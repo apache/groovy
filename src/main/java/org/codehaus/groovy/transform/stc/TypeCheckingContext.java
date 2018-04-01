@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -34,6 +35,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,6 +53,8 @@ public class TypeCheckingContext {
     protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<ClassNode>();
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<Expression>();
+    protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<BlockStatement>();
+
 
     // used for closure return type inference
     protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<EnclosingClosure>();
@@ -68,6 +72,20 @@ public class TypeCheckingContext {
      * be the LUB of (int, String)
      */
     protected Map<VariableExpression, List<ClassNode>> ifElseForWhileAssignmentTracker = null;
+
+
+    /**
+     * This field used for type derivation
+     * Check IfStatement matched pattern :
+     * Object var1;
+     * if (!(var1 instanceOf Runnable)){
+     * return
+     * }
+     * // Here var1 instance of Runnable
+     */
+    protected final IdentityHashMap<BlockStatement, Map<VariableExpression, List<ClassNode>>> blockStatements2Types = new IdentityHashMap<BlockStatement, Map<VariableExpression, List<ClassNode>>>();
+
+
     /**
      * Stores information which is only valid in the "if" branch of an if-then-else statement. This is used when the if
      * condition expression makes use of an instanceof check
