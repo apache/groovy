@@ -944,11 +944,11 @@ public class InvokerHelper {
         }
         if (value instanceof String) {
             // value is a regular expression.
-            return StringGroovyMethods.bitwiseNegate(value.toString());
+            return StringGroovyMethods.bitwiseNegate((CharSequence)value.toString());
         }
         if (value instanceof GString) {
             // value is a regular expression.
-            return StringGroovyMethods.bitwiseNegate(value.toString());
+            return StringGroovyMethods.bitwiseNegate((CharSequence)value.toString());
         }
         if (value instanceof ArrayList) {
             // value is a list.

@@ -210,7 +210,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.removeAll(list, "def".split("")))
         assertTrue(DefaultGroovyMethods.retainAll(list, "bcd".split("")))
         List<String> bAndC = ['b', 'c']
-        assertTrue(DefaultGroovyMethods.containsAll(list, bAndC.toArray(new String[2])))
+        assertTrue(DefaultGroovyMethods.containsAll((Iterable)list, bAndC.toArray(new String[2])))
         assertEquals(list, bAndC)
         assertTrue(DefaultGroovyMethods.addAll(list, 1, ['a', 's', 'i'].toArray(new String[3])))
         assertEquals(list, ['b', 'a', 's', 'i', 'c'])

@@ -5228,7 +5228,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.2.0
      */
     public static List combinations(Iterable self, Closure<?> function) {
-        return collect(GroovyCollections.combinations(self), function);
+        return collect((Iterable)GroovyCollections.combinations(self), function);
     }
 
     /**
@@ -5305,7 +5305,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.2.0
      */
     public static <T,V> List<V> permutations(Iterable<T> self, Closure<V> function) {
-        return collect(permutations(self),function);
+        return collect((Iterable<List<T>>) permutations(self),function);
     }
 
     /**
