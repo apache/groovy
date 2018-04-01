@@ -73,6 +73,8 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -96,6 +98,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ListHashMap;
@@ -3465,6 +3468,95 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } finally {
             popAssignmentTracking(oldTracker);
         }
+        BinaryExpression instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
+        if (instanceOfExpression == null) {
+        } else {
+            if(typeCheckingContext.enclosingBlocks.size()>0) {
+                visitInstanceofNot(instanceOfExpression);
+            }
+        }
+    }
+
+
+    public void visitInstanceofNot(BinaryExpression be) {
+        final BlockStatement currentBlock = typeCheckingContext.enclosingBlocks.getFirst();
+        assert currentBlock != null;
+        if (typeCheckingContext.blockStatements2Types.containsKey(currentBlock)) {
+            // another instanceOf_not was before, no need store vars
+        } else {
+            // saving type of variables to restoring them after returning from block
+            Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+            getTypeCheckingContext().pushTemporaryTypeInfo();
+            typeCheckingContext.blockStatements2Types.put(currentBlock, oldTracker);
+        }
+        pushInstanceOfTypeInfo(be.getLeftExpression(), be.getRightExpression());
+    }
+
+
+    @Override
+    public void visitBlockStatement(BlockStatement block) {
+        if (block != null) {
+            typeCheckingContext.enclosingBlocks.addFirst(block);
+        }
+        super.visitBlockStatement(block);
+        if (block != null) {
+            visitClosingBlock(block);
+        }
+    }
+
+    public void visitClosingBlock(BlockStatement block) {
+        BlockStatement peekBlock = typeCheckingContext.enclosingBlocks.removeFirst();
+        boolean found = typeCheckingContext.blockStatements2Types.containsKey(peekBlock);
+        if (found) {
+            Map<VariableExpression, List<ClassNode>> oldTracker = typeCheckingContext.blockStatements2Types.remove(peekBlock);
+            getTypeCheckingContext().popTemporaryTypeInfo();
+            popAssignmentTracking(oldTracker);
+        }
+    }
+
+    /**
+     * Check IfStatement matched pattern :
+     * Object var1;
+     * if (!(var1 instanceOf Runnable)){
+     * return
+     * }
+     * // Here var1 instance of Runnable
+     *
+     * Return expression , which contains instanceOf (without not)
+     * Return null, if not found
+     */
+    public BinaryExpression findInstanceOfNotReturnExpression(IfStatement ifElse) {
+        Statement elseBlock = ifElse.getElseBlock();
+        if (!(elseBlock instanceof EmptyStatement)) {
+            return null;
+        }
+        Expression conditionExpression = ifElse.getBooleanExpression().getExpression();
+        if (!(conditionExpression instanceof NotExpression)) {
+            return null;
+        }
+        NotExpression notExpression = (NotExpression) conditionExpression;
+        Expression expression = notExpression.getExpression();
+        if (!(expression instanceof BinaryExpression)) {
+            return null;
+        }
+        BinaryExpression instanceOfExpression = (BinaryExpression) expression;
+        int op = instanceOfExpression.getOperation().getType();
+        if (op != Types.KEYWORD_INSTANCEOF) {
+            return null;
+        }
+        Statement block = ifElse.getIfBlock();
+        if (!(block instanceof BlockStatement)) {
+            return null;
+        }
+        BlockStatement bs = (BlockStatement) block;
+        if (bs.getStatements().size() == 0) {
+            return null;
+        }
+        Statement last = DefaultGroovyMethods.last(bs.getStatements());
+        if (!(last instanceof ReturnStatement)) {
+            return null;
+        }
+        return instanceOfExpression;
     }
 
     @Override
