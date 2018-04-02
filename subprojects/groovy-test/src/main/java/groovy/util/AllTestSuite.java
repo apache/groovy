@@ -28,6 +28,8 @@ import org.codehaus.groovy.runtime.ScriptTestAdapter;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -78,7 +80,15 @@ public class AllTestSuite extends TestSuite {
 
     private static final Logger LOG = Logger.getLogger(AllTestSuite.class.getName());
     private static final ClassLoader JAVA_LOADER = AllTestSuite.class.getClassLoader();
-    private static final GroovyClassLoader GROOVY_LOADER = new GroovyClassLoader(JAVA_LOADER);
+    private static final GroovyClassLoader GROOVY_LOADER =
+            AccessController.doPrivileged(
+                    new PrivilegedAction<GroovyClassLoader>() {
+                        @Override
+                        public GroovyClassLoader run() {
+                            return new GroovyClassLoader(JAVA_LOADER);
+                        }
+                    }
+            );
 
     private static final String[] EMPTY_ARGS = new String[]{};
     private static IFileNameFinder finder = null;

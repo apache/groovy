@@ -18,9 +18,8 @@
  */
 package groovy.swing.factory
 
-import java.awt.Dimension
-import javax.swing.Box
-import javax.swing.BoxLayout
+import javax.swing.*
+import java.awt.*
 
 public class BoxFactory extends ComponentFactory {
 

@@ -24,6 +24,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
@@ -49,10 +50,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
@@ -1057,12 +1060,19 @@ public class Groovyc extends MatchingTask {
     }
 
     private String getClasspathRelative(Path classpath) {
-        String raw = classpath.toString();
         String baseDir = getProject().getBaseDir().getAbsolutePath();
-        if (!raw.startsWith(baseDir)) {
-            return raw;
+        StringBuilder sb = new StringBuilder();
+        for (String next : classpath.list()) {
+            if (sb.length() > 0) {
+                sb.append(File.pathSeparatorChar);
+            }
+            if (next.startsWith(baseDir)) {
+                sb.append(".").append(next.substring(baseDir.length()));
+            } else {
+                sb.append(next);
+            }
         }
-        return "." + raw.substring(baseDir.length());
+        return sb.toString();
     }
 
     /**
@@ -1073,8 +1083,10 @@ public class Groovyc extends MatchingTask {
      * @param classpath
      */
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
-        commandLineList.add("--classpath");
-        commandLineList.add(getClasspathRelative(classpath));
+        if (!fork) {
+            commandLineList.add("--classpath");
+            commandLineList.add(classpath.toString());
+        }
         if (jointCompilation) {
             commandLineList.add("-j");
             commandLineList.addAll(jointOptions);
@@ -1141,7 +1153,7 @@ public class Groovyc extends MatchingTask {
     }
 
     private String[] makeCommandLine(List<String> commandLineList) {
-        log.verbose("Compilation arguments:\n" + DefaultGroovyMethods.join(commandLineList, "\n"));
+        log.verbose("Compilation arguments:\n" + DefaultGroovyMethods.join((Iterable)commandLineList, "\n"));
         return commandLineList.toArray(new String[commandLineList.size()]);
     }
 
@@ -1208,7 +1220,7 @@ public class Groovyc extends MatchingTask {
                 // unwrap to the real exception
                 t = re.getCause();
             }
-            StringWriter writer = new StringWriter();
+            Writer writer = new StringBuilderWriter();
             new ErrorReporter(t, false).write(new PrintWriter(writer));
             String message = writer.toString();
 
@@ -1299,9 +1311,16 @@ public class Groovyc extends MatchingTask {
         if (!fork && !getIncludeantruntime()) {
             throw new IllegalArgumentException("The includeAntRuntime=false option is not compatible with fork=false");
         }
-        ClassLoader parent = getIncludeantruntime()
-                ? getClass().getClassLoader()
-                : new AntClassLoader(new RootLoader(EMPTY_URL_ARRAY, null), getProject(), getClasspath());
+        final ClassLoader parent =
+                AccessController.doPrivileged(
+                        new PrivilegedAction<ClassLoader>() {
+                            @Override
+                            public ClassLoader run() {
+                                return getIncludeantruntime()
+                                        ? getClass().getClassLoader()
+                                        : new AntClassLoader(new RootLoader(EMPTY_URL_ARRAY, null), getProject(), getClasspath());
+                            }
+                        });
         if (parent instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) parent;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
@@ -1334,7 +1353,14 @@ public class Groovyc extends MatchingTask {
             }
         }
 
-        GroovyClassLoader loader = new GroovyClassLoader(parent, configuration);
+        GroovyClassLoader loader =
+                AccessController.doPrivileged(
+                        new PrivilegedAction<GroovyClassLoader>() {
+                            @Override
+                            public GroovyClassLoader run() {
+                                return new GroovyClassLoader(parent, configuration);
+                            }
+                        });
         if (!forceLookupUnnamedFiles) {
             // in normal case we don't need to do script lookups
             loader.setResourceLoader(new GroovyResourceLoader() {

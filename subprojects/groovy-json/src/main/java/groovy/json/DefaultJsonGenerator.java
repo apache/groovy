@@ -18,8 +18,8 @@
  */
 package groovy.json;
 
-import groovy.json.internal.CharBuf;
-import groovy.json.internal.Chr;
+import org.apache.groovy.json.internal.CharBuf;
+import org.apache.groovy.json.internal.Chr;
 import groovy.lang.Closure;
 import groovy.util.Expando;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;

@@ -23,17 +23,33 @@
 The Groovy development team
 :revdate: 24-02-2014
 :build-icon: http://ci.groovy-lang.org:8111/app/rest/builds/buildType:(id:Groovy_Jdk7Build)/statusIcon
+:travis-build-icon: https://travis-ci.org/apache/groovy.svg?branch=master
 :noheader:
 :groovy-www: http://groovy-lang.org/
 :groovy-ci: http://ci.groovy-lang.org?guest=1
+:travis-ci: https://travis-ci.org/apache/groovy
 :jdk: http://www.oracle.com/technetwork/java/javase/downloads
 :bintray-latest-version-image: https://api.bintray.com/packages/groovy/maven/groovy/images/download.png
 :bintray-latest-version-link: https://bintray.com/groovy/maven/groovy/_latestVersion
 :bintray-watch-image: https://www.bintray.com/docs/images/bintray_badge_color.png
 :bintray-watch-link: https://bintray.com/groovy/maven/groovy/view?source=watch
+:apache-license-icon: https://img.shields.io/badge/license-APL2-blue.svg
+:apache-license-link: http://www.apache.org/licenses/LICENSE-2.0.txt
+:apache-groovy-twitter-icon: https://img.shields.io/twitter/follow/ApacheGroovy.svg?style=social
+:apache-groovy-twitter-link: https://twitter.com/intent/follow?screen_name=ApacheGroovy
+:jdk-icon: https://img.shields.io/badge/java-8+-4c7e9f.svg
+:bintray-download-icon: https://api.bintray.com/packages/groovy/maven/groovy/images/download.svg
+
 
 [.left.text-left]
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
+image:{jdk-icon}[jdk, link={jdk}]
+image:{apache-license-icon}[Apache License 2, link={apache-license-link}]
+image:{build-icon}[teamcity build status, link={groovy-ci}]
+image:{travis-build-icon}[travis build status, link={travis-ci}]
+image:{bintray-download-icon}[bintray download, link={bintray-latest-version-link}]
+image:{apache-groovy-twitter-icon}[follow on Twitter, link={apache-groovy-twitter-link}]
+
 {groovy-www}[Groovy] is a powerful, optionally typed and dynamic language, with static-typing and static compilation capabilities, for the Java platform aimed at multiplying developers’ productivity thanks to a concise, familiar and easy to learn syntax.
 
 It integrates smoothly with any Java program, and immediately delivers to your application powerful features, including scripting capabilities, Domain-Specific Language authoring, runtime and compile-time meta-programming and functional programming. 
@@ -80,7 +96,7 @@ As mentioned in the previous paragraph, if you download the source distribution
 you need to bootstrap Gradle. This isn't needed if you clone from the Github repo.
 
 Each version of Groovy is built and tested using a specific version of Gradle.
-That version is specified by the `gradleVersion` property defined in the `build.gradle`
+That version is specified by the `gradle_version` property defined in the `gradle.properties`
 file within the root directory. Luckily you shouldn't need to know that version and,
 after bootstrapping, you should use the `gradlew` command which will ensure the
 correct version is always used.
@@ -91,9 +107,12 @@ expecting.
 
 To bootstrap Gradle, at the top directory of your unpacked source, run the command:
 
-    gradle wrapper
+    gradle -b wrapper.gradle wrapper
 
 On Unix-like systems, use `./gradle`.
+If the version of Gradle you have installed is close to the required version,
+you might be able to get away without the `-b wrapper.gradle` above, but if in
+doubt leave it in.
 
 *NOTE*: At this point, the Gradle wrapper should be set up and from now on you should use
 the `gradlew` command instead of `gradle`. (On Unix-like systems, use `./gradlew`).

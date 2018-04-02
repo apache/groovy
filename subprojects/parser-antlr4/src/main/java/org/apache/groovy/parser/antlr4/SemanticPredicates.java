@@ -92,7 +92,6 @@ public class SemanticPredicates {
      * Method name should not end with "2: arguments" and "3: closure"
      *
      * @param t the type of pathExpression
-     * @return
      */
     public static boolean isFollowingMethodName(int t) {
         return !(2 == t || 3 == t);

@@ -18,10 +18,11 @@
  */
 package groovy.swing.factory
 
+import groovy.util.logging.Log
+
 import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableColumn
 import javax.swing.table.TableColumnModel
-import groovy.util.logging.Log
 
 /**
  * @author Alexander Klein

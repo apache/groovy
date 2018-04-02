@@ -23,7 +23,13 @@ import jline.console.completer.AggregateCompleter
 import jline.console.completer.CandidateListCompletionHandler
 import jline.console.completer.CompletionHandler
 import jline.console.history.FileHistory
-import org.codehaus.groovy.tools.shell.completion.*
+import org.codehaus.groovy.tools.shell.completion.CustomClassSyntaxCompletor
+import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
+import org.codehaus.groovy.tools.shell.completion.GroovySyntaxCompletor
+import org.codehaus.groovy.tools.shell.completion.ImportsSyntaxCompletor
+import org.codehaus.groovy.tools.shell.completion.KeywordSyntaxCompletor
+import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
+import org.codehaus.groovy.tools.shell.completion.VariableSyntaxCompletor
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.util.WrappedInputStream

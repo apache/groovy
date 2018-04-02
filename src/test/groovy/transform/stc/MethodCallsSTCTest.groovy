@@ -364,6 +364,29 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             '''
     }
 
+    void testShouldNotFailThanksToInstanceOfChecksAndWithoutExplicitCasts2() {
+        assertScript '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each { argument ->
+                    if (argument instanceof String) {
+                        foo(argument)
+                    } else if (argument instanceof Boolean) {
+                        foo(argument)
+                    } else if (argument instanceof Integer) {
+                        foo(argument)
+                    }
+                }
+            '''
+    }
+
     void testShouldFailWithMultiplePossibleMethods() {
         shouldFailWithMessages '''
                 static String foo(String s) {
@@ -381,6 +404,94 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
             ''', 'Reference to method is ambiguous'
+    }
+
+    void testShouldFailWithMultiplePossibleMethods2() {
+        shouldFailWithMessages '''
+                static String foo(String s) {
+                    'String'
+                }
+                static String foo(Integer s) {
+                    'Integer'
+                }
+                static String foo(Boolean s) {
+                    'Boolean'
+                }
+                ['foo',123,true].each { argument ->
+                    if (argument instanceof String || argument instanceof Boolean || argument instanceof Integer) {
+                        foo(argument)
+                    }
+                }
+            ''', 'Reference to method is ambiguous'
+    }
+
+    void testInstanceOfOnExplicitParameter() {
+        assertScript '''
+                1.with { obj ->
+                    if (obj instanceof String) {
+                        obj.toUpperCase() 
+                    }
+                }
+            '''
+    }
+
+    void testSAMWithExplicitParameter() {
+        assertScript '''
+            public interface SAM {
+                boolean run(String var1, Thread th);
+            }
+            
+            static boolean foo(SAM sam) {
+               sam.run("foo",  new Thread())
+            }
+            
+            static def callSAM() {
+                foo { str, th ->
+                    str.toUpperCase().equals(th.getName())
+                }
+            }
+            '''
+    }
+
+    void testGroovy8241() {
+        assertScript '''
+            import java.util.function.Predicate
+            
+            static boolean foo(Predicate<? super String> p) {
+                p.test("foo")
+            }
+            
+            static def testPredicate() {
+                foo { it ->
+                    it.toUpperCase()
+                    true
+                }
+            }
+            '''
+    }
+
+    void testGroovy7061() {
+        assertScript '''
+            void doIt() {
+                List<Integer> nums = [1, 2, 3, -2, -5, 6]
+                Collections.sort(nums, { a, b -> a.abs() <=> b.abs() })
+            }
+            '''
+    }
+
+    void testGroovy7061ex2() {
+        assertScript '''
+            def doIt(List<String> strings) {
+                return strings.
+                    stream().
+                    filter { s -> s.length() < 10 }.
+                    toArray()
+            }
+            
+            final words = ["orange", "sit", "test", "flabbergasted", "honorific"] 
+            
+            println doIt(words)
+            '''
     }
 
     void testShouldFailBecauseVariableIsReassigned() {
@@ -1124,6 +1235,26 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             assert new Foo.Baz().doBar() == 1
+        '''
+    }
+
+    // GROOVY-8445
+    void testGroovy8445() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e});
+            }
+        }
         '''
     }
 

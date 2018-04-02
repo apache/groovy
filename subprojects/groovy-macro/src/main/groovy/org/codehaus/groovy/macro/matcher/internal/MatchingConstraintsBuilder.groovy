@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.macro.matcher.internal
 
-import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.macro.matcher.MatchingConstraints
 import org.codehaus.groovy.macro.matcher.TreeContext
 import org.codehaus.groovy.syntax.Token

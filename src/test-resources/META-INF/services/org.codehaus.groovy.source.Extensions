@@ -15,4 +15,5 @@
 
 # Format: one extension on each line without the leading "*."
 # groovy source file extensions to test GROOVY-4393
+# intentionally left in legacy directory to test fallback capability for GROOVY-8471
 foogroovy

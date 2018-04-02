@@ -18,11 +18,19 @@
  */
 package groovy.json;
 
-import groovy.lang.*;
+import groovy.lang.Closure;
+import groovy.lang.DelegatesTo;
+import groovy.lang.GString;
+import groovy.lang.GroovyObjectSupport;
+import groovy.lang.Writable;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A builder for creating JSON payloads.
@@ -523,7 +531,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             this(w, first, null);
         }
 
-        StreamingJsonDelegate(Writer w, boolean first, JsonGenerator generator) {
+        public StreamingJsonDelegate(Writer w, boolean first, JsonGenerator generator) {
             this.writer = w;
             this.first = first;
             this.generator = (generator != null) ? generator : JsonOutput.DEFAULT_GENERATOR;

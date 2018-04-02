@@ -21,7 +21,7 @@ if (JavaVersion.current().java9Compatible) {
         tasks.withType(GroovyCompile) {
             groovyOptions.forkOptions.jvmArgs.addAll(['--add-modules', 'java.xml.bind'])
         }
-        test {
+        tasks.withType(Test) {
             jvmArgs '--add-modules', 'java.xml.bind'
         }
     }

@@ -582,7 +582,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5594
     void testMapEntryUsingPropertyNotation() {
         assertScript '''
-        Map.Entry<Date, Integer> entry
+        Map.Entry<Date, Integer> entry = null
 
         @ASTTest(phase=INSTRUCTION_SELECTION, value={
             assert node.getNodeMetaData(INFERRED_TYPE) == make(Date)
@@ -598,7 +598,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testInferenceFromMap() {
         assertScript '''
-        Map<Date, Integer> map
+        Map<Date, Integer> map = [:]
 
         @ASTTest(phase=INSTRUCTION_SELECTION, value={
             def infType = node.getNodeMetaData(INFERRED_TYPE)
@@ -614,7 +614,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testInferenceFromListOfMaps() {
         assertScript '''
-        List<Map<Date, Integer>> maps
+        List<Map<Date, Integer>> maps = []
 
         @ASTTest(phase=INSTRUCTION_SELECTION, value={
             def listType = node.getNodeMetaData(INFERRED_TYPE)

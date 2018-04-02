@@ -259,4 +259,28 @@ class FieldTransformTest extends CompilableTestSupport {
             assert logger.toString() == 'abcdefgh'
         '''
     }
+
+    void testFieldTransformWithFinalField() {
+        // GROOVY-8430
+        assertScript '''
+            import groovy.transform.Field
+
+            @Field final foo = 14
+            @Field final bar = foo * 2
+            @Field baz = foo + bar
+
+            assert foo + bar == 42
+            assert baz == 42
+            def setters = getClass().methods.findAll{ it.name.startsWith('set') }.name
+            assert setters.intersect(['setBar', 'setFoo', 'setBaz']) == ['setBaz']
+        '''
+    }
+
+    void testFieldTransformWithFinalFieldAndOption() {
+        // GROOVY-8430 in conjunction with @Option
+        shouldNotCompile '''
+            import groovy.cli.OptionField
+            @OptionField final String first
+        '''
+    }
 }

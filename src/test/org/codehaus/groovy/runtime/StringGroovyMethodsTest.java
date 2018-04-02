@@ -91,4 +91,38 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
         assertTrue(StringGroovyMethods.isNumber(floatStr));
         assertFalse(StringGroovyMethods.isNumber(nonNumberStr));
     }
+
+    public void testStartsWithAny() {
+        assertTrue(StringGroovyMethods.startsWithAny("abcd", "ab", "ef"));
+        assertFalse(StringGroovyMethods.startsWithAny("abcd", "ef", "gh"));
+    }
+
+    public void testEndsWithAny() {
+        assertTrue(StringGroovyMethods.endsWithAny("abcd", "cd", "ef"));
+        assertFalse(StringGroovyMethods.endsWithAny("abcd", "ef", "gh"));
+    }
+
+    public void testIsBlank() {
+        assertTrue(StringGroovyMethods.isBlank(""));
+        assertTrue(StringGroovyMethods.isBlank(" "));
+        assertTrue(StringGroovyMethods.isBlank("  "));
+        assertTrue(StringGroovyMethods.isBlank("\t"));
+        assertTrue(StringGroovyMethods.isBlank("\t\t"));
+        assertTrue(StringGroovyMethods.isBlank(" \t"));
+        assertTrue(StringGroovyMethods.isBlank("\t "));
+        assertTrue(StringGroovyMethods.isBlank(" \n "));
+        assertTrue(StringGroovyMethods.isBlank("\n"));
+        assertTrue(StringGroovyMethods.isBlank("\n\n"));
+        assertTrue(StringGroovyMethods.isBlank(" \n"));
+        assertTrue(StringGroovyMethods.isBlank("\n "));
+        assertTrue(StringGroovyMethods.isBlank(" \n "));
+        assertTrue(StringGroovyMethods.isBlank(" \n \t "));
+        assertFalse(StringGroovyMethods.isBlank("abc"));
+        assertFalse(StringGroovyMethods.isBlank("abc "));
+        assertFalse(StringGroovyMethods.isBlank(" abc"));
+        assertFalse(StringGroovyMethods.isBlank(" abc "));
+        assertFalse(StringGroovyMethods.isBlank("\tabc"));
+        assertFalse(StringGroovyMethods.isBlank("abc\t"));
+        assertFalse(StringGroovyMethods.isBlank("\tabc\t"));
+    }
 }

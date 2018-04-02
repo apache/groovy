@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.codehaus.groovy.gradle.ReleaseInfoGenerator
 
 buildscript {
     repositories {
@@ -38,10 +39,9 @@ buildscript {
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.2'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.7'
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
         classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
-        //classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
@@ -69,17 +69,16 @@ buildScanRecipes {
 ext.modules = {
     subprojects.findAll{ !['performance'].contains(it.name) }
 }
+ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 
 apply from: 'gradle/bad-practices.gradle'
-apply from: 'gradle/filter.gradle'
-apply from: 'gradle/indy.gradle'
+//apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
 apply plugin: 'javadocHotfix'
 apply plugin: "com.github.jk1.dependency-license-report"
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
-indyBanner()
 
 allprojects {
     apply plugin: 'java'
@@ -99,10 +98,21 @@ allprojects {
         maven { url 'http://dl.bintray.com/melix/thirdparty-apache' } // openbeans
     }
 
+    ext.buildDate = isReleaseVersion?new Date():new Date(0)
+
+    task generateReleaseInfo(type: ReleaseInfoGenerator) {
+        version = rootProject.groovyVersion
+        bundleVersion = rootProject.groovyBundleVersion
+        buildDate = rootProject.buildDate
+        outputFile = file("$buildDir/release-info/groovy-release-info.properties")
+    }
+
     apply plugin: 'groovy'
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
-    if (JavaVersion.current().java7Compatible) {
-        apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
+    apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
+
+    tasks.withType(org.asciidoctor.gradle.AsciidoctorTask) {
+        outputs.cacheIf { true }
     }
 
     tasks.withType(GroovyCompile) {
@@ -110,36 +120,16 @@ allprojects {
     }
 }
 
-// todo: use the conventional "resources" directory for classpath resources
-task(copyResources, type: Copy) {
-    destinationDir = file("$buildDir/classes")
-    // text files requiring filtering
-    into('main') {
-        from('src/main')
-        include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.html')
-        filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-    }
-    // other resources
-    into('main') {
-        from 'src/main'
-        include('**/*.png', '**/*.gif', '**/*.ico', '**/*.css')
-    }
-}
-compileJava.dependsOn(copyResources)
 task(copyTestResources, type: Copy)
         .from('src/test')
         .into("$buildDir/classes/test")
         .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
-compileTestJava.dependsOn(copyTestResources)
+test.dependsOn(copyTestResources)
 
-task sourceJar(type: Jar) {
-    classifier = 'sources'
-    from 'src/main'
-}
-
-subprojects {
+allprojects {
     task sourceJar(type: Jar) {
         classifier = 'sources'
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from sourceSets.main.allSource
     }
 }
@@ -162,7 +152,7 @@ configurations {
 
 ext {
     antVersion = '1.10.1'
-    asmVersion = '6.0'
+    asmVersion = '6.1.1'
     antlrVersion = '2.7.7'
     bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
@@ -170,10 +160,9 @@ ext {
     commonsHttpClientVersion = '3.1'
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
-    gradleVersion = '4.3.1'
     ivyVersion = '2.4.0'
     jansiVersion = '1.13'
-    jarjarVersion = '1.4.1'
+    jarjarVersion = '1.6.5'
     jlineVersion = '2.14.5'
     jmockVersion = '1.2.0'
     logbackVersion = '1.1.7'
@@ -186,9 +175,9 @@ ext {
     slf4jVersion = '1.7.21'
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.10'
-    spockVersion = '1.1-groovy-2.4-SNAPSHOT' // supports 3.0
+    spockVersion = '1.2-groovy-2.4-SNAPSHOT' // supports 3.0
     antlr4Version = '4.7'
-    isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
+    jsr305Version = '3.0.2'
 }
 
 dependencies {
@@ -214,9 +203,12 @@ dependencies {
     }
     compile files("${buildDir}/generated-classes")
 
+    compileOnly "com.google.code.findbugs:jsr305:$jsr305Version"
+
     runtime("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
+
     testCompile "jmock:jmock:$jmockVersion"
     testCompile "jmock:jmock-cglib:$jmockVersion"
     testCompile "xmlunit:xmlunit:$xmlunitVersion"
@@ -229,7 +221,7 @@ dependencies {
         testRuntime 'javax.xml.bind:jaxb-api:2.3.0'
     }
 
-    tools "com.googlecode.jarjar:jarjar:$jarjarVersion"
+    tools "org.pantsbuild:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
 
     tools("net.sourceforge.cobertura:cobertura:$coberturaVersion") {
@@ -264,6 +256,7 @@ dependencies {
     antlr2 "org.apache.ant:ant-antlr:$antVersion"
 
     testCompile project(':groovy-ant')
+    testCompile project(':groovy-dateutil')
     testCompile project(':groovy-test')
     testCompile project(':groovy-macro')
 }
@@ -273,20 +266,16 @@ ext.generatedDirectory = "${buildDir}/generated-sources"
 sourceSets {
     main {
         java {
-            srcDirs = [
-                    'src/main',
-                    "$generatedDirectory/src/main"
-            ]
+            // the only reason we add src/main/groovy here is for the bootstrap compiler
+            srcDir 'src/main/groovy'
+            srcDir "$generatedDirectory/src/main"
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
             }
         }
         groovy {
-            srcDirs = [
-                    'src/main',
-                    "$generatedDirectory/src/main"
-            ]
+            srcDir "$generatedDirectory/src/main"
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
@@ -331,30 +320,21 @@ check {
     dependsOn examplesClasses
 }
 
-// remove this from config once GRADLE-854 is fixed.
-processResources.doLast {
-    copy {
-        from('src/main') {
-            include 'groovy/inspect/swingui/AstBrowserProperties.groovy',
-                    'org/codehaus/groovy/tools/groovydoc/gstringTemplates/GroovyDocTemplateInfo.java'
-        }
-        into sourceSets.main.java.outputDir
-    }
-}
-
-tasks.withType(Jar) {
-    doFirst {
+compileJava {
+    doLast {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
             arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/classgen/Verifier.class")
         }
         ant.echo('Bridger: ' + ant.properties.stdout)
     }
 }
 
 task ensureGrammars {
+    outputs.cacheIf { true }
     description = 'Ensure all the Antlr2 generated files are up to date.'
-    ext.antlrDirectory = "$projectDir/src/main/org/codehaus/groovy/antlr"
-    ext.groovyParserDirectory = "$ext.antlrDirectory/parser"
+    ext.antlrDirectory = "$projectDir/src/main/antlr2/org/codehaus/groovy/antlr"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
     ext.genPath = "$generatedDirectory/src/main/org/codehaus/groovy/antlr"
     ext.groovyOutDir = "$ext.genPath/parser"
@@ -370,7 +350,6 @@ task ensureGrammars {
                     classname: 'org.apache.tools.ant.taskdefs.optional.ANTLR',
                     classpath: configurations.antlr2.asPath)
 
-            mkdir dir: ext.groovyParserDirectory
             antlr2(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
                 classpath path: configurations.compile.asPath
             }
@@ -381,28 +360,29 @@ task ensureGrammars {
     }
 }
 
-apply from: 'gradle/utils.gradle'
-apply from: 'gradle/wrapper.gradle'
+apply from: 'wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {
+    outputs.cacheIf { true }
+
     description = 'Generates DGM info file required for faster startup.'
-    def classesDir = sourceSets.main.java.outputDir
     def classpath = files(sourceSets.main.output.classesDirs, configurations.compile)
+    ext.outputDir = file("$buildDir/dgm")
 
     //main = 'org.codehaus.groovy.tools.DgmConverter'
     //args = ['--info', classesDir.absolutePath]
     doFirst {
-        file("$classesDir/META-INF").mkdirs()
+        file("$outputDir/META-INF").mkdirs()
         // we use ant.java because Gradle is a bit "too smart" with JavaExec
         // as it will invalidate the task if classpath changes, which will
         // happen once Groovy files are compiled
         ant.java(classname:'org.codehaus.groovy.tools.DgmConverter', classpath: classpath.asPath) {
             arg(value: '--info')
-            arg(value: classesDir.absolutePath)
+            arg(value: "$outputDir.absolutePath")
         }
     }
-    inputs.files fileTree('src').include('**/*GroovyMethods.java')
-    outputs.file file("${classesDir}/META-INF/dgminfo")
+    inputs.files fileTree('src/main').include('**/*GroovyMethods.java')
+    outputs.dir outputDir
 }
 
 compileJava {
@@ -413,34 +393,36 @@ compileJava {
     // Gradle classloading magic with Groovy will only work if it finds a *jar*
     // on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
 
-task bootstrapJar {
+task bootstrapJar(type:Jar ) {
     dependsOn compileJava, dgmConverter
 
-    def destinationDir = file("$buildDir/bootstrap")
-    def archiveName = "groovy-${version}-bootstrap.jar"
-    ext.archivePath = file("$destinationDir/$archiveName")
+    from compileJava.destinationDir
+    from dgmConverter.outputDir
 
-    doLast {
-        // we use ant.jar because Gradle is a bit "too smart" with JavaExec
-        // as it will invalidate the task if classpath changes, which will
-        // happen once Groovy files are compiled
-        destinationDir.mkdirs()
-        ant.jar(
-                destfile: archivePath,
-                basedir: file(sourceSets.main.java.outputDir)
-        )
-    }
-    inputs.property('indy', useIndy())
-    inputs.files sourceSets.main.allJava
-    outputs.file archivePath
+    destinationDir = file("$buildDir/bootstrap")
+    classifier = 'bootstrap'
 }
-
-compileGroovy.dependsOn bootstrapJar
 
 allprojects {
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
+        options.incremental = true
+
+        if (classpath) {
+            classpath = classpath + files(dgmConverter.outputDir)
+        }
+    }
+
+    if (rootProject.indyCapable()) {
+        task compileGroovyWithIndy(type: GroovyCompile) {
+            source = sourceSets.main.groovy
+            classpath = compileGroovy.classpath
+            sourceCompatibility = 1.8
+            targetCompatibility = 1.8
+            groovyOptions.optimizationOptions['indy'] = true
+            destinationDir = file("$buildDir/classes/indy")
+        }
     }
 
     tasks.withType(GroovyCompile) {
@@ -448,32 +430,11 @@ allprojects {
         groovyOptions.encoding = 'UTF-8'
         groovyClasspath = files(
                 rootProject.compileJava.classpath,
-                rootProject.bootstrapJar.archivePath
+                files(project==rootProject?rootProject.bootstrapJar:rootProject.jar)
         )
 
         // TODO: this null check was required after adding JMH plugin to performance project
         classpath = (classpath != null) ? classpath + groovyClasspath : groovyClasspath
-    }
-
-    if (useIndy()) {
-        tasks.withType(GroovyCompile) {
-            logger.info("Building ${project.name}:${name} with InvokeDynamic support activated")
-            groovyOptions.optimizationOptions.indy = true
-            sourceCompatibility = 1.8
-            targetCompatibility = 1.8
-        }
-        tasks.withType(JavaCompile) {
-            if (project.name=='performance') {
-                sourceCompatibility = 1.8
-                targetCompatibility = 1.8
-            } else {
-                sourceCompatibility = 1.8
-                targetCompatibility = 1.8
-            }
-        }
-        jar {
-            classifier = 'indy'
-        }
     }
 }
 
@@ -505,6 +466,7 @@ apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/quality.gradle'
 apply from: 'gradle/jdk9.gradle'
+apply from: 'gradle/parallel-build-fixes.gradle'
 
 // If a local configuration file for tweaking the build is present, apply it
 if (file('user.gradle').exists()) {

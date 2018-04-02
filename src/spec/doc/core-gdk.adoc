@@ -25,6 +25,10 @@ include::{projectdir}/src/spec/doc/working-with-io.adoc[leveloffset=+1]
 
 include::{projectdir}/src/spec/doc/working-with-collections.adoc[leveloffset=+1]
 
+include::{projectdir}/subprojects/groovy-dateutil/{specfolder}/working-with-dateutil-types.adoc[leveloffset=+1]
+
+include::{projectdir}/subprojects/groovy-datetime/{specfolder}/working-with-datetime-types.adoc[leveloffset=+1]
+
 == Handy utilities
 
 === ConfigSlurper

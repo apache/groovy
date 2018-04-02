@@ -214,4 +214,118 @@ class TupleConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-7981
+    void testVisibilityOptions() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.transform.options.Visibility.*
+            import static java.lang.reflect.Modifier.isPrivate
+            import static org.codehaus.groovy.control.CompilePhase.*
+
+            @VisibilityOptions(PRIVATE)
+            @Immutable
+            @ASTTest(phase = CANONICALIZATION,
+                     value = {
+                         node.constructors.every { isPrivate(it.modifiers) }
+                     })
+            class Person {
+                String first, last
+                int age
+                static makePerson(Map args) {
+                    new Person(args)
+                }
+            }
+
+            @CompileStatic
+            def method() {
+                def p = Person.makePerson(first: 'John', last: 'Smith', age: 20)
+                assert p.toString() == 'Person(John, Smith, 20)'
+            }
+            method()
+        '''
+    }
+
+    // GROOVY-7981
+    void testMultipleVisibilityOptions() {
+        assertScript '''
+            import groovy.transform.*
+            import java.lang.reflect.Modifier
+            import static groovy.transform.options.Visibility.*
+            import static org.codehaus.groovy.control.CompilePhase.*
+
+            @VisibilityOptions(value = PROTECTED, id = 'first_only')
+            @VisibilityOptions(constructor = PRIVATE, id = 'age_only')
+            @TupleConstructor(visibilityId = 'first_only', includes = 'first', defaults = false, force = true)
+            @TupleConstructor(visibilityId = 'age_only', includes = 'age', defaults = false, force = true)
+            @ASTTest(phase = CANONICALIZATION,
+                     value = {
+                         assert node.constructors.size() == 2
+                         node.constructors.each {
+                             assert (it.typeDescriptor == 'void <init>(java.lang.String)' && it.modifiers == Modifier.PROTECTED) ||
+                             (it.typeDescriptor == 'void <init>(int)' && it.modifiers == Modifier.PRIVATE)
+                         }
+                     })
+            class Person {
+                String first, last
+                int age
+                static test() {
+                    assert new Person('John').first == 'John'
+                    assert new Person(42).age == 42
+                }
+            }
+            Person.test()
+        '''
+    }
+
+    // GROOVY-8455, GROOVY-8453
+    void testPropPsuedoPropAndFieldOrderIncludingInheritedMembers() {
+        assertScript '''
+            import groovy.transform.TupleConstructor
+
+            class Basepubf{}
+            class Basep{}
+            class Basepp{}
+            class Base {
+                Basep basep
+                public Basepubf basepubf
+                protected Byte baseProtField
+                void setBasePseudoProp(Basepp bpp) {}
+            }
+
+            class Foopubf{}
+            class Foop{}
+            class Foopp{}
+            class Foo extends Base {
+                Foop foop
+                public Foopubf foopubf
+                protected Short fooProtField
+                Foopp getFooPseudoProp() { null }
+            }
+
+            class Barpubf{}
+            class Barp{}
+            class Barpp{}
+            class Bar extends Foo {
+                Barp barp
+                public Barpubf barpubf
+                protected Integer barProtField
+                void setBarPseudoProp(Barpp bpp) { }
+            }
+
+            class Bazpubf{}
+            class Bazp{}
+            class Bazpp{}
+            @TupleConstructor(includeSuperProperties=true, includeFields=true, includeSuperFields=true, allProperties=true)
+            class Baz extends Bar {
+                Bazp bazp
+                public Bazpubf bazpubf
+                protected Long bazProtField
+                void setBazPseudoProp(Bazpp bpp) { }
+            }
+
+            assert Baz.constructors.max{ it.parameterTypes.size() }.toString() ==
+                'public Baz(Basep,Basepp,Basepubf,java.lang.Byte,Foop,Foopubf,java.lang.Short,Barp,Barpp,Barpubf,java.lang.Integer,Bazp,Bazpp,Bazpubf,java.lang.Long)'
+        '''
+    }
+
 }

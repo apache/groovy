@@ -1,0 +1,338 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Working with Date/Time types
+
+The `groovy-datetime` module supports numerous extensions for working with
+the http://www.oracle.com/technetwork/articles/java/jf14-date-time-2125367.html[Date/Time API]
+introduced in Java 8. This documentation refers to the data types defined by this API as
+"JSR 310 types."
+
+== Formatting and parsing
+
+A common use case when working with date/time types is to convert them to Strings (formatting)
+and from Strings (parsing). Groovy provides these additional formatting methods:
+
+[cols="1,1,1" options="header"]
+|====
+| Method
+| Description
+| Example
+
+| `getDateString()`
+| For `LocalDate` and `LocalDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_LOCAL_DATE[`DateTimeFormatter.ISO_LOCAL_DATE`]
+| `2018-03-10`
+
+|
+| For `OffsetDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_OFFSET_DATE[`DateTimeFormatter.ISO_OFFSET_DATE`]
+| `2018-03-10+04:00`
+
+|
+| For `ZonedDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_LOCAL_DATE[`DateTimeFormatter.ISO_LOCAL_DATE`]
+and appends the `ZoneId` short name
+| `2018-03-10EST`
+
+| `getDateTimeString()`
+| For `LocalDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_LOCAL_DATE_TIME[`DateTimeFormatter.ISO_LOCAL_DATE_TIME`]
+| `2018-03-10T20:30:45`
+
+|
+| For `OffsetDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_OFFSET_DATE_TIME[`DateTimeFormatter.ISO_OFFSET_DATE_TIME`]
+| `2018-03-10T20:30:45+04:00`
+
+|
+| For `ZonedDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_LOCAL_DATE_TIME[`DateTimeFormatter.ISO_LOCAL_DATE_TIME`]
+and appends the `ZoneId` short name
+| `2018-03-10T20:30:45EST`
+
+| `getTimeString()`
+| For `LocalTime` and `LocalDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_LOCAL_TIME[`DateTimeFormatter.ISO_LOCAL_TIME`]
+| `20:30:45`
+
+|
+| For `OffsetTime` and `OffsetDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_OFFSET_TIME[`DateTimeFormatter.ISO_OFFSET_TIME`]
+formatter
+| `20:30:45+04:00`
+
+|
+| For `ZonedDateTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ISO_LOCAL_TIME[`DateTimeFormatter.ISO_LOCAL_TIME`]
+and appends the `ZoneId` short name
+| `20:30:45EST`
+
+| `format(FormatStyle style)`
+| For `LocalTime` and `OffsetTime`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ofLocalizedTime-java.time.format.FormatStyle-[`DateTimeFormatter.ofLocalizedTime(style)`]
+| `4:30 AM` (with style `FormatStyle.SHORT`, e.g.)
+
+|
+| For `LocalDate`, formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ofLocalizedDate-java.time.format.FormatStyle-[`DateTimeFormatter.ofLocalizedDate(style)`]
+| `Saturday, March 10, 2018` (with style `FormatStyle.FULL`, e.g.)
+
+|
+| For `LocalDateTime`, `OffsetDateTime`, and `ZonedDateTime` formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ofLocalizedDateTime-java.time.format.FormatStyle-[`DateTimeFormatter.ofLocalizedDateTime(style)`]
+| `Mar 10, 2019 4:30:45 AM` (with style `FormatStyle.MEDIUM`, e.g.)
+
+| `format(String pattern)`
+| Formats with
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html#ofPattern-java.lang.String-[`DateTimeFormatter.ofPattern(pattern)`]
+| `03/10/2018` (with pattern `'MM/dd/yyyy', e.g.)
+|====
+
+For parsing, Groovy adds a static `parse` method to many of the JSR 310 types. The method
+takes two arguments: the value to be formatted and the pattern to use. The pattern is
+defined by the
+https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html[`java.time.format.DateTimeFormatter` API].
+As an example:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=static_parsing,indent=0]
+-------------------------------------
+
+Note that these `parse` methods have a different argument ordering than the static
+`parse` method Groovy added to `java.util.Date`.
+This was done to be consistent with the existing `parse` methods of the Date/Time API.
+
+== Manipulating date/time
+
+=== Addition and subtraction
+
+`Temporal` types have `plus` and `minus` methods for adding or subtracting a provided
+`java.time.temporal.TemporalAmount` argument. Because Groovy maps the `+` and `-` operators
+to single-argument methods of these names, a more natural expression syntax can be used to add and subtract.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=plus_minus_period,indent=0]
+-------------------------------------
+
+Groovy provides additional `plus` and `minus` methods that accept an integer argument,
+enabling the above to be rewritten more succinctly:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=localdate_plus_minus_integer,indent=0]
+-------------------------------------
+
+The unit of these integers depends on the JSR 310 type operand. As evident above,
+integers used with `ChronoLocalDate` types like `LocalDate` have a unit of
+https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#DAYShttp://days[days].
+Integers used with `Year` and `YearMonth` have a unit of
+https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#YEARS[years] and
+https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#MONTHS[months], respectively.
+All other types have a unit of
+https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#SECONDS[seconds],
+such as `LocalTime`, for instance:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=localtime_plus_minus_integer,indent=0]
+-------------------------------------
+
+=== Multiplication and division
+
+The `*` operator can be used to multiply `Period` and `Duration` instances by an
+integer value; the `/` operator can be used to divide `Duration` instances by an integer value.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=multiply_divide,indent=0]
+-------------------------------------
+
+=== Incrementing and decrementing
+
+The  `++` and `--` operators can be used increment and decrement date/time values by one unit. Since the JSR 310 types
+are immutable, the operation will create a new instance with the incremented/decremented value and reassign it to the
+reference.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=next_previous,indent=0]
+-------------------------------------
+
+=== Negation
+
+The `Duration` and `Period` types represent a negative or positive length of time.
+These can be negated with the unary `-` operator.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=duration_negation,indent=0]
+-------------------------------------
+
+== Interacting with date/time values
+
+=== Property notation
+
+The
+https://docs.oracle.com/javase/8/docs/api/java/time/temporal/TemporalAccessor.html#getLong-java.time.temporal.TemporalField-[`getLong(TemporalField)`]
+method of `TemporalAccessor` types (e.g. `LocalDate`,
+`LocalTime`, `ZonedDateTime`, etc.) and the
+https://docs.oracle.com/javase/8/docs/api/java/time/temporal/TemporalAmount.html#get-java.time.temporal.TemporalUnit-[`get(TemporalUnit)`]
+method of `TemporalAmount` types (namely `Period` and `Duration`), can be invoked with
+Groovy's property notation. For example:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=property_notation,indent=0]
+-------------------------------------
+
+=== Ranges, `upto`, and `downto`
+
+The JSR 310 types can be used with the <<core-operators.adoc#_range_operator,range operator>>.
+The following example iterates between today and the `LocalDate` six days from now,
+printing out the day of the week for each iteration. As both range bounds are inclusive,
+this prints all seven days of the week.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_ranges,indent=0]
+-------------------------------------
+
+The `upto` method will accomplish the same as the range in the above example.
+The `upto` method iterates from the earlier start value (inclusive) to the later end value
+(also inclusive), calling the closure with the incremented value once per iteration.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_upto_date,indent=0]
+-------------------------------------
+
+The `downto` method iterates in the opposite direction, from a later start value
+to an earlier end value.
+
+The unit of iteration for `upto`, `downto`, and ranges is the same as the unit for addition
+and subtraction: `LocalDate` iterates by one day at a time,
+`YearMonth` iterates by one month, `Year` by one year, and everything else by one second.
+Both methods also support an optional a `TemporalUnit` argument to change the unit of
+iteration.
+
+Consider the following example, where March 1st, 2018 is iterated up to March 2nd, 2018
+using an iteration unit of
+https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#MONTHS[months].
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_upto_date_by_months,indent=0]
+-------------------------------------
+
+Since the start date is inclusive, the closure is called with date March 1st. The `upto` method
+then increments the date by one month, yielding the date, April 1st. Because this date is _after_ the
+specified end date of March 2nd, the iteration stops immediately, having only called the closure
+once. This behavior is the same for the `downto` method except that the iteration will stop
+as soon as the the value of `end` becomes earlier than the targeted end date.
+
+In short, when iterating with the `upto` or `downto` methods with a custom unit of iteration,
+the current value of iteration will never exceed the end value.
+
+=== Combining date/time values
+
+The left-shift operator (`<<`) can be used to combine two JSR 310 types into an aggregate type.
+For example, a `LocalDate` can be left-shifted into a `LocalTime` to produce a composite
+`LocalDateTime` instance.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=leftshift_operator,indent=0]
+-------------------------------------
+
+The left-shift operator is reflexive; the order of the operands does not matter.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=leftshift_operator_reflexive,indent=0]
+-------------------------------------
+
+=== Creating periods and durations
+
+The right-shift operator (`>>`) produces a value representing the period or duration between the
+operands. For `ChronoLocalDate`, `YearMonth`, and `Year`, the operator yields
+a `Period` instance:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_period,indent=0]
+-------------------------------------
+
+The operator produces a `Duration` for the time-aware JSR types:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_duration,indent=0]
+-------------------------------------
+
+If the value on the left-hand side of the operator is earlier than the value on the right-hand
+side, the result is positive. If the left-hand side is later than the right-hand side, the
+result is negative:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_negative,indent=0]
+-------------------------------------
+
+== Converting between legacy and JSR 310 types
+
+Despite the shortcomings of `Date`, `Calendar`, and `TimeZone` types in the `java.util` package
+they are farily common in Java APIs (at least in those prior to Java 8).
+To accommodate use of such APIs, Groovy provides methods for converting between the
+JSR 310 types and legacy types.
+
+Most JSR types have been fitted with `toDate()` and `toCalendar()` methods for
+converting to relatively equivalent `java.util.Date` and `java.util.Calendar` values.
+Both `ZoneId` and `ZoneOffset` have been given a `toTimeZone()` method for converting to
+`java.util.TimeZone`.
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=todate_tocalendar,indent=0]
+-------------------------------------
+
+Note that when converting to a legacy type:
+
+* Nanosecond values are truncated to milliseconds. A `LocalTime`, for example, with a `ChronoUnit.NANOS` value
+of 999,999,999 nanoseconds translates to 999 milliseconds.
+* When converting the "local" types (`LocalDate`, `LocalTime`, and `LocalDateTime`), the time zone of the
+returned `Date` or `Calendar` will be the system default.
+* When converting a time-only type (`LocalTime` or `OffsetTime`), the year/month/day of the `Date` or `Calendar` is set
+to the current date.
+* When converting a date-only type (`LocalDate`), the time value of the `Date` or `Calendar` will be cleared,
+i.e. `00:00:00.000`.
+* When converting an `OffsetDateTime` to a `Calendar`, only the hours and minutes of the `ZoneOffset` convey
+into the corresponding `TimeZone`. Fortunately, Zone Offsets with non-zero seconds are rare.
+
+Groovy has added a number of methods to `Date` and `Calendar`
+for converting into the various JSR 310 types:
+
+[source,groovy]
+-------------------------------------
+include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=to_jsr310_types,indent=0]
+-------------------------------------

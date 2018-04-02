@@ -149,6 +149,26 @@ assert bono.toString() == 'BandMember(bandName:U2, name:Bono)'
 '''
 
         assertScript '''
+import groovy.transform.*
+
+// tag::tostring_example_includeSuperFields[]
+class Person {
+    protected String name
+}
+
+@ToString(includeSuperFields = true, includeNames = true)
+@MapConstructor(includeSuperFields = true)
+class BandMember extends Person {
+    String bandName
+}
+
+def bono = new BandMember(name:'Bono', bandName: 'U2').toString()
+
+assert bono.toString() == 'BandMember(bandName:U2, name:Bono)'
+// end::tostring_example_includeSuperFields[]
+'''
+
+        assertScript '''
 import groovy.transform.ToString
 
 // tag::tostring_example_ignoreNulls[]
@@ -314,6 +334,27 @@ assert p1.hashCode() != p2.hashCode()
 '''
 
         assertScript '''
+import groovy.transform.EqualsAndHashCode
+
+// tag::equalshashcode_example_allProperties[]
+@EqualsAndHashCode(allProperties=true, excludes='first, last')
+class Person {
+    String first, last
+    String getInitials() { first[0] + last[0] }
+}
+
+def p1 = new Person(first: 'Jack', last: 'Smith')
+def p2 = new Person(first: 'Jack', last: 'Spratt')
+def p3 = new Person(first: 'Bob', last: 'Smith')
+
+assert p1 == p2
+assert p1.hashCode() == p2.hashCode()
+assert p1 != p3
+assert p1.hashCode() != p3.hashCode()
+// end::equalshashcode_example_allProperties[]
+'''
+
+        assertScript '''
 // tag::equalshashcode_example_allNames[]
 import groovy.transform.EqualsAndHashCode
 
@@ -399,7 +440,6 @@ def p1 = new Person(firstName: 'Jack', lastName: 'Nicholson')
 def p2 = new Person('Jack', 'Nicholson')
 // generated tuple constructor with default value for second property
 def p3 = new Person('Jack')
-
 // end::tupleconstructor_simple[]
 
 assert p1.firstName == p2.firstName
@@ -614,6 +654,24 @@ final class Person {
 assert new Person('john smith').toString() == 'Person(john smith)'
 assert new Person('john', 'smith').toString() == 'Person(john smith)'
 // end::tupleconstructor_example_force[]
+'''
+
+        assertScript '''
+import groovy.transform.TupleConstructor
+
+// tag::tupleconstructor_example_allProperties[]
+@TupleConstructor(allProperties=true)
+class Person {
+    String first
+    private String last
+    void setLast(String last) {
+        this.last = last
+    }
+    String getName() { "$first $last" }
+}
+
+assert new Person('john', 'smith').name == 'john smith'
+// end::tupleconstructor_example_allProperties[]
 '''
 
         assertScript '''
@@ -1376,14 +1434,19 @@ firstLastAge()
 // tag::builder_initializer_immutable[]
 import groovy.transform.builder.*
 import groovy.transform.*
+import static groovy.transform.options.Visibility.PRIVATE
 
 @Builder(builderStrategy=InitializerStrategy)
 @Immutable
+@VisibilityOptions(PRIVATE)
 class Person {
     String first
     String last
     int born
 }
+
+def publicCons = Person.constructors
+assert publicCons.size() == 1
 
 @CompileStatic
 def createFirstLastBorn() {

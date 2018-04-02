@@ -24,6 +24,7 @@ import groovy.lang.Writable;
 import groovy.util.Node;
 import groovy.util.XmlNodePrinter;
 import groovy.util.slurpersupport.GPathResult;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.w3c.dom.Element;
@@ -32,13 +33,24 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URL;
 
 /**
@@ -54,7 +66,7 @@ public class XmlUtil {
      * @return the pretty String representation of the Element
      */
     public static String serialize(Element element) {
-        StringWriter sw = new StringWriter();
+        Writer sw = new StringBuilderWriter();
         serialize(new DOMSource(element), sw);
         return sw.toString();
     }
@@ -178,7 +190,7 @@ public class XmlUtil {
      * @return the pretty String representation of the original content
      */
     public static String serialize(String xmlString) {
-        StringWriter sw = new StringWriter();
+        Writer sw = new StringBuilderWriter();
         serialize(asStreamSource(xmlString), sw);
         return sw.toString();
     }
@@ -388,7 +400,7 @@ public class XmlUtil {
     }
 
     private static String asString(Node node) {
-        StringWriter sw = new StringWriter();
+        Writer sw = new StringBuilderWriter();
         PrintWriter pw = new PrintWriter(sw);
         XmlNodePrinter nodePrinter = new XmlNodePrinter(pw);
         nodePrinter.setPreserveWhitespace(true);
@@ -414,7 +426,7 @@ public class XmlUtil {
         if (writable instanceof GPathResult) {
             return asString((GPathResult) writable); //GROOVY-4285
         }
-        Writer sw = new StringWriter();
+        Writer sw = new StringBuilderWriter();
         try {
             writable.writeTo(sw);
         } catch (IOException e) {

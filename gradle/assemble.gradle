@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.codehaus.groovy.gradle.JarJarTask
 
 apply plugin: 'osgi'
 
@@ -26,12 +28,17 @@ archivesBaseName = 'groovy'
 ext.srcSpec = copySpec {
     from(projectDir) {
         exclude 'target',
+                'build',
                 'benchmark',
                 'subprojects/*/target',
                 'buildSrc/target',
                 buildDir.path,
                 'classes/**',
                 'cruise/**',
+                'src/install/**', // CI file
+                '.travis.yml', // CI file
+                'appveyor.yml', // CI file
+                'jitpack.yml', // CI file
                 'security/groovykeys',
                 '.clover/*',
                 'local.build.properties',
@@ -60,7 +67,7 @@ ext.docSpec = copySpec {
         from groovydocAll.destinationDir
     }
     into('html/documentation') {
-        from "$buildDir/asciidoc/html5"
+        from "$buildDir/asciidocAll/html5"
     }
     into('html/groovy-jdk') {
         from docGDK.destinationDir
@@ -81,8 +88,16 @@ task copy(type: Copy) {
     into "$buildDir/meta"
 }
 
+// unnecessary entries which in addition may trigger unnecessary rebuilds
+def excludedFromManifest = [
+        'Ant-Version',
+        'Originally-Created-By',
+        'Bnd-LastModified',
+        'Created-By'
+]
+
 ext.allManifest = manifest {
-    attributes('Built-By': System.properties['user.name'],
+    attributes(
             'Extension-Name': 'groovy',
             'Specification-Title': 'Groovy: a powerful, dynamic language for the JVM',
             'Specification-Version': groovyBundleVersion,
@@ -105,7 +120,7 @@ ext.groovyOsgiManifest = {
     // Exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
     from(allManifest) {
         eachEntry { details ->
-            if (details.key == 'Bnd-LastModified') {
+            if (excludedFromManifest.any { it == details.key }) {
                 details.exclude()
             }
         }
@@ -120,7 +135,7 @@ ext.subprojectOsgiManifest = {
     // Exclude attributes not needed for subprojects.
     from(allManifest) {
         eachEntry { details ->
-            if (details.key in ['Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
+            if (details.key in [*excludedFromManifest, 'Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
                 details.exclude()
             }
         }
@@ -131,137 +146,150 @@ ext.subprojectOsgiManifest = {
     classpath = sourceSets.main.runtimeClasspath
 }
 
-jar {
-    dependsOn('dgmConverter')
-    metaInf {
-        from("$projectDir/licenses/LICENSE-JARJAR")
-        from("$projectDir/licenses") {
-            into('licenses')
-            include('asm-license.txt')
-            include('antlr2-license.txt')
-            include('antlr4-license.txt')
-        }
-        from("$projectDir/notices/NOTICE-JARJAR")
-        from('src/resources/META-INF/groovy-release-info.properties') {
-            filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-        }
-        rename { String filename -> filename == 'LICENSE-JARJAR' ? 'LICENSE' : filename == 'NOTICE-JARJAR' ? 'NOTICE' : filename }
-    }
-    exclude '**/package-info.class'
-}
-
 allprojects {
-    task jarjar(type:Jar, dependsOn: jar) {
-        destinationDir = jar.destinationDir
-        baseName = jar.baseName
-        appendix = jar.appendix?"${jar.appendix}-jarjar":"jarjar"
-        classifier = jar.classifier
-        includeEmptyDirs = false
-        def target = new File("${archivePath}.tmp")
-        def targetTmp = new File("${archivePath}.tmp.1.tmp")
+    boolean isRoot = project == rootProject
 
-        doFirst {
-            from zipTree(target)
+    def producedJars = [jar]
+    jar {
+        appendix = 'raw'
+        manifest {
+            from(allManifest) {
+                eachEntry { details ->
+                    if (excludedFromManifest.any { it == details.key }) {
+                        details.exclude()
+                    }
+                }
+            }
+        }
+    }
+    if (rootProject.indyCapable()) {
+        task jarWithIndy(type: Jar) {
+            dependsOn compileGroovyWithIndy
+            classifier = 'indy'
+            appendix = 'raw'
+            from sourceSets.main.java.outputDir
+            from sourceSets.main.groovy.outputDir
+            from compileGroovyWithIndy.destinationDir
+            from "${project.buildDir}/resources/main"
+        }
+        producedJars << jarWithIndy
+    }
+    producedJars.each { arch ->
+        arch.metaInf {
+            from("$projectDir/licenses/LICENSE-JARJAR")
+            from("$projectDir/licenses") {
+                into('licenses')
+                include('asm-license.txt')
+                include('antlr2-license.txt')
+                include('antlr4-license.txt')
+            }
+            from("$projectDir/notices/NOTICE-JARJAR")
+            from(generateReleaseInfo)
+            rename '^([A-Z]+)-([^.]*)', '$1'
+        }
+        arch.exclude '**/package-info.class'
 
-            def keepUntouched = [
+        task "jar${arch.name}"(type: JarJarTask) {
+            dependsOn arch
+            from = file(arch.archivePath)
+            if (project == rootProject) {
+                repackagedLibraries = files(configurations.runtime.incoming.artifactView {
+                    componentFilter { component ->
+                        if (component instanceof ModuleComponentIdentifier) {
+                            return component.module in [
+                                    'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
+                                    'asm', 'asm-commons', 'asm-tree', 'asm-util',
+                                    'commons-cli']
+                        }
+                        return false
+                    }
+                }.files)
+            } else {
+                repackagedLibraries = files()
+            }
+            jarjarToolClasspath = rootProject.configurations.tools
+            untouchedFiles = [
                     'org/codehaus/groovy/cli/GroovyPosixParser*.class',
                     'groovy/util/CliBuilder*.class',
                     'groovy/util/OptionAccessor*.class',
                     'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class'
-            ].join(',')
-            boolean isRoot = project == rootProject
-            def gradleProject = project
-            ant {
-                taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
-                jarjar(jarfile: targetTmp) {
-                    zipfileset(
-                            src: jar.archivePath,
-                            excludes: keepUntouched)
+            ]
+            patterns = [
+                    'antlr.**'                 : 'groovyjarjarantlr.@1', // antlr2
+                    'org.antlr.**'             : 'groovyjarjarantlr4.@1', // antlr4
+                    'org.objectweb.**'         : 'groovyjarjarasm.@1',
+                    'org.apache.commons.cli.**': 'groovyjarjarcommonscli.@1'
+            ]
+            excludesPerLibrary = [
+                    '*': ['META-INF/maven/**', 'META-INF/*', 'META-INF/services/javax.annotation.processing.Processor', 'module-info.class']
+            ]
+            includesPerLibrary = [
+                    'asm-util': ['org/objectweb/asm/util/Printer.class',
+                                 'org/objectweb/asm/util/Textifier.class',
+                                 'org/objectweb/asm/util/ASMifier.class',
+                                 'org/objectweb/asm/util/Trace*']
+            ]
+            outputFile = file("$buildDir/libs/${arch.baseName}-${arch.version}${arch.classifier ? '-' + arch.classifier : ''}.jar")
 
-                    // only groovy core will include the dependencies repackaged
-                    if (isRoot) {
-                        configurations.runtime.files.findAll { file ->
-                            ['antlr', 'asm', 'commons-cli'].any {
-                                file.name.startsWith(it)
-                            } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
-                        }.each { jarjarFile ->
-                            // explanation of excludes:
-                            // GROOVY-7386: stop copy of incorrect maven meta info
-                            // GROOVY-8332: stop copy of annotation processor which is for some reason included in antlr runtime artifact
-                            zipfileset(src: jarjarFile, excludes: 'META-INF/maven/commons-cli/commons-cli/*,META-INF/*,META-INF/services/javax.annotation.processing.Processor')
+            withManifest {
+                def moduleName = "org.codehaus.${project.name.replace('-', '.')}"
+                attributes('Automatic-Module-Name': moduleName)
+                from(allManifest) {
+                    eachEntry { details ->
+                        if (excludedFromManifest.any { it == details.key }) {
+                            details.exclude()
                         }
-
-                        zipfileset(src: configurations.runtime.files.find { file -> file.name.startsWith('asm-util') },
-                                includes: 'org/objectweb/asm/util/Printer.class,org/objectweb/asm/util/Textifier.class,org/objectweb/asm/util/ASMifier.class,org/objectweb/asm/util/Trace*')
                     }
-                    rule pattern: 'antlr.**', result: 'groovyjarjarantlr.@1' // antlr2
-                    rule pattern: 'org.antlr.**', result: 'groovyjarjarantlr4.@1' // antlr4
-                    rule pattern: 'org.objectweb.**', result: 'groovyjarjarasm.@1'
-                    rule pattern: 'org.apache.commons.cli.**', result: 'groovyjarjarcommonscli.@1'
                 }
             }
-
-            def manifestSpec = isRoot ? groovyOsgiManifest : subprojectOsgiManifest
-            manifest = osgiManifest {
-                symbolicName = gradleProject.name
-                instruction 'Import-Package', '*;resolution:=optional'
-                classesDir = targetTmp
-            }
-            manifest(manifestSpec)
-
-            def manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
-            manifest.writeTo(manifestPath)
-
-            ant.copy(file: targetTmp, tofile: target)
-            ant.jar(destfile: target, update: true, manifest: manifestPath) {
-                zipfileset(
-                        src: jar.archivePath,
-                        includes: keepUntouched)
-            }
-
+            withManifest(isRoot ? groovyOsgiManifest : subprojectOsgiManifest)
         }
-        doLast {
-            target.delete()
-            ant.delete(file: targetTmp, quiet: true, deleteonexit: true)
-        }
+
     }
 
     if (project.name in ['groovy', 'groovy-test']) {
-        task grooidjar(type: Jar) {
-            onlyIf {
-                !rootProject.useIndy()
-            }
-            destinationDir = jar.destinationDir
-            baseName = jar.baseName
-            appendix = jar.appendix
-            classifier = jar.classifier ? "${jar.classifier}grooid" : 'grooid'
-            includeEmptyDirs = false
-            def target = new File("${archivePath}.tmp")
-            boolean isRootProject = project==rootProject
-
-            doFirst {
-                from zipTree(target)
-                ant {
-                    taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: rootProject.configurations.tools.asPath
-                    jarjar(jarfile: target) {
-                        zipfileset(dir: "$rootProject.projectDir/notices/", includes: isRootProject ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID', fullpath: 'META-INF/NOTICE')
-                        zipfileset(src: jarjar.archivePath, excludes: 'META-INF/NOTICE')
-                        if (isRootProject) {
-                            zipfileset(src: rootProject.configurations.runtime.files.find { it.name.startsWith('openbeans') }, excludes: 'META-INF/*')
+        task grooidjar(type: JarJarTask) {
+            dependsOn jarjar
+            from = file(jarjar.outputFile)
+            if (isRoot) {
+                repackagedLibraries = files(configurations.runtime.incoming.artifactView {
+                    componentFilter { component ->
+                        if (component instanceof ModuleComponentIdentifier) {
+                            return component.module in ['openbeans']
                         }
-                        rule pattern: 'com.googlecode.openbeans.**', result: 'groovyjarjaropenbeans.@1'
-                        rule pattern: 'org.apache.harmony.beans.**', result: 'groovyjarjarharmonybeans.@1'
-                        rule pattern: 'java.beans.**', result: 'groovyjarjaropenbeans.@1'
+                        return false
                     }
-                }
-
+                }.files)
+            } else {
+                repackagedLibraries = files()
             }
-            doLast {
-                target.delete()
-            }
+            jarjarToolClasspath = rootProject.configurations.tools
+            patterns = [
+                    'com.googlecode.openbeans.**': 'groovyjarjaropenbeans.@1',
+                    'org.apache.harmony.beans.**': 'groovyjarjarharmonybeans.@1',
+                    'java.beans.**'              : 'groovyjarjaropenbeans.@1'
+            ]
+            excludesPerLibrary = [
+                    '*': ['META-INF/NOTICE']
+            ]
+            excludes = ['META-INF/NOTICE','META-INF/INDEX.LIST']
+            createManifest = false
+            includedResources = [
+                    ("$rootProject.projectDir/notices/${isRoot ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID'}".toString()): 'META-INF/NOTICE'
+            ]
+            outputFile = file("$buildDir/libs/${jar.baseName}-${jar.version}-grooid.jar")
         }
-        jarjar.finalizedBy(grooidjar)
     }
+}
+
+def producedJars = [jar]
+if (rootProject.indyCapable()) {
+    producedJars << jarWithIndy
+}
+
+producedJars.each {
+    it.dependsOn('dgmConverter')
+    it.from files(dgmConverter.outputDir)
 }
 
 subprojects { sp ->
@@ -277,204 +305,9 @@ subprojects { sp ->
             } else {
                 from "${rootProject.projectDir}/notices/NOTICE-BASE"
             }
-            from("${rootProject.projectDir}/src/resources/META-INF/groovy-release-info.properties") {
-                filter(rootProject.propertiesFilter, org.apache.tools.ant.filters.ReplaceTokens)
-            }
-            rename { String filename -> filename == 'LICENSE-BASE' ? 'LICENSE' : filename == 'NOTICE-BASE' ? 'NOTICE' : filename }
+            rename '^([A-Z]+)-([^.]*)', '$1'
         }
         exclude '**/package-info.class'
-    }
-}
-
-def moduleJars() {
-    modules()*.jar.archivePath
-}
-
-def mergeModuleDescriptors() {
-    new File("$buildDir/tmp/").mkdirs()
-
-    def extensionClasses = []
-    def staticExtensionClasses = []
-
-    modules().collect {
-        new File("${it.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.runtime.ExtensionModule")
-    }.findAll { it.exists() }.each {
-        def props = new Properties()
-        props.load(it.newInputStream())
-        extensionClasses += props.get('extensionClasses').split(',').findAll { it }
-        staticExtensionClasses += props.get('staticExtensionClasses').split(',').findAll { it }
-    }
-
-    def descriptor = new File("$buildDir/tmp/org.codehaus.groovy.runtime.ExtensionModule")
-    descriptor.withWriter('UTF-8') {
-        it << '# This is a generated file, do not edit\n'
-        it << 'moduleName=groovy-all\n'
-        it << "moduleVersion=${project.version}\n"
-        it << "extensionClasses=${extensionClasses.join(',')}\n"
-        it << "staticExtensionClasses=${staticExtensionClasses.join(',')}\n"
-    }
-
-    descriptor
-}
-
-def mergeGlobalTransforms() {
-    new File("$buildDir/tmp/").mkdirs()
-
-    def descriptor = new File("$buildDir/tmp/org.codehaus.groovy.transform.ASTTransformation")
-    descriptor.withWriter('UTF-8') {
-        it << '# This is a generated file, do not edit\n'
-    }
-
-    def files = []
-    files << new File("${rootProject.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.transform.ASTTransformation")
-    modules().collect {
-        new File("${it.buildDir}/resources/main/META-INF/services/org.codehaus.groovy.transform.ASTTransformation")
-    }.findAll { it.exists() }.each {
-        files << it
-    }
-    files.each {
-        def skipping = true
-        it.readLines().each { line ->
-            if (skipping) {
-                skipping = line.startsWith('#')
-            }
-            if (!skipping) {
-                descriptor << line + '\n'
-            }
-        }
-    }
-
-    descriptor
-}
-
-task replaceJarWithJarJar(dependsOn: allprojects.jarjar ) {
-    description = "Overwrites normal JAR files with their JARJAR version"
-    doLast {
-        allprojects {
-            def jarjarFile = tasks.jarjar.archivePath
-            if (jarjarFile) {
-                file(jar.archivePath).delete()
-                ant.copy(file: jarjarFile, tofile: jar.archivePath)
-                jarjarFile.delete()
-            }
-        }
-    }
-    inputs.files(allprojects.jarjar.archivePath)
-    outputs.files(allprojects.jar.archivePath)
-}
-
-allprojects {
-    rootProject.replaceJarWithJarJar.mustRunAfter(test)
-}
-
-task jarAll(type: Jar, dependsOn: replaceJarWithJarJar) {
-
-    inputs.files(allprojects.jar.archivePath)
-
-    ext.metaInfDir = "$buildDir/tmp/groovy-all-metainf"
-    baseName = 'groovy-all'
-    includeEmptyDirs = false
-    if (rootProject.useIndy()) {
-        classifier = 'indy'
-    }
-    doLast {
-        def manifestPath = "$ext.metaInfDir/MANIFEST.MF"
-        manifest.writeTo(manifestPath)
-        copy {
-            from "$projectDir/notices/NOTICE-ALLJARJAR"
-            into owner.ext.metaInfDir
-            rename('NOTICE-ALLJARJAR', 'NOTICE')
-        }
-        copy {
-            from "$projectDir/licenses"
-            into "$owner.ext.metaInfDir/licenses"
-            include 'normalize-stylesheet-license.txt'
-            include 'jsr223-license.txt'
-            include 'jline2-license.txt'
-        }
-        copy {
-            from "$projectDir/licenses/LICENSE-ALLJARJAR"
-            into owner.ext.metaInfDir
-            rename('LICENSE-ALLJARJAR', 'LICENSE')
-        }
-        copy {
-            from(mergeModuleDescriptors())
-            into "$owner.ext.metaInfDir/services"
-        }
-        copy {
-            from(mergeGlobalTransforms())
-            into "$owner.ext.metaInfDir/services"
-        }
-        copy {
-            into "$owner.ext.metaInfDir"
-        }
-        logger.info 'Packaging with jarjar'
-
-        def archivePathTmp = new File("${archivePath}.1.tmp")
-        ant {
-            taskdef name: 'jarjar', classname: 'com.tonicsystems.jarjar.JarJarTask', classpath: configurations.tools.asPath
-            jarjar(jarfile: archivePathTmp, manifest: "$owner.ext.metaInfDir/MANIFEST.MF") {
-                zipfileset(dir: "$owner.ext.metaInfDir", prefix: 'META-INF')
-                zipfileset(src: jar.archivePath, excludes:'META-INF/NOTICE,META-INF/LICENSE')
-                moduleJars().each {
-                    zipfileset(src: it, excludes:'META-INF/NOTICE,META-INF/LICENSE')
-                }
-            }
-        }
-
-        manifest = osgiManifest {
-            symbolicName = 'groovy-all'
-            instruction 'Import-Package', '*;resolution:=optional'
-            classesDir = archivePathTmp
-        }
-        manifest groovyOsgiManifest
-        manifestPath = "${temporaryDir}/META-INF/MANIFEST.MF"
-        manifest.writeTo(manifestPath)
-
-        ant {
-            copy(file: archivePathTmp, tofile: archivePath)
-            jar(destfile: archivePath, update:true, manifest: manifestPath) {
-                zipfileset(src: jar.archivePath, excludes:'META-INF')
-            }
-            delete(file: archivePathTmp, quiet: true, deleteonexit: true)
-        }
-    }
-}
-
-allprojects {
-    task jarWithIndy(type: GradleBuild) {
-        onlyIf rootProject.indyCapable
-        description = 'Triggers an external build generating the indy jar'
-        buildFile = 'build.gradle'
-        startParameter.projectProperties['indy'] = true
-        startParameter.projectCacheDir = file("$buildDir/indyCacheDir")
-        tasks = ['jar']
-    }
-}
-
-task jarAllWithIndy(type: GradleBuild) {
-    onlyIf rootProject.indyCapable
-    description = 'Triggers an external build generating the indy jarAll'
-    buildFile = 'build.gradle'
-    startParameter.projectProperties['indy'] = true
-    startParameter.projectCacheDir = file("$buildDir/indyAllCacheDir")
-    tasks = ['jarAll']
-}
-
-task jarAllAll(dependsOn: [jarAll, jarAllWithIndy]) {
-    description = 'Generates groovy-all and groovy-all-indy jars'
-    doFirst {
-        if (useIndy()) {
-            logger.lifecycle('InvokeDynamic support was activated but needs to be off for this pass. Disabling.')
-            ext.useIndy = false
-        }
-    }
-}
-
-allprojects {
-    tasks.withType(Test) { task ->
-        jarAll.mustRunAfter(task)
-        jarAllWithIndy.mustRunAfter(task)
     }
 }
 
@@ -484,62 +317,78 @@ task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sou
         with it.rootSpec
     }
     baseName = 'groovy-all'
-    classifier = rootProject.useIndy() ? 'indy-sources' : 'sources'
+    classifier = 'sources'
 }
 
 allprojects {
     task javadocJar(type: Jar, dependsOn: javadoc) {
-        classifier = rootProject.useIndy() ? 'indy-javadoc' : 'javadoc'
         from javadoc.destinationDir
+        classifier = 'javadoc'
     }
     task groovydocJar(type: Jar, dependsOn: groovydoc) {
-        classifier = rootProject.useIndy() ? 'indy-groovydoc' : 'groovydoc'
         from groovydoc.destinationDir
+        classifier = 'groovydoc'
     }
 }
 
 task javadocAllJar(type: Jar, dependsOn: javadocAll) {
     baseName = 'groovy-all'
-    classifier = rootProject.useIndy() ? 'indy-javadoc' : 'javadoc'
     from javadocAll.destinationDir
+    classifier = 'javadoc'
 }
 
 task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
     baseName = 'groovy-all'
-    classifier = rootProject.useIndy() ? 'indy-groovydoc' : 'groovydoc'
     from groovydocAll.destinationDir
+    classifier = 'groovydoc'
 }
 
 ext.distSpec = copySpec {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from("$projectDir/licenses/LICENSE-BINZIP")
     from("$projectDir/notices/NOTICE-BINZIP")
-    rename { String filename -> filename == 'LICENSE-BINZIP' ? 'LICENSE' : filename == 'NOTICE-BINZIP' ? 'NOTICE' : filename }
+    rename '^([A-Z]+)-([^.]*)', '$1'
+    exclude { it.file.name =~ /-raw/ }
     into('lib') {
-        from jar.archivePath
-        from {
-            configurations.runtime.findAll {
-                it.name.endsWith('jar') && !it.name.startsWith('openbeans-') && !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('antlr4-') } +
-                    modules()*.jar.archivePath +
-                    modules().configurations.runtime*.findAll {
-                        it.name.endsWith('jar') && !it.name.contains('livetribe-jsr223') && !it.name.matches(/groovy-\d.*/) &&
-                                !it.name.startsWith('asm-') && !it.name.startsWith('antlr-') && !it.name.startsWith('antlr4-') && !it.name.startsWith('openbeans-')
-                    }.flatten() as Set
+        from jarjar
+        from modules()*.jarjar
+        from(configurations.runtime) {
+            exclude {
+                it.file.name.startsWith('openbeans-') ||
+                        it.file.name.startsWith('asm-') ||
+                        it.file.name.startsWith('antlr-') ||
+                        it.file.name.startsWith('antlr4-')
+            }
         }
         from('src/bin/groovy.icns')
     }
-    into('indy') {
-        from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-indy.jar") }
-        from {
-            modules()*.jar.collect { j ->
-                new File(j.archivePath.parent, "${j.baseName}-${j.version}-indy.jar")
+    modules().configurations.runtime.each { conf ->
+        into('lib') {
+            from(conf) {
+                exclude {
+                    it.file.name.contains('livetribe-jsr223') ||
+                            it.file.name.matches(/groovy-\d.*/) ||
+                            it.file.name.startsWith('asm-') ||
+                            it.file.name.startsWith('antlr-') ||
+                            it.file.name.startsWith('antlr4-') ||
+                            it.file.name.startsWith('openbeans-')
+                }
             }
         }
     }
-    into('grooid') {
-        from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
-        from {
-            modules()*.jar.collect { j ->
-                new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
+    if (!rootProject.hasProperty('skipIndy')) {
+        into('indy') {
+            from jarjarWithIndy
+            from modules()*.jarjarWithIndy
+        }
+    }
+    if (!rootProject.hasProperty('skipGrooid')) {
+        into('grooid') {
+            from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
+            from {
+                modules()*.jar.collect { j ->
+                    new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
+                }
             }
         }
     }
@@ -548,7 +397,7 @@ ext.distSpec = copySpec {
     }
     into('bin') {
         from('src/bin') {
-            filter(ReplaceTokens, tokens: [GROOVYJAR:jar.archiveName])
+            filter(ReplaceTokens, tokens: [GROOVYJAR: jarjar.archiveName])
             fileMode = 0755
             exclude 'groovy.icns'
         }
@@ -566,17 +415,18 @@ ext.distSpec = copySpec {
         include 'junit-license.txt'
         include 'xstream-license.txt'
     }
-    into('embeddable') {
-        from jarAll.archivePath
-        from { new File(jarAll.destinationDir, "${jarAll.baseName}-${jarAll.version}-indy.jar") }
-    }
 }
 
-task distBin(type: Zip, dependsOn: [jar, jarAllAll, replaceJarWithJarJar]) {
+task distBin(type: Zip) {
     baseName = 'apache-groovy'
     appendix = 'binary'
     into("groovy-$version") {
         with distSpec
+    }
+    allprojects {
+        if (project.name in ['groovy', 'groovy-test']) {
+            distBin.dependsOn(grooidjar)
+        }
     }
 }
 
@@ -610,8 +460,8 @@ task distSrc(type: Zip) {
 }
 
 def installDir = {
-    project.hasProperty('groovy_installPath')?project.groovy_installPath:
-        System.properties.installDirectory ?: "$buildDir/install"
+    project.hasProperty('groovy_installPath') ? project.groovy_installPath :
+            System.properties.installDirectory ?: "$buildDir/install"
 }
 
 task installGroovy(type: Sync, dependsOn: [checkCompatibility, distBin]) {
@@ -639,8 +489,6 @@ task checkNoSnapshotVersions {
 }
 distBin.dependsOn checkNoSnapshotVersions
 
-import org.gradle.api.file.DuplicatesStrategy
-
 task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, syncDoc]) {
     description = 'Generates the binary, sources, documentation and full distributions'
     baseName = 'apache-groovy'
@@ -649,7 +497,7 @@ task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, 
     into "groovy-$version"
     from("$projectDir/licenses/LICENSE-SDK")
     from("$projectDir/notices/NOTICE-SDK")
-    rename { String filename -> filename == 'LICENSE-SDK' ? 'LICENSE' : filename == 'NOTICE-SDK' ? 'NOTICE' : filename }
+    rename '^([A-Z]+)-([^.]*)', '$1'
     with distSpec
     into('doc') {
         with docSpec
@@ -659,7 +507,7 @@ task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, 
     }
 
     if ((version.endsWith('SNAPSHOT') && !groovyBundleVersion.endsWith('SNAPSHOT'))
-        || (!version.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
+            || (!version.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
         throw new GradleException("Incoherent versions. Found groovyVersion=$version and groovyBundleVersion=$groovyBundleVersion")
     }
 }
@@ -673,23 +521,18 @@ task updateLicenses {
     ext.licenseDocGeneratorFile = "${projectDir}/subprojects/groovy-docgenerator/LICENSE"
     ext.licenseGroovyDocFile = "${projectDir}/subprojects/groovy-groovydoc/LICENSE"
     ext.licenseJsr223File = "${projectDir}/subprojects/groovy-jsr223/LICENSE"
-    ext.licenseAllJarJarFile = "${licensesDir}/LICENSE-ALLJARJAR"
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
     ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
     ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
-    outputs.files(licenseAllJarJarFile, licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
+    outputs.files(licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
             licenseDocGeneratorFile, licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
         def docFiles = fileTree(licensesDir).include('*-DOC*.txt').sort { it.name }
         def jarjarFiles = fileTree(licensesDir).include('*-JARJAR*.txt').sort { it.name }
-        def allJarjarFiles = fileTree(licensesDir) {
-            include '*-JARJAR*.txt'
-            include '*-ALLJARJAR*.txt'
-        }.sort { it.name }
         def binzipFiles = fileTree(licensesDir) {
             include '*-JARJAR*.txt'
             include '*-ALLJARJAR*.txt'
@@ -700,17 +543,18 @@ task updateLicenses {
         def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
-                (licenseAllJarJarFile)  : allJarjarFiles,
-                (licenseBinZipFile)     : binzipFiles,
-                (licenseDocFile)        : docFiles,
-                (licenseJarJarFile)     : jarjarFiles,
-                (licenseSrcFile)        : srcFiles,
+                (licenseBinZipFile)      : binzipFiles,
+                (licenseDocFile)         : docFiles,
+                (licenseJarJarFile)      : jarjarFiles,
+                (licenseSrcFile)         : srcFiles,
                 (licenseDocGeneratorFile): docgeneratorFiles,
                 (licenseGroovyDocFile)   : groovydocFiles,
                 (licenseJsr223File)      : jsr223Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
-                writer << ([file(licenseBaseFile)] + inFiles).collect { it.text.replaceAll(/[\n\r]*$/, '') }.join(licenseHdr) + '\n'
+                writer << ([file(licenseBaseFile)] + inFiles).collect {
+                    it.text.replaceAll(/[\n\r]*$/, '')
+                }.join(licenseHdr) + '\n'
             }
         }
         file(licenseSdkFile).withWriter { writer ->
@@ -748,10 +592,6 @@ task updateNotices {
             include '*-JARJAR*.txt'
             include '*-GROOID*.txt'
         }.sort { it.name }
-        def allJarjarFiles = fileTree(noticesDir) {
-            include '*-JARJAR*.txt'
-            include '*-ALLJARJAR*.txt'
-        }.sort { it.name }
         def binzipFiles = fileTree(noticesDir) {
             include '*-JARJAR*.txt'
             include '*-ALLJARJAR*.txt'
@@ -760,12 +600,11 @@ task updateNotices {
         }.sort { it.name }
         def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-ALLJARJAR-SRC.txt')
         [
-                (noticeAllJarJarFile): allJarjarFiles,
-                (noticeBinZipFile): binzipFiles,
-                (noticeGrooidFile): grooidFiles,
-                (noticeGrooidJarJarFile): grooidJarjarFiles,
-                (noticeJarJarFile): jarjarFiles,
-                (noticeSrcFile): srcFiles,
+                (noticeBinZipFile)       : binzipFiles,
+                (noticeGrooidFile)       : grooidFiles,
+                (noticeGrooidJarJarFile) : grooidJarjarFiles,
+                (noticeJarJarFile)       : jarjarFiles,
+                (noticeSrcFile)          : srcFiles,
                 (noticeGroovyConsoleFile): groovyconsoleFiles,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->

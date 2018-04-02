@@ -18,6 +18,9 @@
  */
 package groovy.text;
 
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -25,9 +28,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
-
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 
 /**
  * Represents an API to any template engine which is basically a factory of Template instances from a given text input.

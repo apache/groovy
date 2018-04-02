@@ -16,13 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-int i, j = 0;
+int i = 0, j = 0
 
 do {
     i++
-    if (i == 4) break;
+    if (i == 4) break
 
-    if (j == 3) continue;
+    if (j == 3) continue
     j++
 } while (true)
 

@@ -31,7 +31,59 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
 
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.*
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.ASSIGN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BAND
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BAND_ASSIGN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BNOT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BOR
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BOR_ASSIGN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BXOR
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BXOR_ASSIGN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.COLON
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.COMMA
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.COMPARE_TO
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DIV
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DIV_ASSIGN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DOT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.EQUAL
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.GE
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.GT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.IDENT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LAND
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LBRACK
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LCURLY
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LE
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_false
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_in
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_instanceof
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_true
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LNOT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LOR
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LPAREN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.MEMBER_POINTER
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.MINUS
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.MINUS_ASSIGN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NOT_EQUAL
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_BIG_DECIMAL
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_BIG_INT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_DOUBLE
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_FLOAT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_INT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_LONG
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.OPTIONAL_DOT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.PLUS
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.PLUS_ASSIGN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.RANGE_EXCLUSIVE
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.RANGE_INCLUSIVE
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.RBRACK
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.RPAREN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SEMI
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SPREAD_DOT
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STAR
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STAR_ASSIGN
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STRING_CTOR_START
+import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STRING_LITERAL
 
 /**
  * Completes fields and methods of Classes or instances.

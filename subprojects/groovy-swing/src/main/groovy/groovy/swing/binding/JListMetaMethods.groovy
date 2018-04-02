@@ -18,8 +18,7 @@
  */
 package groovy.swing.binding
 
-import javax.swing.ListModel
-import javax.swing.JList
+import javax.swing.*
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>

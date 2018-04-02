@@ -44,7 +44,11 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.util.Iterator;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 
 public class MacroGroovyMethods {
 
@@ -191,12 +195,13 @@ public class MacroGroovyMethods {
     protected static ClosureExpression getClosureArgument(SourceUnit source, MethodCallExpression call) {
         TupleExpression tupleArguments = getMacroArguments(source, call);
 
-        if (tupleArguments == null || tupleArguments.getExpressions().size() < 1) {
+        int size = tupleArguments.getExpressions().size();
+        if (tupleArguments == null || size < 1) {
             source.addError(new SyntaxException("Call arguments should have at least one argument" + '\n', tupleArguments));
             return null;
         }
 
-        Expression result = tupleArguments.getExpression(tupleArguments.getExpressions().size() - 1);
+        Expression result = tupleArguments.getExpression(size - 1);
         if (!(result instanceof ClosureExpression)) {
             source.addError(new SyntaxException("Last call argument should be a closure" + '\n', result));
             return null;

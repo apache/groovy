@@ -18,10 +18,27 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
+import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
+import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
+import org.codehaus.groovy.groovydoc.GroovyParameter;
+import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.codehaus.groovy.groovydoc.GroovyType;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -459,7 +476,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     }
                     sb = new StringBuilder(getDocUrl(outerType, full, links, relativePath, rootDoc, classDoc));
                     sb.append("&lt;");
-                    sb.append(DefaultGroovyMethods.join(typeUrls, ", "));
+                    sb.append(DefaultGroovyMethods.join((Iterable) typeUrls, ", "));
                     sb.append("&gt;");
                     return sb.toString();
                 }
@@ -893,7 +910,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 sb.append(preKey);
                 sb.append(e.getKey());
                 sb.append(postKey);
-                sb.append(DefaultGroovyMethods.join(e.getValue(), valueSeparator));
+                sb.append(DefaultGroovyMethods.join((Iterable)e.getValue(), valueSeparator));
                 sb.append(postValues);
             }
             return sb.toString();

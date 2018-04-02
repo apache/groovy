@@ -125,7 +125,7 @@ builder.classNameResolver = "com.acme"
 
 // tag::newinstanceresolver[]
 builder.newInstanceResolver = { Class klazz, Map attributes ->
-    if (klazz.isAnnotationPresent(Immutable)) {
+    if (klazz.getConstructor(Map)) {
         def o = klazz.newInstance(attributes)
         attributes.clear()
         return o

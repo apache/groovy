@@ -18,8 +18,8 @@
  */
 package groovy.jmx.builder
 
-import java.lang.reflect.Constructor
 import javax.management.ObjectName
+import java.lang.reflect.Constructor
 
 /**
  * The JmxMetaMapBuilder class is used to collect meta data passed in JmxBuilder nodes.  Once collected,

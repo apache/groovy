@@ -18,8 +18,8 @@
  */
 package groovy.util
 
-import junit.framework.TestSuite
 import junit.framework.Test
+import junit.framework.TestSuite
 import junit.textui.TestRunner
 
 /**

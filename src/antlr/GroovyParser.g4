@@ -125,6 +125,7 @@ modifier
           |   TRANSIENT
           |   VOLATILE
           |   DEF
+          |   VAR
           )
     ;
 
@@ -161,6 +162,7 @@ variableModifier
     :   annotation
     |   m=( FINAL
           | DEF
+          | VAR
           // Groovy supports declaring local variables as instance/class fields,
           // e.g. import groovy.transform.*; @Field static List awe = [1, 2, 3]
           // e.g. import groovy.transform.*; def a = { @Field public List awe = [1, 2, 3] }
@@ -353,8 +355,8 @@ type
             (
                 primitiveType
             |
-                 // !!! ERROR ALTERNATIVE !!!
-                 VOID { require(false, "void is not allowed here", -4); }
+                // !!! Error Alternative !!!
+                 VOID
             )
         |
                 generalClassOrInterfaceType
@@ -504,7 +506,6 @@ lambdaBody
 
 // CLOSURE
 closure
-locals[ String footprint = "" ]
     :   LBRACE nls (formalParameterList? nls ARROW nls)? blockStatementsOpt RBRACE
     ;
 
@@ -615,48 +616,22 @@ ifElseStatement
     ;
 
 switchStatement
-locals[ String footprint = "" ]
     :   SWITCH expressionInPar nls LBRACE nls switchBlockStatementGroup* nls RBRACE
     ;
 
 loopStatement
-locals[ String footprint = "" ]
     :   FOR LPAREN forControl rparen nls statement                                                            #forStmtAlt
     |   WHILE expressionInPar nls statement                                                                   #whileStmtAlt
     |   DO nls statement nls WHILE expressionInPar                                                            #doWhileStmtAlt
     ;
 
 continueStatement
-locals[ boolean isInsideLoop ]
-@init {
-    try {
-        $isInsideLoop = null != $loopStatement::footprint;
-    } catch(NullPointerException e) {
-        $isInsideLoop = false;
-    }
-}
     :   CONTINUE
-        { require($isInsideLoop, "the continue statement is only allowed inside loops", -8); }
         identifier?
     ;
 
 breakStatement
-locals[ boolean isInsideLoop, boolean isInsideSwitch ]
-@init {
-    try {
-        $isInsideLoop = null != $loopStatement::footprint;
-    } catch(NullPointerException e) {
-        $isInsideLoop = false;
-    }
-
-    try {
-        $isInsideSwitch = null != $switchStatement::footprint;
-    } catch(NullPointerException e) {
-        $isInsideSwitch = false;
-    }
-}
     :   BREAK
-        { require($isInsideLoop || $isInsideSwitch, "the break statement is only allowed inside loops or switches", -5); }
         identifier?
     ;
 
@@ -667,7 +642,6 @@ tryCatchStatement
     ;
 
 assertStatement
-locals[ String footprint = "" ]
     :   ASSERT ce=expression (nls (COLON | COMMA) nls me=expression)?
     ;
 
@@ -776,7 +750,7 @@ parExpression
     ;
 
 expressionInPar
-    :   LPAREN enhancedExpression rparen
+    :   LPAREN enhancedStatementExpression rparen
     ;
 
 expressionList[boolean canSpread]
@@ -805,14 +779,6 @@ statementExpression
     ;
 
 postfixExpression
-locals[ boolean isInsideAssert ]
-@init {
-    try {
-        $isInsideAssert = null != $assertStatement::footprint;
-    } catch(NullPointerException e) {
-        $isInsideAssert = false;
-    }
-}
     :   pathExpression op=(INC | DEC)?
     ;
 
@@ -850,7 +816,7 @@ expression
         right=expression                                                                    #shiftExprAlt
 
     // boolean relational expressions (level 7)
-    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type                  #relationalExprAlt
+    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type           #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=expression      #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)
@@ -912,10 +878,12 @@ expression
                      enhancedStatementExpression                                            #assignmentExprAlt
     ;
 
+/*
 enhancedExpression
     :   expression
     |   standardLambdaExpression
     ;
+*/
 
 commandExpression
     :   pathExpression
@@ -966,14 +934,6 @@ pathExpression returns [int t]
     ;
 
 pathElement returns [int t]
-locals[ boolean isInsideClosure ]
-@init {
-    try {
-        $isInsideClosure = null != $closure::footprint;
-    } catch(NullPointerException e) {
-        $isInsideClosure = false;
-    }
-}
     :   nls
 
         // AT: foo.@bar selects the field (or attribute), not property
@@ -1055,7 +1015,10 @@ namedPropertyArgs
     ;
 
 primary
-    :   identifier                                                                          #identifierPrmrAlt
+    :
+        // Append `typeArguments?` to `identifier` to support constructor reference with generics, e.g. HashMap<String, Integer>::new
+        // Though this is not a graceful solution, it is much faster than replacing `builtInType` with `type`
+        identifier typeArguments?                                                           #identifierPrmrAlt
     |   literal                                                                             #literalPrmrAlt
     |   gstring                                                                             #gstringPrmrAlt
     |   NEW nls creator                                                                     #newPrmrAlt
@@ -1066,7 +1029,7 @@ primary
     |   lambdaExpression                                                                    #lambdaPrmrAlt
     |   list                                                                                #listPrmrAlt
     |   map                                                                                 #mapPrmrAlt
-    |   builtInType                                                                         #typePrmrAlt
+    |   builtInType                                                                         #builtInTypePrmrAlt
     ;
 
 list
@@ -1172,7 +1135,7 @@ className
 identifier
     :   Identifier
     |   CapitalizedIdentifier
-
+    |   VAR
     |
         // if 'static' followed by DOT, we can treat them as identifiers, e.g. static.unused = { -> }
         { DOT == _input.LT(2).getType() }?
@@ -1226,6 +1189,7 @@ keywords
     |   TRAIT
     |   THREADSAFE
     |   TRY
+    |   VAR
     |   VOLATILE
     |   WHILE
 
@@ -1251,8 +1215,5 @@ nls
     :   NL*
     ;
 
-sep :   SEMI NL*
-    |   NL+ (SEMI NL*)*
+sep :   (NL | SEMI)+
     ;
-
-

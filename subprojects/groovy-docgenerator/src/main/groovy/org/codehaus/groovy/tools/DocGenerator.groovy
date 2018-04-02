@@ -402,7 +402,7 @@ class DocGenerator {
         }
 
         String getReturnTypeDocUrl() {
-            def returnType = javaMethod.returns
+            def returnType = javaMethod.returnType
             def resolvedReturnType = (returnType) ? DocUtil.resolveJdkClassName(returnType.toString()) : ""
             DocUtil.getLinkAnchor(resolvedReturnType, declaringDocType.packageName)
         }
@@ -541,7 +541,7 @@ class DocGenerator {
             if (pathOrClassName.contains("/")) {
                 return new File(pathOrClassName)
             }
-            new File("src/main/" + pathOrClassName.replace('.', '/') + ".java")
+            new File("src/main/java/" + pathOrClassName.replace('.', '/') + ".java")
         }
     }
 }

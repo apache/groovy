@@ -55,4 +55,86 @@ class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
             assert set.sort() == set.stream().toSet().sort()
         '''
     }
+
+    void testBaseStreamToList() {
+        assertScript '''
+            def list = [1, 2, 3]
+            assert list == Arrays.stream(list as int[]).toList()
+        '''
+    }
+
+    void testBaseStreamToSet() {
+        assertScript '''
+            def set = [1, 2, 3] as Set
+            assert set.sort() == Arrays.stream(set as int[]).toSet().sort()
+        '''
+    }
+
+    void testObjectArrayToStream() {
+        assertScript '''
+            def array = ["Hello", "World"] as Object[]
+            assert array == array.stream().toArray()
+        '''
+
+        assertScript '''
+            def array = ["Hello", "World"] as String[]
+            assert array == array.stream().toArray()
+        '''
+    }
+
+    void testIntArrayToStream() {
+        assertScript '''
+            def array = [1, 2] as int[]
+            assert array == array.stream().toArray()
+        '''
+    }
+
+    void testLongArrayToStream() {
+        assertScript '''
+            def array = [1, 2] as long[]
+            assert array == array.stream().toArray()
+        '''
+    }
+
+    void testDoubleArrayToStream() {
+        assertScript '''
+            def array = [1, 2] as double[]
+            assert array == array.stream().toArray()
+        '''
+    }
+
+    void testCharArrayToStream() {
+        assertScript '''
+            def array = [65, 66] as char[]
+            assert array == array.stream().toArray()
+        '''
+    }
+
+    void testByteArrayToStream() {
+        assertScript '''
+            def array = [65, 66] as byte[]
+            assert array == array.stream().toArray()
+        '''
+    }
+
+    void testShortArrayToStream() {
+        assertScript '''
+            def array = [65, 66] as short[]
+            assert array == array.stream().toArray()
+        '''
+    }
+
+    void testBooleanArrayToStream() {
+        assertScript '''
+            def array = [true, false] as boolean[]
+            assert array == array.stream().toArray()
+        '''
+    }
+
+    void testFloatArrayToStream() {
+        assertScript '''
+            def array = [65, 66] as float[]
+            assert array == array.stream().toArray()
+        '''
+    }
 }

@@ -562,7 +562,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=sam_trai
 In Java 8, interfaces can have default implementations of methods. If a class implements an interface and does not provide
 an implementation for a default method, then the implementation from the interface is chosen. Traits behave the same but
 with a major difference: the implementation from the trait is *always* used if the class declares the trait in its interface
-list *and* that it doesn't provide an implementation.
+list *and* that it doesn't provide an implementation *even* if a super class does.
 
 This feature can be used to compose behaviors in an very precise way, in case you want to override the behavior of an
 already implemented method.

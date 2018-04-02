@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
-import junit.framework.Assert
+import org.junit.Assert
 
 /**
  * Utility methods for testing power assertions.
- *
- * @author Peter Niederwieser
  */
 
 abstract class AssertionTestUtil {

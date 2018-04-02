@@ -18,9 +18,10 @@
  */
 package groovy.swing.factory
 
-import javax.swing.JTable
-import javax.swing.table.TableColumnModel
 import groovy.util.logging.Log
+
+import javax.swing.*
+import javax.swing.table.TableColumnModel
 
 /**
  * @author Alexander Klein

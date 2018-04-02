@@ -20,7 +20,13 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.MissingPropertyException;
+import groovy.lang.Tuple;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.SimpleType;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
+import javax.sql.DataSource;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -33,18 +39,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.sql.DataSource;
-
-import groovy.lang.MissingPropertyException;
-import groovy.lang.Tuple;
-import groovy.transform.stc.ClosureParams;
-import groovy.transform.stc.SimpleType;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 import static org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult;
 
@@ -584,14 +590,18 @@ public class Sql {
         Connection connection;
         LOG.fine("url = " + url);
         if (props != null) {
-            Properties propsCopy = new Properties(props);
-            connection = DriverManager.getConnection(url.toString(), propsCopy);
-            if (propsCopy.containsKey("password")) {
-                // don't log the password
-                propsCopy = new Properties(propsCopy);
-                propsCopy.setProperty("password", "***");
+            connection = DriverManager.getConnection(url.toString(), props);
+            if (LOG.isLoggable(Level.FINE)) {
+                if (!props.containsKey("password")) {
+                    LOG.fine("props = " + props);
+                } else {
+                    // don't log the password
+                    Properties propsCopy = new Properties();
+                    propsCopy.putAll(props);
+                    propsCopy.setProperty("password", "***");
+                    LOG.fine("props = " + propsCopy);
+                }
             }
-            LOG.fine("props = " + propsCopy);
         } else if (sqlArgs.containsKey("user")) {
             Object user = sqlArgs.remove("user");
             LOG.fine("user = " + user);

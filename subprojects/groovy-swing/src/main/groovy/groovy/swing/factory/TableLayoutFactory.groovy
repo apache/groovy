@@ -18,12 +18,11 @@
  */
 package groovy.swing.factory
 
-import groovy.swing.impl.TableLayoutCell
-
-import java.awt.Component
-import java.awt.Window
 import groovy.swing.impl.TableLayout
+import groovy.swing.impl.TableLayoutCell
 import groovy.swing.impl.TableLayoutRow
+
+import java.awt.*
 
 public class TableLayoutFactory extends AbstractFactory {
     

@@ -77,11 +77,27 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def bar() { foo { it - 2 } }
         ''', 'Cannot find matching method java.lang.Object#minus(int)'
     }
-    void testShouldNotAllowMinusBynUntypedVariable() {
+    void testShouldNotAllowMinusByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 - it } }
         ''', 'Cannot find matching method int#minus(java.lang.Object)'
+    }
+
+    // GROOVY-7929
+    void testShouldDetectInvalidMethodUseWithinTraitWithCompileStaticAndSelfType() {
+        shouldFailWithMessages '''
+            class C1 {
+                def c1() { }
+            }
+            @groovy.transform.CompileStatic
+            @groovy.transform.SelfType(C1)
+            trait TT {
+                def foo() {
+                    c2()
+                }
+            }
+        ''', 'Cannot find matching method <UnionType:C1+TT>#c2'
     }
 
     void testGroovy5444() {
@@ -426,22 +442,6 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             }
         '''
     }
-    void testFlowTypingErrorWithIfElseAndNoInitialInferredType() {
-        assertScript '''
-            def o
-            boolean b = true
-            if (b) {
-                o = 1
-            } else {
-                @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                    assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
-                })
-                def o2 = o
-                o2 = 'foo'
-                println (o2.toString())
-            }
-        '''
-    }
 
     // GROOVY-6104
     void testShouldResolveConstantFromInterfaceImplementedInSuperClass() {
@@ -742,6 +742,53 @@ Printer
             assert X.makeX().toString() == 'X(1)'
             assert X.makeX().makeY().toString() == 'X$Y(2)'
             assert X.makeX().makeY().makeZ().toString() == 'X$Y$Z(3)'
+        '''
+    }
+
+    // GROOVY-8255 and GROOVY-8382
+    void testTargetTypingEmptyCollectionLiterals() {
+        assertScript '''
+            class Foo {
+                List<List<String>> items = [['x']]
+                def bar() {
+                    List<String> result = []
+                    List<String> selections = items.size() ? (items.get(0) ?: []) : items.size() > 1 ? items.get(1) : []
+                    for (String selection: selections) {
+                        result << selection
+                    }
+                    result
+                }
+            }
+            assert new Foo().bar() == ['x']
+        '''
+        assertScript '''
+            class Foo {
+                def bar() {
+                    def items = [x:1]
+                    Map<String, Integer> empty = [:]
+                    Map<String, Integer> first = items ?: [:]
+                    Map<String, Integer> second = first.isEmpty() ? [:] : [y:2]
+                    [first, second]
+                }
+            }
+            assert new Foo().bar() == [[x:1], [y:2]]
+        '''
+        assertScript '''
+            import groovy.transform.*
+            @ToString(includeFields=true)
+            class Foo {
+                List<String> propWithGen = ['propWithGen'] ?: []
+                List propNoGen = ['propNoGen'] ?: []
+                private Map<String, Integer> fieldGen = [fieldGen:42] ?: [:]
+                def bar() {
+                    this.propNoGen = ['notDecl'] ?: [] // not applicable here
+                    List<String> localVar = ['localVar'] ?: []
+                    localVar
+                }
+            }
+            def foo = new Foo()
+            assert foo.bar() == ['localVar']
+            assert foo.toString() == 'Foo([propWithGen], [notDecl], [fieldGen:42])'
         '''
     }
 }

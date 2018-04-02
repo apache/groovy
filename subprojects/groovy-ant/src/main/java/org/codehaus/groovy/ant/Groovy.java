@@ -24,6 +24,7 @@ import groovy.lang.GroovyShell;
 import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
 import groovy.util.AntBuilder;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Java;
@@ -48,8 +49,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Vector;
 
 /**
@@ -405,7 +408,7 @@ public class Groovy extends Java {
                 configureCompiler();
                 super.execute();
             } catch (Exception e) {
-                StringWriter writer = new StringWriter();
+                Writer writer = new StringBuilderWriter();
                 new ErrorReporter(e, false).write(new PrintWriter(writer));
                 String message = writer.toString();
                 throw new BuildException("Script Failed: " + message, e, getLocation());
@@ -446,7 +449,14 @@ public class Groovy extends Java {
         }
 
         final String scriptName = computeScriptName();
-        final GroovyClassLoader classLoader = new GroovyClassLoader(baseClassLoader);
+        final GroovyClassLoader classLoader =
+                AccessController.doPrivileged(
+                        new PrivilegedAction<GroovyClassLoader>() {
+                            @Override
+                            public GroovyClassLoader run() {
+                                return new GroovyClassLoader(baseClassLoader);
+                            }
+                        });
         addClassPathes(classLoader);
         configureCompiler();
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
@@ -526,7 +536,7 @@ public class Groovy extends Java {
     }
 
     private void processError(Exception e) {
-        StringWriter writer = new StringWriter();
+        Writer writer = new StringBuilderWriter();
         new ErrorReporter(e, false).write(new PrintWriter(writer));
         String message = writer.toString();
         throw new BuildException("Script Failed: " + message, e, getLocation());

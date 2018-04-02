@@ -86,13 +86,23 @@ public class GroovycTest extends GroovyTestCase {
         }
         final File result = new File(classDirectory + classname + "_Result.txt");
         final char[] buffer = new char[10];
+        FileReader fr = null;
         try {
-            (new FileReader(result)).read(buffer);
+            fr = new FileReader(result);
+            fr.read(buffer);
             assertEquals("OK.", new String(buffer).trim());
         } catch (final FileNotFoundException fnfe) {
             fail("File " + result.getName() + " should have been created but wasn't.");
         } catch (final IOException ioe) {
             fail("Error reading file " + result.getName() + ".");
+        } finally {
+            if (null != fr) {
+                try {
+                    fr.close();
+                } catch (IOException e) {
+                    fail("Error close file reader " + result.getName() + ".");
+                }
+            }
         }
     }
 

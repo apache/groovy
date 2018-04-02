@@ -542,13 +542,13 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
         assert result.contains('private int $hash$code')
-        assert result.contains('public Event(java.util.HashMap args)')
+        assert result.contains('public Event(java.util.Map args)')
 
         // assert toString()... quotations marks were a hassle
         assert result.contains('public java.lang.String toString()')
         assert result.contains("_result.append('Event(')")
         assert result.contains("_result.append(')')")
-        assert result.contains('return _result.toString()')
+        assert result.contains('return $to$string')
     }
 
     void testToStringClassAndStaticMethodCallExpression() {

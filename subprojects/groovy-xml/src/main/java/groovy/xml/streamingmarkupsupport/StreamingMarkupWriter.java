@@ -33,7 +33,7 @@ public class StreamingMarkupWriter extends Writer {
     protected final CharsetEncoder encoder;
     protected boolean writingAttribute = false;
     protected boolean haveHighSurrogate = false;
-    protected StringBuffer surrogatePair = new StringBuffer(2);
+    protected StringBuilder surrogatePair = new StringBuilder(2);
     private boolean useDoubleQuotes;
     private final Writer escapedWriter = new Writer() {
         /* (non-Javadoc)

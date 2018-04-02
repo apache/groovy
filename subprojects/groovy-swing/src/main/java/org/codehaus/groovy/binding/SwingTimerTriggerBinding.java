@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.binding;
 
-import javax.swing.Timer;
-import java.awt.event.ActionListener;
+import javax.swing.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
@@ -106,11 +106,11 @@ class SwingTimerFullBinding extends AbstractFullBinding implements ActionListene
                     Integer.valueOf((int) (elapsed / stepSize)));
         } else if (reportFraction) {
             ((ClosureSourceBinding)sourceBinding).setClosureArgument(
-                    new Float((float) elapsed / (float) duration));
+                    Float.valueOf((float) elapsed / (float) duration));
             //in Groovy2.0 use valueOf
         } else if (reportElapsed) {
             ((ClosureSourceBinding)sourceBinding).setClosureArgument(
-                    new Long(elapsed));
+                    Long.valueOf(elapsed));
             //in Groovy2.0 use valueOf
         } 
 

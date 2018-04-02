@@ -22,6 +22,7 @@ package groovy.text;
  * A custom exception class to flag template execution errors
  */
 public class TemplateExecutionException extends Exception  {
+    private static final long serialVersionUID = 3940987189684210921L;
     private int lineNumber;
 
     public TemplateExecutionException(int lineNumber) {

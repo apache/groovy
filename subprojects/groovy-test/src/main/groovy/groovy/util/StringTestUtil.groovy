@@ -18,7 +18,7 @@
  */
 package groovy.util
 
-import junit.framework.Assert
+import org.junit.Assert
 
 class StringTestUtil {
     static void assertMultilineStringsEqual(String a, String b) {

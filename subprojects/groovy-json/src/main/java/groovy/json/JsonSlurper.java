@@ -18,10 +18,10 @@
  */
 package groovy.json;
 
-import groovy.json.internal.JsonFastParser;
-import groovy.json.internal.JsonParserCharArray;
-import groovy.json.internal.JsonParserLax;
-import groovy.json.internal.JsonParserUsingCharacterSource;
+import org.apache.groovy.json.internal.JsonFastParser;
+import org.apache.groovy.json.internal.JsonParserCharArray;
+import org.apache.groovy.json.internal.JsonParserLax;
+import org.apache.groovy.json.internal.JsonParserUsingCharacterSource;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
-import java.util.*;
+import java.util.Map;
 
 /**
  * This has the same interface as the original JsonSlurper written for version 1.8.0, but its

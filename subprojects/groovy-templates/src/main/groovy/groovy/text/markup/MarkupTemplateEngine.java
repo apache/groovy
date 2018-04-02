@@ -27,6 +27,7 @@ import groovy.transform.CompileStatic;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.asm.BytecodeDumper;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -34,7 +35,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.classgen.asm.BytecodeDumper;
 
 import java.io.File;
 import java.io.IOException;
@@ -121,8 +121,16 @@ public class MarkupTemplateEngine extends TemplateEngine {
      * @param templateDirectory directory where to find templates
      * @param tplConfig         template engine configuration
      */
-    public MarkupTemplateEngine(ClassLoader parentLoader, File templateDirectory, TemplateConfiguration tplConfig) {
-        this(new URLClassLoader(buildURLs(templateDirectory), parentLoader), tplConfig, null);
+    public MarkupTemplateEngine(final ClassLoader parentLoader, final File templateDirectory, TemplateConfiguration tplConfig) {
+        this(AccessController.doPrivileged(
+                new PrivilegedAction<URLClassLoader>() {
+                    @Override
+                    public URLClassLoader run() {
+                        return new URLClassLoader(buildURLs(templateDirectory), parentLoader);
+                    }
+                }),
+                tplConfig,
+                null);
     }
 
     private static URL[] buildURLs(final File templateDirectory) {

@@ -32,6 +32,7 @@ def srcTest = "$srcBase/test"
 
 final PARSER_PACKAGE_NAME = 'org.apache.groovy.parser.antlr4'
 generateGrammarSource {
+    outputs.cacheIf { true }
     arguments += ["-visitor", "-no-listener", "-package", PARSER_PACKAGE_NAME]
 
     doLast {
@@ -54,7 +55,7 @@ compileJava.dependsOn generateGrammarSource
 
 configurations {
     compile {
-        extendsFrom = extendsFrom.findAll { it != configurations.antlr }
+        extendsFrom = extendsFrom.findAll { it != configurations.antlr2 }
     }
 }
 
@@ -72,6 +73,6 @@ sourceSets.test.groovy.srcDirs += file("$srcTest/groovy");
 sourceSets.test.resources.srcDirs += file("$srcTest/resources");
 
 
-test {
+tasks.withType(Test) {
     jvmArgs "-Dgroovy.attach.groovydoc=true", "-Dgroovy.antlr4.cache.threshold=100"
 }

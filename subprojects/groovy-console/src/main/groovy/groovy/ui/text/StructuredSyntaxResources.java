@@ -18,9 +18,7 @@
  */
 package groovy.ui.text;
 
-import java.awt.Font;
-import java.awt.Toolkit;
-
+import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 
 /**

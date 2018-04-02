@@ -18,11 +18,15 @@
  */
 package groovy.swing.binding;
 
-import org.codehaus.groovy.binding.*;
+import org.codehaus.groovy.binding.FullBinding;
+import org.codehaus.groovy.binding.PropertyBinding;
+import org.codehaus.groovy.binding.SourceBinding;
+import org.codehaus.groovy.binding.TargetBinding;
+import org.codehaus.groovy.binding.TriggerBinding;
 
+import javax.swing.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import javax.swing.JComponent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.HashMap;

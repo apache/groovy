@@ -151,6 +151,9 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.shouldFail('fail/MethodDeclaration_01.groovy');
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_02x.groovy');
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_03x.groovy');
+        TestUtils.doRunAndShouldFail('fail/MethodDeclaration_04x.groovy');
+        TestUtils.doRunAndShouldFail('fail/MethodDeclaration_05x.groovy');
+
     }
 
     void "test groovy core - ConstructorDeclaration"() {
@@ -207,6 +210,16 @@ class SyntaxErrorTest extends GroovyTestCase {
 
     void "test groovy core - MethodCall"() {
         TestUtils.doRunAndShouldFail('fail/MethodCall_01x.groovy');
+    }
+
+    void "test groovy core - var"() {
+        TestUtils.doRunAndShouldFail('fail/Var_01x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Var_02x.groovy');
+    }
+
+    void "test groovy core - String"() {
+        TestUtils.doRunAndShouldFail('fail/String_01x.groovy');
+        TestUtils.doRunAndShouldFail('fail/String_02x.groovy');
     }
 
     /**************************************/

@@ -19,7 +19,7 @@
 package groovy.lang
 
 class InnerClassResolvingTest extends GroovyTestCase {
-    public void testInnerClass() {
+    void testInnerClass() {
         // Thread.UncaughtExceptionHandler was added in Java 1.5
         def script = '''
             def caught = false
@@ -34,7 +34,7 @@ class InnerClassResolvingTest extends GroovyTestCase {
         new GroovyShell().evaluate(script)
     }
 
-    public void testInnerClassWithPartialMatchOnImport() {
+    void testInnerClassWithPartialMatchOnImport() {
         def script = '''
             import java.lang.Thread as X
             X.UncaughtExceptionHandler y = null
@@ -42,4 +42,20 @@ class InnerClassResolvingTest extends GroovyTestCase {
         new GroovyShell().evaluate(script)
     }
 
+    // GROOVY-8362
+    void 'test do not resolve nested class via inner class with package name'() {
+        shouldFail '''
+            package bugs
+
+            class Current {
+                static class bugs {
+                    static class Target {}
+                }
+                static usage() {
+                    new Target()
+                }
+            }
+            assert Current.usage()
+        '''
+    }
 }

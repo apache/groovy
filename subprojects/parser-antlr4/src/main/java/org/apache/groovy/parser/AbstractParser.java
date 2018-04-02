@@ -25,6 +25,8 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.io.File;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,7 +46,19 @@ public abstract class AbstractParser {
         }
 
         CompilerConfiguration configuration = this.getCompilerConfiguration();
-        SourceUnit sourceUnit = new SourceUnit(file, configuration, new GroovyClassLoader(), new ErrorCollector(configuration));
+        SourceUnit sourceUnit =
+                new SourceUnit(
+                        file,
+                        configuration,
+                        AccessController.doPrivileged(
+                                new PrivilegedAction<GroovyClassLoader>() {
+                                    @Override
+                                    public GroovyClassLoader run() {
+                                        return new GroovyClassLoader();
+                                    }
+                                }),
+                        new ErrorCollector(configuration)
+                );
 
         return this.parse(sourceUnit);
     }
@@ -59,7 +73,20 @@ public abstract class AbstractParser {
         }
 
         CompilerConfiguration configuration = this.getCompilerConfiguration();
-        SourceUnit sourceUnit = new SourceUnit(name, text, configuration, new GroovyClassLoader(), new ErrorCollector(configuration));
+        SourceUnit sourceUnit =
+                new SourceUnit(
+                        name,
+                        text,
+                        configuration,
+                        AccessController.doPrivileged(
+                                new PrivilegedAction<GroovyClassLoader>() {
+                                    @Override
+                                    public GroovyClassLoader run() {
+                                        return new GroovyClassLoader();
+                                    }
+                                }),
+                        new ErrorCollector(configuration)
+                );
 
         return this.parse(sourceUnit);
     }

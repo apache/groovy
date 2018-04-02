@@ -24,6 +24,7 @@ import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.*;
 
@@ -57,7 +58,7 @@ public abstract class GenericsTestBase extends GroovyTestCase {
     }
     private class GenericsTester extends ClassVisitor {
         public GenericsTester(ClassVisitor cv) {
-            super(Opcodes.ASM4,cv);
+            super(CompilerConfiguration.ASM_API_VERSION, cv);
         }
         public void visit(int version, int access, String name,
                 String signature, String superName, String[] interfaces) {

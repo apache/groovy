@@ -18,9 +18,18 @@
  */
 package org.codehaus.groovy.runtime;
 
-import static java.nio.file.StandardOpenOption.APPEND;
-import static java.nio.file.StandardOpenOption.CREATE;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
+import groovy.io.FileType;
+import groovy.io.FileVisitResult;
+import groovy.io.GroovyPrintWriter;
+import groovy.lang.Closure;
+import groovy.lang.MetaClass;
+import groovy.lang.Writable;
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FromString;
+import groovy.transform.stc.PickFirstResolver;
+import groovy.transform.stc.SimpleType;
+import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -52,18 +61,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import groovy.io.FileType;
-import groovy.io.FileVisitResult;
-import groovy.io.GroovyPrintWriter;
-import groovy.lang.Closure;
-import groovy.lang.MetaClass;
-import groovy.lang.Writable;
-import groovy.transform.stc.ClosureParams;
-import groovy.transform.stc.FromString;
-import groovy.transform.stc.PickFirstResolver;
-import groovy.transform.stc.SimpleType;
-import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
 
 /**
  * This class defines new groovy methods for Readers, Writers, InputStreams and
@@ -1141,7 +1141,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
                 files.add(itr.next());
             }
 
-            if (sort != null) files = DefaultGroovyMethods.sort(files, sort);
+            if (sort != null) files = DefaultGroovyMethods.sort((Iterable<Path>)files, sort);
 
             for (Path path : files) {
                 if (Files.isDirectory(path)) {

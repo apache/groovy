@@ -356,6 +356,15 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                     role 'Developer'
                 }
             }
+            developer {
+                id 'sunlan'
+                name 'Daniel Sun'
+                email 'realbluesun@hotmail.com'
+                roles {
+                    role 'Developer'
+                    role 'Despot'
+                }
+            }
         }
         contributors {
             contributor {
@@ -541,6 +550,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Peter Ledbrook'
             }
             contributor {
+                name 'Scott Stirling'
+            }
+            contributor {
                 name 'Thibault Kruse'
             }
             contributor {
@@ -584,6 +596,24 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Martin Kempf'
+            }
+            contributor {
+                name 'Stephane Landelle'
+            }
+            contributor {
+                name 'Vladimir Vivien'
+            }
+            contributor {
+                name 'Graeme Rocher'
+            }
+            contributor {
+                name 'Joe Wolf'
+            }
+            contributor {
+                name 'Kent Inge Fagerland Simonsen'
+            }
+            contributor {
+                name 'Tom Nichols'
             }
         }
         mailingLists {

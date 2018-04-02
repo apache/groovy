@@ -55,14 +55,13 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
 import groovy.lang.Tuple;
-
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.util.ManagedConcurrentValueMap;
-import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.util.ManagedConcurrentValueMap;
+import org.codehaus.groovy.util.ReferenceBundle;
 
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
@@ -73,15 +72,15 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * JSR-223 Engine implementation.
@@ -114,7 +113,12 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     public GroovyScriptEngineImpl() {
-        this(new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT)));
+        this(AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+            @Override
+            public GroovyClassLoader run() {
+                return new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT));
+            }
+        }));
     }
 
     public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {
@@ -363,6 +367,22 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
+    private Object invokeImplSafe(Object thiz, String name, Object... args) {
+        if (name == null) {
+            throw new NullPointerException("method name is null");
+        }
+
+        try {
+            if (thiz != null) {
+                return InvokerHelper.invokeMethod(thiz, name, args);
+            } else {
+                return callGlobal(name, args);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // call the script global function of the given name
     private Object callGlobal(String name, Object[] args) {
         return callGlobal(name, args, context);
@@ -400,7 +420,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
                 new InvocationHandler() {
                     public Object invoke(Object proxy, Method m, Object[] args)
                             throws Throwable {
-                        return invokeImpl(thiz, m.getName(), args);
+                        return invokeImplSafe(thiz, m.getName(), args);
                     }
                 });
     }

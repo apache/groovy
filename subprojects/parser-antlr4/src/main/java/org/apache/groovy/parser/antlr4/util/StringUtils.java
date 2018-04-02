@@ -27,12 +27,15 @@ import java.util.regex.Pattern;
 
 /**
  * Utilities for handling strings
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/08/20
  */
 public class StringUtils {
+	private static final String BACKSLASH = "\\";
+
 	public static String replaceHexEscapes(String text) {
+		if (!text.contains(BACKSLASH)) {
+			return text;
+		}
+
 		Pattern p = Pattern.compile("(\\\\*)\\\\u([0-9abcdefABCDEF]{4})");
 		return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1, String _2) {
@@ -46,6 +49,10 @@ public class StringUtils {
 	}
 
 	public static String replaceOctalEscapes(String text) {
+		if (!text.contains(BACKSLASH)) {
+			return text;
+		}
+
 		Pattern p = Pattern.compile("(\\\\*)\\\\([0-3]?[0-7]?[0-7])");
 		return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1, String _2) {
@@ -67,6 +74,10 @@ public class StringUtils {
 	);
 
 	public static String replaceStandardEscapes(String text) {
+		if (!text.contains(BACKSLASH)) {
+			return text;
+		}
+
 		Pattern p = Pattern.compile("(\\\\*)\\\\([btnfr\"'])");
 
 		String result = StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
@@ -111,6 +122,10 @@ public class StringUtils {
 	}
 
 	private static String replaceEscapes(String text) {
+		if (!text.contains(BACKSLASH)) {
+			return text;
+		}
+
 		text = replace(text,"\\$", "$");
 
 		text = StringUtils.replaceLineEscape(text);
@@ -119,6 +134,10 @@ public class StringUtils {
 	}
 
 	private static String replaceLineEscape(String text) {
+		if (!text.contains(BACKSLASH)) {
+			return text;
+		}
+
 		Pattern p = Pattern.compile("(\\\\*)\\\\\r?\n");
 		text = StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1) {
@@ -216,7 +235,6 @@ public class StringUtils {
 	 *
 	 * @param cs  the CharSequence to check, may be null
 	 * @return {@code true} if the CharSequence is empty or null
-	 * @since 3.0 Changed signature from isEmpty(String) to isEmpty(CharSequence)
 	 */
 	public static boolean isEmpty(final CharSequence cs) {
 		return cs == null || cs.length() == 0;

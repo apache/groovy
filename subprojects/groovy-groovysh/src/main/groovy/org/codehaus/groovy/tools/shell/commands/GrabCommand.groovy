@@ -19,13 +19,9 @@
 package org.codehaus.groovy.tools.shell.commands
 
 import groovy.grape.Grape
-import jline.console.completer.Completer;
-
-import org.codehaus.groovy.tools.shell.CommandSupport
-
-import java.util.List;
-
+import jline.console.completer.Completer
 import org.codehaus.groovy.tools.GrapeUtil
+import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Groovysh
 
 /**

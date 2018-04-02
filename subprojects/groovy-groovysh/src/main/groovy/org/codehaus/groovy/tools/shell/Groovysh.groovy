@@ -32,9 +32,14 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.commands.LoadCommand
 import org.codehaus.groovy.tools.shell.commands.RecordCommand
-import org.codehaus.groovy.tools.shell.util.*
+import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
+import org.codehaus.groovy.tools.shell.util.DefaultCommandsRegistrar
+import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.PackageHelper
+import org.codehaus.groovy.tools.shell.util.PackageHelperImpl
+import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.util.ScriptVariableAnalyzer
+import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.fusesource.jansi.AnsiRenderer
 
 import java.util.regex.Pattern
@@ -471,7 +476,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
 
         if (cause instanceof MultipleCompilationErrorsException) {
-            StringWriter data = new StringWriter();
+            Writer data = new org.apache.groovy.io.StringBuilderWriter();
             PrintWriter writer = new PrintWriter(data);
             ErrorCollector collector = ((MultipleCompilationErrorsException) cause).getErrorCollector()
             Iterator<Message> msgIterator = collector.getErrors().iterator()
@@ -503,7 +508,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
                 def trace = cause.stackTrace
 
-                def buff = new StringBuffer()
+                def buff = new StringBuilder()
 
                 boolean doBreak = false
 

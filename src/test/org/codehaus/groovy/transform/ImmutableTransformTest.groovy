@@ -230,7 +230,9 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void testImmutableWithHashMap() {
         assertScript """
             import groovy.transform.Immutable
-            @Immutable final class HasHashMap {
+            import groovy.transform.options.LegacyHashMapPropertyHandler
+            @Immutable(propertyHandler = LegacyHashMapPropertyHandler, noArg = false)
+            final class HasHashMap {
                 HashMap map = [d:4]
             }
             assert new HasHashMap([a:1]).map == [a:1]
@@ -413,7 +415,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void testPrivateFieldAssignedViaConstructor() {
         assertScript '''
             import groovy.transform.Immutable
-            @Immutable class Numbers {
+            @Immutable(includeStatic = true)
+            class Numbers {
                 private int a1 = 1
                 private int b1 = -1
                 private int c1
@@ -607,8 +610,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
                 new Person(first: 'John', last: 'Doe', address: new Address(street: 'Street'))
             '''
         }
-        assert msg.contains("doesn't know how to handle field 'address' of type 'Address'")
-        assert msg.contains("@Immutable classes only support properties with effectively immutable types")
+        assert msg.contains("Unsupported type (Address) found for field 'address' while constructing immutable class Person")
+        assert msg.contains("Immutable classes only support properties with effectively immutable types")
     }
 
     // GROOVY-5828
@@ -655,7 +658,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             }
             '''
         }
-        assert msg.contains("@Immutable processor doesn't know how to handle field 'name' of type 'java.lang.Object or def'")
+        assert msg.contains("Unsupported type (java.lang.Object or def) found for field 'name' while ")
     }
 
     // GROOVY-6192
@@ -986,7 +989,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
                new Person(surName: "Doe")
            """
         }
-        assert message.contains("Error during @Immutable processing: 'knownImmutables' property 'sirName' does not exist.")
+        assert message.contains("Error during immutable class processing: 'knownImmutables' property 'sirName' does not exist.")
     }
 
     // GROOVY-7162
@@ -1036,5 +1039,43 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             }
             '''
         }
+    }
+
+    // GROOVY-7599
+    @Test
+    void testImmutableWithJSR310_vm8() {
+        assertScript '''
+            import groovy.transform.Immutable
+            import java.time.*
+
+            @Immutable
+            class Person {
+              String first, last
+              LocalDate born
+            }
+
+            def mmm = new Person('Fred', 'Brooks', LocalDate.of(1931, Month.APRIL, 19))
+            assert mmm.toString() == 'Person(Fred, Brooks, 1931-04-19)'
+        '''
+    }
+
+    // GROOVY-8416
+    @Test
+    void testMapFriendlyNamedArgs() {
+        assertScript '''
+            import groovy.transform.Immutable
+            @Immutable
+            class Point {
+                int x, y
+            }
+            def coordinates = [x: 1, y: 2]
+            assert coordinates instanceof LinkedHashMap
+            def p1 = new Point(coordinates)
+            assert p1.x == 1
+            def p2 = new Point(new HashMap(coordinates))
+            assert p2.x == 1
+            def p3 = new Point(new TreeMap(coordinates))
+            assert p3.x == 1
+        '''
     }
 }

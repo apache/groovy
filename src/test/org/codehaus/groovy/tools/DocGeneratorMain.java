@@ -28,7 +28,7 @@ public class DocGeneratorMain {
         try {
             GroovyShell shell = new GroovyShell();
             //shell.run("src/main/org/codehaus/groovy/tools/DocGenerator.groovy", "org.codehaus.groovy.tools.DocGenerator.groovy", args);
-            shell.run(new File("src/main/org/codehaus/groovy/tools/DocGenerator.groovy"), args);
+            shell.run(new File("src/main/groovy/org/codehaus/groovy/tools/DocGenerator.groovy"), args);
         }
         catch (Exception e) {
             System.out.println("Failed: " + e);

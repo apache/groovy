@@ -17,13 +17,8 @@
  *  under the License.
  */
 package org.codehaus.groovy.runtime
-
-import java.util.*
-
 /**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Marc Guillemot
- * @author Brad Long
+ * Tests for DGM methods
  */
 class DefaultGroovyMethodsTest extends GroovyTestCase {
 
@@ -167,9 +162,9 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         ByteArrayInputStream is = new ByteArrayInputStream(bytes)
         try {
             byte[] answer = IOGroovyMethods.getBytes(is)
-            assertEquals(bytes.length, answer.length)
-            bytes.eachWithIndex{ byte entry, int i ->
-                assertEquals(entry, answer[i])
+            assert bytes.length == answer.length
+            (0..<bytes.length).each{
+                assert answer[it] == answer[it]
             }
         } catch (IOException e) {
             fail()
@@ -182,9 +177,9 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         try {
             IOGroovyMethods.setBytes(os, bytes)
             byte[] answer = os.toByteArray()
-            assertEquals(bytes.length, answer.length)
-            bytes.eachWithIndex{ byte entry, int i ->
-                assertEquals(entry, answer[i])
+            assert bytes.length == answer.length
+            (0..<bytes.length).each{
+                assert answer[it] == answer[it]
             }
         } catch (IOException e) {
             fail()
@@ -215,7 +210,7 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.removeAll(list, "def".split("")))
         assertTrue(DefaultGroovyMethods.retainAll(list, "bcd".split("")))
         List<String> bAndC = ['b', 'c']
-        assertTrue(DefaultGroovyMethods.containsAll(list, bAndC.toArray(new String[2])))
+        assertTrue(DefaultGroovyMethods.containsAll((Iterable)list, bAndC.toArray(new String[2])))
         assertEquals(list, bAndC)
         assertTrue(DefaultGroovyMethods.addAll(list, 1, ['a', 's', 'i'].toArray(new String[3])))
         assertEquals(list, ['b', 'a', 's', 'i', 'c'])
@@ -312,4 +307,5 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertTrue(DefaultGroovyMethods.implies(false, null))
         assertFalse(DefaultGroovyMethods.implies(true, null))
     }
+
 }

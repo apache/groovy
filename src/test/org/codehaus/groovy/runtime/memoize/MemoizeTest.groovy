@@ -121,6 +121,74 @@ public class MemoizeTest extends AbstractMemoizeTestCase {
         assert c.mcSoftRef() == 1
     }
 
+    // GROOVY-8486
+    void testMemoizeConcurrently() {
+        assertScript '''
+        // http://groovy.329449.n5.nabble.com/ConcurrentModificationException-with-use-of-memoize-tp5736788.html
+        
+        class Utils { 
+            public static int cnt = 0
+            
+            public static synchronized void increment() {
+                cnt++
+            }
+            
+            public static synchronized int getCnt() {
+                return cnt
+            }
+        
+            public static final Closure powerSet =  { Collection things -> 
+                increment()
+        
+                def Set objSets = things.collect { [it] as Set } 
+                def Set resultSet = [[] as Set] 
+                def finalResult = objSets.inject(resultSet) { rez, objSet -> 
+                        def newMemberSets = rez.collect { it -> (it + objSet) as Set } 
+                        rez.addAll(newMemberSets) 
+                        rez 
+                } 
+            }.memoize() 
+    
+            public static Collection combinations(Collection objs, int n) { (n < 1 || n > objs.size()) ? null : powerSet(objs)?.findAll { it.size() == n } } 
+        } 
+        
+        def threadList = (0..<10).collect {
+            Thread.start { 
+                Collection things = [
+                        [1, 2, 3],
+                        [1, 2],
+                        [1, 2],
+                        [2, 3],
+                        [2, 3],
+                        [3, 4],
+                        [3, 4],
+                        [5, 6, 7, 8]
+                ]
+                Utils.combinations(things, 2) 
+            } 
+        }
+        threadList << (0..<5).collect {
+            Thread.start {
+                def things = [
+                    [1, 2, 3],
+                    [1, 2, 3],
+                    [1, 2],
+                    [2, 3, 4],
+                    [2, 3, 4],
+                    [3, 4],
+                    [3, 4, 5],
+                    [5, 6, 7, 8]
+                ]
+                Utils.combinations(things, 2) 
+            }
+        }
+        
+        threadList*.join()
+        
+        assert 2 == Utils.getCnt()
+        '''
+    }
+
     private static class ClassWithMemoizeClosureProperty {
         int timesCalled, timesCalledSoftRef
         def mc = {
