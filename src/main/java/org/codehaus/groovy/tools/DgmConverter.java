@@ -50,7 +50,7 @@ public class DgmConverter implements Opcodes {
         for (Class aClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
             Collections.addAll(cachedMethodsList, ReflectionCache.getCachedClass(aClass).getMethods());
         }
-        final CachedMethod[] cachedMethods = cachedMethodsList.toArray(new CachedMethod[0]);
+        final CachedMethod[] cachedMethods = cachedMethodsList.toArray(CachedMethod.EMPTY_ARRAY);
 
         List<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<GeneratedMetaMethod.DgmMethodRecord>();
 
