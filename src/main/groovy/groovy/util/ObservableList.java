@@ -193,8 +193,7 @@ public class ObservableList implements List {
 
     public void clear() {
         int oldSize = size();
-        List values = new ArrayList();
-        values.addAll(delegate);
+        List values = new ArrayList(delegate);
         delegate.clear();
         if (!values.isEmpty()) {
             fireElementClearedEvent(values);

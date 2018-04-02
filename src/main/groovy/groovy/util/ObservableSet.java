@@ -300,8 +300,7 @@ public class ObservableSet<E> implements Set<E> {
 
     public void clear() {
         int oldSize = size();
-        List<E> values = new ArrayList<E>();
-        values.addAll(delegate);
+        List<E> values = new ArrayList<E>(delegate);
         delegate.clear();
         if (!values.isEmpty()) {
             fireElementClearedEvent(values);
