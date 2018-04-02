@@ -23,7 +23,7 @@ class Groovy8523Bug extends GroovyTestCase {
         assertScript '''
         import groovy.transform.CompileStatic
         @CompileStatic
-        class Test8439a1 {
+        class Test1 {
             static int checkRes = 0
         
             static void f1(Object var1) {
@@ -50,7 +50,7 @@ class Groovy8523Bug extends GroovyTestCase {
         assertScript '''
         import groovy.transform.CompileStatic
         @CompileStatic
-        class Test8439a2 {
+        class Test1 {
             static int checkRes = 0
         
             static void f1(Object var1) {
@@ -81,7 +81,7 @@ class Groovy8523Bug extends GroovyTestCase {
         assertScript '''
         import groovy.transform.CompileStatic
         @CompileStatic
-        class Test8439a3 {
+        class Test1 {
             static int checkRes = 0
         
             static void f1(Object var1) {
