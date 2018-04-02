@@ -189,7 +189,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             List<MetaMethod> arr = new ArrayList<MetaMethod>();
             arr.addAll(Arrays.asList(metaMethods));
             arr.addAll(Arrays.asList(add));
-            myNewMetaMethods = arr.toArray(new MetaMethod[arr.size()]);
+            myNewMetaMethods = arr.toArray(new MetaMethod[0]);
             additionalMetaMethods = metaMethods;
         }
         else {

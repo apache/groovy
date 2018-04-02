@@ -256,7 +256,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         boolean hasMapCons = AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
-        ConstructorNode consNode = new ConstructorNode(modifiers, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body);
+        ConstructorNode consNode = new ConstructorNode(modifiers, params.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, body);
         markAsGenerated(cNode, consNode);
         cNode.addConstructor(consNode);
 

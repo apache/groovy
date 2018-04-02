@@ -364,7 +364,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args      the command line arguments to pass in
      */
     public Object run(GroovyCodeSource source, List args) throws CompilationFailedException {
-        return run(source, ((String[]) args.toArray(new String[args.size()])));
+        return run(source, ((String[]) args.toArray(new String[0])));
     }
 
     /**
@@ -385,7 +385,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args      the command line arguments to pass in
      */
     public Object run(URI source, List args) throws CompilationFailedException, IOException {
-        return run(new GroovyCodeSource(source), ((String[]) args.toArray(new String[args.size()])));
+        return run(new GroovyCodeSource(source), ((String[]) args.toArray(new String[0])));
     }
 
     /**
@@ -406,7 +406,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param list     the command line arguments to pass in
      */
     public Object run(final Reader in, final String fileName, List list) throws CompilationFailedException {
-        return run(in, fileName, (String[]) list.toArray(new String[list.size()]));
+        return run(in, fileName, (String[]) list.toArray(new String[0]));
     }
 
     /**

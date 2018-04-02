@@ -46,7 +46,7 @@ public class StringHelper {
             }
             first = last;
         }
-        return (String[])tokens.toArray(new String[tokens.size()]);
+        return (String[])tokens.toArray(new String[0]);
     }
 
     private static int scanToken(String s, int pos0) {

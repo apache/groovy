@@ -373,7 +373,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (systemProperties != null) basicArgs.put(SYSTEM_PROPERTIES_SETTING, systemProperties);
 
             try {
-                Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
+                Grape.grab(basicArgs, grabMaps.toArray(new Map[0]));
                 // grab may have added more transformations through new URLs added to classpath, so do one more scan
                 if (compilationUnit!=null) {
                     ASTTransformationVisitor.addGlobalTransformsAfterGrab(compilationUnit.getASTTransformationsContext());

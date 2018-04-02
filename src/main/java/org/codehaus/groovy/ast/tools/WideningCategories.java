@@ -573,7 +573,7 @@ public class WideningCategories {
                 itcn.remove();
             }
         }
-        ClassNode[] interfaceArray = interfaces.toArray(new ClassNode[interfaces.size()]);
+        ClassNode[] interfaceArray = interfaces.toArray(new ClassNode[0]);
         Arrays.sort(interfaceArray, INTERFACE_CLASSNODE_COMPARATOR);
         type = new LowestUpperBoundClassNode(name, superClass, interfaceArray);
         return type;
@@ -632,7 +632,7 @@ public class WideningCategories {
                         Collections.addAll(asArrayList, genericsTypes);
                     }
                 }
-                setGenericsTypes(asArrayList.toArray(new GenericsType[asArrayList.size()]));
+                setGenericsTypes(asArrayList.toArray(new GenericsType[0]));
             }
             StringBuilder sb = new StringBuilder();
             if (!upper.equals(OBJECT_TYPE)) sb.append(upper.getName());
