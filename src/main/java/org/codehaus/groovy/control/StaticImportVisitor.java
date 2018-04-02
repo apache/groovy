@@ -199,7 +199,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     protected Expression transformVariableExpression(VariableExpression ve) {
         Variable v = ve.getAccessedVariable();
-        if (v != null && v instanceof DynamicVariable) {
+        if (v instanceof DynamicVariable) {
             Expression result = findStaticFieldOrPropAccessorImportFromModule(v.getName());
             if (result != null) {
                 setSourcePosition(result, ve);

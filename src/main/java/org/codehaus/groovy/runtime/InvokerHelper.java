@@ -509,7 +509,7 @@ public class InvokerHelper {
         } catch (InvokerInvocationException iie) {
             // GROOVY-5802 IAE for missing properties with classes that extend List
             Throwable cause = iie.getCause();
-            if (cause == null || !(cause instanceof IllegalArgumentException)) throw iie;
+            if (!(cause instanceof IllegalArgumentException)) throw iie;
         }
     }
 

@@ -696,7 +696,7 @@ public abstract class StaticTypeCheckingSupport {
 
         // char as left expression
         if (leftRedirect == char_TYPE && rightRedirect==STRING_TYPE) {
-            if (rightExpression!=null && rightExpression instanceof ConstantExpression) {
+            if (rightExpression instanceof ConstantExpression) {
                 String value = rightExpression.getText();
                 return value.length()==1;
             }

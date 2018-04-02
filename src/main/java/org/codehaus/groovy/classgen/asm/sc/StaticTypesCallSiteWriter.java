@@ -639,7 +639,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         // first, direct access from within the class or inner class nodes
         if (declaringClass.equals(receiverType)) return true;
         if (receiverType instanceof InnerClassNode) {
-            while (receiverType!=null && receiverType instanceof InnerClassNode) {
+            while (receiverType instanceof InnerClassNode) {
                 if (declaringClass.equals(receiverType)) return true;
                 receiverType = receiverType.getOuterClass();
             }

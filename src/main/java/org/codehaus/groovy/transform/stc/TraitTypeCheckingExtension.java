@@ -77,7 +77,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
                 } else if (isThisTraitReceiver(var)) {
                     type = receiver;
                 }
-                if (type != null && Traits.isTrait(type) && !(type instanceof UnionTypeClassNode)) {
+                if (Traits.isTrait(type) && !(type instanceof UnionTypeClassNode)) {
                     ClassNode helper = Traits.findHelper(type);
                     Parameter[] params = new Parameter[argumentTypes.length + 1];
                     params[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "staticSelf");

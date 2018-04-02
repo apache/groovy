@@ -189,7 +189,7 @@ public class ObservableMap implements Map {
             } else {
                 result = test.call(value);
             }
-            if (result != null && result instanceof Boolean && (Boolean) result) {
+            if (result instanceof Boolean && (Boolean) result) {
                 if (newKey) {
                     firePropertyAddedEvent(key, value);
                     fireSizeChangedEvent(oldSize, size());
@@ -229,7 +229,7 @@ public class ObservableMap implements Map {
                     } else {
                         result = test.call(newValue);
                     }
-                    if (result != null && result instanceof Boolean && (Boolean) result) {
+                    if (result instanceof Boolean && (Boolean) result) {
                         if (newKey) {
                             events.add(new PropertyAddedEvent(this, key, newValue));
                         } else if (oldValue != newValue) {
