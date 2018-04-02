@@ -34,6 +34,7 @@ import java.lang.reflect.Modifier;
  * @author Alex Tkachman
  */
 public abstract class MetaMethod extends ParameterTypes implements Cloneable {
+    public static final MetaMethod[] EMPTY_ARRAY = new MetaMethod[0];
     private String signature;
     private String mopName;
 
