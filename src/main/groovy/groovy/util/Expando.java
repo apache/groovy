@@ -115,7 +115,7 @@ public class Expando extends GroovyObjectSupport {
      */
     public String toString() {
         Object method = getProperties().get("toString");
-        if (method != null && method instanceof Closure) {
+        if (method instanceof Closure) {
             // invoke overridden toString closure method
             Closure closure = (Closure) method;
             closure.setDelegate(this);
@@ -133,7 +133,7 @@ public class Expando extends GroovyObjectSupport {
      */
     public boolean equals(Object obj) {
         Object method = getProperties().get("equals");
-        if (method != null && method instanceof Closure) {
+        if (method instanceof Closure) {
             // invoke overridden equals closure method
             Closure closure = (Closure) method;
             closure.setDelegate(this);
@@ -152,7 +152,7 @@ public class Expando extends GroovyObjectSupport {
      */
     public int hashCode() {
         Object method = getProperties().get("hashCode");
-        if (method != null && method instanceof Closure) {
+        if (method instanceof Closure) {
             // invoke overridden hashCode closure method
             Closure closure = (Closure) method;
             closure.setDelegate(this);

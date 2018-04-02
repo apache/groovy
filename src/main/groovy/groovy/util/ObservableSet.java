@@ -191,7 +191,7 @@ public class ObservableSet<E> implements Set<E> {
         if (success) {
             if (test != null) {
                 Object result = test.call(e);
-                if (result != null && result instanceof Boolean && (Boolean) result) {
+                if (result instanceof Boolean && (Boolean) result) {
                     fireElementAddedEvent(e);
                     fireSizeChangedEvent(oldSize, size());
                 }
@@ -234,7 +234,7 @@ public class ObservableSet<E> implements Set<E> {
             for (E element : c) {
                 if (test != null) {
                     Object result = test.call(element);
-                    if (result != null && result instanceof Boolean && (Boolean) result && !duplicates.contains(element)) {
+                    if (result instanceof Boolean && (Boolean) result && !duplicates.contains(element)) {
                         values.add(element);
                     }
                 } else if (!duplicates.contains(element)) {

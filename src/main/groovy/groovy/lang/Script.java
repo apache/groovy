@@ -85,7 +85,7 @@ public abstract class Script extends GroovyObjectSupport {
             try {
                 if (name.equals(mme.getMethod())) {
                     Object boundClosure = getProperty(name);
-                    if (boundClosure != null && boundClosure instanceof Closure) {
+                    if (boundClosure instanceof Closure) {
                         return ((Closure) boundClosure).call((Object[])args);
                     } else {
                         throw mme;

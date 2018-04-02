@@ -152,7 +152,7 @@ public class ObservableList implements List {
     private void fireAddWithTest(Object element, int index, int oldSize) {
         if (test != null) {
             Object result = test.call(element);
-            if (result != null && result instanceof Boolean && (Boolean) result) {
+            if (result instanceof Boolean && (Boolean) result) {
                 fireElementAddedEvent(index, element);
                 fireSizeChangedEvent(oldSize, size());
             }
@@ -175,7 +175,7 @@ public class ObservableList implements List {
             for (Object element : c) {
                 if (test != null) {
                     Object result = test.call(element);
-                    if (result != null && result instanceof Boolean && (Boolean) result) {
+                    if (result instanceof Boolean && (Boolean) result) {
                         values.add(element);
                     }
                 } else {
@@ -321,7 +321,7 @@ public class ObservableList implements List {
         Object oldValue = delegate.set(index, element);
         if (test != null) {
             Object result = test.call(element);
-            if (result != null && result instanceof Boolean && ((Boolean) result).booleanValue()) {
+            if (result instanceof Boolean && ((Boolean) result).booleanValue()) {
                 fireElementUpdatedEvent(index, oldValue, element);
             }
         } else {

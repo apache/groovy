@@ -149,7 +149,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                         cn = ClassHelper.make(typeClass);
                     }
                 }
-                if (cn == null || !Traits.isTrait(cn)) {
+                if (!Traits.isTrait(cn)) {
                     ASTNode errorNode = methodNode;
                     String name = mn.getName();
                     if (errorNode.getLineNumber() == -1) {

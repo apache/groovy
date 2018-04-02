@@ -469,7 +469,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
     private void checkForClassLoader(AnnotationNode node) {
         Object val = node.getMember("systemClassLoader");
-        if (val == null || !(val instanceof ConstantExpression)) return;
+        if (!(val instanceof ConstantExpression)) return;
         Object systemClassLoaderObject = ((ConstantExpression)val).getValue();
         if (!(systemClassLoaderObject instanceof Boolean)) return;
         Boolean systemClassLoader = (Boolean) systemClassLoaderObject;
@@ -478,7 +478,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
     private void checkForInitContextClassLoader(AnnotationNode node) {
         Object val = node.getMember("initContextClassLoader");
-        if (val == null || !(val instanceof ConstantExpression)) return;
+        if (!(val instanceof ConstantExpression)) return;
         Object initContextClassLoaderObject = ((ConstantExpression)val).getValue();
         if (!(initContextClassLoaderObject instanceof Boolean)) return;
         initContextClassLoader = (Boolean) initContextClassLoaderObject;
@@ -486,7 +486,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
     private void checkForAutoDownload(AnnotationNode node) {
         Object val = node.getMember(AUTO_DOWNLOAD_SETTING);
-        if (val == null || !(val instanceof ConstantExpression)) return;
+        if (!(val instanceof ConstantExpression)) return;
         Object autoDownloadValue = ((ConstantExpression)val).getValue();
         if (!(autoDownloadValue instanceof Boolean)) return;
         autoDownload = (Boolean) autoDownloadValue;
@@ -494,7 +494,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
     private void checkForDisableChecksums(AnnotationNode node) {
         Object val = node.getMember(DISABLE_CHECKSUMS_SETTING);
-        if (val == null || !(val instanceof ConstantExpression)) return;
+        if (!(val instanceof ConstantExpression)) return;
         Object disableChecksumsValue = ((ConstantExpression)val).getValue();
         if (!(disableChecksumsValue instanceof Boolean)) return;
         disableChecksums = (Boolean) disableChecksumsValue;
@@ -515,7 +515,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
     private static void checkForConvenienceForm(AnnotationNode node, boolean exclude) {
         Object val = node.getMember("value");
-        if (val == null || !(val instanceof ConstantExpression)) return;
+        if (!(val instanceof ConstantExpression)) return;
         Object allParts = ((ConstantExpression)val).getValue();
         if (!(allParts instanceof String)) return;
         String allstr = (String) allParts;
