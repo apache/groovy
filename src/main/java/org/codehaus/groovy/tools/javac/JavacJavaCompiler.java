@@ -172,7 +172,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         // files to compile
         paras.addAll(files);
 
-        return paras.toArray(new String[paras.size()]);
+        return paras.toArray(new String[0]);
     }
 
     private Class findJavac(CompilationUnit cu) throws ClassNotFoundException {

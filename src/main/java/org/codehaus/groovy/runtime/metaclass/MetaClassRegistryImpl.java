@@ -415,7 +415,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                     new ArrayList<MetaClassRegistryChangeEventListener>(changeListenerList.size()+nonRemoveableChangeListenerList.size());
             ret.addAll(nonRemoveableChangeListenerList);
             ret.addAll(changeListenerList);
-            return ret.toArray(new MetaClassRegistryChangeEventListener[ret.size()]);
+            return ret.toArray(new MetaClassRegistryChangeEventListener[0]);
         }
     }
     

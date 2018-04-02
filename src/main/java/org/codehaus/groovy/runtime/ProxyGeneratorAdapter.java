@@ -215,7 +215,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         if (!traits.isEmpty()) {
             String name = superClass.getName() + "$TraitAdapter";
-            ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(new ClassNode[traits.size()]), null);
+            ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(new ClassNode[0]), null);
             CompilationUnit cu = new CompilationUnit(loader);
             CompilerConfiguration config = new CompilerConfiguration();
             SourceUnit su = new SourceUnit(name + "wrapper", "", config, loader, new ErrorCollector(config));
@@ -341,7 +341,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             classList.add(GeneratedGroovyProxy.class);
             interfacesSet.add("groovy/lang/GeneratedGroovyProxy");
         }
-        super.visit(V1_5, ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(new String[interfacesSet.size()]));
+        super.visit(V1_5, ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(new String[0]));
         visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         addDelegateFields();
         if (addGroovyObjectSupport) {

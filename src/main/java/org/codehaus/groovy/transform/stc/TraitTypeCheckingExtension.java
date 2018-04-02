@@ -111,7 +111,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         String traitName = decomposed[0];
         String name = decomposed[1];
         LinkedHashSet<ClassNode> traitsAsList = Traits.collectAllInterfacesReverseOrder(receiver, new LinkedHashSet<ClassNode>());
-        ClassNode[] implementedTraits = traitsAsList.toArray(new ClassNode[traitsAsList.size()]);
+        ClassNode[] implementedTraits = traitsAsList.toArray(new ClassNode[0]);
         ClassNode nextTrait = null;
         for (int i = 0; i < implementedTraits.length - 1; i++) {
             ClassNode implementedTrait = implementedTraits[i];

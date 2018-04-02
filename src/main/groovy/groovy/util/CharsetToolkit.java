@@ -414,6 +414,6 @@ public class CharsetToolkit {
      */
     public static Charset[] getAvailableCharsets() {
         Collection collection = Charset.availableCharsets().values();
-        return (Charset[]) collection.toArray(new Charset[collection.size()]);
+        return (Charset[]) collection.toArray(new Charset[0]);
     }
 }

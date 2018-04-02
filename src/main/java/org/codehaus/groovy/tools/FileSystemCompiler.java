@@ -267,7 +267,7 @@ public class FileSystemCompiler {
         if (errors) {
             return null;
         } else {
-            return fileList.toArray(new String[fileList.size()]);
+            return fileList.toArray(new String[0]);
         }
     }
 

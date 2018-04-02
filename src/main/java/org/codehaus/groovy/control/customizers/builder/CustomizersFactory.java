@@ -52,7 +52,7 @@ public class CustomizersFactory extends AbstractFactory implements PostCompletio
     public Object postCompleteNode(final FactoryBuilderSupport factory, final Object parent, final Object node) {
         if (node instanceof List) {
             List col = (List) node;
-            return col.toArray(new CompilationCustomizer[col.size()]);
+            return col.toArray(new CompilationCustomizer[0]);
         }
         return node;
     }
