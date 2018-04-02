@@ -38,6 +38,8 @@ import java.util.List;
  * @author Paul King
  */
 public class NodeList extends ArrayList {
+    private static final long serialVersionUID = 5454686773425258279L;
+
     static {
         // wrap the standard MetaClass with the delegate
         setMetaClass(NodeList.class, GroovySystem.getMetaClassRegistry().getMetaClass(NodeList.class));

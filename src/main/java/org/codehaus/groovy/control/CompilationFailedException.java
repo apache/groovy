@@ -29,6 +29,7 @@ import groovy.lang.GroovyRuntimeException;
 
 public class CompilationFailedException extends GroovyRuntimeException {
 
+    private static final long serialVersionUID = 4500269747315896966L;
     protected int phase;   // The phase in which the failures occurred
     protected ProcessingUnit unit;    // The *Unit object this exception wraps
 

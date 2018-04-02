@@ -33,6 +33,7 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
     }
 
     public static class Segment<K,V> extends AbstractConcurrentMap.Segment<K,V>{
+        private static final long serialVersionUID = -2157582627873688747L;
         protected final ReferenceBundle bundle;
         public Segment(ReferenceBundle bundle, int cap) {
             super(cap);
