@@ -1652,7 +1652,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             break;
         }
         // NOTE: must be changed to "1 |" if constructor was vargs
-        return 0 | (found << 8);
+        return (found << 8);
     }
 
     private CachedConstructor createCachedConstructor(Object[] arguments) {
