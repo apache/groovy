@@ -58,7 +58,7 @@ class Groovy8523Bug extends GroovyTestCase {
                     checkRes = 3
                     return;
                 }
-                if(!(var1 instanceof Serializable)){
+                if(!(var1 instanceof List)){
                     checkRes = 5
                     return;
                 }                
@@ -103,7 +103,7 @@ class Groovy8523Bug extends GroovyTestCase {
         
         Runnable r = {}        
         Test1.f1(r)
-        assert Test1.checkRes == 4;
+        assert Test1.checkRes == 5;
         '''
     }
 
