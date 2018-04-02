@@ -29,6 +29,8 @@ import org.codehaus.groovy.ast.ASTNode;
  */
 public class RuntimeParserException extends GroovyRuntimeException {
 
+    private static final long serialVersionUID = -6612860527133856587L;
+
     public RuntimeParserException(String message, ASTNode node) {
         super(message + "\n", node);
     }
