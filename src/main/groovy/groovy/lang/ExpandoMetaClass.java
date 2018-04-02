@@ -926,8 +926,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     public List<MetaProperty> getProperties() {
-        List<MetaProperty> propertyList = new ArrayList<MetaProperty>();
-        propertyList.addAll(super.getProperties());
+        List<MetaProperty> propertyList = new ArrayList<MetaProperty>(super.getProperties());
         return propertyList;
     }
 

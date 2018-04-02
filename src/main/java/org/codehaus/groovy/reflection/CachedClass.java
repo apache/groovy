@@ -362,11 +362,10 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        List<MetaMethod> arr = new ArrayList<MetaMethod>();
-        arr.addAll(Arrays.asList(classInfo.newMetaMethods));
+        List<MetaMethod> arr = new ArrayList<MetaMethod>(Arrays.asList(classInfo.newMetaMethods));
 
         final MetaClass metaClass = classInfo.getStrongMetaClass();
-        if (metaClass != null && metaClass instanceof ExpandoMetaClass) {
+        if (metaClass instanceof ExpandoMetaClass) {
             arr.addAll(((ExpandoMetaClass)metaClass).getExpandoMethods());
         }
 
