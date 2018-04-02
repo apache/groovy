@@ -24,7 +24,7 @@ class Groovy8523Bug extends GroovyTestCase {
         import groovy.transform.CompileStatic
         @CompileStatic
         class Test8439a1 {
-            int checkRes = 0
+            static int checkRes = 0
         
             static void f1(Object var1) {
                 if(!(var1 instanceof Runnable)){
@@ -51,7 +51,7 @@ class Groovy8523Bug extends GroovyTestCase {
         import groovy.transform.CompileStatic
         @CompileStatic
         class Test8439a2 {
-            int checkRes = 0
+            static int checkRes = 0
         
             static void f1(Object var1) {
                 if(!(var1 instanceof Runnable)){
@@ -82,7 +82,7 @@ class Groovy8523Bug extends GroovyTestCase {
         import groovy.transform.CompileStatic
         @CompileStatic
         class Test8439a3 {
-            int checkRes = 0
+            static int checkRes = 0
         
             static void f1(Object var1) {
                 if(!(var1 instanceof Runnable)){
