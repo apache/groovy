@@ -151,7 +151,7 @@ public class CachedClass {
                 else
                   methods.add(cachedMethod);
             }
-            CachedMethod [] resMethods = methods.toArray(new CachedMethod[0]);
+            CachedMethod [] resMethods = methods.toArray(CachedMethod.EMPTY_ARRAY);
             Arrays.sort(resMethods);
 
             final CachedClass superClass = getCachedSuperClass();
