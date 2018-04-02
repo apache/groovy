@@ -134,6 +134,8 @@ public class LexerFrame extends JFrame implements ActionListener {
     }
 
     private final Action loadFileAction = new AbstractAction("Open File...") {
+        private static final long serialVersionUID = 4541927184172762704L;
+
         public void actionPerformed(ActionEvent ae) {
             final JFileChooser jfc = new JFileChooser();
             final int response = jfc.showOpenDialog(LexerFrame.this);
@@ -264,6 +266,8 @@ public class LexerFrame extends JFrame implements ActionListener {
     }
 
     private static class HScrollableTextPane extends JTextPane {
+        private static final long serialVersionUID = -8582328309470654441L;
+
         @Override
         public boolean getScrollableTracksViewportWidth() {
             return (getSize().width < getParent().getSize().width);
