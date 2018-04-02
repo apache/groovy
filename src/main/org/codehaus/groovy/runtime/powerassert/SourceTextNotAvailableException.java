@@ -27,6 +27,8 @@ import org.codehaus.groovy.control.SourceUnit;
  * @author Peter Niederwieser
  */
 public class SourceTextNotAvailableException extends RuntimeException {
+    private static final long serialVersionUID = -3815868502019514479L;
+
     // only accepts AssertStatementS so that better error messages can be produced
     public SourceTextNotAvailableException(AssertStatement stat, SourceUnit unit, String msg) {
         super(String.format("%s for %s at (%d,%d)-(%d,%d) in %s",

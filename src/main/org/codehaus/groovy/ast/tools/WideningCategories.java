@@ -75,7 +75,10 @@ public class WideningCategories {
 
     private static final List<ClassNode> EMPTY_CLASSNODE_LIST = Collections.emptyList();
 
-    private static final Map<ClassNode, Integer> NUMBER_TYPES_PRECEDENCE = Collections.unmodifiableMap(new HashMap<ClassNode, Integer>() {{
+    private static final Map<ClassNode, Integer> NUMBER_TYPES_PRECEDENCE = Collections.unmodifiableMap(new HashMap<ClassNode, Integer>() {
+        private static final long serialVersionUID = -5178744121420941913L;
+
+        {
         put(ClassHelper.double_TYPE, 0);
         put(ClassHelper.float_TYPE, 1);
         put(ClassHelper.long_TYPE, 2);

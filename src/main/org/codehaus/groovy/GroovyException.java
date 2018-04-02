@@ -19,6 +19,7 @@
 package org.codehaus.groovy;
 
 public class GroovyException extends Exception implements GroovyExceptionInterface {
+    private static final long serialVersionUID = -61298636122042408L;
     private boolean fatal = true;
 
     public GroovyException() {

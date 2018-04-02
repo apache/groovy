@@ -160,7 +160,10 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
     protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = new ExtensionMethodCache();
     protected static final Map<ClassNode, Integer> NUMBER_TYPES = Collections.unmodifiableMap(
-            new HashMap<ClassNode, Integer>() {{
+            new HashMap<ClassNode, Integer>() {
+                private static final long serialVersionUID = 8841951852732042766L;
+
+                {
                 put(byte_TYPE, 0);
                 put(Byte_TYPE, 0);
                 put(short_TYPE, 1);
@@ -176,7 +179,10 @@ public abstract class StaticTypeCheckingSupport {
             }});
 
     protected static final Map<String, Integer> NUMBER_OPS = Collections.unmodifiableMap(
-            new HashMap<String, Integer>() {{
+            new HashMap<String, Integer>() {
+                private static final long serialVersionUID = 6951856193525808411L;
+
+                {
                 put("plus", PLUS);
                 put("minus", MINUS);
                 put("multiply", MULTIPLY);
