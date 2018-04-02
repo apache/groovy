@@ -134,8 +134,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
 
             @Override
             public void visitBlockStatement(BlockStatement block) {
-                Set<String> names = new HashSet<String>();
-                names.addAll(varStack.getLast());
+                Set<String> names = new HashSet<String>(varStack.getLast());
                 varStack.add(names);
                 super.visitBlockStatement(block);
                 varStack.remove(names);

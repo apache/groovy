@@ -155,7 +155,7 @@ public class CachedClass {
                 for (int i = 0; i != superMopMethods.length; ++i)
                   mopMethods.add(superMopMethods[i]);
             }
-            CachedClass.this.mopMethods = mopMethods.toArray(new CachedMethod[mopMethods.size()]);
+            CachedClass.this.mopMethods = mopMethods.toArray(CachedMethod.EMPTY_ARRAY);
             Arrays.sort(CachedClass.this.mopMethods, CachedMethodComparatorByName.INSTANCE);
 
             return resMethods;

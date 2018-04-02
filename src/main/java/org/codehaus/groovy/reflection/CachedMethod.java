@@ -42,6 +42,7 @@ import java.util.Comparator;
  * @author Alex.Tkachman
  */
 public class CachedMethod extends MetaMethod implements Comparable {
+    public static final CachedMethod[] EMPTY_ARRAY = new CachedMethod[0];
     public final CachedClass cachedClass;
 
     private final Method cachedMethod;
