@@ -1094,7 +1094,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private static ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
-        if (code == null || !(code instanceof ExpressionStatement)) return null;
+        if (!(code instanceof ExpressionStatement)) return null;
 
         Expression expression = ((ExpressionStatement) code).getExpression();
         if (!(expression instanceof ConstructorCallExpression)) return null;

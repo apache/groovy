@@ -48,7 +48,7 @@ public class ConstructorNode extends MethodNode {
     
     public boolean firstStatementIsSpecialConstructorCall() {
         Statement code = getFirstStatement();
-        if (code == null || !(code instanceof ExpressionStatement)) return false;
+        if (!(code instanceof ExpressionStatement)) return false;
 
         Expression expression = ((ExpressionStatement) code).getExpression();
         if (!(expression instanceof ConstructorCallExpression)) return false;

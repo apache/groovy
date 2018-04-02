@@ -246,7 +246,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
 
     private static AnnotationCollectorMode getMode(AnnotationNode node) {
         final Expression member = node.getMember("mode");
-        if (member != null && member instanceof PropertyExpression) {
+        if (member instanceof PropertyExpression) {
             PropertyExpression prop = (PropertyExpression) member;
             Expression oe = prop.getObjectExpression();
             if (oe instanceof ClassExpression) {

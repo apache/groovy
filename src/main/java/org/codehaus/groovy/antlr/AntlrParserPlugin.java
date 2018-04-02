@@ -1723,7 +1723,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         // let's do the catch nodes
         List<CatchStatement> catches = new ArrayList<CatchStatement>();
-        for (; node != null && isType(LITERAL_catch, node); node = node.getNextSibling()) {
+        for (; isType(LITERAL_catch, node); node = node.getNextSibling()) {
             final List<CatchStatement> catchStatements = catchStatement(node);
             catches.addAll(catchStatements);
         }

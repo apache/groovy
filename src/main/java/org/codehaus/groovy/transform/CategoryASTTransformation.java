@@ -281,7 +281,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
 
     private static ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {
         Expression value = annotation.getMember("value");
-        if (value == null || !(value instanceof ClassExpression)) {
+        if (!(value instanceof ClassExpression)) {
             //noinspection ThrowableInstanceNeverThrown
             source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
                     new SyntaxException("@groovy.lang.Category must define 'value' which is the class to apply this category to",

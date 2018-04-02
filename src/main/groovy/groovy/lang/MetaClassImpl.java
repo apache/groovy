@@ -872,7 +872,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if(isGetter) {
             final Class[] getPropertyArgs = {String.class};
             final MetaMethod method = findMethodInClassHierarchy(instance.getClass(), GET_PROPERTY_METHOD, getPropertyArgs, this);
-            if(method != null && method instanceof ClosureMetaMethod) {
+            if(method instanceof ClosureMetaMethod) {
                 onGetPropertyFoundInHierarchy(method);
                 return method.invoke(instance,new Object[]{propertyName});
             }
@@ -880,7 +880,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         else {
             final Class[] setPropertyArgs = {String.class, Object.class};
             final MetaMethod method = findMethodInClassHierarchy(instance.getClass(), SET_PROPERTY_METHOD, setPropertyArgs, this);
-            if(method != null && method instanceof ClosureMetaMethod) {
+            if(method instanceof ClosureMetaMethod) {
                 onSetPropertyFoundInHierarchy(method);
                 return method.invoke(instance, new Object[]{propertyName, optionalValue});
             }
@@ -943,7 +943,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             // still not method here, so see if there is an invokeMethod method up the hierarchy
             final Class[] invokeMethodArgs = {String.class, Object[].class};
             method = findMethodInClassHierarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this );
-            if(method != null && method instanceof ClosureMetaMethod) {
+            if(method instanceof ClosureMetaMethod) {
                 onInvokeMethodFoundInHierarchy(method);
                 return method.invoke(instance, invokeMethodArgs);
             }

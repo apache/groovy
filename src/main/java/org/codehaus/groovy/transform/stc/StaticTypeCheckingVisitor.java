@@ -1816,7 +1816,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (key instanceof VariableExpression) {
                 ClassNode origType = varOrigType.get(key);
                 ClassNode newType = entry.getValue();
-                if (varOrigType.containsKey(key) && (origType == null || !newType.equals(origType))) {
+                if (varOrigType.containsKey(key) && (!newType.equals(origType))) {
                     return true;
                 }
             }
@@ -2882,7 +2882,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     final List<Expression> expressions = arguments.getExpressions();
                     final int expressionsSize = expressions.size();
                     Expression parameter = annotation.getMember("target");
-                    String parameterName = parameter!=null && parameter instanceof ConstantExpression ?parameter.getText():"";
+                    String parameterName = parameter instanceof ConstantExpression ?parameter.getText():"";
                     // todo: handle vargs!
                     for (int j = 0, paramsLength = params.length; j < paramsLength; j++) {
                         final Parameter methodParam = params[j];
@@ -2890,12 +2890,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (targets != null && targets.size() == 1) {
                             AnnotationNode targetAnnotation = targets.get(0); // @DelegatesTo.Target Obj foo
                             Expression idMember = targetAnnotation.getMember("value");
-                            String id = idMember != null && idMember instanceof ConstantExpression ? idMember.getText() : "";
+                            String id = idMember instanceof ConstantExpression ? idMember.getText() : "";
                             if (id.equals(parameterName)) {
                                 if (j < expressionsSize) {
                                     Expression actualArgument = expressions.get(j);
                                     ClassNode actualType = getType(actualArgument);
-                                    if (genericTypeIndex!=null && genericTypeIndex instanceof ConstantExpression) {
+                                    if (genericTypeIndex instanceof ConstantExpression) {
                                         int gti = Integer.parseInt(genericTypeIndex.getText());
                                         ClassNode paramType = methodParam.getType(); // type annotated with @DelegatesTo.Target
                                         GenericsType[] genericsTypes = paramType.getGenericsTypes();
@@ -3618,7 +3618,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /// it seems attractive to want to do this for more cases but perhaps not all cases
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-        if (enclosingBinaryExpression != null && enclosingBinaryExpression instanceof DeclarationExpression
+        if (enclosingBinaryExpression instanceof DeclarationExpression
                 && isEmptyCollection(expr) && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
             VariableExpression target = (VariableExpression) enclosingBinaryExpression.getLeftExpression();
             return adjustForTargetType(target.getType(), type);

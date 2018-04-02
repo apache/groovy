@@ -149,7 +149,7 @@ public class GroovyCodeSource {
             this.codeSource = (CodeSource) info[1];
         } catch (PrivilegedActionException pae) {
             Throwable cause = pae.getCause();
-            if (cause != null && cause instanceof IOException) {
+            if (cause instanceof IOException) {
                 throw (IOException) cause;
             }
             throw new RuntimeException("Could not construct CodeSource for file: " + file, cause);

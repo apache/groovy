@@ -79,7 +79,7 @@ public class Node implements Serializable, Cloneable {
     @Override
     public Object clone() {
         Object newValue = value;
-        if (value != null && value instanceof NodeList) {
+        if (value instanceof NodeList) {
             NodeList nodes = (NodeList) value;
             newValue = nodes.clone();
         }

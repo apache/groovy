@@ -164,7 +164,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     Map<MethodNode, MethodNode> bridgeMethods = declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
                     bridge = bridgeMethods != null ? bridgeMethods.get(cn) : null;
                 }
-                if (bridge != null && bridge instanceof ConstructorNode) {
+                if (bridge instanceof ConstructorNode) {
                     ArgumentListExpression newArgs = new ArgumentListExpression(new ConstantExpression(null));
                     for (Expression arg: args) {
                         newArgs.addExpression(arg);
@@ -247,7 +247,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     ClassNode current = thisClass.getOuterClass();
                     fixedReceiver = new VariableExpression("thisObject", current);
                     // adjust for multiple levels of nesting if needed
-                    while (current != null && current instanceof InnerClassNode && !lookupClassNode.equals(current)) {
+                    while (current instanceof InnerClassNode && !lookupClassNode.equals(current)) {
                         FieldNode thisField = current.getField("this$0");
                         current = current.getOuterClass();
                         if (thisField != null) {
@@ -359,7 +359,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     ClassNode current = classNode.getOuterClass();
                     fixedReceiver = new VariableExpression("thisObject", current);
                     // adjust for multiple levels of nesting if needed
-                    while (current != null && current instanceof InnerClassNode && !classNode.equals(current)) {
+                    while (current instanceof InnerClassNode && !classNode.equals(current)) {
                         FieldNode thisField = current.getField("this$0");
                         current = current.getOuterClass();
                         if (thisField != null) {

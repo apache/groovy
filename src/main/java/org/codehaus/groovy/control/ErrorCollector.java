@@ -242,7 +242,7 @@ public class ErrorCollector {
         SyntaxException exception = null;
 
         Message message = getError(index);
-        if (message != null && message instanceof SyntaxErrorMessage) {
+        if (message instanceof SyntaxErrorMessage) {
             exception = ((SyntaxErrorMessage) message).getCause();
         }
         return exception;

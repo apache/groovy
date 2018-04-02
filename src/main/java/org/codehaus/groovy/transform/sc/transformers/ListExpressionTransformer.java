@@ -41,7 +41,7 @@ public class ListExpressionTransformer {
 
     Expression transformListExpression(final ListExpression expr) {
         MethodNode target = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        if (target!=null && target instanceof ConstructorNode) {
+        if (target instanceof ConstructorNode) {
             if (target.getDeclaringClass().isArray()) {
                 return transformArrayConstructor(expr, target);
             }
