@@ -131,7 +131,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
                 anno.setMember("pre", new ClosureExpression(Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE));
             }
             if (post != null) {
-                anno.setMember("post", new ClosureExpression(new Parameter[0], EmptyStatement.INSTANCE));
+                anno.setMember("post", new ClosureExpression(Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE));
             }
         }
     }

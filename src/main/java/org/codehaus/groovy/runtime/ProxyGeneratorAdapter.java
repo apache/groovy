@@ -215,7 +215,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         if (!traits.isEmpty()) {
             String name = superClass.getName() + "$TraitAdapter";
-            ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(new ClassNode[0]), null);
+            ClassNode cn = new ClassNode(name, ACC_PUBLIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, traits.toArray(ClassNode.EMPTY_ARRAY), null);
             CompilationUnit cu = new CompilationUnit(loader);
             CompilerConfiguration config = new CompilerConfiguration();
             SourceUnit su = new SourceUnit(name + "wrapper", "", config, loader, new ErrorCollector(config));

@@ -2608,7 +2608,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     private static void setTypeArgumentsOnMethodCallExpression(MethodCallExpression expression,
                                                         List<GenericsType> typeArgumentList) {
         if (typeArgumentList != null && !typeArgumentList.isEmpty()) {
-            expression.setGenericsTypes(typeArgumentList.toArray(new GenericsType[0]));
+            expression.setGenericsTypes(typeArgumentList.toArray(GenericsType.EMPTY_ARRAY));
         }
     }
 
@@ -3022,7 +3022,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     private ClassNode addTypeArguments(ClassNode basicType, AST node) {
         List<GenericsType> typeArgumentList = getTypeArgumentsList(node);
         // a 0-length type argument list means we face the diamond operator
-        basicType.setGenericsTypes(typeArgumentList.toArray(new GenericsType[0]));
+        basicType.setGenericsTypes(typeArgumentList.toArray(GenericsType.EMPTY_ARRAY));
         return basicType;
     }
 
@@ -3055,7 +3055,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             bounds.add(bound);
         }
         if (bounds.isEmpty()) return null;
-        return (ClassNode[]) bounds.toArray(new ClassNode[0]);
+        return (ClassNode[]) bounds.toArray(ClassNode.EMPTY_ARRAY);
     }
 
     protected GenericsType[] makeGenericsType(AST rootNode) {
@@ -3073,7 +3073,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             ret.add(gt);
             typeParameter = typeParameter.getNextSibling();
         }
-        return (GenericsType[]) ret.toArray(new GenericsType[0]);
+        return (GenericsType[]) ret.toArray(GenericsType.EMPTY_ARRAY);
     }
 
     protected ClassNode makeType(AST typeNode) {
