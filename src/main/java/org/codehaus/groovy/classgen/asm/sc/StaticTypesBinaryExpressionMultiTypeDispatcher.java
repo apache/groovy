@@ -85,7 +85,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpressionMultiTypeDispatcher implements Opcodes {
 
     private final AtomicInteger labelCounter = new AtomicInteger();
-    private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", new Parameter[0]);
+    private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY);
 
 
     public StaticTypesBinaryExpressionMultiTypeDispatcher(WriterController wc) {
