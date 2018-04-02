@@ -85,7 +85,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
             }
             createMethods(cNode, exception, message, (ClosureExpression) code);
             if (code != null) {
-                anno.setMember("code", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+                anno.setMember("code", new ClosureExpression(Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE));
             }
         }
     }
