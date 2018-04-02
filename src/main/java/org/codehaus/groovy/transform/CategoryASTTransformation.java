@@ -111,8 +111,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             }
 
             private void addVariablesToStack(Parameter[] params) {
-                Set<String> names = new HashSet<String>();
-                names.addAll(varStack.getLast());
+                Set<String> names = new HashSet<String>(varStack.getLast());
                 for (Parameter param : params) {
                     names.add(param.getName());
                 }
