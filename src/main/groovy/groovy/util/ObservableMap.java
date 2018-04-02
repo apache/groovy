@@ -113,7 +113,7 @@ public class ObservableMap implements Map {
     }
 
     protected void fireMultiPropertyEvent(List<PropertyEvent> events) {
-        firePropertyEvent(new MultiPropertyEvent(this, (PropertyEvent[]) events.toArray(new PropertyEvent[events.size()])));
+        firePropertyEvent(new MultiPropertyEvent(this, (PropertyEvent[]) events.toArray(new PropertyEvent[0])));
     }
 
     protected void fireMultiPropertyEvent(PropertyEvent[] events) {

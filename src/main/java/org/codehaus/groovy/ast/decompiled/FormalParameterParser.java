@@ -51,7 +51,7 @@ abstract class FormalParameterParser extends SignatureVisitor {
     protected void flushTypeParameter() {
         if (currentTypeParameter != null) {
             ClassNode ref = Java5.configureTypeVariableReference(currentTypeParameter);
-            ClassNode[] boundNodes = parameterBounds.toArray(new ClassNode[parameterBounds.size()]);
+            ClassNode[] boundNodes = parameterBounds.toArray(new ClassNode[0]);
             typeParameters.add(Java5.configureTypeVariableDefinition(ref, boundNodes));
 
             currentTypeParameter = null;
@@ -76,6 +76,6 @@ abstract class FormalParameterParser extends SignatureVisitor {
 
     public GenericsType[] getTypeParameters() {
         flushTypeParameter();
-        return typeParameters.toArray(new GenericsType[typeParameters.size()]);
+        return typeParameters.toArray(new GenericsType[0]);
     }
 }

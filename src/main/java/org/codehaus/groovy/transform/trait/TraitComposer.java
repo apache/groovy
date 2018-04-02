@@ -405,7 +405,7 @@ public abstract class TraitComposer {
         }
         if (!modified) return oldTypes;
         if (l.isEmpty()) return null;
-        return l.toArray(new GenericsType[l.size()]);
+        return l.toArray(new GenericsType[0]);
     }
 
     /**
@@ -431,7 +431,7 @@ public abstract class TraitComposer {
             }
         }
         for (MethodNode superForwarder : superForwarders) {
-            doCreateSuperForwarder(targetNode, superForwarder, traits.toArray(new ClassNode[traits.size()]), genericsSpec);
+            doCreateSuperForwarder(targetNode, superForwarder, traits.toArray(new ClassNode[0]), genericsSpec);
         }
     }
 

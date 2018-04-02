@@ -329,7 +329,7 @@ public class LoaderConfiguration {
      * @see java.net.URLClassLoader
      */
     public URL[] getClassPathUrls() {
-        return classPath.toArray(new URL[classPath.size()]);
+        return classPath.toArray(new URL[0]);
     }
 
     /**

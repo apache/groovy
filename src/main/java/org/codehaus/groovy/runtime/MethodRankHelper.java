@@ -310,7 +310,7 @@ public class MethodRankHelper{
             l.add(rc[index].c);
             index++;
         }
-        return l.toArray(new Constructor[l.size()]);
+        return l.toArray(new Constructor[0]);
     }
 
     /**

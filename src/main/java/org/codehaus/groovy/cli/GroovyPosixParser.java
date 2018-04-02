@@ -159,7 +159,7 @@ public class GroovyPosixParser extends Parser
             gobble(iter);
         }
 
-        return (String[]) tokens.toArray(new String[tokens.size()]);
+        return (String[]) tokens.toArray(new String[0]);
     }
 
     /**

@@ -152,7 +152,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                                 plusX(new ConstantExpression("Unrecognized namedArgKey: "), varX(namedArgKey)))
                 ));
 
-        Parameter[] genParamsArray = genParams.toArray(new Parameter[genParams.size()]);
+        Parameter[] genParamsArray = genParams.toArray(new Parameter[0]);
         // TODO account for default params giving multiple signatures
         if (cNode.hasMethod(mNode.getName(), genParamsArray)) {
             addError("Error during " + MY_TYPE_NAME + " processing. Class " + cNode.getNameWithoutPackage() +

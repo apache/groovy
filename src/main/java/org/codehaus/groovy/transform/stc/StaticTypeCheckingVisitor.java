@@ -2143,7 +2143,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (arr.size()==1) {
                     result = arr.get(0);
                 } else {
-                    result = new UnionTypeClassNode(arr.toArray(new ClassNode[arr.size()]));
+                    result = new UnionTypeClassNode(arr.toArray(new ClassNode[0]));
                 }
             }
         }
@@ -2830,7 +2830,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (Expression expression : list) {
                 result.add(expression.getText());
             }
-            return result.toArray(new String[result.size()]);
+            return result.toArray(new String[0]);
         }
         throw new IllegalArgumentException("Unexpected options for @ClosureParams:"+options);
     }
@@ -3286,7 +3286,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         nodes.add(arg);
                     }
                 }
-                return new LowestUpperBoundClassNode(returnType.getName()+"Composed", OBJECT_TYPE, nodes.toArray(new ClassNode[nodes.size()]));
+                return new LowestUpperBoundClassNode(returnType.getName()+"Composed", OBJECT_TYPE, nodes.toArray(new ClassNode[0]));
             }
         }
         return returnType;
@@ -4428,7 +4428,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Traits.collectSelfTypes(ret, selfTypes);
         if (!selfTypes.isEmpty()) {
             selfTypes.add(ret);
-            ret = new UnionTypeClassNode(selfTypes.toArray(new ClassNode[selfTypes.size()]));
+            ret = new UnionTypeClassNode(selfTypes.toArray(new ClassNode[0]));
         }
         return ret;
     }
