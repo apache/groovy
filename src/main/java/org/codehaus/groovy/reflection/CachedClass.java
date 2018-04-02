@@ -217,7 +217,7 @@ public class CachedClass {
         }
     };
 
-    static final MetaMethod[] EMPTY = new MetaMethod[0];
+    static final MetaMethod[] EMPTY = MetaMethod.EMPTY_ARRAY;
 
     int hashCode;
 
@@ -401,7 +401,7 @@ public class CachedClass {
             addSubclassExpandos(arr, mc);
         }
 
-        return arr.toArray(new MetaMethod[arr.size()]);
+        return arr.toArray(MetaMethod.EMPTY_ARRAY);
     }
 
     private void addSubclassExpandos(List<MetaMethod> arr, MetaClass mc) {
@@ -453,7 +453,7 @@ public class CachedClass {
 
     private void updateSetNewMopMethods(List<MetaMethod> arr) {
         if (arr != null) {
-            final MetaMethod[] metaMethods = arr.toArray(new MetaMethod[arr.size()]);
+            final MetaMethod[] metaMethods = arr.toArray(MetaMethod.EMPTY_ARRAY);
             classInfo.dgmMetaMethods = metaMethods;
             classInfo.newMetaMethods = metaMethods;
         }
@@ -501,7 +501,7 @@ public class CachedClass {
         List<MetaMethod> res = new ArrayList<MetaMethod>();
         res.addAll(Arrays.asList(classInfo.newMetaMethods));
         res.addAll(arr);
-        classInfo.newMetaMethods = res.toArray(new MetaMethod[res.size()]);
+        classInfo.newMetaMethods = res.toArray(MetaMethod.EMPTY_ARRAY);
         Class theClass = classInfo.getCachedClass().getTheClass();
         if (theClass==Closure.class || theClass==Class.class) {
             ClosureMetaClass.resetCachedMetaClasses();
