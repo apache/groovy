@@ -117,7 +117,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         }
 
         ClassNode bound = base.getPlainNodeReference();
-        bound.setGenericsTypes(arguments.toArray(new GenericsType[0]));
+        bound.setGenericsTypes(arguments.toArray(GenericsType.EMPTY_ARRAY));
         finished(bound);
     }
 

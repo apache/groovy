@@ -2144,7 +2144,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (arr.size()==1) {
                     result = arr.get(0);
                 } else {
-                    result = new UnionTypeClassNode(arr.toArray(new ClassNode[0]));
+                    result = new UnionTypeClassNode(arr.toArray(ClassNode.EMPTY_ARRAY));
                 }
             }
         }
@@ -3289,7 +3289,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         nodes.add(arg);
                     }
                 }
-                return new LowestUpperBoundClassNode(returnType.getName()+"Composed", OBJECT_TYPE, nodes.toArray(new ClassNode[0]));
+                return new LowestUpperBoundClassNode(returnType.getName()+"Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
             }
         }
         return returnType;
@@ -4458,7 +4458,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Traits.collectSelfTypes(ret, selfTypes);
         if (!selfTypes.isEmpty()) {
             selfTypes.add(ret);
-            ret = new UnionTypeClassNode(selfTypes.toArray(new ClassNode[0]));
+            ret = new UnionTypeClassNode(selfTypes.toArray(ClassNode.EMPTY_ARRAY));
         }
         return ret;
     }
