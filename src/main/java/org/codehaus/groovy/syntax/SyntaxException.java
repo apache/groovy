@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.ASTNode;
  */
 public class SyntaxException extends GroovyException {
 
-    private static final long serialVersionUID = -6086822614839477581L;
+    private static final long serialVersionUID = 5547021570604495375L;
     /** Line upon which the error occurred. */
     private final int startLine;
     private final int endLine;

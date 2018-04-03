@@ -26,6 +26,7 @@ import org.codehaus.groovy.syntax.ParserException;
  *
  */
 public class ASTParserException extends ParserException {
+    private static final long serialVersionUID = 2537232761345194260L;
     private final AST ast;
 
     public ASTParserException(ASTRuntimeException e) {

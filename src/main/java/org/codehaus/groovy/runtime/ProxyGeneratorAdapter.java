@@ -934,7 +934,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
             if (loadedClass != null) return loadedClass;
 
-            // Not loaded, try to load it 
+            // Not loaded, try to load it
             if (internalClassLoaders != null) {
                 for (ClassLoader i : internalClassLoaders) {
                     try {
@@ -953,7 +953,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
     }
 
-    private static class ReturnValueWrappingClosure<V> extends Closure<V> {
+    private static class ReturnValueWrappingClosure<V> extends Closure<V>{
         private static final long serialVersionUID = 1313135457715304501L;
         private final V value;
 

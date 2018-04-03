@@ -31,8 +31,9 @@ import org.codehaus.groovy.GroovyExceptionInterface;
 
 public class ConfigurationException extends RuntimeException implements GroovyExceptionInterface
 {
-    
-  //---------------------------------------------------------------------------
+    private static final long serialVersionUID = -630757959041134069L;
+
+    //---------------------------------------------------------------------------
   // CONSTRUCTION AND SUCH
 
     protected Exception cause;   // The phase in which the failures occurred

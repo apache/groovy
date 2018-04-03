@@ -26,9 +26,9 @@ import groovy.lang.Script;
  */
 public class ScriptReference extends Reference {
 
-    private static final long serialVersionUID = 9011836991962996884L;
-    private final Script script;
-    private final String variable;
+    private static final long serialVersionUID = -2914281513576690336L;
+    private Script script;
+    private String variable;
 
     public ScriptReference(Script script, String variable) {
         this.script = script;

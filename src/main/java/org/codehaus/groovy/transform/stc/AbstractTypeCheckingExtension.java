@@ -436,6 +436,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
     }
 
     private static class TypeCheckingScope extends LinkedHashMap<String, Object> {
+        private static final long serialVersionUID = 7607331333917615144L;
         private final AbstractTypeCheckingExtension.TypeCheckingScope parent;
 
         private TypeCheckingScope(final AbstractTypeCheckingExtension.TypeCheckingScope parentScope) {
