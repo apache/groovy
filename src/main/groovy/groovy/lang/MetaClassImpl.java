@@ -137,7 +137,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return o1.getName().compareTo(o2.getName());
         }
     };
-    private static final MetaMethod[] EMPTY = new MetaMethod[0];
+    private static final MetaMethod[] EMPTY = MetaMethod.EMPTY_ARRAY;
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
 
     protected final Class theClass;
@@ -189,7 +189,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             List<MetaMethod> arr = new ArrayList<MetaMethod>();
             arr.addAll(Arrays.asList(metaMethods));
             arr.addAll(Arrays.asList(add));
-            myNewMetaMethods = arr.toArray(new MetaMethod[0]);
+            myNewMetaMethods = arr.toArray(MetaMethod.EMPTY_ARRAY);
             additionalMetaMethods = metaMethods;
         }
         else {
