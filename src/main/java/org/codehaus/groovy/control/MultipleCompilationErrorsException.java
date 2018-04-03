@@ -24,12 +24,12 @@ import java.io.PrintWriter;
 import java.io.Writer;
 
 /**
- * @author Jochen Theodorou
+ * Represents multiple other exceptions
  */
 public class MultipleCompilationErrorsException extends
         CompilationFailedException {
 
-    private static final long serialVersionUID = 2948487149304811836L;
+    private static final long serialVersionUID = 8583586586290252555L;
     protected ErrorCollector collector;
     
     public MultipleCompilationErrorsException(ErrorCollector ec) {

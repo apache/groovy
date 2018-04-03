@@ -47,7 +47,7 @@ import java.util.Hashtable;
  * Swing application to graphically display the tokens produced by the lexer.
  */
 public class LexerFrame extends JFrame implements ActionListener {
-    private static final long serialVersionUID = 4753761422597441243L;
+    private static final long serialVersionUID = 2715693043143492893L;
     private final JSplitPane jSplitPane1 = new JSplitPane();
     private final JScrollPane jScrollPane1 = new JScrollPane();
     private final JScrollPane jScrollPane2 = new JScrollPane();

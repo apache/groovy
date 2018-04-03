@@ -28,12 +28,9 @@ import java.util.List;
 /**
  * We have an AST subclass so we can track source information.
  * Very odd that ANTLR doesn't do this by default.
- *
- * @author Mike Spille
- * @author Jeremy Rayner <groovy@ross-rayner.com>
  */
 public class GroovySourceAST extends CommonAST implements Comparable, SourceInfo {
-    private static final long serialVersionUID = 2019901428136117486L;
+    private static final long serialVersionUID = 9116765466538981906L;
     private int line;
     private int col;
     private int lineLast;

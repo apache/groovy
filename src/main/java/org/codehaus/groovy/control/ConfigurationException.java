@@ -20,74 +20,47 @@ package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.GroovyExceptionInterface;
 
-
-
-
 /**
- *  Thrown when configuration data is invalid.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * Thrown when configuration data is invalid.
  */
-
-public class ConfigurationException extends RuntimeException implements GroovyExceptionInterface
-{
-    private static final long serialVersionUID = -630757959041134069L;
-
-    //---------------------------------------------------------------------------
-  // CONSTRUCTION AND SUCH
+public class ConfigurationException extends RuntimeException implements GroovyExceptionInterface {
+    private static final long serialVersionUID = -3844401402301111613L;
 
     protected Exception cause;   // The phase in which the failures occurred
 
-    
-   /**
-    *  Initializes the exception from a cause exception.
-    */
-    
-    public ConfigurationException( Exception cause ) 
-    {
-        super( cause.getMessage() );
+    /**
+     * Initializes the exception from a cause exception.
+     */
+    public ConfigurationException(Exception cause) {
+        super(cause.getMessage());
         this.cause = cause;
     }
-    
-    
-   /**
-    *  Initializes the exception with just a message.
-    */
-    
-    public ConfigurationException( String message )
-    {
-        super( message );
+
+    /**
+     * Initializes the exception with just a message.
+     */
+    public ConfigurationException(String message) {
+        super(message);
     }
 
-    
-    
-   /**
-    *  Returns the causing exception, if available.
-    */
-    
-    public Throwable getCause()
-    {
+    /**
+     * Returns the causing exception, if available.
+     */
+    public Throwable getCause() {
         return cause;
     }
-    
-    
-   /**
-    *  Its always fatal.
-    */
-    
-    public boolean isFatal()
-    {
+
+    /**
+     * Its always fatal.
+     */
+    public boolean isFatal() {
         return true;
     }
-    
-    
-    
-   /**
-    *  Set fatal is just ignored.
-    */
-    
-    public void setFatal( boolean fatal )
-    {
+
+    /**
+     * Set fatal is just ignored.
+     */
+    public void setFatal(boolean fatal) {
     }
-    
+
 }
