@@ -47,35 +47,6 @@ class Groovy8523Bug extends GroovyTestCase {
         '''
     }
 
-    void testNotInstanceof1() {
-        assertScript '''
-        import groovy.transform.CompileStatic
-        @CompileStatic
-        class Test1 {
-            static int checkRes = 0
-
-            static void f1(Object var1) {
-                if (var1 !instanceof Runnable){
-                    checkRes = 3
-                    return
-                }
-                f2(var1)
-            }
-
-            static void f2(Runnable var2) {
-                checkRes = 4
-            }
-        }
-
-        Runnable r = {}
-        Test1.f1(r)
-        assert Test1.checkRes == 4
-        Test1.f1(42)
-        assert Test1.checkRes == 3
-        '''
-    }
-
-
     void testInstanceofNot2() {
         assertScript '''
         import groovy.transform.CompileStatic
