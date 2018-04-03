@@ -116,7 +116,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyConstructorDoc[] constructors() {
         Collections.sort(constructors);
-        return constructors.toArray(new GroovyConstructorDoc[constructors.size()]);
+        return constructors.toArray(new GroovyConstructorDoc[0]);
     }
 
     public boolean add(GroovyConstructorDoc constructor) {
@@ -145,7 +145,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyClassDoc[] innerClasses() {
         Collections.sort(nested);
-        return nested.toArray(new GroovyClassDoc[nested.size()]);
+        return nested.toArray(new GroovyClassDoc[0]);
     }
 
     public boolean addNested(GroovyClassDoc nestedClass) {
@@ -157,7 +157,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyFieldDoc[] fields() {
         Collections.sort(fields);
-        return fields.toArray(new GroovyFieldDoc[fields.size()]);
+        return fields.toArray(new GroovyFieldDoc[0]);
     }
 
     public boolean add(GroovyFieldDoc field) {
@@ -169,7 +169,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyFieldDoc[] properties() {
         Collections.sort(properties);
-        return properties.toArray(new GroovyFieldDoc[properties.size()]);
+        return properties.toArray(new GroovyFieldDoc[0]);
     }
 
     public boolean addProperty(GroovyFieldDoc property) {
@@ -181,7 +181,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyFieldDoc[] enumConstants() {
         Collections.sort(enumConstants);
-        return enumConstants.toArray(new GroovyFieldDoc[enumConstants.size()]);
+        return enumConstants.toArray(new GroovyFieldDoc[0]);
     }
 
     public boolean addEnumConstant(GroovyFieldDoc field) {
@@ -193,7 +193,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyMethodDoc[] methods() {
         Collections.sort(methods);
-        return methods.toArray(new GroovyMethodDoc[methods.size()]);
+        return methods.toArray(new GroovyMethodDoc[0]);
     }
 
     public boolean add(GroovyMethodDoc method) {
@@ -732,7 +732,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     public GroovyClassDoc[] interfaces() {
         Collections.sort(interfaceClasses);
-        return interfaceClasses.toArray(new GroovyClassDoc[interfaceClasses.size()]);
+        return interfaceClasses.toArray(new GroovyClassDoc[0]);
     }
 
     public GroovyType[] interfaceTypes() {/*todo*/

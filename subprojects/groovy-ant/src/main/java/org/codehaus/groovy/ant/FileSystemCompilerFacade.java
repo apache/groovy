@@ -37,7 +37,7 @@ public class FileSystemCompilerFacade {
         if (forceLookupUnnamedFiles) {
             argList.remove("--forceLookupUnnamedFiles");
         }
-        String[] newArgs = forceLookupUnnamedFiles ? argList.toArray(new String[argList.size()]) : args;
+        String[] newArgs = forceLookupUnnamedFiles ? argList.toArray(new String[0]) : args;
         FileSystemCompiler.commandLineCompileWithErrorHandling(newArgs, forceLookupUnnamedFiles);
     }
 }
