@@ -19,8 +19,6 @@
 package org.codehaus.groovy.syntax;
 
 public class ParserException extends TokenException {
-    private static final long serialVersionUID = -3772086239731735693L;
-
     public ParserException(String message, Token token) {
         super(message, token);
     }

@@ -32,7 +32,6 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
 public class MissingPropertyException extends GroovyRuntimeException {
 
     public static final Object MPE = new Object();
-    private static final long serialVersionUID = -5493778577329511881L;
 
     private final String property;
     private final Class type;

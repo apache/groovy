@@ -19,7 +19,6 @@
 package org.codehaus.groovy.syntax;
 
 public class TokenMismatchException extends TokenException {
-    private static final long serialVersionUID = -6321206176010272124L;
     private final Token unexpectedToken;
     private final int expectedType;
 

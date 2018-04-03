@@ -115,8 +115,6 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         Closure<Boolean> extensionValidator = data.extensionValidator;
         if (extensionValidator==null && !extensions.isEmpty()) {
             extensionValidator = new Closure<Boolean>(sourceAwareCustomizer) {
-                private static final long serialVersionUID = 925642730835101872L;
-
                 @Override
                 @SuppressWarnings("unchecked")
                 public Boolean call(final Object arguments) {
@@ -133,8 +131,6 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         Closure<Boolean> basenameValidator = data.basenameValidator;
         if (basenameValidator==null && !basenames.isEmpty()) {
             basenameValidator = new Closure<Boolean>(sourceAwareCustomizer) {
-                private static final long serialVersionUID = 7714937867958607043L;
-
                 @Override
                 @SuppressWarnings("unchecked")
                 public Boolean call(final Object arguments) {

@@ -29,8 +29,6 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class InvokerInvocationException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = 5870532233180451709L;
-
     public InvokerInvocationException(InvocationTargetException e) {
         super(e.getTargetException());
     }

@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.ModuleNode;
  */
 public class GroovyRuntimeException extends RuntimeException {
 
-    private static final long serialVersionUID = 3699943230572902549L;
     private ModuleNode module;
     private ASTNode node;
 

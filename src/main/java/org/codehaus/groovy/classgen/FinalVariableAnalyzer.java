@@ -395,8 +395,6 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     private static class StateMap extends HashMap<Variable, VariableState> {
-        private static final long serialVersionUID = -5881634573411342092L;
-
         @Override
         public VariableState get(final Object key) {
             return super.get(getTarget((Variable) key));

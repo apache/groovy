@@ -25,7 +25,6 @@ package groovy.lang;
  */
 public class ClosureException extends RuntimeException {
 
-    private static final long serialVersionUID = -945565055750688719L;
     private final Closure closure;
     
     public ClosureException(Closure closure, Throwable cause) {
