@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @ThreadSafe
 public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V>, Serializable {
+    private static final long serialVersionUID = -857220494475488328L;
     private final ConcurrentHashMap<K, V> map;
 
     /**
