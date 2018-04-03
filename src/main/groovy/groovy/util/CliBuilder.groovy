@@ -23,20 +23,17 @@ import groovy.cli.Option
 import groovy.cli.TypedOption
 import groovy.cli.Unparsed
 import groovy.transform.Undefined
-import org.apache.commons.cli.CommandLine
-import org.apache.commons.cli.CommandLineParser
-import org.apache.commons.cli.DefaultParser
-import org.apache.commons.cli.GnuParser
-import org.apache.commons.cli.HelpFormatter
-import org.apache.commons.cli.Option as CliOption
-import org.apache.commons.cli.Options
-import org.apache.commons.cli.ParseException
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MetaClassHelper
 import org.codehaus.groovy.runtime.StringGroovyMethods
+import picocli.CommandLine
+import picocli.CommandLine.Model.CommandSpec
+import picocli.CommandLine.Model.IGetter
+import picocli.CommandLine.Model.ISetter
+import picocli.CommandLine.Model.OptionSpec
+import picocli.CommandLine.Model.UnmatchedArgsBinding
+import picocli.CommandLine.ParseResult
 
-import java.lang.annotation.Annotation
-import java.lang.reflect.Array
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
@@ -69,19 +66,17 @@ import java.lang.reflect.Method
  * by default. Bursting would convert '-alt' into '-a -l -t' provided no long
  * option exists with value 'alt' and provided that none of 'a', 'l' or 't'
  * takes an argument (in fact the last one is allowed to take an argument).
- * The bursting behavior can be turned off by using an
- * alternate underlying parser. The simplest way to achieve this is by using
- * the deprecated GnuParser from Commons CLI with the parser property on the CliBuilder,
- * i.e. include <code>parser: new GnuParser()</code> in the constructor call.
+ * The bursting behavior can be turned off by configuring the underlying parser.
+ * The simplest way to achieve this is by setting the posix property on the CliBuilder
+ * to false, i.e. include {@code posix: false} in the constructor call.
  * <p>
  * Another example (partial emulation of arg processing for 'ant' command line):
  * <pre>
  * def cli = new CliBuilder(usage:'ant [options] [targets]',
- *                          header:'Options:')
+ *                          optionListHeading:'Options:%n') // TODO was header:'Options:'
  * cli.help('print this message')
- * cli.logfile(args:1, argName:'file', 'use given file for log')
- * cli.D(args:2, valueSeparator:'=', argName:'property=value',
- *       'use value for given property')
+ * cli.logfile(type:File, argName:'file', 'use given file for log')
+ * cli.D(type:Map, argName:'property=value', 'use value for given property')
  * def options = cli.parse(args)
  * ...
  * </pre>
@@ -89,9 +84,9 @@ import java.lang.reflect.Method
  * <pre>
  * usage: ant [options] [targets]
  * Options:
- *  -D &lt;property=value>   use value for given property
- *  -help                 print this message
- *  -logfile &lt;file>       use given file for log
+ *  -D=&lt;property=value>      use value for given property
+ *     -help                 print this message
+ *     -logfile=&lt;file>       use given file for log
  * </pre>
  * And if called with the following arguments '-logfile foo -Dbar=baz target'
  * then the following assertions would be true:
@@ -143,14 +138,33 @@ import java.lang.reflect.Method
  * example, the last two lines of the 'curl' example above could be replaced
  * with the following:
  * <pre>
- * import org.apache.commons.cli.*
+ * import picocli.CommandLine.Model.*
  * ... as before ...
- * cli << new Option('q', false, 'If used as the first parameter disables .curlrc')
- * cli << Option.builder().longOpt('url').hasArg().argName('URL').
- *                      desc('Set URL to work with').build()
+ * cli << OptionSpec.builder('-q').
+ *                      description('If used as the first parameter disables .curlrc').build()
+ * cli << OptionSpec.builder('--url').type(URL.class).paramLabel('&lt;URL>').
+ *                      description('Set URL to work with').build()
  * ...
  * </pre>
  *
+ * <p>
+ * <b>Supported Option Properties</b>:
+ * <pre>
+ *   argName:        String
+ *   longOpt:        String
+ *   args:           int or String
+ *   optionalArg:    boolean
+ *   required:       boolean
+ *   type:           Class
+ *   valueSeparator: char
+ *   convert:        Closure
+ *   defaultValue:   String
+ * </pre>
+ * TODO See {@link org.apache.commons.cli.Option} for the meaning of most of these properties
+ * and {@link CliBuilderTest} for further examples.
+ * <p>
+ * <b>@-files</b>
+ * <p>
  * CliBuilder also supports Argument File processing. If an argument starts with
  * an '@' character followed by a filename, then the contents of the file with name
  * filename are placed into the command line. The feature can be turned off by
@@ -175,21 +189,6 @@ import java.lang.reflect.Method
  * on the size of the command line (e.g. Windows). The feature is similar to
  * the 'Command Line Argument File' processing supported by javadoc and javac.
  * Consult the corresponding documentation for those tools if you wish to see further examples.
- * <p>
- * <b>Supported Option Properties</b>:
- * <pre>
- *   argName:        String
- *   longOpt:        String
- *   args:           int or String
- *   optionalArg:    boolean
- *   required:       boolean
- *   type:           Class
- *   valueSeparator: char
- *   convert:        Closure
- *   defaultValue:   String
- * </pre>
- * See {@link org.apache.commons.cli.Option} for the meaning of most of these properties
- * and {@link CliBuilderTest} for further examples.
  * <p>
  * <b>Annotation style with an interface</b>
  * <p>
@@ -244,21 +243,17 @@ import java.lang.reflect.Method
  */
 class CliBuilder {
 
+    /** This property is ignored. */
+    @Deprecated def parser
+
     /**
      * Usage summary displayed as the first line when <code>cli.usage()</code> is called.
      */
     String usage = 'groovy'
 
     /**
-     * Normally set internally but allows you full customisation of the underlying processing engine.
+     * To disallow clustered POSIX short options, set this to false.
      */
-    CommandLineParser parser = null
-
-    /**
-     * To change from the default PosixParser to the GnuParser, set this to false. Ignored if the parser is explicitly set.
-     * @deprecated use the parser option instead with an instance of your preferred parser
-     */
-    @Deprecated
     Boolean posix = null
 
     /**
@@ -267,43 +262,61 @@ class CliBuilder {
     boolean expandArgumentFiles = true
 
     /**
-     * Normally set internally but can be overridden if you want to customise how the usage message is displayed.
-     */
-    HelpFormatter formatter = new HelpFormatter()
-
-    /**
-     * Defaults to stdout but you can provide your own PrintWriter if desired.
-     */
-    PrintWriter writer = new PrintWriter(System.out)
-
-    /**
-     * Optional additional message for usage; displayed after the usage summary but before the options are displayed.
-     */
-    String header = ''
-
-    /**
-     * Optional additional message for usage; displayed after the options are displayed.
-     */
-    String footer = ''
-
-    /**
-     * Indicates that option processing should continue for all arguments even
+     * Indicates that argument processing should continue for all arguments even
      * if arguments not recognized as options are encountered (default true).
      */
     boolean stopAtNonOption = true
 
     /**
-     * Allows customisation of the usage message width.
+     * The PrintWriter to write the {@linkplain #usage} help message to.
+     * Defaults to stdout but you can provide your own PrintWriter if desired.
      */
-    int width = HelpFormatter.DEFAULT_WIDTH
+    PrintWriter writer = new PrintWriter(System.out)
 
     /**
-     * Not normally accessed directly but full access to underlying options if needed.
+     * The PrintWriter to write to when invalid user input was provided to
+     * the {@link #parse(java.lang.String[])} method.
+     * Defaults to stderr but you can provide your own PrintWriter if desired.
      */
-    Options options = new Options()
+    PrintWriter errorWriter = new PrintWriter(System.err)
 
-    Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
+    /**
+     * Optional additional message for usage; displayed after the usage summary
+     * but before the options are displayed.
+     */
+    String header = ''
 
+    /**
+     * Optional additional message for usage; displayed after the options.
+     */
+    String footer = ''
+
+    /**
+     * Allows customisation of the usage message width.
+     */
+    int width = CommandLine.Model.UsageMessageSpec.DEFAULT_USAGE_WIDTH
+
+    /**
+     * Not normally accessed directly but full access to underlying model if needed.
+     */
+    CommandSpec commandSpec = CommandSpec.create();
+
+    void setHeader(String header) {
+        commandSpec.usageMessage().description(header)
+        this.header = header
+    }
+
+    void setFooter(String footer) {
+        commandSpec.usageMessage().footer(footer)
+        this.footer = header
+    }
+
+    void setWidth(int width) {
+        commandSpec.usageMessage().width(width)
+        this.width = width
+    }
+
+    // TODO make OptionSpec and PositionalParamSpec generic?
     public <T> TypedOption<T> option(Map args, Class<T> type, String description) {
         def name = args.opt ?: '_'
         args.type = type
@@ -317,30 +330,23 @@ class CliBuilder {
     def invokeMethod(String name, Object args) {
         if (args instanceof Object[]) {
             if (args.size() == 1 && (args[0] instanceof String || args[0] instanceof GString)) {
-                def option = option(name, [:], args[0])
-                options.addOption(option)
-
-                return create(option, null, null, null)
+                def option = option(name, [:], args[0]) // args[0] is description
+                commandSpec.addOption(option)
+                return option
             }
-            if (args.size() == 1 && args[0] instanceof CliOption && name == 'leftShift') {
-                CliOption option = args[0]
-                options.addOption(option)
-                return create(option, null, null, null)
+            if (args.size() == 1 && args[0] instanceof OptionSpec && name == 'leftShift') {
+                OptionSpec option = args[0] as OptionSpec
+                commandSpec.addOption(option)
+                return option
             }
             if (args.size() == 2 && args[0] instanceof Map) {
-                def convert = args[0].remove('convert')
-                def type = args[0].remove('type')
-                def defaultValue = args[0].remove('defaultValue')
-                if (type && !(type instanceof Class)) {
+                Map m = args[0] as Map
+                if (m.type && !(m.type instanceof Class)) {
                     throw new CliBuilderException("'type' must be a Class")
                 }
-                if ((convert || type) && !args[0].containsKey('args') &&
-                        type?.simpleName?.toLowerCase() != 'boolean') {
-                    args[0].args = 1
-                }
-                def option = option(name, args[0], args[1])
-                options.addOption(option)
-                return create(option, type, defaultValue, convert)
+                def option = option(name, m, args[1])
+                commandSpec.addOption(option)
+                return option
             }
         }
         return InvokerHelper.getMetaClass(this).invokeMethod(this, name, args)
@@ -351,28 +357,34 @@ class CliBuilder {
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
-        if (expandArgumentFiles) args = expandArgumentFiles(args)
-        if (!parser) {
-            parser = posix != null && posix == false ? new GnuParser() : new DefaultParser()
-        }
+        commandSpec.parser()
+                .overwrittenOptionsAllowed(true)
+                .unmatchedArgumentsAllowed(true)
+                .stopAtUnmatched(stopAtNonOption)
+                .expandAtFiles(expandArgumentFiles)
+                .posixClusteredShortOptionsAllowed(posix ?: true)
+                .arityRestrictsCumulativeSize(true)
+        def commandLine = new CommandLine(commandSpec)
         try {
-            def accessor = new OptionAccessor(
-                    parser.parse(options, args as String[], stopAtNonOption))
-            accessor.savedTypeOptions = savedTypeOptions
-            return accessor
-        } catch (ParseException pe) {
-            writer.println("error: " + pe.message)
-            usage()
+            return new OptionAccessor(commandLine.parseArgs(args as String[]))
+        } catch (CommandLine.ParameterException pe) {
+            errorWriter.println("error: " + pe.message)
+            printUsage(pe.commandLine, errorWriter)
             return null
         }
     }
 
     /**
-     * Print the usage message with writer (default: System.out) and formatter (default: HelpFormatter)
+     * Prints the usage message with the specified {@link #header header}, {@link #footer footer} and {@link #width width}
+     * to the specified {@link #writer writer} (default: System.out).
      */
     void usage() {
-        formatter.printHelp(writer, width, usage, header, options, HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, footer)
-        writer.flush()
+        printUsage(commandSpec.commandLine(), writer)
+    }
+
+    private void printUsage(CommandLine commandLine, PrintWriter pw) {
+        commandLine.usage(pw)
+        pw.flush()
     }
 
     /**
@@ -384,10 +396,10 @@ class CliBuilder {
      * @return an instance containing the processed options
      */
     public <T> T parseFromSpec(Class<T> optionsClass, String[] args) {
-        addOptionsFromAnnotations(optionsClass, false)
-        def cli = parse(args)
         def cliOptions = [:]
-        setOptionsFromAnnotations(cli, optionsClass, cliOptions, false)
+        addOptionsFromAnnotations(optionsClass, cliOptions, true)
+        addUnmatchedFromAnnotations(optionsClass, cliOptions, true)
+        parse(args)
         cliOptions as T
     }
 
@@ -400,277 +412,277 @@ class CliBuilder {
      * @return the options instance populated with the processed options
      */
     public <T> T parseFromInstance(T optionInstance, args) {
-        addOptionsFromAnnotations(optionInstance.getClass(), true)
-        def cli = parse(args)
-        setOptionsFromAnnotations(cli, optionInstance.getClass(), optionInstance, true)
+        addOptionsFromAnnotations(optionInstance.getClass(), optionInstance, false)
+        addUnmatchedFromAnnotations(optionInstance.getClass(), optionInstance, false)
+        parse(args)
         optionInstance
     }
 
-    void addOptionsFromAnnotations(Class optionClass, boolean namesAreSetters) {
+    void addOptionsFromAnnotations(Class optionClass, Object target, boolean isCoercedMap) {
         optionClass.methods.findAll{ it.getAnnotation(Option) }.each { Method m ->
-            Annotation annotation = m.getAnnotation(Option)
-            def typedOption = processAddAnnotation(annotation, m, namesAreSetters)
-            options.addOption(typedOption.cliOption)
-        }
+            Option annotation = m.getAnnotation(Option)
+            Class type = isCoercedMap ? m.returnType : (m.parameterTypes.size() > 0 ? m.parameterTypes[0] : m.returnType)
+            type = type && type == Void.TYPE ? null : type
 
+            // If the method is a real setter, we can't invoke it to get its value,
+            // so instead we need to keep track of its current value ourselves.
+            // Additionally, implementation classes may annotate _getter_ methods with @Option;
+            // if the getter returns a Collection or Map, picocli will add parsed values to it.
+            def currentValue = initialValue(type, m, target, isCoercedMap)
+            if (currentValue && isCoercedMap) {
+                target.put(m.name, currentValue)
+            }
+            def getter = { currentValue }
+            def setter = {
+                def old = currentValue
+                currentValue = it
+                if (isCoercedMap) {
+                    target.put(m.name, currentValue)
+                } else if (m.parameterTypes.size() > 0) {
+                    m.invoke(target, [currentValue])
+                }
+                return old
+            }
+            def label = m.name.startsWith("set") || m.name.startsWith("get") ? MetaClassHelper.convertPropertyName(m.name.substring(3)) : m.name
+            commandSpec.addOption(extractOptionSpec(annotation, type, label, getter, setter, target))
+        }
         def optionFields = optionClass.declaredFields.findAll { it.getAnnotation(Option) }
         if (optionClass.isInterface() && !optionFields.isEmpty()) {
             throw new CliBuilderException("@Option only allowed on methods in interface " + optionClass.simpleName)
         }
         optionFields.each { Field f ->
-            Annotation annotation = f.getAnnotation(Option)
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
-            Method m = optionClass.getMethod(setterName, f.getType())
-            def typedOption = processAddAnnotation(annotation, m, true)
-            options.addOption(typedOption.cliOption)
+            Option annotation = f.getAnnotation(Option)
+            def getter = {
+                f.accessible = true
+                f.get(target)
+            }
+            def setter = { newValue ->
+                f.accessible = true
+                def oldValue = f.get(target)
+                f.set(target, newValue)
+                oldValue
+            }
+            Class type = f.type
+            String label = f.name
+            commandSpec.addOption(extractOptionSpec(annotation, f.type, label, getter, setter, target))
         }
     }
 
-    private TypedOption processAddAnnotation(Option annotation, Method m, boolean namesAreSetters) {
-        String shortName = annotation.shortName()
-        String description = annotation.description()
-        String defaultValue = annotation.defaultValue()
-        char valueSeparator = 0
-        if (annotation.valueSeparator()) valueSeparator = annotation.valueSeparator() as char
-        boolean optionalArg = annotation.optionalArg()
-        Integer numberOfArguments = annotation.numberOfArguments()
-        String numberOfArgumentsString = annotation.numberOfArgumentsString()
-        Class convert = annotation.convert()
-        if (convert == Undefined.CLASS) {
-            convert = null
+    Object initialValue(Class<?> cls, Method m, Object target, boolean isCoercedMap) {
+        if (m.parameterTypes.size() == 0 && m.returnType != Void.TYPE) {
+            return isCoercedMap ? target[m.name] : m.invoke(target)
         }
-        Map names = calculateNames(annotation.longName(), shortName, m, namesAreSetters)
-        def builder = names.short ? CliOption.builder(names.short) : CliOption.builder()
-        if (names.long) {
-            builder.longOpt(names.long)
+        if (List.class.isAssignableFrom(cls)) { // TODO support other Collections in future
+            return new ArrayList()
         }
-        if (numberOfArguments != 1) {
-            if (numberOfArgumentsString) {
-                throw new CliBuilderException("You can't specify both 'numberOfArguments' and 'numberOfArgumentsString'")
+        if (Map.class.isAssignableFrom(cls)) {
+            return new LinkedHashMap()
+        }
+        null
+    }
+
+    private OptionSpec extractOptionSpec(Option annotation, Class type, String label, IGetter getter, ISetter setter, Object target) {
+        Map names = calculateNames(annotation.longName(), annotation.shortName(), label)
+        String arityString = extractArity(type, annotation.optionalArg(), annotation.numberOfArguments(), annotation.numberOfArgumentsString(), names)
+        CommandLine.Range arity = CommandLine.Range.valueOf(arityString)
+        OptionSpec.Builder builder = OptionSpec.builder(hyphenate(names))
+        if (type) { builder.type(type) } // not nullable, picocli will derive default
+        builder.arity(arity)
+        builder.description(annotation.description())
+        builder.splitRegex(annotation.valueSeparator())
+        if (annotation.defaultValue()) { builder.defaultValue(annotation.defaultValue()) } // don't default picocli model to empty string
+        builder.paramLabel("<$label>")
+        if (annotation.convert() != Undefined.CLASS) {
+            if (annotation.convert() instanceof Class) {
+                builder.converters(annotation.convert().newInstance(target, target))
             }
         }
-        def details = [:]
-        Class type = namesAreSetters ? (m.parameterTypes.size() > 0 ? m.parameterTypes[0] : null) : m.returnType
-        if (optionalArg && (!type || !type.isArray())) {
-            throw new CliBuilderException("Attempted to set optional argument for non array type")
+        builder.getter(getter)
+        builder.setter(setter)
+        builder.build()
+    }
+
+    private static String[] hyphenate(Map<String, String> names) {
+        names.values().findAll { it && it != "_" }.collect { it.length() == 1 ? "-$it" : "--$it" }.toArray()
+    }
+
+    private static String extractArity(Class<?> type, boolean optionalArg, int numberOfArguments, String numberOfArgumentsString, Map names) {
+        if (optionalArg && (!type || !isMultiValue(type))) {
+            throw new CliBuilderException("Attempted to set optional argument for single-value type on flag '${names.long ?: names.short}'")
+        }
+        if (numberOfArguments != 1 && numberOfArgumentsString) {
+            throw new CliBuilderException("You can't specify both 'numberOfArguments' and 'numberOfArgumentsString' on flag '${names.long ?: names.short}'")
         }
         def isFlag = type.simpleName.toLowerCase() == 'boolean'
+        String arity = "0"
         if (numberOfArgumentsString) {
-            details.args = numberOfArgumentsString
-            details = adjustDetails(details)
-            if (details.optionalArg) optionalArg = true
+            arity = optionalArg ? "0.." + (numberOfArgumentsString == "+" ? "*" : numberOfArgumentsString)
+                                :          numberOfArgumentsString == "+" ? "1..*" : numberOfArgumentsString
         } else {
-            details.args = isFlag ? 0 : numberOfArguments
+            int argCount = isFlag ? 0 : numberOfArguments
+            arity = optionalArg ? "0..$argCount" : argCount as String
         }
-        if (details?.args == 0 && !(isFlag || type.name == 'java.lang.Object')) {
+        if (arity == "0" && !(isFlag || type.name == 'java.lang.Object')) {
             throw new CliBuilderException("Flag '${names.long ?: names.short}' must be Boolean or Object")
         }
-        if (description) builder.desc(description)
-        if (valueSeparator) builder.valueSeparator(valueSeparator)
-        if (type) {
-            if (isFlag && details.args == 1) {
-                // special flag: treat like normal not boolean expecting explicit 'true' or 'false' param
-                isFlag = false
-            }
-            if (!isFlag) {
-                builder.hasArg(true)
-                if (details.containsKey('args')) builder.numberOfArgs(details.args)
-            }
-            if (type.isArray()) {
-                builder.optionalArg(optionalArg)
-            }
-        }
-        def typedOption = create(builder.build(), convert ? null : type, defaultValue, convert)
-        typedOption
+        arity
+    }
+    private static boolean isMultiValue(Class<?> cls) {
+        cls.isArray() || Collection.class.isAssignableFrom(cls) || Map.class.isAssignableFrom(cls)
     }
 
-    private TypedOption create(CliOption o, Class theType, defaultValue, convert) {
-        Map<String, Object> result = new TypedOption<Object>()
-        o.with {
-            if (opt != null) result.put("opt", opt)
-            result.put("longOpt", longOpt)
-            result.put("cliOption", o)
-            if (defaultValue) {
-                result.put("defaultValue", defaultValue)
-            }
-            if (convert) {
-                if (theType) {
-                    throw new CliBuilderException("You can't specify 'type' when using 'convert'")
-                }
-                result.put("convert", convert)
-                result.put("type", convert instanceof Class ? convert : convert.getClass())
-            } else {
-                result.put("type", theType)
-            }
-        }
-        savedTypeOptions[o.longOpt ?: o.opt] = result
-        result
-    }
-
-    def setOptionsFromAnnotations(def cli, Class optionClass, Object t, boolean namesAreSetters) {
-        optionClass.methods.findAll{ it.getAnnotation(Option) }.each { Method m ->
-            Annotation annotation = m.getAnnotation(Option)
-            Map names = calculateNames(annotation.longName(), annotation.shortName(), m, namesAreSetters)
-            processSetAnnotation(m, t, names.long ?: names.short, cli, namesAreSetters)
-        }
-        optionClass.declaredFields.findAll { it.getAnnotation(Option) }.each { Field f ->
-            Annotation annotation = f.getAnnotation(Option)
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
-            Method m = optionClass.getMethod(setterName, f.getType())
-            Map names = calculateNames(annotation.longName(), annotation.shortName(), m, true)
-            processSetAnnotation(m, t, names.long ?: names.short, cli, true)
-        }
-        def remaining = cli.arguments()
+    void addUnmatchedFromAnnotations(Class optionClass, Object target, boolean isCoercedMap) {
         optionClass.methods.findAll{ it.getAnnotation(Unparsed) }.each { Method m ->
-            processSetRemaining(m, remaining, t, cli, namesAreSetters)
+            commandSpec.addUnmatchedArgsBinding(createUnmatchedArgsBindingForMethod(m, target, isCoercedMap))
         }
-        optionClass.declaredFields.findAll{ it.getAnnotation(Unparsed) }.each { Field f ->
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
-            Method m = optionClass.getMethod(setterName, f.getType())
-            processSetRemaining(m, remaining, t, cli, namesAreSetters)
+        def optionFields = optionClass.declaredFields.findAll { it.getAnnotation(Unparsed) }
+        if (optionClass.isInterface() && !optionFields.isEmpty()) {
+            throw new CliBuilderException("@Unparsed only allowed on methods in interface " + optionClass.simpleName)
         }
-    }
-
-    private void processSetRemaining(Method m, remaining, Object t, cli, boolean namesAreSetters) {
-        def resultType = namesAreSetters ? m.parameterTypes[0] : m.returnType
-        def isTyped = resultType?.isArray()
-        def result
-        def type = null
-        if (isTyped) {
-            type = resultType.componentType
-            result = remaining.collect{ cli.getValue(type, it, null) }
-        } else {
-            result = remaining.toList()
-        }
-        if (namesAreSetters) {
-            m.invoke(t, isTyped ? [result.toArray(Array.newInstance(type, result.size()))] as Object[] : result)
-        } else {
-            Map names = calculateNames("", "", m, namesAreSetters)
-            t.put(names.long, { -> result })
+        optionFields.each { Field f ->
+            commandSpec.addUnmatchedArgsBinding(createUnmatchedArgsBindingForField(f, target))
         }
     }
-
-    private void processSetAnnotation(Method m, Object t, String name, cli, boolean namesAreSetters) {
-        def conv = savedTypeOptions[name]?.convert
-        if (conv && conv instanceof Class) {
-            savedTypeOptions[name].convert = conv.newInstance(t, t)
-        }
-        boolean hasArg = savedTypeOptions[name]?.cliOption?.numberOfArgs == 1
-        boolean noArg = savedTypeOptions[name]?.cliOption?.numberOfArgs == 0
-        if (namesAreSetters) {
-            def isBoolArg = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase() == 'boolean'
-            boolean isFlag = (isBoolArg && !hasArg) || noArg
-            if (cli.hasOption(name) || isFlag || cli.defaultValue(name)) {
-                m.invoke(t, [isFlag ? cli.hasOption(name) :
-                                     cli.hasOption(name) ? optionValue(cli, name) : cli.defaultValue(name)] as Object[])
+    private UnmatchedArgsBinding createUnmatchedArgsBindingForMethod(Method m, Object target, boolean isCoercedMap) {
+        if (m.parameterTypes.size() > 0) { // setter
+            Class type = m.parameterTypes[0]
+            if (type.isArray() && type.componentType == String) {
+                return UnmatchedArgsBinding.forStringArrayConsumer { m.invoke(target, [it]) }
             }
-        } else {
-            def isBoolRetType = m.returnType.simpleName.toLowerCase() == 'boolean'
-            boolean isFlag = (isBoolRetType && !hasArg) || noArg
-            t.put(m.getName(), cli.hasOption(name) ?
-                    { -> isFlag ? true : optionValue(cli, name) } :
-                    { -> isFlag ? false : cli.defaultValue(name) })
+            if (List.isAssignableFrom(type)) {
+                return UnmatchedArgsBinding.forStringArrayConsumer { m.invoke(target, [it as List]) }
+            }
+            if (String == type) {
+                return UnmatchedArgsBinding.forStringArrayConsumer { String[] value ->
+                    value.each {
+                        m.invoke(target, [it])
+                    }
+                }
+            }
+            throw new CliBuilderException("@Unparsed only allowed on setter method or property accepting String[], List, or String")
         }
+        Class type = m.returnType
+        if (List.isAssignableFrom(type)) {
+            // initialize with a non-null List to supply to picocli; picocli will add the unmatched args to it
+            if (isCoercedMap) {
+                if (!target[m.name]) {
+                    target[m.name] = new ArrayList<String>()
+                }
+            }
+            return UnmatchedArgsBinding.forStringCollectionSupplier {
+                isCoercedMap ? target[m.name] : m.invoke(target)
+            }
+        }
+        throw new CliBuilderException("@Unparsed only allowed on getter method or property returning List")
+    }
+    private UnmatchedArgsBinding createUnmatchedArgsBindingForField(Field f, Object target) {
+        Class type = f.type
+        if (type.isArray() && type.componentType == String) {
+            return UnmatchedArgsBinding.forStringArrayConsumer { f.accessible = true; f.set(target, it) }
+        }
+        if (List.isAssignableFrom(type) || type == Object) {
+            return UnmatchedArgsBinding.forStringArrayConsumer { f.accessible = true; f.set(target, it as List) }
+        }
+        throw new CliBuilderException("@Unparsed only allowed on field of type List or String[]")
     }
 
-    private optionValue(cli, String name) {
-        if (savedTypeOptions.containsKey(name)) {
-            return cli.getOptionValue(savedTypeOptions[name])
-        }
-        cli[name]
-    }
-
-    private Map calculateNames(String longName, String shortName, Method m, boolean namesAreSetters) {
+    private Map calculateNames(String longName, String shortName, String label) {
         boolean useShort = longName == '_'
         if (longName == '_') longName = ""
-        def result = longName
-        if (!longName) {
-            result = m.getName()
-            if (namesAreSetters && result.startsWith("set")) {
-                result = MetaClassHelper.convertPropertyName(result.substring(3))
-            }
-        }
+        def result = longName ?: label
         [long: useShort ? "" : result, short: (useShort && !shortName) ? result : shortName]
     }
 
     // implementation details -------------------------------------
-
     /**
-     * Internal method: How to create an option from the specification.
+     * Pretend that OptionSpec has opt() and longopt() methods to facilitate migration from commons-cli.
      */
-    CliOption option(shortname, Map details, info) {
-        CliOption option
+    static {
+        OptionSpec.metaClass.opt = { ->
+            String opt = delegate.names().sort { a, b -> a.length() - b.length() }.first()
+            opt?.length() == 2 ? opt.substring(1) : null
+        }
+        OptionSpec.metaClass.longopt = { ->
+            String longopt = delegate.names().sort { a, b -> b.length() - a.length() }.first()
+            longopt?.startsWith("--") ? longopt.substring(2) : null
+        }
+    }
+    /**
+     * Internal method: How to create an OptionSpec from the specification.
+     */
+    OptionSpec option(shortname, Map details, description) {
+        OptionSpec.Builder builder
         if (shortname == '_') {
-            option = CliOption.builder().desc(info).longOpt(details.longOpt).build()
+            builder = OptionSpec.builder("--$details.longOpt").description(description)
             details.remove('longOpt')
         } else {
-            option = new CliOption(shortname, info)
+            builder = OptionSpec.builder("-$shortname").description(description)
         }
-        adjustDetails(details).each { key, value ->
-            option[key] = value
+        commons2picocli(shortname, details).each { key, value ->
+            if (builder.hasProperty(key)) {
+                builder[key] = value
+            } else {
+                builder.invokeMethod(key, value)
+            }
         }
-        return option
+        return builder.build()
     }
+//    * <pre>
+//    *  - argName:        String
+//    *  - longOpt:        String
+//    *  - args:           int or String
+//    *  - optionalArg:    boolean
+//    *  - required:       boolean
+//    *  - type:           Class
+//    *  - valueSeparator: char
+//    *  - convert:        Closure
+//    *  - defaultValue:   String
+//    * </pre>
 
-    static Map adjustDetails(Map m) {
-        m.collectMany { k, v ->
+    /** Commons-cli constant that specifies the number of argument values is infinite */
+    private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
+
+    static Map commons2picocli(shortname, Map m) {
+        if (m.args && m.optionalArg) {
+            m.arity = "0..${m.remove('args')}"
+            m.remove('optionalArg')
+        }
+        if (!m.defaultValue) {
+            m.remove('defaultValue') // don't default the picocli model to empty string
+        }
+        def result = m.collectMany { k, v ->
             if (k == 'args' && v == '+') {
-                [[args: org.apache.commons.cli.Option.UNLIMITED_VALUES]]
-            } else if (k == 'args' && v == '*') {
-                [[args: org.apache.commons.cli.Option.UNLIMITED_VALUES,
-                  optionalArg: true]]
-            } else if (k == 'args' && v instanceof String) {
-                [[args: Integer.parseInt(v)]]
+                [[arity: '1..*']]
+            } else if (k == 'args') {
+                v == COMMONS_CLI_UNLIMITED_VALUES ? [[arity: "*"]] : [[arity: "$v"]]
+            } else if (k == 'optionalArg') {
+                v ? [[arity: '0..1']] : [[arity: '1']]
+            } else if (k == 'argName') {
+                [[paramLabel: "<$v>"]]
+            } else if (k == 'longOpt') {
+                [[names: ["-$shortname", "--$v"] as String[] ]]
+            } else if (k == 'valueSeparator') {
+                [[splitRegex: "$v"]]
+            } else if (k == 'convert') {
+                [[converters: [v] as CommandLine.ITypeConverter[] ]]
             } else {
                 [[(k): v]]
             }
-        }.sum()
+        }.sum() as Map
+        result
     }
-
-    static expandArgumentFiles(args) throws IOException {
-        def result = []
-        for (arg in args) {
-            if (arg && arg != '@' && arg[0] == '@') {
-                arg = arg.substring(1)
-                if (arg[0] != '@') {
-                    expandArgumentFile(arg, result)
-                    continue
-                }
-            }
-            result << arg
-        }
-        return result
-    }
-
-    private static expandArgumentFile(name, args) throws IOException {
-        def charAsInt = { String s -> s.toCharacter() as int }
-        new File(name).withReader { r ->
-            new StreamTokenizer(r).with {
-                resetSyntax()
-                wordChars(charAsInt(' '), 255)
-                whitespaceChars(0, charAsInt(' '))
-                commentChar(charAsInt('#'))
-                quoteChar(charAsInt('"'))
-                quoteChar(charAsInt('\''))
-                while (nextToken() != StreamTokenizer.TT_EOF) {
-                    args << sval
-                }
-            }
-        }
-    }
-
 }
 
 class OptionAccessor {
-    CommandLine commandLine
+    ParseResult parseResult
     Map<String, TypedOption> savedTypeOptions
 
-    OptionAccessor(CommandLine commandLine) {
-        this.commandLine = commandLine
+    OptionAccessor(ParseResult parseResult) {
+        this.parseResult = parseResult
     }
 
     boolean hasOption(TypedOption typedOption) {
-        commandLine.hasOption(typedOption.longOpt ?: typedOption.opt)
+        parseResult.hasOption(typedOption.longOpt ?: typedOption.opt as String)
     }
 
     public <T> T defaultValue(String name) {
@@ -685,33 +697,7 @@ class OptionAccessor {
 
     public <T> T getOptionValue(TypedOption<T> typedOption, T defaultValue) {
         String optionName = (String) typedOption.longOpt ?: typedOption.opt
-        if (commandLine.hasOption(optionName)) {
-            if (typedOption.containsKey('type') && typedOption.type.isArray()) {
-                def compType = typedOption.type.componentType
-                return (T) getTypedValuesFromName(optionName, compType)
-            }
-            return getTypedValueFromName(optionName)
-        }
-        return defaultValue
-    }
-
-    private <T> T[] getTypedValuesFromName(String optionName, Class<T> compType) {
-        CliOption option = commandLine.options.find{ it.longOpt == optionName }
-        T[] result = null
-        if (option) {
-            int count = 0
-            def optionValues = commandLine.getOptionValues(optionName)
-            for (String optionValue : optionValues) {
-                if (result == null) {
-                    result = (T[]) Array.newInstance(compType, optionValues.length)
-                }
-                result[count++] = (T) getTypedValue(compType, optionName, optionValue)
-            }
-        }
-        if (result == null) {
-            result = (T[]) Array.newInstance(compType, 0)
-        }
-        return result
+        parseResult.optionValue(optionName, defaultValue)
     }
 
     public <T> T getAt(TypedOption<T> typedOption) {
@@ -720,21 +706,12 @@ class OptionAccessor {
 
     public <T> T getAt(TypedOption<T> typedOption, T defaultValue) {
         String optionName = (String) typedOption.longOpt ?: typedOption.opt
-        if (savedTypeOptions.containsKey(optionName)) {
-            return getTypedValueFromName(optionName)
-        }
-        return defaultValue
-    }
-
-    private <T> T getTypedValueFromName(String optionName) {
-        Class type = savedTypeOptions[optionName].type
-        String optionValue = commandLine.getOptionValue(optionName)
-        return (T) getTypedValue(type, optionName, optionValue)
+        parseResult.optionValue(optionName, defaultValue)
     }
 
     private <T> T getTypedValue(Class<T> type, String optionName, String optionValue) {
-        if (savedTypeOptions[optionName]?.cliOption?.numberOfArgs == 0) {
-            return (T) commandLine.hasOption(optionName)
+        if (savedTypeOptions[optionName]?.cliOption?.arity?.min == 0) {
+            return (T) parseResult.option(optionName)
         }
         def convert = savedTypeOptions[optionName]?.convert
         return getValue(type, optionValue, convert)
@@ -747,52 +724,36 @@ class OptionAccessor {
         if (Closure.isAssignableFrom(type) && convert) {
             return (T) convert(optionValue)
         }
-        if (type?.simpleName?.toLowerCase() == 'boolean') {
-            return (T) Boolean.parseBoolean(optionValue)
+        if (type == Boolean || type == Boolean.TYPE) {
+            return type.cast(Boolean.parseBoolean(optionValue))
         }
         StringGroovyMethods.asType(optionValue, (Class<T>) type)
     }
 
     def invokeMethod(String name, Object args) {
-        return InvokerHelper.getMetaClass(commandLine).invokeMethod(commandLine, name, args)
+        return InvokerHelper.getMetaClass(parseResult).invokeMethod(parseResult, name, args)
     }
 
     def getProperty(String name) {
-        if (!savedTypeOptions.containsKey(name)) {
-            def alt = savedTypeOptions.find{ it.value.opt == name }
-            if (alt) name = alt.key
+        if (parseResult.hasOption(name)) {
+            return parseResult.optionValue(name, null)
         }
-        def methodname = 'getOptionValue'
-        Class type = savedTypeOptions[name]?.type
-        def foundArray = type?.isArray()
-        if (name.size() > 1 && name.endsWith('s')) {
+        if (name.size() > 1 && name.endsWith('s')) { // user wants multi-value result
             def singularName = name[0..-2]
-            if (commandLine.hasOption(singularName) || foundArray) {
-                name = singularName
-                methodname += 's'
-                type = savedTypeOptions[name]?.type
+            if (parseResult.hasOption(singularName)) {
+                // if picocli has a strongly typed multi-value result, return it
+                Class type = parseResult.option(singularName).type()
+                if (type.isArray() || Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type)) {
+                    return parseResult.optionValue(singularName, null)
+                }
+                // otherwise, return the raw string values as a list
+                return parseResult.rawOptionValues(singularName)
             }
         }
-        if (type?.isArray()) {
-            methodname = 'getOptionValues'
-        }
-        if (name.size() == 1) name = name as char
-        def result = InvokerHelper.getMetaClass(commandLine).invokeMethod(commandLine, methodname, name)
-        if (result != null) {
-            if (result instanceof String[]) {
-                result = result.collect{ type ? getTypedValue(type.isArray() ? type.componentType : type, name, it) : it }
-            } else {
-                if (type) result = getTypedValue(type, name, result)
-            }
-        } else if (type?.simpleName != 'boolean' && savedTypeOptions[name]?.defaultValue) {
-            result = getTypedValue(type, name, savedTypeOptions[name].defaultValue)
-        } else {
-            result = commandLine.hasOption(name)
-        }
-        return result
+        null
     }
 
     List<String> arguments() {
-        commandLine.args.toList()
+        parseResult.unmatched()
     }
 }

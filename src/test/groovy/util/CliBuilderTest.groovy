@@ -422,6 +422,14 @@ usage: groovy
         assert options.b
         assert options.c
         assert options.arguments() == ['foo']
+        options = cli.parse(['--abacus', 'foo'])
+        assert !options.a
+        assert !options.b
+        assert !options.c
+        assert options.d
+        assert options.arguments() == ['foo']
+
+        //TODO this passed in previous version of CliBuilder. Shouldn't longOpt have 2 hyphens?
         options = cli.parse(['-abacus', 'foo'])
         assert !options.a
         assert !options.b
