@@ -87,7 +87,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
             Collections.sort(classDocValues);
         }
-        return classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]);
+        return classDocValues.toArray(new GroovyClassDoc[0]);
     }
 
     public String[][] options() {/*todo*/
@@ -117,7 +117,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             packageDocValues = new ArrayList<GroovyPackageDoc>(packageDocs.values());
             Collections.sort(packageDocValues);
         }
-        return packageDocValues.toArray(new GroovyPackageDoc[packageDocValues.size()]);
+        return packageDocValues.toArray(new GroovyPackageDoc[0]);
     }
 
     public Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages) {
