@@ -37,9 +37,16 @@ task checkBinaryCompatibility {
 }
 check.dependsOn(checkBinaryCompatibility)
 
+def excludeModules = ['performance', 'tests-vm8']
+//def excludeModules = []
+
+Set projectsToCheck = allprojects.findAll{ !(it.name in excludeModules) }
+
 if (JavaVersion.current().isJava7Compatible()) {
     allprojects {
-        apply plugin: 'me.champeau.gradle.japicmp'
+        if (project in projectsToCheck) {
+            apply plugin: 'me.champeau.gradle.japicmp'
+        }
     }
 
     def referenceMinorVersion = '2.4.15'
@@ -140,7 +147,7 @@ if (JavaVersion.current().isJava7Compatible()) {
         txtOutputFile = file("$buildDir/reports/japi.txt")
 
         doFirst {
-            classpath = allprojects.configurations.japicmp.files.flatten()
+            classpath = projectsToCheck.configurations.japicmp.files.flatten()
         }
 
         def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}-all.html")
@@ -162,37 +169,39 @@ if (JavaVersion.current().isJava7Compatible()) {
     }
 
     allprojects {
+        if (project in projectsToCheck) {
 
-        dependencies  {
-            japicmp files(rootProject.jar.archivePath)
-        }
-
-        task japicmp(type: me.champeau.gradle.ArtifactJapicmpTask) {
-            dependsOn replaceJarWithJarJar
-            baseline = "org.codehaus.groovy:${project.name}:${referenceMinorVersion}@jar"
-            to = jar.archivePath
-            accessModifier = 'protected'
-            onlyModified = true
-            failOnModification = false
-            txtOutputFile = file("$buildDir/reports/japi.txt")
-
-            def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}.html")
-            inputs.file file("$configDir/$templateFile")
-            inputs.file templateFile
-            outputs.file htmlReportFile
-
-            def model = [title   : "Binary compatibility report for ${project.name}",
-                         project : project,
-                         baseline: baseline,
-                         archive : to.name]
-            outputProcessor(reportGenerator.curry(model))
-
-            doLast {
-                htmlReportFile.withWriter('utf-8') { wrt ->
-                    engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
-                }
+            dependencies  {
+                japicmp files(rootProject.jar.archivePath)
             }
 
+            task japicmp(type: me.champeau.gradle.ArtifactJapicmpTask) {
+                dependsOn replaceJarWithJarJar
+                baseline = "org.codehaus.groovy:${project.name}:${referenceMinorVersion}@jar"
+                to = jar.archivePath
+                accessModifier = 'protected'
+                onlyModified = true
+                failOnModification = false
+                txtOutputFile = file("$buildDir/reports/japi.txt")
+
+                def htmlReportFile = file("${buildDir}/reports/binary-compat-${project.name}.html")
+                inputs.file file("$configDir/$templateFile")
+                inputs.file templateFile
+                outputs.file htmlReportFile
+
+                def model = [title   : "Binary compatibility report for ${project.name}",
+                             project : project,
+                             baseline: baseline,
+                             archive : to.name]
+                outputProcessor(reportGenerator.curry(model))
+
+                doLast {
+                    htmlReportFile.withWriter('utf-8') { wrt ->
+                        engine.createTemplateByPath(templateFile).make(model).writeTo(wrt)
+                    }
+                }
+
+            }
         }
     }
 
@@ -200,6 +209,5 @@ if (JavaVersion.current().isJava7Compatible()) {
         tasks.withType(me.champeau.gradle.ArtifactJapicmpTask) { task ->
             checkBinaryCompatibility.dependsOn(task)
         }
-
     }
 }
