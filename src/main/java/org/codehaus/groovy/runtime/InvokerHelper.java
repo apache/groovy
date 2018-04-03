@@ -509,7 +509,7 @@ public class InvokerHelper {
         } catch (InvokerInvocationException iie) {
             // GROOVY-5802 IAE for missing properties with classes that extend List
             Throwable cause = iie.getCause();
-            if (cause == null || !(cause instanceof IllegalArgumentException)) throw iie;
+            if (!(cause instanceof IllegalArgumentException)) throw iie;
         }
     }
 
@@ -944,11 +944,11 @@ public class InvokerHelper {
         }
         if (value instanceof String) {
             // value is a regular expression.
-            return StringGroovyMethods.bitwiseNegate(value.toString());
+            return StringGroovyMethods.bitwiseNegate((CharSequence)value.toString());
         }
         if (value instanceof GString) {
             // value is a regular expression.
-            return StringGroovyMethods.bitwiseNegate(value.toString());
+            return StringGroovyMethods.bitwiseNegate((CharSequence)value.toString());
         }
         if (value instanceof ArrayList) {
             // value is a list.

@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.ClassNode;
  */
 public class MissingClassException extends GroovyRuntimeException {
 
+    private static final long serialVersionUID = -4059735896182191589L;
     private final String type;
 
     public MissingClassException(String type, ASTNode node, String message) {

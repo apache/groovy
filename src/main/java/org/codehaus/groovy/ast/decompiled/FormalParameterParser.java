@@ -22,7 +22,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.vmplugin.v5.Java5;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.signature.SignatureVisitor;
 
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ abstract class FormalParameterParser extends SignatureVisitor {
     protected void flushTypeParameter() {
         if (currentTypeParameter != null) {
             ClassNode ref = Java5.configureTypeVariableReference(currentTypeParameter);
-            ClassNode[] boundNodes = parameterBounds.toArray(new ClassNode[parameterBounds.size()]);
+            ClassNode[] boundNodes = parameterBounds.toArray(ClassNode.EMPTY_ARRAY);
             typeParameters.add(Java5.configureTypeVariableDefinition(ref, boundNodes));
 
             currentTypeParameter = null;
@@ -76,6 +75,6 @@ abstract class FormalParameterParser extends SignatureVisitor {
 
     public GenericsType[] getTypeParameters() {
         flushTypeParameter();
-        return typeParameters.toArray(new GenericsType[typeParameters.size()]);
+        return typeParameters.toArray(GenericsType.EMPTY_ARRAY);
     }
 }

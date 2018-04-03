@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen.asm.util;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 /**

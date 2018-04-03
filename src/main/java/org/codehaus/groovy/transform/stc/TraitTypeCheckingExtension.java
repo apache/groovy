@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -77,7 +76,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
                 } else if (isThisTraitReceiver(var)) {
                     type = receiver;
                 }
-                if (type != null && Traits.isTrait(type) && !(type instanceof UnionTypeClassNode)) {
+                if (Traits.isTrait(type) && !(type instanceof UnionTypeClassNode)) {
                     ClassNode helper = Traits.findHelper(type);
                     Parameter[] params = new Parameter[argumentTypes.length + 1];
                     params[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "staticSelf");
@@ -111,7 +110,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         String traitName = decomposed[0];
         String name = decomposed[1];
         LinkedHashSet<ClassNode> traitsAsList = Traits.collectAllInterfacesReverseOrder(receiver, new LinkedHashSet<ClassNode>());
-        ClassNode[] implementedTraits = traitsAsList.toArray(new ClassNode[traitsAsList.size()]);
+        ClassNode[] implementedTraits = traitsAsList.toArray(ClassNode.EMPTY_ARRAY);
         ClassNode nextTrait = null;
         for (int i = 0; i < implementedTraits.length - 1; i++) {
             ClassNode implementedTrait = implementedTraits[i];

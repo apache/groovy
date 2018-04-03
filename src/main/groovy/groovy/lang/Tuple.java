@@ -65,7 +65,7 @@ public class Tuple<E> extends AbstractList<E> implements Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof Tuple)) return false;
+        if (!(o instanceof Tuple)) return false;
 
         Tuple that = (Tuple) o;
         int size = size();

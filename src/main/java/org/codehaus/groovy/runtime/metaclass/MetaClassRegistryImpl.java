@@ -415,7 +415,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                     new ArrayList<MetaClassRegistryChangeEventListener>(changeListenerList.size()+nonRemoveableChangeListenerList.size());
             ret.addAll(nonRemoveableChangeListenerList);
             ret.addAll(changeListenerList);
-            return ret.toArray(new MetaClassRegistryChangeEventListener[ret.size()]);
+            return ret.toArray(new MetaClassRegistryChangeEventListener[0]);
         }
     }
     
@@ -513,22 +513,22 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
         public void onModule(final ExtensionModule module) {
             if (moduleRegistry.hasModule(module.getName())) {
-            ExtensionModule loadedModule = moduleRegistry.getModule(module.getName());
-            if (loadedModule.getVersion().equals(module.getVersion())) {
-                // already registered
-                return;
-            } else {
-                throw new GroovyRuntimeException("Conflicting module versions. Module ["+module.getName()+" is loaded in version "+
-                        loadedModule.getVersion()+" and you are trying to load version "+module.getVersion());
+                ExtensionModule loadedModule = moduleRegistry.getModule(module.getName());
+                if (loadedModule.getVersion().equals(module.getVersion())) {
+                    // already registered
+                    return;
+                } else {
+                    throw new GroovyRuntimeException("Conflicting module versions. Module [" + module.getName() + " is loaded in version " +
+                            loadedModule.getVersion() + " and you are trying to load version " + module.getVersion());
+                }
             }
-        }
             moduleRegistry.addModule(module);
             // register MetaMethods
             List<MetaMethod> metaMethods = module.getMetaMethods();
             for (MetaMethod metaMethod : metaMethods) {
                 CachedClass cachedClass = metaMethod.getDeclaringClass();
                 List<MetaMethod> methods = map.get(cachedClass);
-                if (methods==null) {
+                if (methods == null) {
                     methods = new ArrayList<MetaMethod>(4);
                     map.put(cachedClass, methods);
                 }

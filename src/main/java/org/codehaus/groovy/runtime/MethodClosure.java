@@ -24,15 +24,13 @@ import groovy.lang.MetaMethod;
 import java.io.IOException;
 import java.util.List;
 
-
 /**
  * Represents a method on an object using a closure which can be invoked
  * at any time
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MethodClosure extends Closure {
 
+    private static final long serialVersionUID = 5316055624606528584L;
     public static boolean ALLOW_RESOLVE = false;
 
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];

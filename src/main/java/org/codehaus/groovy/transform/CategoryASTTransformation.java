@@ -111,8 +111,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             }
 
             private void addVariablesToStack(Parameter[] params) {
-                Set<String> names = new HashSet<String>();
-                names.addAll(varStack.getLast());
+                Set<String> names = new HashSet<String>(varStack.getLast());
                 for (Parameter param : params) {
                     names.add(param.getName());
                 }
@@ -135,8 +134,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
 
             @Override
             public void visitBlockStatement(BlockStatement block) {
-                Set<String> names = new HashSet<String>();
-                names.addAll(varStack.getLast());
+                Set<String> names = new HashSet<String>(varStack.getLast());
                 varStack.add(names);
                 super.visitBlockStatement(block);
                 varStack.remove(names);
@@ -283,7 +281,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
 
     private static ClassNode getTargetClass(SourceUnit source, AnnotationNode annotation) {
         Expression value = annotation.getMember("value");
-        if (value == null || !(value instanceof ClassExpression)) {
+        if (!(value instanceof ClassExpression)) {
             //noinspection ThrowableInstanceNeverThrown
             source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
                     new SyntaxException("@groovy.lang.Category must define 'value' which is the class to apply this category to",

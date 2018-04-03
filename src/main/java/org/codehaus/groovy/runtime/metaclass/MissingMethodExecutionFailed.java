@@ -24,7 +24,8 @@ package org.codehaus.groovy.runtime.metaclass;
  * invokeMethod for GroovyObject implementing classes.
  */
 public class MissingMethodExecutionFailed extends MissingMethodExceptionNoStack {
-    private final Throwable cause;
+    private static final long serialVersionUID = -6551412223364004284L;
+    private Throwable cause;
     public MissingMethodExecutionFailed(String method, Class type, Object[] arguments, boolean isStatic, Throwable cause) {
         super(method, type, arguments, isStatic);
         this.cause = cause;

@@ -60,8 +60,6 @@ import java.util.Set;
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- *
- * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableMap implements Map {
     private final Map delegate;
@@ -115,7 +113,7 @@ public class ObservableMap implements Map {
     }
 
     protected void fireMultiPropertyEvent(List<PropertyEvent> events) {
-        firePropertyEvent(new MultiPropertyEvent(this, (PropertyEvent[]) events.toArray(new PropertyEvent[events.size()])));
+        firePropertyEvent(new MultiPropertyEvent(this, (PropertyEvent[]) events.toArray(new PropertyEvent[0])));
     }
 
     protected void fireMultiPropertyEvent(PropertyEvent[] events) {
@@ -191,7 +189,7 @@ public class ObservableMap implements Map {
             } else {
                 result = test.call(value);
             }
-            if (result != null && result instanceof Boolean && (Boolean) result) {
+            if (result instanceof Boolean && (Boolean) result) {
                 if (newKey) {
                     firePropertyAddedEvent(key, value);
                     fireSizeChangedEvent(oldSize, size());
@@ -231,7 +229,7 @@ public class ObservableMap implements Map {
                     } else {
                         result = test.call(newValue);
                     }
-                    if (result != null && result instanceof Boolean && (Boolean) result) {
+                    if (result instanceof Boolean && (Boolean) result) {
                         if (newKey) {
                             events.add(new PropertyAddedEvent(this, key, newValue));
                         } else if (oldValue != newValue) {
@@ -309,8 +307,8 @@ public class ObservableMap implements Map {
     public enum ChangeType {
         ADDED, UPDATED, REMOVED, CLEARED, MULTI, NONE;
 
-        public static final Object oldValue = new Object();
-        public static final Object newValue = new Object();
+        public static final Object oldValue = new Object[0];
+        public static final Object newValue = new Object[0];
 
         public static ChangeType resolve(int ordinal) {
             switch (ordinal) {
@@ -332,7 +330,8 @@ public class ObservableMap implements Map {
     }
 
     public abstract static class PropertyEvent extends PropertyChangeEvent {
-        private final ChangeType type;
+        private static final long serialVersionUID = -8328412226044328674L;
+        private ChangeType type;
 
         public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, ChangeType type) {
             super(source, propertyName, oldValue, newValue);
@@ -353,25 +352,32 @@ public class ObservableMap implements Map {
     }
 
     public static class PropertyAddedEvent extends PropertyEvent {
+        private static final long serialVersionUID = -5761685843732329868L;
+
         public PropertyAddedEvent(Object source, String propertyName, Object newValue) {
             super(source, propertyName, null, newValue, ChangeType.ADDED);
         }
     }
 
     public static class PropertyUpdatedEvent extends PropertyEvent {
+        private static final long serialVersionUID = -1104637722950032690L;
+
         public PropertyUpdatedEvent(Object source, String propertyName, Object oldValue, Object newValue) {
             super(source, propertyName, oldValue, newValue, ChangeType.UPDATED);
         }
     }
 
     public static class PropertyRemovedEvent extends PropertyEvent {
+        private static final long serialVersionUID = 1882656655856158470L;
+
         public PropertyRemovedEvent(Object source, String propertyName, Object oldValue) {
             super(source, propertyName, oldValue, null, ChangeType.REMOVED);
         }
     }
 
     public static class PropertyClearedEvent extends PropertyEvent {
-        private final Map values = new HashMap();
+        private static final long serialVersionUID = -1472110679547513634L;
+        private Map values = new HashMap();
 
         public PropertyClearedEvent(Object source, Map values) {
             super(source, ObservableMap.CLEARED_PROPERTY, values, null, ChangeType.CLEARED);
@@ -388,6 +394,7 @@ public class ObservableMap implements Map {
     public static class MultiPropertyEvent extends PropertyEvent {
         public static final String MULTI_PROPERTY = "groovy_util_ObservableMap_MultiPropertyEvent_MULTI";
         private static final PropertyEvent[] EMPTY_PROPERTY_EVENTS = new PropertyEvent[0];
+        private static final long serialVersionUID = 3925136810810084267L;
 
         private final PropertyEvent[] events;
 

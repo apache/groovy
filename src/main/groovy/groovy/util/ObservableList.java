@@ -63,8 +63,6 @@ import java.util.Set;
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- *
- * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableList implements List {
     private final List delegate;
@@ -154,7 +152,7 @@ public class ObservableList implements List {
     private void fireAddWithTest(Object element, int index, int oldSize) {
         if (test != null) {
             Object result = test.call(element);
-            if (result != null && result instanceof Boolean && (Boolean) result) {
+            if (result instanceof Boolean && (Boolean) result) {
                 fireElementAddedEvent(index, element);
                 fireSizeChangedEvent(oldSize, size());
             }
@@ -177,7 +175,7 @@ public class ObservableList implements List {
             for (Object element : c) {
                 if (test != null) {
                     Object result = test.call(element);
-                    if (result != null && result instanceof Boolean && (Boolean) result) {
+                    if (result instanceof Boolean && (Boolean) result) {
                         values.add(element);
                     }
                 } else {
@@ -195,8 +193,7 @@ public class ObservableList implements List {
 
     public void clear() {
         int oldSize = size();
-        List values = new ArrayList();
-        values.addAll(delegate);
+        List values = new ArrayList(delegate);
         delegate.clear();
         if (!values.isEmpty()) {
             fireElementClearedEvent(values);
@@ -324,7 +321,7 @@ public class ObservableList implements List {
         Object oldValue = delegate.set(index, element);
         if (test != null) {
             Object result = test.call(element);
-            if (result != null && result instanceof Boolean && ((Boolean) result).booleanValue()) {
+            if (result instanceof Boolean && ((Boolean) result).booleanValue()) {
                 fireElementUpdatedEvent(index, oldValue, element);
             }
         } else {
@@ -453,8 +450,8 @@ public class ObservableList implements List {
     public enum ChangeType {
         ADDED, UPDATED, REMOVED, CLEARED, MULTI_ADD, MULTI_REMOVE, NONE;
 
-        public static final Object oldValue = new Object();
-        public static final Object newValue = new Object();
+        public static final Object oldValue = new Object[0];
+        public static final Object newValue = new Object[0];
 
         public static ChangeType resolve(int ordinal) {
             switch (ordinal) {
@@ -479,6 +476,7 @@ public class ObservableList implements List {
 
     public abstract static class ElementEvent extends PropertyChangeEvent {
 
+        private static final long serialVersionUID = -218253929030274352L;
         private final ChangeType type;
         private final int index;
 
@@ -506,25 +504,32 @@ public class ObservableList implements List {
     }
 
     public static class ElementAddedEvent extends ElementEvent {
+        private static final long serialVersionUID = -6594847306176480596L;
+
         public ElementAddedEvent(Object source, Object newValue, int index) {
             super(source, null, newValue, index, ChangeType.ADDED);
         }
     }
 
     public static class ElementUpdatedEvent extends ElementEvent {
+        private static final long serialVersionUID = 1116018076124047485L;
+
         public ElementUpdatedEvent(Object source, Object oldValue, Object newValue, int index) {
             super(source, oldValue, newValue, index, ChangeType.UPDATED);
         }
     }
 
     public static class ElementRemovedEvent extends ElementEvent {
+        private static final long serialVersionUID = 9017470261231004168L;
+
         public ElementRemovedEvent(Object source, Object value, int index) {
             super(source, value, null, index, ChangeType.REMOVED);
         }
     }
 
     public static class ElementClearedEvent extends ElementEvent {
-        private final List values = new ArrayList();
+        private static final long serialVersionUID = -2754983590419383972L;
+        private List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.CLEARED);
@@ -539,7 +544,8 @@ public class ObservableList implements List {
     }
 
     public static class MultiElementAddedEvent extends ElementEvent {
-        private final List values = new ArrayList();
+        private static final long serialVersionUID = 443060557109693114L;
+        private List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, int index, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, index, ChangeType.MULTI_ADD);
@@ -554,7 +560,8 @@ public class ObservableList implements List {
     }
 
     public static class MultiElementRemovedEvent extends ElementEvent {
-        private final List values = new ArrayList();
+        private static final long serialVersionUID = 2590238951081945868L;
+        private List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.MULTI_REMOVE);

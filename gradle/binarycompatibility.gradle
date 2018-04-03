@@ -40,7 +40,7 @@ def excludeModules = ['groovy-dateutil', 'groovy-datetime', 'performance', 'groo
 
 Set projectsToCheck = allprojects.findAll{ !(it.name in excludeModules) }
 
-def compatibilityBaselineVersion = '2.4.13'
+def compatibilityBaselineVersion = '2.4.15'
 
 allprojects {
     if (project in projectsToCheck) {

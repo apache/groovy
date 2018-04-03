@@ -24,6 +24,7 @@ import antlr.collections.AST;
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  */
 public class ASTRuntimeException extends RuntimeException {
+    private static final long serialVersionUID = 3980229202392379560L;
     private final AST ast;
 
     public ASTRuntimeException(AST ast, String message) {

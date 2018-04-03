@@ -142,6 +142,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         final long[] size = {0L};
 
         eachFileRecurse(self, FileType.FILES, new Closure<Void>(null) {
+            private static final long serialVersionUID = 7688764529326404277L;
+
             public void doCall(Object[] args) {
                 size[0] += ((File) args[0]).length();
             }
@@ -1459,7 +1461,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
         if (origFiles != null) {
             List<File> files = Arrays.asList(origFiles);
-            if (sort != null) files = DefaultGroovyMethods.sort(files, sort);
+            if (sort != null) files = DefaultGroovyMethods.sort((Iterable<File>)files, sort);
             for (File file : files) {
                 if (file.isDirectory()) {
                     if (type != FileType.FILES) {

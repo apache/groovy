@@ -293,7 +293,7 @@ class UnionTypeClassNode extends ClassNode {
             ClassNode[] interfaces = delegate.getInterfaces();
             if (interfaces != null) Collections.addAll(nodes, interfaces);
         }
-        return nodes.toArray(new ClassNode[nodes.size()]);
+        return nodes.toArray(ClassNode.EMPTY_ARRAY);
     }
 
     @Override
@@ -328,7 +328,7 @@ class UnionTypeClassNode extends ClassNode {
             ClassNode[] interfaces = delegate.getUnresolvedInterfaces();
             if (interfaces != null) Collections.addAll(nodes, interfaces);
         }
-        return nodes.toArray(new ClassNode[nodes.size()]);
+        return nodes.toArray(ClassNode.EMPTY_ARRAY);
     }
 
     @Override
@@ -338,7 +338,7 @@ class UnionTypeClassNode extends ClassNode {
             ClassNode[] interfaces = delegate.getUnresolvedInterfaces(useRedirect);
             if (interfaces != null) Collections.addAll(nodes, interfaces);
         }
-        return nodes.toArray(new ClassNode[nodes.size()]);
+        return nodes.toArray(ClassNode.EMPTY_ARRAY);
     }
 
     @Override

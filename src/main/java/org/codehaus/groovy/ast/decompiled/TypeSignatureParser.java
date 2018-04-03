@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.vmplugin.v5.Java5;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureVisitor;
 
@@ -117,7 +116,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         }
 
         ClassNode bound = base.getPlainNodeReference();
-        bound.setGenericsTypes(arguments.toArray(new GenericsType[arguments.size()]));
+        bound.setGenericsTypes(arguments.toArray(GenericsType.EMPTY_ARRAY));
         finished(bound);
     }
 

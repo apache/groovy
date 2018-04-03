@@ -20,18 +20,16 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.MethodRankHelper;
 
-
 /**
  * An exception occurred if a dynamic property dispatch fails with an unknown property.
  * 
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MissingPropertyException extends GroovyRuntimeException {
 
     public static final Object MPE = new Object();
+    private static final long serialVersionUID = -1780027060966200019L;
 
     private final String property;
     private final Class type;

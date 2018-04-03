@@ -128,10 +128,10 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
             createConstructors(this, anno, handler, cNode, includeFields, includeProperties, includeSuperProperties, includeSuperFields, noArg, allNames, allProperties, specialNamedArgHandling, includeStatic, excludes, includes, (ClosureExpression) pre, (ClosureExpression) post, source);
 
             if (pre != null) {
-                anno.setMember("pre", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+                anno.setMember("pre", new ClosureExpression(Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE));
             }
             if (post != null) {
-                anno.setMember("post", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+                anno.setMember("post", new ClosureExpression(Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE));
             }
         }
     }

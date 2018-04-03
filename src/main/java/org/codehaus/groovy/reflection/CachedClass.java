@@ -60,6 +60,8 @@ public class CachedClass {
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
     private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>(softBundle) {
+        private static final long serialVersionUID = 5450437842165410025L;
+
         public CachedField[] initValue() {
             final Field[] declaredFields = (Field[])
                AccessController.doPrivileged(new PrivilegedAction<Field[]>() {
@@ -76,7 +78,9 @@ public class CachedClass {
         }
     };
 
-    private final LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
+    private LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
+        private static final long serialVersionUID = -5834446523983631635L;
+
         public CachedConstructor[] initValue() {
             final Constructor[] declaredConstructors = (Constructor[])
                AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
@@ -113,6 +117,8 @@ public class CachedClass {
     }
 
     private final LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]>(softBundle) {
+        private static final long serialVersionUID = 6347586066597418308L;
+
         public CachedMethod[] initValue() {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
@@ -145,7 +151,7 @@ public class CachedClass {
                 else
                   methods.add(cachedMethod);
             }
-            CachedMethod [] resMethods = methods.toArray(new CachedMethod[methods.size()]);
+            CachedMethod [] resMethods = methods.toArray(CachedMethod.EMPTY_ARRAY);
             Arrays.sort(resMethods);
 
             final CachedClass superClass = getCachedSuperClass();
@@ -155,14 +161,16 @@ public class CachedClass {
                 for (int i = 0; i != superMopMethods.length; ++i)
                   mopMethods.add(superMopMethods[i]);
             }
-            CachedClass.this.mopMethods = mopMethods.toArray(new CachedMethod[mopMethods.size()]);
+            CachedClass.this.mopMethods = mopMethods.toArray(CachedMethod.EMPTY_ARRAY);
             Arrays.sort(CachedClass.this.mopMethods, CachedMethodComparatorByName.INSTANCE);
 
             return resMethods;
         }
     };
 
-    private final LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
+    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
+        private static final long serialVersionUID = -4663740963306806058L;
+
         public CachedClass initValue() {
             if (!isArray)
               return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
@@ -175,6 +183,8 @@ public class CachedClass {
     };
 
     private final LazyReference<CallSiteClassLoader> callSiteClassLoader = new LazyReference<CallSiteClassLoader>(softBundle) {
+        private static final long serialVersionUID = 4410385968428074090L;
+
         public CallSiteClassLoader initValue() {
             return
                AccessController.doPrivileged(new PrivilegedAction<CallSiteClassLoader>() {
@@ -186,6 +196,8 @@ public class CachedClass {
     };
 
     private final LazyReference<LinkedList<ClassInfo>> hierarchy = new LazyReference<LinkedList<ClassInfo>>(softBundle) {
+        private static final long serialVersionUID = 7166687623678851596L;
+
         public LinkedList<ClassInfo> initValue() {
             Set<ClassInfo> res = new LinkedHashSet<ClassInfo> ();
 
@@ -205,7 +217,7 @@ public class CachedClass {
         }
     };
 
-    static final MetaMethod[] EMPTY = new MetaMethod[0];
+    static final MetaMethod[] EMPTY = MetaMethod.EMPTY_ARRAY;
 
     int hashCode;
 
@@ -213,6 +225,8 @@ public class CachedClass {
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
     private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> (softBundle) {
+        private static final long serialVersionUID = 2139190436931329873L;
+
         public Set<CachedClass> initValue() {
             Set<CachedClass> res = new HashSet<CachedClass> (0);
 
@@ -225,6 +239,8 @@ public class CachedClass {
     };
 
     private final LazyReference<Set<CachedClass>> interfaces = new LazyReference<Set<CachedClass>> (softBundle) {
+        private static final long serialVersionUID = 4060471819464086940L;
+
         public Set<CachedClass> initValue() {
             Set<CachedClass> res = new HashSet<CachedClass> (0);
 
@@ -362,11 +378,10 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        List<MetaMethod> arr = new ArrayList<MetaMethod>();
-        arr.addAll(Arrays.asList(classInfo.newMetaMethods));
+        List<MetaMethod> arr = new ArrayList<MetaMethod>(Arrays.asList(classInfo.newMetaMethods));
 
         final MetaClass metaClass = classInfo.getStrongMetaClass();
-        if (metaClass != null && metaClass instanceof ExpandoMetaClass) {
+        if (metaClass instanceof ExpandoMetaClass) {
             arr.addAll(((ExpandoMetaClass)metaClass).getExpandoMethods());
         }
 
@@ -386,11 +401,11 @@ public class CachedClass {
             addSubclassExpandos(arr, mc);
         }
 
-        return arr.toArray(new MetaMethod[arr.size()]);
+        return arr.toArray(MetaMethod.EMPTY_ARRAY);
     }
 
     private void addSubclassExpandos(List<MetaMethod> arr, MetaClass mc) {
-        if (mc != null && mc instanceof ExpandoMetaClass) {
+        if (mc instanceof ExpandoMetaClass) {
             ExpandoMetaClass emc = (ExpandoMetaClass) mc;
             for (Object mm : emc.getExpandoSubclassMethods()) {
                 if (mm instanceof MetaMethod) {
@@ -438,7 +453,7 @@ public class CachedClass {
 
     private void updateSetNewMopMethods(List<MetaMethod> arr) {
         if (arr != null) {
-            final MetaMethod[] metaMethods = arr.toArray(new MetaMethod[arr.size()]);
+            final MetaMethod[] metaMethods = arr.toArray(MetaMethod.EMPTY_ARRAY);
             classInfo.dgmMetaMethods = metaMethods;
             classInfo.newMetaMethods = metaMethods;
         }
@@ -486,7 +501,7 @@ public class CachedClass {
         List<MetaMethod> res = new ArrayList<MetaMethod>();
         res.addAll(Arrays.asList(classInfo.newMetaMethods));
         res.addAll(arr);
-        classInfo.newMetaMethods = res.toArray(new MetaMethod[res.size()]);
+        classInfo.newMetaMethods = res.toArray(MetaMethod.EMPTY_ARRAY);
         Class theClass = classInfo.getCachedClass().getTheClass();
         if (theClass==Closure.class || theClass==Class.class) {
             ClosureMetaClass.resetCachedMetaClasses();

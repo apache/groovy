@@ -39,7 +39,6 @@ buildscript {
         classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.7'
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
         classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
-        //classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.1'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
@@ -149,7 +148,7 @@ configurations {
 
 ext {
     antVersion = '1.9.9'
-    asmVersion = '6.1'
+    asmVersion = '6.1.1'
     antlrVersion = '2.7.7'
     bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
@@ -328,6 +327,8 @@ compileJava {
     doLast {
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
             arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/classgen/Verifier.class")
         }
         ant.echo('Bridger: ' + ant.properties.stdout)
     }
@@ -362,7 +363,6 @@ task ensureGrammars {
     }
 }
 
-apply from: 'gradle/utils.gradle'
 apply from: 'wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {

@@ -33,11 +33,10 @@ import java.util.List;
 /**
  * A List implementation which is returned by queries on a {@link Node}
  * which provides some XPath like helper methods for GPath.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
  */
 public class NodeList extends ArrayList {
+    private static final long serialVersionUID = 8307095805417308716L;
+
     static {
         // wrap the standard MetaClass with the delegate
         setMetaClass(NodeList.class, GroovySystem.getMetaClassRegistry().getMetaClass(NodeList.class));

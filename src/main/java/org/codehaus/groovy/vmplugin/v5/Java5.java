@@ -213,8 +213,9 @@ public class Java5 implements VMPlugin {
     }
 
     @Deprecated
-    public static void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
-        VMPluginFactory.getPlugin().configureAnnotationNodeFromDefinition(definition, root);
+    public void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
+        VMPlugin plugin = VMPluginFactory.getPlugin();
+        plugin.configureAnnotationNodeFromDefinition(definition, root);
     }
 
     public void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root) {
@@ -244,11 +245,12 @@ public class Java5 implements VMPlugin {
 
     public void configureAnnotation(AnnotationNode node) {
         ClassNode type = node.getClassNode();
+        VMPlugin plugin = VMPluginFactory.getPlugin();
         List<AnnotationNode> annotations = type.getAnnotations();
         for (AnnotationNode an : annotations) {
-            configureAnnotationFromDefinition(an, node);
+            plugin.configureAnnotationNodeFromDefinition(an, node);
         }
-        configureAnnotationFromDefinition(node, node);
+        plugin.configureAnnotationNodeFromDefinition(node, node);
     }
 
     private void configureAnnotation(AnnotationNode node, Annotation annotation) {

@@ -26,8 +26,6 @@ import java.util.Map;
  * If the maximum size has been reached all newly added elements will cause the oldest element to be removed from the storage
  * in order not to exceed the maximum capacity.
  * The touch method can be used to renew an element and move it to the from the LRU queue.
- *
- * @author Vaclav Pech
  */
 final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implements ProtectionStorage {
     private static final long serialVersionUID = 1L;

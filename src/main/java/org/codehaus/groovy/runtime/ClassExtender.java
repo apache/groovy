@@ -23,12 +23,10 @@ import groovy.lang.Closure;
 import java.util.HashMap;
 import java.util.Map;
 
-
 /**
  * A helper class used by the runtime to allow Groovy classes to be extended at runtime
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
+@Deprecated
 public class ClassExtender {
     private Map variables;
     private Map methods;

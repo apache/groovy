@@ -289,7 +289,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
 
     private static AutoCloneStyle getStyle(AnnotationNode node, String name) {
         final Expression member = node.getMember(name);
-        if (member != null && member instanceof PropertyExpression) {
+        if (member instanceof PropertyExpression) {
             PropertyExpression prop = (PropertyExpression) member;
             Expression oe = prop.getObjectExpression();
             if (oe instanceof ClassExpression) {

@@ -73,6 +73,8 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -96,6 +98,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ListHashMap;
@@ -1815,7 +1818,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (key instanceof VariableExpression) {
                 ClassNode origType = varOrigType.get(key);
                 ClassNode newType = entry.getValue();
-                if (varOrigType.containsKey(key) && (origType == null || !newType.equals(origType))) {
+                if (varOrigType.containsKey(key) && (!newType.equals(origType))) {
                     return true;
                 }
             }
@@ -2143,7 +2146,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (arr.size()==1) {
                     result = arr.get(0);
                 } else {
-                    result = new UnionTypeClassNode(arr.toArray(new ClassNode[arr.size()]));
+                    result = new UnionTypeClassNode(arr.toArray(ClassNode.EMPTY_ARRAY));
                 }
             }
         }
@@ -2830,7 +2833,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             for (Expression expression : list) {
                 result.add(expression.getText());
             }
-            return result.toArray(new String[result.size()]);
+            return result.toArray(new String[0]);
         }
         throw new IllegalArgumentException("Unexpected options for @ClosureParams:"+options);
     }
@@ -2881,7 +2884,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     final List<Expression> expressions = arguments.getExpressions();
                     final int expressionsSize = expressions.size();
                     Expression parameter = annotation.getMember("target");
-                    String parameterName = parameter!=null && parameter instanceof ConstantExpression ?parameter.getText():"";
+                    String parameterName = parameter instanceof ConstantExpression ?parameter.getText():"";
                     // todo: handle vargs!
                     for (int j = 0, paramsLength = params.length; j < paramsLength; j++) {
                         final Parameter methodParam = params[j];
@@ -2889,12 +2892,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (targets != null && targets.size() == 1) {
                             AnnotationNode targetAnnotation = targets.get(0); // @DelegatesTo.Target Obj foo
                             Expression idMember = targetAnnotation.getMember("value");
-                            String id = idMember != null && idMember instanceof ConstantExpression ? idMember.getText() : "";
+                            String id = idMember instanceof ConstantExpression ? idMember.getText() : "";
                             if (id.equals(parameterName)) {
                                 if (j < expressionsSize) {
                                     Expression actualArgument = expressions.get(j);
                                     ClassNode actualType = getType(actualArgument);
-                                    if (genericTypeIndex!=null && genericTypeIndex instanceof ConstantExpression) {
+                                    if (genericTypeIndex instanceof ConstantExpression) {
                                         int gti = Integer.parseInt(genericTypeIndex.getText());
                                         ClassNode paramType = methodParam.getType(); // type annotated with @DelegatesTo.Target
                                         GenericsType[] genericsTypes = paramType.getGenericsTypes();
@@ -3286,7 +3289,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         nodes.add(arg);
                     }
                 }
-                return new LowestUpperBoundClassNode(returnType.getName()+"Composed", OBJECT_TYPE, nodes.toArray(new ClassNode[nodes.size()]));
+                return new LowestUpperBoundClassNode(returnType.getName()+"Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
             }
         }
         return returnType;
@@ -3462,6 +3465,95 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } finally {
             popAssignmentTracking(oldTracker);
         }
+        BinaryExpression instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
+        if (instanceOfExpression == null) {
+        } else {
+            if(typeCheckingContext.enclosingBlocks.size()>0) {
+                visitInstanceofNot(instanceOfExpression);
+            }
+        }
+    }
+
+
+    public void visitInstanceofNot(BinaryExpression be) {
+        final BlockStatement currentBlock = typeCheckingContext.enclosingBlocks.getFirst();
+        assert currentBlock != null;
+        if (typeCheckingContext.blockStatements2Types.containsKey(currentBlock)) {
+            // another instanceOf_not was before, no need store vars
+        } else {
+            // saving type of variables to restoring them after returning from block
+            Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+            getTypeCheckingContext().pushTemporaryTypeInfo();
+            typeCheckingContext.blockStatements2Types.put(currentBlock, oldTracker);
+        }
+        pushInstanceOfTypeInfo(be.getLeftExpression(), be.getRightExpression());
+    }
+
+
+    @Override
+    public void visitBlockStatement(BlockStatement block) {
+        if (block != null) {
+            typeCheckingContext.enclosingBlocks.addFirst(block);
+        }
+        super.visitBlockStatement(block);
+        if (block != null) {
+            visitClosingBlock(block);
+        }
+    }
+
+    public void visitClosingBlock(BlockStatement block) {
+        BlockStatement peekBlock = typeCheckingContext.enclosingBlocks.removeFirst();
+        boolean found = typeCheckingContext.blockStatements2Types.containsKey(peekBlock);
+        if (found) {
+            Map<VariableExpression, List<ClassNode>> oldTracker = typeCheckingContext.blockStatements2Types.remove(peekBlock);
+            getTypeCheckingContext().popTemporaryTypeInfo();
+            popAssignmentTracking(oldTracker);
+        }
+    }
+
+    /**
+     * Check IfStatement matched pattern :
+     * Object var1;
+     * if (!(var1 instanceOf Runnable)){
+     * return
+     * }
+     * // Here var1 instance of Runnable
+     *
+     * Return expression , which contains instanceOf (without not)
+     * Return null, if not found
+     */
+    public BinaryExpression findInstanceOfNotReturnExpression(IfStatement ifElse) {
+        Statement elseBlock = ifElse.getElseBlock();
+        if (!(elseBlock instanceof EmptyStatement)) {
+            return null;
+        }
+        Expression conditionExpression = ifElse.getBooleanExpression().getExpression();
+        if (!(conditionExpression instanceof NotExpression)) {
+            return null;
+        }
+        NotExpression notExpression = (NotExpression) conditionExpression;
+        Expression expression = notExpression.getExpression();
+        if (!(expression instanceof BinaryExpression)) {
+            return null;
+        }
+        BinaryExpression instanceOfExpression = (BinaryExpression) expression;
+        int op = instanceOfExpression.getOperation().getType();
+        if (op != Types.KEYWORD_INSTANCEOF) {
+            return null;
+        }
+        Statement block = ifElse.getIfBlock();
+        if (!(block instanceof BlockStatement)) {
+            return null;
+        }
+        BlockStatement bs = (BlockStatement) block;
+        if (bs.getStatements().size() == 0) {
+            return null;
+        }
+        Statement last = DefaultGroovyMethods.last(bs.getStatements());
+        if (!(last instanceof ReturnStatement)) {
+            return null;
+        }
+        return instanceOfExpression;
     }
 
     @Override
@@ -3615,7 +3707,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /// it seems attractive to want to do this for more cases but perhaps not all cases
     private ClassNode checkForTargetType(final Expression expr, final ClassNode type) {
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-        if (enclosingBinaryExpression != null && enclosingBinaryExpression instanceof DeclarationExpression
+        if (enclosingBinaryExpression instanceof DeclarationExpression
                 && isEmptyCollection(expr) && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
             VariableExpression target = (VariableExpression) enclosingBinaryExpression.getLeftExpression();
             return adjustForTargetType(target.getType(), type);
@@ -4369,13 +4461,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         final Parameter[] parameters = closureExpression.getParameters();
         String name = parameter.getName();
 
-        if (parameters.length == 0) {
-            return "it".equals(name) && closureParamTypes.length != 0 ? closureParamTypes[0] : null;
-        }
+        if (parameters != null) {
+            if (parameters.length == 0) {
+                return "it".equals(name) && closureParamTypes.length != 0 ? closureParamTypes[0] : null;
+            }
 
-        for (int index = 0; index < parameters.length; index++) {
-            if (name.equals(parameters[index].getName())) {
-                return closureParamTypes.length > index ? closureParamTypes[index] : null;
+            for (int index = 0; index < parameters.length; index++) {
+                if (name.equals(parameters[index].getName())) {
+                    return closureParamTypes.length > index ? closureParamTypes[index] : null;
+                }
             }
         }
 
@@ -4426,7 +4520,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Traits.collectSelfTypes(ret, selfTypes);
         if (!selfTypes.isEmpty()) {
             selfTypes.add(ret);
-            ret = new UnionTypeClassNode(selfTypes.toArray(new ClassNode[selfTypes.size()]));
+            ret = new UnionTypeClassNode(selfTypes.toArray(ClassNode.EMPTY_ARRAY));
         }
         return ret;
     }

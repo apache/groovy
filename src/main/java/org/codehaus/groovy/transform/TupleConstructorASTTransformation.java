@@ -23,6 +23,7 @@ import groovy.transform.CompilationUnitAware;
 import groovy.transform.MapConstructor;
 import groovy.transform.TupleConstructor;
 import groovy.transform.options.PropertyHandler;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -155,10 +156,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                     sourceUnit, handler, (ClosureExpression) pre, (ClosureExpression) post);
 
             if (pre != null) {
-                anno.setMember("pre", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+                anno.setMember("pre", new ClosureExpression(Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE));
             }
             if (post != null) {
-                anno.setMember("post", new ClosureExpression(new Parameter[0], new EmptyStatement()));
+                anno.setMember("post", new ClosureExpression(Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE));
             }
         }
     }
@@ -253,9 +254,9 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             Collections.sort(params, includeComparator);
         }
 
-        boolean hasMapCons = hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
+        boolean hasMapCons = AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
-        ConstructorNode consNode = new ConstructorNode(modifiers, params.toArray(new Parameter[params.size()]), ClassNode.EMPTY_ARRAY, body);
+        ConstructorNode consNode = new ConstructorNode(modifiers, params.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, body);
         markAsGenerated(cNode, consNode);
         cNode.addConstructor(consNode);
 

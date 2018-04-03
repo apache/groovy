@@ -64,8 +64,6 @@ import java.util.Stack;
  * <li><tt>content</tt> - read-only.</li>
  * <li><tt>size</tt> - read-only.</li>
  * </ul>
- *
- * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
  */
 public class ObservableSet<E> implements Set<E> {
     private final Set<E> delegate;
@@ -193,7 +191,7 @@ public class ObservableSet<E> implements Set<E> {
         if (success) {
             if (test != null) {
                 Object result = test.call(e);
-                if (result != null && result instanceof Boolean && (Boolean) result) {
+                if (result instanceof Boolean && (Boolean) result) {
                     fireElementAddedEvent(e);
                     fireSizeChangedEvent(oldSize, size());
                 }
@@ -236,7 +234,7 @@ public class ObservableSet<E> implements Set<E> {
             for (E element : c) {
                 if (test != null) {
                     Object result = test.call(element);
-                    if (result != null && result instanceof Boolean && (Boolean) result && !duplicates.contains(element)) {
+                    if (result instanceof Boolean && (Boolean) result && !duplicates.contains(element)) {
                         values.add(element);
                     }
                 } else if (!duplicates.contains(element)) {
@@ -302,8 +300,7 @@ public class ObservableSet<E> implements Set<E> {
 
     public void clear() {
         int oldSize = size();
-        List<E> values = new ArrayList<E>();
-        values.addAll(delegate);
+        List<E> values = new ArrayList<E>(delegate);
         delegate.clear();
         if (!values.isEmpty()) {
             fireElementClearedEvent(values);
@@ -343,11 +340,12 @@ public class ObservableSet<E> implements Set<E> {
     public enum ChangeType {
         ADDED, REMOVED, CLEARED, MULTI_ADD, MULTI_REMOVE, NONE;
 
-        public static final Object oldValue = new Object();
-        public static final Object newValue = new Object();
+        public static final Object oldValue = new Object[0];
+        public static final Object newValue = new Object[0];
     }
 
     public abstract static class ElementEvent extends PropertyChangeEvent {
+        private static final long serialVersionUID = -7140793925623806823L;
         private final ChangeType type;
 
         public ElementEvent(Object source, Object oldValue, Object newValue, ChangeType type) {
@@ -369,19 +367,24 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class ElementAddedEvent extends ElementEvent {
+        private static final long serialVersionUID = 4678444473287170956L;
+
         public ElementAddedEvent(Object source, Object newValue) {
             super(source, null, newValue, ChangeType.ADDED);
         }
     }
 
     public static class ElementRemovedEvent extends ElementEvent {
+        private static final long serialVersionUID = 5934658331755545227L;
+
         public ElementRemovedEvent(Object source, Object value) {
             super(source, value, null, ChangeType.REMOVED);
         }
     }
 
     public static class ElementClearedEvent extends ElementEvent {
-        private final List values = new ArrayList();
+        private static final long serialVersionUID = 6075523774365623231L;
+        private List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.CLEARED);
@@ -396,7 +399,8 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class MultiElementAddedEvent extends ElementEvent {
-        private final List values = new ArrayList();
+        private static final long serialVersionUID = 575204921472897312L;
+        private List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI_ADD);
@@ -411,7 +415,8 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public static class MultiElementRemovedEvent extends ElementEvent {
-        private final List values = new ArrayList();
+        private static final long serialVersionUID = 8894701122065438905L;
+        private List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI_REMOVE);

@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform;
 import groovy.transform.NamedDelegate;
 import groovy.transform.NamedParam;
 import groovy.transform.NamedVariant;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -44,7 +45,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
@@ -100,7 +100,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         // first pass, just check for absence of annotations of interest
         boolean annoFound = false;
         for (Parameter fromParam : fromParams) {
-            if (hasAnnotation(fromParam, NAMED_PARAM_TYPE) || hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
+            if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE) || AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
                 annoFound = true;
             }
         }
@@ -110,7 +110,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             processDelegateParam(mNode, mapParam, args, propNames, fromParams[0]);
         } else {
             for (Parameter fromParam : fromParams) {
-                if (hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
+                if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
                     AnnotationNode namedParam = fromParam.getAnnotations(NAMED_PARAM_TYPE).get(0);
                     boolean required = memberHasValue(namedParam, "required", true);
                     if (getMemberValue(namedParam, "name") == null) {
@@ -134,7 +134,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                     args.addExpression(propX(varX(mapParam), name));
                     mapParam.addAnnotation(namedParam);
                     fromParam.getAnnotations().remove(namedParam);
-                } else if (hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
+                } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
                     if (!processDelegateParam(mNode, mapParam, args, propNames, fromParam)) return;
                 } else {
                     args.addExpression(varX(fromParam));
@@ -152,7 +152,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                                 plusX(new ConstantExpression("Unrecognized namedArgKey: "), varX(namedArgKey)))
                 ));
 
-        Parameter[] genParamsArray = genParams.toArray(new Parameter[genParams.size()]);
+        Parameter[] genParamsArray = genParams.toArray(Parameter.EMPTY_ARRAY);
         // TODO account for default params giving multiple signatures
         if (cNode.hasMethod(mNode.getName(), genParamsArray)) {
             addError("Error during " + MY_TYPE_NAME + " processing. Class " + cNode.getNameWithoutPackage() +

@@ -267,8 +267,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 MethodNode found = getDeclaredMethodCorrected(genericsSpec, mn, correctedNext);
                 if (found != null) break;
             }
-            List<ClassNode> ifaces = new ArrayList<ClassNode>();
-            ifaces.addAll(Arrays.asList(next.getInterfaces()));
+            List<ClassNode> ifaces = new ArrayList<ClassNode>(Arrays.asList(next.getInterfaces()));
             Map updatedGenericsSpec = new HashMap(genericsSpec);
             while (!ifaces.isEmpty()) {
                 ClassNode origInterface = ifaces.remove(0);

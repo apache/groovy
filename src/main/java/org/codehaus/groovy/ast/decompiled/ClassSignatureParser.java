@@ -79,6 +79,6 @@ class ClassSignatureParser {
         if (typeParameters.length > 0) {
             classNode.setGenericsTypes(typeParameters);
         }
-        classNode.setInterfaces(interfaces.toArray(new ClassNode[interfaces.size()]));
+        classNode.setInterfaces(interfaces.toArray(ClassNode.EMPTY_ARRAY));
     }
 }

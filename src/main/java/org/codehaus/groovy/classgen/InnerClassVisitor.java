@@ -219,7 +219,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
             pField.setOriginType(ClassHelper.getWrapper(var.getOriginType()));
         }
 
-        innerClass.addConstructor(ACC_SYNTHETIC, parameters.toArray(new Parameter[parameters.size()]), ClassNode.EMPTY_ARRAY, block);
+        innerClass.addConstructor(ACC_SYNTHETIC, parameters.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, block);
     }
 
     private boolean isStaticThis(InnerClassNode innerClass, VariableScope scope) {

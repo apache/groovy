@@ -86,7 +86,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
                         newInterfaces.add(classNode);
                     }
                 }
-                node.setInterfaces(newInterfaces.toArray(new ClassNode[newInterfaces.size()]));
+                node.setInterfaces(newInterfaces.toArray(ClassNode.EMPTY_ARRAY));
             }
         }
     }

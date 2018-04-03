@@ -476,7 +476,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     }
                     sb = new StringBuilder(getDocUrl(outerType, full, links, relativePath, rootDoc, classDoc));
                     sb.append("&lt;");
-                    sb.append(DefaultGroovyMethods.join(typeUrls, ", "));
+                    sb.append(DefaultGroovyMethods.join((Iterable) typeUrls, ", "));
                     sb.append("&gt;");
                     return sb.toString();
                 }
@@ -910,7 +910,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 sb.append(preKey);
                 sb.append(e.getKey());
                 sb.append(postKey);
-                sb.append(DefaultGroovyMethods.join(e.getValue(), valueSeparator));
+                sb.append(DefaultGroovyMethods.join((Iterable)e.getValue(), valueSeparator));
                 sb.append(postValues);
             }
             return sb.toString();
