@@ -27,12 +27,9 @@ import java.util.Map;
 
 /**
  * Helper to turn a list with an even number of elements into a Map.
- * 
- * @author Pilho Kim
- * @author Tim Tiemens
  */
 public class SpreadMap extends HashMap {
-    private static final long serialVersionUID = 2870520857928038334L;
+    private static final long serialVersionUID = 3827653766235954251L;
     private int hashCode;
 
     public SpreadMap(Object[] values) {
