@@ -33,7 +33,6 @@ import java.util.List;
  * @author Jeremy Rayner <groovy@ross-rayner.com>
  */
 public class GroovySourceAST extends CommonAST implements Comparable, SourceInfo {
-    private static final long serialVersionUID = 2019901428136117486L;
     private int line;
     private int col;
     private int lineLast;

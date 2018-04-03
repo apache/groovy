@@ -65,10 +65,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     // method name to DSL name
     private static final Map<String, String> METHOD_ALIASES = Collections.unmodifiableMap(
-            new HashMap<String, String>() {
-                private static final long serialVersionUID = 8938707932245818749L;
-
-                {
+            new HashMap<String, String>() {{
                 put("onMethodSelection", "onMethodSelection");
                 put("afterMethodCall", "afterMethodCall");
                 put("beforeMethodCall", "beforeMethodCall");

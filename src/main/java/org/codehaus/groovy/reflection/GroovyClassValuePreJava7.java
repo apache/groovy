@@ -54,9 +54,7 @@ class GroovyClassValuePreJava7<T> implements GroovyClassValue<T> {
 
 	private class GroovyClassValuePreJava7Segment extends ManagedConcurrentMap.Segment<Class<?>,T> {
 
-        private static final long serialVersionUID = 1289753977947029168L;
-
-        GroovyClassValuePreJava7Segment(ReferenceBundle bundle, int initialCapacity) {
+		GroovyClassValuePreJava7Segment(ReferenceBundle bundle, int initialCapacity) {
 			super(bundle, initialCapacity);
 		}
 
