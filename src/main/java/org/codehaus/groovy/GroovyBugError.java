@@ -19,15 +19,13 @@
 package org.codehaus.groovy;
 
 /**
- * This class represents an error that is thrown when a bug is 
+ * This class represents an error that is thrown when a bug is
  * recognized inside the runtime. Basically it is thrown when
  * a constraint is not fulfilled that should be fulfilled.
- * 
- * @author Jochen Theodorou
  */
 public class GroovyBugError extends AssertionError {
 
-    private static final long serialVersionUID = 7170193853899664927L;
+    private static final long serialVersionUID = -9165076784700059275L;
     // message string
     private String message;
     // optional exception
@@ -35,74 +33,75 @@ public class GroovyBugError extends AssertionError {
 
     /**
      * constructs a bug error using the given text
+     *
      * @param message the error message text
      */
-    public GroovyBugError( String message ) {
+    public GroovyBugError(String message) {
         this(message, null);
     }
-    
+
     /**
      * Constructs a bug error using the given exception
+     *
      * @param exception cause of this error
      */
-    public GroovyBugError( Exception exception ) {
+    public GroovyBugError(Exception exception) {
         this(null, exception);
     }
-    
+
     /**
      * Constructs a bug error using the given exception and
-     * a text with additional information about the cause 
-     * @param msg additional information about this error
+     * a text with additional information about the cause
+     *
+     * @param msg       additional information about this error
      * @param exception cause of this error
      */
-    public GroovyBugError( String msg, Exception exception ) {
+    public GroovyBugError(String msg, Exception exception) {
         this.exception = exception;
         this.message = msg;
     }
 
     /**
-     * Returns a String representation of this class by calling <code>getMessage()</code>.  
+     * Returns a String representation of this class by calling <code>getMessage()</code>.
+     *
      * @see #getMessage()
      */
     public String toString() {
         return getMessage();
     }
-    
+
     /**
-     * Returns the detail message string of this error. The message 
+     * Returns the detail message string of this error. The message
      * will consist of the bug text prefixed by "BUG! " if there this
      * instance was created using a message. If this error was
-     * constructed without using a bug text the message of the cause 
+     * constructed without using a bug text the message of the cause
      * is used prefixed by "BUG! UNCAUGHT EXCEPTION: "
-     *  
+     *
      * @return the detail message string of this error.
      */
     public String getMessage() {
-        if( message != null )
-        {
-            return "BUG! "+message;
-        }
-        else
-        {
+        if (message != null) {
+            return "BUG! " + message;
+        } else {
             return "BUG! UNCAUGHT EXCEPTION: " + exception.getMessage();
         }
     }
-    
+
     public Throwable getCause() {
         return this.exception;
-    }    
-    
+    }
+
     /**
      * Returns the bug text to describe this error
      */
-    public String getBugText(){
-        if( message != null ){
+    public String getBugText() {
+        if (message != null) {
             return message;
         } else {
             return exception.getMessage();
         }
     }
-    
+
     /**
      * Sets the bug text to describe this error
      */

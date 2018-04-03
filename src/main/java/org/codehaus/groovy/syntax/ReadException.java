@@ -25,9 +25,8 @@ import java.io.IOException;
 /**
  * Encapsulates non-specific i/o exceptions.
  */
-
 public class ReadException extends GroovyException {
-    private static final long serialVersionUID = -6171846198126205359L;
+    private static final long serialVersionUID = 848585058428047961L;
     private final IOException cause;
 
     public ReadException(IOException cause) {
