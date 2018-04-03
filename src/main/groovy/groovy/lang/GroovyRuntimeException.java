@@ -23,12 +23,10 @@ import org.codehaus.groovy.ast.ModuleNode;
 
 /**
  * An exception thrown by the interpreter
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class GroovyRuntimeException extends RuntimeException {
 
-    private static final long serialVersionUID = 3699943230572902549L;
+    private static final long serialVersionUID = -193137033604506378L;
     private ModuleNode module;
     private ASTNode node;
 
