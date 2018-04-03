@@ -46,6 +46,7 @@ import groovy.lang.Closure;
  */
 public final class CurriedClosure<V> extends Closure<V> {
 
+    private static final long serialVersionUID = -1018388175778192754L;
     private final Object[] curriedParams;
     private final int minParamsExpected;
     private int index;

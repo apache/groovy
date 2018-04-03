@@ -27,6 +27,8 @@ import java.io.IOException;
  */
 public class StringWriterIOException extends RuntimeException {
 
+    private static final long serialVersionUID = -504499949457372681L;
+
     public StringWriterIOException(IOException e) {
         super(e);
     }

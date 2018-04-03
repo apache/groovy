@@ -37,6 +37,7 @@ import java.lang.reflect.Modifier;
  */
 public class MethodSelectionException extends GroovyRuntimeException {
 
+    private static final long serialVersionUID = 6260193948973669540L;
     private final String methodName;
     private final FastArray methods;
     private final Class[] arguments;

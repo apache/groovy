@@ -30,6 +30,7 @@ package groovy.lang;
  */
 final class TrampolineClosure<V> extends Closure<V> {
 
+    private static final long serialVersionUID = -4096349147398489925L;
     private final Closure<V> original;
 
     TrampolineClosure(final Closure<V> original) {
