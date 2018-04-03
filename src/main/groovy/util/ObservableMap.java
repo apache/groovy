@@ -332,6 +332,7 @@ public class ObservableMap implements Map {
     }
 
     public abstract static class PropertyEvent extends PropertyChangeEvent {
+        private static final long serialVersionUID = -8328412226044328674L;
         private ChangeType type;
 
         public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, ChangeType type) {
@@ -353,24 +354,31 @@ public class ObservableMap implements Map {
     }
 
     public static class PropertyAddedEvent extends PropertyEvent {
+        private static final long serialVersionUID = -5761685843732329868L;
+
         public PropertyAddedEvent(Object source, String propertyName, Object newValue) {
             super(source, propertyName, null, newValue, ChangeType.ADDED);
         }
     }
 
     public static class PropertyUpdatedEvent extends PropertyEvent {
+        private static final long serialVersionUID = -1104637722950032690L;
+
         public PropertyUpdatedEvent(Object source, String propertyName, Object oldValue, Object newValue) {
             super(source, propertyName, oldValue, newValue, ChangeType.UPDATED);
         }
     }
 
     public static class PropertyRemovedEvent extends PropertyEvent {
+        private static final long serialVersionUID = 1882656655856158470L;
+
         public PropertyRemovedEvent(Object source, String propertyName, Object oldValue) {
             super(source, propertyName, oldValue, null, ChangeType.REMOVED);
         }
     }
 
     public static class PropertyClearedEvent extends PropertyEvent {
+        private static final long serialVersionUID = -1472110679547513634L;
         private Map values = new HashMap();
 
         public PropertyClearedEvent(Object source, Map values) {
@@ -388,6 +396,7 @@ public class ObservableMap implements Map {
     public static class MultiPropertyEvent extends PropertyEvent {
         public static final String MULTI_PROPERTY = "groovy_util_ObservableMap_MultiPropertyEvent_MULTI";
         private static final PropertyEvent[] EMPTY_PROPERTY_EVENTS = new PropertyEvent[0];
+        private static final long serialVersionUID = 3925136810810084267L;
 
         private PropertyEvent[] events = EMPTY_PROPERTY_EVENTS;
 

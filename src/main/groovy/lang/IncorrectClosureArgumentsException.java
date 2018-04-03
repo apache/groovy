@@ -28,6 +28,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class IncorrectClosureArgumentsException extends GroovyRuntimeException {
 
+    private static final long serialVersionUID = 4208144749858078754L;
     private final Closure closure;
     private final Object arguments;
     private final Class[] expected;

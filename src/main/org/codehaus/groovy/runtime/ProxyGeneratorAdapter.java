@@ -929,6 +929,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     private static class ReturnValueWrappingClosure<V> extends Closure<V>{
+        private static final long serialVersionUID = 1313135457715304501L;
         private final V value;
 
         public ReturnValueWrappingClosure(V returnValue) {

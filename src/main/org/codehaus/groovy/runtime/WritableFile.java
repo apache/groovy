@@ -32,6 +32,7 @@ import java.io.Writer;
  *
  */
 public class WritableFile extends File implements Writable {
+    private static final long serialVersionUID = 1661640530283827325L;
     private final String encoding;
 
     public WritableFile(final File delegate) {

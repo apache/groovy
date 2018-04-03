@@ -35,6 +35,7 @@ import java.util.List;
  */
 public class Sequence extends ArrayList implements GroovyObject {
 
+    private static final long serialVersionUID = 7498505573299850715L;
     private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
     private Class type;
     private int hashCode;

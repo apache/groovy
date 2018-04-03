@@ -26,6 +26,8 @@ package groovy.lang;
  */
 public class ReadOnlyPropertyException extends MissingPropertyException {
 
+    private static final long serialVersionUID = -1800912081930896077L;
+
     public ReadOnlyPropertyException(final String property, final Class type) {
         super("Cannot set readonly property: " + property + " for class: " + type.getName(), property, type);
     }

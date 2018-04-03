@@ -33,6 +33,7 @@ import java.util.List;
  */
 public class MethodClosure extends Closure {
 
+    private static final long serialVersionUID = 5316055624606528584L;
     public static boolean ALLOW_RESOLVE = false;
 
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];

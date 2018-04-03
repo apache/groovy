@@ -43,6 +43,7 @@ import java.util.Hashtable;
  * @author Santhosh Kumar T
  */
 public class LexerFrame extends JFrame implements ActionListener{
+    private static final long serialVersionUID = -8997987607217627488L;
     JSplitPane jSplitPane1 = new JSplitPane();
     JScrollPane jScrollPane1 = new JScrollPane();
     JScrollPane jScrollPane2 = new JScrollPane();
@@ -103,6 +104,8 @@ public class LexerFrame extends JFrame implements ActionListener{
     }
 
     private Action loadFileAction = new AbstractAction("Open File..."){
+        private static final long serialVersionUID = 4541927184172762704L;
+
         public void actionPerformed(ActionEvent ae){
             JFileChooser jfc = new JFileChooser();
             int response = jfc.showOpenDialog(LexerFrame.this);
@@ -204,6 +207,8 @@ public class LexerFrame extends JFrame implements ActionListener{
 
 
 class HScrollableTextPane extends JTextPane{
+    private static final long serialVersionUID = 3170809157581763848L;
+
     public boolean getScrollableTracksViewportWidth(){
         return(getSize().width<getParent().getSize().width);
     }

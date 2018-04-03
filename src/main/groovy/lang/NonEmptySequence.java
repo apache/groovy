@@ -29,6 +29,8 @@ import java.util.List;
  */
 public class NonEmptySequence extends Sequence {
 
+    private static final long serialVersionUID = 1614604919062836998L;
+
     public NonEmptySequence() {
         super(null);
     }
