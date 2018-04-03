@@ -3470,7 +3470,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         BinaryExpression instanceOfExpression = findInstanceOfNotReturnExpression(ifElse);
         if (instanceOfExpression == null) {
-        } else {
+            instanceOfExpression = findNotInstanceOfReturnExpression(ifElse);
+        }
+        if (instanceOfExpression != null) {
             if(typeCheckingContext.enclosingBlocks.size()>0) {
                 visitInstanceofNot(instanceOfExpression);
             }
@@ -3478,7 +3480,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
 
-    public void visitInstanceofNot(BinaryExpression be) {
+    protected void visitInstanceofNot(BinaryExpression be) {
         final BlockStatement currentBlock = typeCheckingContext.enclosingBlocks.getFirst();
         assert currentBlock != null;
         if (typeCheckingContext.blockStatements2Types.containsKey(currentBlock)) {
@@ -3517,15 +3519,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /**
      * Check IfStatement matched pattern :
      * Object var1;
-     * if (!(var1 instanceOf Runnable)){
-     * return
+     * if (!(var1 instanceOf Runnable)) {
+     *   return
      * }
      * // Here var1 instance of Runnable
      *
      * Return expression , which contains instanceOf (without not)
      * Return null, if not found
      */
-    public BinaryExpression findInstanceOfNotReturnExpression(IfStatement ifElse) {
+    protected BinaryExpression findInstanceOfNotReturnExpression(IfStatement ifElse) {
         Statement elseBlock = ifElse.getElseBlock();
         if (!(elseBlock instanceof EmptyStatement)) {
             return null;
@@ -3544,19 +3546,56 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (op != Types.KEYWORD_INSTANCEOF) {
             return null;
         }
-        Statement block = ifElse.getIfBlock();
-        if (!(block instanceof BlockStatement)) {
-            return null;
-        }
-        BlockStatement bs = (BlockStatement) block;
-        if (bs.getStatements().size() == 0) {
-            return null;
-        }
-        Statement last = DefaultGroovyMethods.last(bs.getStatements());
-        if (!(last instanceof ReturnStatement)) {
+        if (notReturningBlock(ifElse.getIfBlock())) {
             return null;
         }
         return instanceOfExpression;
+    }
+
+    /**
+     * Check IfStatement matched pattern :
+     * Object var1;
+     * if (var1 !instanceOf Runnable) {
+     *   return
+     * }
+     * // Here var1 instance of Runnable
+     *
+     * Return expression , which contains instanceOf (without not)
+     * Return null, if not found
+     */
+    protected BinaryExpression findNotInstanceOfReturnExpression(IfStatement ifElse) {
+        Statement elseBlock = ifElse.getElseBlock();
+        if (!(elseBlock instanceof EmptyStatement)) {
+            return null;
+        }
+        Expression conditionExpression = ifElse.getBooleanExpression().getExpression();
+        if (!(conditionExpression instanceof BinaryExpression)) {
+            return null;
+        }
+        BinaryExpression instanceOfExpression = (BinaryExpression) conditionExpression;
+        int op = instanceOfExpression.getOperation().getType();
+        if (op != Types.COMPARE_NOT_INSTANCEOF) {
+            return null;
+        }
+        if (notReturningBlock(ifElse.getIfBlock())) {
+            return null;
+        }
+        return instanceOfExpression;
+    }
+
+    private boolean notReturningBlock(Statement block) {
+        if (!(block instanceof BlockStatement)) {
+            return true;
+        }
+        BlockStatement bs = (BlockStatement) block;
+        if (bs.getStatements().size() == 0) {
+            return true;
+        }
+        Statement last = DefaultGroovyMethods.last(bs.getStatements());
+        if (!(last instanceof ReturnStatement)) {
+            return true;
+        }
+        return false;
     }
 
     @Override

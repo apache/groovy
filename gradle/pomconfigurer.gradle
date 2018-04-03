@@ -562,6 +562,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Mike Spille'
             }
             contributor {
+                name 'Nikolay Chugunov'
+            }
+            contributor {
                 name 'Paolo Di Tommaso'
             }
             contributor {
