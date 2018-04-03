@@ -42,7 +42,7 @@ if (JavaVersion.current().isJava7Compatible()) {
         apply plugin: 'me.champeau.gradle.japicmp'
     }
 
-    def referenceMinorVersion = '2.4.6'
+    def referenceMinorVersion = '2.4.15'
 
     def prettyPrint = { classOrMethod ->
         "${Modifier.toString(classOrMethod.get()?.modifiers)} ${classOrMethod.get()?.longName}"
@@ -195,7 +195,6 @@ if (JavaVersion.current().isJava7Compatible()) {
 
         }
     }
-
 
     allprojects {
         tasks.withType(me.champeau.gradle.ArtifactJapicmpTask) { task ->
