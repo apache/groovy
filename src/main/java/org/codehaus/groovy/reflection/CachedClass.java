@@ -60,6 +60,8 @@ public class CachedClass {
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
     private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>(softBundle) {
+        private static final long serialVersionUID = 5450437842165410025L;
+
         public CachedField[] initValue() {
             final Field[] declaredFields = (Field[])
                AccessController.doPrivileged(new PrivilegedAction<Field[]>() {
@@ -76,7 +78,9 @@ public class CachedClass {
         }
     };
 
-    private final LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
+    private LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
+        private static final long serialVersionUID = -5834446523983631635L;
+
         public CachedConstructor[] initValue() {
             final Constructor[] declaredConstructors = (Constructor[])
                AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
@@ -113,6 +117,8 @@ public class CachedClass {
     }
 
     private final LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]>(softBundle) {
+        private static final long serialVersionUID = 6347586066597418308L;
+
         public CachedMethod[] initValue() {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
@@ -162,7 +168,9 @@ public class CachedClass {
         }
     };
 
-    private final LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
+    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
+        private static final long serialVersionUID = -4663740963306806058L;
+
         public CachedClass initValue() {
             if (!isArray)
               return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
@@ -175,6 +183,8 @@ public class CachedClass {
     };
 
     private final LazyReference<CallSiteClassLoader> callSiteClassLoader = new LazyReference<CallSiteClassLoader>(softBundle) {
+        private static final long serialVersionUID = 4410385968428074090L;
+
         public CallSiteClassLoader initValue() {
             return
                AccessController.doPrivileged(new PrivilegedAction<CallSiteClassLoader>() {
@@ -186,6 +196,8 @@ public class CachedClass {
     };
 
     private final LazyReference<LinkedList<ClassInfo>> hierarchy = new LazyReference<LinkedList<ClassInfo>>(softBundle) {
+        private static final long serialVersionUID = 7166687623678851596L;
+
         public LinkedList<ClassInfo> initValue() {
             Set<ClassInfo> res = new LinkedHashSet<ClassInfo> ();
 
@@ -213,6 +225,8 @@ public class CachedClass {
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
     private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> (softBundle) {
+        private static final long serialVersionUID = 2139190436931329873L;
+
         public Set<CachedClass> initValue() {
             Set<CachedClass> res = new HashSet<CachedClass> (0);
 
@@ -225,6 +239,8 @@ public class CachedClass {
     };
 
     private final LazyReference<Set<CachedClass>> interfaces = new LazyReference<Set<CachedClass>> (softBundle) {
+        private static final long serialVersionUID = 4060471819464086940L;
+
         public Set<CachedClass> initValue() {
             Set<CachedClass> res = new HashSet<CachedClass> (0);
 

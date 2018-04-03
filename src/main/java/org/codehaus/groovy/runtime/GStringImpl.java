@@ -29,8 +29,8 @@ import groovy.lang.GString;
  * @see groovy.lang.GString
  */
 public class GStringImpl extends GString {
-    private static final long serialVersionUID = 3856688359714409314L;
-    private final String[] strings;
+    private static final long serialVersionUID = -6400178815578597715L;
+    private String[] strings;
 
     /**
      * Create a new GString with values and strings.

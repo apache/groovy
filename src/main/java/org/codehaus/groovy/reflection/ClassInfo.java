@@ -441,6 +441,7 @@ public class ClassInfo implements Finalizable {
     }
 
     private static class LazyCachedClassRef extends LazyReference<CachedClass> {
+        private static final long serialVersionUID = -1400274148849287400L;
         private final ClassInfo info;
 
         LazyCachedClassRef(ReferenceBundle bundle, ClassInfo info) {
@@ -454,6 +455,7 @@ public class ClassInfo implements Finalizable {
     }
 
     private static class LazyClassLoaderRef extends LazyReference<ClassLoaderForClassArtifacts> {
+        private static final long serialVersionUID = 1639196133085420609L;
         private final ClassInfo info;
 
         LazyClassLoaderRef(ReferenceBundle bundle, ClassInfo info) {

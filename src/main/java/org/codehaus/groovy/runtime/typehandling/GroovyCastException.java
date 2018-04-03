@@ -20,6 +20,8 @@ package org.codehaus.groovy.runtime.typehandling;
 
 public class GroovyCastException extends ClassCastException {
 
+    private static final long serialVersionUID = 6859089155641797356L;
+
     /**
      * @param objectToCast object we tried to cast
      * @param classToCastTo class we tried to cast to

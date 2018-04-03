@@ -57,9 +57,9 @@ import java.util.List;
  */
 public final class ComposedClosure<V> extends Closure<V> {
 
-    private static final long serialVersionUID = -6410722393739184061L;
-    private final Closure first;
-    private final Closure<V> second;
+    private static final long serialVersionUID = 1290542293376731831L;
+    private Closure first;
+    private Closure<V> second;
 
     public ComposedClosure(Closure first, Closure<V> second) {
         super(first.clone());

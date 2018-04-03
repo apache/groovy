@@ -25,6 +25,8 @@ package org.codehaus.groovy.classgen;
  */
 public class ClassGeneratorException extends RuntimeException {
 
+    private static final long serialVersionUID = 440899360174632769L;
+
     public ClassGeneratorException(String message) {
         super(message);
     }
