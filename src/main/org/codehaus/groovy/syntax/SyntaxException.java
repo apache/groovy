@@ -26,7 +26,7 @@ import org.codehaus.groovy.GroovyException;
  */
 public class SyntaxException extends GroovyException {
 
-    private static final long serialVersionUID = 5547021570604495375L;
+    private static final long serialVersionUID = 7447641806794047013L;
     /** Line upon which the error occurred. */
     private final int startLine;
     private final int endLine;
