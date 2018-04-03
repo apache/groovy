@@ -399,7 +399,7 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('bugs/BUG-GROOVY-2324.groovy')
         doTest('bugs/BUG-GROOVY-8161.groovy')
         doRunAndTestAntlr4('bugs/GROOVY-3898.groovy')
-        doRunAndTestAntlr4('bugs/GROOVY8532.groovy')
+        doRunAndTestAntlr4('bugs/GROOVY8523.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-8311.groovy')
 
         if (jdk8orGreater) {
