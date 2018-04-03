@@ -31,8 +31,6 @@ import java.util.Map;
  */
 public class ConvertedMap extends ConversionHandler {
 
-    private static final long serialVersionUID = -8131432558241254137L;
-
     /**
      * to create a ConvertedMap object.
      *

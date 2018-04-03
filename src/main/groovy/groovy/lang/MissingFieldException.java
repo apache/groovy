@@ -29,7 +29,6 @@ package groovy.lang;
  */
 public class MissingFieldException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = -9209464582858098430L;
     private final String field;
     private final Class type;
 

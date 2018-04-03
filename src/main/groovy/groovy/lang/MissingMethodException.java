@@ -30,7 +30,6 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
 public class MissingMethodException extends GroovyRuntimeException {
 
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-    private static final long serialVersionUID = -2423785115382704124L;
     private final String method;
     private final Class type;
     private final boolean isStatic;

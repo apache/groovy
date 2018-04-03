@@ -32,7 +32,6 @@ import java.util.List;
  */
 public class IteratorClosureAdapter<T> extends Closure {
 
-    private static final long serialVersionUID = -3193812539363103534L;
     private final List<T> list = new ArrayList<T>();
     private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
     

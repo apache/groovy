@@ -166,9 +166,7 @@ public class ConcurrentReaderHashMap
   */
 
   /** A Serializable class for barrier lock **/
-  protected static class BarrierLock implements java.io.Serializable {
-      private static final long serialVersionUID = -5403150101810674636L;
-  }
+  protected static class BarrierLock implements java.io.Serializable { }
 
   /**
    * Lock used only for its memory effects.

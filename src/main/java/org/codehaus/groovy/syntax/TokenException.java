@@ -19,8 +19,6 @@
 package org.codehaus.groovy.syntax;
 
 public class TokenException extends SyntaxException {
-    private static final long serialVersionUID = 6850594285972085144L;
-
     public TokenException(String message, Token token) {
         super(
                 (token == null)
