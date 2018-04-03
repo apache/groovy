@@ -24,8 +24,6 @@ package org.codehaus.groovy.runtime.powerassert;
  * @author Peter Niederwieser
  */
 public class PowerAssertionError extends java.lang.AssertionError {
-    private static final long serialVersionUID = 186840762256433109L;
-
     public PowerAssertionError(String msg) {
         super(msg);
     }

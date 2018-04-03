@@ -28,9 +28,7 @@ import java.lang.reflect.Modifier;
  * @author <a href="mailto:blackdrag@uni.de">Jochen Theodorou</a>
  */
 public class IllegalPropertyAccessException extends MissingPropertyException {
-
-    private static final long serialVersionUID = 8149534204771978786L;
-
+    
     private static String makeMessage(String propertyName, Class clazz, int modifiers, boolean isField) {
         String access = "private";
         if (Modifier.isProtected(modifiers)) access = "protected";

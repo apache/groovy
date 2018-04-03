@@ -32,7 +32,6 @@ import java.util.Map;
  * @author Tim Tiemens
  */
 public class SpreadMap extends HashMap {
-    private static final long serialVersionUID = 2870520857928038334L;
     private int hashCode;
 
     public SpreadMap(Object[] values) {

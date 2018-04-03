@@ -26,8 +26,7 @@ import java.io.StringWriter;
  */
 public class MultipleCompilationErrorsException extends
         CompilationFailedException {
-
-    private static final long serialVersionUID = 2948487149304811836L;
+    
     protected ErrorCollector collector;
     
     public MultipleCompilationErrorsException(ErrorCollector ec) {

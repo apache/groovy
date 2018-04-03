@@ -22,8 +22,6 @@ import groovy.lang.MissingMethodException;
 
 public class MissingMethodExceptionNoStack extends MissingMethodException {
 
-    private static final long serialVersionUID = 7075950754138801519L;
-
     public MissingMethodExceptionNoStack(String method, Class type, Object[] arguments) {
         this(method,type,arguments,false);
     }

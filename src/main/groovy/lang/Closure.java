@@ -196,8 +196,6 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public static final int DONE = 1, SKIP = 2;
     private static final Object[] EMPTY_OBJECT_ARRAY = {};
     public static final Closure IDENTITY = new Closure<Object>(null) {
-        private static final long serialVersionUID = 730973623329943963L;
-
         public Object doCall(Object args) {
             return args;
         }
@@ -847,8 +845,6 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * inner class instead of the outer!
      */
     private class WritableClosure extends Closure implements Writable {
-        private static final long serialVersionUID = -5749205698681690370L;
-
         public WritableClosure() {
             super(Closure.this);
         }

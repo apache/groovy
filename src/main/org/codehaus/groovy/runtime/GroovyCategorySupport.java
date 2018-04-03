@@ -47,7 +47,6 @@ public class GroovyCategorySupport {
     private static int categoriesInUse = 0;
 
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
-        private static final long serialVersionUID = 1569020062006842141L;
         public final int level;
         final CategoryMethodList previous;
         final AtomicInteger usage;
@@ -73,7 +72,6 @@ public class GroovyCategorySupport {
     public static class ThreadCategoryInfo extends HashMap<String, CategoryMethodList>{
 
         private static final Object LOCK = new Object();
-        private static final long serialVersionUID = 2609120843123833410L;
 
         int level;
 

@@ -138,8 +138,6 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         final long[] size = {0L};
 
         eachFileRecurse(self, FileType.FILES, new Closure<Void>(null) {
-            private static final long serialVersionUID = 7688764529326404277L;
-
             public void doCall(Object[] args) {
                 size[0] += ((File) args[0]).length();
             }

@@ -78,8 +78,6 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         referenceResolver = new DefaultReferenceResolver();
 
         addPostNodeCompletionDelegate(new Closure(this, this) {
-            private static final long serialVersionUID = 7282290918368141309L;
-
             public void doCall(ObjectGraphBuilder builder, Object parent, Object node) {
                 if (parent == null) {
                     builder.resolveLazyReferences();
