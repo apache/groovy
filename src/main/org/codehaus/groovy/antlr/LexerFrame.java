@@ -43,7 +43,7 @@ import java.util.Hashtable;
  * @author Santhosh Kumar T
  */
 public class LexerFrame extends JFrame implements ActionListener{
-    private static final long serialVersionUID = 2715693043143492893L;L;
+    private static final long serialVersionUID = 2715693043143492893L;
     JSplitPane jSplitPane1 = new JSplitPane();
     JScrollPane jScrollPane1 = new JScrollPane();
     JScrollPane jScrollPane2 = new JScrollPane();
