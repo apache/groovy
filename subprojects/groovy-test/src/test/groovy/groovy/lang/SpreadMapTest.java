@@ -24,8 +24,6 @@ import java.util.Map;
 
 /**
  * Tests the SpreadMap implementation.
- *
- * @author Tim Tiemens
  */
 public class SpreadMapTest extends GroovyTestCase {
     Map map;

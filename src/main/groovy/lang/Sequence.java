@@ -30,14 +30,12 @@ import java.util.List;
  * Represents a sequence of objects which represents zero or many instances of
  * of objects of a given type. The type can be omitted in which case any type of
  * object can be added.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class Sequence extends ArrayList implements GroovyObject {
 
-    private static final long serialVersionUID = 7498505573299850715L;
-    private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
-    private Class type;
+    private static final long serialVersionUID = 5697409354934589471L;
+    private transient MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
+    private final Class type;
     private int hashCode;
 
     public Sequence() {
