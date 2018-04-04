@@ -208,7 +208,7 @@ public class MopWriter {
             // JDK 8 support for default methods in interfaces
             // this should probably be strenghtened when we support the A.super.foo() syntax
             int opcode = declaringClass.isInterface()?INVOKEINTERFACE:INVOKESPECIAL;
-            mv.visitMethodInsn(opcode, BytecodeHelper.getClassInternalName(declaringClass), method.getName(), methodDescriptor, opcode == INVOKEINTERFACE);
+            mv.visitMethodInsn(opcode, BytecodeHelper.getClassInternalName(declaringClass), method.getName(), methodDescriptor, declaringClass.isInterface());
             BytecodeHelper.doReturn(mv, method.getReturnType());
             mv.visitMaxs(0, 0);
             mv.visitEnd();
