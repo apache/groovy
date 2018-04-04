@@ -268,8 +268,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     public Set<GroovyClassDoc> getParentInterfaces() {
         Set<GroovyClassDoc> result = new LinkedHashSet<GroovyClassDoc>();
         result.add(this);
-        Set<GroovyClassDoc> next = new LinkedHashSet<GroovyClassDoc>();
-        next.addAll(Arrays.asList(this.interfaces()));
+        Set<GroovyClassDoc> next = new LinkedHashSet<GroovyClassDoc>(Arrays.asList(this.interfaces()));
         while (!next.isEmpty()) {
             Set<GroovyClassDoc> temp = next;
             next = new LinkedHashSet<GroovyClassDoc>();
