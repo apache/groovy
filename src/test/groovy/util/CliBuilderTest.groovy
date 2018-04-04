@@ -22,16 +22,13 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
-import org.apache.commons.cli.BasicParser
-import org.apache.commons.cli.DefaultParser
-import org.apache.commons.cli.GnuParser
-import org.codehaus.groovy.cli.GroovyPosixParser
+import picocli.CommandLine
+import picocli.CommandLine.Model.OptionSpec
 
 import java.math.RoundingMode
 import java.text.SimpleDateFormat
 
-import static org.apache.commons.cli.Option.UNLIMITED_VALUES
-import static org.apache.commons.cli.Option.builder
+import static picocli.CommandLine.Model.OptionSpec.builder
 
 /**
  * Test class for the CliBuilder.
@@ -43,6 +40,8 @@ import static org.apache.commons.cli.Option.builder
  */
 
 class CliBuilderTest extends GroovyTestCase {
+    /** Commons-cli constant that specifies the number of argument values is infinite */
+    private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
 
     private StringWriter stringWriter
     private PrintWriter printWriter
@@ -54,13 +53,13 @@ class CliBuilderTest extends GroovyTestCase {
     private final expectedParameter = 'ASCII'
     private final usageString = 'groovy [option]* filename'
 
-    private void runSample(parser, optionList) {
+    private void runSample(optionList) {
         resetPrintWriter()
-        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: parser)
+        def cli = new CliBuilder(usage: usageString, writer: printWriter)
         cli.h(longOpt: 'help', 'usage information')
         cli.c(argName: 'charset', args: 1, longOpt: 'encoding', 'character encoding')
         cli.i(argName: 'extension', optionalArg: true, 'modify files in place, create backup if extension is given (e.g. \'.bak\')')
-        def stringified = cli.options.toString()
+        def stringified = cli.commandSpec.toString()
         assert stringified =~ /i=\[ option: i  :: modify files in place, create backup if extension is given/
         assert stringified =~ /c=\[ option: c encoding  \[ARG] :: character encoding/
         assert stringified =~ /h=\[ option: h help  :: usage information/
@@ -102,36 +101,28 @@ class CliBuilderTest extends GroovyTestCase {
     }
 
     void testSampleShort() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
-            runSample(parser, ['-h', '-c', expectedParameter])
-        }
+        runSample(['-h', '-c', expectedParameter])
     }
 
     void testSampleLong() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
-            runSample(parser, ['--help', '--encoding', expectedParameter])
-        }
+        runSample( ['--help', '--encoding', expectedParameter])
     }
 
     void testSimpleArg() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
-            def cli = new CliBuilder(parser: parser)
-            cli.a([:], '')
-            def options = cli.parse(['-a', '1', '2'])
-            assertEquals(['1', '2'], options.arguments())
-        }
+        def cli = new CliBuilder()
+        cli.a([:], '')
+        def options = cli.parse(['-a', '1', '2'])
+        assertEquals(['1', '2'], options.arguments())
     }
 
     void testMultipleArgs() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
-            def cli = new CliBuilder(parser: parser)
-            cli.a(longOpt: 'arg', args: 2, valueSeparator: ',' as char, 'arguments')
-            def options = cli.parse(['-a', '1,2'])
-            assertEquals('1', options.a)
-            assertEquals(['1', '2'], options.as)
-            assertEquals('1', options.arg)
-            assertEquals(['1', '2'], options.args)
-        }
+        def cli = new CliBuilder()
+        cli.a(longOpt: 'arg', args: 2, valueSeparator: ',' as char, 'arguments')
+        def options = cli.parse(['-a', '1,2'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2'], options.as)
+        assertEquals('1', options.arg)
+        assertEquals(['1', '2'], options.args)
     }
 
     void testFailedParsePrintsUsage() {
@@ -146,95 +137,81 @@ usage: groovy
     }
 
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
-            def cli = new CliBuilder(parser: parser)
-            def anOption = builder().longOpt('anOption').hasArg().desc('An option.')
-                    .build()
-            cli.options.addOption(anOption)
-            def options = cli.parse(['-v', '--anOption', 'something'])
-            // no options should be found
-            assert options.getOptionValue('anOption') == null
-            assert !options.anOption
-            assert !options.v
-            // arguments should be still sitting there
-            assert options.arguments() == ['-v', '--anOption', 'something']
-        }
+        def cli = new CliBuilder()
+        def anOption = builder('anOption').arity("1").description('An option.')
+                .build()
+        cli.commandSpec.addOption(anOption)
+        def options = cli.parse(['-v', '--anOption', 'something'])
+        // no options should be found
+        assert options.getOptionValue('anOption') == null
+        assert !options.anOption
+        assert !options.v
+        // arguments should be still sitting there
+        assert options.arguments() == ['-v', '--anOption', 'something']
     }
 
     void testLongAndShortOpts_allOptionsValid() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
-            def cli = new CliBuilder(parser: parser)
-            def anOption = builder().longOpt('anOption').hasArg().desc('An option.').build()
-            cli.options.addOption(anOption)
-            cli.v(longOpt: 'verbose', 'verbose mode')
-            def options = cli.parse(['-v', '--anOption', 'something'])
-            assert options.v
-            assert options.getOptionValue('anOption') == 'something'
-            assert options.anOption == 'something'
-            assert !options.arguments()
-        }
+        def cli = new CliBuilder()
+        def anOption = builder('--anOption').arity("1").description('An option.').build()
+        cli.commandSpec.addOption(anOption)
+        cli.v(longOpt: 'verbose', 'verbose mode')
+        def options = cli.parse(['-v', '--anOption', 'something'])
+        assert options.v
+        assert options.getOptionValue('anOption') == 'something'
+        assert options.anOption == 'something'
+        assert !options.arguments()
     }
 
     void testUnrecognizedOptions() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
-            def cli = new CliBuilder(parser: parser)
-            cli.v(longOpt: 'verbose', 'verbose mode')
-            def options = cli.parse(['-x', '-yyy', '--zzz', 'something'])
-            assertEquals(['-x', '-yyy', '--zzz', 'something'], options.arguments())
-        }
+        def cli = new CliBuilder()
+        cli.v(longOpt: 'verbose', 'verbose mode')
+        def options = cli.parse(['-x', '-yyy', '--zzz', 'something'])
+        assertEquals(['-x', '-yyy', '--zzz', 'something'], options.arguments())
     }
 
     void testMultipleOccurrencesSeparateSeparate() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
-            def cli = new CliBuilder(parser: parser)
-            cli.a(longOpt: 'arg', args: UNLIMITED_VALUES, 'arguments')
-            def options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
-            assertEquals('1', options.a)
-            assertEquals(['1', '2', '3'], options.as)
-            assertEquals('1', options.arg)
-            assertEquals(['1', '2', '3'], options.args)
-            assertEquals([], options.arguments())
-        }
+        def cli = new CliBuilder()
+        cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, 'arguments')
+        def options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)
+        assertEquals(['1', '2', '3'], options.args)
+        assertEquals([], options.arguments())
     }
 
     void testMultipleOccurrencesSeparateJuxtaposed() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
-            def cli = new CliBuilder(parser: parser)
-            //cli.a ( longOpt : 'arg' , args : UNLIMITED_VALUES , 'arguments' )
-            cli.a(longOpt: 'arg', args: 1, 'arguments')
-            def options = cli.parse(['-a1', '-a2', '-a3'])
-            assertEquals('1', options.a)
-            assertEquals(['1', '2', '3'], options.as)
-            assertEquals('1', options.arg)
-            assertEquals(['1', '2', '3'], options.args)
-            assertEquals([], options.arguments())
-        }
+        def cli = new CliBuilder()
+        //cli.a ( longOpt : 'arg' , args : COMMONS_CLI_UNLIMITED_VALUES , 'arguments' )
+        cli.a(longOpt: 'arg', args: 1, 'arguments')
+        def options = cli.parse(['-a1', '-a2', '-a3'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)
+        assertEquals(['1', '2', '3'], options.args)
+        assertEquals([], options.arguments())
     }
 
     void testMultipleOccurrencesTogetherSeparate() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
-            def cli = new CliBuilder(parser: parser)
-            cli.a(longOpt: 'arg', args: UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
-            def options = cli.parse(['-a 1,2,3'])
-            assertEquals(' 1', options.a)
-            assertEquals([' 1', '2', '3'], options.as)
-            assertEquals(' 1', options.arg)
-            assertEquals([' 1', '2', '3'], options.args)
-            assertEquals([], options.arguments())
-        }
+        def cli = new CliBuilder()
+        cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
+        def options = cli.parse(['-a 1,2,3'])
+        assertEquals(' 1', options.a)
+        assertEquals([' 1', '2', '3'], options.as)
+        assertEquals(' 1', options.arg)
+        assertEquals([' 1', '2', '3'], options.args)
+        assertEquals([], options.arguments())
     }
 
     void testMultipleOccurrencesTogetherJuxtaposed() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
-            def cli1 = new CliBuilder(parser: parser)
-            cli1.a(longOpt: 'arg', args: UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
-            def options = cli1.parse(['-a1,2,3'])
-            assertEquals('1', options.a)
-            assertEquals(['1', '2', '3'], options.as)
-            assertEquals('1', options.arg)
-            assertEquals(['1', '2', '3'], options.args)
-            assertEquals([], options.arguments()) }
-        }
+        def cli1 = new CliBuilder()
+        cli1.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
+        def options = cli1.parse(['-a1,2,3'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)
+        assertEquals(['1', '2', '3'], options.args)
+        assertEquals([], options.arguments()) }
 
     /*
     *  Behaviour with unrecognized options.
@@ -243,7 +220,7 @@ usage: groovy
     */
 
     void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
-        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new GnuParser())
+        def cli = new CliBuilder(usage: usageString, writer: printWriter)
         def options = cli.parse(['-v'])
         assertEquals('''''', stringWriter.toString().tokenize('\r\n').join('\n'))
         assert !options.v
@@ -254,14 +231,14 @@ usage: groovy
     }
 
     void testUnrecognizedOptionSilentlyIgnored_DefaultParser() {
-        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new DefaultParser())
+        def cli = new CliBuilder(usage: usageString, writer: printWriter/*, parser: new DefaultParser()*/)
         def options = cli.parse(['-v'])
         checkNoOutput()
         assert !options.v
     }
 
     void testUnrecognizedOptionTerminatesParse_GnuParser() {
-        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new GnuParser())
+        def cli = new CliBuilder(usage: usageString, writer: printWriter/*, parser: new GnuParser()*/)
         cli.h(longOpt: 'help', 'usage information')
         def options = cli.parse(['-v', '-h'])
         checkNoOutput()
@@ -271,7 +248,7 @@ usage: groovy
     }
 
     void testUnrecognizedOptionTerminatesParse_DefaultParser() {
-        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new DefaultParser())
+        def cli = new CliBuilder(usage: usageString, writer: printWriter/*, parser: new DefaultParser()*/)
         cli.h(longOpt: 'help', 'usage information')
         def options = cli.parse(['-v', '-h'])
         checkNoOutput()
@@ -281,16 +258,14 @@ usage: groovy
     }
 
     void testMultiCharShortOpt() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
-            def cli = new CliBuilder(writer: printWriter, parser: parser)
-            cli.abc('abc option')
-            cli.def(longOpt: 'defdef', 'def option')
-            def options = cli.parse(['-abc', '--defdef', 'ghi'])
-            assert options
-            assert options.arguments() == ['ghi']
-            assert options.abc && options.def && options.defdef
-            checkNoOutput()
-        }
+        def cli = new CliBuilder(writer: printWriter)
+        cli.abc('abc option')
+        cli.def(longOpt: 'defdef', 'def option')
+        def options = cli.parse(['-abc', '--defdef', 'ghi'])
+        assert options
+        assert options.arguments() == ['ghi']
+        assert options.abc && options.def && options.defdef
+        checkNoOutput()
     }
 
     void testArgumentBursting_DefaultParserOnly() {
