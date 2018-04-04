@@ -225,7 +225,7 @@ public class InvocationWriter {
         loadArguments(args.getExpressions(), target.getParameters());
 
         String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
-        mv.visitMethodInsn(opcode, owner, methodName, desc, opcode == INVOKEINTERFACE);
+        mv.visitMethodInsn(opcode, owner, methodName, desc, declaringClass.isInterface());
         ClassNode ret = target.getReturnType().redirect();
         if (ret==ClassHelper.VOID_TYPE) {
             ret = ClassHelper.OBJECT_TYPE;
