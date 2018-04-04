@@ -317,14 +317,6 @@ class CliBuilder {
         this.width = width
     }
 
-    // TODO make OptionSpec and PositionalParamSpec generic?
-    public <T> TypedOption<T> option(Map args, Class<T> type, String description) {
-        def name = args.opt ?: '_'
-        args.type = type
-        args.remove('opt')
-        "$name"(args, description)
-    }
-
     /**
      * Internal method: Detect option specification method calls.
      */
@@ -517,8 +509,8 @@ class CliBuilder {
         def isFlag = type.simpleName.toLowerCase() == 'boolean'
         String arity = "0"
         if (numberOfArgumentsString) {
-            arity = optionalArg ? "0.." + (numberOfArgumentsString == "+" ? "*" : numberOfArgumentsString)
-                                :          numberOfArgumentsString == "+" ? "1..*" : numberOfArgumentsString
+            arity = optionalArg ? "0.." + (numberOfArgumentsString == "+" ? "*"    : numberOfArgumentsString)
+                                :         (numberOfArgumentsString == "+" ? "1..*" : numberOfArgumentsString)
         } else {
             int argCount = isFlag ? 0 : numberOfArguments
             arity = optionalArg ? "0..$argCount" : argCount as String
@@ -596,19 +588,6 @@ class CliBuilder {
 
     // implementation details -------------------------------------
     /**
-     * Pretend that OptionSpec has opt() and longopt() methods to facilitate migration from commons-cli.
-     */
-    static {
-        OptionSpec.metaClass.opt = { ->
-            String opt = delegate.names().sort { a, b -> a.length() - b.length() }.first()
-            opt?.length() == 2 ? opt.substring(1) : null
-        }
-        OptionSpec.metaClass.longopt = { ->
-            String longopt = delegate.names().sort { a, b -> b.length() - a.length() }.first()
-            longopt?.startsWith("--") ? longopt.substring(2) : null
-        }
-    }
-    /**
      * Internal method: How to create an OptionSpec from the specification.
      */
     OptionSpec option(shortname, Map details, description) {
@@ -645,7 +624,8 @@ class CliBuilder {
 
     static Map commons2picocli(shortname, Map m) {
         if (m.args && m.optionalArg) {
-            m.arity = "0..${m.remove('args')}"
+            m.arity = "0..${m.args}"
+            m.remove('args')
             m.remove('optionalArg')
         }
         if (!m.defaultValue) {
@@ -665,7 +645,7 @@ class CliBuilder {
             } else if (k == 'valueSeparator') {
                 [[splitRegex: "$v"]]
             } else if (k == 'convert') {
-                [[converters: [v] as CommandLine.ITypeConverter[] ]]
+                [[converters: [v] as ITypeConverter[] ]]
             } else {
                 [[(k): v]]
             }
@@ -676,59 +656,9 @@ class CliBuilder {
 
 class OptionAccessor {
     ParseResult parseResult
-    Map<String, TypedOption> savedTypeOptions
 
     OptionAccessor(ParseResult parseResult) {
         this.parseResult = parseResult
-    }
-
-    boolean hasOption(TypedOption typedOption) {
-        parseResult.hasOption(typedOption.longOpt ?: typedOption.opt as String)
-    }
-
-    public <T> T defaultValue(String name) {
-        Class<T> type = savedTypeOptions[name]?.type
-        String value = savedTypeOptions[name]?.defaultValue() ? savedTypeOptions[name].defaultValue() : null
-        return (T) value ? getTypedValue(type, name, value) : null
-    }
-
-    public <T> T getOptionValue(TypedOption<T> typedOption) {
-        getOptionValue(typedOption, null)
-    }
-
-    public <T> T getOptionValue(TypedOption<T> typedOption, T defaultValue) {
-        String optionName = (String) typedOption.longOpt ?: typedOption.opt
-        parseResult.optionValue(optionName, defaultValue)
-    }
-
-    public <T> T getAt(TypedOption<T> typedOption) {
-        getAt(typedOption, null)
-    }
-
-    public <T> T getAt(TypedOption<T> typedOption, T defaultValue) {
-        String optionName = (String) typedOption.longOpt ?: typedOption.opt
-        parseResult.optionValue(optionName, defaultValue)
-    }
-
-    private <T> T getTypedValue(Class<T> type, String optionName, String optionValue) {
-        if (savedTypeOptions[optionName]?.cliOption?.arity?.min == 0) {
-            return (T) parseResult.option(optionName)
-        }
-        def convert = savedTypeOptions[optionName]?.convert
-        return getValue(type, optionValue, convert)
-    }
-
-    private <T> T getValue(Class<T> type, String optionValue, Closure convert) {
-        if (!type) {
-            return (T) optionValue
-        }
-        if (Closure.isAssignableFrom(type) && convert) {
-            return (T) convert(optionValue)
-        }
-        if (type == Boolean || type == Boolean.TYPE) {
-            return type.cast(Boolean.parseBoolean(optionValue))
-        }
-        StringGroovyMethods.asType(optionValue, (Class<T>) type)
     }
 
     def invokeMethod(String name, Object args) {
