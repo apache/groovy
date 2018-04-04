@@ -440,7 +440,7 @@ class CliBuilder {
                 if (isCoercedMap) {
                     target.put(m.name, currentValue)
                 } else if (m.parameterTypes.size() > 0) {
-                    m.invoke(target, [currentValue])
+                    m.invoke(target, [currentValue].toArray())
                 }
                 return old
             }
@@ -548,15 +548,15 @@ class CliBuilder {
         if (m.parameterTypes.size() > 0) { // setter
             Class type = m.parameterTypes[0]
             if (type.isArray() && type.componentType == String) {
-                return UnmatchedArgsBinding.forStringArrayConsumer { m.invoke(target, [it]) }
+                return UnmatchedArgsBinding.forStringArrayConsumer { m.invoke(target, [it].toArray()) }
             }
             if (List.isAssignableFrom(type)) {
-                return UnmatchedArgsBinding.forStringArrayConsumer { m.invoke(target, [it as List]) }
+                return UnmatchedArgsBinding.forStringArrayConsumer { m.invoke(target, [it as List].toArray()) }
             }
             if (String == type) {
                 return UnmatchedArgsBinding.forStringArrayConsumer { String[] value ->
                     value.each {
-                        m.invoke(target, [it])
+                        m.invoke(target, [it].toArray())
                     }
                 }
             }
