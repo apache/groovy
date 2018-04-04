@@ -27,6 +27,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MetaClassHelper
 import org.codehaus.groovy.runtime.StringGroovyMethods
 import picocli.CommandLine
+import picocli.CommandLine.ITypeConverter
 import picocli.CommandLine.Model.CommandSpec
 import picocli.CommandLine.Model.IGetter
 import picocli.CommandLine.Model.ISetter
@@ -494,7 +495,7 @@ class CliBuilder {
         builder.paramLabel("<$label>")
         if (annotation.convert() != Undefined.CLASS) {
             if (annotation.convert() instanceof Class) {
-                builder.converters(annotation.convert().newInstance(target, target))
+                builder.converters(annotation.convert().newInstance(target, target) as ITypeConverter)
             }
         }
         builder.getter(getter)

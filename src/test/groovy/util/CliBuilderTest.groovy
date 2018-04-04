@@ -28,6 +28,7 @@ import org.apache.commons.cli.GnuParser
 import org.codehaus.groovy.cli.GroovyPosixParser
 
 import java.math.RoundingMode
+import java.text.SimpleDateFormat
 
 import static org.apache.commons.cli.Option.UNLIMITED_VALUES
 import static org.apache.commons.cli.Option.builder
@@ -585,12 +586,12 @@ usage: groovy
     class WithConvertC {
         @Option(convert={ it.toLowerCase() }) String a
         @Option(convert={ it.toUpperCase() }) String b
-        @Option(convert={ Date.parse("yyyy-MM-dd", it) }) Date d
+        @Option(convert={ new SimpleDateFormat("yyyy-MM-dd").parse(it) }) Date d
         @Unparsed List remaining
     }
 
     void testConvertClass() {
-        Date newYears = Date.parse("yyyy-MM-dd", "2016-01-01")
+        Date newYears = new SimpleDateFormat("yyyy-MM-dd").parse("2016-01-01")
         def argz = '''-a John -b Mary -d 2016-01-01 and some more'''.split()
         def cli = new CliBuilder()
         def options = new WithConvertC()
