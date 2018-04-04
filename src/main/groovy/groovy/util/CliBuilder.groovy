@@ -664,6 +664,41 @@ class OptionAccessor {
         this.parseResult = parseResult
     }
 
+    def <T> T defaultValue(String name) {
+        def option = parseResult.commandSpec().optionsMap().find { it == "-$name" || it == "--$name" } ?.value
+        if (!option) return null
+        if (option.arity().min == 0) { return option.getValue() }
+        Class<T> type = option.type() as Class<T>
+        String optionValue = option.defaultValue()
+        if (!type) {
+            return (T) optionValue
+        }
+        ITypeConverter<T> converter = option.converters().first()
+        if (converter) {
+            return converter.convert(optionValue)
+        }
+        if (type == Boolean || type == Boolean.TYPE) {
+            return type.cast(Boolean.parseBoolean(optionValue))
+        }
+        StringGroovyMethods.asType(optionValue, (Class<T>) type)
+    }
+
+    def getOptionValue(String name) {
+        getOptionValue(name, null)
+    }
+
+    def <T> T getOptionValue(String name, T defaultValue) {
+        parseResult.optionValue(name, defaultValue)
+    }
+
+    def getAt(String name) {
+        getOptionValue(name, null)
+    }
+
+    def <T> T getAt(String name, T defaultValue) {
+        getOptionValue(name, defaultValue)
+    }
+
     def invokeMethod(String name, Object args) {
         return InvokerHelper.getMetaClass(parseResult).invokeMethod(parseResult, name, args)
     }
