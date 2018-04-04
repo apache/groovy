@@ -37,7 +37,7 @@ public class DirectFastStringService implements FastStringService {
     @Override
     public String noCopyStringFromChars(char[] chars) {
         if (WRITE_TO_FINAL_FIELDS) {
-            String string = "";
+            String string = new String();
             UNSAFE.putObject(string, STRING_VALUE_FIELD_OFFSET, chars);
             return string;
         } else {
