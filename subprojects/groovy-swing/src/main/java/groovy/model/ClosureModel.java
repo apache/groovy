@@ -65,7 +65,7 @@ public class ClosureModel implements ValueModel, NestedValueModel {
         if (writeClosure != null) {
             Object source = sourceModel.getValue();
             if (source != null) {
-                writeClosure.call(new Object[] { source, value });
+                writeClosure.call(source, value);
             }
         }
     }
