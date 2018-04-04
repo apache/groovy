@@ -97,14 +97,15 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     @Override
     public void writeLambda(LambdaExpression expression) {
         ClassNode lambdaType = getLambdaType(expression);
+        ClassNode redirect = lambdaType.redirect();
 
-        if (PRE_JAVA8 || null == lambdaType || !ClassHelper.isFunctionalInterface(lambdaType.redirect())) {
+        if (PRE_JAVA8 || null == lambdaType || !ClassHelper.isFunctionalInterface(redirect)) {
             // if running on pre8 JVM or the parameter type is not real FunctionInterface or failed to be inferred, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
         }
 
-        MethodNode abstractMethodNode = ClassHelper.findSAM(lambdaType.redirect());
+        MethodNode abstractMethodNode = ClassHelper.findSAM(redirect);
         String abstractMethodDesc = createMethodDescriptor(abstractMethodNode);
 
         ClassNode classNode = controller.getClassNode();
@@ -126,7 +127,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 createBootstrapMethod(isInterface),
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaWrapperClassNode, syntheticLambdaMethodNode)
         );
-        operandStack.replace(lambdaType.redirect(), 2);
+        operandStack.replace(redirect, 2);
 
         if (null != expression.getNodeMetaData(INFERRED_LAMBDA_TYPE)) {
             // FIXME declaring variable whose initial value is a lambda, e.g. `Function<Integer, String> f = (Integer e) -> 'a' + e`
