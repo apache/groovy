@@ -413,16 +413,22 @@ usage: groovy
     }
 
     void testMixedBurstingAndLongOptions() {
-        def cli = new CliBuilder()
-        cli.a([:], '')
-        cli.b([:], '')
-        cli.c([:], '')
-        cli.d([longOpt:'abacus'], '')
+        def createCli = { ->
+            def cli = new CliBuilder()
+            cli.a([:], '')
+            cli.b([:], '')
+            cli.c([:], '')
+            cli.d([longOpt: 'abacus'], '')
+            cli
+        }
+        def cli = createCli()
         def options = cli.parse(['-abc', 'foo'])
         assert options.a
         assert options.b
         assert options.c
         assert options.arguments() == ['foo']
+
+        cli = createCli()
         options = cli.parse(['--abacus', 'foo'])
         assert !options.a
         assert !options.b
@@ -430,7 +436,9 @@ usage: groovy
         assert options.d
         assert options.arguments() == ['foo']
 
-        //TODO this passed in previous version of CliBuilder. Shouldn't longOpt have 2 hyphens?
+        //this passed in previous version of CliBuilder:
+        // longOpt may have 1 or 2 hyphens
+        cli = createCli()
         options = cli.parse(['-abacus', 'foo'])
         assert !options.a
         assert !options.b
