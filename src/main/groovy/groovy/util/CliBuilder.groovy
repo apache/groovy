@@ -623,6 +623,9 @@ class CliBuilder {
     private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
 
     static Map commons2picocli(shortname, Map m) {
+//        if (m.args || m.optionalArg) { // if not boolean
+//            m.type = List
+//        }
         if (m.args && m.optionalArg) {
             m.arity = "0..${m.args}"
             m.remove('args')
@@ -667,7 +670,15 @@ class OptionAccessor {
 
     def getProperty(String name) {
         if (parseResult.hasOption(name)) {
-            return parseResult.optionValue(name, null)
+            def result = parseResult.optionValue(name, null)
+            // if picocli has a strongly typed multi-value result, return it
+            Class type = parseResult.option(name).type()
+            if (type.isArray()) {
+                return result ? result[0] : null
+            } else if (Collection.class.isAssignableFrom(type)) {
+                return (result as Collection)?.first()
+            }
+            return result
         }
         if (name.size() > 1 && name.endsWith('s')) { // user wants multi-value result
             def singularName = name[0..-2]
