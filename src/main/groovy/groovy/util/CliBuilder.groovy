@@ -496,7 +496,7 @@ class CliBuilder {
     }
 
     private static String[] hyphenate(Map<String, String> names) {
-        names.values().findAll { it && it != "_" }.collect { it.length() == 1 ? "-$it" : "--$it" }.toArray()
+        names.values().findAll { it && it != "_" }.collect { it.length() == 1 ? "-$it" : ["-$it", "--$it"] }.flatten().toArray()
     }
 
     private static String extractArity(Class<?> type, boolean optionalArg, int numberOfArguments, String numberOfArgumentsString, Map names) {
@@ -644,7 +644,7 @@ class CliBuilder {
             } else if (k == 'argName') {
                 [[paramLabel: "<$v>"]]
             } else if (k == 'longOpt') {
-                [[names: ["-$shortname", "--$v"] as String[] ]]
+                [[names: ["-$shortname", "-$v", "--$v"] as String[] ]]
             } else if (k == 'valueSeparator') {
                 [[splitRegex: "$v"]]
             } else if (k == 'convert') {
