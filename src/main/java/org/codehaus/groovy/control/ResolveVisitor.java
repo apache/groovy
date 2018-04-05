@@ -290,7 +290,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private boolean resolveToNestedOfCurrentClassAndSuperClasses(ClassNode type) {
         // GROOVY-8531: Fail to resolve type defined in super class written in Java
-        for (ClassNode enclosingClassNode = currentClass; ClassHelper.OBJECT_TYPE != enclosingClassNode; enclosingClassNode = enclosingClassNode.getSuperClass()) {
+        for (ClassNode enclosingClassNode = currentClass; ClassHelper.OBJECT_TYPE != enclosingClassNode && null != enclosingClassNode; enclosingClassNode = enclosingClassNode.getSuperClass()) {
             if(resolveToNested(enclosingClassNode, type)) return true;
         }
 
