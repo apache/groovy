@@ -273,25 +273,34 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             type.setName(name);
             if (resolve(type)) return true;
         }
-        if(resolveToNestedOfCurrent(type)) return true;
-        
+
+        // GROOVY-8531: Fail to resolve type defined in super class written in Java
+        for (ClassNode enclosingClassNode = currentClass; ClassHelper.OBJECT_TYPE != enclosingClassNode; enclosingClassNode = enclosingClassNode.getSuperClass()) {
+            if(resolveToNested(enclosingClassNode, type)) return true;
+        }
+
         type.setName(saved);
         return false;
     }
 
     private boolean resolveToNestedOfCurrent(ClassNode type) {
+        return resolveToNested(currentClass, type);
+    }
+
+    private boolean resolveToNested(ClassNode enclosingType, ClassNode type) {
         if (type instanceof ConstructedNestedClass) return false;
         // GROOVY-3110: It may be an inner enum defined by this class itself, in which case it does not need to be
         // explicitly qualified by the currentClass name
         String name = type.getName();
-        if (currentClass != type && !name.contains(".") && type.getClass().equals(ClassNode.class)) {
-            ClassNode tmp = new ConstructedNestedClass(currentClass,name);
+        if (enclosingType != type && !name.contains(".") && type.getClass().equals(ClassNode.class)) {
+            ClassNode tmp = new ConstructedNestedClass(enclosingType,name);
             if (resolve(tmp)) {
                 type.setRedirect(tmp);
                 return true;
             }
         }
         return false;
+
     }
 
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {
