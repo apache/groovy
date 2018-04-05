@@ -24,9 +24,13 @@ class Groovy8531Bug extends GroovyTestCase {
             package groovy.bugs.groovy8531
             class Example extends Reducer {
                 public void reduce(Context context) {}
+                public boolean isDynamic(Type type) {
+                    return Type.DYNAMIC == type
+                }
             }
             
             new Example().reduce(null)
+            assert new Example().isDynamic(Reducer.Type.DYNAMIC)
         '''
     }
 }
