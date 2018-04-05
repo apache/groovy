@@ -283,16 +283,18 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         // GROOVY-8531: Fail to resolve type defined in super class written in Java
-        for (ClassNode enclosingClassNode = currentClass; ClassHelper.OBJECT_TYPE != enclosingClassNode; enclosingClassNode = enclosingClassNode.getSuperClass()) {
-            if(resolveToNested(enclosingClassNode, type)) return true;
-        }
+        if (resolveToNestedOfCurrentClassAndSuperClasses(type)) return true;
 
         type.setName(saved);
         return false;
     }
 
-    private boolean resolveToNestedOfCurrent(ClassNode type) {
-        return resolveToNested(currentClass, type);
+    private boolean resolveToNestedOfCurrentClassAndSuperClasses(ClassNode type) {
+        for (ClassNode enclosingClassNode = currentClass; ClassHelper.OBJECT_TYPE != enclosingClassNode; enclosingClassNode = enclosingClassNode.getSuperClass()) {
+            if(resolveToNested(enclosingClassNode, type)) return true;
+        }
+
+        return false;
     }
 
     private boolean resolveToNested(ClassNode enclosingType, ClassNode type) {
@@ -983,7 +985,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                   t = new LowerCaseClass(name);
                 }
                 isClass = resolve(t);
-                if(!isClass) isClass = resolveToNestedOfCurrent(t);
+                if(!isClass) {
+                    isClass = resolveToNestedOfCurrentClassAndSuperClasses(t);
+                }
             }
             if (isClass) {
                 // the name is a type so remove it from the scoping
