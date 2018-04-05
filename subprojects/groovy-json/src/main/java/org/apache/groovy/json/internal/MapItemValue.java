@@ -21,8 +21,6 @@ package org.apache.groovy.json.internal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.apache.groovy.json.internal.Exceptions.die;
-
 /**
  * This holds a mapping from value key to value value to maximize laziness.
  *

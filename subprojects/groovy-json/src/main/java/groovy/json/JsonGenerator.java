@@ -255,9 +255,7 @@ public interface JsonGenerator {
                                         Closure<?> closure)
         {
             Converter converter = new DefaultJsonGenerator.ClosureConverter(type, closure);
-            if (converters.contains(converter)) {
-                converters.remove(converter);
-            }
+            converters.remove(converter);
             return addConverter(converter);
         }
 

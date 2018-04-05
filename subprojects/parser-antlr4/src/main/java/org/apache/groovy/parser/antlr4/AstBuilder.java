@@ -3193,7 +3193,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
                 if (asBoolean(emptyDimList)) {
                     empties = new Expression[emptyDimList.size()];
-                    Arrays.setAll(empties, i -> ConstantExpression.EMPTY_EXPRESSION);
+                    Arrays.fill(empties, ConstantExpression.EMPTY_EXPRESSION);
                 } else {
                     empties = Expression.EMPTY_ARRAY;
                 }

@@ -4589,7 +4589,7 @@ public class Sql {
         @Override
         protected PreparedStatement execute(Connection connection, String sql) throws SQLException {
             if (returnGeneratedKeys == USE_COLUMN_NAMES && keyColumnNames != null) {
-                return connection.prepareStatement(sql, keyColumnNames.toArray(new String[keyColumnNames.size()]));
+                return connection.prepareStatement(sql, keyColumnNames.toArray(new String[0]));
             }
             if (returnGeneratedKeys != 0) {
                 return connection.prepareStatement(sql, returnGeneratedKeys);

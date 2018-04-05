@@ -98,7 +98,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
     }
 
     public GroovyAnnotationRef[] annotations() {
-        return annotationRefs.toArray(new GroovyAnnotationRef[annotationRefs.size()]);
+        return annotationRefs.toArray(new GroovyAnnotationRef[0]);
     }
 
     public void addAnnotationRef(GroovyAnnotationRef ref) {
