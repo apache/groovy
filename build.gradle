@@ -122,14 +122,6 @@ task(copyTestResources, type: Copy)
         .include('**/*.txt', '**/*.xml', '**/*.properties', '**/*.png', '**/*.html', '**/*.gif', '**/*.ico', '**/*.css')
 test.dependsOn(copyTestResources)
 
-allprojects {
-    task sourceJar(type: Jar) {
-        classifier = 'sources'
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        from sourceSets.main.allSource
-    }
-}
-
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
     maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // examples, tools
@@ -287,6 +279,11 @@ sourceSets {
                     'groovy/grape/*.xml'
         }
     }
+    antlr {
+        resources {
+            srcDirs = ['src/main/antlr2']
+        }
+    }
     test {
         groovy {
             srcDirs = ['src/test']
@@ -311,6 +308,21 @@ sourceSets {
             srcDirs = ['src/examples']
         }
         compileClasspath = configurations.examplesRuntime + sourceSets.main.output + project(':groovy-xml').sourceSets.main.output
+    }
+}
+
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from sourceSets.main.allSource
+    from sourceSets.antlr.allSource
+}
+
+subprojects {
+    task sourceJar(type: Jar) {
+        classifier = 'sources'
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        from sourceSets.main.allSource
     }
 }
 
