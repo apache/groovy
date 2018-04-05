@@ -282,7 +282,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (resolve(type)) return true;
         }
 
-        // GROOVY-8531: Fail to resolve type defined in super class written in Java
         if (resolveToNestedOfCurrentClassAndSuperClasses(type)) return true;
 
         type.setName(saved);
@@ -290,6 +289,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveToNestedOfCurrentClassAndSuperClasses(ClassNode type) {
+        // GROOVY-8531: Fail to resolve type defined in super class written in Java
         for (ClassNode enclosingClassNode = currentClass; ClassHelper.OBJECT_TYPE != enclosingClassNode; enclosingClassNode = enclosingClassNode.getSuperClass()) {
             if(resolveToNested(enclosingClassNode, type)) return true;
         }
@@ -305,12 +305,27 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (enclosingType != type && !name.contains(".") && type.getClass().equals(ClassNode.class)) {
             ClassNode tmp = new ConstructedNestedClass(enclosingType,name);
             if (resolve(tmp)) {
+                if (!checkInnerTypeVisibility(enclosingType, tmp)) return false;
+
                 type.setRedirect(tmp);
                 return true;
             }
         }
         return false;
 
+    }
+
+    private boolean checkInnerTypeVisibility(ClassNode enclosingType, ClassNode innerClassNode) {
+        if (currentClass == enclosingType) {
+            return true;
+        }
+
+        int modifiers = innerClassNode.getModifiers();
+        if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+            return true;
+        }
+
+        return false;
     }
 
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {

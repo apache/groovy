@@ -19,7 +19,9 @@
 package groovy.bugs.groovy8531;
 
 public class Reducer {
-    public abstract class Context {}
+    public abstract class PublicContext {}
+    protected abstract class ProtectedContext {}
+    private abstract class PrivateContext {}
 
     public enum Type {
         DYNAMIC, STATIC
