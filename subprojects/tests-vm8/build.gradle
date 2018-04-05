@@ -26,6 +26,11 @@ tasks.withType(JavaCompile) {
     targetCompatibility = 1.8
 }
 
+tasks.withType(GroovyCompile) {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
 sourceSets {
     test {
         java {
