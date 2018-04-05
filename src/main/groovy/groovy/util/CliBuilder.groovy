@@ -253,6 +253,13 @@ class CliBuilder {
     String usage = 'groovy'
 
     /**
+     * This property allows customizing the program name displayed in the synopsis when <code>cli.usage()</code> is called.
+     * Ignored if the {@link #usage} property is set.
+     * @since 2.5
+     */
+    String name = 'groovy'
+
+    /**
      * To disallow clustered POSIX short options, set this to false.
      */
     Boolean posix = null
@@ -278,6 +285,7 @@ class CliBuilder {
      * The PrintWriter to write to when invalid user input was provided to
      * the {@link #parse(java.lang.String[])} method.
      * Defaults to stderr but you can provide your own PrintWriter if desired.
+     * @since 2.5
      */
     PrintWriter errorWriter = new PrintWriter(System.err)
 
@@ -285,12 +293,12 @@ class CliBuilder {
      * Optional additional message for usage; displayed after the usage summary
      * but before the options are displayed.
      */
-    String header = ''
+    String header = null
 
     /**
      * Optional additional message for usage; displayed after the options.
      */
-    String footer = ''
+    String footer = null
 
     /**
      * Allows customisation of the usage message width.
@@ -299,22 +307,32 @@ class CliBuilder {
 
     /**
      * Not normally accessed directly but full access to underlying model if needed.
+     * @since 2.5
      */
     CommandSpec commandSpec = CommandSpec.create();
 
-    void setHeader(String header) {
-        commandSpec.usageMessage().description(header)
-        this.header = header
+    Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
+
+    void setUsage(String usage) {
+        this.usage = usage
+        commandSpec.usageMessage().customSynopsis(usage)
     }
 
-    void setFooter(String footer) {
-        commandSpec.usageMessage().footer(footer)
-        this.footer = header
+    /**
+     * For backwards compatibility reasons, if a custom {@code writer} is set, this sets
+     * both the {@link #writer} and the {@link #errorWriter} to the specified writer.
+     * @param writer the writer to initialize both the {@code writer} and the {@code errorWriter} to
+     */
+    void setWriter(PrintWriter writer) {
+        this.writer = writer
+        this.errorWriter = writer
     }
 
-    void setWidth(int width) {
-        commandSpec.usageMessage().width(width)
-        this.width = width
+    public <T> TypedOption<T> option(Map args, Class<T> type, String description) {
+        def name = args.opt ?: '_'
+        args.type = type
+        args.remove('opt')
+        "$name"(args, description)
     }
 
     /**
@@ -325,12 +343,12 @@ class CliBuilder {
             if (args.size() == 1 && (args[0] instanceof String || args[0] instanceof GString)) {
                 def option = option(name, [:], args[0]) // args[0] is description
                 commandSpec.addOption(option)
-                return option
+                return create(option, null, null, null)
             }
             if (args.size() == 1 && args[0] instanceof OptionSpec && name == 'leftShift') {
                 OptionSpec option = args[0] as OptionSpec
                 commandSpec.addOption(option)
-                return option
+                return create(option, null, null, null)
             }
             if (args.size() == 2 && args[0] instanceof Map) {
                 Map m = args[0] as Map
@@ -339,10 +357,37 @@ class CliBuilder {
                 }
                 def option = option(name, m, args[1])
                 commandSpec.addOption(option)
-                return option
+                return create(option, option.type(), option.defaultValue(), option.converters())
             }
         }
         return InvokerHelper.getMetaClass(this).invokeMethod(this, name, args)
+    }
+
+    private TypedOption create(OptionSpec o, Class theType, defaultValue, convert) {
+        String opt = o.names().sort { a, b -> a.length() - b.length() }.first()
+        opt = opt?.length() == 2 ? opt.substring(1) : null
+
+        String longOpt = o.names().sort { a, b -> b.length() - a.length() }.first()
+        longOpt = longOpt?.startsWith("--") ? longOpt.substring(2) : null
+
+        Map<String, Object> result = new TypedOption<Object>()
+        if (opt != null) result.put("opt", opt)
+        result.put("longOpt", longOpt)
+        result.put("cliOption", o)
+        if (defaultValue) {
+            result.put("defaultValue", defaultValue)
+        }
+        if (convert) {
+            if (theType) {
+                throw new CliBuilderException("You can't specify 'type' when using 'convert'")
+            }
+            result.put("convert", convert)
+            result.put("type", convert instanceof Class ? convert : convert.getClass())
+        } else {
+            result.put("type", theType)
+        }
+        savedTypeOptions[longOpt ?: opt] = result
+        result
     }
 
     /**
@@ -350,6 +395,9 @@ class CliBuilder {
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
+        if (!System.getProperty("picocli.trace")) {
+            System.setProperty("picocli.trace", "OFF")
+        }
         commandSpec.parser()
                 .overwrittenOptionsAllowed(true)
                 .unmatchedArgumentsAllowed(true)
@@ -357,9 +405,15 @@ class CliBuilder {
                 .expandAtFiles(expandArgumentFiles)
                 .posixClusteredShortOptionsAllowed(posix ?: true)
                 .arityRestrictsCumulativeSize(true)
+        commandSpec.name(name).usageMessage()
+                .description(header)
+                .footer(footer)
+                .width(width)
         def commandLine = new CommandLine(commandSpec)
         try {
-            return new OptionAccessor(commandLine.parseArgs(args as String[]))
+            def accessor = new OptionAccessor(commandLine.parseArgs(args as String[]))
+            accessor.savedTypeOptions = savedTypeOptions
+            return accessor
         } catch (CommandLine.ParameterException pe) {
             errorWriter.println("error: " + pe.message)
             printUsage(pe.commandLine, errorWriter)
@@ -423,14 +477,14 @@ class CliBuilder {
             // if the getter returns a Collection or Map, picocli will add parsed values to it.
             def currentValue = initialValue(type, m, target, isCoercedMap)
             if (currentValue && isCoercedMap) {
-                target.put(m.name, currentValue)
+                target.put(m.name, {currentValue})
             }
             def getter = { currentValue }
             def setter = {
                 def old = currentValue
                 currentValue = it
                 if (isCoercedMap) {
-                    target.put(m.name, currentValue)
+                    target.put(m.name, {currentValue})
                 } else if (m.parameterTypes.size() > 0) {
                     m.invoke(target, [currentValue].toArray())
                 }
@@ -559,11 +613,11 @@ class CliBuilder {
             // initialize with a non-null List to supply to picocli; picocli will add the unmatched args to it
             if (isCoercedMap) {
                 if (!target[m.name]) {
-                    target[m.name] = new ArrayList<String>()
+                    target[m.name] = {new ArrayList<String>()}
                 }
             }
             return UnmatchedArgsBinding.forStringCollectionSupplier {
-                isCoercedMap ? target[m.name] : m.invoke(target)
+                isCoercedMap ? target[m.name] : {m.invoke(target)}
             }
         }
         throw new CliBuilderException("@Unparsed only allowed on getter method or property returning List")
@@ -659,23 +713,54 @@ class CliBuilder {
 
 class OptionAccessor {
     ParseResult parseResult
+    Map<String, TypedOption> savedTypeOptions
 
     OptionAccessor(ParseResult parseResult) {
         this.parseResult = parseResult
     }
 
-    def <T> T defaultValue(String name) {
-        def option = parseResult.commandSpec().optionsMap().find { it == "-$name" || it == "--$name" } ?.value
-        if (!option) return null
-        if (option.arity().min == 0) { return option.getValue() }
-        Class<T> type = option.type() as Class<T>
-        String optionValue = option.defaultValue()
+    boolean hasOption(TypedOption typedOption) {
+        parseResult.hasOption(typedOption.longOpt ?: typedOption.opt as String)
+    }
+
+    public <T> T defaultValue(String name) {
+        Class<T> type = savedTypeOptions[name]?.type
+        String value = savedTypeOptions[name]?.defaultValue() ? savedTypeOptions[name].defaultValue() : null
+        return (T) value ? getTypedValue(type, name, value) : null
+    }
+
+    public <T> T getOptionValue(TypedOption<T> typedOption) {
+        getOptionValue(typedOption, null)
+    }
+
+    public <T> T getOptionValue(TypedOption<T> typedOption, T defaultValue) {
+        String optionName = (String) typedOption.longOpt ?: typedOption.opt
+        parseResult.optionValue(optionName, defaultValue)
+    }
+
+    public <T> T getAt(TypedOption<T> typedOption) {
+        getAt(typedOption, null)
+    }
+
+    public <T> T getAt(TypedOption<T> typedOption, T defaultValue) {
+        String optionName = (String) typedOption.longOpt ?: typedOption.opt
+        parseResult.optionValue(optionName, defaultValue)
+    }
+
+    private <T> T getTypedValue(Class<T> type, String optionName, String optionValue) {
+        if (savedTypeOptions[optionName]?.cliOption?.arity?.min == 0) {
+            return (T) parseResult.option(optionName)
+        }
+        def convert = savedTypeOptions[optionName]?.convert
+        return getValue(type, optionValue, convert)
+    }
+
+    private <T> T getValue(Class<T> type, String optionValue, Closure convert) {
         if (!type) {
             return (T) optionValue
         }
-        ITypeConverter<T> converter = option.converters().first()
-        if (converter) {
-            return converter.convert(optionValue)
+        if (Closure.isAssignableFrom(type) && convert) {
+            return (T) convert(optionValue)
         }
         if (type == Boolean || type == Boolean.TYPE) {
             return type.cast(Boolean.parseBoolean(optionValue))
@@ -683,23 +768,8 @@ class OptionAccessor {
         StringGroovyMethods.asType(optionValue, (Class<T>) type)
     }
 
-    def getOptionValue(String name) {
-        getOptionValue(name, null)
-    }
-
-    def <T> T getOptionValue(String name, T defaultValue) {
-        parseResult.optionValue(name, defaultValue)
-    }
-
-    def getAt(String name) {
-        getOptionValue(name, null)
-    }
-
-    def <T> T getAt(String name, T defaultValue) {
-        getOptionValue(name, defaultValue)
-    }
-
     def invokeMethod(String name, Object args) {
+        if (name == 'getOptionValue') { name = 'optionValue'; args = [args[0], null].toArray() }
         return InvokerHelper.getMetaClass(parseResult).invokeMethod(parseResult, name, args)
     }
 
@@ -727,7 +797,7 @@ class OptionAccessor {
                 return parseResult.rawOptionValues(singularName)
             }
         }
-        null
+        false
     }
 
     List<String> arguments() {
