@@ -19,18 +19,30 @@
 package groovy.bugs.groovy8531
 
 class Groovy8531Bug extends GroovyTestCase {
-    void test() {
+    void testPublicAndProtectedInnerType() {
         assertScript '''
             package groovy.bugs.groovy8531
             class Example extends Reducer {
-                public void reduce(Context context) {}
+                public void reduce(PublicContext context) {}
+                public void reduce2(ProtectedContext context) {}
                 public boolean isDynamic(Type type) {
                     return Type.DYNAMIC == type
                 }
             }
             
             new Example().reduce(null)
+            new Example().reduce2(null)
             assert new Example().isDynamic(Reducer.Type.DYNAMIC)
         '''
+    }
+
+    void testPrivateInnerType() {
+        def errMsg = shouldFail '''
+            package groovy.bugs.groovy8531
+            class Example extends Reducer {
+                public void reduce3(PrivateContext context) {}
+            }
+        '''
+        assert errMsg.contains('unable to resolve class')
     }
 }
