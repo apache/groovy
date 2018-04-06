@@ -20,14 +20,11 @@ package groovy.bugs.groovy4585
 
 class Groovy4585Bug extends GroovyTestCase {
     void test() {
-        assertScript '''
-            package groovy.bugs.groovy4585
-            def engineForBuildXml = new groovy.text.SimpleTemplateEngine(false, true)
-            def templateForBuildXml = engineForBuildXml.createTemplate(this.getClass().getResource("/groovy/bugs/groovy4585/groovy4585.xml").text)
-            String buildXmlContent = templateForBuildXml.make([names:['a', 'b', 'c']]).toString()
-    
-            assert buildXmlContent.contains('<property name="drive" value="d:\\\\" />')
-            assert buildXmlContent.contains('<exec dir="${drive}" executable="echo">')
-        '''
+        def engineForBuildXml = new groovy.text.SimpleTemplateEngine(false, true)
+        def templateForBuildXml = engineForBuildXml.createTemplate(this.getClass().getResource("/groovy/bugs/groovy4585/groovy4585.xml").text)
+        String buildXmlContent = templateForBuildXml.make([names:['a', 'b', 'c']]).toString()
+
+        assert buildXmlContent.contains('<property name="drive" value="d:\\" />')
+        assert buildXmlContent.contains('<exec dir="${drive}" executable="echo">')
     }
 }
