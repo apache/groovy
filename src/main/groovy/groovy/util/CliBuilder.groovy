@@ -32,7 +32,7 @@ import picocli.CommandLine.Model.CommandSpec
 import picocli.CommandLine.Model.IGetter
 import picocli.CommandLine.Model.ISetter
 import picocli.CommandLine.Model.OptionSpec
-import picocli.CommandLine.Model.UnmatchedArgsBinding
+import picocli.CommandLine.Model.PositionalParamSpec
 import picocli.CommandLine.ParseResult
 
 import java.lang.reflect.Field
@@ -243,10 +243,6 @@ import java.lang.reflect.Method
  * </pre>
  */
 class CliBuilder {
-
-    /** This property is ignored. */
-    @Deprecated def parser
-
     /**
      * Usage summary displayed as the first line when <code>cli.usage()</code> is called.
      */
@@ -395,13 +391,13 @@ class CliBuilder {
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
-        if (!System.getProperty("picocli.trace")) {
+        if (!System.getProperty("picocli.trace")) { // suppress warnings
             System.setProperty("picocli.trace", "OFF")
         }
         commandSpec.parser()
                 .overwrittenOptionsAllowed(true)
-                .unmatchedArgumentsAllowed(true)
-                .stopAtUnmatched(stopAtNonOption)
+                //.unmatchedArgumentsAllowed(stopAtNonOption) // TODO check commons-cli semantics
+                .stopAtPositional(stopAtNonOption)
                 .expandAtFiles(expandArgumentFiles)
                 .posixClusteredShortOptionsAllowed(posix ?: true)
                 .arityRestrictsCumulativeSize(true)
@@ -409,6 +405,9 @@ class CliBuilder {
                 .description(header)
                 .footer(footer)
                 .width(width)
+        if (stopAtNonOption && commandSpec.positionalParameters().empty) {
+            commandSpec.addPositional(PositionalParamSpec.builder().type(String[]).hidden(true).build())
+        }
         def commandLine = new CommandLine(commandSpec)
         try {
             def accessor = new OptionAccessor(commandLine.parseArgs(args as String[]))
@@ -445,7 +444,7 @@ class CliBuilder {
     public <T> T parseFromSpec(Class<T> optionsClass, String[] args) {
         def cliOptions = [:]
         addOptionsFromAnnotations(optionsClass, cliOptions, true)
-        addUnmatchedFromAnnotations(optionsClass, cliOptions, true)
+        addPositionalsFromAnnotations(optionsClass, cliOptions, true)
         parse(args)
         cliOptions as T
     }
@@ -460,38 +459,16 @@ class CliBuilder {
      */
     public <T> T parseFromInstance(T optionInstance, args) {
         addOptionsFromAnnotations(optionInstance.getClass(), optionInstance, false)
-        addUnmatchedFromAnnotations(optionInstance.getClass(), optionInstance, false)
+        addPositionalsFromAnnotations(optionInstance.getClass(), optionInstance, false)
         parse(args)
         optionInstance
     }
 
-    void addOptionsFromAnnotations(Class optionClass, Object target, boolean isCoercedMap) {
+    private void addOptionsFromAnnotations(Class optionClass, Object target, boolean isCoercedMap) {
         optionClass.methods.findAll{ it.getAnnotation(Option) }.each { Method m ->
             Option annotation = m.getAnnotation(Option)
-            Class type = isCoercedMap ? m.returnType : (m.parameterTypes.size() > 0 ? m.parameterTypes[0] : m.returnType)
-            type = type && type == Void.TYPE ? null : type
-
-            // If the method is a real setter, we can't invoke it to get its value,
-            // so instead we need to keep track of its current value ourselves.
-            // Additionally, implementation classes may annotate _getter_ methods with @Option;
-            // if the getter returns a Collection or Map, picocli will add parsed values to it.
-            def currentValue = initialValue(type, m, target, isCoercedMap)
-            if (currentValue && isCoercedMap) {
-                target.put(m.name, {currentValue})
-            }
-            def getter = { currentValue }
-            def setter = {
-                def old = currentValue
-                currentValue = it
-                if (isCoercedMap) {
-                    target.put(m.name, {currentValue})
-                } else if (m.parameterTypes.size() > 0) {
-                    m.invoke(target, [currentValue].toArray())
-                }
-                return old
-            }
-            def label = m.name.startsWith("set") || m.name.startsWith("get") ? MetaClassHelper.convertPropertyName(m.name.substring(3)) : m.name
-            commandSpec.addOption(extractOptionSpec(annotation, type, label, getter, setter, target))
+            ArgSpecAttributes attributes = extractAttributesFromMethod(m, isCoercedMap, target)
+            commandSpec.addOption(createOptionSpec(annotation, attributes, target))
         }
         def optionFields = optionClass.declaredFields.findAll { it.getAnnotation(Option) }
         if (optionClass.isInterface() && !optionFields.isEmpty()) {
@@ -499,23 +476,66 @@ class CliBuilder {
         }
         optionFields.each { Field f ->
             Option annotation = f.getAnnotation(Option)
-            def getter = {
-                f.accessible = true
-                f.get(target)
-            }
-            def setter = { newValue ->
-                f.accessible = true
-                def oldValue = f.get(target)
-                f.set(target, newValue)
-                oldValue
-            }
-            Class type = f.type
-            String label = f.name
-            commandSpec.addOption(extractOptionSpec(annotation, f.type, label, getter, setter, target))
+            ArgSpecAttributes attributes = extractAttributesFromField(f, target)
+            commandSpec.addOption(createOptionSpec(annotation, attributes, target))
         }
     }
 
-    Object initialValue(Class<?> cls, Method m, Object target, boolean isCoercedMap) {
+    private void addPositionalsFromAnnotations(Class optionClass, Object target, boolean isCoercedMap) {
+        optionClass.methods.findAll{ it.getAnnotation(Unparsed) }.each { Method m ->
+            Unparsed annotation = m.getAnnotation(Unparsed)
+            ArgSpecAttributes attributes = extractAttributesFromMethod(m, isCoercedMap, target)
+            commandSpec.addPositional(createPositionalParamSpec(annotation, attributes, target))
+        }
+        def optionFields = optionClass.declaredFields.findAll { it.getAnnotation(Unparsed) }
+        if (optionClass.isInterface() && !optionFields.isEmpty()) {
+            throw new CliBuilderException("@Unparsed only allowed on methods in interface " + optionClass.simpleName)
+        }
+        optionFields.each { Field f ->
+            Unparsed annotation = f.getAnnotation(Unparsed)
+            ArgSpecAttributes attributes = extractAttributesFromField(f, target)
+            commandSpec.addPositional(createPositionalParamSpec(annotation, attributes, target))
+        }
+    }
+
+    private static class ArgSpecAttributes {
+        Class type
+        Class[] auxiliaryTypes
+        String label
+        IGetter getter
+        ISetter setter
+    }
+
+    private ArgSpecAttributes extractAttributesFromMethod(Method m, boolean isCoercedMap, target) {
+        Class type = isCoercedMap ? m.returnType : (m.parameterTypes.size() > 0 ? m.parameterTypes[0] : m.returnType)
+        type = type && type == Void.TYPE ? null : type
+
+        Class[] auxTypes = null // TODO extract generic types like List<Integer>, Map<Integer,Double>
+
+        // If the method is a real setter, we can't invoke it to get its value,
+        // so instead we need to keep track of its current value ourselves.
+        // Additionally, implementation classes may annotate _getter_ methods with @Option;
+        // if the getter returns a Collection or Map, picocli will add parsed values to it.
+        def currentValue = initialValue(type, m, target, isCoercedMap)
+        if (isCoercedMap) {
+            target[m.name] = { currentValue }
+        }
+        def getter = { currentValue }
+        def setter = {
+            def old = currentValue
+            currentValue = it
+            if (isCoercedMap) {
+                target[m.name] = { currentValue }
+            } else if (m.parameterTypes.size() > 0) {
+                m.invoke(target, [currentValue].toArray())
+            }
+            return old
+        }
+        def label = m.name.startsWith("set") || m.name.startsWith("get") ? MetaClassHelper.convertPropertyName(m.name.substring(3)) : m.name
+        new ArgSpecAttributes(type: type, auxiliaryTypes: auxTypes, label: label, getter: getter, setter: setter)
+    }
+
+    private Object initialValue(Class<?> cls, Method m, Object target, boolean isCoercedMap) {
         if (m.parameterTypes.size() == 0 && m.returnType != Void.TYPE) {
             return isCoercedMap ? target[m.name] : m.invoke(target)
         }
@@ -528,24 +548,55 @@ class CliBuilder {
         null
     }
 
-    private OptionSpec extractOptionSpec(Option annotation, Class type, String label, IGetter getter, ISetter setter, Object target) {
-        Map names = calculateNames(annotation.longName(), annotation.shortName(), label)
-        String arityString = extractArity(type, annotation.optionalArg(), annotation.numberOfArguments(), annotation.numberOfArgumentsString(), names)
+    private ArgSpecAttributes extractAttributesFromField(Field f, target) {
+        def getter = {
+            f.accessible = true
+            f.get(target)
+        }
+        def setter = { newValue ->
+            f.accessible = true
+            def oldValue = f.get(target)
+            f.set(target, newValue)
+            oldValue
+        }
+        Class[] auxTypes = null // TODO extract generic types like List<Integer>, Map<Integer,Double>
+        new ArgSpecAttributes(type: f.type, auxiliaryTypes: auxTypes, label: f.name, getter: getter, setter: setter)
+    }
+
+    private PositionalParamSpec createPositionalParamSpec(Unparsed unparsed, ArgSpecAttributes attr, Object target) {
+        PositionalParamSpec.Builder builder = PositionalParamSpec.builder();
+
+        CommandLine.Range arity = CommandLine.Range.valueOf("0..*")
+        if (attr.type == Object) { attr.type = String[] }
+        if (attr.type)           { builder.type(attr.type) } // cannot set type to null
+        if (attr.auxiliaryTypes) { builder.auxiliaryTypes(attr.auxiliaryTypes) } // cannot set aux types to null
+        builder.arity(arity)
+        builder.paramLabel("<$attr.label>")
+        builder.getter(attr.getter)
+        builder.setter(attr.setter)
+        builder.build()
+    }
+
+    private OptionSpec createOptionSpec(Option annotation, ArgSpecAttributes attr, Object target) {
+        Map names = calculateNames(annotation.longName(), annotation.shortName(), attr.label)
+        String arityString = extractArity(attr.type, annotation.optionalArg(), annotation.numberOfArguments(), annotation.numberOfArgumentsString(), names)
         CommandLine.Range arity = CommandLine.Range.valueOf(arityString)
+        if (attr.type == Object && arity.max == 0) { attr.type = boolean }
         OptionSpec.Builder builder = OptionSpec.builder(hyphenate(names))
-        if (type) { builder.type(type) } // not nullable, picocli will derive default
+        if (attr.type)           { builder.type(attr.type) } // cannot set type to null
+        if (attr.auxiliaryTypes) { builder.auxiliaryTypes(attr.auxiliaryTypes) } // cannot set aux types to null
         builder.arity(arity)
         builder.description(annotation.description())
         builder.splitRegex(annotation.valueSeparator())
         if (annotation.defaultValue()) { builder.defaultValue(annotation.defaultValue()) } // don't default picocli model to empty string
-        builder.paramLabel("<$label>")
+        builder.paramLabel("<$attr.label>")
         if (annotation.convert() != Undefined.CLASS) {
             if (annotation.convert() instanceof Class) {
                 builder.converters(annotation.convert().newInstance(target, target) as ITypeConverter)
             }
         }
-        builder.getter(getter)
-        builder.setter(setter)
+        builder.getter(attr.getter)
+        builder.setter(attr.setter)
         builder.build()
     }
 
@@ -576,61 +627,6 @@ class CliBuilder {
     }
     private static boolean isMultiValue(Class<?> cls) {
         cls.isArray() || Collection.class.isAssignableFrom(cls) || Map.class.isAssignableFrom(cls)
-    }
-
-    void addUnmatchedFromAnnotations(Class optionClass, Object target, boolean isCoercedMap) {
-        optionClass.methods.findAll{ it.getAnnotation(Unparsed) }.each { Method m ->
-            commandSpec.addUnmatchedArgsBinding(createUnmatchedArgsBindingForMethod(m, target, isCoercedMap))
-        }
-        def optionFields = optionClass.declaredFields.findAll { it.getAnnotation(Unparsed) }
-        if (optionClass.isInterface() && !optionFields.isEmpty()) {
-            throw new CliBuilderException("@Unparsed only allowed on methods in interface " + optionClass.simpleName)
-        }
-        optionFields.each { Field f ->
-            commandSpec.addUnmatchedArgsBinding(createUnmatchedArgsBindingForField(f, target))
-        }
-    }
-    private UnmatchedArgsBinding createUnmatchedArgsBindingForMethod(Method m, Object target, boolean isCoercedMap) {
-        if (m.parameterTypes.size() > 0) { // setter
-            Class type = m.parameterTypes[0]
-            if (type.isArray() && type.componentType == String) {
-                return UnmatchedArgsBinding.forStringArrayConsumer { m.invoke(target, [it].toArray()) }
-            }
-            if (List.isAssignableFrom(type)) {
-                return UnmatchedArgsBinding.forStringArrayConsumer { m.invoke(target, [it as List].toArray()) }
-            }
-            if (String == type) {
-                return UnmatchedArgsBinding.forStringArrayConsumer { String[] value ->
-                    value.each {
-                        m.invoke(target, [it].toArray())
-                    }
-                }
-            }
-            throw new CliBuilderException("@Unparsed only allowed on setter method or property accepting String[], List, or String")
-        }
-        Class type = m.returnType
-        if (List.isAssignableFrom(type)) {
-            // initialize with a non-null List to supply to picocli; picocli will add the unmatched args to it
-            if (isCoercedMap) {
-                if (!target[m.name]) {
-                    target[m.name] = {new ArrayList<String>()}
-                }
-            }
-            return UnmatchedArgsBinding.forStringCollectionSupplier {
-                isCoercedMap ? target[m.name] : {m.invoke(target)}
-            }
-        }
-        throw new CliBuilderException("@Unparsed only allowed on getter method or property returning List")
-    }
-    private UnmatchedArgsBinding createUnmatchedArgsBindingForField(Field f, Object target) {
-        Class type = f.type
-        if (type.isArray() && type.componentType == String) {
-            return UnmatchedArgsBinding.forStringArrayConsumer { f.accessible = true; f.set(target, it) }
-        }
-        if (List.isAssignableFrom(type) || type == Object) {
-            return UnmatchedArgsBinding.forStringArrayConsumer { f.accessible = true; f.set(target, it as List) }
-        }
-        throw new CliBuilderException("@Unparsed only allowed on field of type List or String[]")
     }
 
     private Map calculateNames(String longName, String shortName, String label) {
@@ -801,6 +797,6 @@ class OptionAccessor {
     }
 
     List<String> arguments() {
-        parseResult.unmatched()
+        parseResult.hasPositional(0) ? parseResult.positional(0).rawStringValues() : []
     }
 }
