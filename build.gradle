@@ -152,7 +152,7 @@ ext {
     eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
     ivyVersion = '2.4.0'
-    jansiVersion = '1.13'
+    jansiVersion = '1.17'
     jarjarVersion = '1.6.5'
     jlineVersion = '2.14.5'
     jmockVersion = '1.2.0'
