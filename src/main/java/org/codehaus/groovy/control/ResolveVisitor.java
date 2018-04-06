@@ -87,9 +87,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
  * Note: the method to start the resolving is  startResolving(ClassNode, SourceUnit).
  */
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
-    private ClassNode currentClass;
     // note: BigInteger and BigDecimal are also imported by default
     public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
+    private static final String BIGINTEGER_STR = "BigInteger";
+    private static final String BIGDECIMAL_STR = "BigDecimal";
+
+    private ClassNode currentClass;
     private final CompilationUnit compilationUnit;
     private SourceUnit source;
     private VariableScope currentScope;
@@ -497,34 +500,34 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    private boolean resolveFromDefaultImports(ClassNode type, boolean testDefaultImports) {
+    private boolean resolveFromDefaultImports(final ClassNode type, boolean testDefaultImports) {
         // test default imports
         testDefaultImports &= !type.hasPackageName();
         // we do not resolve a vanilla name starting with a lower case letter
         // try to resolve against a default import, because we know that the
         // default packages do not contain classes like these
         testDefaultImports &= !(type instanceof LowerCaseClass);
+        final String typeName = type.getName();
+
         if (testDefaultImports) {
-            for (int i = 0, size = DEFAULT_IMPORTS.length; i < size; i++) {
-                String packagePrefix = DEFAULT_IMPORTS[i];
-                String name = type.getName();
+            for (String packagePrefix : DEFAULT_IMPORTS) {
                 // We limit the inner class lookups here by using ConstructedClassWithPackage.
                 // This way only the name will change, the packagePrefix will
                 // not be included in the lookup. The case where the
                 // packagePrefix is really a class is handled elsewhere.
                 // WARNING: This code does not expect a class that has a static
                 //          inner class in DEFAULT_IMPORTS
-                ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(packagePrefix,name);
+                ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, typeName);
                 if (resolve(tmp, false, false, false)) {
                     type.setRedirect(tmp.redirect());
                     return true;
                 }
             }
-            String name = type.getName();
-            if (name.equals("BigInteger")) {
+
+            if (BIGINTEGER_STR.equals(typeName)) {
                 type.setRedirect(ClassHelper.BigInteger_TYPE);
                 return true;
-            } else if (name.equals("BigDecimal")) {
+            } else if (BIGDECIMAL_STR.equals(typeName)) {
                 type.setRedirect(ClassHelper.BigDecimal_TYPE);
                 return true;
             }
