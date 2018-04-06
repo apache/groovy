@@ -790,19 +790,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     return null;
                 }
                 String varName = ve.getName();
-                if (doInitialClassTest) {
-                    // we are at the first name part. This is the right most part.
-                    // If this part is in lower case, then we do not need a class
-                    // check. other parts of the property expression will be tested
-                    // by a different method call to this method, so foo.Bar.bar
-                    // can still be resolved to the class foo.Bar and the static
-                    // field bar.
-                    if (!testVanillaNameForClass(varName)) return null;
-                    doInitialClassTest = false;
-                    name = new StringBuilder(varName);
-                } else {
-                    name.insert(0, varName + ".");
-                }
+                name = getClassName(doInitialClassTest, name, varName);
+                if (name == null) return null;
                 break;
             }
             // anything other than PropertyExpressions or
@@ -816,23 +805,30 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if (propertyPart == null || propertyPart.equals("class")) {
                     return null;
                 }
-                if (doInitialClassTest) {
-                    // we are at the first name part. This is the right most part.
-                    // If this part is in lower case, then we do not need a class
-                    // check. other parts of the property expression will be tested
-                    // by a different method call to this method, so foo.Bar.bar
-                    // can still be resolved to the class foo.Bar and the static
-                    // field bar.
-                    if (!testVanillaNameForClass(propertyPart)) return null;
-                    doInitialClassTest= false;
-                    name = new StringBuilder(propertyPart);
-                } else {
-                    name.insert(0, propertyPart + ".");
-                }
+                name = getClassName(doInitialClassTest, name, propertyPart);
             }
         }
-        if (name.length() == 0) return null;
+
+        if (null == name || name.length() == 0) return null;
+
         return name.toString();
+    }
+
+    private static StringBuilder getClassName(boolean doInitialClassTest, StringBuilder name, String varName) {
+        if (doInitialClassTest) {
+            // we are at the first name part. This is the right most part.
+            // If this part is in lower case, then we do not need a class
+            // check. other parts of the property expression will be tested
+            // by a different method call to this method, so foo.Bar.bar
+            // can still be resolved to the class foo.Bar and the static
+            // field bar.
+            if (!testVanillaNameForClass(varName)) return null;
+            doInitialClassTest = false;
+            name = new StringBuilder(varName);
+        } else {
+            name.insert(0, varName + ".");
+        }
+        return name;
     }
 
     // iterate from the inner most to the outer and check for classes
