@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control;
 
+import groovy.lang.Tuple2;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -790,8 +791,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     return null;
                 }
                 String varName = ve.getName();
-                name = getClassName(doInitialClassTest, name, varName);
-                if (name == null) return null;
+                Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, varName);
+                name = classNameInfo.getFirst();
+                doInitialClassTest = classNameInfo.getSecond();
+
                 break;
             }
             // anything other than PropertyExpressions or
@@ -805,7 +808,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if (propertyPart == null || propertyPart.equals("class")) {
                     return null;
                 }
-                name = getClassName(doInitialClassTest, name, propertyPart);
+                Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, propertyPart);
+                name = classNameInfo.getFirst();
+                doInitialClassTest = classNameInfo.getSecond();
             }
         }
 
@@ -814,7 +819,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return name.toString();
     }
 
-    private static StringBuilder getClassName(boolean doInitialClassTest, StringBuilder name, String varName) {
+    private static Tuple2<StringBuilder, Boolean> makeClassName(boolean doInitialClassTest, StringBuilder name, String varName) {
         if (doInitialClassTest) {
             // we are at the first name part. This is the right most part.
             // If this part is in lower case, then we do not need a class
@@ -822,13 +827,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             // by a different method call to this method, so foo.Bar.bar
             // can still be resolved to the class foo.Bar and the static
             // field bar.
-            if (!testVanillaNameForClass(varName)) return null;
-            doInitialClassTest = false;
-            name = new StringBuilder(varName);
+            if (!testVanillaNameForClass(varName)) {
+                name = null;
+            } else {
+                doInitialClassTest = false;
+                name = new StringBuilder(varName);
+            }
         } else {
             name.insert(0, varName + ".");
         }
-        return name;
+
+        return new Tuple2<StringBuilder, Boolean>(name, doInitialClassTest);
     }
 
     // iterate from the inner most to the outer and check for classes
