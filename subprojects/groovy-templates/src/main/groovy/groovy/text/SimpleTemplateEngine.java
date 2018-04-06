@@ -105,13 +105,8 @@ public class SimpleTemplateEngine extends TemplateEngine {
     }
 
     public SimpleTemplateEngine(boolean verbose) {
-        this(verbose, false);
-    }
-
-    public SimpleTemplateEngine(boolean verbose, boolean escapeBackslash) {
         this(GroovyShell.class.getClassLoader());
         setVerbose(verbose);
-        this.escapeBackslash = escapeBackslash;
     }
 
     public SimpleTemplateEngine(ClassLoader parentLoader) {
@@ -365,6 +360,13 @@ public class SimpleTemplateEngine extends TemplateEngine {
             }
             sw.write(";\nout.print(\"\"\"");
         }
+    }
 
+    public boolean isEscapeBackslash() {
+        return escapeBackslash;
+    }
+
+    public void setEscapeBackslash(boolean escapeBackslash) {
+        this.escapeBackslash = escapeBackslash;
     }
 }
