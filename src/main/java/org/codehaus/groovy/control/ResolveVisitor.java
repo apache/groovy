@@ -368,15 +368,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // test if vanilla name is current class name
         if (currentClass == type) return true;
 
-        if (genericParameterNames.get(type.getName()) != null) {
-            GenericsType gt = genericParameterNames.get(type.getName());
+        String typeName = type.getName();
+
+        if (genericParameterNames.get(typeName) != null) {
+            GenericsType gt = genericParameterNames.get(typeName);
             type.setRedirect(gt.getType());
-            type.setGenericsTypes(new GenericsType[]{gt});
+            type.setGenericsTypes(new GenericsType[]{ gt });
             type.setGenericsPlaceHolder(true);
             return true;
         }
 
-        if (currentClass.getNameWithoutPackage().equals(type.getName())) {
+        if (currentClass.getNameWithoutPackage().equals(typeName)) {
             type.setRedirect(currentClass);
             return true;
         }
