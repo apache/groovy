@@ -270,7 +270,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         genericParameterNames = oldPNames;
     }
 
-    private boolean resolveToInner (ClassNode type) {
+    private boolean resolveToInner(ClassNode type) {
         // we do not do our name mangling to find an inner class
         // if the type is a ConstructedClassWithPackage, because in this case we
         // are resolving the name at a different place already
@@ -279,9 +279,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         String name = type.getName();
         String saved = name;
         while (true) {
-            int len = name.lastIndexOf('.');
-            if (len == -1) break;
-            name = name.substring(0,len) + "$" + name.substring(len+1);
+            if (-1 == name.lastIndexOf('.')) break;
+            name = replaceLastPointWithDollar(name);
             type.setName(name);
             if (resolve(type)) return true;
         }
@@ -315,8 +314,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 return true;
             }
         }
-        return false;
 
+        return false;
     }
 
     private boolean checkInnerTypeVisibility(ClassNode enclosingType, ClassNode innerClassNode) {
@@ -458,12 +457,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    private static String replaceLastPoint(String name) {
-        int lastPoint = name.lastIndexOf('.');
-        name = name.substring(0, lastPoint) +
-                "$" +
-                name.substring(lastPoint + 1);
-        return name;
+    private static String replaceLastPointWithDollar(String name) {
+        int lastPointIndex = name.lastIndexOf('.');
+
+        return name.substring(0, lastPointIndex) + "$" + name.substring(lastPointIndex + 1);
     }
 
     private boolean resolveFromStaticInnerClasses(ClassNode type, boolean testStaticInnerClasses) {
@@ -483,7 +480,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // the package is really a class is handled elsewhere
                 ConstructedClassWithPackage tmp = (ConstructedClassWithPackage) type;
                 String savedName = tmp.className;
-                tmp.className = replaceLastPoint(savedName);
+                tmp.className = replaceLastPointWithDollar(savedName);
                 if (resolve(tmp, false, true, true)) {
                     type.setRedirect(tmp.redirect());
                     return true;
@@ -491,7 +488,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 tmp.className = savedName;
             }   else {
                 String savedName = type.getName();
-                String replacedPointType = replaceLastPoint(savedName);
+                String replacedPointType = replaceLastPointWithDollar(savedName);
                 type.setName(replacedPointType);
                 if (resolve(type, false, true, true)) return true;
                 type.setName(savedName);
