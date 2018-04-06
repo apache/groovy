@@ -655,6 +655,7 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.lmn() == true
         assert options.remaining() == ['bar', 'baz']
 
+        cli = new CliBuilder()
         options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -ijk cat -efg false bar baz'.split())
         assert options.abc()
         assert options.ijk() == 'cat'
