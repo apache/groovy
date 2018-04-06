@@ -18,9 +18,19 @@
  */
 package groovy.bugs.groovy8531;
 
-public class Reducer {
+class BaseReducer {
+    public abstract class PublicBaseContext {}
+    protected abstract class ProtectedBaseContext {}
+    public static abstract class PublicStaticBaseContext {}
+    protected static abstract class ProtectedStaticBaseContext {}
+    private abstract class PrivateBaseContext {}
+}
+
+public class Reducer extends BaseReducer {
     public abstract class PublicContext {}
     protected abstract class ProtectedContext {}
+    public static abstract class PublicStaticContext {}
+    protected static abstract class ProtectedStaticContext {}
     private abstract class PrivateContext {}
 
     public enum Type {
