@@ -460,11 +460,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private static String replaceLastPoint(String name) {
         int lastPoint = name.lastIndexOf('.');
-        name = new StringBuffer()
-                .append(name.substring(0, lastPoint))
-                .append("$")
-                .append(name.substring(lastPoint + 1))
-                .toString();
+        name = name.substring(0, lastPoint) +
+                "$" +
+                name.substring(lastPoint + 1);
         return name;
     }
 
