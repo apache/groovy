@@ -108,7 +108,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
                 setDeprecated(true);
             }
         }
-        tags = result.toArray(new GroovyTag[result.size()]);
+        tags = result.toArray(new GroovyTag[0]);
     }
 
     public static String calculateFirstSentence(String raw) {

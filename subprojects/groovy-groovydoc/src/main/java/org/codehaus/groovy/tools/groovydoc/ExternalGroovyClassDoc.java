@@ -46,7 +46,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     }
 
     public GroovyAnnotationRef[] annotations() {
-        return annotationRefs.toArray(new GroovyAnnotationRef[annotationRefs.size()]);
+        return annotationRefs.toArray(new GroovyAnnotationRef[0]);
     }
 
     public String qualifiedTypeName() {

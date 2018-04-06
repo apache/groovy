@@ -44,17 +44,16 @@ import org.codehaus.groovy.control.CompilerConfiguration
      * @param statementsOnly
      */
     List<ASTNode> compile(String script, CompilePhase compilePhase, boolean statementsOnly) {
-        def scriptClassName = "script" + System.currentTimeMillis()
-        GroovyClassLoader classLoader = new GroovyClassLoader()
-        GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptClassName + ".groovy", "/groovy/script")
-        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
-        cu.addSource(codeSource.getName(), script);
+        final scriptClassName = makeScriptClassName()
+        GroovyCodeSource codeSource = new GroovyCodeSource(script, "${scriptClassName}.groovy", "/groovy/script")
+        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, new GroovyClassLoader())
+        cu.addSource(codeSource.getName(), script)
         cu.compile(compilePhase.getPhaseNumber())
         // collect all the ASTNodes into the result, possibly ignoring the script body if desired
-        return (List<ASTNode>) cu.getAST().modules.inject([]) {List acc, ModuleNode node ->
+        return (List<ASTNode>) cu.getAST().modules.inject([]) { List acc, ModuleNode node ->
             if (node.statementBlock) acc.add(node.statementBlock)
             node.classes?.each {
-                if (!(it.name == scriptClassName && statementsOnly)) {
+                if (!(statementsOnly && it.name == scriptClassName)) {
                     acc << it
                 }
             }
@@ -62,4 +61,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
         }
     }
 
+    private static String makeScriptClassName() {
+        return "Script${System.nanoTime()}"
+    }
 }

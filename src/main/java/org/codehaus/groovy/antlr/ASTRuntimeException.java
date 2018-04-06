@@ -21,10 +21,10 @@ package org.codehaus.groovy.antlr;
 import antlr.collections.AST;
 
 /**
- * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
+ * Used within the Groovy's AntlrParserPlugin
  */
 public class ASTRuntimeException extends RuntimeException {
-    private static final long serialVersionUID = 3980229202392379560L;
+    private static final long serialVersionUID = 238104771184624613L;
     private final AST ast;
 
     public ASTRuntimeException(AST ast, String message) {

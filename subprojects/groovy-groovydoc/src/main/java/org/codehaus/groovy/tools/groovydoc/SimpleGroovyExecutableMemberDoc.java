@@ -35,7 +35,7 @@ public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc imple
     }
 
     public GroovyParameter[] parameters() {
-        return (GroovyParameter[]) parameters.toArray(new GroovyParameter[parameters.size()]);
+        return (GroovyParameter[]) parameters.toArray(new GroovyParameter[0]);
     }
 
     public void add(GroovyParameter parameter) {

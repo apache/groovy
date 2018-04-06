@@ -39,7 +39,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] allClasses() {
-        return classDocs.values().toArray(new GroovyClassDoc[classDocs.values().size()]);
+        return classDocs.values().toArray(new GroovyClassDoc[0]);
     }
 
     public void setDescription(String description) {
@@ -68,7 +68,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     public GroovyClassDoc[] allClasses(boolean arg0) {
         List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
-        return classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]);
+        return classDocValues.toArray(new GroovyClassDoc[0]);
     }
 
     public GroovyClassDoc[] enums() {
@@ -78,7 +78,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[result.size()]);
+        return result.toArray(new GroovyClassDoc[0]);
     }
 
     public GroovyClassDoc[] errors() {
@@ -88,7 +88,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[result.size()]);
+        return result.toArray(new GroovyClassDoc[0]);
     }
 
     public GroovyClassDoc[] exceptions() {
@@ -98,7 +98,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[result.size()]);
+        return result.toArray(new GroovyClassDoc[0]);
     }
 
     public GroovyClassDoc findClass(String arg0) {/*todo*/
@@ -112,7 +112,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[result.size()]);
+        return result.toArray(new GroovyClassDoc[0]);
     }
 
     public GroovyClassDoc[] ordinaryClasses() {
@@ -122,7 +122,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[result.size()]);
+        return result.toArray(new GroovyClassDoc[0]);
     }
 
     public String description() {

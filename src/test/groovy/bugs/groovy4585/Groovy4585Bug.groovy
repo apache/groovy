@@ -16,32 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
-}
+package groovy.bugs.groovy4585
 
-tasks.withType(JavaCompile) {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
+class Groovy4585Bug extends GroovyTestCase {
+    void test() {
+        def engineForBuildXml = new groovy.text.SimpleTemplateEngine(false, true)
+        def templateForBuildXml = engineForBuildXml.createTemplate(this.getClass().getResource("/groovy/bugs/groovy4585/groovy4585.xml").text)
+        String buildXmlContent = templateForBuildXml.make([names:['a', 'b', 'c']]).toString()
 
-tasks.withType(GroovyCompile) {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
-
-sourceSets {
-    test {
-        java {
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/vm8/*'
-            }
-        }
-        groovy {
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/vm8/*'
-            }
-        }
+        assert buildXmlContent.contains('<property name="drive" value="d:\\" />')
+        assert buildXmlContent.contains('<exec dir="${drive}" executable="echo">')
     }
 }

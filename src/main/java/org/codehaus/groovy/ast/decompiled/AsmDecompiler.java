@@ -77,11 +77,9 @@ public abstract class AsmDecompiler {
         ClassStub stub = ref == null ? null : ref.get();
         if (stub == null) {
             DecompilingVisitor visitor = new DecompilingVisitor();
-            InputStream stream = url.openStream();
-            try {
-                new ClassReader(new BufferedInputStream(stream)).accept(visitor, ClassReader.SKIP_FRAMES);
-            } finally {
-                stream.close();
+
+            try (InputStream stream = new BufferedInputStream(url.openStream())) {
+                new ClassReader(stream).accept(visitor, ClassReader.SKIP_FRAMES);
             }
             stub = visitor.result;
             StubCache.map.put(uri, new SoftReference<ClassStub>(stub));

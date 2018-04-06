@@ -62,7 +62,7 @@ public class SimpleGroovyParameter implements GroovyParameter {
     }
 
     public GroovyAnnotationRef[] annotations() {
-        return annotationRefs.toArray(new GroovyAnnotationRef[annotationRefs.size()]);
+        return annotationRefs.toArray(new GroovyAnnotationRef[0]);
     }
 
     public void addAnnotationRef(GroovyAnnotationRef ref) {

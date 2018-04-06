@@ -16,32 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
+package groovy.bugs.groovy8531;
+
+class BaseReducer {
+    public abstract class PublicBaseContext {}
+    protected abstract class ProtectedBaseContext {}
+    public static abstract class PublicStaticBaseContext {}
+    protected static abstract class ProtectedStaticBaseContext {}
+    private abstract class PrivateBaseContext {}
 }
 
-tasks.withType(JavaCompile) {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
+public class Reducer extends BaseReducer {
+    public abstract class PublicContext {}
+    protected abstract class ProtectedContext {}
+    public static abstract class PublicStaticContext {}
+    protected static abstract class ProtectedStaticContext {}
+    private abstract class PrivateContext {}
 
-tasks.withType(GroovyCompile) {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
-
-sourceSets {
-    test {
-        java {
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/vm8/*'
-            }
-        }
-        groovy {
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/vm8/*'
-            }
-        }
+    public enum Type {
+        DYNAMIC, STATIC
     }
 }

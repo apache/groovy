@@ -197,7 +197,7 @@ class ExtractIndexAndSql {
             int index = (indexStr == null || indexStr.length() == 0 || ":".equals(indexStr)) ? 0 : Integer.parseInt(indexStr) - 1;
             String prop = matcher.group(2);
             if (prop == null) prop = matcher.group(4);
-            indexPropList.add(new Tuple(new Object[]{index, prop == null || prop.length() == 0 ? "<this>" : prop}));
+            indexPropList.add(new Tuple(index, prop == null || prop.length() == 0 ? "<this>" : prop));
             txtIndex = matcher.end();
         }
         newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
