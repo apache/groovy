@@ -25,6 +25,14 @@ class Groovy8531Bug extends GroovyTestCase {
             class Example extends Reducer {
                 public void reduce(PublicContext context) {}
                 public void reduce2(ProtectedContext context) {}
+                public void reduce3(PublicStaticContext context) {}
+                public void reduce4(ProtectedStaticContext context) {}
+                
+                public void reduce5(PublicBaseContext context) {}
+                public void reduce6(ProtectedBaseContext context) {}
+                public void reduce7(PublicStaticBaseContext context) {}
+                public void reduce8(ProtectedStaticBaseContext context) {}
+                
                 public boolean isDynamic(Type type) {
                     return Type.DYNAMIC == type
                 }
@@ -32,6 +40,14 @@ class Groovy8531Bug extends GroovyTestCase {
             
             new Example().reduce(null)
             new Example().reduce2(null)
+            new Example().reduce3(null)
+            new Example().reduce4(null)
+            
+            new Example().reduce5(null)
+            new Example().reduce6(null)
+            new Example().reduce7(null)
+            new Example().reduce8(null)
+            
             assert new Example().isDynamic(Reducer.Type.DYNAMIC)
         '''
     }
@@ -43,6 +59,16 @@ class Groovy8531Bug extends GroovyTestCase {
                 public void reduce3(PrivateContext context) {}
             }
         '''
-        assert errMsg.contains('unable to resolve class')
+        assert errMsg.contains('unable to resolve class PrivateContext')
+    }
+
+    void testPrivateInnerType2() {
+        def errMsg = shouldFail '''
+            package groovy.bugs.groovy8531
+            class Example extends Reducer {
+                public void reduce3(PrivateBaseContext context) {}
+            }
+        '''
+        assert errMsg.contains('unable to resolve class PrivateBaseContext')
     }
 }
