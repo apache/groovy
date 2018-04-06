@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="GB2312"?>
+<project name="projBuild" default="projBuild" basedir=".">
+    <property name="drive" value="d:\" />
+
+    <target name="projBuild">
+        <%for (int i = 0; i < names.size(); i++) {%>
+            <exec dir="\${drive}" executable="echo">
+                  <arg line="${names[i]}"/>
+            </exec>
+        <%}%>
+    </target>
+</project>
