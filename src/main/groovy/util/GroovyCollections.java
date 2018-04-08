@@ -118,6 +118,9 @@ public class GroovyCollections {
                 }
                 collectedCombos = newCombos;
             }
+
+            if (collectedCombos.isEmpty()) 
+                break;
         }
         return collectedCombos;
     }
