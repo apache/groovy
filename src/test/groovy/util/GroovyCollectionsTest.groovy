@@ -50,6 +50,11 @@ public class GroovyCollectionsTest extends GroovyTestCase {
         // collection versions should match Collection
         assert GroovyCollections.combinations(input) as Set == expected
         assert combinations(input) as Set == expected
+
+        // an empty iterable should result in no combination
+        assert combinations([[]] + input).isEmpty()
+        assert combinations(input + [[]]).isEmpty()
+        assert combinations(input + [[]] + input).isEmpty()
     }
 
     void testTranspose() {
