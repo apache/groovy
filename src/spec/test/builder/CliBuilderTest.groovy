@@ -24,6 +24,7 @@ import groovy.cli.Unparsed
 import groovy.transform.TypeChecked
 
 import java.math.RoundingMode
+import java.text.SimpleDateFormat
 
 //import java.math.RoundingMode
 
@@ -100,10 +101,14 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testWithArgument() {
         // tag::withArgument[]
-        def cli = new CliBuilder()
-        cli.a(args: 0, 'a arg') // <1>
-        cli.b(args: 1, 'b arg') // <2>
-        cli.c(args: 1, optionalArg: true, 'c arg') // <3>
+        def createCli = { ->
+            def cli = new CliBuilder()
+            cli.a(args: 0, 'a arg') // <1>
+            cli.b(args: 1, 'b arg') // <2>
+            cli.c(args: 1, optionalArg: true, 'c arg') // <3>
+            cli
+        }
+        def cli = createCli()
         def options = cli.parse('-a -b foo -c bar baz'.split()) // <4>
 
         assert options.a == true
@@ -111,6 +116,7 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.c == 'bar'
         assert options.arguments() == ['baz']
 
+        cli = createCli()
         options = cli.parse('-a -c -b foo bar baz'.split()) // <5>
 
         assert options.a == true
@@ -131,14 +137,13 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testWithArgumentInterface() {
         // tag::withArgumentInterface[]
-        def cli = new CliBuilder()
-        def options = cli.parseFromSpec(WithArgsI, '-a -b foo -c bar baz'.split())
+        def options = new CliBuilder().parseFromSpec(WithArgsI, '-a -b foo -c bar baz'.split())
         assert options.a()
         assert options.b() == 'foo'
         assert options.c() == ['bar']
         assert options.remaining() == ['baz']
 
-        options = cli.parseFromSpec(WithArgsI, '-a -c -b foo bar baz'.split())
+        options = new CliBuilder().parseFromSpec(WithArgsI, '-a -c -b foo bar baz'.split())
         assert options.a()
         assert options.c() == []
         assert options.b() == 'foo'
@@ -148,16 +153,20 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testMultipleArgsAndOptionalValueSeparator() {
         // tag::multipleArgs[]
-        def cli = new CliBuilder()
-        cli.a(args: 2, 'a-arg')
-        cli.b(args: '2', valueSeparator: ',', 'b-arg') // <1>
-        cli.c(args: '+', valueSeparator: ',', 'c-arg') // <2>
-
+        def createCli = { ->
+            def cli = new CliBuilder()
+            cli.a(args: 2, 'a-arg')
+            cli.b(args: '2', valueSeparator: ',', 'b-arg') // <1>
+            cli.c(args: '+', valueSeparator: ',', 'c-arg') // <2>
+            cli
+        }
+        def cli = createCli()
         def options = cli.parse('-a 1 2 3 4'.split()) // <3>
         assert options.a == '1' // <4>
         assert options.as == ['1', '2'] // <5>
         assert options.arguments() == ['3', '4']
 
+        cli = createCli()
         options = cli.parse('-a1 -a2 3'.split()) // <6>
         assert options.as == ['1', '2']
         assert options.arguments() == ['3']
@@ -187,26 +196,24 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testMultipleArgsAndOptionalValueSeparatorInterface() {
         // tag::multipleArgsInterface[]
-        def cli = new CliBuilder()
-
-        def options = cli.parseFromSpec(ValSepI, '-a 1 2 3 4'.split())
+        def options = new CliBuilder().parseFromSpec(ValSepI, '-a 1 2 3 4'.split())
         assert options.a() == ['1', '2']
         assert options.remaining() == ['3', '4']
 
-        options = cli.parseFromSpec(ValSepI, '-a1 -a2 3'.split())
+        options = new CliBuilder().parseFromSpec(ValSepI, '-a1 -a2 3'.split())
         assert options.a() == ['1', '2']
         assert options.remaining() == ['3']
 
-        options = cli.parseFromSpec(ValSepI, ['-b1,2'] as String[])
+        options = new CliBuilder().parseFromSpec(ValSepI, ['-b1,2'] as String[])
         assert options.b() == ['1', '2']
 
-        options = cli.parseFromSpec(ValSepI, ['-c', '1'] as String[])
+        options = new CliBuilder().parseFromSpec(ValSepI, ['-c', '1'] as String[])
         assert options.c() == ['1']
 
-        options = cli.parseFromSpec(ValSepI, ['-c1'] as String[])
+        options = new CliBuilder().parseFromSpec(ValSepI, ['-c1'] as String[])
         assert options.c() == ['1']
 
-        options = cli.parseFromSpec(ValSepI, ['-c1,2,3'] as String[])
+        options = new CliBuilder().parseFromSpec(ValSepI, ['-c1,2,3'] as String[])
         assert options.c() == ['1', '2', '3']
         // end::multipleArgsInterface[]
     }
@@ -260,11 +267,11 @@ class CliBuilderTest extends GroovyTestCase {
         def lower = { it.toLowerCase() }
         cli.a(convert: lower, 'a-arg')
         cli.b(convert: { it.toUpperCase() }, 'b-arg')
-        cli.d(convert: { Date.parse('yyyy-MM-dd', it) }, 'd-arg')
+        cli.d(convert: { new SimpleDateFormat("yyyy-MM-dd").parse(it) }, 'd-arg')
         def options = cli.parse(argz)
         assert options.a == 'john'
         assert options.b == 'MARY'
-        assert options.d.format('dd-MMM-yyyy') == '01-Jan-2016'
+        assert new SimpleDateFormat("dd-MMM-yyyy").format(options.d) == '01-Jan-2016'
         assert options.arguments() == ['and', 'some', 'more']
         // end::withConvert[]
     }
@@ -273,14 +280,14 @@ class CliBuilderTest extends GroovyTestCase {
     interface WithConvertI {
         @Option(convert={ it.toLowerCase() }) String a()
         @Option(convert={ it.toUpperCase() }) String b()
-        @Option(convert={ Date.parse("yyyy-MM-dd", it) }) Date d()
+        @Option(convert={ new SimpleDateFormat("yyyy-MM-dd").parse(it) }) Date d()
         @Unparsed List remaining()
     }
     // end::withConvertInterfaceSpec[]
 
     void testConvertInterface() {
         // tag::withConvertInterface[]
-        Date newYears = Date.parse("yyyy-MM-dd", "2016-01-01")
+        Date newYears = new SimpleDateFormat("yyyy-MM-dd").parse("2016-01-01")
         def argz = '''-a John -b Mary -d 2016-01-01 and some more'''.split()
         def cli = new CliBuilder()
         def options = cli.parseFromSpec(WithConvertI, argz)
@@ -293,16 +300,21 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testDefaultValue() {
         // tag::withDefaultValue[]
-        def cli = new CliBuilder()
-        cli.f longOpt: 'from', type: String, args: 1, defaultValue: 'one', 'f option'
-        cli.t longOpt: 'to', type: int, defaultValue: '35', 't option'
+        def createCli = { ->
+            def cli = new CliBuilder()
+            cli.f longOpt: 'from', type: String, args: 1, defaultValue: 'one', 'f option'
+            cli.t longOpt: 'to', type: int, defaultValue: '35', 't option'
+            cli
+        }
 
+        def cli = createCli()
         def options = cli.parse('-f two'.split())
         assert options.hasOption('f')
         assert options.f == 'two'
         assert !options.hasOption('t')
         assert options.t == 35
 
+        cli = createCli()
         options = cli.parse('-t 45'.split())
         assert !options.hasOption('from')
         assert options.from == 'one'
@@ -320,13 +332,11 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testDefaultValueInterface() {
         // tag::withDefaultValueInterface[]
-        def cli = new CliBuilder()
-
-        def options = cli.parseFromSpec(WithDefaultValueI, '-f two'.split())
+        def options = new CliBuilder().parseFromSpec(WithDefaultValueI, '-f two'.split())
         assert options.from() == 'two'
         assert options.to() == 35
 
-        options = cli.parseFromSpec(WithDefaultValueI, '-t 45'.split())
+        options = new CliBuilder().parseFromSpec(WithDefaultValueI, '-t 45'.split())
         assert options.from() == 'one'
         assert options.to() == 45
         // end::withDefaultValueInterface[]
