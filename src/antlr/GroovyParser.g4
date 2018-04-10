@@ -1215,6 +1215,5 @@ nls
     :   NL*
     ;
 
-sep :   SEMI NL*
-    |   NL+ (SEMI NL*)*
+sep :   (NL | SEMI)+
     ;
