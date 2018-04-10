@@ -251,7 +251,7 @@ ext.pomAll = {
         def dependencyClass = p.dependencies[0].getClass()
         p.dependencies.clear()
         // defer setting packaging until here otherwise gets overwritten
-        p.packaging - 'pom'
+        p.packaging = 'pom'
         allprojects {
             if (it.name.startsWith('groovy')) {
                 def dep = dependencyClass.newInstance()
