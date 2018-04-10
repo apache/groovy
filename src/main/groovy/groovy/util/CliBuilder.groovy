@@ -353,7 +353,7 @@ class CliBuilder {
                 }
                 def option = option(name, m, args[1])
                 commandSpec.addOption(option)
-                return create(option, option.type(), option.defaultValue(), option.converters())
+                return create(option, m.type, option.defaultValue(), option.converters())
             }
         }
         return InvokerHelper.getMetaClass(this).invokeMethod(this, name, args)
@@ -391,9 +391,9 @@ class CliBuilder {
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
-        if (!System.getProperty("picocli.trace")) { // suppress warnings
-            System.setProperty("picocli.trace", "OFF")
-        }
+//        if (!System.getProperty("picocli.trace")) { // suppress warnings
+//            System.setProperty("picocli.trace", "OFF")
+//        }
         commandSpec.parser()
                 .overwrittenOptionsAllowed(true)
                 //.unmatchedArgumentsAllowed(stopAtNonOption) // TODO check commons-cli semantics
@@ -401,12 +401,14 @@ class CliBuilder {
                 .expandAtFiles(expandArgumentFiles)
                 .posixClusteredShortOptionsAllowed(posix ?: true)
                 .arityRestrictsCumulativeSize(true)
+                .unmatchedOptionsArePositionalParams(true)
+                .toggleBooleanFlags(false)
         commandSpec.name(name).usageMessage()
                 .description(header)
                 .footer(footer)
                 .width(width)
         if (stopAtNonOption && commandSpec.positionalParameters().empty) {
-            commandSpec.addPositional(PositionalParamSpec.builder().type(String[]).hidden(true).build())
+            commandSpec.addPositional(PositionalParamSpec.builder().type(String[]).arity("*").hidden(true).build())
         }
         def commandLine = new CommandLine(commandSpec)
         try {
@@ -611,14 +613,16 @@ class CliBuilder {
         if (numberOfArguments != 1 && numberOfArgumentsString) {
             throw new CliBuilderException("You can't specify both 'numberOfArguments' and 'numberOfArgumentsString' on flag '${names.long ?: names.short}'")
         }
-        def isFlag = type.simpleName.toLowerCase() == 'boolean'
+        def isFlag = type.simpleName.toLowerCase() == 'boolean' ||
+                     (type.simpleName.toLowerCase() == 'object' && (numberOfArguments == 0 || numberOfArgumentsString == "0"))
         String arity = "0"
         if (numberOfArgumentsString) {
-            arity = optionalArg ? "0.." + (numberOfArgumentsString == "+" ? "*"    : numberOfArgumentsString)
-                                :         (numberOfArgumentsString == "+" ? "1..*" : numberOfArgumentsString)
+            String max = numberOfArgumentsString.replace('+', '*')
+            arity = optionalArg ? "0..$max" : "1..$max"
         } else {
-            int argCount = isFlag ? 0 : numberOfArguments
-            arity = optionalArg ? "0..$argCount" : argCount as String
+            if (!isFlag) {
+                arity = optionalArg ? "0..$numberOfArguments" : "1..$numberOfArguments"
+            }
         }
         if (arity == "0" && !(isFlag || type.name == 'java.lang.Object')) {
             throw new CliBuilderException("Flag '${names.long ?: names.short}' must be Boolean or Object")
@@ -643,7 +647,7 @@ class CliBuilder {
     OptionSpec option(shortname, Map details, description) {
         OptionSpec.Builder builder
         if (shortname == '_') {
-            builder = OptionSpec.builder("--$details.longOpt").description(description)
+            builder = OptionSpec.builder("-$details.longOpt", "--$details.longOpt").description(description)
             details.remove('longOpt')
         } else {
             builder = OptionSpec.builder("-$shortname").description(description)
@@ -654,6 +658,9 @@ class CliBuilder {
             } else {
                 builder.invokeMethod(key, value)
             }
+        }
+        if (!builder.type() && !builder.arity() && builder.converters()?.length > 0) {
+            builder.arity("1").type(String)
         }
         return builder.build()
     }
@@ -673,9 +680,6 @@ class CliBuilder {
     private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
 
     static Map commons2picocli(shortname, Map m) {
-//        if (m.args || m.optionalArg) { // if not boolean
-//            m.type = List
-//        }
         if (m.args && m.optionalArg) {
             m.arity = "0..${m.args}"
             m.remove('args')
@@ -687,8 +691,10 @@ class CliBuilder {
         def result = m.collectMany { k, v ->
             if (k == 'args' && v == '+') {
                 [[arity: '1..*']]
+            } else if (k == 'args' && v == 0) {
+                [[arity: '0']]
             } else if (k == 'args') {
-                v == COMMONS_CLI_UNLIMITED_VALUES ? [[arity: "*"]] : [[arity: "$v"]]
+                v == COMMONS_CLI_UNLIMITED_VALUES ? [[arity: "*"]] : [[arity: "1..$v"]]
             } else if (k == 'optionalArg') {
                 v ? [[arity: '0..1']] : [[arity: '1']]
             } else if (k == 'argName') {
@@ -716,7 +722,7 @@ class OptionAccessor {
     }
 
     boolean hasOption(TypedOption typedOption) {
-        parseResult.hasOption(typedOption.longOpt ?: typedOption.opt as String)
+        parseResult.hasMatchedOption(typedOption.longOpt ?: typedOption.opt as String)
     }
 
     public <T> T defaultValue(String name) {
@@ -731,7 +737,12 @@ class OptionAccessor {
 
     public <T> T getOptionValue(TypedOption<T> typedOption, T defaultValue) {
         String optionName = (String) typedOption.longOpt ?: typedOption.opt
-        parseResult.optionValue(optionName, defaultValue)
+        if (parseResult.hasMatchedOption(optionName)) {
+            return parseResult.matchedOptionValue(optionName, defaultValue)
+        } else {
+            OptionSpec option = parseResult.commandSpec().findOption(optionName)
+            return option ? option.value : defaultValue
+        }
     }
 
     public <T> T getAt(TypedOption<T> typedOption) {
@@ -739,13 +750,12 @@ class OptionAccessor {
     }
 
     public <T> T getAt(TypedOption<T> typedOption, T defaultValue) {
-        String optionName = (String) typedOption.longOpt ?: typedOption.opt
-        parseResult.optionValue(optionName, defaultValue)
+        getOptionValue(typedOption, defaultValue)
     }
 
     private <T> T getTypedValue(Class<T> type, String optionName, String optionValue) {
-        if (savedTypeOptions[optionName]?.cliOption?.arity?.min == 0) {
-            return (T) parseResult.option(optionName)
+        if (savedTypeOptions[optionName]?.cliOption?.arity?.min == 0) { // TODO is this not a bug?
+            return (T) parseResult.hasMatchedOption(optionName) // TODO should defaultValue not simply convert the type regardless of the matched value?
         }
         def convert = savedTypeOptions[optionName]?.convert
         return getValue(type, optionValue, convert)
@@ -765,38 +775,50 @@ class OptionAccessor {
     }
 
     def invokeMethod(String name, Object args) {
-        if (name == 'getOptionValue') { name = 'optionValue'; args = [args[0], null].toArray() }
+        // TODO do we have to use reflection here?
+        if (name == 'hasOption') { name = 'hasMatchedOption'; args = [args[0]].toArray() }
+        if (name == 'getOptionValue') { name = 'matchedOptionValue'; args = [args[0], null].toArray() }
         return InvokerHelper.getMetaClass(parseResult).invokeMethod(parseResult, name, args)
     }
 
     def getProperty(String name) {
-        if (parseResult.hasOption(name)) {
-            def result = parseResult.optionValue(name, null)
-            // if picocli has a strongly typed multi-value result, return it
-            Class type = parseResult.option(name).type()
-            if (type.isArray()) {
+        if (parseResult.hasMatchedOption(name)) {
+            def result = parseResult.matchedOptionValue(name, null)
+
+            // if user specified an array type, return the full array (regardless of 's' suffix on name)
+            Class userSpecifiedType = savedTypeOptions[name]?.type
+            if (userSpecifiedType?.isArray()) { return result }
+
+            // otherwise, if the result is multi-value, return the first value
+            Class derivedType = parseResult.matchedOption(name).type()
+            if (derivedType.isArray()) {
                 return result ? result[0] : null
-            } else if (Collection.class.isAssignableFrom(type)) {
+            } else if (Collection.class.isAssignableFrom(derivedType)) {
                 return (result as Collection)?.first()
             }
             return result
         }
+        if (parseResult.commandSpec().findOption(name)) { // requested option was not matched: return its default
+            def option = parseResult.commandSpec().findOption(name)
+            def result = option.value
+            return result ? result : false
+        }
         if (name.size() > 1 && name.endsWith('s')) { // user wants multi-value result
             def singularName = name[0..-2]
-            if (parseResult.hasOption(singularName)) {
+            if (parseResult.hasMatchedOption(singularName)) {
                 // if picocli has a strongly typed multi-value result, return it
-                Class type = parseResult.option(singularName).type()
+                Class type = parseResult.matchedOption(singularName).type()
                 if (type.isArray() || Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type)) {
-                    return parseResult.optionValue(singularName, null)
+                    return parseResult.matchedOptionValue(singularName, null)
                 }
                 // otherwise, return the raw string values as a list
-                return parseResult.rawOptionValues(singularName)
+                return parseResult.matchedOption(singularName).stringValues()
             }
         }
         false
     }
 
     List<String> arguments() {
-        parseResult.hasPositional(0) ? parseResult.positional(0).rawStringValues() : []
+        parseResult.hasMatchedPositional(0) ? parseResult.matchedPositional(0).stringValues() : []
     }
 }
