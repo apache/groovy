@@ -395,13 +395,12 @@ class CliBuilder {
 //            System.setProperty("picocli.trace", "OFF")
 //        }
         commandSpec.parser()
-                .overwrittenOptionsAllowed(true)
-                //.unmatchedArgumentsAllowed(stopAtNonOption) // TODO check commons-cli semantics
-                .stopAtPositional(stopAtNonOption)
-                .expandAtFiles(expandArgumentFiles)
                 .posixClusteredShortOptionsAllowed(posix ?: true)
-                .arityRestrictsCumulativeSize(true)
+                .expandAtFiles(expandArgumentFiles)
+                .stopAtPositional(stopAtNonOption)
                 .unmatchedOptionsArePositionalParams(true)
+                .arityRestrictsCumulativeSize(true) // TODO expose as property?
+                .overwrittenOptionsAllowed(true)
                 .toggleBooleanFlags(false)
         commandSpec.name(name).usageMessage()
                 .description(header)
@@ -462,7 +461,17 @@ class CliBuilder {
     public <T> T parseFromInstance(T optionInstance, args) {
         addOptionsFromAnnotations(optionInstance.getClass(), optionInstance, false)
         addPositionalsFromAnnotations(optionInstance.getClass(), optionInstance, false)
-        parse(args)
+        def optionAccessor = parse(args)
+
+        // initialize the boolean properties that were not matched
+        if (optionAccessor) {
+            optionAccessor.parseResult.commandSpec().options().each { option ->
+                if (!optionAccessor.parseResult.hasMatchedOption(option)) {
+                    boolean isFlag = option.arity().max == 0 && option.type().simpleName.toLowerCase() == 'boolean'
+                    if (isFlag) { option.value = false } // else default has already been applied
+                }
+            }
+        }
         optionInstance
     }
 
@@ -506,6 +515,7 @@ class CliBuilder {
         String label
         IGetter getter
         ISetter setter
+        boolean[] isFlag
     }
 
     private ArgSpecAttributes extractAttributesFromMethod(Method m, boolean isCoercedMap, target) {
@@ -519,22 +529,25 @@ class CliBuilder {
         // Additionally, implementation classes may annotate _getter_ methods with @Option;
         // if the getter returns a Collection or Map, picocli will add parsed values to it.
         def currentValue = initialValue(type, m, target, isCoercedMap)
-        if (isCoercedMap) {
-            target[m.name] = { currentValue }
+        boolean modified = false
+        boolean[] isFlag = [false]
+        def getter = {
+            isFlag[0] ? modified : currentValue
         }
-        def getter = { currentValue }
         def setter = {
             def old = currentValue
             currentValue = it
-            if (isCoercedMap) {
-                target[m.name] = { currentValue }
-            } else if (m.parameterTypes.size() > 0) {
+            modified = true
+            if (!isCoercedMap && m.parameterTypes.size() > 0) {
                 m.invoke(target, [currentValue].toArray())
             }
             return old
         }
+        if (isCoercedMap) {
+            target[m.name] = getter
+        }
         def label = m.name.startsWith("set") || m.name.startsWith("get") ? MetaClassHelper.convertPropertyName(m.name.substring(3)) : m.name
-        new ArgSpecAttributes(type: type, auxiliaryTypes: auxTypes, label: label, getter: getter, setter: setter)
+        new ArgSpecAttributes(type: type, auxiliaryTypes: auxTypes, label: label, getter: getter, setter: setter, isFlag: isFlag)
     }
 
     private Object initialValue(Class<?> cls, Method m, Object target, boolean isCoercedMap) {
@@ -553,7 +566,7 @@ class CliBuilder {
     private ArgSpecAttributes extractAttributesFromField(Field f, target) {
         def getter = {
             f.accessible = true
-            f.get(target)
+            f.get(target);
         }
         def setter = { newValue ->
             f.accessible = true
@@ -562,7 +575,7 @@ class CliBuilder {
             oldValue
         }
         Class[] auxTypes = null // TODO extract generic types like List<Integer>, Map<Integer,Double>
-        new ArgSpecAttributes(type: f.type, auxiliaryTypes: auxTypes, label: f.name, getter: getter, setter: setter)
+        new ArgSpecAttributes(type: f.type, auxiliaryTypes: auxTypes, label: f.name, getter: getter, setter: setter, isFlag: [false] as boolean[])
     }
 
     private PositionalParamSpec createPositionalParamSpec(Unparsed unparsed, ArgSpecAttributes attr, Object target) {
@@ -574,6 +587,7 @@ class CliBuilder {
         if (attr.auxiliaryTypes) { builder.auxiliaryTypes(attr.auxiliaryTypes) } // cannot set aux types to null
         builder.arity(arity)
         builder.paramLabel("<$attr.label>")
+        attr.isFlag[0] = arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean'
         builder.getter(attr.getter)
         builder.setter(attr.setter)
         builder.build()
@@ -597,6 +611,7 @@ class CliBuilder {
                 builder.converters(annotation.convert().newInstance(target, target) as ITypeConverter)
             }
         }
+        attr.isFlag[0] = arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean'
         builder.getter(attr.getter)
         builder.setter(attr.setter)
         builder.build()
@@ -775,13 +790,14 @@ class OptionAccessor {
     }
 
     def invokeMethod(String name, Object args) {
-        // TODO do we have to use reflection here?
-        if (name == 'hasOption') { name = 'hasMatchedOption'; args = [args[0]].toArray() }
+        // TODO we could just declare normal methods to map commons-cli CommandLine methods to picocli ParseResult methods
+        if (name == 'hasOption')      { name = 'hasMatchedOption';   args = [args[0]      ].toArray() }
         if (name == 'getOptionValue') { name = 'matchedOptionValue'; args = [args[0], null].toArray() }
         return InvokerHelper.getMetaClass(parseResult).invokeMethod(parseResult, name, args)
     }
 
     def getProperty(String name) {
+        if (name == 'parseResult') { return parseResult }
         if (parseResult.hasMatchedOption(name)) {
             def result = parseResult.matchedOptionValue(name, null)
 
