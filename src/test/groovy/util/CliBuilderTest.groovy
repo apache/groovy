@@ -183,7 +183,8 @@ class CliBuilderTest extends GroovyTestCase {
 
     void testMultipleOccurrencesSeparateJuxtaposed() {
         def cli = new CliBuilder()
-        //cli.a ( longOpt : 'arg' , args : COMMONS_CLI_UNLIMITED_VALUES , 'arguments' )
+        // TODO is this a bug? In other test, args restricts the total number of values for an option...
+//        cli.a ( longOpt : 'arg' , args : COMMONS_CLI_UNLIMITED_VALUES , 'arguments' )
         cli.a(longOpt: 'arg', args: 1, 'arguments')
         def options = cli.parse(['-a1', '-a2', '-a3'])
         assertEquals('1', options.a)
@@ -538,32 +539,30 @@ class CliBuilderTest extends GroovyTestCase {
     }
 
     void testValSepClass() {
-        def cli = new CliBuilder()
-
         def options = new ValSepC()
-        cli.parseFromInstance(options, '-a 1 2 3 4'.split())
+        new CliBuilder().parseFromInstance(options, '-a 1 2 3 4'.split())
         assert options.a == ['1', '2']
         assert options.remaining == ['3', '4']
 
         options = new ValSepC()
-        cli.parseFromInstance(options, '-a1 -a2 3'.split())
+        new CliBuilder().parseFromInstance(options, '-a1 -a2 3'.split())
         assert options.a == ['1', '2']
         assert options.remaining == ['3']
 
         options = new ValSepC()
-        cli.parseFromInstance(options, ['-b1,2'] as String[])
+        new CliBuilder().parseFromInstance(options, ['-b1,2'] as String[])
         assert options.b == ['1', '2']
 
         options = new ValSepC()
-        cli.parseFromInstance(options, ['-c', '1'] as String[])
+        new CliBuilder().parseFromInstance(options, ['-c', '1'] as String[])
         assert options.c == ['1']
 
         options = new ValSepC()
-        cli.parseFromInstance(options, ['-c1'] as String[])
+        new CliBuilder().parseFromInstance(options, ['-c1'] as String[])
         assert options.c == ['1']
 
         options = new ValSepC()
-        cli.parseFromInstance(options, ['-c1,2,3'] as String[])
+        new CliBuilder().parseFromInstance(options, ['-c1,2,3'] as String[])
         assert options.c == ['1', '2', '3']
     }
 
