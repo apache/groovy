@@ -167,7 +167,7 @@ ext {
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.10'
     spockVersion = '1.2-groovy-2.4-SNAPSHOT'
-    antlr4Version = '4.7'
+    antlr4Version = '4.7.1'
     jsr305Version = '3.0.2'
 }
 
