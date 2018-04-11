@@ -35,7 +35,7 @@ public class MethodClosure extends Closure {
     public static final String NEW = "new";
     public static final String ANY_INSTANCE_METHOD_EXISTS = "anyInstanceMethodExists";
 
-    private static final long serialVersionUID = 5316055624606528584L;
+    private static final long serialVersionUID = -2491254866810955844L;
     public static boolean ALLOW_RESOLVE = false;
 
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];

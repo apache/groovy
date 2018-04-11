@@ -22,7 +22,7 @@ import groovy.lang.MissingPropertyException;
 
 public class MissingPropertyExceptionNoStack extends MissingPropertyException {
 
-    private static final long serialVersionUID = -7734212543734003079L;
+    private static final long serialVersionUID = 8993570436675442348L;
 
     public MissingPropertyExceptionNoStack(String propertyName, Class theClass) {
         super(propertyName, theClass);

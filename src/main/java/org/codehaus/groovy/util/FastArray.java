@@ -18,12 +18,14 @@
  */
 package org.codehaus.groovy.util;
 
+import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class FastArray implements Cloneable {
+public class FastArray implements Cloneable, Serializable {
+    private static final long serialVersionUID = -9143440116071577249L;
     private Object[] data;
     public int size;
     public static final FastArray EMPTY_LIST = new FastArray(0);
