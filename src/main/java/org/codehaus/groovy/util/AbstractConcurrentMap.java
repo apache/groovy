@@ -50,7 +50,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
 
     public abstract static class Segment<K,V> extends AbstractConcurrentMapBase.Segment {
 
-        private static final long serialVersionUID = 5192533863182570468L;
+        private static final long serialVersionUID = -2392526467736920612L;
 
         protected Segment(int initialCapacity) {
             super(initialCapacity);

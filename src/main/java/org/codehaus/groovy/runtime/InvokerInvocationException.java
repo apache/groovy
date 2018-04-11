@@ -24,12 +24,10 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * An exception thrown if a method is called and an exception occurred
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class InvokerInvocationException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = 5870532233180451709L;
+    private static final long serialVersionUID = 1337849572129640775L;
 
     public InvokerInvocationException(InvocationTargetException e) {
         super(e.getTargetException());
