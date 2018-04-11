@@ -24,8 +24,10 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
 
+import static org.codehaus.groovy.syntax.Types.PLUS;
+
 /**
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
+ * Binary write operations specialised for Booleans
  */
 public class BinaryBooleanExpressionHelper extends BinaryIntExpressionHelper {
 
@@ -49,6 +51,8 @@ public class BinaryBooleanExpressionHelper extends BinaryIntExpressionHelper {
     
     @Override
     protected boolean writeStdOperators(int type, boolean simulate) {
+        type = type - PLUS;
+        if (type < 0 || type > 5 || type == 3 /*DIV*/) return false;
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
@@ -58,10 +62,6 @@ public class BinaryBooleanExpressionHelper extends BinaryIntExpressionHelper {
         throw new GroovyBugError("should not reach here");
     }
 
-    protected int getBitwiseOperationBytecode(int type) {
-        return -1;
-    }
-    
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.boolean_TYPE;
     }
