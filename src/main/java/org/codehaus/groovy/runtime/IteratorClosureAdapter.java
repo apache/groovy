@@ -27,12 +27,10 @@ import java.util.List;
 /**
  * A closure which stores calls in a List so that method calls 
  * can be iterated over in a 'yield' style way
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class IteratorClosureAdapter<T> extends Closure {
 
-    private static final long serialVersionUID = -3193812539363103534L;
+    private static final long serialVersionUID = -7485077849389539770L;
     private final List<T> list = new ArrayList<T>();
     private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
     
