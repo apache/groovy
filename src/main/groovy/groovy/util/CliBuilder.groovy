@@ -866,6 +866,9 @@ class OptionAccessor {
             } else if (Collection.class.isAssignableFrom(derivedType)) {
                 return (result as Collection)?.first()
             }
+            if (!userSpecifiedType && result == '' && parseResult.matchedOption(name).arity().min == 0) {
+                return true
+            }
             return result
         }
         if (parseResult.commandSpec().findOption(name)) { // requested option was not matched: return its default
