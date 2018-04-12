@@ -390,22 +390,16 @@ class CliBuilderTest extends GroovyTestCase {
     }
 
     void testMixedBurstingAndLongOptions() {
-        def createCli = { ->
-            def cli = new CliBuilder()
-            cli.a([:], '')
-            cli.b([:], '')
-            cli.c([:], '')
-            cli.d([longOpt: 'abacus'], '')
-            cli
-        }
-        def cli = createCli()
+        def cli = new CliBuilder()
+        cli.a([:], '')
+        cli.b([:], '')
+        cli.c([:], '')
+        cli.d([longOpt:'abacus'], '')
         def options = cli.parse(['-abc', 'foo'])
         assert options.a
         assert options.b
         assert options.c
         assert options.arguments() == ['foo']
-
-        cli = createCli()
         options = cli.parse(['--abacus', 'foo'])
         assert !options.a
         assert !options.b
@@ -415,7 +409,6 @@ class CliBuilderTest extends GroovyTestCase {
 
         //this passed in previous version of CliBuilder:
         // longOpt may have 1 or 2 hyphens
-        cli = createCli()
         options = cli.parse(['-abacus', 'foo'])
         assert !options.a
         assert !options.b
@@ -539,30 +532,32 @@ class CliBuilderTest extends GroovyTestCase {
     }
 
     void testValSepClass() {
+        def cli = new CliBuilder()
+
         def options = new ValSepC()
-        new CliBuilder().parseFromInstance(options, '-a 1 2 3 4'.split())
+        cli.parseFromInstance(options, '-a 1 2 3 4'.split())
         assert options.a == ['1', '2']
         assert options.remaining == ['3', '4']
 
         options = new ValSepC()
-        new CliBuilder().parseFromInstance(options, '-a1 -a2 3'.split())
+        cli.parseFromInstance(options, '-a1 -a2 3'.split())
         assert options.a == ['1', '2']
         assert options.remaining == ['3']
 
         options = new ValSepC()
-        new CliBuilder().parseFromInstance(options, ['-b1,2'] as String[])
+        cli.parseFromInstance(options, ['-b1,2'] as String[])
         assert options.b == ['1', '2']
 
         options = new ValSepC()
-        new CliBuilder().parseFromInstance(options, ['-c', '1'] as String[])
+        cli.parseFromInstance(options, ['-c', '1'] as String[])
         assert options.c == ['1']
 
         options = new ValSepC()
-        new CliBuilder().parseFromInstance(options, ['-c1'] as String[])
+        cli.parseFromInstance(options, ['-c1'] as String[])
         assert options.c == ['1']
 
         options = new ValSepC()
-        new CliBuilder().parseFromInstance(options, ['-c1,2,3'] as String[])
+        cli.parseFromInstance(options, ['-c1,2,3'] as String[])
         assert options.c == ['1', '2', '3']
     }
 
@@ -654,7 +649,6 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.lmn() == true
         assert options.remaining() == ['bar', 'baz']
 
-        cli = new CliBuilder()
         options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -ijk cat -efg false bar baz'.split())
         assert options.abc()
         assert options.ijk() == 'cat'
