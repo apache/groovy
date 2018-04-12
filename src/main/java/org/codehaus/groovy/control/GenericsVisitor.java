@@ -28,8 +28,13 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 
 /**
- * class used to verify correct usage of generics in
- * class header (class and superclass declaration)
+ * Verify correct usage of generics.
+ * This includes:
+ * <ul>
+ * <li>class header (class and superclass declaration)</li>
+ * <li>arity of type parameters for fields, parameters, local variables</li>
+ * <li>invalid diamond &;t;&gt; usage</li>
+ * </ul>
  */
 public class GenericsVisitor extends ClassCodeVisitorSupport {
     private final SourceUnit source;
@@ -135,10 +140,12 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             addError(message, n);
             return;
         }
-        // check bounds
         for (int i = 0; i < nTypes.length; i++) {
             ClassNode nType = nTypes[i].getType();
             ClassNode cnType = cnTypes[i].getType();
+            // check nested type parameters
+            checkGenericsUsage(nType, nType.redirect());
+            // check bounds
             if (!nType.isDerivedFrom(cnType)) {
                 if (cnType.isInterface() && nType.implementsInterface(cnType)) continue;
                 addError("The type " + nTypes[i].getName() +
