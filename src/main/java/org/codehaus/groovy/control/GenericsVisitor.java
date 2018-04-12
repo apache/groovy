@@ -26,6 +26,9 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 
 /**
  * Verify correct usage of generics.
@@ -84,6 +87,21 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         ClassNode returnType = node.getReturnType();
         checkGenericsUsage(returnType, returnType.redirect());
         super.visitMethod(node);
+    }
+
+    @Override
+    public void visitDeclarationExpression(DeclarationExpression expression) {
+        if (expression.isMultipleAssignmentDeclaration()) {
+            TupleExpression tExpr = expression.getTupleExpression();
+            for (Expression nextExpr : tExpr.getExpressions()) {
+                ClassNode declType = nextExpr.getType();
+                checkGenericsUsage(declType, declType.redirect());
+            }
+        } else {
+            ClassNode declType = expression.getVariableExpression().getType();
+            checkGenericsUsage(declType, declType.redirect());
+        }
+        super.visitDeclarationExpression(expression);
     }
 
     private boolean checkWildcard(ClassNode cn) {

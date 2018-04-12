@@ -256,7 +256,7 @@ class Bean {
     public value
 }
 def bean = new Bean(value:42)
-def vlaue = bean.@value
+def value = bean.@value
 :::[AttributeExpression,(5:13),(5:24)][VariableExpression,(5:13),(5:17)][ConstantExpression,(5:19),(5:24)]
 
 ###AttributeExpression2:::
