@@ -2321,6 +2321,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
         }
 
+        if (asBoolean(ctx.creator())) {
+            CreatorContext creatorContext = ctx.creator();
+            creatorContext.putNodeMetaData(ENCLOSING_INSTANCE_EXPRESSION, baseExpr);
+
+            return configureAST(this.visitCreator(creatorContext), ctx);
+        }
+
         if (asBoolean(ctx.indexPropertyArgs())) { // e.g. list[1, 3, 5]
             Tuple2<Token, Expression> tuple = this.visitIndexPropertyArgs(ctx.indexPropertyArgs());
             boolean isSafeChain = isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
@@ -3176,9 +3183,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public Expression visitCreator(CreatorContext ctx) {
         ClassNode classNode = this.visitCreatedName(ctx.createdName());
-        Expression arguments = this.visitArguments(ctx.arguments());
 
         if (asBoolean(ctx.arguments())) { // create instance of class
+            Expression arguments = this.visitArguments(ctx.arguments());
+            Expression enclosingInstanceExpression = ctx.getNodeMetaData(ENCLOSING_INSTANCE_EXPRESSION);
+
+            if (null != enclosingInstanceExpression) {
+                if (arguments instanceof ArgumentListExpression) {
+                    ((ArgumentListExpression) arguments).getExpressions().add(0, enclosingInstanceExpression);
+                } else if (arguments instanceof TupleExpression || arguments instanceof NamedArgumentListExpression) {
+                    throw createParsingFailedException("Creating instance of non-static class does not support named parameters", arguments);
+                }
+            }
+
             if (asBoolean(ctx.anonymousInnerClassDeclaration())) {
                 ctx.anonymousInnerClassDeclaration().putNodeMetaData(ANONYMOUS_INNER_CLASS_SUPER_CLASS, classNode);
                 InnerClassNode anonymousInnerClassNode = this.visitAnonymousInnerClassDeclaration(ctx.anonymousInnerClassDeclaration());
@@ -4851,6 +4868,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final String ANONYMOUS_INNER_CLASS_SUPER_CLASS = "_ANONYMOUS_INNER_CLASS_SUPER_CLASS";
     private static final String INTEGER_LITERAL_TEXT = "_INTEGER_LITERAL_TEXT";
     private static final String FLOATING_POINT_LITERAL_TEXT = "_FLOATING_POINT_LITERAL_TEXT";
+    private static final String ENCLOSING_INSTANCE_EXPRESSION = "_ENCLOSING_INSTANCE_EXPRESSION";
 
     private static final String CLASS_NAME = "_CLASS_NAME";
 }

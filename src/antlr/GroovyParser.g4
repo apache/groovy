@@ -849,7 +849,7 @@ expression
         right=expression                                                                    #shiftExprAlt
 
     // boolean relational expressions (level 7)
-    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type           #relationalExprAlt
+    |   left=expression nls op=(AS | INSTANCEOF | NOT_INSTANCEOF) nls type                  #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN)  nls right=expression      #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)
@@ -960,7 +960,7 @@ commandArgument
  *  (Compare to a C lvalue, or LeftHandSide in the JLS section 15.26.)
  *  General expressions are built up from path expressions, using operators like '+' and '='.
  *
- *  t   0: primary, 1: namePart, 2: arguments, 3: closure, 4: indexPropertyArgs, 5: namedPropertyArgs
+ *  t   0: primary, 1: namePart, 2: arguments, 3: closure, 4: indexPropertyArgs, 5: namedPropertyArgs, 6: non-static inner class creator
  */
 pathExpression returns [int t]
     :   primary (pathElement { $t = $pathElement.t; })*
@@ -983,7 +983,9 @@ pathElement returns [int t]
         )
         namePart
         { $t = 1; }
-
+    |
+        DOT nls NEW creator[1]
+        { $t = 6; }
     |   arguments
         { $t = 2; }
 
@@ -1054,7 +1056,7 @@ primary
         identifier typeArguments?                                                           #identifierPrmrAlt
     |   literal                                                                             #literalPrmrAlt
     |   gstring                                                                             #gstringPrmrAlt
-    |   NEW nls creator                                                                     #newPrmrAlt
+    |   NEW nls creator[0]                                                                  #newPrmrAlt
     |   THIS                                                                                #thisPrmrAlt
     |   SUPER                                                                               #superPrmrAlt
     |   parExpression                                                                       #parenPrmrAlt
@@ -1091,11 +1093,14 @@ mapEntryLabel
     |   primary
     ;
 
-creator
+/**
+ *  t 0: general creation; 1: non-static inner class creation
+ */
+creator[int t]
     :   createdName
-        (   nls arguments anonymousInnerClassDeclaration[0]?
-        |   (annotationsOpt LBRACK expression RBRACK)+ dimsOpt
-        |   dims nls arrayInitializer
+        (   {0 == $t || 1 == $t}? nls arguments anonymousInnerClassDeclaration[0]?
+        |   {0 == $t}?            (annotationsOpt LBRACK expression RBRACK)+ dimsOpt
+        |   {0 == $t}?            dims nls arrayInitializer
         )
     ;
 
