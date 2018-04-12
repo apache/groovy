@@ -159,6 +159,11 @@ public class GenericsUtils {
         if (parameterized == null || parameterized.length == 0) return;
         GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
         if (redirectGenericsTypes == null) redirectGenericsTypes = parameterized;
+        if (redirectGenericsTypes.length != parameterized.length) {
+            throw new GroovyBugError("Expected earlier checking to detect generics parameter arity mismatch" +
+                    "\nExpected: " + node.getName() + toGenericTypesString(redirectGenericsTypes) +
+                    "\nSupplied: " + node.getName() + toGenericTypesString(parameterized));
+        }
         for (int i = 0; i < redirectGenericsTypes.length; i++) {
             GenericsType redirectType = redirectGenericsTypes[i];
             if (redirectType.isPlaceholder()) {
@@ -183,6 +188,20 @@ public class GenericsUtils {
                 }
             }
         }
+    }
+
+    private static String toGenericTypesString(GenericsType[] genericsTypes) {
+        if (genericsTypes == null) return "";
+        StringBuilder sb = new StringBuilder("<");
+        for (int i = 0; i < genericsTypes.length; i++) {
+            final GenericsType genericsType = genericsTypes[i];
+            sb.append(genericsType.toString());
+            if (i < genericsTypes.length - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("> ");
+        return sb.toString();
     }
 
     /**
