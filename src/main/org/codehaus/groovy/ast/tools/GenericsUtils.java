@@ -52,9 +52,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implem
 
 /**
  * Utility methods to deal with generic types.
- *
- * @author Cedric Champeau
- * @author Paul King
  */
 public class GenericsUtils {
     public static final GenericsType[] EMPTY_GENERICS_ARRAY = new GenericsType[0];
@@ -159,6 +156,7 @@ public class GenericsUtils {
         if (parameterized == null || parameterized.length == 0) return;
         GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
         if (redirectGenericsTypes==null) redirectGenericsTypes = parameterized;
+        if (parameterized.length != redirectGenericsTypes.length) return;
         for (int i = 0; i < redirectGenericsTypes.length; i++) {
             GenericsType redirectType = redirectGenericsTypes[i];
             if (redirectType.isPlaceholder()) {
