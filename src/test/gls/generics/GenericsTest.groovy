@@ -576,6 +576,12 @@ import java.util.concurrent.atomic.AtomicInteger
         shouldFailCompilationWithMessages '''
             class MyClass { Map<String, Map<String>> map }
         ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+             def method() { Map<String> map }
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        shouldFailCompilationWithMessages '''
+             def method() { Map<String, Map<String>> map }
+        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
         assertScript '''
             List<String> ss = new LinkedList<>()
         '''
