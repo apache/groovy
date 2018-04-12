@@ -91,6 +91,7 @@ public class GroovyCollections {
      * is <code>[['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</code>.
      * If a non-collection item is given, it is treated as a singleton collection,
      * i.e. <code>combinations([[1, 2], 'x'])</code> is <code>[[1, 'x'], [2, 'x']]</code>.
+     * If an empty collection is found within the given collections, the result will be an empty list.
      *
      * @param collections the Iterable of given collections
      * @return a List of the combinations found
@@ -118,6 +119,9 @@ public class GroovyCollections {
                 }
                 collectedCombos = newCombos;
             }
+
+            if (collectedCombos.isEmpty()) 
+                break;
         }
         return collectedCombos;
     }

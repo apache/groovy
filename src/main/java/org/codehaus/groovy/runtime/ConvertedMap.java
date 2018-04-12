@@ -26,12 +26,10 @@ import java.util.Map;
 /**
  * This class is a general adapter to adapt a map of closures to
  * any Java interface.
- *
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class ConvertedMap extends ConversionHandler {
 
-    private static final long serialVersionUID = -8131432558241254137L;
+    private static final long serialVersionUID = 8535543126684786030L;
 
     /**
      * to create a ConvertedMap object.

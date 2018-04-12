@@ -26,12 +26,18 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 
 /**
- * class used to verify correct usage of generics in
- * class header (class and superclass declaration)
- *
- * @author Jochen Theodorou
+ * Verify correct usage of generics.
+ * This includes:
+ * <ul>
+ * <li>class header (class and superclass declaration)</li>
+ * <li>arity of type parameters for fields, parameters, local variables</li>
+ * <li>invalid diamond &;t;&gt; usage</li>
+ * </ul>
  */
 public class GenericsVisitor extends ClassCodeVisitorSupport {
     private final SourceUnit source;
@@ -48,7 +54,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     public void visitClass(ClassNode node) {
         boolean error = checkWildcard(node);
         if (error) return;
-        boolean isAnon = node instanceof InnerClassNode && ((InnerClassNode)node).isAnonymous();
+        boolean isAnon = node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous();
         checkGenericsUsage(node.getUnresolvedSuperClass(false), node.getSuperClass(), isAnon ? true : null);
         ClassNode[] interfaces = node.getInterfaces();
         for (ClassNode anInterface : interfaces) {
@@ -67,7 +73,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         ClassNode type = call.getType();
-        boolean isAnon = type instanceof InnerClassNode && ((InnerClassNode)type).isAnonymous();
+        boolean isAnon = type instanceof InnerClassNode && ((InnerClassNode) type).isAnonymous();
         checkGenericsUsage(type, type.redirect(), isAnon);
     }
 
@@ -81,6 +87,21 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         ClassNode returnType = node.getReturnType();
         checkGenericsUsage(returnType, returnType.redirect());
         super.visitMethod(node);
+    }
+
+    @Override
+    public void visitDeclarationExpression(DeclarationExpression expression) {
+        if (expression.isMultipleAssignmentDeclaration()) {
+            TupleExpression tExpr = expression.getTupleExpression();
+            for (Expression nextExpr : tExpr.getExpressions()) {
+                ClassNode declType = nextExpr.getType();
+                checkGenericsUsage(declType, declType.redirect());
+            }
+        } else {
+            ClassNode declType = expression.getVariableExpression().getType();
+            checkGenericsUsage(declType, declType.redirect());
+        }
+        super.visitDeclarationExpression(expression);
     }
 
     private boolean checkWildcard(ClassNode cn) {
@@ -137,10 +158,12 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             addError(message, n);
             return;
         }
-        // check bounds
         for (int i = 0; i < nTypes.length; i++) {
             ClassNode nType = nTypes[i].getType();
             ClassNode cnType = cnTypes[i].getType();
+            // check nested type parameters
+            checkGenericsUsage(nType, nType.redirect());
+            // check bounds
             if (!nType.isDerivedFrom(cnType)) {
                 if (cnType.isInterface() && nType.implementsInterface(cnType)) continue;
                 addError("The type " + nTypes[i].getName() +
