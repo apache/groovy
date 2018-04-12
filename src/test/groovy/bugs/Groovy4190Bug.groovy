@@ -41,7 +41,7 @@ class Groovy4190Bug extends CompilableTestSupport {
     
     void testGenericsUsageInMethodCall2() {
         shouldCompile """
-            class Test4190V2<E> {
+            class Test4190V2<K,V> {
                 public static void main(String[] args) {
                     Test4190V2<Integer, String> t = Test4190V2.<Integer, String>create();
                 }
