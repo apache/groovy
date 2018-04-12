@@ -159,7 +159,7 @@ ext {
     luceneVersion = '4.7.2'
     openbeansVersion = '1.0'
     openejbVersion = '1.0'
-    picocliVersion = '3.0.0-alpha-5'
+    picocliVersion = '3.0.0-alpha-6'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.21'
     xmlunitVersion = '1.6'
@@ -179,7 +179,7 @@ dependencies {
 
     compile "commons-cli:commons-cli:$commonsCliVersion"
     compile "info.picocli:picocli:$picocliVersion"
-//    compile files ('C:/Users/remko/IdeaProjects/picocli/build/libs/picocli-3.0.0-alpha-6-SNAPSHOT.jar')
+//    compile files ('C:/Users/remko/IdeaProjects/picocli/build/libs/picocli-3.0.0-alpha-6.jar')
     compile "org.apache.ant:ant:$antVersion"
     compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
