@@ -30,8 +30,6 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 /**
  * class used to verify correct usage of generics in
  * class header (class and superclass declaration)
- *
- * @author Jochen Theodorou
  */
 public class GenericsVisitor extends ClassCodeVisitorSupport {
     private final SourceUnit source;
@@ -48,7 +46,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     public void visitClass(ClassNode node) {
         boolean error = checkWildcard(node);
         if (error) return;
-        boolean isAnon = node instanceof InnerClassNode && ((InnerClassNode)node).isAnonymous();
+        boolean isAnon = node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous();
         checkGenericsUsage(node.getUnresolvedSuperClass(false), node.getSuperClass(), isAnon ? true : null);
         ClassNode[] interfaces = node.getInterfaces();
         for (ClassNode anInterface : interfaces) {
@@ -67,7 +65,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         ClassNode type = call.getType();
-        boolean isAnon = type instanceof InnerClassNode && ((InnerClassNode)type).isAnonymous();
+        boolean isAnon = type instanceof InnerClassNode && ((InnerClassNode) type).isAnonymous();
         checkGenericsUsage(type, type.redirect(), isAnon);
     }
 
