@@ -32,7 +32,9 @@ import picocli.CommandLine.Model.CommandSpec
 import picocli.CommandLine.Model.IGetter
 import picocli.CommandLine.Model.ISetter
 import picocli.CommandLine.Model.OptionSpec
+import picocli.CommandLine.Model.ParserSpec
 import picocli.CommandLine.Model.PositionalParamSpec
+import picocli.CommandLine.Model.UsageMessageSpec
 import picocli.CommandLine.ParseResult
 
 import java.lang.reflect.Field
@@ -244,7 +246,8 @@ import java.lang.reflect.Method
  */
 class CliBuilder {
     /**
-     * Usage summary displayed as the first line when <code>cli.usage()</code> is called.
+     * The command synopsis displayed as the first line in the usage help message, e.g., when <code>cli.usage()</code> is called.
+     * When not set, a default synopsis is generated that shows the supported options and parameters.
      */
     String usage = 'groovy'
 
@@ -258,7 +261,7 @@ class CliBuilder {
     /**
      * To disallow clustered POSIX short options, set this to false.
      */
-    Boolean posix = null
+    Boolean posix = true
 
     /**
      * Whether arguments of the form '{@code @}<i>filename</i>' will be expanded into the arguments contained within the file named <i>filename</i> (default true).
@@ -266,13 +269,17 @@ class CliBuilder {
     boolean expandArgumentFiles = true
 
     /**
-     * Indicates that argument processing should continue for all arguments even
-     * if arguments not recognized as options are encountered (default true).
+     * Configures what the parser should do when arguments not recognized
+     * as options are encountered: when <code>true</code> (the default), the
+     * remaining arguments are all treated as positional parameters.
+     * When <code>false</code>, the parser will continue to look for options, and
+     * only the unrecognized arguments are treated as positional parameters.
      */
     boolean stopAtNonOption = true
 
     /**
-     * The PrintWriter to write the {@linkplain #usage} help message to.
+     * The PrintWriter to write the {@linkplain #usage} help message to
+     * when <code>cli.usage()</code> is called.
      * Defaults to stdout but you can provide your own PrintWriter if desired.
      */
     PrintWriter writer = new PrintWriter(System.out)
@@ -299,19 +306,66 @@ class CliBuilder {
     /**
      * Allows customisation of the usage message width.
      */
-    int width = CommandLine.Model.UsageMessageSpec.DEFAULT_USAGE_WIDTH
+    int width = UsageMessageSpec.DEFAULT_USAGE_WIDTH
 
     /**
-     * Not normally accessed directly but full access to underlying model if needed.
+     * Not normally accessed directly but allows fine-grained control over the
+     * parser behaviour via the API of the underlying library if needed.
      * @since 2.5
      */
-    CommandSpec commandSpec = CommandSpec.create();
+    final ParserSpec parser = new ParserSpec()
+            .stopAtPositional(true)
+            .unmatchedOptionsArePositionalParams(true)
+            .arityRestrictsCumulativeSize(true)
+            .overwrittenOptionsAllowed(true)
+            .toggleBooleanFlags(false)
+
+    /**
+     * Not normally accessed directly but allows fine-grained control over the
+     * usage help message via the API of the underlying library if needed.
+     * @since 2.5
+     */
+    final UsageMessageSpec usageMessage = new UsageMessageSpec()
 
     Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
 
+    private CommandSpec commandSpec = CommandSpec.create()
+
     void setUsage(String usage) {
         this.usage = usage
-        commandSpec.usageMessage().customSynopsis(usage)
+        usageMessage.customSynopsis(usage)
+    }
+
+    void setFooter(String footer) {
+        this.footer = footer
+        usageMessage.footer(footer)
+    }
+
+    void setHeader(String header) {
+        this.header = header
+        // "header" is displayed after the synopsis in previous CliBuilder versions.
+        // The picocli equivalent is the "description".
+        usageMessage.description(header)
+    }
+
+    void setWidth(int width) {
+        this.width = width
+        usageMessage.width(width)
+    }
+
+    void setExpandArgumentFiles(boolean expand) {
+        this.expandArgumentFiles = expand
+        parser.expandAtFiles(expand)
+    }
+
+    void setPosix(boolean posix) {
+        this.posix = posix
+        parser.posixClusteredShortOptionsAllowed(posix)
+    }
+
+    void setStopAtNonOption(boolean stopAtNonOption) {
+        this.stopAtNonOption = stopAtNonOption
+        parser.stopAtPositional(stopAtNonOption)
     }
 
     /**
@@ -391,22 +445,9 @@ class CliBuilder {
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
-//        if (!System.getProperty("picocli.trace")) { // suppress warnings
-//            System.setProperty("picocli.trace", "OFF")
-//        }
-        commandSpec.parser()
-                .posixClusteredShortOptionsAllowed(posix ?: true)
-                .expandAtFiles(expandArgumentFiles)
-                .stopAtPositional(stopAtNonOption)
-                .unmatchedOptionsArePositionalParams(true)
-                .arityRestrictsCumulativeSize(true) // TODO expose as property?
-                .overwrittenOptionsAllowed(true)
-                .toggleBooleanFlags(false)
-        commandSpec.name(name).usageMessage()
-                .description(header)
-                .footer(footer)
-                .width(width)
-        if (stopAtNonOption && commandSpec.positionalParameters().empty) {
+        commandSpec.parser(parser)
+        commandSpec.name(name).usageMessage(usageMessage)
+        if (commandSpec.positionalParameters().empty) {
             commandSpec.addPositional(PositionalParamSpec.builder().type(String[]).arity("*").hidden(true).build())
         }
         def commandLine = new CommandLine(commandSpec)
@@ -444,6 +485,7 @@ class CliBuilder {
      */
     public <T> T parseFromSpec(Class<T> optionsClass, String[] args) {
         def cliOptions = [:]
+        commandSpec = CommandSpec.create()
         addOptionsFromAnnotations(optionsClass, cliOptions, true)
         addPositionalsFromAnnotations(optionsClass, cliOptions, true)
         parse(args)
@@ -459,6 +501,7 @@ class CliBuilder {
      * @return the options instance populated with the processed options
      */
     public <T> T parseFromInstance(T optionInstance, args) {
+        commandSpec = CommandSpec.create()
         addOptionsFromAnnotations(optionInstance.getClass(), optionInstance, false)
         addPositionalsFromAnnotations(optionInstance.getClass(), optionInstance, false)
         def optionAccessor = parse(args)
@@ -515,7 +558,7 @@ class CliBuilder {
         String label
         IGetter getter
         ISetter setter
-        boolean[] isFlag
+        Object initialValue
     }
 
     private ArgSpecAttributes extractAttributesFromMethod(Method m, boolean isCoercedMap, target) {
@@ -529,15 +572,12 @@ class CliBuilder {
         // Additionally, implementation classes may annotate _getter_ methods with @Option;
         // if the getter returns a Collection or Map, picocli will add parsed values to it.
         def currentValue = initialValue(type, m, target, isCoercedMap)
-        boolean modified = false
-        boolean[] isFlag = [false]
         def getter = {
-            isFlag[0] ? modified : currentValue
+            currentValue
         }
         def setter = {
             def old = currentValue
             currentValue = it
-            modified = true
             if (!isCoercedMap && m.parameterTypes.size() > 0) {
                 m.invoke(target, [currentValue].toArray())
             }
@@ -547,7 +587,7 @@ class CliBuilder {
             target[m.name] = getter
         }
         def label = m.name.startsWith("set") || m.name.startsWith("get") ? MetaClassHelper.convertPropertyName(m.name.substring(3)) : m.name
-        new ArgSpecAttributes(type: type, auxiliaryTypes: auxTypes, label: label, getter: getter, setter: setter, isFlag: isFlag)
+        new ArgSpecAttributes(type: type, auxiliaryTypes: auxTypes, label: label, getter: getter, setter: setter, initialValue: currentValue)
     }
 
     private Object initialValue(Class<?> cls, Method m, Object target, boolean isCoercedMap) {
@@ -575,7 +615,7 @@ class CliBuilder {
             oldValue
         }
         Class[] auxTypes = null // TODO extract generic types like List<Integer>, Map<Integer,Double>
-        new ArgSpecAttributes(type: f.type, auxiliaryTypes: auxTypes, label: f.name, getter: getter, setter: setter, isFlag: [false] as boolean[])
+        new ArgSpecAttributes(type: f.type, auxiliaryTypes: auxTypes, label: f.name, getter: getter, setter: setter, initialValue: getter.call())
     }
 
     private PositionalParamSpec createPositionalParamSpec(Unparsed unparsed, ArgSpecAttributes attr, Object target) {
@@ -587,9 +627,16 @@ class CliBuilder {
         if (attr.auxiliaryTypes) { builder.auxiliaryTypes(attr.auxiliaryTypes) } // cannot set aux types to null
         builder.arity(arity)
         builder.paramLabel("<$attr.label>")
-        attr.isFlag[0] = arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean'
         builder.getter(attr.getter)
         builder.setter(attr.setter)
+        if (arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean' && !attr.initialValue) {
+            attr.initialValue = false
+        }
+        try {
+            builder.initialValue(attr.initialValue)
+        } catch (Exception ex) {
+            throw new CliBuilderException("Could not get initial value of positional parameters: " + ex, ex)
+        }
         builder.build()
     }
 
@@ -611,9 +658,16 @@ class CliBuilder {
                 builder.converters(annotation.convert().newInstance(target, target) as ITypeConverter)
             }
         }
-        attr.isFlag[0] = arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean'
         builder.getter(attr.getter)
         builder.setter(attr.setter)
+        if (arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean' && !attr.initialValue) {
+            attr.initialValue = false
+        }
+        try {
+            builder.initialValue(attr.initialValue)
+        } catch (Exception ex) {
+            throw new CliBuilderException("Could not get initial value of option " + names + ": " + ex, ex)
+        }
         builder.build()
     }
 
