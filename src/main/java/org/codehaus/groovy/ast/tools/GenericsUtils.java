@@ -144,7 +144,7 @@ public class GenericsUtils {
      * types it defines.
      *
      * @param node the class node to check
-     + @param map the generics type information collector
+     * @param map the generics type information collector
      */
     public static void extractPlaceholders(ClassNode node, Map<String, GenericsType> map) {
         if (node == null) return;
