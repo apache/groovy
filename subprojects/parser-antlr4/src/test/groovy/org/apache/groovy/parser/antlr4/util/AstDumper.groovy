@@ -744,10 +744,6 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         visitClosureExpression(expression)
     }
 
-    @Override
-    void visitLambdaExpression(LambdaExpression expression) {
-        visitClosureExpression(expression)
-    }
 
     @Override
     void visitTupleExpression(TupleExpression expression) {
