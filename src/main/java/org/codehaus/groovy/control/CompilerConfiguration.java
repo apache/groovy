@@ -194,8 +194,6 @@ public class CompilerConfiguration {
 
     private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<CompilationCustomizer>();
 
-    private static final boolean COMPILE_STATIC_BY_DEFAULT = Boolean.getBoolean("groovy.compile.static.by.default");
-
     /**
      * Sets a list of global AST transformations which should not be loaded even if they are
      * defined in META-INF/org.codehaus.groovy.transform.ASTTransformation files. By default,
@@ -942,47 +940,51 @@ public class CompilerConfiguration {
         return indyEnabled;
     }
 
+    private boolean compileStatic;
     private void enableCompileStaticByDefault() {
-        if (!COMPILE_STATIC_BY_DEFAULT) {
+        if (compileStatic) {
+            return;
+        }
+        if (!Boolean.getBoolean("groovy.compile.static")) {
             return;
         }
 
         compilationCustomizers.add(
-                new CompilationCustomizer(CompilePhase.CONVERSION) {
-                    @Override
-                    public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                        for (ClassNode cn : source.getAST().getClasses()) {
-                            new ClassCodeVisitorSupport() {
-                                @Override
-                                public void visitClass(ClassNode node) {
-                                    enableCompileStatic(node);
+            new CompilationCustomizer(CompilePhase.CONVERSION) {
+                @Override
+                public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+                    for (ClassNode cn : source.getAST().getClasses()) {
+                        new ClassCodeVisitorSupport() {
+                            @Override
+                            public void visitClass(ClassNode node) {
+                                enableCompileStatic(node);
+                            }
+
+                            private void enableCompileStatic(ClassNode classNode) {
+                                if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)).isEmpty()) {
+                                    return;
+                                }
+                                if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
+                                    return;
                                 }
 
-                                private void enableCompileStatic(ClassNode classNode) {
-                                    if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)).isEmpty()) {
-                                        return;
-                                    }
+                                classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)));
+                            }
 
-                                    if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
-                                        return;
-                                    }
+                            @Override
+                            protected SourceUnit getSourceUnit() {
+                                return source;
+                            }
 
-                                    classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)));
-                                }
-
-                                @Override
-                                protected SourceUnit getSourceUnit() {
-                                    return source;
-                                }
-
-                                private static final String GROOVY_TRANSFORM_COMPILE_STATIC = "groovy.transform.CompileStatic";
-                                private static final String GROOVY_TRANSFORM_COMPILE_DYNAMIC = "groovy.transform.CompileDynamic";
-                            }.visitClass(cn);
-                        }
+                            private static final String GROOVY_TRANSFORM_COMPILE_STATIC = "groovy.transform.CompileStatic";
+                            private static final String GROOVY_TRANSFORM_COMPILE_DYNAMIC = "groovy.transform.CompileDynamic";
+                        }.visitClass(cn);
                     }
                 }
+            }
         );
 
+        compileStatic = true;
     }
     { enableCompileStaticByDefault(); }
 }
