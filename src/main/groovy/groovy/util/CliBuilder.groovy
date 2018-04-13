@@ -122,12 +122,12 @@ import java.lang.reflect.Method
  * </pre>
  * Which has the following usage message:
  * <pre>
- * usage: curl [options] &lt;url>
- *     --basic         Use HTTP Basic Authentication
- *  -d,--data &lt;data>   HTTP POST data
- *  -G,--get           Send the -d data with a HTTP GET
- *  -q                 If used as the first parameter disables .curlrc
- *     --url &lt;URL>     Set URL to work with
+ * Usage: curl [options] &lt;url>
+ *       -basic, --basic         Use HTTP Basic Authentication
+ *   -d, -data, --data=&lt;data>    HTTP POST data
+ *   -G, -get, --get             Send the -d data with a HTTP GET
+ *   -q                          If used as the first parameter disables .curlrc
+ *       -url, --url=&lt;URL>       Set URL to work with
  * </pre>
  * This example shows a common convention. When mixing short and long names, the
  * short names are often one character in size. One character options with
@@ -136,7 +136,7 @@ import java.lang.reflect.Method
  * the use of '_' when no short option is applicable.
  * <p>
  * Also note that '_' was used multiple times. This is supported but if
- * any other shortOpt or any longOpt is repeated, then the behavior is undefined.
+ * any other shortOpt or any longOpt is repeated, then the underlying library throws an exception.
  * <p>
  * Short option names may not contain a hyphen. If a long option name contains a hyphen, e.g. '--max-wait' then you can either
  * use the long hand method call <code>options.hasOption('max-wait')</code> or surround
@@ -159,19 +159,76 @@ import java.lang.reflect.Method
  *
  * <p>
  * <b>Supported Option Properties</b>:
- * <pre>
- *   argName:        String
- *   longOpt:        String
- *   args:           int or String
- *   optionalArg:    boolean
- *   required:       boolean
- *   type:           Class
- *   valueSeparator: char
- *   convert:        Closure
- *   defaultValue:   String
- * </pre>
- * TODO See {@link org.apache.commons.cli.Option} for the meaning of most of these properties
- * and {@link CliBuilderTest} for further examples.
+ * <table border="1" cellspacing="0">
+ *   <tr>
+ *     <th>Property</th>
+ *     <th>Type</th>
+ *     <th>Picocli equivalent</th>
+ *     <th>Description</th>
+ *   </tr>
+ *   <tr>
+ *     <th><code>argName</code><br><code>longOpt</code></th>
+ *     <td>String</td>
+ *     <td><code>names</code></td>
+ *     <td>An option may have two option names: a short name (<code>argName</code>), prefixed with a single hyphen,
+ *     and a long name (<code>longOpt</code>), which may have either a single hypen or two hyphens as prefix.</td>
+ *   </tr>
+ *   <tr>
+ *     <th><code>args</code><br><code>optionalArg</code></th>
+ *     <td>int&nbsp;or&nbsp;String<br>boolean</td>
+ *     <td><code>arity</code></td>
+ *     <td><code>args</code> indicates the maximum number of parameters for this option.
+ *       A String value of '+' indicates the maximum is unlimited.
+ *       The minimum number of parameters depends on the type (booleans require no parameters)
+ *       and the <code>optionalArg</code> setting. If <code>optionalArg = true</code>, then <code>args = 3</code>
+ *       is the equivalent of <code>arity = "0..3"</code> in picocli. If <code>optionalArg = false</code>,
+ *       then <code>args = '+'</code> is the equivalent of <code>arity = "1..*"</code> in picocli.
+ *       By default, <code>args</code> also restricts the total (cumulative) number of values that can be matched for this option.
+ *       Call <code>arityRestrictsCumulativeSize(false)</code> on the {@link #parser} to switch this off.
+ *       </td>
+ *   </tr>
+ *   <tr>
+ *     <th><code>required</code></th>
+ *     <td>boolean</td>
+ *     <td><code>required</code></td>
+ *     <td>If <code>true</code>, this option must be specified on the command line, or an exception is thrown.
+ *       </td>
+ *   </tr>
+ *   <tr>
+ *     <th><code>type</code></th>
+ *     <td>Class</td>
+ *     <td><code>type</code></td>
+ *     <td>Option parameters are converted to this type. The underlying library has built-in converters for many types.
+ *       A custom converter can be specified with the <code>convert</code> property.
+ *       </td>
+ *   </tr>
+ *   <tr>
+ *     <th><code>convert</code></th>
+ *     <td>Closure</td>
+ *     <td><code>converter</code></td>
+ *     <td>A closure that takes a single String parameter and returns an object converted to the <code>type</code> of this option.
+ *       The picocli equivalent is the <code>ITypeConverter</code> interface.
+ *       </td>
+ *   </tr>
+ *   <tr>
+ *     <th><code>valueSeparator</code></th>
+ *     <td>char</td>
+ *     <td><code>splitRegex</code></td>
+ *     <td>The character used to split a single command line argument into parts.
+ *       (Note that the max number of parameters for an option means the total cumulative number of parts.)
+ *       </td>
+ *   </tr>
+ *   <tr>
+ *     <th><code>defaultValue</code></th>
+ *     <td>String</td>
+ *     <td><code>defaultValue</code></td>
+ *     <td>The value the option should have if it did not appear on the command line.
+ *       The specified String value will be split into parts with the <code>valueSeparator</code> and
+ *       converted to the option <code>type</code> before it is set.
+ *       </td>
+ *   </tr>
+ * </table>
+ * See {@link CliBuilderTest} for further examples.
  * <p>
  * <b>@-files</b>
  * <p>
@@ -452,12 +509,7 @@ class CliBuilder {
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
-        commandSpec.parser(parser)
-        commandSpec.name(name).usageMessage(usageMessage)
-        if (commandSpec.positionalParameters().empty) {
-            commandSpec.addPositional(PositionalParamSpec.builder().type(String[]).arity("*").hidden(true).build())
-        }
-        def commandLine = new CommandLine(commandSpec)
+        CommandLine commandLine = createCommandLine()
         try {
             def accessor = new OptionAccessor(commandLine.parseArgs(args as String[]))
             accessor.savedTypeOptions = savedTypeOptions
@@ -469,12 +521,21 @@ class CliBuilder {
         }
     }
 
+    private CommandLine createCommandLine() {
+        commandSpec.parser(parser)
+        commandSpec.name(name).usageMessage(usageMessage)
+        if (commandSpec.positionalParameters().empty) {
+            commandSpec.addPositional(PositionalParamSpec.builder().type(String[]).arity("*").hidden(true).build())
+        }
+        return new CommandLine(commandSpec)
+    }
+
     /**
      * Prints the usage message with the specified {@link #header header}, {@link #footer footer} and {@link #width width}
      * to the specified {@link #writer writer} (default: System.out).
      */
     void usage() {
-        printUsage(commandSpec.commandLine(), writer)
+        printUsage(commandSpec.commandLine() ?: createCommandLine(), writer)
     }
 
     private void printUsage(CommandLine commandLine, PrintWriter pw) {
