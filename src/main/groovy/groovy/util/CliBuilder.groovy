@@ -49,7 +49,7 @@ import java.lang.reflect.Method
  * <p>
  * Typical usage (emulate partial arg processing of unix command: ls -alt *.groovy):
  * <pre>
- * def cli = new CliBuilder(usage:'ls')
+ * def cli = new CliBuilder(name:'ls')
  * cli.a('display all files')
  * cli.l('use a long listing format')
  * cli.t('sort by modification time')
@@ -60,10 +60,10 @@ import java.lang.reflect.Method
  * </pre>
  * The usage message for this example (obtained using <code>cli.usage()</code>) is shown below:
  * <pre>
- * usage: ls
- *  -a   display all files
- *  -l   use a long listing format
- *  -t   sort by modification time
+ * Usage: ls [-alt]
+ *   -a                          display all files
+ *   -l                          use a long listing format
+ *   -t                          sort by modification time
  * </pre>
  * An underlying parser that supports what is called argument 'bursting' is used
  * by default. Bursting would convert '-alt' into '-a -l -t' provided no long
@@ -76,28 +76,35 @@ import java.lang.reflect.Method
  * Another example (partial emulation of arg processing for 'ant' command line):
  * <pre>
  * def cli = new CliBuilder(usage:'ant [options] [targets]',
- *                          optionListHeading:'Options:%n') // TODO was header:'Options:'
+ *                          header:'Options:')
  * cli.help('print this message')
  * cli.logfile(type:File, argName:'file', 'use given file for log')
- * cli.D(type:Map, argName:'property=value', 'use value for given property')
+ * cli.D(type:Map, argName:'property=value', args: '+', 'use value for given property')
+ * cli.lib(argName:'path', valueSeparator:',', args: '3',
+ *      'comma-separated list of up to 3 paths to search for jars and classes')
  * def options = cli.parse(args)
  * ...
  * </pre>
  * Usage message would be:
  * <pre>
- * usage: ant [options] [targets]
+ * Usage: ant [options] [targets]
  * Options:
  *  -D=&lt;property=value>      use value for given property
  *     -help                 print this message
  *     -logfile=&lt;file>       use given file for log
+ *     -lib=&lt;path>[,&lt;path>]... [&lt;path>[,&lt;path>]... [&lt;path>[,&lt;path>]...]]
+ *                           comma-separated list of up to 3 paths to search
+ *                             for jars and classes
  * </pre>
- * And if called with the following arguments '-logfile foo -Dbar=baz target'
+ * And if called with the following arguments '-logfile foo -Dbar=baz -lib=/tmp,/usr/lib,~/libs target'
  * then the following assertions would be true:
  * <pre>
  * assert options // would be null (false) on failure
  * assert options.arguments() == ['target']
- * assert options.Ds == ['bar', 'baz']
- * assert options.logfile == 'foo'
+ * assert options.D == ['bar': 'baz']
+ * assert options.libs == ['/tmp', '/usr/lib', '~/libs']
+ * assert options.lib == '/tmp'
+ * assert options.logfile == new File('foo')
  * </pre>
  * Note the use of some special notation. By adding 's' onto an option
  * that may appear multiple times and has an argument or as in this case
@@ -559,13 +566,14 @@ class CliBuilder {
         IGetter getter
         ISetter setter
         Object initialValue
+        boolean hasInitialValue
     }
 
     private ArgSpecAttributes extractAttributesFromMethod(Method m, boolean isCoercedMap, target) {
         Class type = isCoercedMap ? m.returnType : (m.parameterTypes.size() > 0 ? m.parameterTypes[0] : m.returnType)
         type = type && type == Void.TYPE ? null : type
 
-        Class[] auxTypes = null // TODO extract generic types like List<Integer>, Map<Integer,Double>
+        Class[] auxTypes = null // TODO extract generic types like List<Integer> or Map<Integer,Double>
 
         // If the method is a real setter, we can't invoke it to get its value,
         // so instead we need to keep track of its current value ourselves.
@@ -587,13 +595,23 @@ class CliBuilder {
             target[m.name] = getter
         }
         def label = m.name.startsWith("set") || m.name.startsWith("get") ? MetaClassHelper.convertPropertyName(m.name.substring(3)) : m.name
-        new ArgSpecAttributes(type: type, auxiliaryTypes: auxTypes, label: label, getter: getter, setter: setter, initialValue: currentValue)
+        new ArgSpecAttributes(type: type, auxiliaryTypes: auxTypes, label: label, getter: getter, setter: setter, initialValue: currentValue, hasInitialValue: isCoercedMap)
     }
 
     private Object initialValue(Class<?> cls, Method m, Object target, boolean isCoercedMap) {
-        if (m.parameterTypes.size() == 0 && m.returnType != Void.TYPE) {
-            return isCoercedMap ? target[m.name] : m.invoke(target)
+        if (m.parameterTypes.size() == 0 && m.returnType != Void.TYPE) { // annotated getter
+            if (!isCoercedMap) {
+                return m.invoke(target)
+            }
+            if (cls.primitive) {
+                if (cls.simpleName.toLowerCase() == 'boolean') {
+                    return false
+                }
+                return 0
+            }
+            return target[m.name]
         }
+        // annotated setter
         if (List.class.isAssignableFrom(cls)) { // TODO support other Collections in future
             return new ArrayList()
         }
@@ -614,8 +632,8 @@ class CliBuilder {
             f.set(target, newValue)
             oldValue
         }
-        Class[] auxTypes = null // TODO extract generic types like List<Integer>, Map<Integer,Double>
-        new ArgSpecAttributes(type: f.type, auxiliaryTypes: auxTypes, label: f.name, getter: getter, setter: setter, initialValue: getter.call())
+        Class[] auxTypes = null // TODO extract generic types like List<Integer> or Map<Integer,Double>
+        new ArgSpecAttributes(type: f.type, auxiliaryTypes: auxTypes, label: f.name, getter: getter, setter: setter, initialValue: getter.call(), hasInitialValue: true)
     }
 
     private PositionalParamSpec createPositionalParamSpec(Unparsed unparsed, ArgSpecAttributes attr, Object target) {
@@ -629,6 +647,7 @@ class CliBuilder {
         builder.paramLabel("<$attr.label>")
         builder.getter(attr.getter)
         builder.setter(attr.setter)
+        builder.hasInitialValue(attr.hasInitialValue)
         if (arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean' && !attr.initialValue) {
             attr.initialValue = false
         }
@@ -660,6 +679,7 @@ class CliBuilder {
         }
         builder.getter(attr.getter)
         builder.setter(attr.setter)
+        builder.hasInitialValue(attr.hasInitialValue)
         if (arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean' && !attr.initialValue) {
             attr.initialValue = false
         }
