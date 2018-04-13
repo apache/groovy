@@ -180,10 +180,11 @@ import java.lang.reflect.Method
  *     <td><code>args</code> indicates the maximum number of parameters for this option.
  *       A String value of '+' indicates the maximum is unlimited.
  *       The minimum number of parameters depends on the type (booleans require no parameters)
- *       and the <code>optionalArg</code> setting. If <code>optionalArg = true</code>, then <code>args = 3</code>
- *       is the equivalent of <code>arity = "0..3"</code> in picocli. If <code>optionalArg = false</code>,
- *       then <code>args = '+'</code> is the equivalent of <code>arity = "1..*"</code> in picocli.
- *       By default, <code>args</code> also restricts the total (cumulative) number of values that can be matched for this option.
+ *       and the <code>optionalArg</code> setting. If <code>optionalArg=true</code>, then <code>args=3</code>
+ *       is the equivalent of <code>arity="0..3"</code> in picocli. If <code>optionalArg=false</code>,
+ *       then <code>args='+'</code> is the equivalent of <code>arity="1..*"</code> in picocli.
+ *       Picocli's <a href="http://picocli.info/#_arity"><code>arity</code></a> is not an exact equivalent of CliBuilder's <code>args</code>:
+ *       by default, <code>args</code> also restricts the total (cumulative) number of values that can be matched for this option.
  *       Call <code>arityRestrictsCumulativeSize(false)</code> on the {@link #parser} to switch this off.
  *       </td>
  *   </tr>
@@ -198,7 +199,8 @@ import java.lang.reflect.Method
  *     <th><code>type</code></th>
  *     <td>Class</td>
  *     <td><code>type</code></td>
- *     <td>Option parameters are converted to this type. The underlying library has built-in converters for many types.
+ *     <td>Option parameters are converted to this type. The underlying library has built-in converters for
+ *     <a href="http://picocli.info/#_built_in_types">many types</a>.
  *       A custom converter can be specified with the <code>convert</code> property.
  *       </td>
  *   </tr>
@@ -207,7 +209,7 @@ import java.lang.reflect.Method
  *     <td>Closure</td>
  *     <td><code>converter</code></td>
  *     <td>A closure that takes a single String parameter and returns an object converted to the <code>type</code> of this option.
- *       The picocli equivalent is the <code>ITypeConverter</code> interface.
+ *       The picocli equivalent is the <code><a href="http://picocli.info/#_custom_type_converters">ITypeConverter</a></code> interface.
  *       </td>
  *   </tr>
  *   <tr>
