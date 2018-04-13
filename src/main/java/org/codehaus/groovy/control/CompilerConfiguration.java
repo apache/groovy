@@ -40,16 +40,11 @@ import java.util.StringTokenizer;
 
 /**
  * Compilation control flags and coordination stuff.
- *
- * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @author <a href="mailto:jim@pagesmiths.com">Jim White</a>
- * @author <a href="mailto:cedric.champeau@gmail.com">Cedric Champeau</a>
  */
 
 public class CompilerConfiguration {
 
-    /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> complilation. */
+    /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> compilation. */
     public static final String INVOKEDYNAMIC = "indy";
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
