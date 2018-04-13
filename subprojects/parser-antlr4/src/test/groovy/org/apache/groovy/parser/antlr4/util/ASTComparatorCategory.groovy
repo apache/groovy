@@ -18,14 +18,90 @@
  */
 package org.apache.groovy.parser.antlr4.util
 
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log
-import org.codehaus.groovy.ast.*
-import org.codehaus.groovy.ast.expr.*
-import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.AnnotationNode
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CompileUnit
+import org.codehaus.groovy.ast.ConstructorNode
+import org.codehaus.groovy.ast.DynamicVariable
+import org.codehaus.groovy.ast.EnumConstantClassNode
+import org.codehaus.groovy.ast.FieldNode
+import org.codehaus.groovy.ast.GenericsType
+import org.codehaus.groovy.ast.ImportNode
+import org.codehaus.groovy.ast.InnerClassNode
+import org.codehaus.groovy.ast.InterfaceHelperClassNode
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.MixinNode
+import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.PackageNode
+import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.PropertyNode
+import org.codehaus.groovy.ast.Variable
+import org.codehaus.groovy.ast.VariableScope
+import org.codehaus.groovy.ast.expr.AnnotationConstantExpression
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.ArrayExpression
+import org.codehaus.groovy.ast.expr.AttributeExpression
+import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.expr.CastExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
+import org.codehaus.groovy.ast.expr.ClosureExpression
+import org.codehaus.groovy.ast.expr.ClosureListExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression
+import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression
+import org.codehaus.groovy.ast.expr.EmptyExpression
+import org.codehaus.groovy.ast.expr.ExpressionTransformer
+import org.codehaus.groovy.ast.expr.FieldExpression
+import org.codehaus.groovy.ast.expr.GStringExpression
+import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.ast.expr.MapEntryExpression
+import org.codehaus.groovy.ast.expr.MapExpression
+import org.codehaus.groovy.ast.expr.MethodCall
+import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.MethodPointerExpression
+import org.codehaus.groovy.ast.expr.NamedArgumentListExpression
+import org.codehaus.groovy.ast.expr.NotExpression
+import org.codehaus.groovy.ast.expr.PostfixExpression
+import org.codehaus.groovy.ast.expr.PrefixExpression
+import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.ast.expr.RangeExpression
+import org.codehaus.groovy.ast.expr.SpreadExpression
+import org.codehaus.groovy.ast.expr.SpreadMapExpression
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.expr.TernaryExpression
+import org.codehaus.groovy.ast.expr.TupleExpression
+import org.codehaus.groovy.ast.expr.UnaryMinusExpression
+import org.codehaus.groovy.ast.expr.UnaryPlusExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.BreakStatement
+import org.codehaus.groovy.ast.stmt.CaseStatement
+import org.codehaus.groovy.ast.stmt.CatchStatement
+import org.codehaus.groovy.ast.stmt.ContinueStatement
+import org.codehaus.groovy.ast.stmt.DoWhileStatement
+import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ForStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
+import org.codehaus.groovy.ast.stmt.LoopingStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.stmt.SwitchStatement
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement
+import org.codehaus.groovy.ast.stmt.ThrowStatement
+import org.codehaus.groovy.ast.stmt.TryCatchStatement
+import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.syntax.Token
 
 import java.util.logging.Level
 
+@CompileStatic
 @Log @SuppressWarnings("GroovyUnusedDeclaration")
 class ASTComparatorCategory {
     static { log.level = Level.WARNING }
@@ -36,94 +112,95 @@ class ASTComparatorCategory {
      *  Keeps all checked object pairs and their comparison result.
      *  Will be cleared at {@link #apply(groovy.lang.Closure)} method }
      */
-    static objects = [:] as Map<List<Object>, Boolean>
+    static Map<List<Object>, Boolean> objects = [:] as Map<List<Object>, Boolean>
     static String lastName
 
     static Map<Class, List<String>> DEFAULT_CONFIGURATION = [
-            (ClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods", "unresolvedSuperClass", "innerClasses" ] + LOCATION_IGNORE_LIST) as List<String>,
-            (ConstructorNode): ['declaringClass'],
-            (DynamicVariable): [],
-            (EnumConstantClassNode): ["typeClass"],
-            (FieldNode): ["owner", "declaringClass", "initialValueExpression", "assignToken"],
-            (GenericsType): [],
-            (ImportNode): LOCATION_IGNORE_LIST,
-            (InnerClassNode): (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods", "unresolvedSuperClass", "innerClasses" ] + LOCATION_IGNORE_LIST) as List<String>,
-            (InterfaceHelperClassNode): [],
-            (MethodNode): ["text", "declaringClass"],
-            (MixinNode): [],
-            (ModuleNode): ["context"],
-            (PackageNode): [],
-            (Parameter): [],
-            (PropertyNode): ['declaringClass', 'initialValueExpression', "assignToken"],
-            (Variable): [],
-            (VariableScope): ["clazzScope", "parent", "declaredVariablesIterator"],
-            (Token): ["root", "startColumn"],
-            (AnnotationNode): (["text"] + LOCATION_IGNORE_LIST) as List<String>,
-            (AssertStatement): ["text"],
-            (BlockStatement): ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"],
-            (BreakStatement): ["text"],
-            (CaseStatement): ["text"],
-            (CatchStatement): (["text"] + LOCATION_IGNORE_LIST) as List<String>,
-            (ContinueStatement): ["text"],
-            (DoWhileStatement): ["text"],
-            (EmptyStatement): ["text"],
-            (ExpressionStatement): ["text"],
-            (ForStatement): ["text"],
-            (IfStatement): ["text"],
-            (LoopingStatement): ["text"],
-            (ReturnStatement): ["text"],
-            (SwitchStatement): ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"],
-            (SynchronizedStatement): ["text"],
-            (ThrowStatement): ["text"],
-            (TryCatchStatement): (["text"] + LOCATION_IGNORE_LIST) as List<String>,
-            (WhileStatement): ["text"],
+            (ClassNode)                   : (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods", "unresolvedSuperClass", "innerClasses" ] + LOCATION_IGNORE_LIST) as List<String>,
+            (ConstructorNode)             : ['declaringClass'],
+            (DynamicVariable)             : [],
+            (EnumConstantClassNode)       : ["typeClass"],
+            (FieldNode)                   : ["owner", "declaringClass", "initialValueExpression", "assignToken"],
+            (GenericsType)                : [],
+            (ImportNode)                  : LOCATION_IGNORE_LIST,
+            (InnerClassNode)              : (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods", "unresolvedSuperClass", "innerClasses" ] + LOCATION_IGNORE_LIST) as List<String>,
+            (InterfaceHelperClassNode)    : [],
+            (MethodNode)                  : ["text", "declaringClass"],
+            (MixinNode)                   : [],
+            (ModuleNode)                  : ["context"],
+            (PackageNode)                 : [],
+            (Parameter)                   : [],
+            (PropertyNode)                : ['declaringClass', 'initialValueExpression', "assignToken"],
+            (Variable)                    : [],
+            (VariableScope)               : ["clazzScope", "parent", "declaredVariablesIterator"],
+            (Token)                       : ["root", "startColumn"],
+            (AnnotationNode)              : (["text"] + LOCATION_IGNORE_LIST) as List<String>,
+            (AssertStatement)             : ["text"],
+            (BlockStatement)              : ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"],
+            (BreakStatement)              : ["text"],
+            (CaseStatement)               : ["text"],
+            (CatchStatement)              : (["text"] + LOCATION_IGNORE_LIST) as List<String>,
+            (ContinueStatement)           : ["text"],
+            (DoWhileStatement)            : ["text"],
+            (EmptyStatement)              : ["text"],
+            (ExpressionStatement)         : ["text"],
+            (ForStatement)                : ["text"],
+            (IfStatement)                 : ["text"],
+            (LoopingStatement)            : ["text"],
+            (ReturnStatement)             : ["text"],
+            (SwitchStatement)             : ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"],
+            (SynchronizedStatement)       : ["text"],
+            (ThrowStatement)              : ["text"],
+            (TryCatchStatement)           : (["text"] + LOCATION_IGNORE_LIST) as List<String>,
+            (WhileStatement)              : ["text"],
             (AnnotationConstantExpression): EXPRESSION_IGNORE_LIST,
-            (ArgumentListExpression): EXPRESSION_IGNORE_LIST,
-            (ArrayExpression): EXPRESSION_IGNORE_LIST,
-            (AttributeExpression): EXPRESSION_IGNORE_LIST,
-            (BinaryExpression): EXPRESSION_IGNORE_LIST,
-            (BitwiseNegationExpression): EXPRESSION_IGNORE_LIST,
-            (BooleanExpression): EXPRESSION_IGNORE_LIST,
-            (CastExpression): EXPRESSION_IGNORE_LIST,
-            (ClassExpression): EXPRESSION_IGNORE_LIST,
-            (ClosureExpression): EXPRESSION_IGNORE_LIST,
-            (ClosureListExpression): EXPRESSION_IGNORE_LIST,
-            (ConstantExpression): EXPRESSION_IGNORE_LIST,
-            (ConstructorCallExpression): EXPRESSION_IGNORE_LIST,
-            (DeclarationExpression): ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"],
-            (ElvisOperatorExpression): EXPRESSION_IGNORE_LIST,
-            (EmptyExpression): EXPRESSION_IGNORE_LIST,
-            (ExpressionTransformer): EXPRESSION_IGNORE_LIST,
-            (FieldExpression): EXPRESSION_IGNORE_LIST,
-            (GStringExpression): EXPRESSION_IGNORE_LIST,
-            (ListExpression): EXPRESSION_IGNORE_LIST,
-            (MapEntryExpression): EXPRESSION_IGNORE_LIST,
-            (MapExpression): EXPRESSION_IGNORE_LIST,
-            (MethodCall): EXPRESSION_IGNORE_LIST,
-            (MethodCallExpression): EXPRESSION_IGNORE_LIST,
-            (MethodPointerExpression): EXPRESSION_IGNORE_LIST,
-            (NamedArgumentListExpression): EXPRESSION_IGNORE_LIST,
-            (NotExpression): EXPRESSION_IGNORE_LIST,
-            (PostfixExpression): EXPRESSION_IGNORE_LIST,
-            (PrefixExpression): EXPRESSION_IGNORE_LIST,
-            (PropertyExpression): EXPRESSION_IGNORE_LIST,
-            (RangeExpression): EXPRESSION_IGNORE_LIST,
-            (SpreadExpression): EXPRESSION_IGNORE_LIST,
-            (SpreadMapExpression): EXPRESSION_IGNORE_LIST,
-            (StaticMethodCallExpression): EXPRESSION_IGNORE_LIST,
-            (TernaryExpression): EXPRESSION_IGNORE_LIST,
-            (TupleExpression): EXPRESSION_IGNORE_LIST,
-            (UnaryMinusExpression): EXPRESSION_IGNORE_LIST,
-            (UnaryPlusExpression): EXPRESSION_IGNORE_LIST,
-            (VariableExpression): EXPRESSION_IGNORE_LIST,
-    ];
+            (ArgumentListExpression)      : EXPRESSION_IGNORE_LIST,
+            (ArrayExpression)             : EXPRESSION_IGNORE_LIST,
+            (AttributeExpression)         : EXPRESSION_IGNORE_LIST,
+            (BinaryExpression)            : EXPRESSION_IGNORE_LIST,
+            (BitwiseNegationExpression)   : EXPRESSION_IGNORE_LIST,
+            (BooleanExpression)           : EXPRESSION_IGNORE_LIST,
+            (CastExpression)              : EXPRESSION_IGNORE_LIST,
+            (ClassExpression)             : EXPRESSION_IGNORE_LIST,
+            (ClosureExpression)           : EXPRESSION_IGNORE_LIST,
+            (ClosureListExpression)       : EXPRESSION_IGNORE_LIST,
+            (ConstantExpression)          : EXPRESSION_IGNORE_LIST,
+            (ConstructorCallExpression)   : EXPRESSION_IGNORE_LIST,
+            (DeclarationExpression)       : ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"],
+            (ElvisOperatorExpression)     : EXPRESSION_IGNORE_LIST,
+            (EmptyExpression)             : EXPRESSION_IGNORE_LIST,
+            (ExpressionTransformer)       : EXPRESSION_IGNORE_LIST,
+            (FieldExpression)             : EXPRESSION_IGNORE_LIST,
+            (GStringExpression)           : EXPRESSION_IGNORE_LIST,
+            (ListExpression)              : EXPRESSION_IGNORE_LIST,
+            (MapEntryExpression)          : EXPRESSION_IGNORE_LIST,
+            (MapExpression)               : EXPRESSION_IGNORE_LIST,
+            (MethodCall)                  : EXPRESSION_IGNORE_LIST,
+            (MethodCallExpression)        : EXPRESSION_IGNORE_LIST,
+            (MethodPointerExpression)     : EXPRESSION_IGNORE_LIST,
+            (NamedArgumentListExpression) : EXPRESSION_IGNORE_LIST,
+            (NotExpression)               : EXPRESSION_IGNORE_LIST,
+            (PostfixExpression)           : EXPRESSION_IGNORE_LIST,
+            (PrefixExpression)            : EXPRESSION_IGNORE_LIST,
+            (PropertyExpression)          : EXPRESSION_IGNORE_LIST,
+            (RangeExpression)             : EXPRESSION_IGNORE_LIST,
+            (SpreadExpression)            : EXPRESSION_IGNORE_LIST,
+            (SpreadMapExpression)         : EXPRESSION_IGNORE_LIST,
+            (StaticMethodCallExpression)  : EXPRESSION_IGNORE_LIST,
+            (TernaryExpression)           : EXPRESSION_IGNORE_LIST,
+            (TupleExpression)             : EXPRESSION_IGNORE_LIST,
+            (UnaryMinusExpression)        : EXPRESSION_IGNORE_LIST,
+            (UnaryPlusExpression)         : EXPRESSION_IGNORE_LIST,
+            (VariableExpression)          : EXPRESSION_IGNORE_LIST,
+    ] as Map<Class, List<String>>
 
     static Map<Class, List<String>> COLLECTION_PROPERTY_CONFIGURATION = [
             (ModuleNode): ["classes", "name"]
-    ]
+    ] as Map<Class, List<String>>
 
     static Map<Class, List<String>> configuration = DEFAULT_CONFIGURATION;
 
+    @CompileDynamic
     static void apply(config = DEFAULT_CONFIGURATION, Closure cl) {
         configuration = config
         objects.clear()
@@ -138,8 +215,8 @@ class ASTComparatorCategory {
      * @param b
      * @return
      */
+    @CompileDynamic
     static reflexiveEquals(a, b, ignore = []) {
-
         if (a.getClass() != b.getClass()) {
             log.warning(" !!!! DIFFERENCE WAS FOUND! ${a.getClass()} != ${b.getClass()}")
             return false;
@@ -161,7 +238,8 @@ class ASTComparatorCategory {
         if (a.is(b))
             return true
 
-        def difference = a.metaClass.properties.find { MetaBeanProperty p ->
+        def difference = a.metaClass.properties.find { MetaProperty mp  ->
+            MetaBeanProperty p = (MetaBeanProperty) mp
             if (!p.getter)
                 return false
 
@@ -194,7 +272,7 @@ class ASTComparatorCategory {
         }
 
         if (difference)
-            log.warning(" !!!! DIFFERENCE WAS FOUND! [${a.metaClass.hasProperty(a, 'text') ? a.text : '<NO TEXT>'}][${a.class}][${difference.name}]:: ${ a."$difference.name" } != ${ b."$difference.name" }")
+            log.warning(" !!!! DIFFERENCE WAS FOUND! [${extractText(a)}][${a.class}][${difference.name}]:: ${ a."$difference.name" } != ${ b."$difference.name" }")
         else
             log.info(" ==== Exit ${ a.getClass() } ${ a.hashCode() } ====== ")
 
@@ -202,6 +280,11 @@ class ASTComparatorCategory {
         this.objects[objects] = res
         this.objects[objects.reverse(false)] = res
         res
+    }
+
+    @CompileDynamic
+    static String extractText(obj) {
+        return obj.metaClass.hasProperty(obj, 'text') ? obj.text : '<NO TEXT>'
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////

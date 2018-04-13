@@ -17,14 +17,16 @@
  *  under the License.
  */
 
+
+import groovy.transform.CompileDynamic
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import static org.codehaus.groovy.control.CompilePhase.CONVERSION
 
-
- class Groovy8426Test {
+@CompileDynamic
+class Groovy8426Test {
     void testMethodBlockStatement() {
         def result = new AstBuilder().buildFromString CONVERSION, false, '''
             def method() {
