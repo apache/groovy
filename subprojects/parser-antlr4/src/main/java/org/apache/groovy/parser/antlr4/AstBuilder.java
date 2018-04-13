@@ -1187,11 +1187,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         classNode.putNodeMetaData(CLASS_NAME, className);
         classNode.setSyntheticPublic(syntheticPublic);
 
-        if (COMPILE_STATIC_BY_DEFAULT) {
-            if (classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
-                attachCompileStaticAnnotation(classNode);
-            }
-        }
+        enableCompileStaticByDefault(classNode);
+
         if (asBoolean(ctx.TRAIT())) {
             attachTraitAnnotation(classNode);
         }
@@ -1260,6 +1257,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         groovydocManager.handle(classNode, ctx);
 
         return classNode;
+    }
+
+    private void enableCompileStaticByDefault(ClassNode classNode) {
+        if (!COMPILE_STATIC_BY_DEFAULT) {
+            return;
+        }
+
+        if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)).isEmpty()) {
+            return;
+        }
+
+        if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
+            return;
+        }
+
+        attachCompileStaticAnnotation(classNode);
     }
 
     private void attachCompileStaticAnnotation(ClassNode classNode) {
