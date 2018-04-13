@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.parser.antlr4
 
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log
 import org.apache.groovy.parser.AbstractParser
 import org.apache.groovy.parser.Antlr2Parser
@@ -25,8 +27,23 @@ import org.apache.groovy.parser.Antlr4Parser
 import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
 import org.apache.groovy.parser.antlr4.util.AstDumper
 import org.codehaus.groovy.antlr.AntlrParserPluginFactory
-import org.codehaus.groovy.ast.*
-import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.ConstructorNode
+import org.codehaus.groovy.ast.FieldNode
+import org.codehaus.groovy.ast.GenericsType
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.ast.PackageNode
+import org.codehaus.groovy.ast.Parameter
+import org.codehaus.groovy.ast.PropertyNode
+import org.codehaus.groovy.ast.stmt.AssertStatement
+import org.codehaus.groovy.ast.stmt.BreakStatement
+import org.codehaus.groovy.ast.stmt.ContinueStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ForStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.stmt.ThrowStatement
+import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.syntax.Token
 
@@ -36,6 +53,8 @@ import java.util.zip.ZipFile
 /**
  * Utilities for test
  */
+
+@CompileStatic
 @Log
 class TestUtils {
     public static final String DEFAULT_RESOURCES_PATH = 'subprojects/parser-antlr4/src/test/resources';
@@ -49,6 +68,7 @@ class TestUtils {
         return doTest(path, addIgnore(ignoreClazzList, ASTComparatorCategory.LOCATION_IGNORE_LIST))
     }
 
+    @CompileDynamic
     static doTest(String path, conf) {
         AbstractParser antlr4Parser = new Antlr4Parser()
         AbstractParser antlr2Parser = new Antlr2Parser()
@@ -81,6 +101,7 @@ class TestUtils {
     }
     */
 
+    @CompileDynamic
     static unzipAndTest(String path, String entryName, conf, Map<String, String> replacementsMap=[:]) {
         AbstractParser antlr4Parser = new Antlr4Parser()
         AbstractParser antlr2Parser = new Antlr2Parser()
@@ -114,6 +135,7 @@ class TestUtils {
         shouldFail(path, addIgnore(ignoreClazzList, ASTComparatorCategory.LOCATION_IGNORE_LIST), toCheckNewParserOnly)
     }
 
+    @CompileDynamic
     static shouldFail(String path, conf, boolean toCheckNewParserOnly = false) {
         AbstractParser antlr4Parser = new Antlr4Parser()
         AbstractParser antlr2Parser = new Antlr2Parser()
@@ -136,6 +158,7 @@ class TestUtils {
         }
     }
 
+    @CompileDynamic
     static unzipAndFail(String path, String entryName, conf, Map<String, String> replacementsMap=[:], boolean toCheckNewParserOnly = false) {
         AbstractParser antlr4Parser = new Antlr4Parser()
         AbstractParser antlr2Parser = new Antlr2Parser()
@@ -164,8 +187,7 @@ class TestUtils {
         }
     }
 
-
-    static assertAST(ast1, ast2, conf) {
+    static assertAST(ModuleNode ast1, ModuleNode ast2, conf) {
         assert null != ast1 && null != ast2
 
         ASTComparatorCategory.apply(conf) {
@@ -187,14 +209,14 @@ class TestUtils {
         return [result, end - begin];
     }
 
-    static addIgnore(Class aClass, ArrayList<String> ignore, Map<Class, List<String>> c = null) {
-        c = c ?: ASTComparatorCategory.DEFAULT_CONFIGURATION.clone() as Map<Class, List<String>>;
+    static addIgnore(Class aClass, List<String> ignore, Map<Class, List<String>> c = null) {
+        c = c ?: new HashMap<>(ASTComparatorCategory.DEFAULT_CONFIGURATION) as Map<Class, List<String>>;
         c[aClass].addAll(ignore)
         return c
     }
 
-    static addIgnore(Collection<Class> aClass, ArrayList<String> ignore, Map<Class, List<String>> c = null) {
-        c = c ?: ASTComparatorCategory.DEFAULT_CONFIGURATION.clone() as Map<Class, List<String>>;
+    static addIgnore(Collection<Class> aClass, List<String> ignore, Map<Class, List<String>> c = null) {
+        c = c ?: new HashMap<>(ASTComparatorCategory.DEFAULT_CONFIGURATION) as Map<Class, List<String>>;
         aClass.each { c[it].addAll(ignore) }
         return c
     }
@@ -229,7 +251,7 @@ class TestUtils {
     }
 
     static doRunAndTestAntlr4(String path) {
-        assert executeScript(path)
+        assert executeScript(path);
     }
 
     static doRunAndTestAntlr2(String path) {
@@ -240,7 +262,7 @@ class TestUtils {
         executeScript(createAntlr4Shell(), "$RESOURCES_PATH/$path")
     }
 
-    static executeScript(gsh, String path) {
+    static executeScript(GroovyShell gsh, String path) {
         def file = new File(path);
         def content = file.text;
 
@@ -254,19 +276,19 @@ class TestUtils {
         }
     }
 
-    static createAntlr4Shell() {
+    static GroovyShell createAntlr4Shell() {
         CompilerConfiguration configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
         configuration.pluginFactory = new Antlr4PluginFactory()
 
         return new GroovyShell(configuration);
     }
 
-    static createAntlr2Shell() {
+    static GroovyShell createAntlr2Shell() {
         CompilerConfiguration configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
         configuration.pluginFactory = new AntlrParserPluginFactory()
 
         return new GroovyShell(configuration);
     }
 
-    public static final List COMMON_IGNORE_CLASS_LIST = Collections.unmodifiableList([AssertStatement, BreakStatement, ConstructorNode, ContinueStatement, ExpressionStatement, FieldNode, ForStatement, GenericsType, IfStatement, MethodNode, PackageNode, Parameter, PropertyNode, ReturnStatement, ThrowStatement, Token, WhileStatement]);
+    public static final List COMMON_IGNORE_CLASS_LIST = Collections.unmodifiableList([AssertStatement, BreakStatement, ConstructorNode, ContinueStatement, ExpressionStatement, FieldNode, ForStatement, GenericsType, IfStatement, MethodNode, PackageNode, Parameter, PropertyNode, ReturnStatement, ThrowStatement, Token, WhileStatement] as List);
 }
