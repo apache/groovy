@@ -19,6 +19,11 @@
 package org.codehaus.groovy.control;
 
 import org.apache.groovy.util.Maps;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
@@ -193,6 +198,8 @@ public class CompilerConfiguration {
     private Map<String, Boolean> optimizationOptions;
 
     private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<CompilationCustomizer>();
+
+    private static final boolean COMPILE_STATIC_BY_DEFAULT = Boolean.getBoolean("groovy.compile.static.by.default");
 
     /**
      * Sets a list of global AST transformations which should not be loaded even if they are
@@ -935,4 +942,48 @@ public class CompilerConfiguration {
 
         return indyEnabled;
     }
+
+    private void enableCompileStaticByDefault() {
+        if (!COMPILE_STATIC_BY_DEFAULT) {
+            return;
+        }
+
+        compilationCustomizers.add(
+                new CompilationCustomizer(CompilePhase.CONVERSION) {
+                    @Override
+                    public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+                        for (ClassNode cn : source.getAST().getClasses()) {
+                            new ClassCodeVisitorSupport() {
+                                @Override
+                                public void visitClass(ClassNode node) {
+                                    enableCompileStatic(node);
+                                }
+
+                                private void enableCompileStatic(ClassNode classNode) {
+                                    if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)).isEmpty()) {
+                                        return;
+                                    }
+
+                                    if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
+                                        return;
+                                    }
+
+                                    classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)));
+                                }
+
+                                @Override
+                                protected SourceUnit getSourceUnit() {
+                                    return source;
+                                }
+
+                                private static final String GROOVY_TRANSFORM_COMPILE_STATIC = "groovy.transform.CompileStatic";
+                                private static final String GROOVY_TRANSFORM_COMPILE_DYNAMIC = "groovy.transform.CompileDynamic";
+                            }.visitClass(cn);
+                        }
+                    }
+                }
+        );
+
+    }
+    { enableCompileStaticByDefault(); }
 }

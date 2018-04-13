@@ -1202,8 +1202,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         classNode.putNodeMetaData(CLASS_NAME, className);
         classNode.setSyntheticPublic(syntheticPublic);
 
-        enableCompileStaticByDefault(classNode);
-
         if (asBoolean(ctx.TRAIT())) {
             attachTraitAnnotation(classNode);
         }
@@ -1272,26 +1270,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         groovydocManager.handle(classNode, ctx);
 
         return classNode;
-    }
-
-    private void enableCompileStaticByDefault(ClassNode classNode) {
-        if (!COMPILE_STATIC_BY_DEFAULT) {
-            return;
-        }
-
-        if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)).isEmpty()) {
-            return;
-        }
-
-        if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
-            return;
-        }
-
-        attachCompileStaticAnnotation(classNode);
-    }
-
-    private void attachCompileStaticAnnotation(ClassNode classNode) {
-        attachAnnotation(classNode, GROOVY_TRANSFORM_COMPILE_STATIC);
     }
 
     private void attachTraitAnnotation(ClassNode classNode) {
@@ -4864,8 +4842,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     private static final String PACKAGE_INFO = "package-info";
     private static final String PACKAGE_INFO_FILE_NAME = PACKAGE_INFO + ".groovy";
-    private static final String GROOVY_TRANSFORM_COMPILE_STATIC = "groovy.transform.CompileStatic";
-    private static final String GROOVY_TRANSFORM_COMPILE_DYNAMIC = "groovy.transform.CompileDynamic";
+
     private static final String GROOVY_TRANSFORM_TRAIT = "groovy.transform.Trait";
     private static final Set<String> PRIMITIVE_TYPE_SET = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("boolean", "char", "byte", "short", "int", "long", "float", "double")));
     private static final Logger LOGGER = Logger.getLogger(AstBuilder.class.getName());
@@ -4893,6 +4870,4 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private static final String ENCLOSING_INSTANCE_EXPRESSION = "_ENCLOSING_INSTANCE_EXPRESSION";
 
     private static final String CLASS_NAME = "_CLASS_NAME";
-
-    private static final boolean COMPILE_STATIC_BY_DEFAULT = Boolean.getBoolean("groovy.compile.static.by.default");
 }
