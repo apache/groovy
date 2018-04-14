@@ -466,7 +466,7 @@ usage: groovy
         assert p1.remaining() == ['and', 'some', 'more']
     }
 
-    @ToString(includeFields=true, excludes='metaClass', includePackage=false)
+    @ToString(includeFields=true, includePackage=false)
     class PersonC {
         @Option String first
         private String last

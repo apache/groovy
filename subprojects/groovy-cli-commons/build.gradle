@@ -18,11 +18,7 @@
  */
 dependencies {
     compile rootProject
-    testCompile rootProject.sourceSets.test.runtimeClasspath
-    compile project(':groovy-cli-commons')
-    compile project(':groovy-templates')
-    runtime project(':groovy-dateutil')
+    compile "commons-cli:commons-cli:$commonsCliVersion"
     testCompile project(':groovy-test')
-    testCompile "org.apache.ant:ant-testutil:$antVersion"
+    testCompile project(':groovy-dateutil')
 }
-
