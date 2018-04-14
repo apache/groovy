@@ -18,8 +18,7 @@
  */
 dependencies {
     compile rootProject
-    compile project(':groovy-cli-commons')
-    compile project(':groovy-templates')
+    compile "commons-cli:commons-cli:$commonsCliVersion"
     testCompile project(':groovy-test')
-    compile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    testCompile project(':groovy-dateutil')
 }
