@@ -16,18 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-evaluationDependsOn(':groovy-swing')
-
 dependencies {
     compile rootProject
-    compile project(':groovy-cli-commons')
-    compile project(':groovy-swing')
-    compile project(':groovy-templates')
+    compile "commons-cli:commons-cli:$commonsCliVersion"
     testCompile project(':groovy-test')
-    testCompile project(':groovy-swing').sourceSets.test.runtimeClasspath
-}
-
-task console(type: JavaExec, dependsOn:classes) {
-    main = 'groovy.ui.Console'
-    classpath = sourceSets.main.runtimeClasspath
+    testCompile project(':groovy-dateutil')
 }
