@@ -284,7 +284,7 @@ classBody[int t]
         (
             /* Only enum can have enum constants */
             { 2 == $t }?
-            enumConstants? nls
+            enumConstants? sep?
         |
 
         )

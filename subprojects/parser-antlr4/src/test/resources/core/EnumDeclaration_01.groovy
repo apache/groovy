@@ -23,6 +23,11 @@ public enum AAAA3 implements A {}
 public enum AAAA4 implements A,B {}
 enum BBBB {A}
 enum CCCC {A, B}
+enum CCCC2 {A, B
+}
+enum CCCC3 {
+    A, B
+}
 enum DDDD {A, B,}
 enum EEEE {
     A,
@@ -60,3 +65,10 @@ enum E3 {
 
 
 enum e {}
+
+enum Enum1 {
+    A, B;
+}
+enum Enum2 {
+    A, B;}
+enum Enum3 {A, B;}
