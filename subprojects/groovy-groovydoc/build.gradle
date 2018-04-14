@@ -19,6 +19,7 @@
 dependencies {
     compile rootProject
     testCompile rootProject.sourceSets.test.runtimeClasspath
+    compile project(':groovy-cli-commons')
     compile project(':groovy-templates')
     runtime project(':groovy-dateutil')
     testCompile project(':groovy-test')
