@@ -35,7 +35,7 @@ task checkBinaryCompatibility {
 check.dependsOn(checkBinaryCompatibility)
 
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.
-def excludeModules = ['groovy-dateutil', 'groovy-datetime', 'performance', 'groovy-macro', 'tests-vm8', 'groovy-json-direct']
+def excludeModules = ['groovy-cli-commons', 'groovy-dateutil', 'groovy-datetime', 'performance', 'groovy-macro', 'tests-vm8', 'groovy-json-direct']
 //def excludeModules = []
 
 Set projectsToCheck = allprojects.findAll{ !(it.name in excludeModules) }
