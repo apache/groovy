@@ -12212,24 +12212,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both collections.  Any
      * elements that exist in both collections are added to the resultant collection.
-     * For collection of custom objects; objects should implement java.lang.Comparable
+     * For collections of custom objects; the objects should implement java.lang.Comparable
      * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
      *
      * @param left  a Collection
      * @param right a Collection
      * @return a Collection as an intersection of both collections
+     * @see #intersect(Collection, Collection, Comparator)
      * @since 1.5.6
      */
     public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right) {
+        return intersect(left, right, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Create a Collection composed of the intersection of both collections.  Any
+     * elements that exist in both collections are added to the resultant collection.
+     * For collections of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">
+     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
+     * </pre>
+     * <pre class="groovyTestCase">
+     * def one = ['a', 'B', 'c', 'd']
+     * def two = ['b', 'C', 'd', 'e']
+     * def compareIgnoreCase = { a, b -> a.toLowerCase() <=> b.toLowerCase() }
+     * assert one.intersect(two) == ['d']
+     * assert two.intersect(one) == ['d']
+     * assert one.intersect(two, compareIgnoreCase) == ['b', 'C', 'd']
+     * assert two.intersect(one, compareIgnoreCase) == ['B', 'c', 'd']
+     * </pre>
+     *
+     * @param left  a Collection
+     * @param right a Collection
+     * @param comparator a Comparator
+     * @return a Collection as an intersection of both collections
+     * @since 2.5.0
+     */
+    public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right, Comparator<T> comparator) {
         if (left.isEmpty() || right.isEmpty())
             return createSimilarCollection(left, 0);
 
-        // TODO optimise if same type?
-        // boolean nlgnSort = sameType(new Collection[]{left, right});
-
         Collection<T> result = createSimilarCollection(left, Math.min(left.size(), right.size()));
         //creates the collection to look for values.
-        Collection<T> pickFrom = new TreeSet<>(new NumberAwareComparator<>());
+        Collection<T> pickFrom = new TreeSet<T>(comparator);
         pickFrom.addAll(left);
 
         for (final T t : right) {
@@ -12242,12 +12269,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * For collection of custom objects; objects should implement java.lang.Comparable
+     * For iterables of custom objects; the objects should implement java.lang.Comparable
      * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
      *
      * @param left  an Iterable
      * @param right an Iterable
      * @return a Collection as an intersection of both iterables
+     * @see #intersect(Iterable, Iterable, Comparator)
      * @since 2.4.0
      */
     public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right) {
@@ -12255,13 +12285,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create a Collection composed of the intersection of both iterables.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * For iterables of custom objects; the objects should implement java.lang.Comparable
+     * <pre class="groovyTestCase">assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())</pre>
+     *
+     * @param left  an Iterable
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Collection as an intersection of both iterables
+     * @since 2.5.0
+     */
+    public static <T> Collection<T> intersect(Iterable<T> left, Iterable<T> right, Comparator<T> comparator) {
+        return intersect(asCollection(left), asCollection(right), comparator);
+    }
+
+    /**
      * Create a List composed of the intersection of a List and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
      * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
      *
      * @param left  a List
      * @param right an Iterable
      * @return a List as an intersection of a List and an Iterable
+     * @see #intersect(List, Iterable, Comparator)
      * @since 2.4.0
      */
     public static <T> List<T> intersect(List<T> left, Iterable<T> right) {
@@ -12269,17 +12318,67 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create a List composed of the intersection of a List and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">assert [3,4] == [1,2,3,4].intersect([3,4,5,6])</pre>
+     *
+     * @param left  a List
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a List as an intersection of a List and an Iterable
+     * @since 2.5.0
+     */
+    public static <T> List<T> intersect(List<T> left, Iterable<T> right, Comparator<T> comparator) {
+        return (List<T>) intersect((Collection<T>) left, asCollection(right), comparator);
+    }
+
+    /**
      * Create a Set composed of the intersection of a Set and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
      * <pre class="groovyTestCase">assert [4,5] as Set == ([1,2,3,4,5] as Set).intersect([4,5,6,7,8])</pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
      *
      * @param left  a Set
      * @param right an Iterable
      * @return a Set as an intersection of a Set and an Iterable
+     * @see #intersect(Set, Iterable, Comparator)
      * @since 2.4.0
      */
     public static <T> Set<T> intersect(Set<T> left, Iterable<T> right) {
         return (Set<T>) intersect((Collection<T>) left, asCollection(right));
+    }
+
+    /**
+     * Create a Set composed of the intersection of a Set and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">assert [3,4] as Set == ([1,2,3,4] as Set).intersect([3,4,5,6], Comparator.naturalOrder())</pre>
+     *
+     * @param left  a Set
+     * @param right an Iterable
+     * @param comparator a Comparator
+     * @return a Set as an intersection of a Set and an Iterable
+     * @since 2.5.0
+     */
+    public static <T> Set<T> intersect(Set<T> left, Iterable<T> right, Comparator<T> comparator) {
+        return (Set<T>) intersect((Collection<T>) left, asCollection(right), comparator);
+    }
+
+    /**
+     * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
+     * elements that exist in both iterables are added to the resultant collection.
+     * <pre class="groovyTestCase">assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])</pre>
+     * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
+     * element exists in both collections.
+     *
+     * @param left  a SortedSet
+     * @param right an Iterable
+     * @return a Set as an intersection of a SortedSet and an Iterable
+     * @see #intersect(SortedSet, Iterable, Comparator)
+     * @since 2.4.0
+     */
+    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right) {
+        return (SortedSet<T>) intersect((Collection<T>) left, asCollection(right));
     }
 
     /**
@@ -12289,11 +12388,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a SortedSet
      * @param right an Iterable
+     * @param comparator a Comparator
      * @return a Set as an intersection of a SortedSet and an Iterable
-     * @since 2.4.0
+     * @since 2.5.0
      */
-    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right) {
-        return (SortedSet<T>) intersect((Collection<T>) left, asCollection(right));
+    public static <T> SortedSet<T> intersect(SortedSet<T> left, Iterable<T> right, Comparator<T> comparator) {
+        return (SortedSet<T>) intersect((Collection<T>) left, asCollection(right), comparator);
     }
 
     /**
