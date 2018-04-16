@@ -12232,9 +12232,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements that exist in both collections are added to the resultant collection.
      * For collections of custom objects; the objects should implement java.lang.Comparable
      * <pre class="groovyTestCase">
-     * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
-     * </pre>
-     * <pre class="groovyTestCase">
      * def one = ['a', 'B', 'c', 'd']
      * def two = ['b', 'C', 'd', 'e']
      * def compareIgnoreCase = { a, b -> a.toLowerCase() <=> b.toLowerCase() }
@@ -12288,7 +12285,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
      * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())</pre>
      *
      * @param left  an Iterable
      * @param right an Iterable
@@ -12352,7 +12348,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Set composed of the intersection of a Set and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">assert [3,4] as Set == ([1,2,3,4] as Set).intersect([3,4,5,6], Comparator.naturalOrder())</pre>
      *
      * @param left  a Set
      * @param right an Iterable
