@@ -1764,7 +1764,7 @@ public abstract class StaticTypeCheckingSupport {
      * * For type !instanceof target a structural compare will be done
      * (for example Dummy&lt;T&gt; and List&lt;R&gt; to get T=R)
      * * If type equals target, a structural match is done as well
-     * (for example Colection&lt;U&gt; and Collection&lt;E&gt; to get U=E)
+     * (for example Collection&lt;U&gt; and Collection&lt;E&gt; to get U=E)
      * * otherwise we climb the hierarchy to find a case of type equals target
      * to then execute the structural match, while applying possibly existing
      * generics contexts on the way (for example for IntRange and Collection&lt;E&gt;
