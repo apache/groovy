@@ -12223,7 +12223,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.6
      */
     public static <T> Collection<T> intersect(Collection<T> left, Collection<T> right) {
-        return intersect(left, right, new NumberAwareComparator<>());
+        return intersect(left, right, new NumberAwareComparator<T>());
     }
 
     /**
