@@ -957,7 +957,7 @@ public class CompilerConfiguration {
                     }
                 }
 
-                private ClassCodeVisitorSupport newClassCodeVisitor(SourceUnit source) {
+                private ClassCodeVisitorSupport newClassCodeVisitor(final SourceUnit source) {
                     return new ClassCodeVisitorSupport() {
                         @Override
                         public void visitClass(ClassNode node) {
