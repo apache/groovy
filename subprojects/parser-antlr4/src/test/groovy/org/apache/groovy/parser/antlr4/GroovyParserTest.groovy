@@ -46,7 +46,8 @@ class GroovyParserTest extends GroovyTestCase {
         doTestAttachedComments()
     }
 
-    void "test IO stream/reader closed by the parser properly"() {
+    // java.lang.ClassFormatError: Illegal method name "test IO stream/reader closed by the parser properly" when using Java9
+    void "test IO reader closed by the parser properly"() {
         def f = File.createTempFile("Script${System.nanoTime()}", ".groovy")
         f.text = '''
             def a = 123
@@ -59,7 +60,8 @@ class GroovyParserTest extends GroovyTestCase {
         assert deleted: "Failed to delete file: ${f.getAbsolutePath()}"
     }
 
-    void "test IO stream/reader closed by the compiler properly"() {
+    // java.lang.ClassFormatError: Illegal method name "test IO stream/reader closed by the parser properly" when using Java9
+    void "test reader closed by the compiler properly"() {
         def f = File.createTempFile("Script${System.nanoTime()}", ".groovy")
         f.text = '''
             def a = 123
