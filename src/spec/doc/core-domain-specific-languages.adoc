@@ -1184,7 +1184,7 @@ properties are supported when specifying an allowed commandline option:
 | type           | the type of this option | `Class`
 | valueSeparator | the character that is the value separator | `char`<2>
 | defaultValue   | a default value | `String`
-| convert        | converts the incoming String to the required type | `Closure`<2>
+| convert        | converts the incoming String to the required type | `Closure`<1>
 |======================
 <1> More details later
 <2> Single character Strings are coerced to chars in special cases in Groovy
@@ -1373,8 +1373,9 @@ flexibility in the syntax supported when supplying such argument lists on the co
 supplying a value separator of ',' allows a comma-delimited list of values to be passed on the commandline.
 
 The `args` value is normally an integer. It can be optionally supplied as a String. There are two special
-String symbols: `+` and `*`. The `*` value means 0 or more. The `+` value means 1 or more. The `*` value is
-the same as using `+` and also setting the `optionalArg` value to true.
+String symbols: `&plus;` and `&#42;`.
+The `&#42;` value means 0 or more. The `&plus;` value means 1 or more.
+The `&#42;` value is the same as using `&plus;` and also setting the `optionalArg` value to true.
 
 Accessing the multiple arguments follows a special convention. Simply add an 's' to the normal property
 you would use to access the argument option and you will retrieve all the supplied arguments as a list.
