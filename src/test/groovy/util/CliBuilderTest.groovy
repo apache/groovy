@@ -540,6 +540,11 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.remaining == ['3', '4']
 
         options = new ValSepC()
+        cli.parseFromInstance(options, '-a 1 2 -a 3 4'.split())
+        assert options.a == ['1', '2', '3', '4']
+//        assert options.remaining == []
+
+        options = new ValSepC()
         cli.parseFromInstance(options, '-a1 -a2 3'.split())
         assert options.a == ['1', '2']
         assert options.remaining == ['3']
