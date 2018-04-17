@@ -121,6 +121,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
             "\\bgoto\\b",
             "\\bpackage\\b",
             "\\bdef\\b",
+            "\\bvar\\b",
             "\\bas\\b",
             "\\bin\\b",
             "\\bsynchronized\\b",
