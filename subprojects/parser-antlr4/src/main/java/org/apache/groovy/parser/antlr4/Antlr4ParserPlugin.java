@@ -30,6 +30,7 @@ import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
 
 import java.io.IOException;
+import java.io.Reader;
 
 /**
  * A parser plugin for the new parser
@@ -42,9 +43,10 @@ public class Antlr4ParserPlugin implements ParserPlugin {
 
     @Override
     public Reduction parseCST(SourceUnit sourceUnit, java.io.Reader reader) throws CompilationFailedException {
-        try {
-            ReaderSource readerSource = sourceUnit.getSource();
-            if (null != readerSource && null != readerSource.getReader()) {
+        ReaderSource readerSource = sourceUnit.getSource();
+
+        try (Reader sourceReader = null != readerSource ? readerSource.getReader() : null) {
+            if (null != readerSource && null != sourceReader) {
                 this.readerSource = readerSource;
             } else {
                 this.readerSource = new StringReaderSource(IOGroovyMethods.getText(reader), sourceUnit.getConfiguration());
@@ -58,9 +60,10 @@ public class Antlr4ParserPlugin implements ParserPlugin {
 
     @Override
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {
-        try {
-            ReaderSource readerSource = sourceUnit.getSource();
-            if (null == readerSource || null == readerSource.getReader()) {
+        ReaderSource readerSource = sourceUnit.getSource();
+
+        try (Reader sourceReader = null != readerSource ? readerSource.getReader() : null) {
+            if (null == readerSource || null == sourceReader) {
                 sourceUnit.setSource(this.readerSource);
             }
         } catch (IOException e) {

@@ -27,9 +27,9 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.syntax.Token
 
-import static org.apache.groovy.parser.antlr4.TestUtils.doTest
-import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTestAntlr4
 import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTest
+import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTestAntlr4
+import static org.apache.groovy.parser.antlr4.TestUtils.doTest
 
 /**
  * Some basic test cases for the new parser
@@ -43,6 +43,31 @@ class GroovyParserTest extends GroovyTestCase {
     void "test groovy core - Comments"() {
         doTest('core/Comments_01.groovy', [ExpressionStatement])
         doTestAttachedComments()
+    }
+
+    void "test IO stream/reader closed by the parser properly"() {
+        def f = File.createTempFile("Script${System.nanoTime()}", ".groovy")
+        f.text = '''
+            def a = 123
+        '''
+
+        def antlr4Parser = new org.apache.groovy.parser.Antlr4Parser()
+        antlr4Parser.parse(f)
+
+        boolean deleted = f.delete()
+        assert deleted: "Failed to delete file: ${f.getAbsolutePath()}"
+    }
+
+    void "test IO stream/reader closed by the compiler properly"() {
+        def f = File.createTempFile("Script${System.nanoTime()}", ".groovy")
+        f.text = '''
+            def a = 123
+        '''
+
+        TestUtils.createAntlr4Shell().evaluate(f)
+
+        boolean deleted = f.delete()
+        assert deleted: "Failed to delete file: ${f.getAbsolutePath()}"
     }
 
     private static doTestAttachedComments() {
