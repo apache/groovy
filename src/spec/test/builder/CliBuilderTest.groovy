@@ -24,7 +24,6 @@ import groovy.cli.Unparsed
 import groovy.transform.TypeChecked
 
 import java.math.RoundingMode
-import java.text.SimpleDateFormat
 
 //import java.math.RoundingMode
 
@@ -261,11 +260,11 @@ class CliBuilderTest extends GroovyTestCase {
         def lower = { it.toLowerCase() }
         cli.a(convert: lower, 'a-arg')
         cli.b(convert: { it.toUpperCase() }, 'b-arg')
-        cli.d(convert: { new SimpleDateFormat("yyyy-MM-dd").parse(it) }, 'd-arg')
+        cli.d(convert: { Date.parse('yyyy-MM-dd', it) }, 'd-arg')
         def options = cli.parse(argz)
         assert options.a == 'john'
         assert options.b == 'MARY'
-        assert new SimpleDateFormat("dd-MMM-yyyy").format(options.d) == '01-Jan-2016'
+        assert options.d.format('dd-MMM-yyyy') == '01-Jan-2016'
         assert options.arguments() == ['and', 'some', 'more']
         // end::withConvert[]
     }
@@ -274,14 +273,14 @@ class CliBuilderTest extends GroovyTestCase {
     interface WithConvertI {
         @Option(convert={ it.toLowerCase() }) String a()
         @Option(convert={ it.toUpperCase() }) String b()
-        @Option(convert={ new SimpleDateFormat("yyyy-MM-dd").parse(it) }) Date d()
+        @Option(convert={ Date.parse("yyyy-MM-dd", it) }) Date d()
         @Unparsed List remaining()
     }
     // end::withConvertInterfaceSpec[]
 
     void testConvertInterface() {
         // tag::withConvertInterface[]
-        Date newYears = new SimpleDateFormat("yyyy-MM-dd").parse("2016-01-01")
+        Date newYears = Date.parse("yyyy-MM-dd", "2016-01-01")
         def argz = '''-a John -b Mary -d 2016-01-01 and some more'''.split()
         def cli = new CliBuilder()
         def options = cli.parseFromSpec(WithConvertI, argz)
