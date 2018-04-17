@@ -141,4 +141,17 @@ class BooleanOperationsTest extends GroovyTestCase {
         assert z == false
     }
 
+    void testBooleanAssignArrayOps() {
+        boolean[] b = [true]
+        b[0] &= false
+        assert b == [false]
+        b[0] ^= true
+        assert b == [true]
+        b[0] ^= true
+        assert b == [false]
+        b[0] |= true
+        assert b == [true]
+        b[0] |= false
+        assert b == [true]
+    }
 }
