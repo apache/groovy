@@ -54,7 +54,7 @@ class CliBuilderTest extends GroovyTestCase {
         def cli = new CliBuilder(usage: usageString, writer: printWriter)
         cli.h(longOpt: 'help', 'usage information')
         cli.c(argName: 'charset', args: 1, longOpt: 'encoding', 'character encoding')
-        cli.i(argName: 'extension', optionalArg: true, 'modify files in place, create backup if extension is given (e.g. \'.bak\')')
+        cli.i(argName: 'extension', optionalArg: true, 'modify files in place, create backup if extension is specified (e.g. \'.bak\')')
         def stringified = cli.commandSpec.toString()
 //        assert stringified =~ /i=\[ option: i  :: modify files in place, create backup if extension is given/
 //        assert stringified =~ /c=\[ option: c encoding  \[ARG] :: character encoding/
@@ -69,10 +69,10 @@ class CliBuilderTest extends GroovyTestCase {
         if (options.h) { cli.usage() }
         def expectedUsage = """Usage: $usageString
   -c, -encoding, --encoding=<charset>
-                              character encoding
-  -h, -help, --help           usage information
-  -i= [<extension>]           modify files in place, create backup if extension
-                                is given (e.g. '.bak')"""
+                      character encoding
+  -h, -help, --help   usage information
+  -i= [<extension>]   modify files in place, create backup if extension is specified
+                        (e.g. '.bak')"""
         assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         resetPrintWriter()
         cli.writer = printWriter
@@ -130,7 +130,7 @@ class CliBuilderTest extends GroovyTestCase {
         assert stringWriter.toString() == String.format(
                 "error: Missing required option '-x=PARAM'%n" +\
                 "Usage: groovy -x%n" +\
-                "  -x                          message%n")
+                "  -x   message%n")
     }
 
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
@@ -177,9 +177,94 @@ class CliBuilderTest extends GroovyTestCase {
         assertEquals([], options.arguments())
     }
 
+    void testMultipleOccurrencesSeparateSeparate3_broken() {
+        def cli = new CliBuilder()
+//        cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, 'arguments')
+        cli.a(args: 2, 'arguments')
+        cli.b(args: 2, valueSeparator: ',', 'arguments')
+        cli.c(args: '+', valueSeparator: ',', 'arguments')
+
+        options = cli.parse(['-a', '1', '-a', '2'])
+        assertNull(options)
+
+        options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
+        assertNull(options)
+    }
+
+    void testMultipleOccurrencesSeparateSeparate3() {
+        def cli = new CliBuilder()
+//        cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, 'arguments')
+        cli.a(args: 2, 'arguments')
+        cli.b(args: 2, valueSeparator: ',', 'arguments')
+        cli.c(args: '+', valueSeparator: ',', 'arguments')
+
+        def options = cli.parse(['-a', '1'])
+        assertNull(options)
+
+        options = cli.parse(['-a1'])
+        assertEquals('1', options.a)
+        assertEquals(['1'], options.as)
+
+//        options = cli.parse(['-a', '1', '-a', '2']) // TODO
+//        assertNull(options)
+
+        options = cli.parse(['-a1', '-a2'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2'], options.as)
+
+        options = cli.parse(['-a1', '-a2', '-a3'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+
+//        options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
+//        assertNull(options)
+
+        options = cli.parse(['-a', '1', '2'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2'], options.as)
+
+        options = cli.parse(['-a1', '2'])
+        assertEquals('1', options.a)
+        assert options.arguments() == ['2']
+        assertEquals(['1'], options.as)
+
+        options = cli.parse(['-a', '1', '2', '-a', '3', '4'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3', '4'], options.as)
+
+        options = cli.parse(['-a', '1', '2', '-a3', '-a4', '-a5'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3', '4', '5'], options.as)
+
+        options = cli.parse(['-a', '1', '2', '-a3', '-a', '4', '5' ])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3', '4', '5'], options.as)
+
+        options = cli.parse(['-a1', '2', '-a3', '4'])
+        assertEquals('1', options.a)
+        assert options.arguments() == ['2', '-a3', '4']
+        //assertEquals(['1', '2', '3', '4'], options.as)
+
+        options = cli.parse(['-b1,2'])
+        assert options.bs == ['1', '2']
+
+        options = cli.parse(['-b1,2,3'])
+        assert options.bs == ['1', '2,3']
+
+        options = cli.parse(['-b', '1,2', '3,4'])
+        assert options.bs == ['1', '2']
+        assert options.arguments() == ['3,4']
+
+        options = cli.parse(['-b', '1,2', '-b', '3,4'])
+        assert options.bs == ['1', '2', '3', '4']
+//        assert options.arguments() == []
+
+        options = cli.parse(['-b', '1', '2', '-b', '3', '4'])
+        assert options.bs == ['1', '2', '3', '4']
+    }
+
     void testMultipleOccurrencesSeparateJuxtaposed() {
         def cli = new CliBuilder()
-        // TODO is this a bug? In other test, args restricts the total number of values for an option...
 //        cli.a ( longOpt : 'arg' , args : COMMONS_CLI_UNLIMITED_VALUES , 'arguments' )
         cli.a(longOpt: 'arg', args: 1, 'arguments')
         def options = cli.parse(['-a1', '-a2', '-a3'])
@@ -212,10 +297,8 @@ class CliBuilderTest extends GroovyTestCase {
         assertEquals([], options.arguments()) }
 
     /*
-    *  Behaviour with unrecognized options.
-    *
-    *  TODO: Should add the BasicParser here as well?
-    */
+     *  Behaviour with unrecognized options.
+     */
 
     void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter)
@@ -540,10 +623,10 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.a == ['1', '2', '3', '4']
 //        assert options.remaining == []
 
-//        options = new ValSepC() // TODO
-//        cli.parseFromInstance(options, '-a1 -a2 3'.split())
-//        assert options.a == ['1', '2']
-//        assert options.remaining == ['3']
+        options = new ValSepC()
+        cli.parseFromInstance(options, '-a1 -a2 3'.split())
+        assert options.a == ['1', '2']
+        assert options.remaining == ['3']
 
         options = new ValSepC()
         cli.parseFromInstance(options, ['-b1,2'] as String[])

@@ -57,9 +57,9 @@ import java.lang.reflect.Method
  * The usage message for this example (obtained using <code>cli.usage()</code>) is shown below:
  * <pre>
  * Usage: ls [-alt]
- *   -a                          display all files
- *   -l                          use a long listing format
- *   -t                          sort by modification time
+ *   -a     display all files
+ *   -l     use a long listing format
+ *   -t     sort by modification time
  * </pre>
  * An underlying parser that supports what is called argument 'bursting' is used
  * by default. Bursting would convert '-alt' into '-a -l -t' provided no long
@@ -163,25 +163,36 @@ import java.lang.reflect.Method
  *     <th>Description</th>
  *   </tr>
  *   <tr>
- *     <th><code>argName</code><br><code>longOpt</code></th>
+ *     <th><code>argName</code></th>
  *     <td>String</td>
  *     <td><code>names</code></td>
- *     <td>An option may have two option names: a short name (<code>argName</code>), prefixed with a single hyphen,
- *     and a long name (<code>longOpt</code>), which may have either a single hypen or two hyphens as prefix.</td>
+ *     <td>Short name for the option, will be prefixed with a single hyphen.</td>
  *   </tr>
  *   <tr>
- *     <th><code>args</code><br><code>optionalArg</code></th>
- *     <td>int&nbsp;or&nbsp;String<br>boolean</td>
+ *     <th><code>longOpt</code></th>
+ *     <td>String</td>
+ *     <td><code>names</code></td>
+ *     <td>Long name for the option, which may be prefixed with either a single hypen or two hyphens.
+ *       An option must have either a long name or a short name (or both).</td>
+ *   </tr>
+ *   <tr>
+ *     <th><code>args</code></th>
+ *     <td>int&nbsp;or&nbsp;String</td>
  *     <td><code>arity</code></td>
- *     <td><code>args</code> indicates the maximum number of parameters for this option.
- *       A String value of '+' indicates the maximum is unlimited.
+ *     <td><code>args</code> indicates the number of parameters for this option.
+ *       A String value of '+' indicates at least one up to any number of parameters.
  *       The minimum number of parameters depends on the type (booleans require no parameters)
- *       and the <code>optionalArg</code> setting. If <code>optionalArg=true</code>, then <code>args=3</code>
- *       is the equivalent of <code>arity="0..3"</code> in picocli. If <code>optionalArg=false</code>,
- *       then <code>args='+'</code> is the equivalent of <code>arity="1..*"</code> in picocli.
- *       Picocli's <a href="http://picocli.info/#_arity"><code>arity</code></a> is not an exact equivalent of CliBuilder's <code>args</code>:
- *       by default, <code>args</code> also restricts the total (cumulative) number of values that can be matched for this option.
- *       Call <code>arityRestrictsCumulativeSize(false)</code> on the {@link #parser} to switch this off.
+ *       and the <code>optionalArg</code> setting.
+ *       </td>
+ *   </tr>
+ *   <tr>
+ *     <th><code>optionalArg</code></th>
+ *     <td>boolean</td>
+ *     <td><code>arity</code></td>
+ *     <td>If <code>optionalArg=true</code>, then <code>args=3</code>
+ *       is the equivalent of <code>arity="0..3"</code> in picocli.
+ *       When <code>optionalArg=true</code>, <code>args='+'</code>
+ *       is equivalent to <code>arity="0..*"</code>.
  *       </td>
  *   </tr>
  *   <tr>
@@ -213,7 +224,6 @@ import java.lang.reflect.Method
  *     <td>char</td>
  *     <td><code>splitRegex</code></td>
  *     <td>The character used to split a single command line argument into parts.
- *       (Note that the max number of parameters for an option means the total cumulative number of parts.)
  *       </td>
  *   </tr>
  *   <tr>
@@ -378,9 +388,8 @@ class CliBuilder {
     final ParserSpec parser = new ParserSpec()
             .stopAtPositional(true)
             .unmatchedOptionsArePositionalParams(true)
-            //.arityRestrictsCumulativeSize(true)
-            .limitSplitToMaxArity(true)
-            .splitBeforeArityCheck(true)
+            .aritySatisfiedByAttachedOptionParam(true)
+            .limitSplit(true)
             .overwrittenOptionsAllowed(true)
             .toggleBooleanFlags(false)
 
@@ -810,7 +819,6 @@ class CliBuilder {
             }
         }
         if (!builder.type() && !builder.arity() && builder.converters()?.length > 0) {
-            //builder.arity("1").type(convert instanceof Class ? convert : convert.getClass())
             builder.arity("1").type(details.convert ? Object : String[])
         }
         return builder.build()
@@ -845,7 +853,7 @@ class CliBuilder {
             } else if (k == 'args' && v == 0) {
                 [[arity: '0']]
             } else if (k == 'args') {
-                v == COMMONS_CLI_UNLIMITED_VALUES ? [[arity: "*"]] : [[arity: "1..$v"]]
+                v == COMMONS_CLI_UNLIMITED_VALUES ? [[arity: "*"]] : [[arity: "$v"]]
             } else if (k == 'optionalArg') {
                 v ? [[arity: '0..1']] : [[arity: '1']]
             } else if (k == 'argName') {
