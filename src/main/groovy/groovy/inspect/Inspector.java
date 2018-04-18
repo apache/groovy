@@ -228,53 +228,47 @@ public class Inspector {
         return className;
     }
 
+    private static String makeTypesInfo(Class[] types) {
+        StringBuilder sb = new StringBuilder(32);
+        for (int k = 0; k < types.length; k++) {
+            sb.append(shortName(types[k]));
+            if (k < (types.length - 1)) sb.append(", ");
+        }
+
+        return sb.toString();
+    }
+
+    private static String makeParamsInfo(Class[] params) {
+        return makeTypesInfo(params);
+    }
+
+    private static String makeExceptionInfo(Class[] exceptions) {
+        return makeTypesInfo(exceptions);
+    }
+
     protected String[] methodInfo(Method method) {
         String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
-        int mod = method.getModifiers();
         result[MEMBER_ORIGIN_IDX] = JAVA;
         result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass());
-        result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
+        result[MEMBER_MODIFIER_IDX] = Modifier.toString(method.getModifiers());
         result[MEMBER_NAME_IDX] = method.getName();
         result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
-        Class[] params = method.getParameterTypes();
-        StringBuilder sb = new StringBuilder();
-        for (int j = 0; j < params.length; j++) {
-            sb.append(shortName(params[j]));
-            if (j < (params.length - 1)) sb.append(", ");
-        }
-        result[MEMBER_PARAMS_IDX] = sb.toString();
-        sb.setLength(0);
-        Class[] exceptions = method.getExceptionTypes();
-        for (int k = 0; k < exceptions.length; k++) {
-            sb.append(shortName(exceptions[k]));
-            if (k < (exceptions.length - 1)) sb.append(", ");
-        }
-        result[MEMBER_EXCEPTIONS_IDX] = sb.toString();
+        result[MEMBER_PARAMS_IDX] = makeParamsInfo(method.getParameterTypes());
+        result[MEMBER_EXCEPTIONS_IDX] = makeExceptionInfo(method.getExceptionTypes());
+
         return withoutNulls(result);
     }
 
     protected String[] methodInfo(Constructor ctor) {
         String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
-        int mod = ctor.getModifiers();
         result[MEMBER_ORIGIN_IDX] = JAVA;
-        result[MEMBER_MODIFIER_IDX] = Modifier.toString(mod);
+        result[MEMBER_MODIFIER_IDX] = Modifier.toString(ctor.getModifiers());
         result[MEMBER_DECLARER_IDX] = shortName(ctor.getDeclaringClass());
         result[MEMBER_TYPE_IDX] = shortName(ctor.getDeclaringClass());
         result[MEMBER_NAME_IDX] = ctor.getName();
-        Class[] params = ctor.getParameterTypes();
-        StringBuilder sb = new StringBuilder();
-        for (int j = 0; j < params.length; j++) {
-            sb.append(shortName(params[j]));
-            if (j < (params.length - 1)) sb.append(", ");
-        }
-        result[MEMBER_PARAMS_IDX] = sb.toString();
-        sb.setLength(0);
-        Class[] exceptions = ctor.getExceptionTypes();
-        for (int k = 0; k < exceptions.length; k++) {
-            sb.append(shortName(exceptions[k]));
-            if (k < (exceptions.length - 1)) sb.append(", ");
-        }
-        result[MEMBER_EXCEPTIONS_IDX] = sb.toString();
+        result[MEMBER_PARAMS_IDX] = makeParamsInfo(ctor.getParameterTypes());
+        result[MEMBER_EXCEPTIONS_IDX] = makeExceptionInfo(ctor.getExceptionTypes());
+
         return withoutNulls(result);
     }
 
@@ -287,11 +281,14 @@ public class Inspector {
         result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
         result[MEMBER_NAME_IDX] = method.getName();
         CachedClass[] params = method.getParameterTypes();
+
+        // TODO reuse `makeParamsInfo`
         StringBuilder sb = new StringBuilder();
         for (int j = 0; j < params.length; j++) {
             sb.append(shortName(params[j].getTheClass()));
             if (j < (params.length - 1)) sb.append(", ");
         }
+
         result[MEMBER_PARAMS_IDX] = sb.toString();
         result[MEMBER_EXCEPTIONS_IDX] = NOT_APPLICABLE; // no exception info for Groovy MetaMethods
         return withoutNulls(result);
