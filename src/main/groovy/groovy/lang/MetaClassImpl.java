@@ -641,9 +641,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 if (!skip) {
-                    if (!newGroovyMethodsSet.contains(method)) {
-                        newGroovyMethodsSet.add(method);
-                    }
+                    newGroovyMethodsSet.add(method);
                     addMetaMethodToIndex(method, mainClassMethodHeader);
                 }
             }
