@@ -177,9 +177,8 @@ class CliBuilderTest extends GroovyTestCase {
         assertEquals([], options.arguments())
     }
 
-    void testMultipleOccurrencesSeparateSeparate3_broken() {
+    void testMandatoryParametersDoNotConsumeOtherOptions() {
         def cli = new CliBuilder()
-//        cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, 'arguments')
         cli.a(args: 2, 'arguments')
         cli.b(args: 2, valueSeparator: ',', 'arguments')
         cli.c(args: '+', valueSeparator: ',', 'arguments')
