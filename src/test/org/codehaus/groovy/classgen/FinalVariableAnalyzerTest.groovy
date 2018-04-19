@@ -460,6 +460,49 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-8472
+    void testTryCatchWithReturnInTry() {
+        assertScript '''
+            def method(String foo) {
+                final str
+                try {
+                    return foo.trim()
+                }
+                catch(e) {
+                    str = '-1'
+                }
+                int exitCode = str.toInteger()
+                exitCode
+            }
+
+            assert method(null) == -1
+            assert method('  foo  ') == 'foo'
+        '''
+    }
+
+    // GROOVY-8472
+    void testTryCatchWithReturnInCatch() {
+        assertScript '''
+            def method(String foo) {
+                final str
+                try {
+                    str = foo.trim()
+                }
+                catch(RuntimeException re) {
+                    return re.message
+                }
+                catch(Throwable t) {
+                    return -1
+                }
+                int exitCode = str.isInteger() ? str.toInteger() : null
+                exitCode
+            }
+
+            assert method(null) == 'Cannot invoke method trim() on null object'
+            assert method('  42  ') == 42
+        '''
+    }
+
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 
