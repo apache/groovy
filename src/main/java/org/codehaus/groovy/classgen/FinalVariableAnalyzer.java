@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -34,17 +35,21 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,12 +59,14 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     private final VariableNotFinalCallback callback;
 
     private Set<Variable> declaredFinalVariables = null;
-    private boolean inAssignment = false;
+    private boolean inAssignmentRHS = false;
+    private boolean inArgumentList = false;
 
     private enum VariableState {
         is_uninitialized(false),
         is_final(true),
-        is_var(false);
+        is_var(false),
+        is_ambiguous(false); // any further use of that variable can trigger uninitialized ot not final errors
 
         private final boolean isFinal;
 
@@ -137,6 +144,14 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitArgumentlistExpression(ArgumentListExpression ale) {
+        boolean old = inArgumentList;
+        inArgumentList = true;
+        super.visitArgumentlistExpression(ale);
+        inArgumentList = old;
+    }
+
+    @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         boolean assignment = StaticTypeCheckingSupport.isAssignment(expression.getOperation().getType());
         boolean isDeclaration = expression instanceof DeclarationExpression;
@@ -146,9 +161,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             recordFinalVars(leftExpression);
         }
         // visit RHS first for expressions like a = b = 0
-        inAssignment = assignment;
+        inAssignmentRHS = assignment;
         rightExpression.visit(this);
-        inAssignment = false;
+        inAssignmentRHS = false;
         leftExpression.visit(this);
         if (assignment) {
             recordAssignments(expression, isDeclaration, leftExpression, rightExpression);
@@ -188,13 +203,13 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
-        boolean old = inAssignment;
-        inAssignment = false;
+        boolean old = inAssignmentRHS;
+        inAssignmentRHS = false;
         Map<Variable, VariableState> origState = new StateMap();
         origState.putAll(getState());
         super.visitClosureExpression(expression);
         cleanLocalVars(origState, getState());
-        inAssignment = old;
+        inAssignmentRHS = old;
     }
 
     private void cleanLocalVars(Map<Variable, VariableState> origState, Map<Variable, VariableState> state) {
@@ -211,17 +226,17 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     @Override
     public void visitPrefixExpression(final PrefixExpression expression) {
-        inAssignment = expression.getExpression() instanceof VariableExpression;
+        inAssignmentRHS = expression.getExpression() instanceof VariableExpression;
         super.visitPrefixExpression(expression);
-        inAssignment = false;
+        inAssignmentRHS = false;
         checkPrePostfixOperation(expression.getExpression(), expression);
     }
 
     @Override
     public void visitPostfixExpression(final PostfixExpression expression) {
-        inAssignment = expression.getExpression() instanceof VariableExpression;
+        inAssignmentRHS = expression.getExpression() instanceof VariableExpression;
         super.visitPostfixExpression(expression);
-        inAssignment = false;
+        inAssignmentRHS = false;
         checkPrePostfixOperation(expression.getExpression(), expression);
     }
 
@@ -248,7 +263,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
         if (key != null && !key.isClosureSharedVariable() && callback != null) {
             VariableState variableState = state.get(key);
-            if (inAssignment && variableState == VariableState.is_uninitialized) {
+            if ((inAssignmentRHS || inArgumentList) && (variableState == VariableState.is_uninitialized || variableState == VariableState.is_ambiguous)) {
                 callback.variableNotAlwaysInitialized(expression);
             }
         }
@@ -263,13 +278,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         popState();
         Statement elseBlock = ifElse.getElseBlock();
         Map<Variable, VariableState> elseState = pushState();
-        if (elseBlock instanceof EmptyStatement) {
-            // dispatching to EmptyStatement will not call back visitor,
-            // must call our visitEmptyStatement explicitly
-            visitEmptyStatement((EmptyStatement) elseBlock);
-        } else {
-            elseBlock.visit(this);
-        }
+        visitPossiblyEmptyStatement(elseBlock);
         popState();
 
         // merge if/else branches
@@ -284,44 +293,113 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             VariableState elseValue = elseState.get(var);
             // merge if and else values
             VariableState mergedIfElse;
-            mergedIfElse = ifValue != null && ifValue.isFinal
-                    && elseValue != null && elseValue.isFinal ? VariableState.is_final : VariableState.is_var;
+            mergedIfElse = isFinal(ifValue) && isFinal(elseValue) ? VariableState.is_final : VariableState.is_var;
             if (beforeValue != null) {
                 curState.put(var, mergedIfElse);
             }
         }
     }
 
+    private void visitPossiblyEmptyStatement(Statement block) {
+        if (block instanceof EmptyStatement) {
+            // dispatching to EmptyStatement will not call back visitor,
+            // must call our visitEmptyStatement explicitly
+            visitEmptyStatement((EmptyStatement) block);
+        } else {
+            block.visit(this);
+        }
+    }
+
+    private boolean isFinal(VariableState value) {
+        return value != null && value.isFinal;
+    }
+
     @Override
     public void visitTryCatchFinally(final TryCatchStatement statement) {
         visitStatement(statement);
-        Map<Variable, VariableState> beforeTryCatch = new HashMap<Variable, VariableState>(getState());
-        statement.getTryStatement().visit(this);
-        for (CatchStatement catchStatement : statement.getCatchStatements()) {
-            catchStatement.visit(this);
-        }
+        Map<Variable, VariableState> beforeTryState = new HashMap<Variable, VariableState>(getState());
+        pushState();
+        Statement tryStatement = statement.getTryStatement();
+        tryStatement.visit(this);
+        Map<Variable, VariableState> afterTryState = new HashMap<Variable, VariableState>(getState());
         Statement finallyStatement = statement.getFinallyStatement();
-        // we need to recall which final variables are unassigned so cloning the current state
-        Map<Variable, VariableState> afterTryCatchState = new HashMap<Variable, VariableState>(getState());
-        if (finallyStatement instanceof EmptyStatement) {
-            // dispatching to EmptyStatement will not call back visitor,
-            // must call our visitEmptyStatement explicitly
-            visitEmptyStatement((EmptyStatement) finallyStatement);
-        } else {
-            finallyStatement.visit(this);
+        List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
+        // the try finally case
+        visitPossiblyEmptyStatement(finallyStatement);
+        if (!returningBlock(tryStatement)) {
+            afterStates.add(new HashMap<Variable, VariableState>(getState()));
         }
-        // and now we must reset to uninitialized state variables which were only initialized during try/catch
-        Map<Variable, VariableState> afterFinally = new HashMap<Variable, VariableState>(getState());
-        for (Map.Entry<Variable, VariableState> entry : afterFinally.entrySet()) {
-            Variable var = entry.getKey();
-            VariableState afterFinallyState = entry.getValue();
-            VariableState beforeTryCatchState = beforeTryCatch.get(var);
-            if (afterFinallyState == VariableState.is_final
-                    && beforeTryCatchState != VariableState.is_final
-                    && afterTryCatchState.get(var) != beforeTryCatchState) {
-                getState().put(var, beforeTryCatchState == null ? VariableState.is_uninitialized : beforeTryCatchState);
+        popState();
+        // now the finally only case but only if no catches
+        if (statement.getCatchStatements().isEmpty()) {
+            visitPossiblyEmptyStatement(finallyStatement);
+            if (!returningBlock(tryStatement)) {
+                afterStates.add(new HashMap<Variable, VariableState>(getState()));
             }
         }
+        for (CatchStatement catchStatement : statement.getCatchStatements()) {
+            // We don't try to analyse which statement within the try block might have thrown an exception.
+            // We make a crude assumption that anywhere from none to all of the statements might have been executed.
+            // Run visitor for both scenarios so the eager checks will be performed for either of these cases.
+            visitCatchFinally(beforeTryState, afterStates, catchStatement, finallyStatement);
+            visitCatchFinally(afterTryState, afterStates, catchStatement, finallyStatement);
+        }
+        // after states can only be empty if try and catch statements all return in which case nothing to do
+        if (afterStates.isEmpty()) return;
+        // now adjust the state variables - any early returns won't have gotten here
+        // but we need to check that the same status was observed by all paths
+        // and mark as ambiguous if needed
+        Map<Variable, VariableState> corrected = afterStates.remove(0);
+        for (Map<Variable, VariableState> nextState : afterStates) {
+            for (Map.Entry<Variable, VariableState> entry : corrected.entrySet()) {
+                Variable var = entry.getKey();
+                VariableState currentCorrectedState = entry.getValue();
+                VariableState candidateCorrectedState = nextState.get(var);
+                if (currentCorrectedState == VariableState.is_ambiguous) continue;
+                if (currentCorrectedState != candidateCorrectedState) {
+                    if (currentCorrectedState == VariableState.is_uninitialized || candidateCorrectedState == VariableState.is_uninitialized) {
+                        corrected.put(var, VariableState.is_ambiguous);
+                    } else {
+                        corrected.put(var, VariableState.is_var);
+                    }
+                }
+            }
+        }
+        getState().putAll(corrected);
+    }
+
+    private void visitCatchFinally(Map<Variable, VariableState> initialVarState, List<Map<Variable, VariableState>> afterTryCatchStates, CatchStatement catchStatement, Statement finallyStatement) {
+        pushState();
+//        getState().clear();
+        getState().putAll(initialVarState);
+        Statement code = catchStatement.getCode();
+        catchStatement.visit(this);
+        visitPossiblyEmptyStatement(finallyStatement);
+        if (code == null || !returningBlock(code)) {
+            afterTryCatchStates.add(new HashMap<Variable, VariableState>(getState()));
+        }
+        popState();
+    }
+
+    /**
+     * @return true if the block's last statement is a return
+     */
+    private boolean returningBlock(Statement block) {
+        if (block instanceof ReturnStatement) {
+            return true;
+        }
+        if (!(block instanceof BlockStatement)) {
+            return false;
+        }
+        BlockStatement bs = (BlockStatement) block;
+        if (bs.getStatements().size() == 0) {
+            return false;
+        }
+        Statement last = DefaultGroovyMethods.last(bs.getStatements());
+        if (last instanceof ReturnStatement) {
+            return true;
+        }
+        return false;
     }
 
     private void recordAssignment(
@@ -357,7 +435,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             variableState = VariableState.is_var;
         }
         getState().put(var, variableState);
-        if (variableState == VariableState.is_var && callback != null) {
+        if ((variableState == VariableState.is_var || variableState == VariableState.is_ambiguous) && callback != null) {
             callback.variableNotFinal(var, expression);
         }
     }
