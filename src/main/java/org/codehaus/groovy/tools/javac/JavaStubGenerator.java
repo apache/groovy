@@ -953,11 +953,9 @@ public class JavaStubGenerator {
         }
 
         for (String imp : imports) {
-            String s = new StringBuilder()
-                    .append("import ")
-                    .append(imp)
-                    .append((imp.charAt(imp.length() - 1) == '.') ? "*;" : ";")
-                    .toString()
+            String s = ("import " +
+                    imp +
+                    ((imp.charAt(imp.length() - 1) == '.') ? "*;" : ";"))
                     .replace('$', '.');
             out.println(s);
         }

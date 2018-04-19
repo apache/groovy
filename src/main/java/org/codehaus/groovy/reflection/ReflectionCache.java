@@ -31,7 +31,7 @@ public class ReflectionCache {
     public static String getMOPMethodName(CachedClass declaringClass, String name, boolean useThis) {
         TripleKeyHashMap.Entry mopNameEntry = mopNames.getOrPut(declaringClass, name, Boolean.valueOf(useThis));
         if (mopNameEntry.value == null) {
-            mopNameEntry.value = new StringBuilder().append(useThis ? "this$" : "super$").append(declaringClass.getSuperClassDistance()).append("$").append(name).toString();
+            mopNameEntry.value = (useThis ? "this$" : "super$") + declaringClass.getSuperClassDistance() + "$" + name;
         }
         return (String) mopNameEntry.value;
     }

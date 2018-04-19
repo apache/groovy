@@ -372,12 +372,11 @@ public class TypeCheckingContext {
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("EnclosingClosure");
-            sb.append("{closureExpression=").append(closureExpression.getText());
-            sb.append(", returnTypes=").append(returnTypes);
-            sb.append('}');
-            return sb.toString();
+            String sb = "EnclosingClosure" +
+                    "{closureExpression=" + closureExpression.getText() +
+                    ", returnTypes=" + returnTypes +
+                    '}';
+            return sb;
         }
     }
 }
