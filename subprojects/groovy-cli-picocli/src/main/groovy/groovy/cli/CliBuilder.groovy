@@ -959,7 +959,7 @@ class OptionAccessor {
             if (!userSpecifiedType && result == '' && parseResult.matchedOption(name).arity().min == 0) {
                 return true
             }
-            return result
+            return parseResult.matchedOption(name).typedValues().get(0)
         }
         if (parseResult.commandSpec().findOption(name)) { // requested option was not matched: return its default
             def option = parseResult.commandSpec().findOption(name)
