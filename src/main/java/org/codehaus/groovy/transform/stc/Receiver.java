@@ -49,11 +49,10 @@ public class Receiver<T> {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("Receiver");
-        sb.append("{type=").append(type);
-        sb.append(", data=").append(data);
-        sb.append('}');
-        return sb.toString();
+        String sb = "Receiver" +
+                "{type=" + type +
+                ", data=" + data +
+                '}';
+        return sb;
     }
 }
