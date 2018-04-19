@@ -402,7 +402,7 @@ public class Groovydoc extends Task {
                     }
                 });
 
-                for (String filename : Arrays.asList(files)) {
+                for (String filename : files) {
                     sourceFilesToDoc.add(dir + File.separator + filename);
                 }
 
