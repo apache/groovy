@@ -850,10 +850,10 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
 
         public String toString() {
-            return new StringBuilder().append("[parentName=").append(parentName)
-                    .append(", childName=").append(childName)
-                    .append(", refId=").append(refId)
-                    .append("]").toString();
+            return "[parentName=" + parentName +
+                    ", childName=" + childName +
+                    ", refId=" + refId +
+                    "]";
         }
     }
 }

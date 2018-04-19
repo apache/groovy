@@ -214,15 +214,14 @@ public class InvokeDynamicWriter extends InvocationWriter {
     }
 
     private void writeIndyCast(ClassNode sourceType, ClassNode targetType) {
-        StringBuilder sig = new StringBuilder();
-        sig.append('(');
-        sig.append(getTypeDescription(sourceType));
-        sig.append(')');
-        sig.append(getTypeDescription(targetType));
 
+        String sig = "(" +
+                getTypeDescription(sourceType) +
+                ')' +
+                getTypeDescription(targetType);
         controller.getMethodVisitor().visitInvokeDynamicInsn(
                 //TODO: maybe use a different bootstrap method since no arguments are needed here
-                CAST.getCallSiteName(), sig.toString(), BSM, "()", 0);
+                CAST.getCallSiteName(), sig, BSM, "()", 0);
         controller.getOperandStack().replace(targetType);
     }
 
