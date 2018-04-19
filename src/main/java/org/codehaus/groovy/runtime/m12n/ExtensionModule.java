@@ -52,10 +52,9 @@ public abstract class ExtensionModule {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ExtensionModule{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", version='").append(version).append('\'');
-        sb.append('}');
-        return sb.toString();
+        String sb = "ExtensionModule{" + "name='" + name + '\'' +
+                ", version='" + version + '\'' +
+                '}';
+        return sb;
     }
 }
