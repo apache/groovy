@@ -184,7 +184,7 @@ class CliBuilderTest extends GroovyTestCase {
         cli.b(args: 2, valueSeparator: ',', 'arguments')
         cli.c(args: '+', valueSeparator: ',', 'arguments')
 
-        options = cli.parse(['-a', '1', '-a', '2'])
+        def options = cli.parse(['-a', '1', '-a', '2'])
         assertNull(options)
 
         options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
