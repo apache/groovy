@@ -22,7 +22,6 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.PropertyValue;
-import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -280,16 +279,7 @@ public class Inspector {
         result[MEMBER_DECLARER_IDX] = shortName(method.getDeclaringClass().getTheClass());
         result[MEMBER_TYPE_IDX] = shortName(method.getReturnType());
         result[MEMBER_NAME_IDX] = method.getName();
-        CachedClass[] params = method.getParameterTypes();
-
-        // TODO reuse `makeParamsInfo`
-        StringBuilder sb = new StringBuilder();
-        for (int j = 0; j < params.length; j++) {
-            sb.append(shortName(params[j].getTheClass()));
-            if (j < (params.length - 1)) sb.append(", ");
-        }
-
-        result[MEMBER_PARAMS_IDX] = sb.toString();
+        result[MEMBER_PARAMS_IDX] = makeParamsInfo(method.getNativeParameterTypes());
         result[MEMBER_EXCEPTIONS_IDX] = NOT_APPLICABLE; // no exception info for Groovy MetaMethods
         return withoutNulls(result);
     }
