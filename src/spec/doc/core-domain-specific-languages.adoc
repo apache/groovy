@@ -1549,6 +1549,8 @@ assert !cli.parse('-d -o'.split()) // <1>
 <1> The parse will fail since only one option from a group can be used at a time.
 
 ====== Picocli
+Below are some features available in the picocli version of `CliBuilder`.
+
 *New property: errorWriter*
 
 When users of your application give invalid command line arguments,
@@ -1574,7 +1576,7 @@ If desired you can http://picocli.info/#_usage_help_with_styles_and_colors[custo
 *New property: name*
 
 As before, you can set the synopsis of the usage help message with the `usage` property.
-You may be interested in this small improvement:
+You may be interested in a small improvement:
 if you only set the command `name`, a synopsis will be generated automatically,
 with repeating elements followed by `...` and optional elements surrounded with `[` and `]`.
 (An example follows below.)
