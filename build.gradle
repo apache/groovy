@@ -162,6 +162,7 @@ ext {
     luceneVersion = '4.7.2'
     openbeansVersion = '1.0'
     openejbVersion = '1.0'
+    picocliVersion = '3.0.0-beta-2'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.21'
     xmlunitVersion = '1.6'
@@ -180,6 +181,7 @@ dependencies {
     compile "org.ow2.asm:asm-util:$asmVersion"
 
     compile "commons-cli:commons-cli:$commonsCliVersion"
+    compile "info.picocli:picocli:$picocliVersion"
     compile "org.apache.ant:ant:$antVersion"
     compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
