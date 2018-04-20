@@ -75,9 +75,9 @@ import java.lang.reflect.Method
  *                          header:'Options:')
  * cli.help('print this message')
  * cli.logfile(type:File, argName:'file', 'use given file for log')
- * cli.D(type:Map, argName:'property=value', args: '+', 'use value for given property')
+ * cli.D(type:Map, argName:'property=value', 'use value for given property')
  * cli.lib(argName:'path', valueSeparator:',', args: '3',
- *      'comma-separated list of up to 3 paths to search for jars and classes')
+ *      'comma-separated list of 3 paths to search for jars and classes')
  * def options = cli.parse(args)
  * ...
  * </pre>
@@ -89,7 +89,7 @@ import java.lang.reflect.Method
  *     -help                 print this message
  *     -logfile=&lt;file>       use given file for log
  *     -lib=&lt;path>[,&lt;path>]... [&lt;path>[,&lt;path>]... [&lt;path>[,&lt;path>]...]]
- *                           comma-separated list of up to 3 paths to search
+ *                           comma-separated list of 3 paths to search
  *                             for jars and classes
  * </pre>
  * And if called with the following arguments '-logfile foo -Dbar=baz -lib=/tmp,/usr/lib,~/libs target'
@@ -838,21 +838,19 @@ class CliBuilder {
         }
         return builder.build()
     }
-//    * <pre>
-//    *  - argName:        String
-//    *  - longOpt:        String
-//    *  - args:           int or String
-//    *  - optionalArg:    boolean
-//    *  - required:       boolean
-//    *  - type:           Class
-//    *  - valueSeparator: char
-//    *  - convert:        Closure
-//    *  - defaultValue:   String
-//    * </pre>
 
     /** Commons-cli constant that specifies the number of argument values is infinite */
     private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
 
+    // - argName:        String
+    // - longOpt:        String
+    // - args:           int or String
+    // - optionalArg:    boolean
+    // - required:       boolean
+    // - type:           Class
+    // - valueSeparator: char
+    // - convert:        Closure
+    // - defaultValue:   String
     static Map commons2picocli(shortname, Map m) {
         if (m.args && m.optionalArg) {
             m.arity = "0..${m.args}"
