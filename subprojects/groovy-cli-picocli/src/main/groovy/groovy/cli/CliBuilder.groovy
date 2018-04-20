@@ -385,6 +385,8 @@ class CliBuilder {
      * parser behaviour via the API of the underlying library if needed.
      * @since 2.5
      */
+    // Implementation note: this object is separate from the CommandSpec.
+    // The values collected here are copied into the ParserSpec of the command.
     final ParserSpec parser = new ParserSpec()
             .stopAtPositional(true)
             .unmatchedOptionsArePositionalParams(true)
@@ -398,10 +400,23 @@ class CliBuilder {
      * usage help message via the API of the underlying library if needed.
      * @since 2.5
      */
+    // Implementation note: this object is separate from the CommandSpec.
+    // The values collected here are copied into the UsageMessageSpec of the command.
     final UsageMessageSpec usageMessage = new UsageMessageSpec()
 
     Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
 
+    // CommandSpec is the entry point into the picocli object model for a command.
+    // It gives access to a ParserSpec to customize the parser behaviour and
+    // a UsageMessageSpec to customize the usage help message.
+    // Add OptionSpec and PositionalParamSpec objects to this object to define
+    // the options and positional parameters this command recognizes.
+    //
+    // This field is private for now.
+    // It is initialized to an empty spec so options and positional parameter specs
+    // can be added dynamically via the programmatic API.
+    // When a command spec is defined via annotations, the existing instance is
+    // replaced with a new one. This allows the outer CliBuilder instance can be reused.
     private CommandSpec commandSpec = CommandSpec.create()
 
     void setUsage(String usage) {
@@ -534,7 +549,7 @@ class CliBuilder {
         commandSpec.parser(parser)
         commandSpec.name(name).usageMessage(usageMessage)
         if (commandSpec.positionalParameters().empty) {
-            commandSpec.addPositional(PositionalParamSpec.builder().type(String[]).arity("*").hidden(true).build())
+            commandSpec.addPositional(PositionalParamSpec.builder().type(String[]).arity("*").paramLabel("P").hidden(true).build())
         }
         return new CommandLine(commandSpec)
     }

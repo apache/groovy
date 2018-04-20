@@ -1324,7 +1324,7 @@ multiple arguments.
 Arguments on the commandline are by nature Strings (or arguably can be considered Booleans for flags) but can be
 converted to richer types automatically by supplying additional typing information. For the
 annotation-based argument definition style, these types are supplied using the field types for annotation
-properties or return types of annotated methods (are the setter argument type for setter methods).
+properties or return types of annotated methods (or the setter argument type for setter methods).
 For the dynamic method style of argument definition a special 'type' property is supported
 which allows you to specify a Class name.
 
@@ -1367,7 +1367,7 @@ include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withConve
 
 ===== Options with multiple arguments
 
-Multiple arguments are also supported using an args value greater than 1. There is a special named parameter,
+Multiple arguments are also supported using an `args` value greater than 1. There is a special named parameter,
 `valueSeparator`, which can also be optionally used when processing multiple arguments. It allows some additional
 flexibility in the syntax supported when supplying such argument lists on the commandline. For example,
 supplying a value separator of ',' allows a comma-delimited list of values to be passed on the commandline.
@@ -1496,8 +1496,8 @@ Then, the following statements can be in a separate part of your code which is t
 ----
 def args = '--age 21'.split()
 def options = cli.parse(args)
-int age = options[age]
-assert age == 21
+int a = options[age]
+assert a == 21
 ----
 
 Finally, there is one additional convenience method offered by `CliBuilder` to even allow the
@@ -1517,7 +1517,8 @@ include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeC
 ===============================
 *NOTE* Advanced CLI features
 
-`CliBuilder` can be thought of as a Groovy friendly wrapper on top of (currently) Apache Commons CLI.
+`CliBuilder` can be thought of as a Groovy friendly wrapper on top of either
+https://github.com/remkop/picocli[picocli] or https://commons.apache.org/proper/commons-cli/[Apache Commons CLI].
 If there is a feature not provided by `CliBuilder` that you know is supported in the underlying
 library, the current `CliBuilder` implementation (and various Groovy language features) make it easy for you
 to call the underlying library methods directly. Doing so is a pragmatic way to leverage the Groovy-friendly
@@ -1525,6 +1526,8 @@ syntax offered by `CliBuilder` and yet still access some of the underlying libra
 A word of caution however; future versions of `CliBuilder` could potentially use another underlying library
 and in that event, some porting work may be required for your Groovy classes and/or scripts.
 ===============================
+
+====== Apache Commons CLI
 
 As an example, here is some code for making use of Apache Commons CLI's grouping mechanism:
 
@@ -1544,6 +1547,101 @@ cli.options.addOptionGroup optionGroup
 assert !cli.parse('-d -o'.split()) // <1>
 ----
 <1> The parse will fail since only one option from a group can be used at a time.
+
+====== Picocli
+*New property: errorWriter*
+
+When users of your application give invalid command line arguments,
+CliBuilder writes an error message and the usage help message to the `stderr` output stream.
+It doesn’t use the `stdout` stream to prevent the error message from being parsed when your program's
+output is used as input for another process.
+You can customize the destination by setting the `errorWriter` to a different value.
+
+On the other hand, `CliBuilder.usage()` prints the usage help message to the `stdout` stream.
+This way, when users request help (e.g. with a `--help` parameter),
+they can pipe the output to a utility like `less` or `grep`.
+
+You can specify different writers for testing.
+_Be aware that for backwards compatibility, setting the `writer` property to a different value
+will set *both* the `writer` and the `errorWriter` to the specified writer._
+
+*ANSI colors*
+
+The picocli version of CliBuilder renders the usage help message in ANSI colors on supported platforms automatically.
+If desired you can http://picocli.info/#_usage_help_with_styles_and_colors[customize] this.
+(An example follows below.)
+
+*New property: name*
+
+As before, you can set the synopsis of the usage help message with the `usage` property.
+You may be interested in this small improvement:
+if you only set the command `name`, a synopsis will be generated automatically,
+with repeating elements followed by `...` and optional elements surrounded with `[` and `]`.
+(An example follows below.)
+
+*New property: usageMessage*
+
+This property exposes a `UsageMessageSpec` object from the underlying picocli library,
+which gives fine-grained control over various sections of the usage help message. For example:
+
+[source,groovy]
+----
+def cli = new CliBuilder()
+cli.name = "myapp"
+cli.usageMessage.with {
+    headerHeading("@|bold,underline Header heading:|@%n")
+    header("Header 1", "Header 2")                     // before the synopsis
+    synopsisHeading("%n@|bold,underline Usage:|@ ")
+    descriptionHeading("%n@|bold,underline Description heading:|@%n")
+    description("Description 1", "Description 2")      // after the synopsis
+    optionListHeading("%n@|bold,underline Options heading:|@%n")
+    footerHeading("%n@|bold,underline Footer heading:|@%n")
+    footer("Footer 1", "Footer 2")
+}
+cli.a('option a description')
+cli.b('option b description')
+cli.c(args: '*', 'option c description')
+cli.usage()
+----
+Gives this output:
+
+image::assets/img/usageMessageSpec.png[]
+
+
+*New property: parser*
+
+The `parser` property gives access to the picocli `ParserSpec` object that can be used to customize the parser behavior.
+See the http://picocli.info/apidocs/picocli/CommandLine.Model.ParserSpec.html[documentation] for details.
+
+*Map options*
+
+Finally, if your application has options that are key-value pairs, you may be interested in picocli's support for maps. For example:
+
+[source,groovy]
+----
+import java.util.concurrent.TimeUnit
+import static java.util.concurrent.TimeUnit.DAYS
+import static java.util.concurrent.TimeUnit.HOURS
+
+def cli = new CliBuilder()
+cli.D(args: 2,   valueSeparator: '=', 'the old way')                          // <1>
+cli.X(type: Map, 'the new way')                                               // <2>
+cli.Z(type: Map, auxiliaryTypes: [TimeUnit, Integer].toArray(), 'typed map')  // <3>
+
+def options = cli.parse('-Da=b -Dc=d -Xx=y -Xi=j -ZDAYS=2 -ZHOURS=23'.split())// <4>
+assert options.Ds == ['a', 'b', 'c', 'd']                                     // <5>
+assert options.Xs == [ 'x':'y', 'i':'j' ]                                     // <6>
+assert options.Zs == [ (DAYS as TimeUnit):2, (HOURS as TimeUnit):23 ]         // <7>
+----
+<1> Previously, `key=value` pairs were split up into parts and added to a list
+<2> Picocli map support: simply specify `Map` as the type of the option
+<3> You can even specify the type of the map elements
+<4> To compare, let's specify two key-value pairs for each option
+<5> Previously, all key-value pairs end up in a list and it is up to the application to work with this list
+<6> Picocli returns the key-value pairs as a `Map`
+<7> Both keys and values of the map can be strongly typed
+
+
 
 ==== ObjectGraphBuilder
 

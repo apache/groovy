@@ -26,6 +26,9 @@ import groovy.transform.TypeChecked
 
 import java.math.RoundingMode
 import java.text.SimpleDateFormat
+import java.util.concurrent.TimeUnit
+import static java.util.concurrent.TimeUnit.DAYS
+import static java.util.concurrent.TimeUnit.HOURS
 
 //import java.math.RoundingMode
 
@@ -370,4 +373,67 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.arguments() == ['and', 'some', 'more']
     }
     // end::withTypeChecked[]
+
+    void testUsageMessageSpec() {
+        // suppress ANSI escape codes to make this test pass on all environments
+        System.setProperty("picocli.ansi", "false")
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        System.setOut(new PrintStream(baos, true))
+
+        // tag::withUsageMessageSpec[]
+        def cli = new CliBuilder()
+        cli.name = "myapp"
+        cli.usageMessage.with {
+            headerHeading("@|bold,underline Header heading:|@%n")
+            header("Header 1", "Header 2")                     // before the synopsis
+            synopsisHeading("%n@|bold,underline Usage:|@ ")
+            descriptionHeading("%n@|bold,underline Description heading:|@%n")
+            description("Description 1", "Description 2")      // after the synopsis
+            optionListHeading("%n@|bold,underline Options heading:|@%n")
+            footerHeading("%n@|bold,underline Footer heading:|@%n")
+            footer("Footer 1", "Footer 2")
+        }
+        cli.a('option a description')
+        cli.b('option b description')
+        cli.c(args: '*', 'option c description')
+        cli.usage()
+        // end::withUsageMessageSpec[]
+
+        String expected = '''\
+Header heading:
+Header 1
+Header 2
+
+Usage: myapp [-ab] [-c=[PARAM]...]...
+
+Description heading:
+Description 1
+Description 2
+
+Options heading:
+  -a               option a description
+  -b               option b description
+  -c= [PARAM]...   option c description
+
+Footer heading:
+Footer 1
+Footer 2
+'''
+        assertEquals(expected.normalize(), baos.toString().normalize())
+    }
+
+    public void testMapOption() {
+        // tag::MapOption[]
+        def cli = new CliBuilder()
+        cli.D(args: 2,   valueSeparator: '=', 'the old way')                          // <1>
+        cli.X(type: Map, 'the new way')                                               // <2>
+        cli.Z(type: Map, auxiliaryTypes: [TimeUnit, Integer].toArray(), 'typed map')  // <3>
+
+        def options = cli.parse('-Da=b -Dc=d -Xx=y -Xi=j -ZDAYS=2 -ZHOURS=23'.split())// <4>
+        assert options.Ds == ['a', 'b', 'c', 'd']                                     // <5>
+        assert options.Xs == [ 'x':'y', 'i':'j' ]                                     // <6>
+        assert options.Zs == [ (DAYS as TimeUnit):2, (HOURS as TimeUnit):23 ]         // <7>
+        // end::MapOption[]
+
+    }
 }
