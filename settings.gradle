@@ -19,6 +19,7 @@
 def subprojects = ['groovy-ant',
         'groovy-bsf',
         'groovy-cli-commons',
+        'groovy-cli-picocli',
         'groovy-console',
         'groovy-datetime',
         'groovy-dateutil',
