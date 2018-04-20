@@ -130,7 +130,7 @@ class CliBuilderTest extends GroovyTestCase {
         assert stringWriter.toString() == String.format(
                 "error: Missing required option '-x=PARAM'%n" +\
                 "Usage: groovy -x%n" +\
-                "  -x               message%n")
+                "  -x           message%n")
     }
 
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
