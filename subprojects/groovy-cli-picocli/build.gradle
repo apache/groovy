@@ -18,9 +18,8 @@
  */
 dependencies {
     compile rootProject
-    compile project(':groovy-cli-commons')
-    compile project(':groovy-cli-picocli')
-    compile project(':groovy-templates')
+    compile "info.picocli:picocli:$picocliVersion"
+//    compile files ('C:/Users/remko/IdeaProjects/picocli/build/libs/picocli-3.0.0-beta-2-SNAPSHOT.jar')
     testCompile project(':groovy-test')
-    compile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    testCompile project(':groovy-dateutil')
 }
