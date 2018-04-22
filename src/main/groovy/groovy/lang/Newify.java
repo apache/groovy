@@ -30,11 +30,28 @@ import java.lang.annotation.Target;
  * keyword. Instead they can be written "Ruby-style" as a method call to a 'new'
  * method or "Python-style" by just omitting the 'new' keyword.
  * <p>
- * It allows you to write code snippets like this ("Python-style"):
+ * WARNING: For the Python style with class-name-matching pattern, the pattern should be chosen as to avoid matching
+ * method names if possible. If following Java/Groovy naming convention, class names (contrary to method names) start
+ * with an uppercase letter. In this case {@code pattern="[A-Z].*"} (see {@link java.util.regex.Pattern} for supported
+ * Java pattern syntax) is the recommended pattern to allow all classes to be created without requiring a new keyword.
+ * Using a pattern that also matches method names (e.g. ".+", ".*" or "[a-zA-Z].*") might negatively impact build
+ * performance, since the Groovy compiler will have to match every class in context against any potential constructor
+ * call.
+ * <p>
+ * {@literal @Newify} allows you to write code snippets like this ("Python-style"):
  * <pre>
  * {@code @Newify([Tree,Leaf])} class MyTreeProcessor {
  *     def myTree = Tree(Tree(Leaf("A"), Leaf("B")), Leaf("C"))
  *     def process() { ... }
+ * }
+ * </pre>
+ * <pre>
+ * {@code // Any class whose name matches pattern can be created without new}
+ * {@code @Newify(pattern="[A-Z].*")} class MyTreeProcessor {
+ *     final myTree = Tree(Tree(Leaf("A"), Leaf("B")), Leaf("C"))
+ *     final sb = StringBuilder("...")
+ *     def dir = File('.')
+ *     def root = XmlSlurper().parseText(File(dir, sb.toString()).text)
  * }
  * </pre>
  * or this ("Ruby-style"):
@@ -59,8 +76,9 @@ import java.lang.annotation.Target;
  * flag is given when using the annotation. You might do this if you create a new method
  * using meta programming.
  * <p>
- * The "Python-style" conversions require you to specify each class on which you want them
- * to apply. The transformation then works by matching the basename of the provided classes to any
+ * For the "Python-style" conversions you can either specify each class name on which you want them
+ * to apply, or supply a pattern to match class names against. The transformation then works by matching the basename
+ * of the provided classes to any
  * similarly named instance method calls not specifically bound to an object, i.e. associated
  * with the 'this' object. In other words <code>Leaf("A")</code> would be transformed to
  * <code>new Leaf("A")</code> but <code>x.Leaf("A")</code> would not be touched.
@@ -73,9 +91,9 @@ import java.lang.annotation.Target;
  *     def field1 = java.math.BigInteger.new(42)
  *     def field2, field3, field4
  *
- *     {@code @Newify(Bar)}
+ *     {@code @Newify(pattern="[A-z][A-Za-z0-9_]*")} // Any class name that starts with an uppercase letter
  *     def process() {
- *         field2 = Bar("my bar")
+ *         field2 = A(Bb(Ccc("my bar")))
  *     }
  *
  *     {@code @Newify(Baz)}
@@ -94,6 +112,7 @@ import java.lang.annotation.Target;
  * field level if already turned on at the class level.
  *
  * @author Paul King
+ * @author mgroovy
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
@@ -106,4 +125,6 @@ public @interface Newify {
      * @return if automatic conversion of "Ruby-style" new method calls should occur
      */
     boolean auto() default true;
+
+    String pattern() default "";
 }
