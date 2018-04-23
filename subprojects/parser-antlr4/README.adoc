@@ -33,6 +33,7 @@ The new parser(Parrot) can parse Groovy source code and construct the related AS
 * additional places for type annotations
 * new operators: identity operators(`===`, `!==`), elvis assignment(`?=`), `!in`, `!instanceof`
 * safe index, e.g. `nullableVar?[1, 2]`
+* create instances of non-static inner classes with Java-Like syntax, e.g. `outer.new Inner()`
 * runtime groovydoc, i.e. groovydoc with `@Groovydoc`; groovydoc attached to AST node as metadata
 
 === How to enable the new parser
