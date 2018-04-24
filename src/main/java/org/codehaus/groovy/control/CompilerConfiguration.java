@@ -43,6 +43,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
+import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
+
 /**
  * Compilation control flags and coordination stuff.
  *
@@ -229,17 +232,17 @@ public class CompilerConfiguration {
         setClasspath("");
         setVerbose(false);
         setDebug(false);
-        setParameters(safeGetSystemProperty("groovy.parameters") != null);
+        setParameters(getSystemPropertySafe("groovy.parameters") != null);
         setTolerance(10);
         setScriptBaseClass(null);
         setRecompileGroovySource(false);
         setMinimumRecompilationInterval(100);
-        setTargetBytecode(safeGetSystemProperty("groovy.target.bytecode", getVMVersion()));
-        setDefaultScriptExtension(safeGetSystemProperty("groovy.default.scriptExtension", ".groovy"));
+        setTargetBytecode(getSystemPropertySafe("groovy.target.bytecode", getVMVersion()));
+        setDefaultScriptExtension(getSystemPropertySafe("groovy.default.scriptExtension", ".groovy"));
 
         // Source file encoding
-        String encoding = safeGetSystemProperty("file.encoding", DEFAULT_SOURCE_ENCODING);
-        encoding = safeGetSystemProperty("groovy.source.encoding", encoding);
+        String encoding = getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING);
+        encoding = getSystemPropertySafe("groovy.source.encoding", encoding);
         setSourceEncoding(encoding);
 
         try {
@@ -249,17 +252,12 @@ public class CompilerConfiguration {
         }
 
 
-        String target = safeGetSystemProperty("groovy.target.directory");
+        String target = getSystemPropertySafe("groovy.target.directory");
         if (target != null) {
             setTargetDirectory(target);
         }
 
-        boolean indy = false;
-        try {
-            indy = Boolean.getBoolean("groovy.target.indy");
-        } catch (Exception e) {
-            // IGNORE
-        }
+        boolean indy = getBooleanSafe("groovy.target.indy");
         if (DEFAULT!=null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(INVOKEDYNAMIC))) {
             indy = true;
         }
@@ -270,7 +268,7 @@ public class CompilerConfiguration {
         setOptimizationOptions(options);
 
         try {
-            String groovyAntlr4Opt = System.getProperty(GROOVY_ANTLR4_OPT);
+            String groovyAntlr4Opt = getSystemPropertySafe(GROOVY_ANTLR4_OPT);
 
             this.parserVersion = !Boolean.valueOf(groovyAntlr4Opt)
                             ? ParserVersion.V_2
@@ -278,45 +276,6 @@ public class CompilerConfiguration {
         } catch (Exception e) {
             // IGNORE
         }
-    }
-
-    /**
-     * Retrieves a System property, or null if any of the following exceptions occur.
-     * <ul>
-     *     <li>SecurityException - if a security manager exists and its checkPropertyAccess method doesn't allow access to the specified system property.</li>
-     *     <li>NullPointerException - if key is null.</li>
-     *     <li>IllegalArgumentException - if key is empty.</li>
-     * </ul>
-     * @param key the name of the system property.
-     * @return value of the system property or null
-     */
-    private static String safeGetSystemProperty(String key){
-        return safeGetSystemProperty(key, null);
-    }
-
-    /**
-     * Retrieves a System property, or null if any of the following exceptions occur (Warning: Exception messages are
-     * suppressed).
-     * <ul>
-     *     <li>SecurityException - if a security manager exists and its checkPropertyAccess method doesn't allow access to the specified system property.</li>
-     *     <li>NullPointerException - if key is null.</li>
-     *     <li>IllegalArgumentException - if key is empty.</li>
-     * </ul>
-     * @param key the name of the system property.
-     * @param def a default value.
-     * @return  value of the system property or null
-     */
-    private static String safeGetSystemProperty(String key, String def){
-        try {
-            return System.getProperty(key, def);
-        } catch (SecurityException t){
-            // suppress exception
-        } catch (NullPointerException t){
-            // suppress exception
-        } catch (IllegalArgumentException t){
-            // suppress exception
-        }
-        return def;
     }
 
     /**
@@ -943,10 +902,11 @@ public class CompilerConfiguration {
 
     {
         // this object initializer assures that `enableCompileStaticByDefault` must be invoked no matter which constructor called.
-        if (Boolean.getBoolean("groovy.compile.static")) {
+        if (getBooleanSafe("groovy.compile.static")) {
             enableCompileStaticByDefault();
         }
     }
+
     private void enableCompileStaticByDefault() {
         compilationCustomizers.add(
             new CompilationCustomizer(CompilePhase.CONVERSION) {
