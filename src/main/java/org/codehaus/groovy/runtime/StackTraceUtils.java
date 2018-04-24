@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.PrintWriter;
@@ -100,7 +101,7 @@ public class StackTraceUtils {
      */
     public static Throwable sanitize(Throwable t) {
         // Note that this getBoolean access may well be synced...
-        if (!Boolean.getBoolean("groovy.full.stacktrace")) {
+        if (!SystemUtil.getBooleanSafe("groovy.full.stacktrace")) {
             StackTraceElement[] trace = t.getStackTrace();
             List<StackTraceElement> newTrace = new ArrayList<StackTraceElement>();
             for (StackTraceElement stackTraceElement : trace) {
