@@ -108,7 +108,9 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.net.URL;
 import java.security.AccessController;
+import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.AbstractCollection;
@@ -595,6 +597,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void mixin(Class self, Class[] categoryClass) {
         mixin(getMetaClass(self), Arrays.asList(categoryClass));
+    }
+
+    /**
+     * Gets the url of the jar containing the specified class
+     *
+     * @param self the class
+     * @return the url of the jar, {@code null} if the specified class is from JDK
+     */
+    public static URL whichJar(Class self) {
+        CodeSource codeSource = self.getProtectionDomain().getCodeSource();
+
+        if (null == codeSource) {
+            return null;
+        }
+
+        return codeSource.getLocation();
     }
 
     /**
