@@ -600,23 +600,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Gets the url of the jar containing the specified class
-     *
-     * @param self the class
-     * @return the url of the jar, {@code null} if the specified class is from JDK
-     * @since 2.5.0
-     */
-    public static URL getLocation(Class self) {
-        CodeSource codeSource = self.getProtectionDomain().getCodeSource();
-
-        if (null == codeSource) {
-            return null;
-        }
-
-        return codeSource.getLocation();
-    }
-
-    /**
      * Extend class globally with category methods.
      *
      * @param self          any Class
@@ -636,6 +619,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void mixin(MetaClass self, Class[] categoryClass) {
         mixin(self, Arrays.asList(categoryClass));
+    }
+
+    /**
+     * Gets the url of the jar file/source file containing the specified class
+     *
+     * @param self the class
+     * @return the url of the jar, {@code null} if the specified class is from JDK
+     * @since 2.5.0
+     */
+    public static URL getLocation(Class self) {
+        CodeSource codeSource = self.getProtectionDomain().getCodeSource();
+
+        return null == codeSource ? null : codeSource.getLocation();
     }
 
     /**
