@@ -606,7 +606,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the url of the jar, {@code null} if the specified class is from JDK
      * @since 2.5.0
      */
-    public static URL whichJar(Class self) {
+    public static URL where(Class self) {
         CodeSource codeSource = self.getProtectionDomain().getCodeSource();
 
         if (null == codeSource) {
