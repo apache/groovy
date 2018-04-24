@@ -131,6 +131,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.AccessController;
+import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.AbstractCollection;
@@ -639,6 +640,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void mixin(MetaClass self, Class[] categoryClass) {
         mixin(self, Arrays.asList(categoryClass));
+    }
+
+    /**
+     * Gets the url of the jar containing the specified class
+     *
+     * @param self the class
+     * @return the url of the jar, {@code null} if the specified class is from JDK
+     */
+    public static URL whichJar(Class self) {
+        CodeSource codeSource = self.getProtectionDomain().getCodeSource();
+
+        if (null == codeSource) {
+            return null;
+        }
+
+        return codeSource.getLocation();
     }
 
     /**
