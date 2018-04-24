@@ -643,7 +643,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Gets the url of the jar containing the specified class
+     * Gets the url of the jar file/source file containing the specified class
      *
      * @param self the class
      * @return the url of the jar, {@code null} if the specified class is from JDK
@@ -652,11 +652,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static URL getLocation(Class self) {
         CodeSource codeSource = self.getProtectionDomain().getCodeSource();
 
-        if (null == codeSource) {
-            return null;
-        }
-
-        return codeSource.getLocation();
+        return null == codeSource ? null : codeSource.getLocation();
     }
 
     /**
