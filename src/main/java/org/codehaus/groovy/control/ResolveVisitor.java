@@ -63,6 +63,7 @@ import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Modifier;
@@ -1222,17 +1223,28 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 member.setValue(newValue);
                 checkAnnotationMemberValue(newValue);
             }
-            if(annType.isResolved()) {
+            if (annType.isResolved()) {
                 Class annTypeClass = annType.getTypeClass();
                 Retention retAnn = (Retention) annTypeClass.getAnnotation(Retention.class);
-                if (retAnn != null && retAnn.value().equals(RetentionPolicy.RUNTIME)) {
+                if (retAnn != null && retAnn.value().equals(RetentionPolicy.RUNTIME) && !isRepeatable(annTypeClass)) {
+                    // remember runtime/non-repeatable annos (auto collecting of Repeatable annotations is handled elsewhere)
                     AnnotationNode anyPrevAnnNode = tmpAnnotations.put(annTypeClass.getName(), an);
-                    if(anyPrevAnnNode != null) {
+                    if (anyPrevAnnNode != null) {
                         addError("Cannot specify duplicate annotation on the same member : " + annType.getName(), an);
                     }
                 }
             }
         }
+    }
+
+    private boolean isRepeatable(Class annTypeClass) {
+        Annotation[] annTypeAnnotations = annTypeClass.getAnnotations();
+        for (Annotation annTypeAnnotation : annTypeAnnotations) {
+            if (annTypeAnnotation.annotationType().getName().equals("java.lang.annotation.Repeatable")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // resolve constant-looking expressions statically (do here as gets transformed away later)
