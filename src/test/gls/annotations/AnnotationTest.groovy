@@ -753,6 +753,45 @@ class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    void testAnnotationWithRepeatableSupportedPrecompiledJava() {
+        assertScript '''
+            import java.lang.annotation.*
+            import gls.annotations.*
+
+            class MyClass {
+                // TODO confirm the JDK9 behavior is what we expect
+                private static final List<String> expected = [
+                    '@gls.annotations.Requires(value=[@gls.annotations.Require(value=val1), @gls.annotations.Require(value=val2)])',    // JDK5-8
+                    '@gls.annotations.Requires(value={@gls.annotations.Require(value="val1"), @gls.annotations.Require(value="val2")})' // JDK9
+                ]
+
+                // control
+                @Requires([@Require("val1"), @Require("val2")])
+                String method1() { 'method1' }
+
+                // duplicate candidate for auto collection
+                @Require(value = "val1")
+                @Require(value = "val2")
+                String method2() { 'method2' }
+
+                static void main(String... args) {
+                    MyClass myc = new MyClass()
+                    assert 'method1' == myc.method1()
+                    assert 'method2' == myc.method2()
+                    assert expected.contains(checkAnnos(myc, "method1"))
+                    assert expected.contains(checkAnnos(myc, "method2"))
+                }
+
+                private static String checkAnnos(MyClass myc, String name) {
+                    def m = myc.getClass().getMethod(name)
+                    List annos = m.getAnnotations()
+                    assert annos.size() == 1
+                    annos[0].toString()
+                }
+            }
+        '''
+    }
+
     //Parametrized tests in Spock would allow to make it much more readable
     private static String codeWithMetaAnnotationWithTarget(String targetElementTypeName) {
         """
