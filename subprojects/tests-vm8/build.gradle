@@ -32,6 +32,13 @@ tasks.withType(GroovyCompile) {
 }
 
 sourceSets {
+    main {
+        java {
+            if (!JavaVersion.current().isJava8Compatible()) {
+                exclude '**/vm8/*'
+            }
+        }
+    }
     test {
         java {
             if (!JavaVersion.current().isJava8Compatible()) {
