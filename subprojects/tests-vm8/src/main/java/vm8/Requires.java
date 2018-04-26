@@ -16,39 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
-}
+package vm8;
 
-tasks.withType(JavaCompile) {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-tasks.withType(GroovyCompile) {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-}
-
-sourceSets {
-    main {
-        java {
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/vm8/*'
-            }
-        }
-    }
-    test {
-        java {
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/vm8/*'
-            }
-        }
-        groovy {
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/vm8/*'
-            }
-        }
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+public @interface Requires {
+    Require[] value();
 }

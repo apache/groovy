@@ -1403,9 +1403,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean isAnnotationDefinition() {
-        return redirect().isPrimaryNode &&
-               isInterface() &&
-               (getModifiers() & Opcodes.ACC_ANNOTATION)!=0;
+        return /* redirect().isPrimaryNode && */
+                isInterface() && (getModifiers() & Opcodes.ACC_ANNOTATION) != 0;
     }
 
     public List<AnnotationNode> getAnnotations() {

@@ -19,14 +19,17 @@
 package org.codehaus.groovy.transform;
 
 import groovy.lang.Newify;
+import groovy.lang.Reference;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -38,11 +41,21 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -61,6 +74,65 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     private ListExpression classesToNewify;
     private DeclarationExpression candidate;
     private boolean auto;
+    private Pattern classNamePattern;
+
+    private static Map<String, ClassNode> nameToGlobalClassesNodesMap;
+    private Map<String, NewifyClassData> nameToInnerClassesNodesMap;
+
+    // ClassHelper.classes minus interfaces, abstract classes, and classes with private ctors
+    private static final Class[] globalClasses = new Class[]{
+            Object.class,
+            Boolean.TYPE,
+            Character.TYPE,
+            Byte.TYPE,
+            Short.TYPE,
+            Integer.TYPE,
+            Long.TYPE,
+            Double.TYPE,
+            Float.TYPE,
+            // Void.TYPE,
+            // Closure.class,
+            // GString.class,
+            // List.class,
+            // Map.class,
+            // Range.class,
+            //Pattern.class,
+            // Script.class,
+            String.class,
+            Boolean.class,  // Shall we allow this ? Using Boolean ctors is usually not what user wants...
+            Character.class,
+            Byte.class,
+            Short.class,
+            Integer.class,
+            Long.class,
+            Double.class,
+            Float.class,
+            BigDecimal.class,
+            BigInteger.class,
+            //Number.class,
+            //Void.class,
+            Reference.class,
+            //Class.class,
+            //MetaClass.class,
+            //Iterator.class,
+            //GeneratedClosure.class,
+            //GeneratedLambda.class,
+            //GroovyObjectSupport.class
+    };
+
+    static {
+        nameToGlobalClassesNodesMap = new ConcurrentHashMap<String, ClassNode>(16, 0.9f, 1);
+        for (Class globalClass : globalClasses) {
+            nameToGlobalClassesNodesMap.put(globalClass.getSimpleName(), ClassHelper.makeCached(globalClass));
+        }
+    }
+
+
+    private static final Pattern extractNamePattern = Pattern.compile("^(?:.*\\$|)(.*)$");
+
+    public static String extractName(final String s) {
+        return extractNamePattern.matcher(s).replaceFirst("$1");
+    }
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         this.source = source;
@@ -74,35 +146,106 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             internalError("Transformation called from wrong annotation: " + node.getClassNode().getName());
         }
 
-        boolean autoFlag = determineAutoFlag(node.getMember("auto"));
-        Expression value = node.getMember("value");
+        final boolean autoFlag = determineAutoFlag(node.getMember("auto"));
+        final Expression classNames = node.getMember("value");
+        final Pattern cnPattern = determineClassNamePattern(node.getMember("pattern"));
 
         if (parent instanceof ClassNode) {
-            newifyClass((ClassNode) parent, autoFlag, determineClasses(value, false));
+            newifyClass((ClassNode) parent, autoFlag, determineClasses(classNames, false), cnPattern);
         } else if (parent instanceof MethodNode || parent instanceof FieldNode) {
-            newifyMethodOrField(parent, autoFlag, determineClasses(value, false));
+            newifyMethodOrField(parent, autoFlag, determineClasses(classNames, false), cnPattern);
         } else if (parent instanceof DeclarationExpression) {
-            newifyDeclaration((DeclarationExpression) parent, autoFlag, determineClasses(value, true));
+            newifyDeclaration((DeclarationExpression) parent, autoFlag, determineClasses(classNames, true), cnPattern);
         }
     }
 
-    private void newifyDeclaration(DeclarationExpression de, boolean autoFlag, ListExpression list) {
+
+    private void newifyClass(ClassNode cNode, boolean autoFlag, ListExpression list, final Pattern cnPattern) {
+        String cName = cNode.getName();
+        if (cNode.isInterface()) {
+            addError("Error processing interface '" + cName + "'. @"
+                    + MY_NAME + " not allowed for interfaces.", cNode);
+        }
+
+        final ListExpression oldClassesToNewify = classesToNewify;
+        final boolean oldAuto = auto;
+        final Pattern oldCnPattern = classNamePattern;
+
+        classesToNewify = list;
+        auto = autoFlag;
+        classNamePattern = cnPattern;
+
+        super.visitClass(cNode);
+
+        classesToNewify = oldClassesToNewify;
+        auto = oldAuto;
+        classNamePattern = oldCnPattern;
+    }
+
+    private void newifyMethodOrField(AnnotatedNode parent, boolean autoFlag, ListExpression list, final Pattern cnPattern) {
+
+        final ListExpression oldClassesToNewify = classesToNewify;
+        final boolean oldAuto = auto;
+        final Pattern oldCnPattern = classNamePattern;
+
+        checkClassLevelClashes(list);
+        checkAutoClash(autoFlag, parent);
+
+        classesToNewify = list;
+        auto = autoFlag;
+        classNamePattern = cnPattern;
+
+        if (parent instanceof FieldNode) {
+            super.visitField((FieldNode) parent);
+        } else {
+            super.visitMethod((MethodNode) parent);
+        }
+
+        classesToNewify = oldClassesToNewify;
+        auto = oldAuto;
+        classNamePattern = oldCnPattern;
+    }
+
+
+    private void newifyDeclaration(DeclarationExpression de, boolean autoFlag, ListExpression list, final Pattern cnPattern) {
         ClassNode cNode = de.getDeclaringClass();
         candidate = de;
         final ListExpression oldClassesToNewify = classesToNewify;
         final boolean oldAuto = auto;
+        final Pattern oldCnPattern = classNamePattern;
+
         classesToNewify = list;
         auto = autoFlag;
+        classNamePattern = cnPattern;
+
         super.visitClass(cNode);
+
         classesToNewify = oldClassesToNewify;
         auto = oldAuto;
+        classNamePattern = oldCnPattern;
     }
 
     private static boolean determineAutoFlag(Expression autoExpr) {
         return !(autoExpr instanceof ConstantExpression && ((ConstantExpression) autoExpr).getValue().equals(false));
     }
 
-    /** allow non-strict mode in scripts because parsing not complete at that point */
+    private Pattern determineClassNamePattern(Expression expr) {
+        if (!(expr instanceof ConstantExpression)) { return null; }
+        final ConstantExpression constExpr = (ConstantExpression) expr;
+        final String text = constExpr.getText();
+        if (constExpr.getValue() == null || text.equals("")) { return null; }
+        try {
+            final Pattern pattern = Pattern.compile(text);
+            return pattern;
+        } catch (PatternSyntaxException e) {
+            addError("Invalid class name pattern: " + e.getMessage(), expr);
+            return null;
+        }
+    }
+
+    /**
+     * allow non-strict mode in scripts because parsing not complete at that point
+     */
     private ListExpression determineClasses(Expression expr, boolean searchSourceUnit) {
         ListExpression list = new ListExpression();
         if (expr instanceof ClassExpression) {
@@ -196,44 +339,13 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     }
 
     private boolean hasClassesToNewify() {
-        return classesToNewify != null && !classesToNewify.getExpressions().isEmpty();
+        return (classesToNewify != null && !classesToNewify.getExpressions().isEmpty()) || (classNamePattern != null);
     }
 
-    private void newifyClass(ClassNode cNode, boolean autoFlag, ListExpression list) {
-        String cName = cNode.getName();
-        if (cNode.isInterface()) {
-            addError("Error processing interface '" + cName + "'. @"
-                    + MY_NAME + " not allowed for interfaces.", cNode);
-        }
-        final ListExpression oldClassesToNewify = classesToNewify;
-        final boolean oldAuto = auto;
-        classesToNewify = list;
-        auto = autoFlag;
-        super.visitClass(cNode);
-        classesToNewify = oldClassesToNewify;
-        auto = oldAuto;
-    }
-
-    private void newifyMethodOrField(AnnotatedNode parent, boolean autoFlag, ListExpression list) {
-        final ListExpression oldClassesToNewify = classesToNewify;
-        final boolean oldAuto = auto;
-        checkClassLevelClashes(list);
-        checkAutoClash(autoFlag, parent);
-        classesToNewify = list;
-        auto = autoFlag;
-        if (parent instanceof FieldNode) {
-            super.visitField((FieldNode) parent);
-        } else {
-            super.visitMethod((MethodNode) parent);
-        }
-        classesToNewify = oldClassesToNewify;
-        auto = oldAuto;
-    }
 
     private void checkDuplicateNameClashes(ListExpression list) {
         final Set<String> seen = new HashSet<String>();
-        @SuppressWarnings("unchecked")
-        final List<ClassExpression> classes = (List)list.getExpressions();
+        @SuppressWarnings("unchecked") final List<ClassExpression> classes = (List) list.getExpressions();
         for (ClassExpression ce : classes) {
             final String name = ce.getType().getNameWithoutPackage();
             if (seen.contains(name)) {
@@ -251,8 +363,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     }
 
     private void checkClassLevelClashes(ListExpression list) {
-        @SuppressWarnings("unchecked")
-        final List<ClassExpression> classes = (List)list.getExpressions();
+        @SuppressWarnings("unchecked") final List<ClassExpression> classes = (List) list.getExpressions();
         for (ClassExpression ce : classes) {
             final String name = ce.getType().getNameWithoutPackage();
             if (findClassWithMatchingBasename(name)) {
@@ -262,17 +373,6 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         }
     }
 
-    private boolean findClassWithMatchingBasename(String nameWithoutPackage) {
-        if (classesToNewify == null) return false;
-        @SuppressWarnings("unchecked")
-        final List<ClassExpression> classes = (List)classesToNewify.getExpressions();
-        for (ClassExpression ce : classes) {
-            if (ce.getType().getNameWithoutPackage().equals(nameWithoutPackage)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private boolean isNewifyCandidate(MethodCallExpression mce) {
         return mce.getObjectExpression() == VariableExpression.THIS_EXPRESSION
@@ -286,31 +386,114 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
                 && ((ConstantExpression) meth).getValue().equals("new"));
     }
 
-    private Expression transformMethodCall(MethodCallExpression mce, Expression args) {
+    private Expression transformMethodCall(MethodCallExpression mce, Expression argsExp) {
         ClassNode classType;
+
         if (isNewMethodStyle(mce)) {
             classType = mce.getObjectExpression().getType();
         } else {
             classType = findMatchingCandidateClass(mce);
         }
+
         if (classType != null) {
-            return new ConstructorCallExpression(classType, args);
+            Expression argsToUse = argsExp;
+            if (classType.getOuterClass() != null && ((classType.getModifiers() & org.objectweb.asm.Opcodes.ACC_STATIC) == 0)) {
+                if (!(argsExp instanceof ArgumentListExpression)) {
+                    addError("Non-static inner constructor arguments must be an argument list expression; pass 'this' pointer explicitely as first constructor argument otherwise.", mce);
+                    return mce;
+                }
+                final ArgumentListExpression argsListExp = (ArgumentListExpression) argsExp;
+                final List<Expression> argExpList = argsListExp.getExpressions();
+                final VariableExpression thisVarExp = new VariableExpression("this");
+
+                final List<Expression> expressionsWithThis = new ArrayList<Expression>(argExpList.size() + 1);
+                expressionsWithThis.add(thisVarExp);
+                expressionsWithThis.addAll(argExpList);
+
+                argsToUse = new ArgumentListExpression(expressionsWithThis);
+            }
+            return new ConstructorCallExpression(classType, argsToUse);
         }
+
         // set the args as they might have gotten Newify transformed GROOVY-3491
-        mce.setArguments(args);
+        mce.setArguments(argsExp);
         return mce;
     }
 
-    private ClassNode findMatchingCandidateClass(MethodCallExpression mce) {
-        if (classesToNewify == null) return null;
-        @SuppressWarnings("unchecked")
-        List<ClassExpression> classes = (List)classesToNewify.getExpressions();
-        for (ClassExpression ce : classes) {
-            final ClassNode type = ce.getType();
-            if (type.getNameWithoutPackage().equals(mce.getMethodAsString())) {
-                return type;
+
+    private boolean findClassWithMatchingBasename(String nameWithoutPackage) {
+        // For performance reasons test against classNamePattern first
+        if (classNamePattern != null && classNamePattern.matcher(nameWithoutPackage).matches()) {
+            return true;
+        }
+
+        if (classesToNewify != null) {
+            @SuppressWarnings("unchecked") final List<ClassExpression> classes = (List) classesToNewify.getExpressions();
+            for (ClassExpression ce : classes) {
+                if (ce.getType().getNameWithoutPackage().equals(nameWithoutPackage)) {
+                    return true;
+                }
             }
         }
+
+        return false;
+    }
+
+    private ClassNode findMatchingCandidateClass(MethodCallExpression mce) {
+        final String methodName = mce.getMethodAsString();
+
+        if (classesToNewify != null) {
+            @SuppressWarnings("unchecked")
+            List<ClassExpression> classes = (List) classesToNewify.getExpressions();
+            for (ClassExpression ce : classes) {
+                final ClassNode type = ce.getType();
+                if (type.getNameWithoutPackage().equals(methodName)) {
+                    return type;
+                }
+            }
+        }
+
+        if (classNamePattern != null && classNamePattern.matcher(methodName).matches()) {
+
+            // One-time-fill inner classes lookup map
+            if (nameToInnerClassesNodesMap == null) {
+                final List<ClassNode> innerClassNodes = source.getAST().getClasses();
+                nameToInnerClassesNodesMap = new HashMap<>(innerClassNodes.size());
+                for (ClassNode type : innerClassNodes) {
+                    final String pureClassName = extractName(type.getNameWithoutPackage());
+                    final NewifyClassData classData = nameToInnerClassesNodesMap.get(pureClassName);
+                    if (classData == null) {
+                        nameToInnerClassesNodesMap.put(pureClassName, new NewifyClassData(pureClassName, type));
+                    } else {
+                        // If class name is looked up below, additional types will be used in error message
+                        classData.addAdditionalType(type);
+                    }
+                }
+            }
+
+            // Inner classes
+            final NewifyClassData innerTypeClassData = nameToInnerClassesNodesMap.get(methodName);
+            if (innerTypeClassData != null) {
+                if (innerTypeClassData.types != null) {
+                    addError("Inner class name lookup is ambiguous between the following classes: " + DefaultGroovyMethods.join(innerTypeClassData.types, ", ") + ". Use new keyword and qualify name to break ambiguity.", mce);
+                    return null;
+                }
+                return innerTypeClassData.type;
+            }
+
+            // Imported classes
+            final ClassNode importedType = source.getAST().getImportType(methodName);
+            if (importedType != null) {
+                return importedType;
+            }
+
+            // Global classes
+            final ClassNode globalType = nameToGlobalClassesNodesMap.get(methodName);
+            if (globalType != null) {
+                return globalType;
+            }
+        }
+
         return null;
     }
 
@@ -321,4 +504,26 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     protected SourceUnit getSourceUnit() {
         return source;
     }
+
+
+    private static class NewifyClassData {
+        final String name;
+        final ClassNode type;
+        List<ClassNode> types = null;
+
+        public NewifyClassData(final String name, final ClassNode type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public void addAdditionalType(final ClassNode additionalType) {
+            if (types == null) {
+                types = new LinkedList<>();
+                types.add(type);
+            }
+            types.add(additionalType);
+        }
+    }
+
+
 }

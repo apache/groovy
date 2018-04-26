@@ -25,6 +25,7 @@ import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Writable;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.io.IOException;
@@ -91,14 +92,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * &lt;/servlet&gt;
  * </pre>
  * In this case, your template source file should be HTML with the appropriate embedded placeholders.
- *
- * @author tug@wilson.co.uk
- * @author Paul King
  */
 public class GStringTemplateEngine extends TemplateEngine {
     private final ClassLoader parentLoader;
     private static AtomicInteger counter = new AtomicInteger();
-    private static final boolean reuseClassLoader = Boolean.getBoolean("groovy.GStringTemplateEngine.reuseClassLoader");
+    private static final boolean reuseClassLoader = SystemUtil.getBooleanSafe("groovy.GStringTemplateEngine.reuseClassLoader");
 
     public GStringTemplateEngine() {
         this(GStringTemplate.class.getClassLoader());

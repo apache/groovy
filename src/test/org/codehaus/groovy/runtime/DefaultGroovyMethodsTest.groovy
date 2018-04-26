@@ -308,4 +308,8 @@ class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertFalse(DefaultGroovyMethods.implies(true, null))
     }
 
+    void testWhichJar() {
+        assert DefaultGroovyMethods.getLocation(org.objectweb.asm.Opcodes).getFile().matches(/(.+\/)?asm[-].+\.jar/)
+        assert null == DefaultGroovyMethods.getLocation(String)
+    }
 }

@@ -238,6 +238,9 @@ grant codeBase "file:${user.dir}/src/test/groovy/script/ScriptTest.groovy" {
     // Required for JUnit to report errors for scripts that are junit test cases
     permission java.util.PropertyPermission "user.home", "read";
     permission java.io.FilePermission "${user.home}${/}junit.properties", "read";
+
+    // Required for Gradle 4.7+ printing a line triggered by running the script
+    permission java.util.PropertyPermission "line.separator", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/script/EvalInScript.groovy" {
