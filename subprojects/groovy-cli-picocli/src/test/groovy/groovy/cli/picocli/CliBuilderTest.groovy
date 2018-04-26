@@ -781,4 +781,25 @@ import java.math.RoundingMode
             assert remaining == ['and', 'some', 'more']
         ''', 'CliBuilderTestScript.groovy', argz)
     }
+
+    public void testOptionProperties() {
+        CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
+        cli.with {
+//            classpath('cli.option.classpath.description')
+            cp(longOpt: 'classpath', 'cli.option.cp.description')
+            h(longOpt: 'help', 'cli.option.help.description')
+            V(longOpt: 'version', 'cli.option.version.description')
+            pa(longOpt: 'parameters', 'cli.option.parameters.description')
+            i(longOpt: 'indy', 'cli.option.indy.description')
+            D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'cli.option.define.description')
+            _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
+        }
+        OptionAccessor options = cli.parse('-Dk=v -Dk2=v2'.split())
+
+        assert options.hasOption('D')
+        Properties props = options.getOptionProperties('D')
+        assert 'v' == props.getProperty('k')
+        assert 'v2' == props.getProperty('k2')
+
+    }
 }

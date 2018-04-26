@@ -950,6 +950,16 @@ class OptionAccessor {
         StringGroovyMethods.asType(optionValue, (Class<T>) type)
     }
 
+    Properties getOptionProperties(String name) {
+        if (!parseResult.hasMatchedOption(name)) {
+            return null
+        }
+        List<String> keyValues = parseResult.matchedOption(name).stringValues()
+        Properties result = new Properties()
+        keyValues.toSpreadMap().each { k, v -> result.setProperty(k, v) }
+        result
+    }
+
     def invokeMethod(String name, Object args) {
         // TODO we could just declare normal methods to map commons-cli CommandLine methods to picocli ParseResult methods
         if (name == 'hasOption')      { name = 'hasMatchedOption';   args = [args[0]      ].toArray() }
