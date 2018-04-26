@@ -166,6 +166,9 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/Closure_08.groovy', [Parameter])
         doTest('core/Closure_09.groovy', [Parameter])
         doTest('core/Closure_10.groovy', [Parameter])
+        doTest('core/Closure_11.groovy')
+        doTest('core/Closure_12.groovy')
+        doTest('core/Closure_13.groovy')
     }
 
     void "test groovy core - Lambda"() {
@@ -380,6 +383,7 @@ class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - Array"() {
         doRunAndTestAntlr4('core/Array_01x.groovy')
+        doRunAndTestAntlr4('core/Array_02x.groovy')
     }
 
     void "test groovy core - Groovydoc"() {

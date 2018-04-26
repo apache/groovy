@@ -324,6 +324,7 @@ variableDeclaratorId
 
 variableInitializer
     :   enhancedStatementExpression
+    |   array
     ;
 
 variableInitializers
@@ -1032,6 +1033,10 @@ primary
     |   list                                                                                #listPrmrAlt
     |   map                                                                                 #mapPrmrAlt
     |   builtInType                                                                         #builtInTypePrmrAlt
+    ;
+
+array
+    :   arrayInitializer
     ;
 
 list

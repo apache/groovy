@@ -79,9 +79,16 @@ class SyntaxErrorTest extends GroovyTestCase {
 //        unzipScriptAndShouldFail("scripts/CompilerErrorTest_002.groovy", [])
 //    }
 
-//    void "test DifferencesFromJavaTest_002.groovy"() {
-//        unzipScriptAndShouldFail("scripts/DifferencesFromJavaTest_002.groovy", [])
-//    }
+    /*
+     *  Since Groovy 3.0.0 supports array literal, so the following test is invalid
+     *
+     *  scripts/DifferencesFromJavaTest_002.groovy:
+     *  int[] array = { 1, 2, 3}
+     *
+    void "test DifferencesFromJavaTest_002.groovy"() {
+        unzipScriptAndShouldFail("scripts/DifferencesFromJavaTest_002.groovy", [])
+    }
+     */
 
 //    void "test Groovy5212Bug_001.groovy"() {
 //        unzipScriptAndShouldFail("scripts/Groovy5212Bug_001.groovy", [])

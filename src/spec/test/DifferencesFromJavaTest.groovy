@@ -43,6 +43,9 @@ assertEquals(1, result);
     }
 
     void testArrayCreation() {
+        /*
+         *  Since Groovy 3.0.0 supports array literal, so the following test is invalid
+         *
         shouldFail {
             assertScript '''
                 // tag::arraycreate_fail[]
@@ -50,6 +53,7 @@ assertEquals(1, result);
                 // end::arraycreate_fail[]
             '''
         }
+         */
         assertScript '''
             // tag::arraycreate_success[]
             int[] array = [1,2,3]
