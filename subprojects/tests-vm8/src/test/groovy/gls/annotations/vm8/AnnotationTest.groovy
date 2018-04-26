@@ -18,12 +18,10 @@
  */
 package gls.annotations.vm8
 
-import gls.CompilableTestSupport
-
 /**
  * Tests various properties of annotation definitions.
  */
-class AnnotationTest extends CompilableTestSupport {
+class AnnotationTest extends GroovyTestCase {
 
     void testAnnotationWithRepeatableSupportedPrecompiledJava() {
         assertScript '''
@@ -33,8 +31,8 @@ class AnnotationTest extends CompilableTestSupport {
             class MyClass {
                 // TODO confirm the JDK9 behavior is what we expect
                 private static final List<String> expected = [
-                    '@Requires(value=[@Require(value=val1), @Require(value=val2)])',    // JDK5-8
-                    '@Requires(value={@Require(value="val1"), @Require(value="val2")})' // JDK9
+                    '@vm8.Requires(value=[@vm8.Require(value=val1), @vm8.Require(value=val2)])',    // JDK5-8
+                    '@vm8.Requires(value={@vm8.Require(value="val1"), @vm8.Require(value="val2")})' // JDK9
                 ]
 
                 // control
