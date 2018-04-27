@@ -16,10 +16,4 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class TheController {
-
-    def page = {
-
-    }
-
-}
+int[] a = {{1}}

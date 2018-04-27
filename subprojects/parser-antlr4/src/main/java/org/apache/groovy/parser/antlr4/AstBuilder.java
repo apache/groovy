@@ -1837,7 +1837,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     private Deque<ClassNode> variableDeclarationTypeStack = new ArrayDeque<>();
 
     @Override
-    public DeclarationListStatement visitVariableDeclaration(VariableDeclarationContext ctx) {
+    public DeclarationListStatement visitVariableDeclaration(final VariableDeclarationContext ctx) {
         ModifierManager modifierManager = this.createModifierManager(ctx);
 
         if (asBoolean(ctx.typeNamePairs())) { // e.g. def (int a, int b) = [1, 2]
@@ -1853,37 +1853,36 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         // if classNode is not null, the variable declaration is for class declaration. In other words, it is a field declaration
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
 
+        DeclarationListStatement declarationListStatement;
         if (asBoolean(classNode)) {
-            DeclarationListStatement declarationListStatement = createFieldDeclarationListStatement(ctx, modifierManager, variableType, declarationExpressionList, classNode);
+            declarationListStatement = createFieldDeclarationListStatement(ctx, modifierManager, variableType, declarationExpressionList, classNode);
+        } else {
+            declarationExpressionList.forEach(e -> {
+                VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
 
-            this.variableDeclarationTypeStack.pop();
+                modifierManager.processVariableExpression(variableExpression);
+                modifierManager.attachAnnotations(e);
+            });
 
-            return declarationListStatement;
-        }
+            int size = declarationExpressionList.size();
+            if (size > 0) {
+                DeclarationExpression declarationExpression = declarationExpressionList.get(0);
 
-        declarationExpressionList.forEach(e -> {
-            VariableExpression variableExpression = (VariableExpression) e.getLeftExpression();
-
-            modifierManager.processVariableExpression(variableExpression);
-            modifierManager.attachAnnotations(e);
-        });
-
-        int size = declarationExpressionList.size();
-        if (size > 0) {
-            DeclarationExpression declarationExpression = declarationExpressionList.get(0);
-
-            if (1 == size) {
-                configureAST(declarationExpression, ctx);
-            } else {
-                // Tweak start of first declaration
-                declarationExpression.setLineNumber(ctx.getStart().getLine());
-                declarationExpression.setColumnNumber(ctx.getStart().getCharPositionInLine() + 1);
+                if (1 == size) {
+                    configureAST(declarationExpression, ctx);
+                } else {
+                    // Tweak start of first declaration
+                    declarationExpression.setLineNumber(ctx.getStart().getLine());
+                    declarationExpression.setColumnNumber(ctx.getStart().getCharPositionInLine() + 1);
+                }
             }
+
+            declarationListStatement = configureAST(new DeclarationListStatement(declarationExpressionList), ctx);
         }
 
         this.variableDeclarationTypeStack.pop();
 
-        return configureAST(new DeclarationListStatement(declarationExpressionList), ctx);
+        return declarationListStatement;
     }
 
     private DeclarationListStatement createFieldDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager, ClassNode variableType, List<DeclarationExpression> declarationExpressionList, ClassNode classNode) {
@@ -3443,14 +3442,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public Expression visitArray(ArrayContext ctx) {
         if (!this.variableDeclarationTypeStack.peek().isArray()) {
-            throw createParsingFailedException("The variable type[" + this.variableDeclarationTypeStack.peek().getName() + "] is not array type", ctx);
+            throw createParsingFailedException("The variable declaration type[" + this.variableDeclarationTypeStack.peek().getText() + "] is not array type", ctx);
         }
 
         arrayLiteralDim++;
 
         ArrayExpression arrayExpression =
                 new ArrayExpression(
-                        getCurrentArrayElementType(),
+                        getCurrentArrayElementType(ctx),
                         this.visitArrayInitializer(ctx.arrayInitializer()));
 
         arrayLiteralDim--;
@@ -3458,11 +3457,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return configureAST(arrayExpression, ctx);
     }
 
-    private ClassNode getCurrentArrayElementType() {
+    private ClassNode getCurrentArrayElementType(GroovyParserRuleContext ctx) {
         ClassNode elementType = this.variableDeclarationTypeStack.peek();
+
         for (int i = 0; i < arrayLiteralDim; i++) {
             elementType = elementType.getComponentType();
         }
+
+        if (null == elementType) { // e.g. int[] a = {{1, 2}, {1}}, elementType will be null when visiting nested array
+            throw createParsingFailedException("The array dimension is greater than variable declaration type's", ctx);
+        }
+
         return elementType;
     }
 
@@ -4186,7 +4191,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 ExpressionStatement expressionStatement = (ExpressionStatement) statement;
                 return configureAST(
                                 new ArrayExpression(
-                                        getCurrentArrayElementType(),
+                                        getCurrentArrayElementType(ctx),
                                 Collections.singletonList(expressionStatement.getExpression())
                         ), ctx);
             } else {
@@ -4194,14 +4199,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
         } else if (0 == statementListSize) {
             if (CLOSURE_STR.equals(elementType(this.variableDeclarationTypeStack.peek()).getName())) {
-                if (this.arrayLiteralDim > 1) { // e.g. if dim is 1, {} is still an array, e.g. Closure[] a = {}
+                if (this.arrayLiteralDim > 1) { // e.g. if dimension is 1, {} is still an array, e.g. Closure[] a = {}
                     return null;
                 }
             }
 
             return configureAST(
                             new ArrayExpression(
-                                    getCurrentArrayElementType(),
+                                    getCurrentArrayElementType(ctx),
                                     Collections.emptyList()
                             ), ctx);
         } else {
@@ -4239,7 +4244,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         if (!classNode.isArray()) {
-            throw new IllegalArgumentException(classNode.getName() + " is not array type");
+            throw new IllegalArgumentException(classNode.getText() + " is not array type");
         }
     }
 
