@@ -362,7 +362,7 @@ class CliBuilderTest extends GroovyTestCase {
     // tag::withTypeChecked[]
     @TypeChecked
     void testTypeChecked() {
-        def cli = new CliBuilder()
+        def cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
         TypedOption<String> name = cli.option(String, opt: 'n', longOpt: 'name', 'name option')
         TypedOption<Integer> age = cli.option(Integer, longOpt: 'age', 'age option')
         def argz = "--name John -age 21 and some more".split()
@@ -373,6 +373,18 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.arguments() == ['and', 'some', 'more']
     }
     // end::withTypeChecked[]
+
+    @TypeChecked
+    void testTypeChecked_defaultOnlyDoubleHyphen() {
+        def cli = new CliBuilder()
+        TypedOption<String> name = cli.option(String, opt: 'n', longOpt: 'name', 'name option')
+        TypedOption<Integer> age = cli.option(Integer, longOpt: 'age', 'age option')
+        def argz = "--name John -age 21 and some more".split()
+        def options = cli.parse(argz)
+        assert options[name] == 'John'
+        assert options[age] == null
+        assert options.arguments() == ['-age', '21', 'and', 'some', 'more']
+    }
 
     void testUsageMessageSpec() {
         // suppress ANSI escape codes to make this test pass on all environments

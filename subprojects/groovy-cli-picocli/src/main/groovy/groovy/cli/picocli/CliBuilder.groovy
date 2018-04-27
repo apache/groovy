@@ -354,6 +354,14 @@ class CliBuilder {
     boolean stopAtNonOption = true
 
     /**
+     * For backwards compatibility with Apache Commons CLI, set this property to
+     * <code>true</code> if the parser should recognize long options with both
+     * a single hyphen and a double hyphen prefix. The default is <code>false</code>,
+     * so only long options with a double hypen prefix (<code>--option</code>) are recognized.
+     */
+    boolean acceptLongOptionsWithSingleHyphen = false
+
+    /**
      * The PrintWriter to write the {@linkplain #usage} help message to
      * when <code>cli.usage()</code> is called.
      * Defaults to stdout but you can provide your own PrintWriter if desired.
@@ -780,11 +788,12 @@ class CliBuilder {
         builder.build()
     }
 
-    private static String[] hyphenate(Map<String, String> names) {
-        names.values().findAll { it && it != "_" }.collect { it.length() == 1 ? "-$it" : ["-$it", "--$it"] }.flatten().toArray()
+    private String[] hyphenate(Map<String, String> names) {
+        def both = acceptLongOptionsWithSingleHyphen
+        names.values().findAll { it && it != "_" }.collect { it.length() == 1 ? "-$it" : (both ? ["-$it", "--$it"] : ["--$it"]) }.flatten().toArray()
     }
 
-    private static String extractArity(Class<?> type, boolean optionalArg, int numberOfArguments, String numberOfArgumentsString, Map names) {
+    private String extractArity(Class<?> type, boolean optionalArg, int numberOfArguments, String numberOfArgumentsString, Map names) {
         if (optionalArg && (!type || !isMultiValue(type))) {
             throw new CliBuilderException("Attempted to set optional argument for single-value type on flag '${names.long ?: names.short}'")
         }
@@ -825,7 +834,10 @@ class CliBuilder {
     OptionSpec option(shortname, Map details, description) {
         OptionSpec.Builder builder
         if (shortname == '_') {
-            builder = OptionSpec.builder("-$details.longOpt", "--$details.longOpt").description(description)
+            builder = OptionSpec.builder("--$details.longOpt").description(description)
+            if (acceptLongOptionsWithSingleHyphen) {
+                builder.names("-$details.longOpt", "--$details.longOpt")
+            }
             details.remove('longOpt')
         } else {
             builder = OptionSpec.builder("-$shortname").description(description)
@@ -855,7 +867,7 @@ class CliBuilder {
     // - valueSeparator: char
     // - convert:        Closure
     // - defaultValue:   String
-    static Map commons2picocli(shortname, Map m) {
+    private Map commons2picocli(shortname, Map m) {
         if (m.args && m.optionalArg) {
             m.arity = "0..${m.args}"
             m.remove('args')
@@ -876,7 +888,9 @@ class CliBuilder {
             } else if (k == 'argName') {
                 [[paramLabel: "<$v>"]]
             } else if (k == 'longOpt') {
-                [[names: ["-$shortname", "-$v", "--$v"] as String[] ]]
+                acceptLongOptionsWithSingleHyphen ?
+                        [[names: ["-$shortname", "-$v", "--$v"] as String[] ]] :
+                        [[names: ["-$shortname",        "--$v"] as String[] ]]
             } else if (k == 'valueSeparator') {
                 [[splitRegex: "$v"]]
             } else if (k == 'convert') {

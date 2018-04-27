@@ -23,6 +23,7 @@ import groovy.cli.Unparsed
 import groovy.cli.picocli.CliBuilder
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
+import picocli.CommandLine.DuplicateOptionAnnotationsException
 
 import java.math.RoundingMode
 import java.text.SimpleDateFormat
@@ -69,11 +70,10 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.help
         if (options.h) { cli.usage() }
         def expectedUsage = """Usage: $usageString
-  -c, -encoding, --encoding=<charset>
-                      character encoding
-  -h, -help, --help   usage information
-  -i= [<extension>]   modify files in place, create backup if extension is specified
-                        (e.g. '.bak')"""
+  -c, --encoding=<charset>   character encoding
+  -h, --help                 usage information
+  -i= [<extension>]          modify files in place, create backup if extension is
+                               specified (e.g. '.bak')"""
         groovy.util.GroovyTestCase.assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         resetPrintWriter()
         cli.writer = printWriter
@@ -488,6 +488,35 @@ class CliBuilderTest extends GroovyTestCase {
 
         //this passed in previous version of CliBuilder:
         // longOpt may have 1 or 2 hyphens
+        resetPrintWriter()
+        cli.writer = printWriter
+        options = cli.parse(['-abacus', 'foo'])
+        assert options == null
+        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument [-us]'))
+    }
+
+    void testMixedBurstingAndLongOptions_singleHyphen() {
+        def cli = new CliBuilder()
+        cli.acceptLongOptionsWithSingleHyphen = true
+
+        cli.a([:], '')
+        cli.b([:], '')
+        cli.c([:], '')
+        cli.d([longOpt:'abacus'], '')
+        def options = cli.parse(['-abc', 'foo'])
+        assert options.a
+        assert options.b
+        assert options.c
+        assert options.arguments() == ['foo']
+        options = cli.parse(['--abacus', 'foo'])
+        assert !options.a
+        assert !options.b
+        assert !options.c
+        assert options.d
+        assert options.arguments() == ['foo']
+
+        //this passed in previous version of CliBuilder:
+        // longOpt may have 1 or 2 hyphens
         options = cli.parse(['-abacus', 'foo'])
         assert !options.a
         assert !options.b
@@ -728,9 +757,9 @@ class CliBuilderTest extends GroovyTestCase {
         @Unparsed List remaining()
     }
 
-    void testParseFromInstanceFlagEdgeCases() {
-        def cli = new CliBuilder()
-        def options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -efg true --ijk foo --lmn bar baz'.split())
+    void testParseFromInstanceFlagEdgeCases_singleHyphen() {
+        def cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
+        def options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -efg true -ijk foo -lmn bar baz'.split())
 
         assert options.abc() && options.efg()
         assert options.ijk() == 'foo'
@@ -745,13 +774,30 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.remaining() == ['bar', 'baz']
     }
 
-        void testParseScript() {
+    void testParseFromInstanceFlagEdgeCases_doubleHyphen() {
+        def cli = new CliBuilder()
+        def options = cli.parseFromSpec(FlagEdgeCasesI, '--abc --efg true --ijk foo --lmn bar baz'.split())
+
+        assert options.abc() && options.efg()
+        assert options.ijk() == 'foo'
+        assert options.lmn() == true
+        assert options.remaining() == ['bar', 'baz']
+
+        options = cli.parseFromSpec(FlagEdgeCasesI, '--abc --ijk cat --efg false bar baz'.split())
+        assert options.abc()
+        assert options.ijk() == 'cat'
+        assert !options.efg()
+        assert options.lmn() == false
+        assert options.remaining() == ['bar', 'baz']
+    }
+
+    void testParseScript() {
         new GroovyShell().run('''
             import groovy.cli.OptionField
             import groovy.cli.UnparsedField
-import groovy.cli.picocli.CliBuilder
-
-import java.math.RoundingMode
+            import groovy.cli.picocli.CliBuilder
+            import java.math.RoundingMode
+            
             @OptionField String first
             @OptionField String last
             @OptionField boolean flag1
@@ -785,7 +831,35 @@ import java.math.RoundingMode
     public void testOptionProperties() {
         CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
         cli.with {
-//            classpath('cli.option.classpath.description')
+            D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'description')
+        }
+        OptionAccessor options = cli.parse('-Dk=v -Dk2=v2'.split())
+        assert options.hasOption('D')
+        Properties props = options.getOptionProperties('D')
+        assert 'v' == props.getProperty('k')
+        assert 'v2' == props.getProperty('k2')
+    }
+
+    public void testAcceptLongOptionsWithSingleHyphen_defaultFalse() {
+        assert !new CliBuilder().acceptLongOptionsWithSingleHyphen
+    }
+
+    public void testAcceptLongOptionsWithSingleHyphen_DuplicateOptionAnnotationsException() {
+        CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
+        try {
+            cli.with {
+                classpath('description')
+                cp(longOpt: 'classpath', 'description')
+            }
+        } catch (DuplicateOptionAnnotationsException expected) {
+            assert expected.message == 'Option name \'-classpath\' is used by both option --classpath and option -classpath'
+        }
+    }
+
+    public void testLongOptionsRequireDoubleHyphenByDefault() {
+        CliBuilder cli = new CliBuilder()
+        cli.with {
+            classpath('description')
             cp(longOpt: 'classpath', 'cli.option.cp.description')
             h(longOpt: 'help', 'cli.option.help.description')
             V(longOpt: 'version', 'cli.option.version.description')
@@ -794,12 +868,135 @@ import java.math.RoundingMode
             D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
         }
-        OptionAccessor options = cli.parse('-Dk=v -Dk2=v2'.split())
 
-        assert options.hasOption('D')
-        Properties props = options.getOptionProperties('D')
-        assert 'v' == props.getProperty('k')
-        assert 'v2' == props.getProperty('k2')
+        assert cli.parse(['--classpath']).cp
+        assert cli.parse(['-cp']).cp
+        assert cli.parse(['-classpath']).classpath
 
+        assert cli.parse(['--parameters']).parameters
+        assert cli.parse(['--parameters']).pa
+
+        def options = cli.parse(['-parameters'])
+        assert !options.parameters
+        assert !options.pa
+        assert options.arguments() == ['-parameters']
+
+        assert cli.parse(['--indy']).indy
+        assert cli.parse(['--indy']).i
+        resetPrintWriter()
+        cli.writer = printWriter
+        assert cli.parse(['-indy']) == null
+        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument [-ndy]'))
+
+        assert cli.parse(['--help']).help
+        assert cli.parse(['--help']).h
+        resetPrintWriter()
+        cli.writer = printWriter
+        assert cli.parse(['-help']) == null
+        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument [-elp]'))
+
+        assert cli.parse(['--version']).version
+        assert cli.parse(['--version']).V
+
+        options = cli.parse(['-version'])
+        assert !options.version
+        assert !options.V
+        assert options.arguments() == ['-version']
+
+        assert cli.parse('--configscript abc'.split()).configscript == 'abc'
+
+        options = cli.parse('-configscript abc'.split())
+        assert !options.configscript
+        assert options.arguments() == ['-configscript', 'abc']
+    }
+
+    public void testAcceptLongOptionsWithSingleHyphen_registersLongOptionsTwice() {
+        CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
+        cli.with {
+            cp(longOpt: 'classpath', 'cli.option.cp.description')
+            h(longOpt: 'help', 'cli.option.help.description')
+            V(longOpt: 'version', 'cli.option.version.description')
+            pa(longOpt: 'parameters', 'cli.option.parameters.description')
+            i(longOpt: 'indy', 'cli.option.indy.description')
+            D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'cli.option.define.description')
+            _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
+        }
+
+        assert cli.parse(['--classpath']).cp
+        assert cli.parse(['-classpath']).cp
+        assert cli.parse(['-cp']).classpath
+
+        assert cli.parse(['--parameters']).pa
+        assert cli.parse(['-parameters']).pa
+        assert cli.parse(['-pa']).parameters
+
+        assert cli.parse(['--indy']).i
+        assert cli.parse(['-indy']).i
+        assert cli.parse(['-i']).indy
+
+        assert cli.parse(['--help']).h
+        assert cli.parse(['-help']).h
+        assert cli.parse(['-h']).help
+
+        assert cli.parse(['--version']).V
+        assert cli.parse(['-version']).V
+        assert cli.parse(['-V']).version
+
+        assert cli.parse('--configscript abc'.split()).configscript == 'abc'
+        assert cli.parse( '-configscript abc'.split()).configscript == 'abc'
+    }
+
+    public void testAcceptLongOptionsWithSingleHyphen_usage() {
+        resetPrintWriter()
+        CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true, writer: printWriter)
+        cli.with {
+            cp(longOpt: 'classpath', 'cli.option.cp.description')
+            h(longOpt: 'help', 'cli.option.help.description')
+            V(longOpt: 'version', 'cli.option.version.description')
+            pa(longOpt: 'parameters', 'cli.option.parameters.description')
+            i(longOpt: 'indy', 'cli.option.indy.description')
+            D(longOpt: 'define', args: 2, argName: 'String', valueSeparator: '=', 'cli.option.define.description')
+            _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
+        }
+        cli.usage()
+        def expectedUsage = """\
+Usage: groovy [-hiV] [-cp] [-pa] [-configscript=PARAM] [-D=<String>=<String>]...
+      -configscript, --configscript=PARAM
+                            cli.option.configscript.description
+      -cp, -classpath, --classpath
+                            cli.option.cp.description
+  -D, -define, --define=<String>=<String>
+                            cli.option.define.description
+  -h, -help, --help         cli.option.help.description
+  -i, -indy, --indy         cli.option.indy.description
+      -pa, -parameters, --parameters
+                            cli.option.parameters.description
+  -V, -version, --version   cli.option.version.description"""
+        groovy.util.GroovyTestCase.assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+
+        resetPrintWriter()
+        cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: false, writer: printWriter)
+        cli.with {
+            cp(longOpt: 'classpath', 'cli.option.cp.description')
+            h(longOpt: 'help', 'cli.option.help.description')
+            V(longOpt: 'version', 'cli.option.version.description')
+            pa(longOpt: 'parameters', 'cli.option.parameters.description')
+            i(longOpt: 'indy', 'cli.option.indy.description')
+            D(longOpt: 'define', args: 2, argName: 'String', valueSeparator: '=', 'cli.option.define.description')
+            _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
+        }
+        cli.usage()
+        expectedUsage = """\
+Usage: groovy [-hiV] [-cp] [-pa] [--configscript=PARAM]
+              [-D=<String>=<String>]...
+      --configscript=PARAM   cli.option.configscript.description
+      -cp, --classpath       cli.option.cp.description
+  -D, --define=<String>=<String>
+                             cli.option.define.description
+  -h, --help                 cli.option.help.description
+  -i, --indy                 cli.option.indy.description
+      -pa, --parameters      cli.option.parameters.description
+  -V, --version              cli.option.version.description"""
+        groovy.util.GroovyTestCase.assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
     }
 }
