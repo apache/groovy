@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.shell
 
+import groovy.cli.commons.CliBuilder
 import jline.TerminalFactory
 import jline.UnixTerminal
 import jline.UnsupportedTerminal
@@ -39,7 +40,6 @@ import static org.apache.groovy.util.SystemUtil.setSystemPropertyFrom
  * via getShell prior to invoking startGroovysh.
  * Clients may use configureAndStartGroovysh to provide the same CLI params
  * but a different Groovysh implementation (implementing getIO() and run()).
- *
  *
  * The class also has static utility methods to manipulate the
  * static ansi state using the jAnsi library.

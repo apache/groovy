@@ -16,18 +16,22 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-evaluationDependsOn(':groovy-swing')
+package groovy.util
 
-dependencies {
-    compile rootProject
-    compile project(':groovy-cli-picocli')
-    compile project(':groovy-swing')
-    compile project(':groovy-templates')
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-swing').sourceSets.test.runtimeClasspath
-}
+/**
+ * @deprecated use {@link groovy.cli.picocli.CliBuilder}
+ */
+@Deprecated
+class CliBuilder {
+    private @Delegate groovy.cli.picocli.CliBuilder delegate = new groovy.cli.picocli.CliBuilder()
 
-task console(type: JavaExec, dependsOn:classes) {
-    main = 'groovy.ui.Console'
-    classpath = sourceSets.main.runtimeClasspath
+    // explicit delegate to convert return type to expected legacy package
+    OptionAccessor parse(args) {
+        return new OptionAccessor(delegate: delegate.parse(args))
+    }
+
+    // explicit delegate since groovyObject methods ignored by @Delegate
+    def invokeMethod(String name, Object args) {
+        delegate.invokeMethod(name, args)
+    }
 }

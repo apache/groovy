@@ -25,8 +25,6 @@ import groovy.transform.TypeChecked
 
 import java.math.RoundingMode
 
-//import java.math.RoundingMode
-
 class CliBuilderTest extends GroovyTestCase {
 //    void tearDown() {
 //    }
@@ -356,7 +354,7 @@ class CliBuilderTest extends GroovyTestCase {
     // tag::withTypeChecked[]
     @TypeChecked
     void testTypeChecked() {
-        def cli = new CliBuilder()
+        def cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
         TypedOption<String> name = cli.option(String, opt: 'n', longOpt: 'name', 'name option')
         TypedOption<Integer> age = cli.option(Integer, longOpt: 'age', 'age option')
         def argz = "--name John -age 21 and some more".split()
