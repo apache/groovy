@@ -23,6 +23,7 @@ import com.thoughtworks.qdox.model.JavaClass
 import com.thoughtworks.qdox.model.JavaMethod
 import com.thoughtworks.qdox.model.JavaParameter
 import com.thoughtworks.qdox.model.Type
+import groovy.cli.picocli.CliBuilder
 import groovy.text.SimpleTemplateEngine
 import groovy.text.Template
 import groovy.text.TemplateEngine
@@ -36,8 +37,6 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Generate documentation about the methods provided by the Groovy Development Kit
  * that enhance the standard JDK classes.
- *
- * @author Guillaume Laforge, John Wilson, Bernhard Huber, Paul King, Yasuharu Nakano
  */
 class DocGenerator {
     private static final MessageSource messages = new MessageSource(DocGenerator)

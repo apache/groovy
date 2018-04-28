@@ -16,10 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    compile project(':groovy-cli-picocli')
-    compile project(':groovy-templates')
-    testCompile project(':groovy-test')
-    compile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+package groovy.util
+
+/**
+ * @deprecated use {@link groovy.cli.picocli.CliBuilder}
+ */
+@Deprecated
+class OptionAccessor {
+    @Delegate
+    groovy.cli.picocli.OptionAccessor delegate
+
+    // explicit delegate since groovyObject methods ignored by @Delegate
+    def getProperty(String name) {
+        delegate.getProperty(name)
+    }
+
+    // explicit delegate since groovyObject methods ignored by @Delegate
+    def invokeMethod(String name, Object args) {
+        delegate.invokeMethod(name, args)
+    }
 }

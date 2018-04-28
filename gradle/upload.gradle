@@ -201,6 +201,8 @@ allprojects {
     }
 }
 
+def optionalModules = ['groovy-dateutil', 'groovy-cli-commons', 'groovy-json-direct']
+
 ext.pomAll = {
     addFilter('groovy') { artifact, file ->
         !(artifact.name.contains('groovy-all')) &&
@@ -209,6 +211,7 @@ ext.pomAll = {
     }
     addFilter('all') { artifact, file ->
         // add an arbitrary artifact, so that the pom file is generated
+        // we adjust the packaging attribute later
         artifact.name.contains('groovy-binary')
     }
     addFilter('binary') { artifact, file ->
@@ -253,7 +256,7 @@ ext.pomAll = {
         // defer setting packaging until here otherwise gets overwritten
         p.packaging = 'pom'
         allprojects {
-            if (it.name.startsWith('groovy')) {
+            if (it.name.startsWith('groovy') && !optionalModules.contains(it.name)) {
                 def dep = dependencyClass.newInstance()
                 dep.groupId = 'org.codehaus.groovy'
                 dep.artifactId = it.name
