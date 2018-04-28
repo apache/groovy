@@ -198,6 +198,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.DoWhileStmtAltCon
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.DynamicMemberNameContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValueArrayInitializerContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValueContext;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValueListContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValuePairContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValuePairsContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValuesContext;
@@ -4353,8 +4354,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ListExpression visitElementValueArrayInitializer(ElementValueArrayInitializerContext ctx) {
-        return configureAST(new ListExpression(ctx.elementValue().stream().map(this::visitElementValue).collect(Collectors.toList())), ctx);
+        return configureAST(visitElementValueList(ctx.elementValueList()), ctx);
     }
+
+    @Override
+    public ListExpression visitElementValueList(ElementValueListContext ctx) {
+        List<Expression> expressionList;
+
+        if (!asBoolean(ctx)) {
+            expressionList = Collections.emptyList();
+        } else {
+            expressionList = ctx.elementValue().stream().map(this::visitElementValue).collect(Collectors.toList());
+        }
+
+        return configureAST(new ListExpression(expressionList), ctx);
+    }
+
 
     @Override
     public String visitClassName(ClassNameContext ctx) {

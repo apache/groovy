@@ -138,6 +138,7 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('core/Annotation_08.groovy')
         doTest('core/Annotation_09.groovy')
         doRunAndTestAntlr4('core/Annotation_10x.groovy')
+        doRunAndTestAntlr4('core/Annotation_11x.groovy')
     }
 
     void "test groovy core - Literal"() {

@@ -550,13 +550,18 @@ elementValuePairName
 
 // TODO verify the potential performance issue because rule expression contains sub-rule assignments(https://github.com/antlr/grammars-v4/issues/215)
 elementValue
-    :   elementValueArrayInitializer
-    |   annotation
+    :   annotation
     |   expression
+    |   elementValueArrayInitializer
     ;
 
 elementValueArrayInitializer
-    :   LBRACK (elementValue (COMMA elementValue)*)? (COMMA)? RBRACK
+    :   LBRACK elementValueList? RBRACK
+    |   LBRACE nls elementValueList? nls RBRACE
+    ;
+
+elementValueList
+    :   elementValue nls (COMMA nls elementValue nls)* nls COMMA?
     ;
 
 // STATEMENTS / BLOCKS
