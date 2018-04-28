@@ -20,7 +20,7 @@ package groovy.io;
 
 /**
  * Represents special return values for the 'preDir', 'postDir' and 'visit'/supplied Closures used with
- * {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#traverse(java.io.File, java.util.Map, groovy.lang.Closure)}
+ * {@link org.codehaus.groovy.runtime.ResourceGroovyMethods#traverse(java.io.File, java.util.Map, groovy.lang.Closure)}
  * and related methods to control subsequent traversal behavior.
  */
 public enum FileVisitResult {

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util
+package groovy.cli.commons
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
@@ -40,7 +40,6 @@ import static org.apache.commons.cli.Option.builder
  * and really need behavior that can only be supplied by one of the legacy parsers, we also include
  * some test case runs against some of the legacy parsers.
  */
-
 class CliBuilderTest extends GroovyTestCase {
 
     private StringWriter stringWriter
@@ -674,6 +673,7 @@ usage: groovy
         new GroovyShell().run('''
             import groovy.cli.OptionField
             import groovy.cli.UnparsedField
+            import groovy.cli.commons.CliBuilder
             import java.math.RoundingMode
             @OptionField String first
             @OptionField String last

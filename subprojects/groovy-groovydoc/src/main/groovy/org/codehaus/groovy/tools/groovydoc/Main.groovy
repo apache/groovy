@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
+import groovy.cli.picocli.CliBuilder
 import groovy.io.FileType
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo
 import org.codehaus.groovy.tools.shell.IO

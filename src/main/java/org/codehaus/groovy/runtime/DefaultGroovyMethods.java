@@ -3241,6 +3241,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Collates an array.
+     *
+     * @param self          an array
+     * @param size          the length of each sub-list in the returned list
+     * @return a List containing the array values collated into sub-lists
+     * @see #collate(Iterable, int)
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> collate(T[] self, int size) {
+        return collate((Iterable)Arrays.asList(self), size, true);
+    }
+
+    /**
      * @deprecated use the Iterable variant instead
      * @see #collate(Iterable, int)
      * @since 1.8.6
@@ -3269,6 +3282,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Collates an array into sub-lists.
+     *
+     * @param self          an array
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @return a List containing the array elements collated into sub-lists
+     * @see #collate(Iterable, int, int)
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> collate(T[] self, int size, int step) {
+        return collate((Iterable)Arrays.asList(self), size, step, true);
+    }
+
+    /**
      * @deprecated use the Iterable variant instead
      * @see #collate(Iterable, int, int)
      * @since 1.8.6
@@ -3294,6 +3321,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<List<T>> collate(Iterable<T> self, int size, boolean keepRemainder) {
         return collate(self, size, size, keepRemainder);
+    }
+
+    /**
+     * Collates this array into sub-lists.
+     *
+     * @param self          an array
+     * @param size          the length of each sub-list in the returned list
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the array elements collated into sub-lists
+     * @see #collate(Iterable, int, boolean)
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> collate(T[] self, int size, boolean keepRemainder) {
+        return collate((Iterable)Arrays.asList(self), size, size, keepRemainder);
     }
 
     /**
@@ -3345,6 +3386,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer ;
+    }
+
+    /**
+     * Collates this array into into sub-lists.
+     *
+     * @param self          an array
+     * @param size          the length of each sub-list in the returned list
+     * @param step          the number of elements to step through for each sub-list
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @return a List containing the array elements collated into sub-lists
+     * @since 2.5.0
+     */
+    public static <T> List<List<T>> collate(T[] self, int size, int step, boolean keepRemainder) {
+        return collate((Iterable)Arrays.asList(self), size, step, keepRemainder);
     }
 
     /**

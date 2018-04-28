@@ -16,18 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    testCompile rootProject.sourceSets.test.runtimeClasspath
-    compile project(':groovy-cli-picocli')
-    compile project(':groovy-templates')
-    runtime project(':groovy-dateutil')
-    testCompile project(':groovy-test')
-    testCompile "org.apache.ant:ant-testutil:$antVersion"
-}
+package groovy.util
 
-compileJava {
-    doLast {
-        mkdir "$sourceSets.main.java.outputDir/META-INF"
+/**
+ * @deprecated use {@link groovy.cli.picocli.CliBuilder}
+ */
+@Deprecated
+class OptionAccessor {
+    @Delegate
+    groovy.cli.picocli.OptionAccessor delegate
+
+    // explicit delegate since groovyObject methods ignored by @Delegate
+    def getProperty(String name) {
+        delegate.getProperty(name)
+    }
+
+    // explicit delegate since groovyObject methods ignored by @Delegate
+    def invokeMethod(String name, Object args) {
+        delegate.invokeMethod(name, args)
     }
 }
