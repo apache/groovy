@@ -3458,14 +3458,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private ClassNode getCurrentArrayElementType(GroovyParserRuleContext ctx) {
-        ClassNode elementType = this.variableDeclarationTypeStack.peek();
+        ClassNode variableDeclarationType = this.variableDeclarationTypeStack.peek();
+        ClassNode elementType = variableDeclarationType;
 
         for (int i = 0; i < arrayLiteralDim; i++) {
             elementType = elementType.getComponentType();
         }
 
         if (null == elementType) { // e.g. int[] a = {{1, 2}, {1}}, elementType will be null when visiting nested array
-            throw createParsingFailedException("The array dimension is greater than variable declaration type's", ctx);
+            throw createParsingFailedException("The array dimension[" + arrayLiteralDim + "] is greater than variable declaration type's dimension[" + dimension(variableDeclarationType) + "]", ctx);
         }
 
         return elementType;
@@ -4150,32 +4151,33 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             Object astNode = this.visit(ctx.statement()); //this.configureAST((Statement) this.visit(ctx.statement()), ctx);
 
             if (astNode instanceof MethodNode) {
-                throw createParsingFailedException("Method definition not expected here", ctx);
-            } else {
-                if (this.arrayLiteralDim > 0) { // visiting nested array, e.g. { { 1 } }, the outer is a closure, the inner is a block
-                    if (astNode instanceof BlockStatement) {
-                        BlockStatement blockStatement = (BlockStatement) astNode;
+                throw createParsingFailedException("Method definition is not allowed here", ctx);
+            }
 
-                        arrayLiteralDim++;
-                        ArrayExpression arrayExpression = createArrayExpressionForClosureAndBlock(ctx, blockStatement);
-                        arrayLiteralDim--;
+            if (arrayLiteralDim > 0) { // visiting nested array, e.g. { { 1 } }, the outer is a closure, the inner is a block
+                if (astNode instanceof BlockStatement) {
+                    BlockStatement blockStatement = (BlockStatement) astNode;
 
-                        if (null != arrayExpression) {
-                            return configureAST(new ExpressionStatement(arrayExpression), ctx);
-                        } else { // e.g. Closure[] a = {{def x = 1; return x}}, transform the inner block to a closure
-                            return configureAST(
-                                    new ExpressionStatement(
-                                            configureAST(
-                                                    new ClosureExpression(Parameter.EMPTY_ARRAY, blockStatement),
-                                                    ctx)
-                                    ),
-                                    ctx);
-                        }
+                    arrayLiteralDim++;
+                    ArrayExpression arrayExpression = createArrayExpressionForClosureAndBlock(ctx, blockStatement);
+                    arrayLiteralDim--;
+
+                    if (null != arrayExpression) {
+                        return configureAST(new ExpressionStatement(arrayExpression), ctx);
+                    } else { // e.g. Closure[] a = {{def x = 1; return x}}, transform the inner block to a closure
+                        return configureAST(
+                                new ExpressionStatement(
+                                        configureAST(
+                                                new ClosureExpression(Parameter.EMPTY_ARRAY, blockStatement),
+                                                ctx)
+                                ),
+                                ctx);
                     }
                 }
-
-                return (Statement) astNode;
             }
+
+            return (Statement) astNode;
+
         }
 
         throw createParsingFailedException("Unsupported block statement: " + ctx.getText(), ctx);
@@ -4215,7 +4217,27 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     /**
-     * TODO move the method to org.codehaus.groovy.runtime.ArrayTypeUtils
+     * TODO move the method to org.codehaus.groovy.ast.ClassNode
+     *
+     * Calculate the dimension of array
+     *
+     * @param classNode the type of array
+     * @return the dimension of array
+     */
+    public static int dimension(ClassNode classNode) {
+        checkArrayType(classNode);
+
+        int result = 0;
+        while (classNode.isArray()) {
+            result++;
+            classNode = classNode.getComponentType();
+        }
+
+        return result;
+    }
+
+    /**
+     * TODO move the method to org.codehaus.groovy.ast.ClassNode
      *
      * Get the type of array elements
      *
@@ -4233,7 +4255,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     /**
-     * TODO move the method to org.codehaus.groovy.runtime.ArrayTypeUtils
+     * TODO move the method to org.codehaus.groovy.ast.ClassNode
      *
      * Check whether the type passed in is array type.
      * If the type is not array type, throw IllegalArgumentException.
