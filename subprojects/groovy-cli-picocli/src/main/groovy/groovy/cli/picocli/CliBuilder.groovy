@@ -111,21 +111,21 @@ import java.lang.reflect.Method
  * <p>
  * Another example showing long options (partial emulation of arg processing for 'curl' command line):
  * <pre>
- * def cli = new CliBuilder(usage:'curl [options] &lt;url&gt;')
+ * def cli = new CliBuilder(name:'curl')
  * cli._(longOpt:'basic', 'Use HTTP Basic Authentication')
  * cli.d(longOpt:'data', args:1, argName:'data', 'HTTP POST data')
  * cli.G(longOpt:'get', 'Send the -d data with a HTTP GET')
  * cli.q('If used as the first parameter disables .curlrc')
- * cli._(longOpt:'url', args:1, argName:'URL', 'Set URL to work with')
+ * cli._(longOpt:'url', type:URL, argName:'URL', 'Set URL to work with')
  * </pre>
  * Which has the following usage message:
  * <pre>
- * Usage: curl [options] &lt;url>
- *       -basic, --basic         Use HTTP Basic Authentication
- *   -d, -data, --data=&lt;data>    HTTP POST data
- *   -G, -get, --get             Send the -d data with a HTTP GET
- *   -q                          If used as the first parameter disables .curlrc
- *       -url, --url=&lt;URL>       Set URL to work with
+ * Usage: curl [-Gq] [--basic] [--url=&lt;URL>] [-d=&lt;data>]
+ *       --basic         Use HTTP Basic Authentication
+ *   -d, --data=&lt;data>   HTTP POST data
+ *   -G, --get           Send the -d data with a HTTP GET
+ *   -q                  If used as the first parameter disables .curlrc
+ *       --url=&lt;URL>     Set URL to work with
  * </pre>
  * This example shows a common convention. When mixing short and long names, the
  * short names are often one character in size. One character options with
@@ -154,6 +154,24 @@ import java.lang.reflect.Method
  *                      description('Set URL to work with').build()
  * ...
  * </pre>
+ * As another example, the <code>usageMessage</code> property gives
+ * fine-grained control over the usage help message (see the
+ * <a href="http://picocli.info/#_usage_help_with_styles_and_colors">picocli user manual</a>
+ * for details):
+ *
+ * <pre>
+ * def cli = new CliBuilder()
+ * cli.name = "myapp"
+ * cli.usageMessage.with {
+ *     headerHeading("@|bold,underline Header heading:|@%n")
+ *     header("Header 1", "Header 2")                     // before the synopsis
+ *     synopsisHeading("%n@|bold,underline Usage:|@ ")
+ *     descriptionHeading("%n@|bold,underline Description heading:|@%n")
+ *     description("Description 1", "Description 2")      // after the synopsis
+ *     optionListHeading("%n@|bold,underline Options heading:|@%n")
+ *     footerHeading("%n@|bold,underline Footer heading:|@%n")
+ *     footer("Footer 1", "Footer 2")
+ * }</pre>
  *
  * <p>
  * <b>Supported Option Properties</b>:
@@ -174,7 +192,9 @@ import java.lang.reflect.Method
  *     <th><code>longOpt</code></th>
  *     <td>String</td>
  *     <td><code>names</code></td>
- *     <td>Long name for the option, which may be prefixed with either a single hypen or two hyphens.
+ *     <td>Long name for the option, will be prefixed with two hyphens
+ *       unless {@link CliBuilder#acceptLongOptionsWithSingleHyphen acceptLongOptionsWithSingleHyphen}
+ *       is <code>true</code>.
  *       An option must have either a long name or a short name (or both).</td>
  *   </tr>
  *   <tr>
@@ -185,6 +205,7 @@ import java.lang.reflect.Method
  *       A String value of '+' indicates at least one up to any number of parameters.
  *       The minimum number of parameters depends on the type (booleans require no parameters)
  *       and the <code>optionalArg</code> setting.
+ *       <code>args</code> can often be omitted if a <code>type</code> is specified.
  *       </td>
  *   </tr>
  *   <tr>
@@ -238,7 +259,7 @@ import java.lang.reflect.Method
  *       </td>
  *   </tr>
  * </table>
- * See {@link CliBuilderTest} for further examples.
+ * See {@link groovy.cli.picocli.CliBuilderTest} for further examples.
  * <p>
  * <b>@-files</b>
  * <p>
@@ -322,6 +343,7 @@ class CliBuilder {
     /**
      * The command synopsis displayed as the first line in the usage help message, e.g., when <code>cli.usage()</code> is called.
      * When not set, a default synopsis is generated that shows the supported options and parameters.
+     * @see #name
      */
     String usage = 'groovy'
 
@@ -360,7 +382,7 @@ class CliBuilder {
     boolean acceptLongOptionsWithSingleHyphen = false
 
     /**
-     * The PrintWriter to write the {@linkplain #usage} help message to
+     * The PrintWriter to write the {@link #usage} help message to
      * when <code>cli.usage()</code> is called.
      * Defaults to stdout but you can provide your own PrintWriter if desired.
      */
@@ -414,6 +436,9 @@ class CliBuilder {
     // The values collected here are copied into the UsageMessageSpec of the command.
     final UsageMessageSpec usageMessage = new UsageMessageSpec()
 
+    /**
+     * Internal data structure mapping option names to their associated {@link TypedOption} object.
+     */
     Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
 
     // CommandSpec is the entry point into the picocli object model for a command.
@@ -429,16 +454,31 @@ class CliBuilder {
     // replaced with a new one. This allows the outer CliBuilder instance can be reused.
     private CommandSpec commandSpec = CommandSpec.create()
 
+    /**
+     * Sets the {@link #usage usage} property on this <code>CliBuilder</code> and the
+     * <code>customSynopsis</code> on the {@link #usageMessage} used by the underlying library.
+     * @param usage the custom synopsis of the usage help message
+     */
     void setUsage(String usage) {
         this.usage = usage
         usageMessage.customSynopsis(usage)
     }
 
+    /**
+     * Sets the {@link #footer} property on this <code>CliBuilder</code>
+     * and on the {@link #usageMessage} used by the underlying library.
+     * @param footer the footer of the usage help message
+     */
     void setFooter(String footer) {
         this.footer = footer
         usageMessage.footer(footer)
     }
 
+    /**
+     * Sets the {@link #header} property on this <code>CliBuilder</code> and the
+     * <code>description</code> on the {@link #usageMessage} used by the underlying library.
+     * @param header the description text of the usage help message
+     */
     void setHeader(String header) {
         this.header = header
         // "header" is displayed after the synopsis in previous CliBuilder versions.
@@ -446,21 +486,46 @@ class CliBuilder {
         usageMessage.description(header)
     }
 
+    /**
+     * Sets the {@link #width} property on this <code>CliBuilder</code>
+     * and on the {@link #usageMessage} used by the underlying library.
+     * @param width the width of the usage help message
+     */
     void setWidth(int width) {
         this.width = width
         usageMessage.width(width)
     }
 
+    /**
+     * Sets the {@link #expandArgumentFiles} property on this <code>CliBuilder</code>
+     * and on the {@link #parser} used by the underlying library.
+     * @param expand whether to expand argument @-files
+     */
     void setExpandArgumentFiles(boolean expand) {
         this.expandArgumentFiles = expand
         parser.expandAtFiles(expand)
     }
 
+    /**
+     * Sets the {@link #posix} property on this <code>CliBuilder</code> and the
+     * <code>posixClusteredShortOptionsAllowed</code> property on the {@link #parser}
+     * used by the underlying library.
+     * @param poxis whether to allow clustered short options
+     */
     void setPosix(boolean posix) {
         this.posix = posix
         parser.posixClusteredShortOptionsAllowed(posix)
     }
 
+    /**
+     * Sets the {@link #stopAtNonOption} property on this <code>CliBuilder</code> and the
+     * <code>stopAtPositional</code> property on the {@link #parser}
+     * used by the underlying library.
+     * @param stopAtNonOption when <code>true</code> (the default), the
+     *          remaining arguments are all treated as positional parameters.
+     *          When <code>false</code>, the parser will continue to look for options, and
+     *          only the unrecognized arguments are treated as positional parameters.
+     */
     void setStopAtNonOption(boolean stopAtNonOption) {
         this.stopAtNonOption = stopAtNonOption
         parser.stopAtPositional(stopAtNonOption)
