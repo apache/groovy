@@ -446,6 +446,61 @@ Footer 2
         assert options.Xs == [ 'x':'y', 'i':'j' ]                                     // <6>
         assert options.Zs == [ (DAYS as TimeUnit):2, (HOURS as TimeUnit):23 ]         // <7>
         // end::MapOption[]
+    }
 
+    public void testGroovyDocAntExample() {
+        def cli = new CliBuilder(usage:'ant [options] [targets]',
+                header:'Options:')
+        cli.help('print this message')
+        cli.logfile(type:File, argName:'file', 'use given file for log')
+        cli.D(type:Map, argName:'property=value', 'use value for given property')
+        cli.lib(argName:'path', valueSeparator:',', args: '3',
+                'comma-separated list of 3 paths to search for jars and classes')
+
+        // suppress ANSI escape codes to make this test pass on all environments
+        System.setProperty("picocli.ansi", "false")
+        StringWriter sw = new StringWriter()
+        cli.writer = new PrintWriter(sw)
+
+        cli.usage()
+
+        String expected = '''\
+Usage: ant [options] [targets]
+Options:
+  -D= <property=value>   use value for given property
+      -help              print this message
+      -lib=<path>,<path>,<path>
+                         comma-separated list of 3 paths to search for jars and
+                           classes
+      -logfile=<file>    use given file for log
+'''
+        assertEquals(expected.normalize(), sw.toString().normalize())
+    }
+
+    public void testGroovyDocCurlExample() {
+        // suppress ANSI escape codes to make this test pass on all environments
+        System.setProperty("picocli.ansi", "false")
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        System.setOut(new PrintStream(baos, true))
+
+        def cli = new CliBuilder(name:'curl')
+        cli._(longOpt:'basic', 'Use HTTP Basic Authentication')
+        cli.d(longOpt:'data', args:1, argName:'data', 'HTTP POST data')
+        cli.G(longOpt:'get', 'Send the -d data with a HTTP GET')
+        cli.q('If used as the first parameter disables .curlrc')
+        cli._(longOpt:'url', type:URL, argName:'URL', 'Set URL to work with')
+
+        cli.usageMessage.sortOptions(false)
+        cli.usage()
+
+        String expected = '''\
+Usage: curl [-Gq] [--basic] [--url=<URL>] [-d=<data>]
+      --basic         Use HTTP Basic Authentication
+  -d, --data=<data>   HTTP POST data
+  -G, --get           Send the -d data with a HTTP GET
+  -q                  If used as the first parameter disables .curlrc
+      --url=<URL>     Set URL to work with
+'''
+        assertEquals(expected.normalize(), baos.toString().normalize())
     }
 }
