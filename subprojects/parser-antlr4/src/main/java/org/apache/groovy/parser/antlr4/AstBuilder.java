@@ -1891,6 +1891,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private void validateArray(DeclarationListStatement declarationListStatement) {
+        if (null == declarationListStatement) {
+            return;
+        }
+
         declarationListStatement.getDeclarationStatements().stream()
                 .map(ExpressionStatement::getExpression)
                 .filter(e -> e instanceof DeclarationExpression && ((DeclarationExpression) e).getRightExpression() instanceof ArrayExpression)
