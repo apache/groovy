@@ -1881,9 +1881,42 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             declarationListStatement = configureAST(new DeclarationListStatement(declarationExpressionList), ctx);
         }
 
+        if (variableType.isArray()) {
+            validateArray(declarationListStatement);
+        }
+
         this.variableDeclarationTypeStack.pop();
 
         return declarationListStatement;
+    }
+
+    private void validateArray(DeclarationListStatement declarationListStatement) {
+        declarationListStatement.getDeclarationStatements().stream()
+                .map(ExpressionStatement::getExpression)
+                .filter(e -> e instanceof DeclarationExpression && ((DeclarationExpression) e).getRightExpression() instanceof ArrayExpression)
+                .forEach(e -> {
+                    ArrayExpression arrayExpression = (ArrayExpression) ((DeclarationExpression) e).getRightExpression();
+                    if (!arrayExpression.getExpressions().isEmpty()) { // we should not check the dimension of array expression like `new int[1][2]`
+                        doValidateArray(arrayExpression);
+                    }
+                });
+    }
+
+    private void doValidateArray(ArrayExpression arrayExpression) {
+        List<Expression> expressionList = arrayExpression.getExpressions();
+        boolean nestedArrayExists = expressionList.stream().anyMatch(e -> e instanceof ArrayExpression);
+
+        if (!nestedArrayExists) {
+            return;
+        }
+
+        for (Expression expression : expressionList) {
+            if (expression instanceof ConstantExpression) {
+                throw createParsingFailedException("constants is not allowed to mix with arrays", expression);
+            } else if (expression instanceof ArrayExpression) {
+                doValidateArray((ArrayExpression) expression);
+            }
+        }
     }
 
     private DeclarationListStatement createFieldDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager, ClassNode variableType, List<DeclarationExpression> declarationExpressionList, ClassNode classNode) {
