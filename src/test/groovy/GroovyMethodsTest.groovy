@@ -811,7 +811,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     void doIt(col) {
         col.clear()
         col.addAll(leftCol)
-        // not really concerned about  correctness, rather that the method can be called, however..
+        // not really concerned about correctness, rather that the method can be called, however..
         assert col.intersect(rightCol) as List == ["2"]
     }
 
