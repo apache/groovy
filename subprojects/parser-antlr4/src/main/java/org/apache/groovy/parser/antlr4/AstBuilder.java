@@ -1896,7 +1896,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 .filter(e -> e instanceof DeclarationExpression && ((DeclarationExpression) e).getRightExpression() instanceof ArrayExpression)
                 .forEach(e -> {
                     ArrayExpression arrayExpression = (ArrayExpression) ((DeclarationExpression) e).getRightExpression();
-                    if (!arrayExpression.getExpressions().isEmpty()) { // we should not check the dimension of array expression like `new int[1][2]`
+                    if (!arrayExpression.getExpressions().isEmpty()) { // we need not validate array expressions like `new int[1][2]`
                         doValidateArray(arrayExpression);
                     }
                 });
