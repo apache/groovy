@@ -28,7 +28,7 @@ The new parser(Parrot) can parse Groovy source code and construct the related AS
 * method references and constructor references
 * try-with-resources, AKA ARM
 * code blocks, i.e. `{..}`
-* Java style array initializers, e.g. `new int[] {1, 2, 3}`
+* Java style array initializers, e.g. `new int[] {1, 2, 3}`, `int[] a = {1, 2, 3}`
 * default methods within interfaces
 * additional places for type annotations
 * new operators: identity operators(`===`, `!==`), elvis assignment(`?=`), `!in`, `!instanceof`
