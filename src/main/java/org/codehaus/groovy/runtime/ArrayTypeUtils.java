@@ -62,13 +62,13 @@ public class ArrayTypeUtils {
     }
 
     /**
-     * Reduce the dimension of array
+     * Get the type of array elements by the dimension
      *
      * @param clazz the type of array
      * @param dim the target dimension
      * @return the result array
      */
-    public static Class reduceDimension(Class clazz, int dim) {
+    public static Class elementType(Class clazz, int dim) {
         checkArrayType(clazz);
 
         if (dim < 0) {

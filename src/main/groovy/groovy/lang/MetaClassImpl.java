@@ -1075,7 +1075,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     Class arrayType =
                             arguments.length == arrayDimension
                                     ? ArrayTypeUtils.elementType(ownerClass) // Just for better performance, though we can use reduceDimension only
-                                    : ArrayTypeUtils.reduceDimension(ownerClass, (arrayDimension - arguments.length));
+                                    : ArrayTypeUtils.elementType(ownerClass, (arrayDimension - arguments.length));
                     return Array.newInstance(arrayType, sizeArray);
                 }
 
