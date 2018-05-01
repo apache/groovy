@@ -238,6 +238,7 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/Array_02x.groovy');
         TestUtils.doRunAndShouldFail('fail/Array_03x.groovy');
         TestUtils.doRunAndShouldFail('fail/Array_04x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Array_05x.groovy');
     }
 
     /**************************************/

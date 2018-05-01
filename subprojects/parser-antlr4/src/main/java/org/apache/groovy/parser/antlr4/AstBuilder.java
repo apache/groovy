@@ -1895,30 +1895,36 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return;
         }
 
+        final int variableDeclarationArrayTypeDimension = dimension(this.variableDeclarationTypeStack.peek());
+
         declarationListStatement.getDeclarationStatements().stream()
                 .map(ExpressionStatement::getExpression)
                 .filter(e -> e instanceof DeclarationExpression && ((DeclarationExpression) e).getRightExpression() instanceof ArrayExpression)
                 .forEach(e -> {
                     ArrayExpression arrayExpression = (ArrayExpression) ((DeclarationExpression) e).getRightExpression();
                     if (!arrayExpression.getExpressions().isEmpty()) { // we need not validate array expressions like `new int[1][2]`
-                        doValidateArray(arrayExpression);
+                        doValidateArray(arrayExpression, variableDeclarationArrayTypeDimension);
                     }
                 });
     }
 
-    private void doValidateArray(ArrayExpression arrayExpression) {
+    private void doValidateArray(ArrayExpression arrayExpression, int dim) {
         List<Expression> expressionList = arrayExpression.getExpressions();
         boolean nestedArrayExists = expressionList.stream().anyMatch(e -> e instanceof ArrayExpression);
 
         if (!nestedArrayExists) {
+            if (!(1 == dim || 0 == expressionList.size())) { // if and only if the innest array dimension is 1 OR it is empty array(its dimension can be greater than 1), the array is valid, e.g. `int[][][] a = {{{1}, {2}}}`, `int[][][] a = {{{1}}, {}}`
+                throw createParsingFailedException("The variable declaration array type's dimension[" + dimension(this.variableDeclarationTypeStack.peek()) + "] is greater than the array dimension[" + dim + "]", arrayExpression);
+            }
+
             return;
         }
 
         for (Expression expression : expressionList) {
             if (expression instanceof ConstantExpression) {
-                throw createParsingFailedException("constants is not allowed to mix with arrays", expression);
+                throw createParsingFailedException("Incompatible type, require " + elementType(this.variableDeclarationTypeStack.peek(), dim - 1), expression);
             } else if (expression instanceof ArrayExpression) {
-                doValidateArray((ArrayExpression) expression);
+                doValidateArray((ArrayExpression) expression, dim - 1);
             }
         }
     }
@@ -4286,6 +4292,28 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         checkArrayType(classNode);
 
         while (classNode.isArray()) {
+            classNode = classNode.getComponentType();
+        }
+
+        return classNode;
+    }
+
+    /**
+     * TODO move the method to org.codehaus.groovy.ast.ClassNode
+     * Get the type of array elements by the dimension
+     *
+     * @param classNode the type of array
+     * @param dim the target dimension
+     * @return the result array
+     */
+    public static ClassNode elementType(ClassNode classNode, int dim) {
+        checkArrayType(classNode);
+
+        if (dim < 0) {
+            throw new IllegalArgumentException("The target dimension should not be less than zero: " + dim);
+        }
+
+        while (classNode.isArray() && dimension(classNode) > dim) {
             classNode = classNode.getComponentType();
         }
 
