@@ -162,7 +162,7 @@ ext {
     luceneVersion = '4.7.2'
     openbeansVersion = '1.0'
     openejbVersion = '1.0'
-    picocliVersion = '3.0.0-beta-2'
+    picocliVersion = '3.0.0'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.21'
     xmlunitVersion = '1.6'
