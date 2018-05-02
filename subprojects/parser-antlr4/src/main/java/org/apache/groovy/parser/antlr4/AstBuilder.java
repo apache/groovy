@@ -1913,8 +1913,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         boolean nestedArrayExists = expressionList.stream().anyMatch(e -> e instanceof ArrayExpression);
 
         if (!nestedArrayExists) {
-            if (!(1 == dim || 0 == expressionList.size())) { // if and only if the innest array dimension is 1 OR it is empty array(its dimension can be greater than 1), the array is valid, e.g. `int[][][] a = {{{1}, {2}}}`, `int[][][] a = {{{1}}, {}}`
-                throw createParsingFailedException("The variable declaration array type's dimension[" + dimension(this.variableDeclarationTypeStack.peek()) + "] is greater than the array dimension[" + dim + "]", arrayExpression);
+            if (!(1 == dim || 0 == expressionList.size())) { // if and only if the most nested array dimension is 1 OR it is empty array(its dimension can be greater than 1), the array is valid, e.g. `int[][][] a = {{{1}, {2}}}`, `int[][][] a = {{{1}}, {}}`
+                throw createParsingFailedException("The array dimension[" + dim + "] is less than the variable declaration array type's dimension[" + dimension(this.variableDeclarationTypeStack.peek()) + "]", arrayExpression);
             }
 
             return;
