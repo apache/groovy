@@ -950,7 +950,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
                 method = getCategoryMethodMissing(instanceKlazz);
                 if (method != null) {
-                    //TODO add onMethodMissingFound(method)
                     return method.invoke(instance, new Object[]{methodName, arguments});
                 }
             }
