@@ -228,12 +228,60 @@ class CategoryTest extends GroovyTestCase {
             }
         '''
     }
+    // GROOVY-3867
+    void testPropertyMissing() {
+        def x = new X()
+
+        shouldFail(MissingPropertyException) {
+            assert x.baz != "works" // accessing x.baz should throw MPE
+        }
+
+        use(XCat4) {
+            assert x.baz == "works"
+        }
+
+        shouldFail(MissingPropertyException) {
+            assert x.baz != "works" // accessing x.baz should throw MPE
+        }
+    }
+
+    // GROOVY-3867
+    void testMethodMissing() {
+        def x = new X()
+        assert foo(x) == 1
+        use (XCat3) {
+            assert foo(x) == 1 // regular foo() is not affected by methodMissing in category
+            assert x.baz() == 4 // XCat3.methodMissing is called
+        }
+        assert foo(x) == 1
+        def t = Thread.start {use (XCat3){assert x.baz()==4}}
+        t.join()
+        assert foo(x) == 1
+        shouldFail(MissingMethodException) {
+            x.baz()
+        }
+    }
+
+    // GROOVY-3867
+    void testMethodMissingNoStatic() {
+        def x = new X()
+        use (XCat3) {
+            assert x.baz() == 4 // XCat3.methodMissing is called for instance
+            shouldFail(MissingMethodException) {
+                assert X.baz() != 4 // XCat3.methodMissing should not be called for static method of X
+            }
+        }
+    }
+
+
 
 }
 
 class X{ def bar(){1}}
 class XCat{ static bar(X x){2}}
 class XCat2{ static bar(X x){3}}
+class XCat3{ static methodMissing(X x, String name, args) {4}}
+class XCat4{ static propertyMissing(X x, String name) {"works"}}
 
 class StringCategory {
     static String lower(String string) {
