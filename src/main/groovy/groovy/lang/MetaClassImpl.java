@@ -943,6 +943,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 onInvokeMethodFoundInHierarchy(method);
                 return method.invoke(instance, invokeMethodArgs);
             }
+
+            // last resort look in the category
+            if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+                method = getCategoryMethodMissing(instanceKlazz);
+                if (method != null) {
+                    return method.invoke(instance, new Object[]{methodName, arguments});
+                }
+            }
         }
 
         if (methodMissing != null) {
@@ -1806,11 +1814,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
+        // check for propertyMissing provided through a category
+        Object[] arguments = EMPTY_ARGUMENTS;
+        if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            method = getCategoryMethodGetter(sender, "propertyMissing", true);
+            if (method != null) arguments = new Object[]{name};
+        }
+
+
         //----------------------------------------------------------------------
         // generic get method
         //----------------------------------------------------------------------
         // check for a generic get method provided through a category
-        Object[] arguments = EMPTY_ARGUMENTS;
         if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
             if (method != null) arguments = new Object[]{name};
@@ -2035,6 +2050,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         return new Tuple2<MetaMethod, MetaProperty>(method, mp);
+    }
+
+
+    private static MetaMethod getCategoryMethodMissing(Class sender) {
+        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods("methodMissing");
+        if (possibleGenericMethods != null) {
+            for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
+                MetaMethod mmethod = (MetaMethod) iter.next();
+                if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
+                    continue;
+
+                CachedClass[] paramTypes = mmethod.getParameterTypes();
+                if (paramTypes.length == 2 && paramTypes[0].getTheClass() == String.class) {
+                    return mmethod;
+                }
+            }
+        }
+        return null;
     }
 
     private static MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
