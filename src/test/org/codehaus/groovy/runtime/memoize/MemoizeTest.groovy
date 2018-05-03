@@ -167,7 +167,7 @@ public class MemoizeTest extends AbstractMemoizeTestCase {
                 Utils.combinations(things, 2) 
             } 
         }
-        threadList << (0..<5).collect {
+        threadList.addAll((0..<5).collect {
             Thread.start {
                 def things = [
                     [1, 2, 3],
@@ -181,7 +181,7 @@ public class MemoizeTest extends AbstractMemoizeTestCase {
                 ]
                 Utils.combinations(things, 2) 
             }
-        }
+        })
         
         threadList*.join()
         
