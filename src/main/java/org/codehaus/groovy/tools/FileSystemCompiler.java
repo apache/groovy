@@ -73,6 +73,12 @@ public class FileSystemCompiler {
         unit.compile();
     }
 
+    public static void displayVersion() {
+        for (String line : new VersionProvider().getVersion()) {
+            System.err.println(line);
+        }
+    }
+
     public static int checkFiles(String[] filenames) {
         int errors = 0;
 
