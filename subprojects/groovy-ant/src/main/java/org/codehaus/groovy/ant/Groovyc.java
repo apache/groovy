@@ -20,10 +20,6 @@ package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyResourceLoader;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
@@ -45,6 +41,7 @@ import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+import picocli.CommandLine;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -1184,14 +1181,10 @@ public class Groovyc extends MatchingTask {
     private void runCompiler(String[] commandLine) {
         // hand crank it so we can add our own compiler configuration
         try {
-            Options options = FileSystemCompiler.createCompilationOptions();
-
-            CommandLineParser cliParser = new DefaultParser();
-
-            CommandLine cli;
-            cli = cliParser.parse(options, commandLine);
-
-            configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
+            FileSystemCompiler.CompilationOptions options = new FileSystemCompiler.CompilationOptions();
+            CommandLine parser = FileSystemCompiler.configureParser(options);
+            parser.parseArgs(commandLine);
+            configuration = options.toCompilerConfiguration();
             configuration.setScriptExtensions(getScriptExtensions());
             String tmpExtension = getScriptExtension();
             if (tmpExtension.startsWith("*."))
@@ -1199,7 +1192,7 @@ public class Groovyc extends MatchingTask {
             configuration.setDefaultScriptExtension(tmpExtension);
 
             // Load the file name list
-            String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
+            String[] filenames = options.generateFileNames();
             boolean fileNameErrors = filenames == null;
 
             fileNameErrors = fileNameErrors || !FileSystemCompiler.validateFiles(filenames);
