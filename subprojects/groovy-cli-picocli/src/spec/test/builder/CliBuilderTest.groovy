@@ -40,7 +40,7 @@ class CliBuilderTest extends GroovyTestCase {
     interface GreeterI {
         @Option(shortName='h', description='display usage') Boolean help()        // <1>
         @Option(shortName='a', description='greeting audience') String audience() // <2>
-        @Unparsed List remaining()                                                // <3>
+        @Unparsed(description = "positional parameters") List remaining()         // <3>
     }
     // end::annotationInterfaceSpec[]
 
@@ -56,14 +56,14 @@ class CliBuilderTest extends GroovyTestCase {
         }
         String getAudience() { audience }
 
-        @Unparsed
+        @Unparsed(description = "positional parameters")
         List remaining                      // <3>
     }
     // end::annotationClassSpec[]
 
     void testAnnotationsInterface() {
         // tag::annotationInterface[]
-        def cli = new CliBuilder(usage: 'groovy Greeter [option]')  // <1>
+        def cli = new CliBuilder(name: 'groovy Greeter')  // <1>
         def argz = '--audience Groovologist'.split()
         def options = cli.parseFromSpec(GreeterI, argz)             // <2>
         assert options.audience() == 'Groovologist'                 // <3>
@@ -73,6 +73,22 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.help()
         assert options.remaining() == ['Some', 'Other', 'Args']     // <5>
         // end::annotationInterface[]
+
+        options = cli.parseFromSpec(GreeterI, ['-h', 'Some', 'Other', 'Args'] as String[])
+        assert options.help()
+        assert options.remaining() == ['Some', 'Other', 'Args']
+        StringWriter sw = new StringWriter()
+        cli.writer = new PrintWriter(sw)
+        cli.usage()
+
+        String expected = '''\
+Usage: groovy Greeter [-h] [-a=<audience>] [<remaining>...]
+      [<remaining>...]   positional parameters
+  -a, --audience=<audience>
+                         greeting audience
+  -h, --help             display usage
+'''
+        assert expected.normalize() == sw.toString().normalize()
     }
 
     void testAnnotationsClass() {

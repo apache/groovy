@@ -378,6 +378,7 @@ class CliBuilder {
      * <code>true</code> if the parser should recognize long options with both
      * a single hyphen and a double hyphen prefix. The default is <code>false</code>,
      * so only long options with a double hypen prefix (<code>--option</code>) are recognized.
+     * @since 2.5
      */
     boolean acceptLongOptionsWithSingleHyphen = false
 
@@ -512,9 +513,9 @@ class CliBuilder {
      * used by the underlying library.
      * @param posix whether to allow clustered short options
      */
-    void setPosix(boolean posix) {
+    void setPosix(Boolean posix) {
         this.posix = posix
-        parser.posixClusteredShortOptionsAllowed(posix)
+        parser.posixClusteredShortOptionsAllowed(posix ?: false)
     }
 
     /**
@@ -804,6 +805,7 @@ class CliBuilder {
         if (attr.type)           { builder.type(attr.type) } // cannot set type to null
         if (attr.auxiliaryTypes) { builder.auxiliaryTypes(attr.auxiliaryTypes) } // cannot set aux types to null
         builder.arity(arity)
+        builder.description(unparsed.description())
         builder.paramLabel("<$attr.label>")
         builder.getter(attr.getter)
         builder.setter(attr.setter)
