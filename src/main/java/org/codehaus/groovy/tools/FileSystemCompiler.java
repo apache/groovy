@@ -20,6 +20,8 @@ package org.codehaus.groovy.tools;
 
 import groovy.lang.GroovyResourceLoader;
 import groovy.lang.GroovySystem;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import picocli.CommandLine;
 import picocli.CommandLine.*;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -29,10 +31,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -73,9 +72,36 @@ public class FileSystemCompiler {
         unit.compile();
     }
 
+    /** @deprecated use {@link #displayHelp(PrintWriter)} instead */
+    @Deprecated
+    public static void displayHelp(final Options options) {
+        final HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp(80, "groovyc [options] <source-files>", "options:", options, "");
+    }
+
+    /** Prints the usage help message for {@link CompilationOptions} to stderr.
+     * @see #displayHelp(PrintWriter)
+     * @since 2.5 */
+    public static void displayHelp() {
+        displayHelp(new PrintWriter(System.err, true));
+    }
+
+    /** Prints the usage help message for the {@link CompilationOptions} to the specified PrintWriter. */
+    public static void displayHelp(final PrintWriter writer) {
+        configureParser(new CompilationOptions()).usage(writer);
+    }
+
+    /** Prints version information to stderr.
+     * @see #displayVersion(PrintWriter)
+     * @since 2.5 */
     public static void displayVersion() {
+        displayVersion(new PrintWriter(System.err, true));
+    }
+
+    /** Prints version information to the specified PrintWriter. */
+    public static void displayVersion(final PrintWriter writer) {
         for (String line : new VersionProvider().getVersion()) {
-            System.err.println(line);
+            writer.println(line);
         }
     }
 
@@ -394,11 +420,6 @@ public class FileSystemCompiler {
             }
             return flags.toArray(new String[0]);
         }
-    }
-
-    @SuppressWarnings({"AccessStaticViaInstance"})
-    public static CommandLine createCompilationOptions() {
-        return new CommandLine(new CompilationOptions());
     }
 
     /**
