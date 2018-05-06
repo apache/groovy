@@ -270,7 +270,11 @@ public class FileSystemCompiler {
     @Command(name = "groovyc", customSynopsis = "groovyc [options] <source-files>",
             mixinStandardHelpOptions = true, versionProvider = VersionProvider.class)
     public static class CompilationOptions {
-        @Option(names = {"-cp", "-classpath", "--classpath"}, paramLabel = "<path>", description = "Specify where to find the class files")
+        // IMPLEMENTATION NOTE:
+        // classpath must be the first argument, so that the `startGroovy(.bat)` script
+        // can extract it and the JVM can be started with the classpath already correctly set.
+        // This saves us from having to fork a new JVM process with the classpath set from the processed arguments.
+        @Option(names = {"-cp", "-classpath", "--classpath"}, paramLabel = "<path>", description = "Specify where to find the class files - must be first argument")
         private String classpath;
 
         @Option(names = {"-sourcepath", "--sourcepath"}, paramLabel = "<path>", description = "Specify where to find the source files")
