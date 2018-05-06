@@ -378,6 +378,7 @@ class CliBuilder {
      * <code>true</code> if the parser should recognize long options with both
      * a single hyphen and a double hyphen prefix. The default is <code>false</code>,
      * so only long options with a double hypen prefix (<code>--option</code>) are recognized.
+     * @since 2.5
      */
     boolean acceptLongOptionsWithSingleHyphen = false
 
