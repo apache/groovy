@@ -1182,12 +1182,7 @@ public class Groovyc extends MatchingTask {
         // hand crank it so we can add our own compiler configuration
         try {
             FileSystemCompiler.CompilationOptions options = new FileSystemCompiler.CompilationOptions();
-            CommandLine parser = new CommandLine(options);
-            parser.getCommandSpec().parser()
-                    .unmatchedArgumentsAllowed(true)
-                    .unmatchedOptionsArePositionalParams(true)
-                    .expandAtFiles(false)
-                    .toggleBooleanFlags(false);
+            CommandLine parser = FileSystemCompiler.configureParser(options);
             parser.parseArgs(commandLine);
             configuration = options.toCompilerConfiguration();
             configuration.setScriptExtensions(getScriptExtensions());

@@ -116,12 +116,7 @@ public class FileSystemCompiler {
      */
     public static void commandLineCompile(String[] args, boolean lookupUnnamedFiles) throws Exception {
         CompilationOptions options = new CompilationOptions();
-        CommandLine parser = new CommandLine(options);
-        parser.getCommandSpec().parser()
-                .unmatchedArgumentsAllowed(true)
-                .unmatchedOptionsArePositionalParams(true)
-                .expandAtFiles(false)
-                .toggleBooleanFlags(false);
+        CommandLine parser = configureParser(options);
         ParseResult parseResult = parser.parseArgs(args);
         if (CommandLine.printHelpIfRequested(parseResult)) {
             return;
@@ -142,6 +137,17 @@ public class FileSystemCompiler {
         if (!fileNameErrors) {
             doCompilation(configuration, null, filenames, lookupUnnamedFiles);
         }
+    }
+
+    public static CommandLine configureParser(CompilationOptions options) {
+        CommandLine parser = new CommandLine(options);
+        parser.getCommandSpec().mixinStandardHelpOptions(true); // programmatically so these options appear last in usage help
+        parser.getCommandSpec().parser()
+                .unmatchedArgumentsAllowed(true)
+                .unmatchedOptionsArePositionalParams(true)
+                .expandAtFiles(false)
+                .toggleBooleanFlags(false);
+        return parser;
     }
 
     /**
@@ -267,8 +273,10 @@ public class FileSystemCompiler {
         }
     }
 
-    @Command(name = "groovyc", customSynopsis = "groovyc [options] <source-files>",
-            mixinStandardHelpOptions = true, versionProvider = VersionProvider.class)
+    @Command(name = "groovyc",
+            customSynopsis = "groovyc [options] <source-files>",
+            sortOptions = false,
+            versionProvider = VersionProvider.class)
     public static class CompilationOptions {
         // IMPLEMENTATION NOTE:
         // classpath must be the first argument, so that the `startGroovy(.bat)` script
