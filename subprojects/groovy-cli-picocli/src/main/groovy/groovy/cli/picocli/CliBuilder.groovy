@@ -804,6 +804,7 @@ class CliBuilder {
         if (attr.type)           { builder.type(attr.type) } // cannot set type to null
         if (attr.auxiliaryTypes) { builder.auxiliaryTypes(attr.auxiliaryTypes) } // cannot set aux types to null
         builder.arity(arity)
+        builder.description(unparsed.description())
         builder.paramLabel("<$attr.label>")
         builder.getter(attr.getter)
         builder.setter(attr.setter)
