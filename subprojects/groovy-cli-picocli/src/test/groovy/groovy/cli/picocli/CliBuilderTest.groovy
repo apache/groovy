@@ -20,7 +20,6 @@ package groovy.cli.picocli
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
 import picocli.CommandLine.DuplicateOptionAnnotationsException
@@ -121,6 +120,38 @@ class CliBuilderTest extends GroovyTestCase {
         groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.as)
         groovy.util.GroovyTestCase.assertEquals('1', options.arg)
         groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.args)
+    }
+
+    void testPosixNullValueHandledCorrectly_inConstructor() {
+        def cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder(posix: false)
+        assert cli.posix == false
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder(posix: null)
+        assert cli.posix == null
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+    }
+
+    void testPosixNullValueHandledCorrectly_inSetter() {
+        def cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli.posix = false
+        assert cli.posix == false
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli.posix = null
+        assert cli.posix == null
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
     }
 
     void testFailedParsePrintsUsage() {
