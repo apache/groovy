@@ -378,6 +378,7 @@ class CliBuilder {
      * <code>true</code> if the parser should recognize long options with both
      * a single hyphen and a double hyphen prefix. The default is <code>false</code>,
      * so only long options with a double hypen prefix (<code>--option</code>) are recognized.
+     * @since 2.5
      */
     boolean acceptLongOptionsWithSingleHyphen = false
 
@@ -453,6 +454,28 @@ class CliBuilder {
     // When a command spec is defined via annotations, the existing instance is
     // replaced with a new one. This allows the outer CliBuilder instance can be reused.
     private CommandSpec commandSpec = CommandSpec.create()
+
+    /**
+     * This setter exists for backwards compatibility with previous versions of CliBuilder:
+     * In this version of CliBuilder, the <code>parser</code> property is read-only.
+     * This methods prints a message to the standard error stream and ignores the specified value.
+     * @param ignored the new value is ignored
+     * @since 2.5
+     */
+    @Deprecated void setParser(Object ignored) {
+        System.err.println('The program attempted to replace the CliBuilder parser. This is no longer supported in groovy.cli.picocli.CliBuilder. Consider using the posix property, or use groovy.cli.commons.CliBuilder instead.')
+    }
+
+    /**
+     * This setter exists for backwards compatibility with previous versions of CliBuilder:
+     * This version of CliBuilder does not have a <code>formatter</code> property.
+     * This methods prints a message to the standard error stream and ignores the specified value.
+     * @param ignored the new value is ignored
+     * @since 2.5
+     */
+    @Deprecated void setFormatter(Object ignored) {
+        System.err.println('The program attempted to set a formatter on CliBuilder. This is no longer supported in groovy.cli.picocli.CliBuilder. Consider using the usageMessage property, or use groovy.cli.commons.CliBuilder instead.')
+    }
 
     /**
      * Sets the {@link #usage usage} property on this <code>CliBuilder</code> and the
@@ -804,6 +827,7 @@ class CliBuilder {
         if (attr.type)           { builder.type(attr.type) } // cannot set type to null
         if (attr.auxiliaryTypes) { builder.auxiliaryTypes(attr.auxiliaryTypes) } // cannot set aux types to null
         builder.arity(arity)
+        builder.description(unparsed.description())
         builder.paramLabel("<$attr.label>")
         builder.getter(attr.getter)
         builder.setter(attr.setter)
