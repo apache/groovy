@@ -455,6 +455,28 @@ class CliBuilder {
     private CommandSpec commandSpec = CommandSpec.create()
 
     /**
+     * This setter exists for backwards compatibility with previous versions of CliBuilder:
+     * In this version of CliBuilder, the <code>parser</code> property is read-only.
+     * This methods prints a message to the standard error stream and ignores the specified value.
+     * @param ignored the new value is ignored
+     * @since 2.5
+     */
+    @Deprecated void setParser(Object ignored) {
+        System.err.println('The program attempted to replace the CliBuilder parser. This is no longer supported in groovy.cli.picocli.CliBuilder. Consider using the posix property, or use groovy.cli.commons.CliBuilder instead.')
+    }
+
+    /**
+     * This setter exists for backwards compatibility with previous versions of CliBuilder:
+     * This version of CliBuilder does not have a <code>formatter</code> property.
+     * This methods prints a message to the standard error stream and ignores the specified value.
+     * @param ignored the new value is ignored
+     * @since 2.5
+     */
+    @Deprecated void setFormatter(Object ignored) {
+        System.err.println('The program attempted to set a formatter on CliBuilder. This is no longer supported in groovy.cli.picocli.CliBuilder. Consider using the usageMessage property, or use groovy.cli.commons.CliBuilder instead.')
+    }
+
+    /**
      * Sets the {@link #usage usage} property on this <code>CliBuilder</code> and the
      * <code>customSynopsis</code> on the {@link #usageMessage} used by the underlying library.
      * @param usage the custom synopsis of the usage help message
