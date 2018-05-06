@@ -20,12 +20,10 @@ package org.codehaus.groovy.tools;
 
 import groovy.lang.GroovyResourceLoader;
 import groovy.lang.GroovySystem;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import picocli.CommandLine;
+import picocli.CommandLine.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
@@ -33,10 +31,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -77,16 +72,37 @@ public class FileSystemCompiler {
         unit.compile();
     }
 
+    /** @deprecated use {@link #displayHelp(PrintWriter)} instead */
+    @Deprecated
     public static void displayHelp(final Options options) {
         final HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp(80, "groovyc [options] <source-files>", "options:", options, "");
     }
 
+    /** Prints the usage help message for {@link CompilationOptions} to stderr.
+     * @see #displayHelp(PrintWriter)
+     * @since 2.5 */
+    public static void displayHelp() {
+        displayHelp(new PrintWriter(System.err, true));
+    }
+
+    /** Prints the usage help message for the {@link CompilationOptions} to the specified PrintWriter. */
+    public static void displayHelp(final PrintWriter writer) {
+        configureParser(new CompilationOptions()).usage(writer);
+    }
+
+    /** Prints version information to stderr.
+     * @see #displayVersion(PrintWriter)
+     * @since 2.5 */
     public static void displayVersion() {
-        String version = GroovySystem.getVersion();
-        System.err.println("Groovy compiler version " + version);
-        System.err.println("Copyright 2003-2018 The Apache Software Foundation. http://groovy-lang.org/");
-        System.err.println("");
+        displayVersion(new PrintWriter(System.err, true));
+    }
+
+    /** Prints version information to the specified PrintWriter. */
+    public static void displayVersion(final PrintWriter writer) {
+        for (String line : new VersionProvider().getVersion()) {
+            writer.println(line);
+        }
     }
 
     public static int checkFiles(String[] filenames) {
@@ -125,32 +141,20 @@ public class FileSystemCompiler {
      * the VM to exit and the lookup for .groovy files can be controlled
      */
     public static void commandLineCompile(String[] args, boolean lookupUnnamedFiles) throws Exception {
-        Options options = createCompilationOptions();
-
-        CommandLineParser cliParser = new DefaultParser();
-
-        CommandLine cli;
-        cli = cliParser.parse(options, args);
-
-        if (cli.hasOption('h')) {
-            displayHelp(options);
+        CompilationOptions options = new CompilationOptions();
+        CommandLine parser = configureParser(options);
+        ParseResult parseResult = parser.parseArgs(args);
+        if (CommandLine.printHelpIfRequested(parseResult)) {
             return;
         }
-
-        if (cli.hasOption('v')) {
-            displayVersion();
-            return;
-        }
-
-        displayStackTraceOnError = cli.hasOption('e');
-
-        CompilerConfiguration configuration = generateCompilerConfigurationFromOptions(cli);
+        displayStackTraceOnError = options.printStack;
+        CompilerConfiguration configuration = options.toCompilerConfiguration();
 
         // Load the file name list
-        String[] filenames = generateFileNamesFromOptions(cli);
+        String[] filenames = options.generateFileNames();
         boolean fileNameErrors = filenames == null;
         if (!fileNameErrors && (filenames.length == 0)) {
-            displayHelp(options);
+            parser.usage(System.err);
             return;
         }
 
@@ -159,6 +163,17 @@ public class FileSystemCompiler {
         if (!fileNameErrors) {
             doCompilation(configuration, null, filenames, lookupUnnamedFiles);
         }
+    }
+
+    public static CommandLine configureParser(CompilationOptions options) {
+        CommandLine parser = new CommandLine(options);
+        parser.getCommandSpec().mixinStandardHelpOptions(true); // programmatically so these options appear last in usage help
+        parser.getCommandSpec().parser()
+                .unmatchedArgumentsAllowed(true)
+                .unmatchedOptionsArePositionalParams(true)
+                .expandAtFiles(false)
+                .toggleBooleanFlags(false);
+        return parser;
     }
 
     /**
@@ -234,9 +249,11 @@ public class FileSystemCompiler {
         }
     }
 
-    public static String[] generateFileNamesFromOptions(CommandLine cli) {
-        String[] filenames = cli.getArgs();
-        List<String> fileList = new ArrayList<String>(filenames.length);
+    private static String[] generateFileNamesFromOptions(List<String> filenames) {
+        if (filenames == null) {
+            return new String[0];
+        }
+        List<String> fileList = new ArrayList<String>(filenames.size());
         boolean errors = false;
         for (String filename : filenames) {
             if (filename.startsWith("@")) {
@@ -271,94 +288,138 @@ public class FileSystemCompiler {
         }
     }
 
-    public static CompilerConfiguration generateCompilerConfigurationFromOptions(CommandLine cli) throws IOException {
-        // Setup the configuration data
-        CompilerConfiguration configuration = new CompilerConfiguration();
-
-        if (cli.hasOption("classpath")) {
-            configuration.setClasspath(cli.getOptionValue("classpath"));
+    static class VersionProvider implements IVersionProvider {
+        @Override
+        public String[] getVersion() {
+            return new String[] {
+                    "Groovy compiler version " + GroovySystem.getVersion(),
+                    "Copyright 2003-2018 The Apache Software Foundation. http://groovy-lang.org/",
+                    "",
+            };
         }
-
-        if (cli.hasOption('d')) {
-            configuration.setTargetDirectory(cli.getOptionValue('d'));
-        }
-
-        configuration.setParameters(cli.hasOption("pa"));
-
-        if (cli.hasOption("encoding")) {
-            configuration.setSourceEncoding(cli.getOptionValue("encoding"));
-        }
-
-        if (cli.hasOption("basescript")) {
-            configuration.setScriptBaseClass(cli.getOptionValue("basescript"));
-        }
-
-        // joint compilation parameters
-        if (cli.hasOption('j')) {
-            Map<String, Object> compilerOptions = new HashMap<String, Object>();
-
-            String[] namedValues = cli.getOptionValues("J");
-            compilerOptions.put("namedValues", namedValues);
-
-            String[] flags = cli.getOptionValues("F");
-            if (flags != null && cli.hasOption("pa")){
-                flags = Arrays.copyOf(flags, flags.length + 1);
-                flags[flags.length - 1] = "parameters";
-            }
-            compilerOptions.put("flags", flags);
-
-            configuration.setJointCompilationOptions(compilerOptions);
-        }
-
-        if (cli.hasOption("indy")) {
-            configuration.getOptimizationOptions().put("int", false);
-            configuration.getOptimizationOptions().put("indy", true);
-        }
-
-        String configScripts = System.getProperty("groovy.starter.configscripts", null);
-        if (cli.hasOption("configscript") || (configScripts != null && !configScripts.isEmpty())) {
-            List<String> scripts = new ArrayList<String>();
-            if (cli.hasOption("configscript")) {
-                scripts.add(cli.getOptionValue("configscript"));
-            }
-            if (configScripts != null) {
-                scripts.addAll(StringGroovyMethods.tokenize((CharSequence) configScripts, ','));
-            }
-            processConfigScripts(scripts, configuration);
-        }
-
-        return configuration;
     }
 
-    @SuppressWarnings({"AccessStaticViaInstance"})
-    public static Options createCompilationOptions() {
-        Options options = new Options();
-        options.addOption(Option.builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build());
-        options.addOption(Option.builder("cp").longOpt("classpath").hasArg().argName("path").desc("Aliases for '-classpath'").build());
-        options.addOption(Option.builder().longOpt("sourcepath").hasArg().argName("path").desc("Specify where to find the source files").build());
-        options.addOption(Option.builder().longOpt("temp").hasArg().argName("temp").desc("Specify temporary directory").build());
-        options.addOption(Option.builder().longOpt("encoding").hasArg().argName("encoding").desc("Specify the encoding of the user class files").build());
-        options.addOption(Option.builder("d").hasArg().desc("Specify where to place generated class files").build());
-        options.addOption(Option.builder("h").longOpt("help").desc("Print a synopsis of standard options").build());
-        options.addOption(Option.builder("v").longOpt("version").desc("Print the version").build());
-        options.addOption(Option.builder("e").longOpt("exception").desc("Print stack trace on error").build());
-        options.addOption(Option.builder("pa").longOpt("parameters").desc("Generate metadata for reflection on method parameter names (jdk8+ only)").build());
-        options.addOption(Option.builder("j").longOpt("jointCompilation").desc("Attach javac compiler to compile .java files").build());
-        options.addOption(Option.builder("b").longOpt("basescript").hasArg().argName("class").desc("Base class name for scripts (must derive from Script)").build());
-        options.addOption(
-                Option.builder("J").argName("property=value")
-                        .valueSeparator()
-                        .numberOfArgs(2)
-                        .desc("Name-value pairs to pass to javac")
-                        .build());
-        options.addOption(
-                Option.builder("F").argName("flag")
-                        .hasArg()
-                        .desc("Passed to javac for joint compilation")
-                        .build());
-        options.addOption(Option.builder().longOpt("indy").desc("Enables compilation using invokedynamic").build());
-        options.addOption(Option.builder().longOpt("configscript").hasArg().desc("A script for tweaking the configuration options").build());
-        return options;
+    @Command(name = "groovyc",
+            customSynopsis = "groovyc [options] <source-files>",
+            sortOptions = false,
+            versionProvider = VersionProvider.class)
+    public static class CompilationOptions {
+        // IMPLEMENTATION NOTE:
+        // classpath must be the first argument, so that the `startGroovy(.bat)` script
+        // can extract it and the JVM can be started with the classpath already correctly set.
+        // This saves us from having to fork a new JVM process with the classpath set from the processed arguments.
+        @Option(names = {"-cp", "-classpath", "--classpath"}, paramLabel = "<path>", description = "Specify where to find the class files - must be first argument")
+        private String classpath;
+
+        @Option(names = {"-sourcepath", "--sourcepath"}, paramLabel = "<path>", description = "Specify where to find the source files")
+        private File sourcepath;
+
+        @Option(names = {"--temp"}, paramLabel = "<temp>", description = "Specify temporary directory")
+        private File temp;
+
+        @Option(names = {"--encoding"}, description = "Specify the encoding of the user class files")
+        private String encoding;
+
+        @Option(names = "-d", paramLabel = "<dir>", description = "Specify where to place generated class files")
+        private File targetDir;
+
+        @Option(names = {"-e", "--exception"}, description = "Print stack trace on error")
+        private boolean printStack;
+
+        @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names (jdk8+ only)")
+        private boolean parameterMetadata;
+
+        @Option(names = {"-j", "--jointCompilation"}, description = "Attach javac compiler to compile .java files")
+        private boolean jointCompilation;
+
+        @Option(names = {"-b", "--basescript"}, paramLabel = "<class>", description = "Base class name for scripts (must derive from Script)")
+        private String scriptBaseClass;
+
+        @Option(names = "-J", paramLabel = "<property=value>", description = "Name-value pairs to pass to javac")
+        private Map<String, String> javacOptionsMap;
+
+        @Option(names = "-F", paramLabel = "<flag>", description = "Passed to javac for joint compilation")
+        private List<String> flags;
+
+        @Option(names = {"--indy"}, description = "Enables compilation using invokedynamic")
+        private boolean indy;
+
+        @Option(names = {"--configscript"}, paramLabel = "<script>", description = "A script for tweaking the configuration options")
+        private String configScript;
+
+        @Parameters(description = "The groovy source files to compile, or @-files containing a list of source files to compile",
+                    paramLabel = "<source-files>")
+        private List<String> files;
+
+        public CompilerConfiguration toCompilerConfiguration() throws IOException {
+            // Setup the configuration data
+            CompilerConfiguration configuration = new CompilerConfiguration();
+
+            if (classpath != null) {
+                configuration.setClasspath(classpath);
+            }
+
+            if (targetDir != null && targetDir.getName().length() > 0) {
+                configuration.setTargetDirectory(targetDir);
+            }
+
+            configuration.setParameters(parameterMetadata);
+            configuration.setSourceEncoding(encoding);
+            configuration.setScriptBaseClass(scriptBaseClass);
+
+            // joint compilation parameters
+            if (jointCompilation) {
+                Map<String, Object> compilerOptions = new HashMap<String, Object>();
+                compilerOptions.put("namedValues", javacOptionsList());
+                compilerOptions.put("flags", flagsWithParameterMetaData());
+                configuration.setJointCompilationOptions(compilerOptions);
+            }
+
+            if (indy) {
+                configuration.getOptimizationOptions().put("int", false);
+                configuration.getOptimizationOptions().put("indy", true);
+            }
+
+            String configScripts = System.getProperty("groovy.starter.configscripts", null);
+            if (configScript != null || (configScripts != null && !configScripts.isEmpty())) {
+                List<String> scripts = new ArrayList<String>();
+                if (configScript != null) {
+                    scripts.add(configScript);
+                }
+                if (configScripts != null) {
+                    scripts.addAll(StringGroovyMethods.tokenize((CharSequence) configScripts, ','));
+                }
+                processConfigScripts(scripts, configuration);
+            }
+
+            return configuration;
+        }
+
+        public String[] generateFileNames() {
+            return generateFileNamesFromOptions(files);
+        }
+
+        String[] javacOptionsList() {
+            if (javacOptionsMap == null) {
+                return null;
+            }
+            List<String> result = new ArrayList<String>();
+            for (Map.Entry<String, String> entry : javacOptionsMap.entrySet()) {
+                result.add(entry.getKey());
+                result.add(entry.getValue());
+            }
+            return result.toArray(new String[0]);
+        }
+
+        String[] flagsWithParameterMetaData() {
+            if (flags == null) {
+                return null;
+            }
+            if (parameterMetadata) {
+                flags.add("parameters");
+            }
+            return flags.toArray(new String[0]);
+        }
     }
 
     /**
