@@ -1268,6 +1268,25 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8138
+    void testGroovy8138() {
+        if (IS_PRE_8) return
+
+        assertScript '''
+        import groovy.transform.CompileStatic
+        
+        import static java.util.stream.Collectors.toList
+        
+        @CompileStatic
+        class Test {
+            static void main(String[] args) {
+                List<String> tables = ['a', 'b']
+                assert ['a'] == tables.stream().filter { tableName -> tableName.contains('a') }.collect(toList())
+            }
+        }
+        '''
+    }
+
     static class MyMethodCallTestClass {
 
         static int mul(int... args) { args.toList().inject(1) { x,y -> x*y } }
