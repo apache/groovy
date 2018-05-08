@@ -345,24 +345,122 @@ There is a distinct section on `@Category` in the <<core-metaprogramming.adoc#xf
 
 === Metaclasses
 
-(TBD)
+As explained in other section, Metaclasses has a central role in the method resolution. For every method invocation from groovy code, Groovy will find the `MetaClass` for the given object and delegate the method resolution to the metaclass via gapid:groovy.lang.MetaClass#invokeMethod(java.lang.Class,java.lang.Object,java.lang.String,java.lang.Object,boolean,boolean)[MetaClass#invokeMethod] which should not be confused with gapid:groovy.lang.GroovyObject#invokeMethod(java.lang.String,java.lang.Object)[GroovyObject#invokeMethod].
+
+
+==== The default metaclass `MetaClassImpl`
+By default objects get an instance of `MetaClassImpl` that implements the default method lookup. This method lookup includes looking up of the method in the object class ("regular" method) but also if no method is found this way it will resort to calling `methodMissing` and ultimately gapid:groovy.lang.GroovyObject.html#invokeMethod(java.lang.String,java.lang.Object)[GroovyObject#invokeMethod]
+
+
+[source,groovy]
+----
+class Foo {}
+
+def f = new Foo()
+
+assert f.metaClass =~ /MetaClassImpl/
+----
+
+
 
 ==== Custom metaclasses
 
-(TBD)
+You can change the metaclass of any object or class and replace with a custom implementation of the `MetaClass` gapi:groovy.lang.MetaClass[interface]. Usually you will want to subclass one of the existing metaclasses `MetaClassImpl`, `DelegatingMetaClass`, `ExpandoMetaClass`, `ProxyMetaClass`, etc. otherwise you will need to implement the complete method lookup logic. Before using a new metaclass instance you should call  gapid:groovy.lang.MetaClass#initialize()[] otherwise the metaclass may or may not behave as expected.
 
 ===== Delegating metaclass
 
-(TBD)
+If you only need to decorate an existing metaclass the `DelegatingMetaClass` simplifies that use case. The old metaclass implementation is still accessible via `super` making easy to apply pretransformations to the inputs, routing to other methods and postprocess the outputs.
 
-===== Magic package (Maksym Stavytskyi)
+[source,groovy]
+----
+class Foo { def bar() { "bar" } }
 
-(TBD)
+class MyFooMetaClass extends DelegatingMetaClass {
+  MyFooMetaClass(MetaClass metaClass) { super(metaClass) }
+  MyFooMetaClass(Class theClass) { super(theClass) }
+
+  Object invokeMethod(Object object, String methodName, Object[] args) {
+     def result = super.invokeMethod(object,methodName.toLowerCase(), args)
+     result.toUpperCase();
+  }
+}
+
+
+def mc =  new MyFooMetaClass(Foo.metaClass)
+mc.initialize()
+
+Foo.metaClass = mc
+def f = new Foo()
+
+assert f.BAR() == "BAR" // the new metaclass routes .BAR() to .bar() and uppercases the result
+----
+
+===== Magic package
+
+It is possible to change the metaclass at startup time by giving the metaclass a specially crafted (magic) class name  and package name. In order to change the metaclass for `java.lang.Integer` it's enough to put a class `groovy.runtime.metaclass.java.lang.IntegerMetaClass` in the classpath. This is useful, for example,  when working with frameworks if you want to to metaclass changes before your code is executed by the framework. The general form of the magic package is `groovy.runtime.metaclass.[package].[class]MetaClass`. In the example below the `[package]` is `java.lang` and the `[class]` is `Integer`:
+
+
+[source,groovy]
+----
+// file: IntegerMetaClass.groovy
+package groovy.runtime.metaclass.java.lang;
+
+class IntegerMetaClass extends DelegatingMetaClass {
+  IntegerMetaClass(MetaClass metaClass) { super(metaClass) }
+  IntegerMetaClass(Class theClass) { super(theClass) }
+  Object invokeMethod(Object object, String name, Object[] args) {
+    if (name =~ /isBiggerThan/) {
+      def other = name.split(/isBiggerThan/)[1].toInteger()
+      object > other
+    } else {
+      return super.invokeMethod(object,name, args);
+    }
+  }
+}
+----
+
+By compiling the above file with `groovyc IntegerMetaClass.groovy` a `./groovy/runtime/metaclass/java/lang/IntegerMetaClass.class` will be generated. The example below will use this new metaclass:
+
+[source,groovy]
+----
+// File testInteger.groovy
+def i = 10
+
+assert i.isBiggerThan5()
+assert !i.isBiggerThan15()
+
+println i.isBiggerThan5()
+----
+
+By running that file with `groovy -cp . testInteger.groovy` the `IntegerMetaClass` will be in the classpath and therefore it will become the metaclass for `java.lang.Integer` intercepting the method calls to `isBiggerThan*()` methods.
+
 
 ==== Per instance metaclass
 
-(TBD)
+You can change the metaclass of individual objects separately, so it's possible to have multiple object of the same class with different metaclasses.
 
+[source,groovy]
+----
+class Foo { def bar() { "bar" }}
+
+class FooMetaClass extends DelegatingMetaClass {
+  FooMetaClass(MetaClass metaClass) { super(metaClass) }
+  Object invokeMethod(Object object, String name, Object[] args) {
+      super.invokeMethod(object,name,args).toUpperCase()
+  }
+}
+
+def f1 = new Foo()
+def f2 = new Foo()
+f2.metaClass = new FooMetaClass(f2.metaClass)
+
+assert f1.bar() == "bar"
+assert f2.bar() == "BAR"
+assert f1.metaClass =~ /MetaClassImpl/
+assert f2.metaClass =~ /FooMetaClass/
+assert f1.class.toString() == "class Foo"
+assert f2.class.toString() == "class Foo"
+----
 
 [[metaprogramming_emc]]
 ==== ExpandoMetaClass
