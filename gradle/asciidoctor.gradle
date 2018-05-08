@@ -51,6 +51,7 @@ asciidoctor {
                 jdk: "http://docs.oracle.com/javase/8/docs/api/index.html",
                 gjdk: "http://docs.groovy-lang.org/${version}/html/groovy-jdk/index.html",
                 gapi: "http://docs.groovy-lang.org/${version}/html/gapi/index.html",
+                gapid:  "http://docs.groovy-lang.org/${version}/html/gapi/",
         ]
 
         baseUrls.each { macroName, baseURL ->
@@ -59,11 +60,22 @@ asciidoctor {
                     def (className, anchor) = target.split('#') as List
                     options = [
                             "type"  : ":link",
-                            "target": calculateDocUrl(baseURL, className, anchor)
+                            "target": calculateDocUrl(baseURL, className, anchor),
                     ]
 
                     createInline(parent, "anchor", attributes.text?:target, attributes, options).render()
             }
+        }
+
+        inlinemacro('gapid') { parent, target, attributes ->
+            def (className, anchor) = target.split('#') as List
+
+            def partialUrl = { -> className.replace('.', '/') + '.html' + (anchor ? '#' + anchor.replace(',',', ') : '')}
+            options = [
+                    "type": ":link",
+                    "target": "${baseUrls['gapid']}${partialUrl()}",
+            ]
+            createInline(parent, "anchor", attributes.text?:target, attributes, options).render()
         }
     }
 }
