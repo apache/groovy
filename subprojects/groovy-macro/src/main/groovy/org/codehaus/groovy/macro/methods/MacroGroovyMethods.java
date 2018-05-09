@@ -195,8 +195,8 @@ public class MacroGroovyMethods {
     protected static ClosureExpression getClosureArgument(SourceUnit source, MethodCallExpression call) {
         TupleExpression tupleArguments = getMacroArguments(source, call);
 
-        int size = tupleArguments.getExpressions().size();
-        if (tupleArguments == null || size < 1) {
+        int size = tupleArguments == null ? -1 : tupleArguments.getExpressions().size();
+        if (size < 1) {
             source.addError(new SyntaxException("Call arguments should have at least one argument" + '\n', tupleArguments));
             return null;
         }
