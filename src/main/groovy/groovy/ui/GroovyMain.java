@@ -25,12 +25,6 @@ import groovy.lang.GroovyShell;
 import groovy.lang.GroovySystem;
 import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
@@ -39,6 +33,8 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.StackTraceUtils;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
+import picocli.CommandLine;
+import picocli.CommandLine.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -59,10 +55,11 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
-
-import static org.apache.commons.cli.Option.builder;
 
 /**
  * A Command line to execute groovy.
@@ -114,188 +111,190 @@ public class GroovyMain {
      * @param args all command line args.
      */
     public static void main(String args[]) {
-        processArgs(args, System.out);
+        processArgs(args, System.out, System.err);
     }
 
     // package-level visibility for testing purposes (just usage/errors at this stage)
-    // TODO: should we have an 'err' printstream too for ParseException?
+    @Deprecated
     static void processArgs(String[] args, final PrintStream out) {
-        Options options = buildOptions();
-
+        processArgs(args, out, out);
+    }
+    // package-level visibility for testing purposes (just usage/errors at this stage)
+    static void processArgs(String[] args, final PrintStream out, final PrintStream err) {
+        GroovyCommand groovyCommand = new GroovyCommand();
+        CommandLine parser = new CommandLine(groovyCommand).setUnmatchedArgumentsAllowed(true).setStopAtUnmatched(true);
+        parser.getCommandSpec().mixinStandardHelpOptions(true);
         try {
-            CommandLine cmd = parseCommandLine(options, args);
-
-            if (cmd.hasOption('h')) {
-                printHelp(out, options);
-            } else if (cmd.hasOption('v')) {
-                String version = GroovySystem.getVersion();
-                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version") +
-                        " Vendor: " + System.getProperty("java.vm.vendor")  + " OS: " + System.getProperty("os.name"));
-            } else {
-                // If we fail, then exit with an error so scripting frameworks can catch it
-                // TODO: pass printstream(s) down through process
-                if (!process(cmd)) {
-                    System.exit(1);
-                }
+            List<CommandLine> result = parser.parse(args);
+            if (CommandLine.printHelpIfRequested(result, out, err, Help.Ansi.AUTO)) {
+                return;
             }
-        } catch (ParseException pe) {
-            out.println("error: " + pe.getMessage());
-            printHelp(out, options);
+            // TODO: pass printstream(s) down through process
+            if (!groovyCommand.process(parser)) {
+                // If we fail, then exit with an error so scripting frameworks can catch it.
+                System.exit(1);
+            }
+
+        } catch (ParameterException ex) { // command line arguments could not be parsed
+            err.println(ex.getMessage());
+            ex.getCommandLine().usage(err);
         } catch (IOException ioe) {
-            out.println("error: " + ioe.getMessage());
+            err.println("error: " + ioe.getMessage());
         }
     }
 
-    private static void printHelp(PrintStream out, Options options) {
-        HelpFormatter formatter = new HelpFormatter();
-        PrintWriter pw = new PrintWriter(out);
-
-        formatter.printHelp(
-                pw,
-                80,
-                "groovy [options] [filename] [args]",
-                "The Groovy command line processor.\nOptions:",
-                options,
-                2,
-                4,
-                null, // footer
-                false);
-
-        pw.flush();
+    static class VersionProvider implements IVersionProvider {
+        @Override
+        public String[] getVersion() {
+            return new String[] {
+                    "Groovy Version: " + GroovySystem.getVersion() + " JVM: " + System.getProperty("java.version") +
+                    " Vendor: " + System.getProperty("java.vm.vendor")  + " OS: " + System.getProperty("os.name")
+            };
+        }
     }
 
-    /**
-     * Parse the command line.
-     *
-     * @param options the options parser.
-     * @param args    the command line args.
-     * @return parsed command line.
-     * @throws ParseException if there was a problem.
-     */
-    private static CommandLine parseCommandLine(Options options, String[] args) throws ParseException {
-        CommandLineParser parser = new DefaultParser();
-        return parser.parse(options, args, true);
-    }
+    @Command(name = "groovy",
+            customSynopsis = "groovy [options] [filename] [args]",
+            description = "The Groovy command line processor.",
+            sortOptions = false,
+            versionProvider = VersionProvider.class)
+    private static class GroovyCommand {
 
-    /**
-     * Build the options parser.
-     *
-     * @return an options parser.
-     */
-    private static Options buildOptions() {
-        return new Options()
-                .addOption(builder("classpath").hasArg().argName("path").desc("Specify where to find the class files - must be first argument").build())
-                .addOption(builder("cp").longOpt("classpath").hasArg().argName("path").desc("Aliases for '-classpath'").build())
-                .addOption(builder("D").longOpt("define").desc("Define a system property").numberOfArgs(2).valueSeparator().argName("name=value").build())
-                .addOption(
-                        builder().longOpt("disableopt")
-                                .desc("Disables one or all optimization elements; " +
-                                        "optlist can be a comma separated list with the elements: " +
-                                        "all (disables all optimizations), " +
-                                        "int (disable any int based optimizations)")
-                                .hasArg().argName("optlist").build())
-                .addOption(builder("h").hasArg(false).desc("Usage information").longOpt("help").build())
-                .addOption(builder("d").hasArg(false).desc("Debug mode will print out full stack traces").longOpt("debug").build())
-                .addOption(builder("v").hasArg(false).desc("Display the Groovy and JVM versions").longOpt("version").build())
-                .addOption(builder("c").argName("charset").hasArg().desc("Specify the encoding of the files").longOpt("encoding").build())
-                .addOption(builder("e").argName("script").hasArg().desc("Specify a command line script").build())
-                .addOption(builder("i").argName("extension").optionalArg(true).desc("Modify files in place; create backup if extension is given (e.g. \'.bak\')").build())
-                .addOption(builder("n").hasArg(false).desc("Process files line by line using implicit 'line' variable").build())
-                .addOption(builder("p").hasArg(false).desc("Process files line by line and print result (see also -n)").build())
-                .addOption(builder("pa").hasArg(false).desc("Generate metadata for reflection on method parameter names (jdk8+ only)").longOpt("parameters").build())
-                .addOption(builder("l").argName("port").optionalArg(true).desc("Listen on a port and process inbound lines (default: 1960)").build())
-                .addOption(builder("a").argName("splitPattern").optionalArg(true).desc("Split lines using splitPattern (default '\\s') using implicit 'split' variable").longOpt("autosplit").build())
-                .addOption(builder().longOpt("indy").desc("Enables compilation using invokedynamic").build())
-                .addOption(builder().longOpt("configscript").hasArg().desc("A script for tweaking the configuration options").build())
-                .addOption(builder("b").longOpt("basescript").hasArg().argName("class").desc("Base class name for scripts (must derive from Script)").build());
-    }
+        // IMPLEMENTATION NOTE:
+        // classpath must be the first argument, so that the `startGroovy(.bat)` script
+        // can extract it and the JVM can be started with the classpath already correctly set.
+        // This saves us from having to fork a new JVM process with the classpath set from the processed arguments.
+        @Option(names = {"-cp", "-classpath", "--classpath"}, paramLabel = "<path>", description = "Specify where to find the class files - must be first argument")
+        private String classpath;
 
-    /**
-     * Process the users request.
-     *
-     * @param line the parsed command line.
-     * @throws ParseException if invalid options are chosen
-     */
-    private static boolean process(CommandLine line) throws ParseException, IOException {
-        List args = line.getArgList();
+        @Option(names = {"-D", "--define"}, paramLabel = "<property=value>", description = "Define a system property")
+        private Map<String, String> systemProperties = new LinkedHashMap<String, String>();
 
-        if (line.hasOption('D')) {
-            Properties optionProperties = line.getOptionProperties("D");
-            Enumeration<String> propertyNames = (Enumeration<String>) optionProperties.propertyNames();
-            while (propertyNames.hasMoreElements()) {
-                String nextName = propertyNames.nextElement();
-                System.setProperty(nextName, optionProperties.getProperty(nextName));
+        @Option(names = "--disableopt", paramLabel = "optlist", split = ",",
+                description = {
+                        "Disables one or all optimization elements; optlist can be a comma separated list with the elements: ",
+                                "all (disables all optimizations), ",
+                                "int (disable any int based optimizations)"})
+        private List<String> disableopt = new ArrayList<String>();
+
+        @Option(names = {"-d", "--debug"}, description = "Debug mode will print out full stack traces")
+        private boolean debug;
+
+        @Option(names = {"-c", "--encoding"}, paramLabel = "<charset>", description = "Specify the encoding of the files")
+        private String encoding;
+
+        @Option(names = {"-e"}, paramLabel = "<script>", description = "Specify a command line script")
+        private String script;
+
+        @Option(names = {"-i"}, arity = "0..1", paramLabel = "<extension>", description = "Modify files in place; create backup if extension is given (e.g. \'.bak\')")
+        private String extension;
+
+        @Option(names = {"-n"}, description = "Process files line by line using implicit 'line' variable")
+        private boolean lineByLine;
+
+        @Option(names = {"-p"}, description = "Process files line by line and print result (see also -n)")
+        private boolean lineByLinePrint;
+
+        @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names (jdk8+ only)")
+        private boolean parameterMetadata;
+
+        @Option(names = "-l", arity = "0..1", paramLabel = "<port>", description = "Listen on a port and process inbound lines (default: 1960)")
+        private String port;
+
+        @Option(names = {"-a", "--autosplit"}, arity = "0..1", paramLabel = "<splitPattern>", description = "Split lines using splitPattern (default '\\s') using implicit 'split' variable")
+        private String splitPattern;
+
+        @Option(names = {"--indy"}, description = "Enables compilation using invokedynamic")
+        private boolean indy;
+
+        @Option(names = {"--configscript"}, paramLabel = "<script>", description = "A script for tweaking the configuration options")
+        private String configscript;
+
+        @Option(names = {"-b", "--basescript"}, paramLabel = "<class>", description = "Base class name for scripts (must derive from Script)")
+        private String scriptBaseClass;
+
+        @Unmatched
+        List<String> arguments = new ArrayList<String>();
+
+        /**
+         * Process the users request.
+         *
+         * @param parser the parsed command line. Used when the user input was invalid.
+         * @throws ParameterException if the user input was invalid
+         */
+        boolean process(CommandLine parser) throws ParameterException, IOException {
+            for (String key : systemProperties.keySet()) {
+                System.setProperty(key, systemProperties.get(key));
             }
+            GroovyMain main = new GroovyMain();
+
+            // add the ability to parse scripts with a specified encoding
+            main.conf.setSourceEncoding(encoding);
+
+            main.debug = debug;
+            main.conf.setDebug(main.debug);
+            main.conf.setParameters(parameterMetadata);
+            main.processFiles = lineByLine || lineByLinePrint;
+            main.autoOutput = lineByLinePrint;
+            main.editFiles = extension != null;
+            if (main.editFiles) {
+                main.backupExtension = extension;
+            }
+
+            main.autoSplit = splitPattern != null;
+            if (main.autoSplit) {
+                main.splitPattern = splitPattern;
+            }
+
+            main.isScriptFile = script == null;
+            if (main.isScriptFile) {
+                if (arguments.isEmpty()) {
+                    throw new ParameterException(parser, "error: neither -e or filename provided");
+                }
+                main.script = arguments.remove(0);
+                if (main.script.endsWith(".java")) {
+                    throw new ParameterException(parser, "error: cannot compile file with .java extension: " + main.script);
+                }
+            } else {
+                main.script = script;
+            }
+
+            main.processSockets = port != null;
+            if (main.processSockets) {
+                String p = port.trim().length() > 0 ? port : "1960"; // default port to listen to
+                main.port = Integer.parseInt(p);
+            }
+
+            for (String optimization : disableopt) {
+                main.conf.getOptimizationOptions().put(optimization, false);
+            }
+
+            if (indy) {
+                CompilerConfiguration.DEFAULT.getOptimizationOptions().put("indy", true);
+                main.conf.getOptimizationOptions().put("indy", true);
+            }
+
+            if (scriptBaseClass != null) {
+                main.conf.setScriptBaseClass(scriptBaseClass);
+            }
+
+            processConfigScripts(getConfigScripts(), main.conf);
+
+            main.args = arguments;
+            return main.run();
         }
 
-        GroovyMain main = new GroovyMain();
-
-        // add the ability to parse scripts with a specified encoding
-        main.conf.setSourceEncoding(line.getOptionValue('c',main.conf.getSourceEncoding()));
-
-        main.isScriptFile = !line.hasOption('e');
-        main.debug = line.hasOption('d');
-        main.conf.setDebug(main.debug);
-        main.conf.setParameters(line.hasOption("pa"));
-        main.processFiles = line.hasOption('p') || line.hasOption('n');
-        main.autoOutput = line.hasOption('p');
-        main.editFiles = line.hasOption('i');
-        if (main.editFiles) {
-            main.backupExtension = line.getOptionValue('i');
-        }
-        main.autoSplit = line.hasOption('a');
-        String sp = line.getOptionValue('a');
-        if (sp != null)
-            main.splitPattern = sp;
-
-        if (main.isScriptFile) {
-            if (args.isEmpty())
-                throw new ParseException("neither -e or filename provided");
-
-            main.script = (String) args.remove(0);
-            if (main.script.endsWith(".java"))
-                throw new ParseException("error: cannot compile file with .java extension: " + main.script);
-        } else {
-            main.script = line.getOptionValue('e');
-        }
-
-        main.processSockets = line.hasOption('l');
-        if (main.processSockets) {
-            String p = line.getOptionValue('l', "1960"); // default port to listen to
-            main.port = Integer.parseInt(p);
-        }
-
-        // we use "," as default, because then split will create
-        // an empty array if no option is set
-        String disabled = line.getOptionValue("disableopt", ",");
-        String[] deopts = disabled.split(",");
-        for (String deopt_i : deopts) {
-            main.conf.getOptimizationOptions().put(deopt_i,false);
-        }
-
-        if (line.hasOption("indy")) {
-            CompilerConfiguration.DEFAULT.getOptimizationOptions().put("indy", true);
-            main.conf.getOptimizationOptions().put("indy", true);
-        }
-
-        if (line.hasOption("basescript")) {
-            main.conf.setScriptBaseClass(line.getOptionValue("basescript"));
-        }
-
-        String configScripts = System.getProperty("groovy.starter.configscripts", null);
-        if (line.hasOption("configscript") || (configScripts != null && !configScripts.isEmpty())) {
+        private List<String> getConfigScripts() {
             List<String> scripts = new ArrayList<String>();
-            if (line.hasOption("configscript")) {
-                scripts.add(line.getOptionValue("configscript"));
+            if (this.configscript != null) {
+                scripts.add(this.configscript);
             }
-            if (configScripts != null) {
+            String configScripts = System.getProperty("groovy.starter.configscripts", null);
+            if (configScripts != null && !configScripts.isEmpty()) {
                 scripts.addAll(StringGroovyMethods.tokenize((CharSequence) configScripts, ','));
             }
-            processConfigScripts(scripts, main.conf);
+            return scripts;
         }
-
-        main.args = args;
-        return main.run();
     }
 
     public static void processConfigScripts(List<String> scripts, CompilerConfiguration conf) throws IOException {
