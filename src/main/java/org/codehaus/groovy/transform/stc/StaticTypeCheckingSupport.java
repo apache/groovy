@@ -1215,29 +1215,29 @@ public abstract class StaticTypeCheckingSupport {
      * The resolved types can not help us to choose methods correctly if the argument is a string:  T: Object, S: Serializable
      * so we need actual types:  T: String, S: Long
      */
-    private static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(ClassNode declaringClassForDistance, ClassNode actualReceiverForDistance) {
-        GenericsType[] declaringGenericsTypes = declaringClassForDistance.getGenericsTypes();
-        GenericsType[] actualGenericsTypes = actualReceiverForDistance.getGenericsTypes();
+    private static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(ClassNode declaringClass, ClassNode actualReceiver) {
+        GenericsType[] declaringGenericsTypes = declaringClass.getGenericsTypes();
+        GenericsType[] actualGenericsTypes = actualReceiver.getGenericsTypes();
 
         if (null == declaringGenericsTypes) {
             return Collections.emptyMap();
         }
 
         if (null == actualGenericsTypes) {
-            List<ClassNode> superClassAndInterfaceList = getAllSuperClassesAndInterfaces(actualReceiverForDistance);
+            List<ClassNode> superClassAndInterfaceList = getAllSuperClassesAndInterfaces(actualReceiver);
 
             for (ClassNode cn : superClassAndInterfaceList) {
-                if (cn.isDerivedFrom(declaringClassForDistance)) {
+                if (declaringClass.equals(cn.redirect())) {
                     actualGenericsTypes = cn.getGenericsTypes();
 
-                    if (null != actualGenericsTypes && declaringGenericsTypes.length == actualGenericsTypes.length) {
+                    if (isGenericsTypeArraysLengthEqual(declaringGenericsTypes, actualGenericsTypes)) {
                         break;
                     }
                 }
             }
         }
 
-        if (null == actualGenericsTypes || declaringGenericsTypes.length != actualGenericsTypes.length) {
+        if (!isGenericsTypeArraysLengthEqual(declaringGenericsTypes, actualGenericsTypes)) {
             return Collections.emptyMap();
         }
 
@@ -1249,11 +1249,15 @@ public abstract class StaticTypeCheckingSupport {
         return result;
     }
 
-    private static List<ClassNode> getAllSuperClassesAndInterfaces(ClassNode actualReceiverForDistance) {
+    private static boolean isGenericsTypeArraysLengthEqual(GenericsType[] declaringGenericsTypes, GenericsType[] actualGenericsTypes) {
+        return null != actualGenericsTypes && declaringGenericsTypes.length == actualGenericsTypes.length;
+    }
+
+    private static List<ClassNode> getAllSuperClassesAndInterfaces(ClassNode actualReceiver) {
         List<ClassNode> superClassAndInterfaceList = new LinkedList<>();
-        List<ClassNode> allSuperClassNodeList = getAllUnresolvedSuperClasses(actualReceiverForDistance);
+        List<ClassNode> allSuperClassNodeList = getAllUnresolvedSuperClasses(actualReceiver);
         superClassAndInterfaceList.addAll(allSuperClassNodeList);
-        superClassAndInterfaceList.addAll(actualReceiverForDistance.getAllInterfaces());
+        superClassAndInterfaceList.addAll(actualReceiver.getAllInterfaces());
 
         for (ClassNode superClassNode : allSuperClassNodeList) {
             superClassAndInterfaceList.addAll(superClassNode.getAllInterfaces());
@@ -1262,10 +1266,10 @@ public abstract class StaticTypeCheckingSupport {
         return superClassAndInterfaceList;
     }
 
-    private static List<ClassNode> getAllUnresolvedSuperClasses(ClassNode actualReceiverForDistance) {
+    private static List<ClassNode> getAllUnresolvedSuperClasses(ClassNode actualReceiver) {
         List<ClassNode> superClassNodeList = new LinkedList<>();
 
-        for (ClassNode cn = actualReceiverForDistance.getUnresolvedSuperClass(); null != cn && ClassHelper.OBJECT_TYPE != cn; cn = cn.getUnresolvedSuperClass()) {
+        for (ClassNode cn = actualReceiver.getUnresolvedSuperClass(); null != cn && ClassHelper.OBJECT_TYPE != cn; cn = cn.getUnresolvedSuperClass()) {
             superClassNodeList.add(cn);
         }
 
