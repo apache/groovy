@@ -190,6 +190,38 @@ class CliBuilderTest extends GroovyTestCase {
         }
     }
 
+    void testPosixNullValueHandledCorrectly_inConstructor() {
+        def cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder(posix: false)
+        assert cli.posix == false
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder(posix: null)
+        assert cli.posix == null
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+    }
+
+    void testPosixNullValueHandledCorrectly_inSetter() {
+        def cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli.posix = false
+        assert cli.posix == false
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli.posix = null
+        assert cli.posix == null
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+    }
+
     void testFailedParsePrintsUsage() {
         def cli = new CliBuilder(writer: printWriter)
         cli.x(required: true, 'message')
