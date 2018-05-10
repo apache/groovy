@@ -1099,8 +1099,8 @@ public abstract class StaticTypeCheckingSupport {
                 Person p = foo(b)
              */
 
-            Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap = makeDeclaringAndActualGenericsTypeMap(declaringClassForDistance, actualReceiverForDistance);
-            Parameter[] params = makeRawTypes(safeNode.getParameters(), genericsPlaceholderAndTypeMap);
+            Map<GenericsType, GenericsType> declaringAndActualGenericsTypeMap = makeDeclaringAndActualGenericsTypeMap(declaringClassForDistance, actualReceiverForDistance);
+            Parameter[] params = makeRawTypes(safeNode.getParameters(), declaringAndActualGenericsTypeMap);
             int dist = measureParametersAndArgumentsDistance(params, safeArgs);
             if (dist >= 0) {
                 dist += getClassDistance(declaringClassForDistance, actualReceiverForDistance);
@@ -1188,6 +1188,18 @@ public abstract class StaticTypeCheckingSupport {
 
     private static int getExtensionDistance(boolean isExtensionMethodNode) {
         return isExtensionMethodNode ? 0 : 1;
+    }
+
+    private static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
+        for (Map.Entry<GenericsType, GenericsType> entry : genericsPlaceholderAndTypeMap.entrySet()) {
+            GenericsType declaringGenericsType = entry.getKey();
+
+            if (placeholderName.equals(declaringGenericsType.getName())) {
+                return entry.getValue().getType();
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1280,18 +1292,6 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         return superClassNodeList;
-    }
-
-    private static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
-        for (Map.Entry<GenericsType, GenericsType> entry : genericsPlaceholderAndTypeMap.entrySet()) {
-            GenericsType declaringGenericsType = entry.getKey();
-
-            if (placeholderName.equals(declaringGenericsType.getName())) {
-                return entry.getValue().getType();
-            }
-        }
-
-        return null;
     }
 
     private static Parameter[] makeRawTypes(Parameter[] params, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
