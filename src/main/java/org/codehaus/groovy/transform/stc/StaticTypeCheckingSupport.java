@@ -1217,37 +1217,37 @@ public abstract class StaticTypeCheckingSupport {
      */
     private static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(ClassNode declaringClassForDistance, ClassNode actualReceiverForDistance) {
         GenericsType[] declaringGenericsTypes = declaringClassForDistance.getGenericsTypes();
-        GenericsType[] actualGenricsTypes = actualReceiverForDistance.getGenericsTypes();
+        GenericsType[] actualGenericsTypes = actualReceiverForDistance.getGenericsTypes();
 
         if (null == declaringGenericsTypes) {
             return Collections.emptyMap();
         }
 
-        if (null == actualGenricsTypes) {
+        if (null == actualGenericsTypes) {
             List<ClassNode> superClassAndInterfaceList = getAllSuperClassAndInterfaceNodes(actualReceiverForDistance);
 
             for (ClassNode cn : superClassAndInterfaceList) {
                 if (cn.isDerivedFrom(declaringClassForDistance)) {
-                    actualGenricsTypes = cn.getGenericsTypes();
+                    actualGenericsTypes = cn.getGenericsTypes();
 
-                    if (null != actualGenricsTypes) {
+                    if (null != actualGenericsTypes && declaringGenericsTypes.length == actualGenericsTypes.length) {
                         break;
                     }
                 }
             }
 
-            if (null == actualGenricsTypes) {
+            if (null == actualGenericsTypes) {
                 return Collections.emptyMap();
             }
         }
 
-        if (declaringGenericsTypes.length != actualGenricsTypes.length) {
+        if (declaringGenericsTypes.length != actualGenericsTypes.length) {
             return Collections.emptyMap();
         }
 
         Map<GenericsType, GenericsType> result = new HashMap<>();
         for (int i = 0, n = declaringGenericsTypes.length; i < n; i++) {
-            result.put(declaringGenericsTypes[i], actualGenricsTypes[i]);
+            result.put(declaringGenericsTypes[i], actualGenericsTypes[i]);
         }
 
         return result;
