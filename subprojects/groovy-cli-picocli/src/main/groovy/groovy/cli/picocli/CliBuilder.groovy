@@ -535,9 +535,9 @@ class CliBuilder {
      * used by the underlying library.
      * @param poxis whether to allow clustered short options
      */
-    void setPosix(boolean posix) {
+    void setPosix(Boolean posix) {
         this.posix = posix
-        parser.posixClusteredShortOptionsAllowed(posix)
+        parser.posixClusteredShortOptionsAllowed(posix ?: false)
     }
 
     /**
