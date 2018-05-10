@@ -221,7 +221,7 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
             assert op.toString() == '3|DOWN'
         """
         assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.util.Deque <java.lang.Integer>) with arguments [java.util.LinkedList <String>]')
-        assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.math.RoundingMode) with arguments [java.util.Date]')
+        assert message.contains('Cannot find matching method OrderPublisher#<init>(java.util.Date)')
         assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.util.Set <RoundingMode>) with arguments [java.util.HashSet <Date>]')
     }
 
