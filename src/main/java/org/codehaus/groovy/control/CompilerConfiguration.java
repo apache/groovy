@@ -19,11 +19,6 @@
 package org.codehaus.groovy.control;
 
 import org.apache.groovy.util.Maps;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
@@ -899,51 +894,55 @@ public class CompilerConfiguration {
         return indyEnabled;
     }
 
-    {
-        // this object initializer assures that `enableCompileStaticByDefault` must be invoked no matter which constructor called.
-        if (getBooleanSafe("groovy.compile.static")) {
-            enableCompileStaticByDefault();
-        }
-    }
-
-    private void enableCompileStaticByDefault() {
-        compilationCustomizers.add(
-            new CompilationCustomizer(CompilePhase.CONVERSION) {
-                @Override
-                public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                    for (ClassNode cn : source.getAST().getClasses()) {
-                        newClassCodeVisitor(source).visitClass(cn);
-                    }
-                }
-
-                private ClassCodeVisitorSupport newClassCodeVisitor(SourceUnit source) {
-                    return new ClassCodeVisitorSupport() {
-                        @Override
-                        public void visitClass(ClassNode node) {
-                            enableCompileStatic(node);
-                        }
-
-                        private void enableCompileStatic(ClassNode classNode) {
-                            if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)).isEmpty()) {
-                                return;
-                            }
-                            if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
-                                return;
-                            }
-
-                            classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)));
-                        }
-
-                        @Override
-                        protected SourceUnit getSourceUnit() {
-                            return source;
-                        }
-
-                        private static final String GROOVY_TRANSFORM_COMPILE_STATIC = "groovy.transform.CompileStatic";
-                        private static final String GROOVY_TRANSFORM_COMPILE_DYNAMIC = "groovy.transform.CompileDynamic";
-                    };
-                }
-            }
-        );
-    }
+//       See http://groovy.329449.n5.nabble.com/What-the-static-compile-by-default-tt5750118.html
+//           https://issues.apache.org/jira/browse/GROOVY-8543
+//
+//    {
+//        // this object initializer assures that `enableCompileStaticByDefault` must be invoked no matter which constructor called.
+//        if (getBooleanSafe("groovy.compile.static")) {
+//            enableCompileStaticByDefault();
+//        }
+//    }
+//
+//
+//    private void enableCompileStaticByDefault() {
+//        compilationCustomizers.add(
+//            new CompilationCustomizer(CompilePhase.CONVERSION) {
+//                @Override
+//                public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+//                    for (ClassNode cn : source.getAST().getClasses()) {
+//                        newClassCodeVisitor(source).visitClass(cn);
+//                    }
+//                }
+//
+//                private ClassCodeVisitorSupport newClassCodeVisitor(SourceUnit source) {
+//                    return new ClassCodeVisitorSupport() {
+//                        @Override
+//                        public void visitClass(ClassNode node) {
+//                            enableCompileStatic(node);
+//                        }
+//
+//                        private void enableCompileStatic(ClassNode classNode) {
+//                            if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)).isEmpty()) {
+//                                return;
+//                            }
+//                            if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
+//                                return;
+//                            }
+//
+//                            classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)));
+//                        }
+//
+//                        @Override
+//                        protected SourceUnit getSourceUnit() {
+//                            return source;
+//                        }
+//
+//                        private static final String GROOVY_TRANSFORM_COMPILE_STATIC = "groovy.transform.CompileStatic";
+//                        private static final String GROOVY_TRANSFORM_COMPILE_DYNAMIC = "groovy.transform.CompileDynamic";
+//                    };
+//                }
+//            }
+//        );
+//    }
 }
