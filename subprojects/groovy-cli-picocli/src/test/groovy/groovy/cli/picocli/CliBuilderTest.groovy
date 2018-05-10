@@ -23,6 +23,11 @@ import groovy.cli.Unparsed
 import groovy.cli.picocli.CliBuilder
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
+import org.apache.commons.cli.BasicParser
+import org.apache.commons.cli.DefaultParser
+import org.apache.commons.cli.GnuParser
+import org.apache.commons.cli.HelpFormatter
+import org.codehaus.groovy.cli.GroovyPosixParser
 import picocli.CommandLine.DuplicateOptionAnnotationsException
 
 import java.math.RoundingMode
@@ -121,6 +126,100 @@ class CliBuilderTest extends GroovyTestCase {
         groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.as)
         groovy.util.GroovyTestCase.assertEquals('1', options.arg)
         groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.args)
+    }
+
+    void testCliBuilderIgnoresAttemptsToModifyParserProperty_inConstructor() {
+        PrintStream orig = System.err
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        System.setErr(new PrintStream(baos))
+        try {
+            [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+                assert baos.size() == 0
+                new CliBuilder(parser: parser)
+                assert 'The program attempted to replace the CliBuilder parser. This is no longer supported in groovy.cli.picocli.CliBuilder. Consider using the posix property, or use groovy.cli.commons.CliBuilder instead.' == baos.toString().trim()
+                baos.reset()
+            }
+        } finally {
+            System.setErr(orig)
+        }
+    }
+
+    void testCliBuilderIgnoresAttemptsToModifyParserProperty_inSetter() {
+        PrintStream orig = System.err
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        System.setErr(new PrintStream(baos))
+        try {
+            [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+                def cli = new CliBuilder()
+                assert baos.size() == 0
+                cli.parser = parser
+                assert 'The program attempted to replace the CliBuilder parser. This is no longer supported in groovy.cli.picocli.CliBuilder. Consider using the posix property, or use groovy.cli.commons.CliBuilder instead.' == baos.toString().trim()
+                baos.reset()
+            }
+        } finally {
+            System.setErr(orig)
+        }
+    }
+
+    void testCliBuilderIgnoresAttemptsToModifyFormatterProperty_inConstructor() {
+        PrintStream orig = System.err
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        System.setErr(new PrintStream(baos))
+        try {
+            assert baos.size() == 0
+            def cli = new CliBuilder(formatter: new HelpFormatter())
+            assert 'The program attempted to set a formatter on CliBuilder. This is no longer supported in groovy.cli.picocli.CliBuilder. Consider using the usageMessage property, or use groovy.cli.commons.CliBuilder instead.' == baos.toString().trim()
+            baos.reset()
+        } finally {
+            System.setErr(orig)
+        }
+    }
+
+    void testCliBuilderIgnoresAttemptsToSetFormatterProperty_inSetter() {
+        PrintStream orig = System.err
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        System.setErr(new PrintStream(baos))
+        try {
+            def cli = new CliBuilder()
+            assert baos.size() == 0
+            cli.formatter = new HelpFormatter()
+            assert 'The program attempted to set a formatter on CliBuilder. This is no longer supported in groovy.cli.picocli.CliBuilder. Consider using the usageMessage property, or use groovy.cli.commons.CliBuilder instead.' == baos.toString().trim()
+            baos.reset()
+        } finally {
+            System.setErr(orig)
+        }
+    }
+
+    void testPosixNullValueHandledCorrectly_inConstructor() {
+        def cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder(posix: false)
+        assert cli.posix == false
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder(posix: null)
+        assert cli.posix == null
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+    }
+
+    void testPosixNullValueHandledCorrectly_inSetter() {
+        def cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli.posix = false
+        assert cli.posix == false
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli = new CliBuilder()
+        assert cli.posix == true
+        assert cli.parser.posixClusteredShortOptionsAllowed()
+
+        cli.posix = null
+        assert cli.posix == null
+        assert !cli.parser.posixClusteredShortOptionsAllowed()
     }
 
     void testFailedParsePrintsUsage() {
