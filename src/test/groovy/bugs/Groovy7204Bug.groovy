@@ -111,4 +111,153 @@ class Groovy7204Bug extends GroovyTestCase {
         '''
     }
 
+    void test3() {
+        assertScript '''
+        import java.io.Serializable;
+        
+        import groovy.transform.CompileStatic;
+        import groovy.transform.TypeChecked;
+        
+        @TypeChecked
+        public class MyClass {
+            static MyRepository factory() {
+                return new MyRepositoryImpl()
+            }
+            
+            static void main(String[] args) {
+                MyRepository r = factory()
+                r.delete('foo')
+            }
+        }
+        
+        @TypeChecked
+        interface CrudRepository<T, S extends Serializable> {
+            void delete(T arg);
+            void delete(S arg);
+        }
+        
+        @TypeChecked
+        interface MyRepository2 extends CrudRepository<String, Long> {
+        }
+        
+        @TypeChecked
+        interface MyRepository extends MyRepository2 {
+        }
+        
+        @TypeChecked
+        class MyRepositoryImpl implements MyRepository {
+            @Override
+            public void delete(String arg) {
+                System.out.println("String");
+                assert true
+            }
+            
+            @Override
+            public void delete(Long arg) {
+                System.out.println("Long");
+                assert false: 'wrong method invoked'
+            }
+        }
+        '''
+    }
+
+    void test4() {
+        assertScript '''
+        import java.io.Serializable;
+        
+        import groovy.transform.CompileStatic;
+        import groovy.transform.TypeChecked;
+        
+        @TypeChecked
+        public class MyClass {
+            static MyRepository factory() {
+                return new MyRepositoryImpl()
+            }
+            
+            static void main(String[] args) {
+                MyRepository r = factory()
+                r.delete('foo')
+            }
+        }
+        
+        @TypeChecked
+        abstract class CrudRepository<T, S extends Serializable> {
+            abstract void delete(T arg);
+            abstract void delete(S arg);
+        }
+        
+        @TypeChecked
+        abstract class MyRepository2 extends CrudRepository<String, Long> {
+        }
+        
+        @TypeChecked
+        abstract class MyRepository extends MyRepository2 {
+        }
+        
+        @TypeChecked
+        class MyRepositoryImpl extends MyRepository {
+            @Override
+            public void delete(String arg) {
+                System.out.println("String");
+                assert true
+            }
+            
+            @Override
+            public void delete(Long arg) {
+                System.out.println("Long");
+                assert false: 'wrong method invoked'
+            }
+        }
+        '''
+    }
+
+    void test5() {
+        assertScript '''
+        import java.io.Serializable;
+        
+        import groovy.transform.CompileStatic;
+        import groovy.transform.TypeChecked;
+        
+        @TypeChecked
+        public class MyClass {
+            static MyRepository factory() {
+                return new MyRepositoryImpl()
+            }
+            
+            static void main(String[] args) {
+                MyRepository r = factory()
+                r.delete('foo')
+            }
+        }
+        
+        @TypeChecked
+        interface CrudRepository<T, S extends Serializable> {
+            void delete(T arg);
+            void delete(S arg);
+        }
+        
+        @TypeChecked
+        abstract class MyRepository2 implements CrudRepository<String, Long> {
+        }
+        
+        @TypeChecked
+        abstract class MyRepository extends MyRepository2 {
+        }
+        
+        @TypeChecked
+        class MyRepositoryImpl extends MyRepository {
+            @Override
+            public void delete(String arg) {
+                System.out.println("String");
+                assert true
+            }
+            
+            @Override
+            public void delete(Long arg) {
+                System.out.println("Long");
+                assert false: 'wrong method invoked'
+            }
+        }
+        '''
+    }
 }

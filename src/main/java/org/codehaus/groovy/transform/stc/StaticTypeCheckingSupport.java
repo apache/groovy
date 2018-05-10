@@ -1099,7 +1099,7 @@ public abstract class StaticTypeCheckingSupport {
                 Person p = foo(b)
              */
 
-            Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap = makeGenericsPlaceholderAndTypeMap(declaringClassForDistance, actualReceiverForDistance);
+            Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap = makeDeclaringAndActualGenericsTypeMap(declaringClassForDistance, actualReceiverForDistance);
             Parameter[] params = makeRawTypes(safeNode.getParameters(), genericsPlaceholderAndTypeMap);
             int dist = measureParametersAndArgumentsDistance(params, safeArgs);
             if (dist >= 0) {
@@ -1190,7 +1190,20 @@ public abstract class StaticTypeCheckingSupport {
         return isExtensionMethodNode ? 0 : 1;
     }
 
-    private static Map<GenericsType, GenericsType> makeGenericsPlaceholderAndTypeMap(ClassNode declaringClassForDistance, ClassNode actualReceiverForDistance) {
+    /**
+     * map declaring generics type to actual generics type, e.g. GROOVY-7204:
+     * declaring generics types:      T,      S extends Serializable
+     * actual generics types   : String,      Long
+     *
+     * the result map is [
+     *  T: String,
+     *  S: Long
+     * ]
+     *
+     * The resolved types can not help us to choose methods correctly if the argument is a string:  T: Object, S: Serializable
+     * so we need actual types:  T: String, S: Long
+     */
+    private static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(ClassNode declaringClassForDistance, ClassNode actualReceiverForDistance) {
         GenericsType[] declaringGenericsTypes = declaringClassForDistance.getGenericsTypes();
         GenericsType[] actualGenricsTypes = actualReceiverForDistance.getGenericsTypes();
 
@@ -1199,19 +1212,15 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (null == actualGenricsTypes) {
-            List<ClassNode> superClassAndInterfaceList = new LinkedList<>();
-            for (ClassNode cn = actualReceiverForDistance.getUnresolvedSuperClass(); null != cn && ClassHelper.OBJECT_TYPE != cn; cn = cn.getUnresolvedSuperClass()) {
-                superClassAndInterfaceList.add(cn);
-            }
-
-            for (ClassNode cn : actualReceiverForDistance.getInterfaces()) {
-                superClassAndInterfaceList.add(cn);
-            }
+            List<ClassNode> superClassAndInterfaceList = getAllSuperClassAndInterfaceNodes(actualReceiverForDistance);
 
             for (ClassNode cn : superClassAndInterfaceList) {
                 if (cn.isDerivedFrom(declaringClassForDistance)) {
                     actualGenricsTypes = cn.getGenericsTypes();
-                    break;
+
+                    if (null != actualGenricsTypes) {
+                        break;
+                    }
                 }
             }
 
@@ -1220,12 +1229,57 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
 
+        if (declaringGenericsTypes.length != actualGenricsTypes.length) {
+            return Collections.emptyMap();
+        }
+
         Map<GenericsType, GenericsType> result = new HashMap<>();
-        for (int i = 0, n = min(declaringGenericsTypes.length, actualGenricsTypes.length); i < n; i++) {
+        for (int i = 0, n = declaringGenericsTypes.length; i < n; i++) {
             result.put(declaringGenericsTypes[i], actualGenricsTypes[i]);
         }
 
         return result;
+    }
+
+    /**
+     * TODO move to ClassNode class
+     */
+    private static List<ClassNode> getAllSuperClassAndInterfaceNodes(ClassNode actualReceiverForDistance) {
+        List<ClassNode> superClassAndInterfaceList = new LinkedList<>();
+        List<ClassNode> allSuperClassNodeList = getAllSuperClassNodes(actualReceiverForDistance);
+        superClassAndInterfaceList.addAll(allSuperClassNodeList);
+        superClassAndInterfaceList.addAll(getAllInterfaceNodes(actualReceiverForDistance));
+        for (ClassNode superClassNode : allSuperClassNodeList) {
+            superClassAndInterfaceList.addAll(getAllInterfaceNodes(superClassNode));
+        }
+        return superClassAndInterfaceList;
+    }
+
+    /**
+     * TODO move to ClassNode class
+     */
+    private static List<ClassNode> getAllInterfaceNodes(ClassNode actualReceiverForDistance) {
+        List<ClassNode> interfaceNodeList = new LinkedList<>();
+
+        for (ClassNode cn : actualReceiverForDistance.getInterfaces()) {
+            interfaceNodeList.add(cn);
+            interfaceNodeList.addAll(getAllInterfaceNodes(cn));
+        }
+
+        return interfaceNodeList;
+    }
+
+    /**
+     * TODO move to ClassNode class
+     */
+    private static List<ClassNode> getAllSuperClassNodes(ClassNode actualReceiverForDistance) {
+        List<ClassNode> superClassNodeList = new LinkedList<>();
+
+        for (ClassNode cn = actualReceiverForDistance.getUnresolvedSuperClass(); null != cn && ClassHelper.OBJECT_TYPE != cn; cn = cn.getUnresolvedSuperClass()) {
+            superClassNodeList.add(cn);
+        }
+
+        return superClassNodeList;
     }
 
     private static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
