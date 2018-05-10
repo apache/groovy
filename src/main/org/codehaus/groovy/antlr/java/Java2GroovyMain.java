@@ -18,25 +18,16 @@
  */
 package org.codehaus.groovy.antlr.java;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GroovyInternalPosixParser;
-import org.apache.commons.cli.Options;
-
 import java.util.Arrays;
 
 public class Java2GroovyMain {
 
     public static void main(String[] args) {
         try {
-            Options options = new Options();
-            CommandLineParser cliParser = new GroovyInternalPosixParser();
-            CommandLine cli = cliParser.parse(options, args);
-            String[] filenames = cli.getArgs();
-            if (filenames.length == 0) {
+            if (args.length == 0) {
                 System.err.println("Needs at least one filename");
             }
-            Java2GroovyProcessor.processFiles(Arrays.asList(filenames));
+            Java2GroovyProcessor.processFiles(Arrays.asList(args));
         } catch (Throwable t) {
             t.printStackTrace();
         }
