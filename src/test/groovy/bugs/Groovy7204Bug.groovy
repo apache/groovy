@@ -19,7 +19,7 @@
 package groovy.bugs
 
 class Groovy7204Bug extends GroovyTestCase {
-    void test1() {
+    void testTypeChecked1() {
         assertScript '''
         import java.io.Serializable;
         
@@ -65,7 +65,7 @@ class Groovy7204Bug extends GroovyTestCase {
         '''
     }
 
-    void test2() {
+    void testTypeChecked2() {
         assertScript '''
         import java.io.Serializable;
         
@@ -111,7 +111,7 @@ class Groovy7204Bug extends GroovyTestCase {
         '''
     }
 
-    void test3() {
+    void testTypeChecked3() {
         assertScript '''
         import java.io.Serializable;
         
@@ -161,7 +161,7 @@ class Groovy7204Bug extends GroovyTestCase {
         '''
     }
 
-    void test4() {
+    void testTypeChecked4() {
         assertScript '''
         import java.io.Serializable;
         
@@ -211,7 +211,7 @@ class Groovy7204Bug extends GroovyTestCase {
         '''
     }
 
-    void test5() {
+    void testTypeChecked5() {
         assertScript '''
         import java.io.Serializable;
         
@@ -258,6 +258,270 @@ class Groovy7204Bug extends GroovyTestCase {
                 assert false: 'wrong method invoked'
             }
         }
+        '''
+    }
+
+
+    void testCompileStatic1() {
+        assertScript '''
+        import java.io.Serializable;
+        
+        import groovy.transform.CompileStatic;
+        import groovy.transform.TypeChecked;
+        
+        @CompileStatic
+        public class MyClass {
+            static MyRepository factory() {
+                return new MyRepositoryImpl()
+            }
+            
+            static void main(String[] args) {
+                MyRepository r = factory()
+                r.delete('foo')
+            }
+        }
+        
+        @CompileStatic
+        interface CrudRepository<T, S extends Serializable> {
+            void delete(T arg);
+            void delete(S arg);
+        }
+        
+        @CompileStatic
+        interface MyRepository extends CrudRepository<String, Long> {
+        }
+        
+        @CompileStatic
+        class MyRepositoryImpl implements MyRepository {
+            @Override
+            public void delete(String arg) {
+                System.out.println("String");
+                assert true
+            }
+            
+            @Override
+            public void delete(Long arg) {
+                System.out.println("Long");
+                assert false: 'wrong method invoked'
+            }
+        }
+        '''
+    }
+
+    void testCompileStatic2() {
+        assertScript '''
+        import java.io.Serializable;
+        
+        import groovy.transform.CompileStatic;
+        import groovy.transform.TypeChecked;
+        
+        @CompileStatic
+        public class MyClass {
+            static MyRepository factory() {
+                return new MyRepositoryImpl()
+            }
+            
+            static void main(String[] args) {
+                MyRepository r = factory()
+                r.delete('foo')
+            }
+        }
+        
+        @CompileStatic
+        abstract class CrudRepository<T, S extends Serializable> {
+            abstract void delete(T arg);
+            abstract void delete(S arg);
+        }
+        
+        @CompileStatic
+        abstract class MyRepository extends CrudRepository<String, Long> {
+        }
+        
+        @CompileStatic
+        class MyRepositoryImpl extends MyRepository {
+            @Override
+            public void delete(String arg) {
+                System.out.println("String");
+                assert true
+            }
+            
+            @Override
+            public void delete(Long arg) {
+                System.out.println("Long");
+                assert false: 'wrong method invoked'
+            }
+        }
+        '''
+    }
+
+    void testCompileStatic3() {
+        assertScript '''
+        import java.io.Serializable;
+        
+        import groovy.transform.CompileStatic;
+        import groovy.transform.TypeChecked;
+        
+        @CompileStatic
+        public class MyClass {
+            static MyRepository factory() {
+                return new MyRepositoryImpl()
+            }
+            
+            static void main(String[] args) {
+                MyRepository r = factory()
+                r.delete('foo')
+            }
+        }
+        
+        @CompileStatic
+        interface CrudRepository<T, S extends Serializable> {
+            void delete(T arg);
+            void delete(S arg);
+        }
+        
+        @CompileStatic
+        interface MyRepository2 extends CrudRepository<String, Long> {
+        }
+        
+        @CompileStatic
+        interface MyRepository extends MyRepository2 {
+        }
+        
+        @CompileStatic
+        class MyRepositoryImpl implements MyRepository {
+            @Override
+            public void delete(String arg) {
+                System.out.println("String");
+                assert true
+            }
+            
+            @Override
+            public void delete(Long arg) {
+                System.out.println("Long");
+                assert false: 'wrong method invoked'
+            }
+        }
+        '''
+    }
+
+    void testCompileStatic4() {
+        assertScript '''
+        import java.io.Serializable;
+        
+        import groovy.transform.CompileStatic;
+        import groovy.transform.TypeChecked;
+        
+        @CompileStatic
+        public class MyClass {
+            static MyRepository factory() {
+                return new MyRepositoryImpl()
+            }
+            
+            static void main(String[] args) {
+                MyRepository r = factory()
+                r.delete('foo')
+            }
+        }
+        
+        @CompileStatic
+        abstract class CrudRepository<T, S extends Serializable> {
+            abstract void delete(T arg);
+            abstract void delete(S arg);
+        }
+        
+        @CompileStatic
+        abstract class MyRepository2 extends CrudRepository<String, Long> {
+        }
+        
+        @CompileStatic
+        abstract class MyRepository extends MyRepository2 {
+        }
+        
+        @CompileStatic
+        class MyRepositoryImpl extends MyRepository {
+            @Override
+            public void delete(String arg) {
+                System.out.println("String");
+                assert true
+            }
+            
+            @Override
+            public void delete(Long arg) {
+                System.out.println("Long");
+                assert false: 'wrong method invoked'
+            }
+        }
+        '''
+    }
+
+    void testCompileStatic5() {
+        assertScript '''
+        import java.io.Serializable;
+        
+        import groovy.transform.CompileStatic;
+        import groovy.transform.TypeChecked;
+        
+        @CompileStatic
+        public class MyClass {
+            static MyRepository factory() {
+                return new MyRepositoryImpl()
+            }
+            
+            static void main(String[] args) {
+                MyRepository r = factory()
+                r.delete('foo')
+            }
+        }
+        
+        @CompileStatic
+        interface CrudRepository<T, S extends Serializable> {
+            void delete(T arg);
+            void delete(S arg);
+        }
+        
+        @CompileStatic
+        abstract class MyRepository2 implements CrudRepository<String, Long> {
+        }
+        
+        @CompileStatic
+        abstract class MyRepository extends MyRepository2 {
+        }
+        
+        @CompileStatic
+        class MyRepositoryImpl extends MyRepository {
+            @Override
+            public void delete(String arg) {
+                System.out.println("String");
+                assert true
+            }
+            
+            @Override
+            public void delete(Long arg) {
+                System.out.println("Long");
+                assert false: 'wrong method invoked'
+            }
+        }
+        '''
+    }
+
+    void testCompileStatic6() {
+        assertScript '''
+        import java.io.Serializable;
+        import groovy.transform.CompileStatic;
+
+        @CompileStatic
+        class Repository<T, S extends Serializable> {
+            void delete(T arg) { assert true }
+            void delete(S arg) { assert false: 'wrong method invoked' }
+        }
+        
+        @CompileStatic
+        def test() {
+            Repository<String, Long> r = new Repository<String, Long>()
+            r.delete('foo')
+        }
+        
+        test()
         '''
     }
 }
