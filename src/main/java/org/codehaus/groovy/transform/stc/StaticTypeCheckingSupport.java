@@ -1224,7 +1224,7 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (null == actualGenericsTypes) {
-            List<ClassNode> superClassAndInterfaceList = getAllSuperClassAndInterfaceNodes(actualReceiverForDistance);
+            List<ClassNode> superClassAndInterfaceList = getAllSuperClassesAndInterfaces(actualReceiverForDistance);
 
             for (ClassNode cn : superClassAndInterfaceList) {
                 if (cn.isDerivedFrom(declaringClassForDistance)) {
@@ -1235,13 +1235,9 @@ public abstract class StaticTypeCheckingSupport {
                     }
                 }
             }
-
-            if (null == actualGenericsTypes) {
-                return Collections.emptyMap();
-            }
         }
 
-        if (declaringGenericsTypes.length != actualGenericsTypes.length) {
+        if (null == actualGenericsTypes || declaringGenericsTypes.length != actualGenericsTypes.length) {
             return Collections.emptyMap();
         }
 
@@ -1253,38 +1249,20 @@ public abstract class StaticTypeCheckingSupport {
         return result;
     }
 
-    /**
-     * TODO move to ClassNode class
-     */
-    private static List<ClassNode> getAllSuperClassAndInterfaceNodes(ClassNode actualReceiverForDistance) {
+    private static List<ClassNode> getAllSuperClassesAndInterfaces(ClassNode actualReceiverForDistance) {
         List<ClassNode> superClassAndInterfaceList = new LinkedList<>();
-        List<ClassNode> allSuperClassNodeList = getAllSuperClassNodes(actualReceiverForDistance);
+        List<ClassNode> allSuperClassNodeList = getAllUnresolvedSuperClasses(actualReceiverForDistance);
         superClassAndInterfaceList.addAll(allSuperClassNodeList);
-        superClassAndInterfaceList.addAll(getAllInterfaceNodes(actualReceiverForDistance));
+        superClassAndInterfaceList.addAll(actualReceiverForDistance.getAllInterfaces());
+
         for (ClassNode superClassNode : allSuperClassNodeList) {
-            superClassAndInterfaceList.addAll(getAllInterfaceNodes(superClassNode));
+            superClassAndInterfaceList.addAll(superClassNode.getAllInterfaces());
         }
+
         return superClassAndInterfaceList;
     }
 
-    /**
-     * TODO move to ClassNode class
-     */
-    private static List<ClassNode> getAllInterfaceNodes(ClassNode actualReceiverForDistance) {
-        List<ClassNode> interfaceNodeList = new LinkedList<>();
-
-        for (ClassNode cn : actualReceiverForDistance.getInterfaces()) {
-            interfaceNodeList.add(cn);
-            interfaceNodeList.addAll(getAllInterfaceNodes(cn));
-        }
-
-        return interfaceNodeList;
-    }
-
-    /**
-     * TODO move to ClassNode class
-     */
-    private static List<ClassNode> getAllSuperClassNodes(ClassNode actualReceiverForDistance) {
+    private static List<ClassNode> getAllUnresolvedSuperClasses(ClassNode actualReceiverForDistance) {
         List<ClassNode> superClassNodeList = new LinkedList<>();
 
         for (ClassNode cn = actualReceiverForDistance.getUnresolvedSuperClass(); null != cn && ClassHelper.OBJECT_TYPE != cn; cn = cn.getUnresolvedSuperClass()) {
