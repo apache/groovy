@@ -4357,7 +4357,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // lookup in DGM methods too
         findDGMMethodsByNameAndArguments(getTransformLoader(), receiver, name, args, methods);
-        methods = filterMethodsByVisibility(receiver, methods);
+        methods = filterMethodsByVisibility(methods);
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
 
@@ -4384,31 +4384,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return EMPTY_METHODNODE_LIST;
     }
 
-    private List<MethodNode> filterMethodsByVisibility(ClassNode receiver, List<MethodNode> methods) {
+    private List<MethodNode> filterMethodsByVisibility(List<MethodNode> methods) {
         List<MethodNode> result = new LinkedList<>();
 
         ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        if (enclosingClassNode.equals(receiver)) {
-            for (MethodNode methodNode : methods) {
-                if (methodNode.isPrivate() && !enclosingClassNode.equals(methodNode.getDeclaringClass())) {
-                    continue;
-                }
-
-                result.add(methodNode);
+        for (MethodNode methodNode : methods) {
+            if (methodNode.isPrivate() && !enclosingClassNode.equals(methodNode.getDeclaringClass())) {
+                continue;
             }
-        } else {
-            boolean isDerived = enclosingClassNode.isDerivedFrom(receiver);
-            for (MethodNode methodNode : methods) {
-                if (methodNode.isPrivate()) {
-                    continue;
-                }
-
-                if (!isDerived && methodNode.isProtected()) {
-                    continue;
-                }
-
-                result.add(methodNode);
+            if (methodNode.isProtected() && !enclosingClassNode.isDerivedFrom(methodNode.getDeclaringClass())) {
+                continue;
             }
+
+            result.add(methodNode);
         }
 
         return result;

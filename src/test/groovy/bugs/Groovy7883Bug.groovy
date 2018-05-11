@@ -98,6 +98,7 @@ class Groovy7883Bug extends GroovyTestCase {
         class A {
             protected void doIt() { doIt2() }
             private void doIt2() {}
+            public void doIt3() { doIt() }
         }
         
         @groovy.transform.CompileStatic
@@ -106,6 +107,7 @@ class Groovy7883Bug extends GroovyTestCase {
         }
         
         new B().m()
+        new B().doIt3()
         '''
     }
 
