@@ -1303,14 +1303,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public void visitClass(ClassNode node) {
         ClassNode oldNode = currentClass;
 
+        currentClass = node;
+
         if (node instanceof InnerClassNode) {
             if (Modifier.isStatic(node.getModifiers())) {
                 genericParameterNames = new HashMap<String, GenericsType>();
             }
+
+            InnerClassNode innerClassNode = (InnerClassNode) node;
+            if (innerClassNode.isAnonymous()) {
+                MethodNode enclosingMethod = innerClassNode.getEnclosingMethod();
+                if (null != enclosingMethod) {
+                    resolveGenericsHeader(enclosingMethod.getGenericsTypes());
+                }
+            }
         } else {
             genericParameterNames = new HashMap<String, GenericsType>();
         }
-        currentClass = node;
+
         resolveGenericsHeader(node.getGenericsTypes());
 
         ModuleNode module = node.getModule();
