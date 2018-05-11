@@ -43,6 +43,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -648,5 +649,69 @@ public class GenericsUtils {
             }
         }
         return newTypes;
+    }
+
+    /**
+     * Get the parameterized type by search the whole class hierarchy according to generics class and actual receiver
+     *
+     * @param genericsClass the generics class
+     * @param actualReceiver the actual receiver
+     * @return the parameterized type
+     */
+    public static ClassNode findParameterizedType(ClassNode genericsClass, ClassNode actualReceiver) {
+        ClassNode parameterizedType = null;
+
+        if (null == genericsClass.getGenericsTypes()) {
+            return parameterizedType;
+        }
+
+        GenericsType[] declaringGenericsTypes = genericsClass.getGenericsTypes();
+
+        List<ClassNode> classNodeList = new LinkedList<>(getAllSuperClassesAndInterfaces(actualReceiver));
+        classNodeList.add(0, actualReceiver);
+
+        for (ClassNode cn : classNodeList) {
+            if (cn == genericsClass) {
+                continue;
+            }
+
+            if (!genericsClass.equals(cn.redirect())) {
+                continue;
+            }
+
+            if (isGenericsTypeArraysLengthEqual(declaringGenericsTypes, cn.getGenericsTypes())) {
+                parameterizedType = cn;
+                break;
+            }
+        }
+
+        return parameterizedType;
+    }
+
+    private static boolean isGenericsTypeArraysLengthEqual(GenericsType[] declaringGenericsTypes, GenericsType[] actualGenericsTypes) {
+        return null != actualGenericsTypes && declaringGenericsTypes.length == actualGenericsTypes.length;
+    }
+
+    private static List<ClassNode> getAllSuperClassesAndInterfaces(ClassNode actualReceiver) {
+        List<ClassNode> superClassAndInterfaceList = new LinkedList<>();
+        List<ClassNode> allSuperClassNodeList = getAllUnresolvedSuperClasses(actualReceiver);
+        superClassAndInterfaceList.addAll(allSuperClassNodeList);
+        superClassAndInterfaceList.addAll(actualReceiver.getAllInterfaces());
+
+        for (ClassNode superClassNode : allSuperClassNodeList) {
+            superClassAndInterfaceList.addAll(superClassNode.getAllInterfaces());
+        }
+
+        return superClassAndInterfaceList;
+    }
+
+    private static List<ClassNode> getAllUnresolvedSuperClasses(ClassNode actualReceiver) {
+        List<ClassNode> superClassNodeList = new LinkedList<>();
+
+        for (ClassNode cn = actualReceiver.getUnresolvedSuperClass(); null != cn && ClassHelper.OBJECT_TYPE != cn; cn = cn.getUnresolvedSuperClass()) {
+            superClassNodeList.add(cn);
+        }
+
+        return superClassNodeList;
     }
 }

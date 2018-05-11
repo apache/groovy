@@ -20,7 +20,6 @@
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
@@ -62,6 +61,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1216,64 +1216,21 @@ public abstract class StaticTypeCheckingSupport {
      * so we need actual types:  T: String, S: Long
      */
     private static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(ClassNode declaringClass, ClassNode actualReceiver) {
+        ClassNode parameterizedType = GenericsUtils.findParameterizedType(declaringClass, actualReceiver);
+
+        if (null == parameterizedType) {
+            return Collections.emptyMap();
+        }
+
         GenericsType[] declaringGenericsTypes = declaringClass.getGenericsTypes();
-        GenericsType[] actualGenericsTypes = actualReceiver.getGenericsTypes();
+        GenericsType[] actualGenericsTypes = parameterizedType.getGenericsTypes();
 
-        if (null == declaringGenericsTypes) {
-            return Collections.emptyMap();
-        }
-
-        if (null == actualGenericsTypes) {
-            List<ClassNode> superClassAndInterfaceList = getAllSuperClassesAndInterfaces(actualReceiver);
-
-            for (ClassNode cn : superClassAndInterfaceList) {
-                if (declaringClass.equals(cn.redirect())) {
-                    actualGenericsTypes = cn.getGenericsTypes();
-
-                    if (isGenericsTypeArraysLengthEqual(declaringGenericsTypes, actualGenericsTypes)) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (!isGenericsTypeArraysLengthEqual(declaringGenericsTypes, actualGenericsTypes)) {
-            return Collections.emptyMap();
-        }
-
-        Map<GenericsType, GenericsType> result = new HashMap<>();
+        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
         for (int i = 0, n = declaringGenericsTypes.length; i < n; i++) {
             result.put(declaringGenericsTypes[i], actualGenericsTypes[i]);
         }
 
         return result;
-    }
-
-    private static boolean isGenericsTypeArraysLengthEqual(GenericsType[] declaringGenericsTypes, GenericsType[] actualGenericsTypes) {
-        return null != actualGenericsTypes && declaringGenericsTypes.length == actualGenericsTypes.length;
-    }
-
-    private static List<ClassNode> getAllSuperClassesAndInterfaces(ClassNode actualReceiver) {
-        List<ClassNode> superClassAndInterfaceList = new LinkedList<>();
-        List<ClassNode> allSuperClassNodeList = getAllUnresolvedSuperClasses(actualReceiver);
-        superClassAndInterfaceList.addAll(allSuperClassNodeList);
-        superClassAndInterfaceList.addAll(actualReceiver.getAllInterfaces());
-
-        for (ClassNode superClassNode : allSuperClassNodeList) {
-            superClassAndInterfaceList.addAll(superClassNode.getAllInterfaces());
-        }
-
-        return superClassAndInterfaceList;
-    }
-
-    private static List<ClassNode> getAllUnresolvedSuperClasses(ClassNode actualReceiver) {
-        List<ClassNode> superClassNodeList = new LinkedList<>();
-
-        for (ClassNode cn = actualReceiver.getUnresolvedSuperClass(); null != cn && ClassHelper.OBJECT_TYPE != cn; cn = cn.getUnresolvedSuperClass()) {
-            superClassNodeList.add(cn);
-        }
-
-        return superClassNodeList;
     }
 
     private static Parameter[] makeRawTypes(Parameter[] params, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
