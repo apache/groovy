@@ -726,11 +726,10 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Allow setting the bytecode compatibility. The parameter can take
-     * one of the values <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
-     * If wrong parameter then the value will default to VM determined version.
-     * 
-     * @param version the bytecode compatibility mode
+     * Allow setting the bytecode compatibility level. The parameter can take
+     * one of the values in {@link #ALLOWED_JDKS}.
+     *
+     * @param version the bytecode compatibility level
      */
     public void setTargetBytecode(String version) {
         for (String allowedJdk : ALLOWED_JDKS) {
@@ -741,9 +740,11 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Retrieves the compiler bytecode compatibility mode.
-     * 
-     * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     * Retrieves the compiler bytecode compatibility level.
+     * Defaults to the minimum officially supported bytecode
+     * version for any particular Groovy version.
+     *
+     * @return bytecode compatibility level
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
