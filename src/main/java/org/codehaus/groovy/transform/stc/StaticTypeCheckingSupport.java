@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
@@ -950,7 +951,7 @@ public abstract class StaticTypeCheckingSupport {
             return dist;
         }
 
-        ClassNode ref = receiver;
+        ClassNode ref = isPrimitiveType(receiver) && !isPrimitiveType(compare) ? ClassHelper.getWrapper(receiver) : receiver;
         while (ref != null) {
             if (compare.equals(ref)) {
                 break;
