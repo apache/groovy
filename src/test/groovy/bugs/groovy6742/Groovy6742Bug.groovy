@@ -71,7 +71,7 @@ class Groovy6742Bug extends GroovyTestCase {
         assertScript '''
             package groovy.bugs.groovy6742
             
-            //@groovy.transform.TypeChecked
+            @groovy.transform.TypeChecked
             class Issue3 {
                 public static <F, T> FutureCallback<F> deferredCallback(DeferredResult<T> deferredResult, final Function<F, T> function) {
                     return new FutureCallback<F>() {
