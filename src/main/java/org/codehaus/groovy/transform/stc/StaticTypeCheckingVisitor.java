@@ -4357,7 +4357,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // lookup in DGM methods too
         findDGMMethodsByNameAndArguments(getTransformLoader(), receiver, name, args, methods);
-        methods = filterMethodsByVisibility(methods);
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
 
@@ -4382,24 +4381,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return EMPTY_METHODNODE_LIST;
-    }
-
-    private List<MethodNode> filterMethodsByVisibility(List<MethodNode> methods) {
-        List<MethodNode> result = new LinkedList<>();
-
-        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        for (MethodNode methodNode : methods) {
-            if (methodNode.isPrivate() && !enclosingClassNode.equals(methodNode.getDeclaringClass())) {
-                continue;
-            }
-            if (methodNode.isProtected() && !enclosingClassNode.isDerivedFrom(methodNode.getDeclaringClass())) {
-                continue;
-            }
-
-            result.add(methodNode);
-        }
-
-        return result;
     }
 
     /**
