@@ -127,4 +127,49 @@ class Groovy7883Bug extends GroovyTestCase {
         new B().m()
         '''
     }
+
+    void test7() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class A {
+            protected void doIt(ArrayList al) { doIt2(al) }
+            private void doIt2(List list, String x = "abc") {}
+            public void doIt3() { }
+        }
+        
+        @groovy.transform.CompileStatic
+        class B extends A {
+            class C {
+                public void m() {
+                    doIt(new ArrayList());
+                    doIt3();
+                }
+            }
+            
+        }
+        
+        assert true
+        '''
+    }
+
+    void test8() {
+        def errMsg = shouldFail  '''
+        @groovy.transform.CompileStatic
+        class A {
+            protected void doIt(ArrayList al) { doIt2(al) }
+            private void doIt2(List list, String x = "abc") {}
+        }
+        
+        @groovy.transform.CompileStatic
+        class B extends A {
+            class C {
+                public void m() { doIt2(new ArrayList()) }
+            }
+            
+        }
+        
+        '''
+
+        assert errMsg.contains('[Static type checking] - Cannot find matching method B$C#doIt2(java.util.ArrayList)')
+    }
 }

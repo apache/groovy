@@ -4396,6 +4396,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean isEnclosingInnerClass = enclosingClassNode instanceof InnerClassNode;
         List<ClassNode> outerClasses = enclosingClassNode.getOuterClasses();
 
+        outer:
         for (MethodNode methodNode : methods) {
             if (methodNode instanceof ExtensionMethodNode) {
                 result.add(methodNode);
@@ -4407,8 +4408,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isEnclosingInnerClass) {
                 for (ClassNode outerClass : outerClasses) {
                     if (outerClass.isDerivedFrom(declaringClass)) {
-                        result.add(methodNode);
-                        continue;
+                        if (outerClass.equals(declaringClass)) {
+                            result.add(methodNode);
+                            continue outer;
+                        } else {
+                            if (methodNode.isPublic() || methodNode.isProtected()) {
+                                result.add(methodNode);
+                                continue outer;
+                            }
+                        }
                     }
                 }
             }
