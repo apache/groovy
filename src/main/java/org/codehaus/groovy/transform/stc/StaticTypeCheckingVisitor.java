@@ -179,6 +179,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
@@ -4289,6 +4290,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // lookup in DGM methods too
         findDGMMethodsByNameAndArguments(getTransformLoader(), receiver, name, args, methods);
+        methods = filterMethodsByVisibility(methods);
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
 
@@ -4313,6 +4315,62 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return EMPTY_METHODNODE_LIST;
+    }
+
+    private List<MethodNode> filterMethodsByVisibility(List<MethodNode> methods) {
+        if (!asBoolean(methods)) {
+            return EMPTY_METHODNODE_LIST;
+        }
+
+        List<MethodNode> result = new LinkedList<>();
+
+        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
+        boolean isEnclosingInnerClass = enclosingClassNode instanceof InnerClassNode;
+        List<ClassNode> outerClasses = enclosingClassNode.getOuterClasses();
+
+        outer:
+        for (MethodNode methodNode : methods) {
+            if (methodNode instanceof ExtensionMethodNode) {
+                result.add(methodNode);
+                continue;
+            }
+
+            ClassNode declaringClass = methodNode.getDeclaringClass();
+
+            if (isEnclosingInnerClass) {
+                for (ClassNode outerClass : outerClasses) {
+                    if (outerClass.isDerivedFrom(declaringClass)) {
+                        if (outerClass.equals(declaringClass)) {
+                            result.add(methodNode);
+                            continue outer;
+                        } else {
+                            if (methodNode.isPublic() || methodNode.isProtected()) {
+                                result.add(methodNode);
+                                continue outer;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (declaringClass instanceof InnerClassNode) {
+                if (declaringClass.getOuterClasses().contains(enclosingClassNode)) {
+                    result.add(methodNode);
+                    continue;
+                }
+            }
+
+            if (methodNode.isPrivate() && !enclosingClassNode.equals(declaringClass)) {
+                continue;
+            }
+            if (methodNode.isProtected() && !enclosingClassNode.isDerivedFrom(declaringClass)) {
+                continue;
+            }
+
+            result.add(methodNode);
+        }
+
+        return result;
     }
 
     /**

@@ -786,6 +786,22 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return null;
     }
 
+    public List<ClassNode> getOuterClasses() {
+        if (!(this instanceof InnerClassNode)) {
+            return Collections.emptyList();
+        }
+
+        List<ClassNode> result = new LinkedList<>();
+        ClassNode outestClass = ((InnerClassNode) this).getOuterMostClass();
+        ClassNode cn = this;
+
+        do {
+            result.add(cn = cn.getOuterClass());
+        } while (!cn.equals(outestClass));
+
+        return result;
+    }
+
     /**
      * Adds a statement to the object initializer.
      *
