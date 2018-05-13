@@ -573,7 +573,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         if (storeTypeForThis(vexp)) return;
         if (storeTypeForSuper(vexp)) return;
-        if (vexp.getAccessedVariable() instanceof PropertyNode) {
+        final Variable accessedVariable = vexp.getAccessedVariable();
+        if (accessedVariable instanceof PropertyNode) {
             // we must be careful, because the property node may be of a wrong type:
             // if a class contains a getter and a setter of different types or
             // overloaded setters, the type of the property node is arbitrary!
@@ -589,6 +590,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                     }
+                }
+            }
+        } else if (accessedVariable instanceof FieldNode) {
+            FieldNode fieldNode = (FieldNode) accessedVariable;
+
+            ClassNode parameterizedType = GenericsUtils.findParameterizedType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
+            if (null != parameterizedType) {
+                ClassNode originalType = fieldNode.getOriginType();
+                GenericsType gt = GenericsUtils.extractPlaceholders(parameterizedType).get(originalType.getUnresolvedName());
+
+                if (null != gt) {
+                    ClassNode redirect = gt.getType().redirect();
+                    storeType(vexp, redirect);
+                    return;
                 }
             }
         }
@@ -608,14 +623,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        if (!(vexp.getAccessedVariable() instanceof DynamicVariable)) {
+        if (!(accessedVariable instanceof DynamicVariable)) {
             if (typeCheckingContext.getEnclosingClosure() == null) {
                 VariableExpression variable = null;
-                if (vexp.getAccessedVariable() instanceof Parameter) {
-                    variable = new ParameterVariableExpression((Parameter) vexp.getAccessedVariable());
-                } else if (vexp.getAccessedVariable() instanceof VariableExpression) {
-                    variable = (VariableExpression) vexp.getAccessedVariable();
+                if (accessedVariable instanceof Parameter) {
+                    variable = new ParameterVariableExpression((Parameter) accessedVariable);
+                } else if (accessedVariable instanceof VariableExpression) {
+                    variable = (VariableExpression) accessedVariable;
                 }
+
                 if (variable != null) {
                     ClassNode inferredType = getInferredTypeFromTempInfo(variable, variable.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
                     // instanceof applies, stash away the type, reusing key used elsewhere
@@ -629,7 +645,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         // a dynamic variable is either an undeclared variable
         // or a member of a class used in a 'with'
-        DynamicVariable dyn = (DynamicVariable) vexp.getAccessedVariable();
+        DynamicVariable dyn = (DynamicVariable) accessedVariable;
         // first, we must check the 'with' context
         String dynName = dyn.getName();
         if (tryVariableExpressionAsProperty(vexp, dynName)) return;
@@ -4500,17 +4516,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 FieldNode fieldNode = (FieldNode) variable;
 
                 checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
-                ClassNode parameterizedType = GenericsUtils.findParameterizedType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
-
-                if (null != parameterizedType) {
-                    ClassNode originalType = fieldNode.getOriginType();
-                    GenericsType gt = GenericsUtils.extractPlaceholders(parameterizedType).get(originalType.getUnresolvedName());
-
-                    if (null != gt) {
-                        return gt.getType().redirect();
-                    }
-                }
-
                 return getType(fieldNode);
             }
             if (variable != null && variable != vexp && variable instanceof VariableExpression) {
@@ -5368,6 +5373,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+
     /**
      * Wrapper for a Parameter so it can be treated like a VariableExpression
      * and tracked in the ifElseForWhileAssignmentTracker.
@@ -5429,4 +5435,5 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return parameter.equals(other);
         }
     }
+
 }
