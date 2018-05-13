@@ -1791,29 +1791,6 @@ assert result == 'ok'
         '''
     }
 
-    // GROOVY-7691
-    @NotYetImplemented
-    void testCovariantGenericField() {
-        assertScript '''
-            abstract class AbstractNumberWrapper<S extends Number> {
-                protected final S number;
-
-                AbstractNumberWrapper(S number) {
-                    this.number = number
-                }
-            }
-            class LongWrapper<S extends Long> extends AbstractNumberWrapper<S> {
-                LongWrapper(S longNumber) {
-                    super(longNumber)
-                }
-
-                S getValue() {
-                    return number;
-                }
-            }
-            assert new LongWrapper<Long>(42L).value == 42L
-        '''
-    }
 
     //GROOVY-7804
     void testParameterlessClosureToGenericSAMTypeArgumentCoercion() {
