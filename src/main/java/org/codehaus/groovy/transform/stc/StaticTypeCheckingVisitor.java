@@ -1983,6 +1983,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected ClassNode checkReturnType(final ReturnStatement statement) {
         Expression expression = statement.getExpression();
         ClassNode type = getType(expression);
+
         if (typeCheckingContext.getEnclosingClosure() != null) {
             return type;
         }
@@ -4428,8 +4429,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
             final Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
-                checkOrMarkPrivateAccess(vexp, (FieldNode) variable, isLHSOfEnclosingAssignment(vexp));
-                return getType((FieldNode) variable);
+                FieldNode fieldNode = (FieldNode) variable;
+
+                checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
+                ClassNode parameterizedType = GenericsUtils.findParameterizedType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
+
+                if (null != parameterizedType) {
+                    ClassNode originalType = fieldNode.getOriginType();
+                    GenericsType gt = GenericsUtils.extractPlaceholders(parameterizedType).get(originalType.getUnresolvedName());
+
+                    if (null != gt) {
+                        return gt.getType().redirect();
+                    }
+                }
+
+                return getType(fieldNode);
             }
             if (variable != null && variable != vexp && variable instanceof VariableExpression) {
                 return getType((Expression) variable);
