@@ -217,6 +217,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.choose
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findActualTypeByPlaceholderName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
@@ -598,11 +599,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode parameterizedType = GenericsUtils.findParameterizedType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
             if (null != parameterizedType) {
                 ClassNode originalType = fieldNode.getOriginType();
-                GenericsType gt = GenericsUtils.extractPlaceholders(parameterizedType).get(originalType.getUnresolvedName());
+                ClassNode actualType = findActualTypeByPlaceholderName(originalType.getUnresolvedName(), GenericsUtils.extractPlaceholders(parameterizedType));
 
-                if (null != gt) {
-                    ClassNode redirect = gt.getType().redirect();
-                    storeType(vexp, redirect);
+                if (null != actualType) {
+                    storeType(vexp, actualType);
                     return;
                 }
             }

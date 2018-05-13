@@ -1189,14 +1189,10 @@ public abstract class StaticTypeCheckingSupport {
         return isExtensionMethodNode ? 0 : 1;
     }
 
-    private static ClassNode findGenericsTypeByPlaceholderName(String placeholderName, Map<String, GenericsType> placeholderInfo) {
-        for (Map.Entry<String, GenericsType> entry : placeholderInfo.entrySet()) {
-            if (placeholderName.equals(entry.getKey())) {
-                return entry.getValue().getType();
-            }
-        }
+    public static ClassNode findActualTypeByPlaceholderName(String placeholderName, Map<String, GenericsType> placeholderInfo) {
+        GenericsType gt = placeholderInfo.get(placeholderName);
 
-        return null;
+        return null == gt ? null : gt.getType().redirect();
     }
 
     private static Parameter[] makeRawTypes(Parameter[] params, ClassNode declaringClassForDistance, ClassNode actualReceiverForDistance) {
@@ -1206,7 +1202,7 @@ public abstract class StaticTypeCheckingSupport {
         for (int i = 0; i < params.length; i++) {
             Parameter oldP = params[i];
 
-            ClassNode actualType = findGenericsTypeByPlaceholderName(oldP.getType().getUnresolvedName(), placeholderInfo);
+            ClassNode actualType = findActualTypeByPlaceholderName(oldP.getType().getUnresolvedName(), placeholderInfo);
             Parameter newP = new Parameter(makeRawType(null == actualType ? oldP.getType() : actualType), oldP.getName());
             newParam[i] = newP;
         }
