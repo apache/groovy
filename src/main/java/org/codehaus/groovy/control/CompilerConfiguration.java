@@ -44,7 +44,6 @@ import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 /**
  * Compilation control flags and coordination stuff.
  */
-
 public class CompilerConfiguration {
 
     /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> compilation. */
