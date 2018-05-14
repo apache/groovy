@@ -1986,15 +1986,35 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             super.visitConstructorOrMethod(node, isConstructor);
         }
         if (!isConstructor) {
-            returnAdder.visitMethod(node);
+            returnAdder.visitMethod(node); // return statement added after visitConstructorOrMethod finished... we can not count these auto-generated return statements(GROOVY-7753), see `this.visitingReturnStatementCnt`
         }
         typeCheckingContext.popEnclosingMethod();
     }
 
+    // GROOVY-7753 return statement added after visitConstructorOrMethod finished... current solution can not solve auto return
+    private int visitingReturnStatementCnt = 0;
+
     @Override
     public void visitReturnStatement(ReturnStatement statement) {
-        super.visitReturnStatement(statement);
-        returnListener.returnStatementAdded(statement);
+        visitingReturnStatementCnt++;
+        try {
+            super.visitReturnStatement(statement);
+            returnListener.returnStatementAdded(statement);
+        } finally {
+            visitingReturnStatementCnt--;
+        }
+    }
+
+    private ClassNode infer(ClassNode target, ClassNode source) {
+        DeclarationExpression virtualDecl = new DeclarationExpression(
+                varX("{target}", target),
+                Token.newSymbol(EQUAL, -1, -1),
+                varX("{source}", source)
+        );
+        virtualDecl.visit(this);
+        ClassNode newlyInferred = (ClassNode) virtualDecl.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+
+        return !missesGenericsTypes(newlyInferred) ? newlyInferred : null;
     }
 
     protected ClassNode checkReturnType(final ReturnStatement statement) {
@@ -2023,15 +2043,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode inferred = previousType == null ? type : lowestUpperBound(type, previousType);
                 if (implementsInterfaceOrIsSubclassOf(inferred, enclosingMethod.getReturnType())) {
                     if (missesGenericsTypes(inferred)) {
-                        DeclarationExpression virtualDecl = new DeclarationExpression(
-                                varX("{target}", enclosingMethod.getReturnType()),
-                                Token.newSymbol(EQUAL, -1, -1),
-                                varX("{source}", type)
-                        );
-                        virtualDecl.setSourcePosition(statement);
-                        virtualDecl.visit(this);
-                        ClassNode newlyInferred = (ClassNode) virtualDecl.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-                        if (!missesGenericsTypes(newlyInferred)) type = newlyInferred;
+                        ClassNode newlyInferred = infer(enclosingMethod.getReturnType(), type);
+
+                        if (null != newlyInferred) {
+                            type = newlyInferred;
+                        }
                     } else {
                         checkTypeGenerics(enclosingMethod.getReturnType(), inferred, expression);
                     }
@@ -3228,6 +3244,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, mn.get(0), call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
+
+                            if (visitingReturnStatementCnt > 0) { // the method call is within return statement, we can try to infer type further
+                                ClassNode inferredType = infer(returnType, typeCheckingContext.getEnclosingMethod().getReturnType());
+                                if (null != inferredType) {
+                                    returnType = inferredType;
+                                }
+                            }
+
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
                             String data = chosenReceiver.getData();
