@@ -48,7 +48,6 @@ import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
  * @author <a href="mailto:jim@pagesmiths.com">Jim White</a>
  * @author <a href="mailto:cedric.champeau@gmail.com">Cedric Champeau</a>
  */
-
 public class CompilerConfiguration {
 
     /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> complilation. */
