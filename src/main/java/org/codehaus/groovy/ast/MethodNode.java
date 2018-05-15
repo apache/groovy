@@ -169,6 +169,10 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return (modifiers & ACC_PROTECTED) != 0;
     }
 
+    public boolean isPackageScope() {
+        return !(this.isPrivate() || this.isProtected() || this.isPublic());
+    }
+
     public boolean hasDefaultValue() {
         return this.hasDefaultValue;
     }
