@@ -518,6 +518,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
     }
 
+    /*
     void testTypeInferenceFieldVsLocalVariable() {
         shouldFailWithMessages '''
             // tag::typeinference_field_vs_local_variable[]
@@ -544,6 +545,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
             SomeClass
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
+    */
 
     void testLeastUpperBound() {
         assertScript '''import org.codehaus.groovy.ast.ClassHelper
