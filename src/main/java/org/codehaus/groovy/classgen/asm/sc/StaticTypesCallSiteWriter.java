@@ -671,14 +671,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (receiver instanceof VariableExpression && rType == null) {
             // TODO: can STCV be made smarter to avoid this check?
             Variable accessedVariable = ((VariableExpression)receiver).getAccessedVariable();
-            VariableExpression ve;
-            if (accessedVariable instanceof FieldNode) {
-                FieldNode fieldNode = (FieldNode) accessedVariable;
-                rType = getInferredTypeOfField(fieldNode);
-            } else {
-                ve = (VariableExpression) accessedVariable;
-                rType = ve.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-            }
+            VariableExpression ve = (VariableExpression) accessedVariable;
+            rType = ve.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         }
         if (rType!=null && trySubscript(receiver, message, arguments, rType, aType)) {
             return;
@@ -689,22 +683,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 "On receiver: " + receiver.getText() + " with message: " + message + " and arguments: " + arguments.getText() + "\n" +
                 "This method should not have been called. Please try to create a simple example reproducing\n" +
                 "this error and file a bug report at https://issues.apache.org/jira/browse/GROOVY");
-    }
-
-    private ClassNode getInferredTypeOfField(FieldNode fieldNode) {
-        ClassNode rType = null;
-
-        Map nodeMetaData = fieldNode.getNodeMetaData(controller.getMethodNode());
-        if (null != nodeMetaData) {
-            rType = (ClassNode) nodeMetaData.get(StaticTypesMarker.INFERRED_TYPE);
-//            if (null == rType) {
-//                nodeMetaData = fieldNode.getNodeMetaData(controller.getClassNode());
-//                if (null != nodeMetaData) {
-//                    rType = (ClassNode) nodeMetaData.get(StaticTypesMarker.INFERRED_TYPE);
-//                }
-//            }
-        }
-        return rType;
     }
 
     private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, ClassNode rType, final ClassNode aType) {
