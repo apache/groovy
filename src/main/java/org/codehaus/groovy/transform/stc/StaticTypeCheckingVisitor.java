@@ -1985,22 +1985,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             super.visitConstructorOrMethod(node, isConstructor);
         }
         if (!isConstructor) {
-            returnAdder.visitMethod(node); // return statement added after visitConstructorOrMethod finished... we can not count these auto-generated return statements(GROOVY-7753), see `this.visitingReturnStatementCnt`
+            returnAdder.visitMethod(node); // return statement added after visitConstructorOrMethod finished... we can not count these auto-generated return statements(GROOVY-7753), see `typeCheckingContext.pushEnclosingReturnStatement`
         }
         typeCheckingContext.popEnclosingMethod();
     }
 
-    // GROOVY-7753 return statement added after visitConstructorOrMethod finished... current solution can not solve auto return
-    private int visitingReturnStatementCnt = 0;
-
     @Override
     public void visitReturnStatement(ReturnStatement statement) {
-        visitingReturnStatementCnt++;
+        typeCheckingContext.pushEnclosingReturnStatement(statement);
         try {
             super.visitReturnStatement(statement);
             returnListener.returnStatementAdded(statement);
         } finally {
-            visitingReturnStatementCnt--;
+            typeCheckingContext.popEnclosingReturnStatement();
         }
     }
 
@@ -3242,7 +3239,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, mn.get(0), call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
 
-                            if (1 == visitingReturnStatementCnt) { // the method call is within return statement, we can try to infer type further
+                            if (null != typeCheckingContext.getEnclosingReturnStatement()) { // the method call is within return statement, we can try to infer type further
                                 ClassNode inferredType = infer(returnType, typeCheckingContext.getEnclosingMethod().getReturnType());
                                 if (null != inferredType) {
                                     returnType = inferredType;

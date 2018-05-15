@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -54,6 +55,7 @@ public class TypeCheckingContext {
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<Expression>();
     protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<BlockStatement>();
+    protected final LinkedList<ReturnStatement> enclosingReturnStatements = new LinkedList<ReturnStatement>();
 
 
     // used for closure return type inference
@@ -214,6 +216,33 @@ public class TypeCheckingContext {
     public MethodNode getEnclosingMethod() {
         if (enclosingMethods.isEmpty()) return null;
         return enclosingMethods.getFirst();
+    }
+
+
+    /**
+     * Pushes a return statement into the return statement stack.
+     * @param returnStatement the return statement to be pushed
+     */
+    public void pushEnclosingReturnStatement(ReturnStatement returnStatement) {
+        enclosingReturnStatements.addFirst(returnStatement);
+    }
+
+    /**
+     * Pops a return statement from the enclosing return statements stack.
+     * @return the popped return statement
+     */
+    public ReturnStatement popEnclosingReturnStatement() {
+        return enclosingReturnStatements.removeFirst();
+    }
+
+    /**
+     * Returns the return statement which is on the top of the stack, or null
+     * if there's no such element.
+     * @return the enclosing return statement on top of the stack, or null if no such element.
+     */
+    public ReturnStatement getEnclosingReturnStatement() {
+        if (enclosingReturnStatements.isEmpty()) return null;
+        return enclosingReturnStatements.getFirst();
     }
 
     /**
