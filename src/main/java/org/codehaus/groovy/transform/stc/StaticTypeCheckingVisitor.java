@@ -595,6 +595,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else if (accessedVariable instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) accessedVariable;
+            FieldVariableExpression fieldVariableExpression = new FieldVariableExpression(fieldNode);
 
             ClassNode parameterizedType = GenericsUtils.findParameterizedType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
             if (null != parameterizedType) {
@@ -602,6 +603,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ClassNode actualType = findActualTypeByPlaceholderName(originalType.getUnresolvedName(), GenericsUtils.extractPlaceholders(parameterizedType));
 
                 if (null != actualType) {
+                    fieldVariableExpression.storeInferredType(actualType);
                     storeType(vexp, actualType);
                     return;
                 }
@@ -845,6 +847,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 // if right expression is a ClosureExpression, store parameter type information
                 if (leftExpression instanceof VariableExpression) {
+                    VariableExpression variableExpression = (VariableExpression) leftExpression;
+
+                    final Variable accessedVariable = variableExpression.getAccessedVariable();
+                    if (accessedVariable instanceof FieldNode) {
+                        new FieldVariableExpression((FieldNode) accessedVariable).storeInferredType(resultType);
+                    }
+
                     if (rightExpression instanceof ClosureExpression) {
                         Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
                         leftExpression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
@@ -1751,6 +1760,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (init instanceof ConstructorCallExpression) {
                     inferDiamondType((ConstructorCallExpression) init, node.getOriginType());
                 }
+
+//                new FieldVariableExpression(node).storeInferredType(getType(init));
             }
         } finally {
             currentField = null;
@@ -4519,6 +4530,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (cn != null) {
             return cn;
         }
+
+        if (exp instanceof FieldNode) {
+            ClassNode inferredType = new FieldVariableExpression((FieldNode) exp).getInferredType();
+
+            if (null != inferredType) {
+                return inferredType;
+            }
+        }
+
         if (exp instanceof ClassExpression) {
             ClassNode node = CLASS_Type.getPlainNodeReference();
             node.setGenericsTypes(new GenericsType[]{
@@ -5457,4 +5477,77 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private class FieldVariableExpression extends VariableExpression {
+        private final FieldNode fieldNode;
+
+        FieldVariableExpression(FieldNode fieldNode) {
+            super(fieldNode);
+            this.fieldNode = fieldNode;
+
+            ClassNode inferred = getInferredType();
+            if (inferred == null) {
+                storeInferredType(fieldNode.getOriginType());
+            }
+        }
+
+        @Override
+        public ListHashMap getMetaDataMap() {
+            AnnotatedNode node = getKey();
+
+            return getMetaDataMap(node);
+        }
+
+        private ListHashMap getMetaDataMap(AnnotatedNode key) {
+            if (null == key) {
+                return new ListHashMap(); // all valid cases should have a methodNode as key. return a empty map is just to avoid NPE, the map will be abandoned finally
+            }
+
+            ListHashMap metaDataMap = fieldNode.getNodeMetaData(key);
+
+            if (null == metaDataMap) {
+                metaDataMap = new ListHashMap();
+                fieldNode.putNodeMetaData(key, metaDataMap);
+            }
+
+            return metaDataMap;
+        }
+
+        @Override
+        public int hashCode() {
+            return fieldNode.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return fieldNode.equals(other);
+        }
+
+        @SuppressWarnings("unchecked")
+        private ClassNode getInferredType() {
+            Map<Object, Object> enclosingMetaData = getMetaDataMap();
+
+            ClassNode inferredType = (ClassNode) enclosingMetaData.get(StaticTypesMarker.INFERRED_TYPE);
+
+            return inferredType;
+//            return null == inferredType ? (ClassNode) getMetaDataMap(getDefaultKey()).get(StaticTypesMarker.INFERRED_TYPE) : inferredType;
+        }
+
+        @SuppressWarnings("unchecked")
+        private void storeInferredType(ClassNode inferredType) {
+            Map<Object, Object> enclosingMetaData = getMetaDataMap();
+
+            enclosingMetaData.put(StaticTypesMarker.INFERRED_TYPE, inferredType);
+        }
+
+        private AnnotatedNode getKey() {
+            AnnotatedNode node = typeCheckingContext.getEnclosingMethod();
+
+            return node;
+//            return null == node ? getDefaultKey() : node;
+        }
+
+//        private ClassNode getDefaultKey() {
+//            return typeCheckingContext.getEnclosingClassNode();
+//        }
+    }
 }
