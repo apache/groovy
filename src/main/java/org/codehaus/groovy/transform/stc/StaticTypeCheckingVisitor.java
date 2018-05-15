@@ -4483,11 +4483,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (methodNode.isProtected() && !enclosingClassNode.isDerivedFrom(declaringClass)) {
                 continue;
             }
+            if (methodNode.isPackageScope() && !getPackageName(enclosingClassNode).equals(getPackageName(declaringClass))) {
+                continue;
+            }
 
             result.add(methodNode);
         }
 
         return result;
+    }
+
+    private static String getPackageName(ClassNode cn) {
+        String name = cn.getPackageName();
+
+        return null == name ? "" : name;
     }
 
     /**
