@@ -34,11 +34,11 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 public class VariableExpressionTransformer {
 
     public Expression transformVariableExpression(VariableExpression expr) {
-        Expression trn = tryTransformPrivateFieldAccess(expr);
+        Expression trn = tryTransformDelegateToProperty(expr);
         if (trn != null) {
             return trn;
         }
-        trn = tryTransformDelegateToProperty(expr);
+        trn = tryTransformPrivateFieldAccess(expr);
         if (trn != null) {
             return trn;
         }
