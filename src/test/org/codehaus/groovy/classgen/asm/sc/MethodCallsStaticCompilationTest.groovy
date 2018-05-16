@@ -259,6 +259,24 @@ import groovy.transform.TypeCheckingMode//import org.codehaus.groovy.classgen.as
         '''
     }
 
+    //GROOVY-8509
+    void testProtectedCallFromClassInSamePackage() {
+        assertScript '''
+            package org.foo
+
+            class A {
+                protected A() {}
+                protected int m() { 123 }
+            }
+            class B {
+                int test() {
+                    new A().m()
+                }
+            }
+            assert new B().test() == 123
+        '''
+    }
+
     public static class Base {
         protected int foo() {
             123
