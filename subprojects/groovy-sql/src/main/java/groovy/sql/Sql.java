@@ -3973,7 +3973,7 @@ public class Sql {
      * @return the resulting list of rows
      * @throws SQLException if a database error occurs
      */
-    public List<GroovyRowResult> asList(String sql, ResultSet rs,
+    protected List<GroovyRowResult> asList(String sql, ResultSet rs,
                                            @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         return asList(sql, rs, 0, 0, metaClosure);
     }
