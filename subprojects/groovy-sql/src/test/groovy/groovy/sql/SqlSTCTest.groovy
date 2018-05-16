@@ -66,8 +66,16 @@ class SqlSTCTest extends GroovyShellTestCase {
 
     void testAsList() {
         shell.evaluate '''
-            def test(groovy.sql.Sql sql, java.sql.ResultSet rs) { 
-                sql.asList('SELECT * FROM FOO', rs) { println it.columnCount } 
+            class CustomSql extends groovy.sql.Sql {
+                CustomSql(groovy.sql.Sql sql) {
+                    super(sql)
+                }
+                def printColumnCount(String sql, java.sql.ResultSet rs) {
+                    this.asList(sql, rs) { println it.columnCount }
+                }
+            }
+            def test(groovy.sql.Sql sql, java.sql.ResultSet rs) {
+                new CustomSql(sql).printColumnCount('SELECT * FROM FOO', rs)
             }
         '''
     }
