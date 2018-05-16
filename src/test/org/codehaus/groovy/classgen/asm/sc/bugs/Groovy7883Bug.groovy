@@ -53,24 +53,6 @@ class Groovy7883Bug extends GroovyTestCase {
         assert errMsg.contains('[Static type checking] - Cannot find matching method A#doIt()')
     }
 
-    void test3() {
-        def errMsg = shouldFail '''
-        @groovy.transform.CompileStatic
-        class A {
-            protected void doIt() {}
-        }
-        
-        @groovy.transform.CompileStatic
-        class B {
-            public void m() { new A().doIt() }
-        }
-        
-        new B().m()
-        '''
-
-        assert errMsg.contains('[Static type checking] - Cannot find matching method A#doIt()')
-    }
-
     void test4() {
         def errMsg = shouldFail '''
         @groovy.transform.CompileStatic
