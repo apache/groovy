@@ -310,4 +310,20 @@ public class ClassNodeUtils {
         }
         return false;
     }
+
+    /**
+     * Determine if the given ClassNode values have the same package name.
+     *
+     * @param first a ClassNode
+     * @param second a ClassNode
+     * @return true if both given nodes have the same package name
+     * @throws NullPointerException if either of the given nodes are null
+     */
+    public static boolean samePackageName(ClassNode first, ClassNode second) {
+        String firstPackage = first.getPackageName();
+        String secondPackage = second.getPackageName();
+        return (firstPackage == secondPackage)
+                || (firstPackage != null && firstPackage.equals(secondPackage));
+    }
+
 }

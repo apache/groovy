@@ -122,6 +122,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
@@ -4469,10 +4470,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (methodNode.isPrivate() && !enclosingClassNode.equals(declaringClass)) {
                 continue;
             }
-            if (methodNode.isProtected() && !enclosingClassNode.isDerivedFrom(declaringClass)) {
+            if (methodNode.isProtected()
+                    && !enclosingClassNode.isDerivedFrom(declaringClass)
+                    && !samePackageName(enclosingClassNode, declaringClass)) {
                 continue;
             }
-            if (methodNode.isPackageScope() && !getPackageName(enclosingClassNode).equals(getPackageName(declaringClass))) {
+            if (methodNode.isPackageScope() && !samePackageName(enclosingClassNode, declaringClass)) {
                 continue;
             }
 
@@ -4480,12 +4483,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return result;
-    }
-
-    private static String getPackageName(ClassNode cn) {
-        String name = cn.getPackageName();
-
-        return null == name ? "" : name;
     }
 
     /**
