@@ -596,6 +596,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (accessedVariable instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) accessedVariable;
 
+            TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+            if (enclosingClosure != null) {
+                // when vexp has the same name as a property of the owner,
+                // the IMPLICIT_RECEIVER must be set in case it's the delegate
+                if (tryVariableExpressionAsProperty(vexp, vexp.getName())) {
+
+                }
+            }
+
             ClassNode parameterizedType = GenericsUtils.findParameterizedType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
             if (null != parameterizedType) {
                 ClassNode originalType = fieldNode.getOriginType();

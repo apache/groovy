@@ -449,6 +449,38 @@ runner.run()
     }
 
 
+    void testDelegateResolution() {
+
+        assertScript '''import groovy.transform.CompileStatic
+class ADelegate {
+    def x = "delegate"
+}
+
+@CompileStatic // @CompileStatic, @CompileDynamic, @TypeChecked
+class AClass {
+    public <T> T closureExecuter(
+            ADelegate d,
+            @DelegatesTo(value = ADelegate, strategy = Closure.DELEGATE_ONLY) Closure<T> c) {
+        c.resolveStrategy = Closure.DELEGATE_ONLY
+        c.delegate = d
+        return c()
+    }
+
+    def x = "owner"
+    
+    def test() {
+        def theDelegate = new ADelegate()
+        def res = closureExecuter(theDelegate) {
+            return x
+        }
+        
+        return res
+    }
+}
+assert new AClass().test() == "delegate"
+'''
+    }
+
     private static class SpecSupport {
         static int getLongueur(String self) { self.length() }
         static int longueur(String self) { self.length() }
