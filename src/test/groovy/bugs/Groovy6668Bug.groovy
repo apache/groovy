@@ -18,9 +18,11 @@
  */
 package groovy.bugs
 
-class Groovy6668Bug extends GroovyTestCase{
+import gls.CompilableTestSupport
+
+class Groovy6668Bug extends CompilableTestSupport {
     void testGroovy6668() {
-        assertScript '''
+        shouldCompile '''
         @groovy.transform.CompileStatic
         class OtherThing {
             OtherThing() {
@@ -29,8 +31,6 @@ class Groovy6668Bug extends GroovyTestCase{
                 m["$k"].toUpperCase()
             }
         }
-        
-        OtherThing
         '''
     }
 
