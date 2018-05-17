@@ -24,6 +24,7 @@ import groovy.lang.DelegatesTo;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.EmptyRange;
 import groovy.lang.ExpandoMetaClass;
+import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
@@ -7659,6 +7660,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    /**
+     * Get the value via the string value of the key
+     * See GROOVY-6668 and the PR#708 (https://github.com/apache/groovy/pull/708)
+     *
+     * @param self a map
+     * @param key a key
+     * @param <V> value type
+     * @return the value
+     */
+    public static <V> V getAt(Map<?, V> self, GString key) {
+        if (null == key) {
+            return null;
+        }
+
+        return self.get(key.toString());
     }
 
     /**
