@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -468,7 +469,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
                 expression.visit(acg);
                 if (!isNullConstant(expression)) {
-                    operandStack.doGroovyCast(para[i].getType());
+                    if (expression instanceof GStringExpression) {
+                        operandStack.doGroovyCast(ClassHelper.STRING_TYPE);
+                    } else {
+                        operandStack.doGroovyCast(para[i].getType());
+                    }
                 }
             }
         } else {

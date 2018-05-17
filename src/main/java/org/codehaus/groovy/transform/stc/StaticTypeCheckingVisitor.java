@@ -4101,13 +4101,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return Number_TYPE;
     }
 
-    protected ClassNode inferComponentType(final ClassNode containerType, final ClassNode indexType) {
+    private static ClassNode convertGStringToStringType(ClassNode cn) {
+        return GSTRING_TYPE.equals(cn) ? STRING_TYPE : cn;
+    }
+
+    protected ClassNode inferComponentType(final ClassNode containerType, ClassNode indexType) {
         final ClassNode componentType = containerType.getComponentType();
         if (componentType == null) {
             // GROOVY-5521
             // try to identify a getAt method
             typeCheckingContext.pushErrorCollector();
-            MethodCallExpression vcall = callX(varX("_hash_", containerType), "getAt", varX("_index_", indexType));
+            MethodCallExpression vcall = callX(varX("_hash_", containerType), "getAt", varX("_index_", convertGStringToStringType(indexType)));
             try {
                 visitMethodCallExpression(vcall);
             } finally {
