@@ -179,6 +179,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isIntCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.MINIMUM_BYTECODE_VERSION;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
@@ -3251,6 +3252,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
+                            ClassNode declaringClass = directMethodCallCandidate.getDeclaringClass();
+                            if (declaringClass.isInterface() && directMethodCallCandidate.isStatic()) {
+                                typeCheckingContext.getEnclosingClassNode().putNodeMetaData(MINIMUM_BYTECODE_VERSION, Opcodes.V1_8);
+                            }
                             String data = chosenReceiver.getData();
                             if (data != null) {
                                 // the method which has been chosen is supposed to be a call on delegate or owner
