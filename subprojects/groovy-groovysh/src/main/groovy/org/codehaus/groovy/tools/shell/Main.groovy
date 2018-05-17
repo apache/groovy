@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools.shell
 
 import groovy.cli.commons.CliBuilder
+import groovy.cli.commons.OptionAccessor
 import jline.TerminalFactory
 import jline.UnixTerminal
 import jline.UnsupportedTerminal

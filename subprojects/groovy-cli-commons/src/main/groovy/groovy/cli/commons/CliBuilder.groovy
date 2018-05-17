@@ -348,7 +348,7 @@ class CliBuilder {
      * Make options accessible from command line args with parser.
      * Returns null on bad command lines after displaying usage message.
      */
-    groovy.cli.commons.OptionAccessor parse(args) {
+    OptionAccessor parse(args) {
         if (expandArgumentFiles) args = expandArgumentFiles(args)
         if (!parser) {
             parser = posix != null && posix == false ? new GnuParser() : new DefaultParser()
