@@ -77,6 +77,7 @@ import java.util.Set;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
@@ -92,6 +93,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
     private static final String BIGINTEGER_STR = "BigInteger";
     private static final String BIGDECIMAL_STR = "BigDecimal";
+    public static final String QUESTION_MARK = "?";
 
     private ClassNode currentClass;
     private final CompilationUnit compilationUnit;
@@ -1462,7 +1464,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             ClassNode classNode = type.getType();
             String name = type.getName();
             ClassNode[] bounds = type.getUpperBounds();
-            boolean isWild = "?".equals(name);
+            boolean isWild = QUESTION_MARK.equals(name);
             boolean toDealWithGenerics = 0 == level || (level > 0 && null != genericParameterNames.get(name));
 
             if (bounds != null) {
@@ -1481,7 +1483,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         resolveOrFail(upperBound, classNode);
                     }
 
-                    if (upperBound.isUsingGenerics()) {
+                    if (asBoolean(upperBound.isUsingGenerics())) {
                         upperBoundsWithGenerics.add(new Tuple2<>(upperBound, type));
                     }
                 }
