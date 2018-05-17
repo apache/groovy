@@ -18,7 +18,6 @@
  */
 package typing
 
-import groovy.$Temp
 import groovy.test.GroovyAssert
 import groovy.transform.TypeChecked
 import groovy.xml.MarkupBuilder
@@ -448,20 +447,18 @@ runner.run()
 '''
     }
 
-
-    void testDelegateResolution() {
-
-        assertScript '''import groovy.transform.CompileStatic
+    void doDelegateResolutionForPropertyReadTest(String strategy, String expected) {
+        assertScript """import groovy.transform.CompileStatic
 class ADelegate {
     def x = "delegate"
 }
 
-@CompileStatic // @CompileStatic, @CompileDynamic, @TypeChecked
+@CompileStatic
 class AClass {
     public <T> T closureExecuter(
             ADelegate d,
-            @DelegatesTo(value = ADelegate, strategy = Closure.DELEGATE_ONLY) Closure<T> c) {
-        c.resolveStrategy = Closure.DELEGATE_ONLY
+            @DelegatesTo(value = ADelegate, strategy = $strategy) Closure<T> c) {
+        c.resolveStrategy = $strategy
         c.delegate = d
         return c()
     }
@@ -477,93 +474,76 @@ class AClass {
         return res
     }
 }
-assert new AClass().test() == "delegate"
-'''
+assert new AClass().test() == "$expected"
+"""
     }
 
-    void testCeption() {
-        assertScript '''
-import groovy.transform.CompileStatic
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.InnerClassNode
-import org.codehaus.groovy.ast.Variable
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder
-import org.codehaus.groovy.classgen.FinalVariableAnalyzer
 
-class FinalVariableAnalyzerTest extends GroovyTestCase {
+    void doDelegateResolutionForPropertyWriteTest(String strategy, String expected) {
+        assertScript """import groovy.transform.CompileStatic
+class ADelegate {
+    def x = "delegate"
+}
 
-    protected void assertFinals(final Map<String, Boolean> expectations, final String script) throws Exception {
-        def cc = new CompilerConfiguration()
-        CompilerCustomizationBuilder.withConfig(cc) {
-            inline(phase: 'SEMANTIC_ANALYSIS') { source, context, classNode ->
-                def analyzer = new AssertionFinalVariableAnalyzer(source, expectations)
-                analyzer.visitClass(classNode)
-            }
-        }
-        def shell = new GroovyShell(cc)
-        shell.parse(script)
+@CompileStatic
+class AClass {
+    public <T> T closureExecuter(
+            ADelegate d,
+            @DelegatesTo(value = ADelegate, strategy = $strategy) Closure<T> c) {
+        c.resolveStrategy = $strategy
+        c.delegate = d
+        return c()
     }
 
-    void testShouldConsiderThatXIsNotEffectivelyFinalWithSubsequentIfs() {
-        assertFinals x: false, \'\'\'
-            int x
-            if (foo) {
-              x=1
-            }
-            if (!foo) {
-              x=2
-            }
-        \'\'\'
-    }
+    def x = "owner"
     
-    
-    @CompileStatic
-    private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
-
-        private Set<Variable> variablesToCheck
-        private Map<String, Boolean> assertionsToCheck
-
-        AssertionFinalVariableAnalyzer(final SourceUnit sourceUnit, final Map<String, Boolean> assertions) {
-            super(sourceUnit)
-            assertionsToCheck = assertions
+    def test() {
+        def theDelegate = new ADelegate()
+        def res = closureExecuter(theDelegate) {
+            x = "changed"
         }
-
-        @Override
-        void visitVariableExpression(final VariableExpression expression) {
-            super.visitVariableExpression(expression)
-            if (assertionsToCheck.containsKey(expression.name)) {
-                variablesToCheck << expression
-                variablesToCheck << expression.accessedVariable
-            }
-        }
-
-        @Override
-        void visitClass(final ClassNode node) {
-            def old = variablesToCheck
-            variablesToCheck = []
-            super.visitClass(node)
-            if (!(node instanceof InnerClassNode)) {
-                checkAssertions()
-            }
-            variablesToCheck = old
-        }
-
-        private void checkAssertions() {
-            assertionsToCheck.each { name, shouldBeFinal ->
-                def candidates = variablesToCheck.findAll { it.name == name }
-                assert candidates.any { isEffectivelyFinal(it) == shouldBeFinal }
-
-            }
-        }
+        
+        return [theDelegate.x, this.x].toSet()
     }
 }
-new FinalVariableAnalyzerTest().testShouldConsiderThatXIsNotEffectivelyFinalWithSubsequentIfs()
-'''
+def result = new AClass().test()
+def expected = (["owner", "delegate", "changed"] - ["$expected"]).toSet()
+assert expected == result
+"""
     }
+
+    void testDelegateResolutionToPropertyWhenReadingUsingDelegateOnly() {
+        doDelegateResolutionForPropertyReadTest("Closure.DELEGATE_ONLY", "delegate")
+    }
+
+    void testDelegateResolutionToPropertyWhenReadingUsingDelegateFirst() {
+        doDelegateResolutionForPropertyReadTest("Closure.DELEGATE_FIRST", "delegate")
+    }
+
+    void testDelegateResolutionToPropertyWhenReadingUsingOwnerOnly() {
+        doDelegateResolutionForPropertyReadTest("Closure.OWNER_ONLY", "owner")
+    }
+
+    void testDelegateResolutionToPropertyWhenReadingUsingOwnerFirst() {
+        doDelegateResolutionForPropertyReadTest("Closure.OWNER_FIRST", "owner")
+    }
+
+    void testDelegateResolutionToPropertyWhenWritingUsingDelegateOnly() {
+        doDelegateResolutionForPropertyWriteTest("Closure.DELEGATE_ONLY", "delegate")
+    }
+
+    void testDelegateResolutionToPropertyWhenWritingUsingDelegateFirst() {
+        doDelegateResolutionForPropertyWriteTest("Closure.DELEGATE_FIRST", "delegate")
+    }
+
+    void testDelegateResolutionToPropertyWhenWritingUsingOwnerOnly() {
+        doDelegateResolutionForPropertyWriteTest("Closure.OWNER_ONLY", "owner")
+    }
+
+    void testDelegateResolutionToPropertyWhenWritingUsingOwnerFirst() {
+        doDelegateResolutionForPropertyWriteTest("Closure.OWNER_FIRST", "owner")
+    }
+
 
     // TODO unignore this
 //    void testDelegateResolution2() {
