@@ -1447,28 +1447,59 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private void resolveGenericsHeader(GenericsType[] types) {
+        resolveGenericsHeader(types, null, 0);
+    }
+
+    private void resolveGenericsHeader(GenericsType[] types, GenericsType rootType, int level) {
         if (types == null) return;
         currentClass.setUsingGenerics(true);
+        List<Tuple2<ClassNode, GenericsType>> upperBoundsWithGenerics = new LinkedList<>();
         for (GenericsType type : types) {
+            if (level > 0 && type.getName().equals(rootType.getName())) {
+                continue;
+            }
+
             ClassNode classNode = type.getType();
             String name = type.getName();
             ClassNode[] bounds = type.getUpperBounds();
+            boolean isWild = "?".equals(name);
+            boolean toDealWithGenerics = 0 == level || (level > 0 && null != genericParameterNames.get(name));
+
             if (bounds != null) {
                 boolean nameAdded = false;
                 for (ClassNode upperBound : bounds) {
-                    if (!nameAdded && upperBound != null || !resolve(classNode)) {
-                        genericParameterNames.put(name, type);
-                        type.setPlaceholder(true);
-                        classNode.setRedirect(upperBound);
-                        nameAdded = true;
+                    if (!isWild) {
+                        if (!nameAdded && upperBound != null || !resolve(classNode)) {
+                            if (toDealWithGenerics) {
+                                genericParameterNames.put(name, type);
+                                type.setPlaceholder(true);
+                                classNode.setRedirect(upperBound);
+                                nameAdded = true;
+                            }
+
+                        }
+                        resolveOrFail(upperBound, classNode);
                     }
-                    resolveOrFail(upperBound, classNode);
+
+                    if (upperBound.isUsingGenerics()) {
+                        upperBoundsWithGenerics.add(new Tuple2<>(upperBound, type));
+                    }
                 }
             } else {
-                genericParameterNames.put(name, type);
-                classNode.setRedirect(ClassHelper.OBJECT_TYPE);
-                type.setPlaceholder(true);
+                if (!isWild) {
+                    if (toDealWithGenerics) {
+                        genericParameterNames.put(name, type);
+                        type.setPlaceholder(true);
+                        classNode.setRedirect(ClassHelper.OBJECT_TYPE);
+                    }
+                }
             }
+        }
+
+        for (Tuple2<ClassNode, GenericsType> tp : upperBoundsWithGenerics) {
+            ClassNode upperBound = tp.getFirst();
+            GenericsType gt = tp.getSecond();
+            resolveGenericsHeader(upperBound.getGenericsTypes(), 0 == level ? gt : rootType, level + 1);
         }
     }
 
