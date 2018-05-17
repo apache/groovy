@@ -87,9 +87,6 @@ public class CompilerConfiguration {
     /** An array of the valid targetBytecode values **/
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[0]);
 
-    // Just call getVMVersion() once.
-    public static final String CURRENT_JVM_VERSION = getVMVersion();
-
     private static final String GROOVY_ANTLR4_OPT = "groovy.antlr4";
 
     /**
@@ -231,7 +228,7 @@ public class CompilerConfiguration {
         setScriptBaseClass(null);
         setRecompileGroovySource(false);
         setMinimumRecompilationInterval(100);
-        setTargetBytecode(getSystemPropertySafe("groovy.target.bytecode", getVMVersion()));
+        setTargetBytecode(getSystemPropertySafe("groovy.target.bytecode", getMinBytecodeVersion()));
         setDefaultScriptExtension(getSystemPropertySafe("groovy.default.scriptExtension", ".groovy"));
 
         // Source file encoding
@@ -778,7 +775,7 @@ public class CompilerConfiguration {
         return this.targetBytecode;
     }
 
-    private static String getVMVersion() {
+    private static String getMinBytecodeVersion() {
         return JDK7;
     }
 
