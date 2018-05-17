@@ -70,8 +70,8 @@ public class CompilerConfiguration {
 
     private static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8 };
 
-    // Just call getVMVersion() once.
-    public static final String CURRENT_JVM_VERSION = getVMVersion();
+    @Deprecated
+    public static final String CURRENT_JVM_VERSION = getMinBytecodeVersion();
 
     // Static initializers are executed in text order,
     // therefore we must do this one last!
@@ -203,7 +203,7 @@ public class CompilerConfiguration {
         if(targetByteCode != null) {
             setTargetBytecode(targetByteCode);
         } else {
-            setTargetBytecode(getVMVersion());
+            setTargetBytecode(getMinBytecodeVersion());
         }
         String tmpDefaultScriptExtension = null;
         try {
@@ -752,7 +752,7 @@ public class CompilerConfiguration {
         return this.targetBytecode;
     }
     
-    private static String getVMVersion() {
+    private static String getMinBytecodeVersion() {
         try {
             Class.forName(JDK5_CLASSNAME_CHECK);
             return POST_JDK5;
