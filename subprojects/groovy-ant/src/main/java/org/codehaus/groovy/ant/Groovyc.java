@@ -161,7 +161,7 @@ import java.util.StringTokenizer;
  * &lt;/project&gt;
  * </pre>
  * <p>
- * Based heavily on the implementation of the Javac task in Apache Ant.
+ * Based on the implementation of the Javac task in Apache Ant.
  * <p>
  * Can also be used from {@link groovy.util.AntBuilder} to allow the build file to be scripted in Groovy.
  */

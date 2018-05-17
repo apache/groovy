@@ -18,24 +18,32 @@
  */
 package org.codehaus.groovy.tools;
 
+import groovy.lang.DeprecationException;
 import groovy.lang.GroovyResourceLoader;
 import groovy.lang.GroovySystem;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
-import picocli.CommandLine;
-import picocli.CommandLine.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.IVersionProvider;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+import picocli.CommandLine.ParseResult;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,13 +80,6 @@ public class FileSystemCompiler {
         unit.compile();
     }
 
-    /** @deprecated use {@link #displayHelp(PrintWriter)} instead */
-    @Deprecated
-    public static void displayHelp(final Options options) {
-        final HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(80, "groovyc [options] <source-files>", "options:", options, "");
-    }
-
     /** Prints the usage help message for {@link CompilationOptions} to stderr.
      * @see #displayHelp(PrintWriter)
      * @since 2.5 */
@@ -86,19 +87,20 @@ public class FileSystemCompiler {
         displayHelp(new PrintWriter(System.err, true));
     }
 
-    /** Prints the usage help message for the {@link CompilationOptions} to the specified PrintWriter. */
+    /** Prints the usage help message for the {@link CompilationOptions} to the specified PrintWriter.
+     * @since 2.5 */
     public static void displayHelp(final PrintWriter writer) {
         configureParser(new CompilationOptions()).usage(writer);
     }
 
     /** Prints version information to stderr.
-     * @see #displayVersion(PrintWriter)
-     * @since 2.5 */
+     * @see #displayVersion(PrintWriter) */
     public static void displayVersion() {
         displayVersion(new PrintWriter(System.err, true));
     }
 
-    /** Prints version information to the specified PrintWriter. */
+    /** Prints version information to the specified PrintWriter.
+     * @since 2.5 */
     public static void displayVersion(final PrintWriter writer) {
         for (String line : new VersionProvider().getVersion()) {
             writer.println(line);
@@ -288,6 +290,8 @@ public class FileSystemCompiler {
         }
     }
 
+    /**
+     * @since 2.5 */
     static class VersionProvider implements IVersionProvider {
         @Override
         public String[] getVersion() {
@@ -299,6 +303,8 @@ public class FileSystemCompiler {
         }
     }
 
+    /**
+     * @since 2.5 */
     @Command(name = "groovyc",
             customSynopsis = "groovyc [options] <source-files>",
             sortOptions = false,
@@ -420,6 +426,30 @@ public class FileSystemCompiler {
             }
             return flags.toArray(new String[0]);
         }
+    }
+
+    /** @deprecated use {@link #displayHelp(PrintWriter)} instead */
+    @Deprecated
+    public static void displayHelp(final Options options) {
+        final HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp(80, "groovyc [options] <source-files>", "options:", options, "");
+    }
+
+    // some methods to avoid binary incompatibility - don't gain us a lot but gives the user
+    // something slightly less cryptic than a NoSuchMethodError or an IncompatibleClassChangeError
+    @Deprecated
+    public static CompilerConfiguration generateCompilerConfigurationFromOptions(org.apache.commons.cli.CommandLine cli) throws IOException {
+        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
+    }
+
+    @Deprecated
+    public static String[] generateFileNamesFromOptions(org.apache.commons.cli.CommandLine cli) {
+        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
+    }
+
+    @Deprecated
+    public static Options createCompilationOptions() {
+        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
     }
 
     /**
