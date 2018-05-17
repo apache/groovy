@@ -510,7 +510,7 @@ class CliBuilder {
      * Sets the {@link #posix} property on this <code>CliBuilder</code> and the
      * <code>posixClusteredShortOptionsAllowed</code> property on the {@link #parser}
      * used by the underlying library.
-     * @param poxis whether to allow clustered short options
+     * @param posix whether to allow clustered short options
      */
     void setPosix(boolean posix) {
         this.posix = posix
