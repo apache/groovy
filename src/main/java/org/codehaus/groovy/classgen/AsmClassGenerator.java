@@ -170,6 +170,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public static final boolean CREATE_DEBUG_INFO = true;
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
     public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-bytecode relationship
+    public static final String MINIMUM_BYTECODE_VERSION = "_MINIMUM_BYTECODE_VERSION";
 
     private ASTNode currentASTNode = null;
     private final Map genericParameterNames;
@@ -214,8 +215,16 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         try {
+            int bytecodeVersion = controller.getBytecodeVersion();
+            Object min = classNode.getNodeMetaData(MINIMUM_BYTECODE_VERSION);
+            if (min instanceof Integer) {
+                int minVersion = (int) min;
+                if (bytecodeVersion < minVersion) {
+                    bytecodeVersion = minVersion;
+                }
+            }
             cv.visit(
-                    controller.getBytecodeVersion(),
+                    bytecodeVersion,
                     adjustedClassModifiersForClassWriting(classNode),
                     controller.getInternalClassName(),
                     BytecodeHelper.getGenericsSignature(classNode),
