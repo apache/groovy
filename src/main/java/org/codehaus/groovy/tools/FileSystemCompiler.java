@@ -166,7 +166,6 @@ public class FileSystemCompiler {
 
     public static CommandLine configureParser(CompilationOptions options) {
         CommandLine parser = new CommandLine(options);
-        parser.getCommandSpec().mixinStandardHelpOptions(true); // programmatically so these options appear last in usage help
         parser.getCommandSpec().parser()
                 .unmatchedArgumentsAllowed(true)
                 .unmatchedOptionsArePositionalParams(true)
@@ -349,6 +348,12 @@ public class FileSystemCompiler {
 
         @Option(names = {"--configscript"}, paramLabel = "<script>", description = "A script for tweaking the configuration options")
         private String configScript;
+
+        @Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this help message and exit")
+        private boolean helpRequested;
+
+        @Option(names = {"-v", "--version"}, versionHelp = true, description = "Print version information and exit")
+        private boolean versionRequested;
 
         @Parameters(description = "The groovy source files to compile, or @-files containing a list of source files to compile",
                     paramLabel = "<source-files>")
