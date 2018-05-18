@@ -20,6 +20,8 @@ package org.apache.groovy.runtime.methoddispatching.vm8
 
 import groovy.transform.CompileStatic
 
+import static org.codehaus.groovy.control.CompilerConfiguration.isPostJDK9
+
 @CompileStatic
 class StaticMethodOverloadCompileStaticTest extends GroovyTestCase {
     void testOneStaticMethod() {
@@ -46,9 +48,9 @@ class StaticMethodOverloadCompileStaticTest extends GroovyTestCase {
         assert BarThree.foo(0, 1) == "BarThree.foo(0, 1)"
     }
 
-    // FIX_JDK9 JDK9 doesn't like the way we do static methods in interfaces - remove this version
+    // FIX_JDK9 JDK9 (and presumably 10+) doesn't like the way we do static methods in interfaces - remove this version
     // check once we fix the problem
     boolean isJdk9() {
-        new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("9.0")) >= 0
+        isPostJDK9(System.getProperty("java.specification.version"))
     }
 }
