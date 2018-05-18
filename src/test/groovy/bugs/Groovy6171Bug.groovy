@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import gls.CompilableTestSupport
+import groovy.transform.NotYetImplemented
 
 class Groovy6171Bug extends CompilableTestSupport {
     void testGroovy6171() {
@@ -53,6 +54,7 @@ class Groovy6171Bug extends CompilableTestSupport {
         assert errMsg.contains('The type HashSet is not a valid substitute for the bounded parameter <T extends java.util.List<X>>')
     }
 
+    @NotYetImplemented
     void test2() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -71,6 +73,7 @@ class Groovy6171Bug extends CompilableTestSupport {
         }
         '''
     }
+
 
     void test3() {
         assertScript '''
@@ -97,4 +100,25 @@ class Groovy6171Bug extends CompilableTestSupport {
         }
         '''
     }
+
+    void test4() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        public class Foo<T extends List<X>, X extends Number> {
+            X getFirstElement(List<X> t) {
+                X x = t.get(0)
+                return x
+            }
+            
+            static void main(String[] args) {
+                def f = new Foo<ArrayList<Integer>, Integer>()
+                def list = new ArrayList<Integer>()
+                list.add(123)
+                assert 123 == f.getFirstElement(list)
+            }
+        }
+        '''
+    }
+
+
 }
