@@ -115,19 +115,18 @@ class GrapeMain implements Runnable {
             optionListHeading = "%nOptions:%n",
             descriptionHeading = "%n")
     private static class HelpOptionsMixin {
-        @Option(names = ["-h", "--help"], description = "usage information") boolean isHelpRequested
-        @Option(names = ["-v", "--version"], description = "display the Groovy and JVM versions") boolean isVersionRequested
+        @Option(names = ["-h", "--help"], usageHelp = true, description = "usage information") boolean isHelpRequested
+        @Option(names = ["-v", "--version"], versionHelp = true, description = "display the Groovy and JVM versions") boolean isVersionRequested
     }
 
     private static class VersionProvider implements CommandLine.IVersionProvider {
         String[] getVersion() {
             String version = GroovySystem.getVersion()
-            return "Groovy Version: $version JVM: ${System.getProperty('java.version')}"
+            return ["Groovy Version: $version JVM: ${System.getProperty('java.version')}"]
         }
     }
 
     @Command(name = 'install', header = 'Installs a particular grape',
-            synopsisHeading = 'Usage: grape ',
             description = 'Installs the specified groovy module or maven artifact. If a version is specified that specific version will be installed, otherwise the most recent version will be used (as if `*` was passed in).')
     private static class Install implements Runnable {
         @Parameters(index = '0', arity = '1', description = 'Which module group the module comes from. Translates directly to a Maven groupId or an Ivy Organization. Any group matching /groovy[x][\\..*]^/ is reserved and may have special meaning to the groovy endorsed modules.')
@@ -164,7 +163,6 @@ class GrapeMain implements Runnable {
     }
 
     @Command(name = 'list', header = 'Lists all installed grapes',
-            synopsisHeading = 'Usage: grape ',
             description = 'Lists locally installed modules (with their full maven name in the case of groovy modules) and versions.')
     private static class ListCommand implements Runnable {
 
@@ -196,7 +194,6 @@ class GrapeMain implements Runnable {
     }
 
     @Command(name = 'resolve', header = 'Enumerates the jars used by a grape',
-            synopsisHeading = 'Usage: grape ',
             description = 'Prints the file locations of the jars representing the artifcats for the specified module(s) and the respective transitive dependencies.')
     private static class Resolve implements Runnable {
 
@@ -292,7 +289,6 @@ class GrapeMain implements Runnable {
     }
 
     @Command(name = 'uninstall',
-            synopsisHeading = 'Usage: grape ',
             description = 'Uninstalls a particular grape (non-transitively removes the respective jar file from the grape cache).')
     private static class Uninstall implements Runnable {
         @Parameters(index = '0', arity = '1', description = 'Which module group the module comes from. Translates directly to a Maven groupId or an Ivy Organization. Any group matching /groovy[x][\\..*]^/ is reserved and may have special meaning to the groovy endorsed modules.')
