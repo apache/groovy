@@ -110,7 +110,7 @@ class GrapeMain implements Runnable {
     // The @Command(mixinStandardHelpOptions = true) attribute cannot be used because
     // the unix standard short option for version help is uppercase -V, while previous versions
     // of this class use lowercase -v. This custom mixin preserves option compatibility.
-    @Command(versionProvider = VersionProvider.class, sortOptions = false,
+    @Command(versionProvider = VersionProvider, sortOptions = false,
             parameterListHeading = "%nParameters:%n",
             optionListHeading = "%nOptions:%n",
             descriptionHeading = "%n")
