@@ -19,15 +19,16 @@
 package groovy.util
 
 /**
- * @deprecated use {@link groovy.cli.picocli.CliBuilder}
+ * @deprecated use {@code groovy.cli.picocli.OptionAccessor} or {@link groovy.cli.commons.OptionAccessor}
  */
 @Deprecated
-class CliBuilder {
-    private @Delegate groovy.cli.picocli.CliBuilder delegate = new groovy.cli.picocli.CliBuilder()
+class OptionAccessor {
+    @Delegate
+    groovy.cli.commons.OptionAccessor delegate
 
-    // explicit delegate to convert return type to expected legacy package
-    OptionAccessor parse(args) {
-        return new OptionAccessor(delegate: delegate.parse(args))
+    // explicit delegate since groovyObject methods ignored by @Delegate
+    def getProperty(String name) {
+        delegate.getProperty(name)
     }
 
     // explicit delegate since groovyObject methods ignored by @Delegate

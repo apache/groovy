@@ -354,10 +354,10 @@ class CliBuilderTest extends GroovyTestCase {
     // tag::withTypeChecked[]
     @TypeChecked
     void testTypeChecked() {
-        def cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
+        def cli = new CliBuilder()
         TypedOption<String> name = cli.option(String, opt: 'n', longOpt: 'name', 'name option')
         TypedOption<Integer> age = cli.option(Integer, longOpt: 'age', 'age option')
-        def argz = "--name John -age 21 and some more".split()
+        def argz = "--name John --age 21 and some more".split()
         def options = cli.parse(argz)
         String n = options[name]
         int a = options[age]

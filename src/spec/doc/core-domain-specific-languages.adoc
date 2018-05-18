@@ -1206,7 +1206,7 @@ Here is how such a specification can be defined:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationInterfaceSpec,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationInterfaceSpec,indent=0]
 ----
 <1> Specify a Boolean option set using `-h` or `--help`
 <2> Specify a String option set using `-a` or `--audience`
@@ -1221,7 +1221,7 @@ Here is how you could use the interface specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationInterface,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationInterface,indent=0]
 ----
 <1> Create a `CliBuilder` instance as before with optional properties
 <2> Parse parameters using the interface specification
@@ -1243,7 +1243,7 @@ Here is how such a specification can be defined:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationClassSpec,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationClassSpec,indent=0]
 ----
 <1> Indicate that a Boolean property is an option
 <2> Indicate that a String property (with explicit setter) is an option
@@ -1253,7 +1253,7 @@ And here is how you could use the specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationClass,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationClass,indent=0]
 ----
 <1> Create a `CliBuilder` instance as before with optional parameters
 <2> Create an instance for `CliBuilder` to populate
@@ -1277,7 +1277,7 @@ with the same arguments as shown for the instance example earlier:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationScript,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=annotationScript,indent=0]
 ----
 
 ===== Options with arguments
@@ -1289,7 +1289,7 @@ Here is an example involving those cases:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withArgument,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withArgument,indent=0]
 ----
 <1> An option that is simply a flag - the default; setting args to 0 is allowed but not needed.
 <2> An option with exactly one argument
@@ -1306,14 +1306,14 @@ illustrating such a definition:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withArgumentInterfaceSpec,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withArgumentInterfaceSpec,indent=0]
 ----
 
 And here is how it is used:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withArgumentInterface,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withArgumentInterface,indent=0]
 ----
 
 This example makes use of an array-typed option specification. We cover this in more detail shortly when we discuss
@@ -1334,7 +1334,7 @@ Here is an example using types with the dynamic api argument definition style:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withType,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withType,indent=0]
 ----
 
 Primitives, numeric types, files, enums and arrays thereof, are supported (they are converted using
@@ -1347,7 +1347,7 @@ for you. Here is a sample using the dynamic api style:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvert,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvert,indent=0]
 ----
 
 Alternatively, you can use the annotation style by supplying the conversion closure as an annotation parameter.
@@ -1355,14 +1355,14 @@ Here is an example specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvertInterfaceSpec,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvertInterfaceSpec,indent=0]
 ----
 
 And an example using that specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvertInterface,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withConvertInterface,indent=0]
 ----
 
 ===== Options with multiple arguments
@@ -1388,7 +1388,7 @@ Here is an excerpt highlighting the use of multiple arguments:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleArgs,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleArgs,indent=0]
 ----
 <1> Args value supplied as a String and comma value separator specified
 <2> One or more arguments are allowed
@@ -1408,14 +1408,14 @@ array type for the annotated class member (method or property) as this example s
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleArgsInterfaceSpec,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleArgsInterfaceSpec,indent=0]
 ----
 
 And used as follows:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleArgsInterface,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=multipleArgsInterface,indent=0]
 ----
 
 ===== Types and multiple arguments
@@ -1424,7 +1424,7 @@ Here is an example using types and multiple arguments with the dynamic api argum
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeMultiple,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeMultiple,indent=0]
 ----
 <1> For an array type, the trailing 's' can be used but isn't needed
 
@@ -1439,7 +1439,7 @@ Here is how you could use it using the dynamic api style:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValue,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValue,indent=0]
 ----
 
 Similarly, you might want such a specification using the annotation style. Here is an example using an interface
@@ -1447,14 +1447,14 @@ specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValueInterfaceSpec,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValueInterfaceSpec,indent=0]
 ----
 
 Which would be used like this:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValueInterface,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withDefaultValueInterface,indent=0]
 ----
 
 You can also use the `defaultValue` annotation attribute when using annotations with an instance,
@@ -1468,14 +1468,14 @@ annotation style, for example, here is an interface option specification:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeCheckedInterfaceSpec,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeCheckedInterfaceSpec,indent=0]
 ----
 
 And it can be used  in combination with `@TypeChecked` as shown here:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeCheckedInterface,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeCheckedInterface,indent=0]
 ----
 
 Secondly, there is a feature of the dynamic api style which offers some support. The definition statements
@@ -1502,13 +1502,13 @@ assert a == 21
 
 Finally, there is one additional convenience method offered by `CliBuilder` to even allow the
 definition part to be type checked. It is a slightly more verbose method call. Instead of using
-the short name (the _opt_ name) in the method call, you use a fixed named of `option` and
+the short name (the _opt_ name) in the method call, you use a fixed name of `option` and
 supply the `opt` value as a property. You must also specify the type directly as shown in
 the following example:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeChecked,indent=0]
+include::{projectdir}/subprojects/groovy-cli-commons/src/spec/test/builder/CliBuilderTest.groovy[tags=withTypeChecked,indent=0]
 ----
 
 ===== Advanced CLI Usage
