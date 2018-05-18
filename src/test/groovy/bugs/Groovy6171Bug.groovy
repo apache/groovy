@@ -27,6 +27,32 @@ class Groovy6171Bug extends CompilableTestSupport {
         '''
     }
 
+    void testIncompatibleType1() {
+        def errMsg = shouldFail '''
+        @groovy.transform.CompileStatic
+        public class Foo<T extends List<X>, X extends Number> {
+            static void main(String[] args) {
+                def f = new Foo<ArrayList<String>, String>()
+            }
+        }
+        '''
+
+        assert errMsg.contains('The type String is not a valid substitute for the bounded parameter <X extends java.lang.Number>')
+    }
+
+    void testIncompatibleType2() {
+        def errMsg = shouldFail '''
+        @groovy.transform.CompileStatic
+        public class Foo<T extends List<X>, X extends Number> {
+            static void main(String[] args) {
+                def f = new Foo<HashSet<Integer>, Integer>()
+            }
+        }
+        '''
+
+        assert errMsg.contains('The type HashSet is not a valid substitute for the bounded parameter <T extends java.util.List<X>>')
+    }
+
     void test2() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -41,6 +67,32 @@ class Groovy6171Bug extends CompilableTestSupport {
                 def list = new ArrayList<Integer>()
                 list.add(123)
                 assert 123 == f.getFirstElement(list)
+            }
+        }
+        '''
+    }
+
+    void test3() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        public class Foo<T extends List<X>, X extends Number> {
+            X getFirstElement(List<X> list) {
+                X x = list.get(0)
+                
+                assert Number == x.getClass().getGenericSuperclass()
+                
+                return x
+            }
+            
+            Number getFirstNumber(T t) {
+                return getFirstElement(t)
+            }
+            
+            static void main(String[] args) {
+                def f = new Foo<ArrayList<Integer>, Integer>()
+                def list = new ArrayList<Integer>()
+                list.add(123)
+                assert 123 == f.getFirstNumber(list)
             }
         }
         '''
