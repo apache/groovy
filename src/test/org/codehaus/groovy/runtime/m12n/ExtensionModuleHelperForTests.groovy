@@ -16,10 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.runtime.m12n
 
-import org.codehaus.groovy.tools.FileSystemCompiler;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods
 
 public class ExtensionModuleHelperForTests {
     static void doInFork(String code) {
@@ -27,7 +26,7 @@ public class ExtensionModuleHelperForTests {
     }
 
     static void doInFork(String baseTestClass, String code) {
-        File baseDir = FileSystemCompiler.createTempDir()
+        File baseDir = DefaultGroovyStaticMethods.createTempDir(null)
         File source = new File(baseDir, 'Temp.groovy')
         source << """import org.codehaus.groovy.runtime.m12n.*
     class TempTest extends $baseTestClass {
