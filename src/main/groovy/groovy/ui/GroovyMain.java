@@ -125,7 +125,6 @@ public class GroovyMain {
     static void processArgs(String[] args, final PrintStream out, final PrintStream err) {
         GroovyCommand groovyCommand = new GroovyCommand();
         CommandLine parser = new CommandLine(groovyCommand).setUnmatchedArgumentsAllowed(true).setStopAtUnmatched(true);
-        parser.getCommandSpec().mixinStandardHelpOptions(true);
         try {
             List<CommandLine> result = parser.parse(args);
             if (CommandLine.printHelpIfRequested(result, out, err, Help.Ansi.AUTO)) {
@@ -214,6 +213,12 @@ public class GroovyMain {
 
         @Option(names = {"-b", "--basescript"}, paramLabel = "<class>", description = "Base class name for scripts (must derive from Script)")
         private String scriptBaseClass;
+
+        @Option(names = {"-h", "--help"}, usageHelp = true, description = "Show this help message and exit")
+        private boolean helpRequested;
+
+        @Option(names = {"-v", "--version"}, versionHelp = true, description = "Print version information and exit")
+        private boolean versionRequested;
 
         @Unmatched
         List<String> arguments = new ArrayList<String>();
