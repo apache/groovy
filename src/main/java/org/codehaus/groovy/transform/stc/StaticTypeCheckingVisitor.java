@@ -5426,7 +5426,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             this.parameter = parameter;
             ClassNode inferred = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
             if (inferred == null) {
-                inferred = getInferredTypeOfPlaceholder(parameter);
+                inferred = infer(parameter);
 
                 parameter.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, inferred);
             }
@@ -5473,7 +5473,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private static ClassNode getInferredTypeOfPlaceholder(Variable variable) {
+    private static ClassNode infer(Variable variable) {
         ClassNode originType = variable.getOriginType();
 
         if (originType.isGenericsPlaceHolder()) {
