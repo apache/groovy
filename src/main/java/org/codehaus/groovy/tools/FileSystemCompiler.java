@@ -18,11 +18,8 @@
  */
 package org.codehaus.groovy.tools;
 
-import groovy.lang.DeprecationException;
 import groovy.lang.GroovyResourceLoader;
 import groovy.lang.GroovySystem;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
@@ -426,41 +423,6 @@ public class FileSystemCompiler {
             }
             return flags.toArray(new String[0]);
         }
-    }
-
-    /** @deprecated use {@link #displayHelp(PrintWriter)} instead */
-    @Deprecated
-    public static void displayHelp(final Options options) {
-        final HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(80, "groovyc [options] <source-files>", "options:", options, "");
-    }
-
-    // some methods to avoid binary incompatibility - don't gain us a lot but gives the user
-    // something slightly less cryptic than a NoSuchMethodError or an IncompatibleClassChangeError
-    @Deprecated
-    public static CompilerConfiguration generateCompilerConfigurationFromOptions(org.apache.commons.cli.CommandLine cli) throws IOException {
-        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
-    }
-
-    @Deprecated
-    public static String[] generateFileNamesFromOptions(org.apache.commons.cli.CommandLine cli) {
-        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
-    }
-
-    @Deprecated
-    public static Options createCompilationOptions() {
-        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
-    }
-
-    /**
-     * Creates a temporary directory in the default temporary directory (as specified by the system
-     * property <i>java.io.tmpdir</i>.
-     *
-     * @deprecated Use {@link DefaultGroovyStaticMethods#createTempDir(java.io.File, String, String)} instead.
-     */
-    @Deprecated
-    public static File createTempDir() throws IOException {
-        return DefaultGroovyStaticMethods.createTempDir(null);
     }
 
     public static void deleteRecursive(File file) {
