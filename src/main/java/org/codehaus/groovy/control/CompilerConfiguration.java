@@ -343,7 +343,7 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.5+ compatible
      * bytecode version.
-     * @param bytecodeVersion the bytecode version string (1.4, 1.5, 1.6, 1.7 or 1.8)
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.5+
      */
     public static boolean isPostJDK5(String bytecodeVersion) {
@@ -353,11 +353,31 @@ public class CompilerConfiguration {
     /**
      * Checks if the specified bytecode version string represents a JDK 1.7+ compatible
      * bytecode version.
-     * @param bytecodeVersion the bytecode version string (1.4, 1.5, 1.6, 1.7 or 1.8)
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.7+
      */
     public static boolean isPostJDK7(String bytecodeVersion) {
         return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK7)) >= 0;
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 1.8+ compatible
+     * bytecode version.
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 1.87+
+     */
+    public static boolean isPostJDK8(String bytecodeVersion) {
+        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK8)) >= 0;
+    }
+
+    /**
+     * Checks if the specified bytecode version string represents a JDK 1.8+ compatible
+     * bytecode version.
+     * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
+     * @return true if the bytecode version is JDK 9.0+
+     */
+    public static boolean isPostJDK9(String bytecodeVersion) {
+        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK9)) >= 0;
     }
 
     /**
