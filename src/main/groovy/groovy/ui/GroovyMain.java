@@ -39,6 +39,7 @@ import picocli.CommandLine.Help;
 import picocli.CommandLine.IVersionProvider;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
+import picocli.CommandLine.Unmatched;
 
 import java.io.BufferedReader;
 import java.io.File;
