@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
@@ -343,6 +344,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     isThisOrSuper = ((VariableExpression) receiver).isThisExpression() || ((VariableExpression) receiver).isSuperExpression();
                 }
                 if (!implicitThis && !isThisOrSuper
+                        && !samePackageName(node, classNode)
                         && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node,target.getDeclaringClass())) {
                     ASTNode src = receiver==null?args:receiver;
                     controller.getSourceUnit().addError(
