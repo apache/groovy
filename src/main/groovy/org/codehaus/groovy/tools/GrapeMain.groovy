@@ -115,14 +115,14 @@ class GrapeMain implements Runnable {
             optionListHeading = "%nOptions:%n",
             descriptionHeading = "%n")
     private static class HelpOptionsMixin {
-        @Option(names = ["-h", "--help"], description = "usage information") boolean isHelpRequested
-        @Option(names = ["-v", "--version"], description = "display the Groovy and JVM versions") boolean isVersionRequested
+        @Option(names = ["-h", "--help"], usageHelp = true, description = "usage information") boolean isHelpRequested
+        @Option(names = ["-v", "--version"], versionHelp = true, description = "display the Groovy and JVM versions") boolean isVersionRequested
     }
 
     private static class VersionProvider implements CommandLine.IVersionProvider {
         String[] getVersion() {
             String version = GroovySystem.getVersion()
-            return "Groovy Version: $version JVM: ${System.getProperty('java.version')}"
+            return ["Groovy Version: $version JVM: ${System.getProperty('java.version')}"]
         }
     }
 
