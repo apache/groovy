@@ -169,6 +169,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
 import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigDecCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isBigIntCategory;
@@ -5099,17 +5100,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static String toMethodGenericTypesString(MethodNode node) {
         GenericsType[] genericsTypes = node.getGenericsTypes();
-        if (genericsTypes == null) return "";
-        StringBuilder sb = new StringBuilder("<");
-        for (int i = 0; i < genericsTypes.length; i++) {
-            final GenericsType genericsType = genericsTypes[i];
-            sb.append(genericsType.toString());
-            if (i < genericsTypes.length - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append("> ");
-        return sb.toString();
+
+        if (genericsTypes == null)
+            return "";
+
+        return toGenericTypesString(genericsTypes);
     }
 
     protected static String formatArgumentList(ClassNode[] nodes) {

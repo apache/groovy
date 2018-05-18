@@ -198,13 +198,12 @@ public class GenericsUtils {
         }
     }
 
-    private static String toGenericTypesString(GenericsType[] genericsTypes) {
+    public static String toGenericTypesString(GenericsType[] genericsTypes) {
         if (genericsTypes == null) return "";
         StringBuilder sb = new StringBuilder("<");
-        for (int i = 0; i < genericsTypes.length; i++) {
-            final GenericsType genericsType = genericsTypes[i];
-            sb.append(genericsType.toString());
-            if (i < genericsTypes.length - 1) {
+        for (int i = 0, n = genericsTypes.length; i < n; i++) {
+            sb.append(genericsTypes[i].toString());
+            if (i < n - 1) {
                 sb.append(",");
             }
         }
