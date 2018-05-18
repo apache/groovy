@@ -19,7 +19,6 @@
 package groovy.bugs
 
 import gls.CompilableTestSupport
-import groovy.transform.NotYetImplemented
 
 class Groovy6171Bug extends CompilableTestSupport {
     void testGroovy6171() {
@@ -54,8 +53,7 @@ class Groovy6171Bug extends CompilableTestSupport {
         assert errMsg.contains('The type HashSet is not a valid substitute for the bounded parameter <T extends java.util.List<X>>')
     }
 
-    @NotYetImplemented
-    void test2() {
+    void testParameter() {
         assertScript '''
         @groovy.transform.CompileStatic
         public class Foo<T extends List<X>, X extends Number> {
@@ -74,8 +72,52 @@ class Groovy6171Bug extends CompilableTestSupport {
         '''
     }
 
+    void testVariable() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        public class Foo<T extends List<X>, X extends Number> {
+            X getFirstElement() {
+                def list = new ArrayList<Integer>()
+                list.add(123)
+                T t = list
+                X x = t.get(0)
+                return x
+            }
+            
+            static void main(String[] args) {
+                def f = new Foo<ArrayList<Integer>, Integer>()
+                assert 123 == f.getFirstElement()
+            }
+        }
+        '''
+    }
 
-    void test3() {
+    void testField() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        public class Foo<T extends List<X>, X extends Number> {
+            T t
+            
+            {
+                def list = new ArrayList<Integer>()
+                list.add(123)
+                t = list
+            }
+        
+            X getFirstElement() {
+                X x = t.get(0)
+                return x
+            }
+            
+            static void main(String[] args) {
+                def f = new Foo<ArrayList<Integer>, Integer>()
+                assert 123 == f.getFirstElement()
+            }
+        }
+        '''
+    }
+
+    void testParameter2() {
         assertScript '''
         @groovy.transform.CompileStatic
         public class Foo<T extends List<X>, X extends Number> {
@@ -101,7 +143,7 @@ class Groovy6171Bug extends CompilableTestSupport {
         '''
     }
 
-    void test4() {
+    void testParameterAndVariable() {
         assertScript '''
         @groovy.transform.CompileStatic
         public class Foo<T extends List<X>, X extends Number> {

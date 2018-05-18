@@ -5426,7 +5426,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             this.parameter = parameter;
             ClassNode inferred = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
             if (inferred == null) {
-                parameter.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, parameter.getOriginType());
+                inferred = getInferredTypeOfPlaceholder(parameter);
+
+                parameter.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, inferred);
             }
         }
 
@@ -5469,5 +5471,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         public boolean equals(Object other) {
             return parameter.equals(other);
         }
+    }
+
+    private static ClassNode getInferredTypeOfPlaceholder(Variable variable) {
+        ClassNode originType = variable.getOriginType();
+
+        if (originType.isGenericsPlaceHolder()) {
+            GenericsType[] genericsTypes = originType.getGenericsTypes();
+
+            if (null != genericsTypes && genericsTypes.length > 0) {
+                GenericsType gt = genericsTypes[0];
+                ClassNode[] upperBounds = gt.getUpperBounds();
+
+                if (null != upperBounds && upperBounds.length > 0) {
+                    return upperBounds[0];
+                }
+            }
+        }
+
+        return variable.getOriginType();
     }
 }

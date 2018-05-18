@@ -374,7 +374,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         if (genericParameterNames.get(typeName) != null) {
             GenericsType gt = genericParameterNames.get(typeName);
-            type.setRedirect(gt.getType()); // FIXME lost the generics type info
+            type.setRedirect(gt.getType());
             type.setGenericsTypes(new GenericsType[]{ gt });
             type.setGenericsPlaceHolder(true);
             return true;
