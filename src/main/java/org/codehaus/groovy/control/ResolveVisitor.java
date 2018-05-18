@@ -374,7 +374,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         if (genericParameterNames.get(typeName) != null) {
             GenericsType gt = genericParameterNames.get(typeName);
-            type.setRedirect(gt.getType());
+            type.setRedirect(gt.getType()); // FIXME lost the generics type info
             type.setGenericsTypes(new GenericsType[]{ gt });
             type.setGenericsPlaceHolder(true);
             return true;
@@ -1490,9 +1490,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             } else {
                 if (!isWild) {
                     if (toDealWithGenerics) {
+                        GenericsType originalGt = genericParameterNames.get(name);
                         genericParameterNames.put(name, type);
                         type.setPlaceholder(true);
-                        classNode.setRedirect(ClassHelper.OBJECT_TYPE);
+
+                        if (null == originalGt) {
+                            classNode.setRedirect(ClassHelper.OBJECT_TYPE);
+                        } else {
+                            classNode.setRedirect(originalGt.getType());
+                        }
                     }
                 }
             }
