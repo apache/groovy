@@ -27,13 +27,13 @@ class GroovyMainTest extends GroovyTestCase {
         GroovyMain.processArgs(args, ps)
         def out = baos.toString()
         assert out.contains('Usage: groovy')
-        ['-a', '-c', '-d', '-e', '-h', '-i', '-l', '-n', '-p', '-V'].each{
+        ['-a', '-c', '-d', '-e', '-h', '-i', '-l', '-n', '-p', '-v'].each{
             assert out.contains(it)
         }
     }
 
     void testVersion() {
-        String[] args = ['-V']
+        String[] args = ['-v']
         GroovyMain.processArgs(args, ps)
         def out = baos.toString()
         assert out.contains('Groovy Version:')
