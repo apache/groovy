@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package groovy.bugs.vm8
 
 class Groovy8579Bug extends GroovyTestCase {
     void testCallToStaticInterfaceMethod() {
