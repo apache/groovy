@@ -16,10 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    compile "commons-cli:commons-cli:$commonsCliVersion"
-    testCompile rootProject.sourceSets.test.output
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-dateutil')
+package cli
+
+import groovy.cli.Option
+import groovy.cli.Unparsed
+
+// tag::withConvertInterfaceSpec[]
+interface WithConvertI {
+    @Option(convert={ it.toLowerCase() }) String a()
+    @Option(convert={ it.toUpperCase() }) String b()
+    @Option(convert={ Date.parse("yyyy-MM-dd", it) }) Date d()
+    @Unparsed List remaining()
 }
+// end::withConvertInterfaceSpec[]
