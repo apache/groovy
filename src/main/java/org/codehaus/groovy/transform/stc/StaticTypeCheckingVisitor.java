@@ -3252,7 +3252,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
                             ClassNode declaringClass = directMethodCallCandidate.getDeclaringClass();
-                            if (declaringClass.isInterface() && directMethodCallCandidate.isStatic()) {
+                            if (declaringClass.isInterface() && directMethodCallCandidate.isStatic() && !(directMethodCallCandidate instanceof ExtensionMethodNode)) {
                                 typeCheckingContext.getEnclosingClassNode().putNodeMetaData(MINIMUM_BYTECODE_VERSION, Opcodes.V1_8);
                             }
                             String data = chosenReceiver.getData();
