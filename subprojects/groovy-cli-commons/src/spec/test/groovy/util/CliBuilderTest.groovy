@@ -16,10 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    compile "commons-cli:commons-cli:$commonsCliVersion"
-    testCompile rootProject.sourceSets.test.output
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-dateutil')
+package groovy.util
+
+import cli.CliBuilderTestCase
+
+// test groovy.util legacy delegate
+class CliBuilderTest extends CliBuilderTestCase {
+
+    String getImportCliBuilder() { '' }
+
 }

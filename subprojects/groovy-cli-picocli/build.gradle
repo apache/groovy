@@ -19,6 +19,7 @@
 dependencies {
     compile rootProject
     compile "info.picocli:picocli:$picocliVersion"
+    testCompile rootProject.sourceSets.test.output
     testCompile project(':groovy-test')
     testCompile project(':groovy-dateutil')
 }
