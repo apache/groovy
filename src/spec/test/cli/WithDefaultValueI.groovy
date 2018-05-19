@@ -16,10 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    compile "commons-cli:commons-cli:$commonsCliVersion"
-    testCompile rootProject.sourceSets.test.output
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-dateutil')
+package cli
+
+import groovy.cli.Option
+
+// tag::withDefaultValueInterfaceSpec[]
+interface WithDefaultValueI {
+    @Option(shortName='f', defaultValue='one') String from()
+    @Option(shortName='t', defaultValue='35') int to()
 }
+// end::withDefaultValueInterfaceSpec[]

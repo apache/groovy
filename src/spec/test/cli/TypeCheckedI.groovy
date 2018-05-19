@@ -16,10 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    compile "commons-cli:commons-cli:$commonsCliVersion"
-    testCompile rootProject.sourceSets.test.output
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-dateutil')
+package cli
+
+import groovy.cli.Option
+import groovy.cli.Unparsed
+
+// tag::withTypeCheckedInterfaceSpec[]
+interface TypeCheckedI{
+    @Option String name()
+    @Option int age()
+    @Unparsed List remaining()
 }
+// end::withTypeCheckedInterfaceSpec[]

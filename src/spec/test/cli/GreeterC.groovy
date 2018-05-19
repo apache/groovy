@@ -16,10 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    compile "commons-cli:commons-cli:$commonsCliVersion"
-    testCompile rootProject.sourceSets.test.output
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-dateutil')
+package cli
+
+import groovy.cli.Option
+import groovy.cli.Unparsed
+
+// tag::annotationClassSpec[]
+class GreeterC {
+    @Option(shortName='h', description='display usage')
+    Boolean help                        // <1>
+
+    private String audience
+    @Option(shortName='a', description='greeting audience')
+    void setAudience(String audience) { // <2>
+        this.audience = audience
+    }
+    String getAudience() { audience }
+
+    @Unparsed(description = "positional parameters")
+    List remaining                      // <3>
 }
+// end::annotationClassSpec[]
