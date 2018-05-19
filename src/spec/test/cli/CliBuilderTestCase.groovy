@@ -73,7 +73,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         cli.writer = new PrintWriter(sw)
         cli.usage()
 
-        assert '$expected'.normalize() == sw.toString().normalize()
+        assert '''$expected'''.normalize() == sw.toString().normalize()
         """
     }
 
