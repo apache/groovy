@@ -791,4 +791,18 @@ Printer
             assert foo.toString() == 'Foo([propWithGen], [notDecl], [fieldGen:42])'
         '''
     }
+
+    //GROOVY-8590
+    void testNestedMethodCallInferredTypeInReturnStmt() {
+        assertScript '''
+            class Source {
+                Object getValue() { '32' }
+            }
+            int m(Source src) {
+                return Integer.parseInt((String) src.getValue())
+            }
+            assert m(new Source()) == 32
+        '''
+    }
+
 }
