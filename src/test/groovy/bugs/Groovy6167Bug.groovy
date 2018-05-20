@@ -20,8 +20,8 @@ package groovy.bugs
 
 import gls.CompilableTestSupport
 
-class Groovy6171Bug extends CompilableTestSupport {
-    void testGroovy6171() {
+class Groovy6167Bug extends CompilableTestSupport {
+    void testGroovy6167() {
         shouldCompile '''
         public class Foo<T extends List<X>, X extends Number> {}
         '''
