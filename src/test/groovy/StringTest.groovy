@@ -231,6 +231,16 @@ foo
     void testDollarEscaping() {
         def text = $/a/b\c$$ $//$
         assert text == 'a/b\\c$ /'
+
+        //GROOVY-8171
+        text = $/$$//$
+        assert text == '$/'
+
+        text = $/$$$$//$
+        assert text == '$$/'
+
+        text = $/$$$$$//$
+        assert text == '$$/'
     }
 
     void testSplit() {
