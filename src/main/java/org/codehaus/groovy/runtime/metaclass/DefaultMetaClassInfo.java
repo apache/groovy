@@ -329,7 +329,7 @@ public class DefaultMetaClassInfo {
         public boolean isValid(){return valid;}
     }
     private static ConstantMetaClassVersioning constantMetaClassVersioning = new ConstantMetaClassVersioning();
-    private static Object constantMetaClassVersioningLock = new Object();
+    private static final Object constantMetaClassVersioningLock = new Object();
     
     public static ConstantMetaClassVersioning getCurrentConstantMetaClassVersioning() {
         return constantMetaClassVersioning;
