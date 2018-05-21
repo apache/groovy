@@ -57,7 +57,7 @@ class CliBuilder {
      * Use groovy.cli.commons.CliBuilder if you need this feature.
      */
     @Deprecated
-    CommandLineParser setParser() {
+    CommandLineParser getParser() {
         delegate.getParser()
     }
 
