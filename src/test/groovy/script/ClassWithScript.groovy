@@ -16,6 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class X {}
-x = new X()
+class XforClassWithScript {}
+x = new XforClassWithScript()
 println(x)
