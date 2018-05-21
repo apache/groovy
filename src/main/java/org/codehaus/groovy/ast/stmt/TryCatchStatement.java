@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,8 +64,8 @@ public class TryCatchStatement extends Statement {
     }
 
     public void addResource(ExpressionStatement resourceStatement) {
-        if (!(resourceStatement.getExpression() instanceof DeclarationExpression)) {
-            throw new IllegalArgumentException("resourceStatement should be a variable declaration statement");
+        if (!(resourceStatement.getExpression() instanceof DeclarationExpression || resourceStatement.getExpression() instanceof VariableExpression)) {
+            throw new IllegalArgumentException("resourceStatement should be a variable declaration statement or a variable");
         }
 
         resourceStatements.add(resourceStatement);
