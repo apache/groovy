@@ -23,13 +23,14 @@ import junit.framework.TestCase;
 
 import java.lang.reflect.Field;
 
-class X {
+class XforStaticInitTest {
 
     public static int field = 0;
 
     static {
         StaticInitTest.failed = true;
     }
+
 }
 
 public class StaticInitTest extends TestCase {
@@ -37,7 +38,7 @@ public class StaticInitTest extends TestCase {
     static boolean failed;
 
     public void testInitOrder () throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
-        final Field f = new GroovyClassLoader().loadClass("org.codehaus.groovy.runtime.X", false, false, false).getField("field");
+        final Field f = new GroovyClassLoader().loadClass("org.codehaus.groovy.runtime.XforStaticInitTest", false, false, false).getField("field");
         assertTrue(!failed);
         f.getInt(null);
         assertTrue(failed);
