@@ -206,7 +206,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //            DateUtilExtensions.class,
 //            DateTimeStaticExtensions.class,
 //            DateTimeExtensions.class,
-//            SqlGroovyMethods.class,
+//            SqlExtensions.class,
 //            SwingGroovyMethods.class,
 //            XmlGroovyMethods.class,
 //            NioGroovyMethods.class
