@@ -18,6 +18,10 @@
  */
 package groovy.bugs.groovy8531;
 
+interface Reducable {
+    class InterfaceContext {}
+}
+
 class BaseReducer {
     public abstract class PublicBaseContext {}
     protected abstract class ProtectedBaseContext {}
@@ -26,7 +30,7 @@ class BaseReducer {
     private abstract class PrivateBaseContext {}
 }
 
-public class Reducer extends BaseReducer {
+public class Reducer extends BaseReducer implements Reducable {
     public abstract class PublicContext {}
     protected abstract class ProtectedContext {}
     public static abstract class PublicStaticContext {}
