@@ -128,7 +128,7 @@ task docGDK {
     doLast { task ->
         try {
             ant {
-                java(classname: 'org.codehaus.groovy.tools.DocGenerator',
+                java(classname: 'org.apache.groovy.docgenerator.DocGenerator',
                      fork: 'true',
                      failonerror: 'true',
                      classpath: (sourceSets.main.runtimeClasspath + rootProject.files(docProjectVersionInfo.destinationDir) + configurations.tools + groovydocAll.groovyClasspath + docGeneratorPath).asPath,
