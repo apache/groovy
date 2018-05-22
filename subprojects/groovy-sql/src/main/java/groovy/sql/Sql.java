@@ -52,7 +52,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult;
+import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
 
 /**
  * A facade over Java's normal JDBC APIs providing greatly simplified

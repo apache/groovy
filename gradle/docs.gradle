@@ -154,7 +154,7 @@ task docGDK {
                     arg(value: 'subprojects/groovy-dateutil/src/main/java/org/apache/groovy/dateutil/extensions/DateUtilExtensions.java')
                     arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/dateutil/extensions/DateTimeExtensions.java')
                     arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/dateutil/extensions/DateTimeStaticExtensions.java')
-                    arg(value: 'subprojects/groovy-sql/src/main/java/org/codehaus/groovy/runtime/SqlGroovyMethods.java')
+                    arg(value: 'subprojects/groovy-sql/src/main/java/org/apache/groovy/sql/extensions/SqlExtensions.java')
                     arg(value: 'subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java')
                     arg(value: 'subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java')
                     arg(value: 'subprojects/groovy-nio/src/main/java/org/codehaus/groovy/runtime/NioGroovyMethods.java')

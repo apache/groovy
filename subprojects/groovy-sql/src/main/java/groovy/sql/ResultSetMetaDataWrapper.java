@@ -38,8 +38,7 @@ import java.sql.ResultSetMetaData;
  * <p>
  * This wrapper is created by an iterator invoked for <code>ResultSetMetaData</code>.
  *
- * @author John Hurst
- * @see org.codehaus.groovy.runtime.SqlGroovyMethods
+ * @see org.apache.groovy.sql.extensions.SqlExtensions
  */
 public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
 
