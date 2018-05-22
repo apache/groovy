@@ -33,6 +33,8 @@ class Groovy8531Bug extends GroovyTestCase {
                 public void reduce7(PublicStaticBaseContext context) {}
                 public void reduce8(ProtectedStaticBaseContext context) {}
                 
+                public void reduce9(InterfaceContext context) {}
+                
                 public boolean isDynamic(Type type) {
                     return Type.DYNAMIC == type
                 }
@@ -47,6 +49,8 @@ class Groovy8531Bug extends GroovyTestCase {
             new Example().reduce6(null)
             new Example().reduce7(null)
             new Example().reduce8(null)
+            
+            new Example().reduce9(null)
             
             assert new Example().isDynamic(Reducer.Type.DYNAMIC)
         '''
