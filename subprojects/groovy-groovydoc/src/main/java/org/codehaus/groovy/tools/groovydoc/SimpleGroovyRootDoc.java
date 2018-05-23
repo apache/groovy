@@ -24,21 +24,29 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
+    private final static Pattern EQUIVALENT_PACKAGE_IMPORT = Pattern.compile("[^/]+$");
+
     private final Map<String, GroovyPackageDoc> packageDocs;
     private List<GroovyPackageDoc> packageDocValues = null;
     private final Map<String, GroovyClassDoc> classDocs;
+    private final Map<String, String> equivalentPackageImports;
     private List<GroovyClassDoc> classDocValues = null;
+    private final Map<String, GroovyClassDoc> cachedResolvedClasses = new HashMap<String, GroovyClassDoc>();
+
     private String description = "";
 
     public SimpleGroovyRootDoc(String name) {
         super(name);
         packageDocs = new LinkedHashMap<String, GroovyPackageDoc>();
         classDocs = new LinkedHashMap<String, GroovyClassDoc>();
+        equivalentPackageImports = new HashMap<String, String>();
     }
 
     public GroovyClassDoc classNamed(GroovyClassDoc groovyClassDoc, String name) {
@@ -124,7 +132,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         Map<String, GroovyClassDoc> visibleClasses = new LinkedHashMap<String, GroovyClassDoc>();
         for (Map.Entry<String, GroovyClassDoc> entry : classDocs.entrySet()) {
             String fullClassName = entry.getKey();
-            String equivalentPackageImport = fullClassName.replaceAll("[^/]+$", "*");
+            String equivalentPackageImport = findEquivalentPackageImport(fullClassName);
             if (importedClassesAndPackages.contains(fullClassName) ||
                     importedClassesAndPackages.contains(equivalentPackageImport)) {
                 GroovyClassDoc classDoc = entry.getValue();
@@ -132,6 +140,20 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             }
         }
         return visibleClasses;
+    }
+
+    private String findEquivalentPackageImport(String fullClassName) {
+        String eq = equivalentPackageImports.get(fullClassName);
+        if (eq == null) {
+            eq = EQUIVALENT_PACKAGE_IMPORT.matcher(fullClassName).replaceAll("*");
+            equivalentPackageImports.put(fullClassName, eq);
+        }
+        return eq;
+    }
+
+    @Override
+    public Map<String, GroovyClassDoc> getResolvedClasses() {
+        return cachedResolvedClasses;
     }
 
     // GroovyDocErrorReporter interface

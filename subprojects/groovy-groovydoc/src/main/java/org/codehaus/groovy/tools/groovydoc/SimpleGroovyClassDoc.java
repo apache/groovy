@@ -547,6 +547,17 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
         if (isPrimitiveType(name)) return null;
+        Map<String, GroovyClassDoc> resolvedClasses = rootDoc.getResolvedClasses();
+        GroovyClassDoc groovyClassDoc = resolvedClasses.get(name);
+        if (groovyClassDoc != null) {
+            return groovyClassDoc;
+        }
+        groovyClassDoc = doResolveClass(rootDoc, name);
+        resolvedClasses.put(name, groovyClassDoc);
+        return groovyClassDoc;
+    }
+
+    private GroovyClassDoc doResolveClass(final GroovyRootDoc rootDoc, final String name) {
         if (name.endsWith("[]")) {
             GroovyClassDoc componentClass = resolveClass(rootDoc, name.substring(0, name.length() - 2));
             if (componentClass != null) return new ArrayClassDocWrapper(componentClass);

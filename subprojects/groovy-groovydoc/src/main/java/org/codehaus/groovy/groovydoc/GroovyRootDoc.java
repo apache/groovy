@@ -35,4 +35,6 @@ public interface GroovyRootDoc extends GroovyDoc, GroovyDocErrorReporter {
     GroovyPackageDoc[] specifiedPackages();
 
     Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages);
+
+    Map<String, GroovyClassDoc> getResolvedClasses();
 }
