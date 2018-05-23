@@ -32,6 +32,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -80,6 +81,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private final List<GroovyClassDoc> interfaceClasses;
     private final List<GroovyClassDoc> nested;
     private final List<LinkArgument> links;
+    private final Map<String, Class<?>> resolvedExternalClassesCache;
     private GroovyClassDoc superClass;
     private GroovyClassDoc outer;
     private String superClassName;
@@ -101,6 +103,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         interfaceNames = new ArrayList<String>();
         interfaceClasses = new ArrayList<GroovyClassDoc>();
         nested = new ArrayList<GroovyClassDoc>();
+        resolvedExternalClassesCache = new HashMap<String, Class<?>>();
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, Map<String, String> aliases, String name) {
@@ -547,6 +550,17 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
         if (isPrimitiveType(name)) return null;
+        Map<String, GroovyClassDoc> resolvedClasses = rootDoc.getResolvedClasses();
+        GroovyClassDoc groovyClassDoc = resolvedClasses.get(name);
+        if (groovyClassDoc != null) {
+            return groovyClassDoc;
+        }
+        groovyClassDoc = doResolveClass(rootDoc, name);
+        resolvedClasses.put(name, groovyClassDoc);
+        return groovyClassDoc;
+    }
+
+    private GroovyClassDoc doResolveClass(final GroovyRootDoc rootDoc, final String name) {
         if (name.endsWith("[]")) {
             GroovyClassDoc componentClass = resolveClass(rootDoc, name.substring(0, name.length() - 2));
             if (componentClass != null) return new ArrayClassDocWrapper(componentClass);
@@ -656,6 +670,18 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private Class resolveExternalClassFromImport(String name) {
         if (isPrimitiveType(name)) return null;
+        Class<?> clazz = resolvedExternalClassesCache.get(name);
+        if (clazz == null) {
+            if (resolvedExternalClassesCache.containsKey(name)) {
+                return null;
+            }
+            clazz = doResolveExternalClassFromImport(name);
+            resolvedExternalClassesCache.put(name, clazz);
+        }
+        return clazz;
+    }
+
+    private Class doResolveExternalClassFromImport(final String name) {
         for (String importName : importedClassesAndPackages) {
             String candidate = null;
             if (importName.endsWith("/" + name)) {
