@@ -31,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -85,12 +86,16 @@ public class GroovyDocTemplateEngine {
             Map<String, Object> binding = new LinkedHashMap<String, Object>();
             binding.put("classDoc", classDoc);
             binding.put("props", properties);
-            templateWithBindingApplied = t.make(binding).toString();
+            templateWithBindingApplied = t.make(binding).writeTo(reasonableSizeWriter()).toString();
         } catch (Exception e) {
             System.out.println("Error processing class template for: " + classDoc.getFullPathName());
             e.printStackTrace();
         }
         return templateWithBindingApplied;
+    }
+
+    private static StringWriter reasonableSizeWriter() {
+        return new StringWriter(65536);
     }
 
     String applyPackageTemplate(String template, GroovyPackageDoc packageDoc) {
