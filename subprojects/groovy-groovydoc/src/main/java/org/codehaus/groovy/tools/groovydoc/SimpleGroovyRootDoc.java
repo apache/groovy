@@ -55,16 +55,17 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             return doc;
         }
         // look for full match or match excluding package
+        String fullPathName = groovyClassDoc != null ? groovyClassDoc.getFullPathName() : null;
+        boolean hasPackage = (fullPathName != null && fullPathName.lastIndexOf('/') > 0);
+        if (hasPackage) {
+            fullPathName = fullPathName.substring(0, fullPathName.lastIndexOf('/'));
+        }
+
         for (Map.Entry<String, GroovyClassDoc> entry : classDocs.entrySet()) {
             String key = entry.getKey();
             int lastSlashIdx = key.lastIndexOf('/');
             if (lastSlashIdx > 0) {
                 String shortKey = key.substring(lastSlashIdx + 1);
-                String fullPathName = groovyClassDoc != null ? groovyClassDoc.getFullPathName() : null;
-
-                boolean hasPackage = (fullPathName != null && fullPathName.lastIndexOf('/') > 0);
-                if (hasPackage) fullPathName = fullPathName.substring(0, fullPathName.lastIndexOf('/'));
-
                 if (shortKey.equals(name) && (!hasPackage || key.startsWith(fullPathName))) {
                     return entry.getValue();
                 }
