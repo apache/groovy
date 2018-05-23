@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v5;
 
 import groovy.lang.EmptyRange;
+import groovy.lang.GString;
 import groovy.lang.IntRange;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -96,10 +97,16 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the StringBuilder on which this operation was invoked
      */
     public static StringBuilder leftShift(StringBuilder self, Object value) {
-        if (value instanceof CharSequence)
+        if (value instanceof GString) {
+            // Force the conversion of the GString to string now, or appending
+            // is going to be extremely expensive, due to calls to GString#charAt,
+            // which is going to re-evaluate the GString for each character!
+            return self.append(value.toString());
+        } else if (value instanceof CharSequence) {
             return self.append((CharSequence)value);
-        else
+        } else {
             return self.append(value);
+        }
     }
 
     /**
