@@ -50,10 +50,13 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     }
 
     public GroovyClassDoc classNamed(GroovyClassDoc groovyClassDoc, String name) {
+        GroovyClassDoc doc = classDocs.get(name);
+        if (doc != null) {
+            return doc;
+        }
         // look for full match or match excluding package
         for (Map.Entry<String, GroovyClassDoc> entry : classDocs.entrySet()) {
             String key = entry.getKey();
-            if (key.equals(name)) return entry.getValue();
             int lastSlashIdx = key.lastIndexOf('/');
             if (lastSlashIdx > 0) {
                 String shortKey = key.substring(lastSlashIdx + 1);
@@ -71,11 +74,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     }
 
     public GroovyClassDoc classNamedExact(String name) {
-        for (Map.Entry<String, GroovyClassDoc> entry : classDocs.entrySet()) {
-            String key = entry.getKey();
-            if (key.equals(name)) return entry.getValue();
-        }
-        return null;
+        return classDocs.get(name);
     }
 
     public void setDescription(String description) {
