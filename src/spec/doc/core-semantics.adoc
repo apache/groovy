@@ -1591,8 +1591,8 @@ The type checker will now fail at compile time, because it knows that `o` is a `
 so it's a type error.
 
 It is important to understand that it is not the fact of declaring a variable with `def` that triggers type inference.
-Flow typing works for *any* variable of any type. Declaring a variable with an explicit type only constraints what you
-can assign to a variable:
+Flow typing works for *any* variable of any type. Declaring a variable with an explicit type only constrains what you
+can assign to the variable:
 
 [source,groovy]
 ----
