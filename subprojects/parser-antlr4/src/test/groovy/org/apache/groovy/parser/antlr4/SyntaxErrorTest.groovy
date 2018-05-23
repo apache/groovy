@@ -227,8 +227,8 @@ class SyntaxErrorTest extends GroovyTestCase {
     }
 
     void "test groovy core - Import"() {
-        TestUtils.shouldFail('fail/Import_01x.groovy');
-        TestUtils.shouldFail('fail/Import_02x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Import_01x.groovy');
+        TestUtils.doRunAndShouldFail('fail/Import_02x.groovy');
     }
 
     /**************************************/
