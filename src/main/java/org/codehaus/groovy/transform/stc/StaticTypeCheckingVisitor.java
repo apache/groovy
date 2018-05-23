@@ -782,11 +782,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // if left expression is a closure shared variable, a second pass should be done
             if (leftExpression instanceof VariableExpression) {
                 VariableExpression leftVar = (VariableExpression) leftExpression;
-                // TODO is the || part required?
-                if (leftVar.isClosureSharedVariable() || leftVar.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
+                if (leftVar.isClosureSharedVariable()) {
                     // if left expression is a closure shared variable, we should check it twice
                     // see GROOVY-5874
-                    // also if it is delegated
                     typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<Void>(expression));
                 }
             }

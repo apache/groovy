@@ -18,6 +18,7 @@
  */
 package typing
 
+import groovy.$Temp
 import groovy.test.GroovyAssert
 import groovy.transform.TypeChecked
 import groovy.xml.MarkupBuilder
@@ -544,47 +545,48 @@ assert expected == result
         doDelegateResolutionForPropertyWriteTest("Closure.OWNER_FIRST", "owner")
     }
 
+    void testDelegateResolutionToPropertyWhenWritingInsideWith() {
+        // Failing example provided by Jan Hackel (@jhunovis) in groovy slack
+        // https://groovy-community.slack.com/files/U9CM8G6AJ/FAR1PJT1U/behavior_of__with__and___compilestatic.groovy
 
-    // TODO unignore this
-//    void testDelegateResolution2() {
-//
-//        assertScript '''import groovy.transform.CompileStatic
-//class DelegateTest {
-//
-//  @CompileStatic
-//  private static class Person {
-//    String name
-//    int age
-//
-//    Person copyWithName(String newName) {
-//      return new Person().with {
-//        name = newName
-//        age = this.age
-//        it
-//      }
-//    }
-//  }
-//
-//  void delegate() {
-//    def oldTim = new Person().with {
-//      name = 'Tim Old'
-//      age = 20
-//      it
-//    }
-//    def newTim = new Person().with {
-//      name = 'Tim New'
-//      age = 20
-//      it
-//    }
-//    def copiedTim = oldTim.copyWithName('Tim New')
-//    assert oldTim.name == 'Tim Old'
-//    assert copiedTim.name == newTim.name
-//    assert copiedTim.age == newTim.age
-//  }
-//}
-//new DelegateTest().delegate()
-//'''
-//    }
+        assertScript '''import groovy.transform.CompileStatic
+class DelegateTest {
+
+  @CompileStatic
+  private static class Person {
+    String name
+    int age
+
+    Person copyWithName(String newName) {
+      return new Person().with {
+        name = newName
+        age = this.age
+        it
+      }
+    }
+  }
+
+  void delegate() {
+    def oldTim = new Person().with {
+      name = 'Tim Old'
+      age = 20
+      it
+    }
+    def newTim = new Person().with {
+      name = 'Tim New'
+      age = 20
+      it
+    }
+    def copiedTim = oldTim.copyWithName('Tim New')
+    assert oldTim.name == 'Tim Old'
+    assert copiedTim.name == newTim.name
+    assert copiedTim.age == newTim.age
+  }
+}
+new DelegateTest().delegate()
+'''
+    }
+
     private static class SpecSupport {
         static int getLongueur(String self) { self.length() }
         static int longueur(String self) { self.length() }
