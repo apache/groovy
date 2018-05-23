@@ -32,6 +32,8 @@ import java.util.regex.Pattern;
 public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private static final Pattern TAG2_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(.*)");
     private static final Pattern TAG3_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(\\S*)\\s+(.*)");
+    private static final Pattern RAW_COMMENT_PATTERN = Pattern.compile("\"(?s).*?\\\\*\\\\s*@\"");
+    private static final Pattern TRIMMED_COMMENT_PATTERN = Pattern.compile("(?m)^\\s*\\*\\s*([^*]*)$");
     private final String name;
     private String commentText = null;
     private String rawCommentText = "";
@@ -84,9 +86,9 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     }
 
     private void calculateTags(String rawCommentText) {
-        String trimmed = rawCommentText.replaceFirst("(?s).*?\\*\\s*@", "@");
+        String trimmed = RAW_COMMENT_PATTERN.matcher(rawCommentText).replaceFirst("@");
         if (trimmed.equals(rawCommentText)) return;
-        String cleaned = trimmed.replaceAll("(?m)^\\s*\\*\\s*([^*]*)$", "$1").trim();
+        String cleaned = TRIMMED_COMMENT_PATTERN.matcher(trimmed).replaceAll("$1").trim();
         String[] split = cleaned.split("(?m)^@");
         List<GroovyTag> result = new ArrayList<GroovyTag>();
         for (String s : split) {
