@@ -62,7 +62,7 @@ public class GroovySourceAST extends CommonAST implements Comparable, SourceInfo
         if (t instanceof SourceInfo) {
             SourceInfo info = (SourceInfo) t;
             lineLast = info.getLineLast();
-            colLast  = info.getColumnLast(); 
+            colLast  = info.getColumnLast();
         }
     }
 
@@ -140,17 +140,16 @@ public class GroovySourceAST extends CommonAST implements Comparable, SourceInfo
     }
 
     public GroovySourceAST childAt(int position) {
-        List list = new ArrayList();
+        int cur = 0;
         AST child = this.getFirstChild();
-        while (child != null) {
-            list.add(child);
+        while (child != null && cur <= position) {
+            if (cur == position) {
+                return (GroovySourceAST) child;
+            }
+            cur++;
             child = child.getNextSibling();
         }
-        try {
-            return (GroovySourceAST)list.get(position);
-        } catch (IndexOutOfBoundsException e) {
-            return null;
-        }
+        return null;
     }
 
     public GroovySourceAST childOfType(int type) {
