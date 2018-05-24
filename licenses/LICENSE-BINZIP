@@ -252,10 +252,13 @@ has a BSD-style license. Details can be found in: licenses/jsr223-license.txt
 
 ------------------------------------------------------------------------
 
-JUnit License (optional dependency when using Groovy for testing)
+JUnit Licenses (optional dependencies when using Groovy for testing)
 
-This product bundles the JUnit jar, which is available under the
-Eclipse Public License v1.0.  For details, see licenses/junit-license.
+This product bundles the JUnit 4 jar, which is available under the
+Eclipse Public License v1.0.  For details, see licenses/junit4-license.
+
+This product bundles several JUnit 5 jars, which are available under the
+Eclipse Public License v2.0.  For details, see licenses/junit5-license.
 
 ------------------------------------------------------------------------
 
