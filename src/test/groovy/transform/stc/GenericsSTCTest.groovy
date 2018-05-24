@@ -75,7 +75,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
-        ''', '[Static type checking] - Cannot call <T> java.util.List <String>#leftShift(T) with arguments [int] '
+        ''', '[Static type checking] - Cannot find matching method java.util.List#leftShift(int)'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -87,6 +87,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List<Integer> list = []
             list << 1
+        '''
+    }
+
+    void testAddOnListWithParameterizedTypeLeftShift() {
+        assertScript '''
+            class Trie<T> {}
+            List<Trie<String>> list = []
+            list << new Trie<String>()
         '''
     }
 
