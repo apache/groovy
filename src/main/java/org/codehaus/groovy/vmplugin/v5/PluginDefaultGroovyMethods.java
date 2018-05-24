@@ -46,8 +46,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object next(Enum self) {
         final Method[] methods = self.getClass().getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
+        for (Method method : methods) {
             if (method.getName().equals("next") && method.getParameterTypes().length == 0) {
                 return InvokerHelper.invokeMethod(self, "next", NO_ARGS);
             }
@@ -67,8 +66,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object previous(Enum self) {
         final Method[] methods = self.getClass().getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
+        for (Method method : methods) {
             if (method.getName().equals("previous") && method.getParameterTypes().length == 0) {
                 return InvokerHelper.invokeMethod(self, "previous", NO_ARGS);
             }
@@ -102,11 +100,11 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             // is going to be extremely expensive, due to calls to GString#charAt,
             // which is going to re-evaluate the GString for each character!
             return self.append(value.toString());
-        } else if (value instanceof CharSequence) {
-            return self.append((CharSequence)value);
-        } else {
-            return self.append(value);
         }
+        if (value instanceof CharSequence) {
+            return self.append((CharSequence)value);
+        }
+        return self.append(value);
     }
 
     /**
