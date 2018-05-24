@@ -416,7 +416,8 @@ ext.distSpec = copySpec {
         include 'jline2-license.txt'
         include 'jsr166y-license.txt'
         include 'jsr223-license.txt'
-        include 'junit-license.txt'
+        include 'junit4-license.txt'
+        include 'junit5-license.txt'
         include 'xstream-license.txt'
     }
 }
