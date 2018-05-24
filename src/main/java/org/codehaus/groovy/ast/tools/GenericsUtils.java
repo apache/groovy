@@ -665,9 +665,7 @@ public class GenericsUtils {
      * If no cached item found, cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode)}
      */
     public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
-        final ParameterizedTypeCacheKey parameterizedInfoCacheKey = new ParameterizedTypeCacheKey(genericsClass, actualType);
-
-        return PARAMETERIZED_TYPE_CACHE.getAndPut(parameterizedInfoCacheKey, key -> findParameterizedType(key.getGenericsClass(), key.getActualType()));
+        return PARAMETERIZED_TYPE_CACHE.getAndPut(new ParameterizedTypeCacheKey(genericsClass, actualType), key -> findParameterizedType(key.getGenericsClass(), key.getActualType()));
     }
 
     /**
