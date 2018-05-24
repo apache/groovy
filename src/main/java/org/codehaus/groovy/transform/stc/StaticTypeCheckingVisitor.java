@@ -100,6 +100,7 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
@@ -598,6 +599,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else if (accessedVariable instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) accessedVariable;
+
+            TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+            if (enclosingClosure != null) {
+                // GROOVY-8562
+                // when vexp has the same name as a property of the owner,
+                // the IMPLICIT_RECEIVER must be set in case it's the delegate
+                if (tryVariableExpressionAsProperty(vexp, vexp.getName())) {
+                    // IMPLICIT_RECEIVER is handled elsewhere
+                    // however other access needs to be fixed for private access
+                    if (vexp.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
+                        ClassNode owner = (ClassNode) vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+                        if (owner != null) {
+                            boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
+                            fieldNode = owner.getField(vexp.getName());
+                            vexp.setAccessedVariable(fieldNode);
+                            checkOrMarkPrivateAccess(vexp, fieldNode, lhsOfEnclosingAssignment);
+                        }
+                    }
+                }
+            }
 
             ClassNode parameterizedType = GenericsUtils.findParameterizedTypeFromCache(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
             if (null != parameterizedType) {
