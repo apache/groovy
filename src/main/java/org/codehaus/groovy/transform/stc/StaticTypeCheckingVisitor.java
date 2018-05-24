@@ -606,9 +606,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // IMPLICIT_RECEIVER is handled elsewhere
                     // however other access needs to be fixed for private access
                     if (vexp.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
-                        boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
                         ClassNode owner = (ClassNode) vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
                         if (owner != null) {
+                            boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
                             fieldNode = owner.getField(vexp.getName());
                             vexp.setAccessedVariable(fieldNode);
                             checkOrMarkPrivateAccess(vexp, fieldNode, lhsOfEnclosingAssignment);
