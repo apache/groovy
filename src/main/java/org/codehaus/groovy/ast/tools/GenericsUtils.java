@@ -37,7 +37,6 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
-import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 import org.codehaus.groovy.runtime.memoize.StampedCommonCache;
 import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
@@ -666,14 +665,9 @@ public class GenericsUtils {
      * If no cached item found, cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode)}
      */
     public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
-        final ParameterizedInfoCacheKey parameterizedInfoCacheKey = new ParameterizedInfoCacheKey(genericsClass, actualType);
+        final ParameterizedTypeCacheKey parameterizedInfoCacheKey = new ParameterizedTypeCacheKey(genericsClass, actualType);
 
-        return PARAMETERIZED_INFO_CACHE.getAndPut(parameterizedInfoCacheKey, new MemoizeCache.ValueProvider<ParameterizedInfoCacheKey, ClassNode>() {
-            @Override
-            public ClassNode provide(ParameterizedInfoCacheKey key) {
-                return findParameterizedType(key.getGenericsClass(), key.getActualType());
-            }
-        });
+        return PARAMETERIZED_TYPE_CACHE.getAndPut(parameterizedInfoCacheKey, key -> findParameterizedType(key.getGenericsClass(), key.getActualType()));
     }
 
     /**
@@ -740,12 +734,12 @@ public class GenericsUtils {
         return superClassNodeList;
     }
 
-    private static final EvictableCache<ParameterizedInfoCacheKey, ClassNode> PARAMETERIZED_INFO_CACHE = new StampedCommonCache<>(128);
-    private static class ParameterizedInfoCacheKey {
+    private static final EvictableCache<ParameterizedTypeCacheKey, ClassNode> PARAMETERIZED_TYPE_CACHE = new StampedCommonCache<>(128);
+    private static class ParameterizedTypeCacheKey {
         private ClassNode genericsClass;
         private ClassNode actualType;
 
-        public ParameterizedInfoCacheKey(ClassNode genericsClass, ClassNode actualType) {
+        public ParameterizedTypeCacheKey(ClassNode genericsClass, ClassNode actualType) {
             this.genericsClass = genericsClass;
             this.actualType = actualType;
         }
@@ -771,7 +765,7 @@ public class GenericsUtils {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            ParameterizedInfoCacheKey cacheKey = (ParameterizedInfoCacheKey) o;
+            ParameterizedTypeCacheKey cacheKey = (ParameterizedTypeCacheKey) o;
 
             return genericsClass == cacheKey.genericsClass &&
                     actualType == cacheKey.actualType;
