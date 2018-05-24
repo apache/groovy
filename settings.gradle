@@ -44,6 +44,7 @@ def subprojects = ['groovy-ant',
 if (JavaVersion.current().isJava8Compatible()) {
     subprojects << 'groovy-datetime'
     subprojects << 'performance'
+    subprojects << 'groovy-test-junit5'
 }
 
 if (hasProperty('stressTests')) {

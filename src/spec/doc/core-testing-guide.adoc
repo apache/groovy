@@ -358,10 +358,21 @@ cobertura {
 Several output formats can be chosen for Cobertura coverage reports and test code coverage reports can be added to
 continuous integration build tasks.
 
-== Unit Tests with JUnit 3 and 4
+== Testing with JUnit
 
-Groovy simplifies JUnit testing, making it more Groovy. In the following sections we will have a closer look at
-JUnit 3/4 Groovy integration.
+Groovy simplifies JUnit testing in the following ways:
+
+* You use the same overall practices as you would when testing with Java but you
+can adopt much of Groovy's concise syntax in your tests making them succinct. You can even use
+the capabilities for writing testing domain specific languages (DSLs) if you feel so inclined.
+* There are numerous helper classes that simplify many testing activities. The details differ
+in some cases depending on the version of JUnit you are using. We'll cover those details shortly.
+* Groovy's PowerAssert mechanism is wonderful to use in your tests
+* Groovy deems that tests are so important you should be able to run them as easily as scripts or classes.
+This is why Groovy includes an automatic test runner when using the `groovy` command or the GroovyConsole.
+This gives you some additional options over and above running your tests
+
+In the following sections we will have a closer look at JUnit 3, 4 and 5 Groovy integration.
 
 === JUnit 3
 
@@ -480,6 +491,8 @@ exception:
 ----
 include::{projectdir}/src/spec/test/testingguide/JUnit4ExampleTests.groovy[tags=should_fail_return,indent=0]
 ----
+
+include::{rootProjectDir}/subprojects/groovy-test-junit5/src/spec/doc/testing-with-junit5.adoc[leveloffset=+1]
 
 == Testing with Spock
 

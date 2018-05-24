@@ -1,2 +1,5 @@
-This product bundles the JUnit jar (junit.org)
+This product bundles the JUnit4 jar (junit.org)
 which is available under the terms of the Eclipse Public License v1.0
+
+This product bundles several of the JUnit5 jars (junit.org)
+which are available under the terms of the Eclipse Public License v2.0
