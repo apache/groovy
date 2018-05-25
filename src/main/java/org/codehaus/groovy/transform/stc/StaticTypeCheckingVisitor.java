@@ -611,10 +611,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (vexp.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
                         ClassNode owner = (ClassNode) vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
                         if (owner != null) {
-                            boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
-                            fieldNode = owner.getField(vexp.getName());
-                            vexp.setAccessedVariable(fieldNode);
-                            checkOrMarkPrivateAccess(vexp, fieldNode, lhsOfEnclosingAssignment);
+                            FieldNode veFieldNode = owner.getField(vexp.getName());
+                            if (veFieldNode != null) {
+                                fieldNode = veFieldNode;
+                                boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
+                                vexp.setAccessedVariable(fieldNode);
+                                checkOrMarkPrivateAccess(vexp, fieldNode, lhsOfEnclosingAssignment);
+                            }
                         }
                     }
                 }

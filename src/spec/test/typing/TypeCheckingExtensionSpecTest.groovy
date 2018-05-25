@@ -587,6 +587,25 @@ new DelegateTest().delegate()
 '''
     }
 
+    void testDelegateVariableFromDifferentOwningClass() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class A {
+            static private int MAX_LINES = 2
+            static class B {
+                @Delegate
+                private Map<String, Object> delegate = [:]
+                void m(int c) {
+                    if (c > MAX_LINES) {
+                        return
+                    }
+                }
+            }
+        }
+        null
+        '''
+    }
+
     private static class SpecSupport {
         static int getLongueur(String self) { self.length() }
         static int longueur(String self) { self.length() }
