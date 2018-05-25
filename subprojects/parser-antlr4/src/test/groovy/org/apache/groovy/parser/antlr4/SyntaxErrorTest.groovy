@@ -231,10 +231,6 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/Import_02x.groovy');
     }
 
-    void "test groovy core - Lambda"() {
-        TestUtils.doRunAndShouldFail('fail/Lambda_01x.groovy');
-    }
-
     /**************************************/
     static unzipScriptAndShouldFail(String entryName, List ignoreClazzList, Map<String, String> replacementsMap=[:], boolean toCheckNewParserOnly = false) {
         ignoreClazzList.addAll(TestUtils.COMMON_IGNORE_CLASS_LIST)

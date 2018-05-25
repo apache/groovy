@@ -534,7 +534,6 @@ standardLambdaParameters
 lambdaBody
 	:	block
 	|	statementExpression
-	|   statement // !!! Error Alternative !!!
 	;
 
 
