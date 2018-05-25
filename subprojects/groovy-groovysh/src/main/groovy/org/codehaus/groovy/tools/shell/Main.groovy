@@ -47,8 +47,7 @@ import static org.apache.groovy.util.SystemUtil.setSystemPropertyFrom
  *
  * Main CLI entry-point for <tt>groovysh</tt>.
  */
-class Main
-{
+class Main {
     final Groovysh groovysh
 
     /**
@@ -76,8 +75,9 @@ class Main
      * @param main must have a Groovysh member that has an IO member.
      */
     static void main(final String[] args) {
-        CliBuilder cli = new CliBuilder(usage: 'groovysh [options] [...]', formatter: new HelpFormatter(), stopAtNonOption: false)
         MessageSource messages = new MessageSource(Main)
+        CliBuilder cli = new CliBuilder(usage: 'groovysh [options] [...]', formatter: new HelpFormatter(), stopAtNonOption: false,
+                header: messages['cli.option.header'])
         cli.with {
             classpath(messages['cli.option.classpath.description'])
             cp(longOpt: 'classpath', messages['cli.option.cp.description'])
