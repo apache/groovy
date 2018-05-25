@@ -77,7 +77,6 @@ import java.util.Set;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
