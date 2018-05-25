@@ -230,8 +230,8 @@ public class GroovyMain {
          * @throws ParameterException if the user input was invalid
          */
         boolean process(CommandLine parser) throws ParameterException, IOException {
-            for (String key : systemProperties.keySet()) {
-                System.setProperty(key, systemProperties.get(key));
+            for (Map.Entry<String, String> entry : systemProperties.entrySet()) {
+                System.setProperty(entry.getKey(), entry.getValue());
             }
             GroovyMain main = new GroovyMain();
 
