@@ -18,6 +18,8 @@
  */
 package groovy.ui
 
+import groovy.cli.picocli.CliBuilder
+import groovy.cli.picocli.OptionAccessor
 import groovy.inspect.swingui.AstBrowser
 import groovy.inspect.swingui.ObjectBrowser
 import groovy.swing.SwingBuilder
@@ -191,16 +193,16 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     ConsolePreferences consolePreferences
 
     static void main(args) {
-        CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
         MessageSource messages = new MessageSource(Console)
+        CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false,
+                header: messages['cli.option.header'])
         cli.with {
-            classpath(messages['cli.option.classpath.description'])
-            cp(longOpt: 'classpath', messages['cli.option.cp.description'])
+            _(names: ['-cp', '-classpath', '--classpath'], messages['cli.option.classpath.description'])
             h(longOpt: 'help', messages['cli.option.help.description'])
             V(longOpt: 'version', messages['cli.option.version.description'])
             pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
             i(longOpt: 'indy', messages['cli.option.indy.description'])
-            D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', messages['cli.option.define.description'])
+            D(longOpt: 'define', type: Map, argName: 'name=value', messages['cli.option.define.description'])
             _(longOpt: 'configscript', args: 1, messages['cli.option.configscript.description'])
         }
         OptionAccessor options = cli.parse(args)
@@ -221,9 +223,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
 
         if (options.hasOption('D')) {
-            options.getOptionProperties('D')?.each { k, v ->
-                System.setProperty(k, v)
-            }
+            options.Ds.each { k, v -> System.setProperty(k, v) }
         }
 
         // full stack trace should not be logged to the output window - GROOVY-4663
