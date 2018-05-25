@@ -36,6 +36,8 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
+import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
 
@@ -46,6 +48,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCorrectedClassNode;
@@ -658,13 +661,27 @@ public class GenericsUtils {
     }
 
     /**
-     * Get the parameterized type by search the whole class hierarchy according to generics class and actual receiver
+     * Try to get the parameterized type from the cache.
+     * If no cached item found, cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode)}
+     */
+    public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
+        return PARAMETERIZED_TYPE_CACHE.getAndPut(new ParameterizedTypeCacheKey(genericsClass, actualType), new EvictableCache.ValueProvider<ParameterizedTypeCacheKey, ClassNode>() {
+            @Override
+            public ClassNode provide(ParameterizedTypeCacheKey key) {
+                return findParameterizedType(key.getGenericsClass(), key.getActualType());
+            }
+        });
+    }
+
+    /**
+     * Get the parameterized type by search the whole class hierarchy according to generics class and actual receiver.
+     * {@link #findParameterizedTypeFromCache(ClassNode, ClassNode)} is strongly recommended for better performance.
      *
      * @param genericsClass the generics class
-     * @param actualReceiver the actual receiver
+     * @param actualType the actual type
      * @return the parameterized type
      */
-    public static ClassNode findParameterizedType(ClassNode genericsClass, ClassNode actualReceiver) {
+    public static ClassNode findParameterizedType(ClassNode genericsClass, ClassNode actualType) {
         ClassNode parameterizedType = null;
 
         if (null == genericsClass.getGenericsTypes()) {
@@ -673,8 +690,8 @@ public class GenericsUtils {
 
         GenericsType[] declaringGenericsTypes = genericsClass.getGenericsTypes();
 
-        List<ClassNode> classNodeList = new LinkedList<>(getAllSuperClassesAndInterfaces(actualReceiver));
-        classNodeList.add(0, actualReceiver);
+        List<ClassNode> classNodeList = new LinkedList<>(getAllSuperClassesAndInterfaces(actualType));
+        classNodeList.add(0, actualType);
 
         for (ClassNode cn : classNodeList) {
             if (cn == genericsClass) {
@@ -719,5 +736,48 @@ public class GenericsUtils {
         }
 
         return superClassNodeList;
+    }
+
+    private static final EvictableCache<ParameterizedTypeCacheKey, ClassNode> PARAMETERIZED_TYPE_CACHE = new ConcurrentCommonCache<>(128);
+    private static class ParameterizedTypeCacheKey {
+        private ClassNode genericsClass;
+        private ClassNode actualType;
+
+        public ParameterizedTypeCacheKey(ClassNode genericsClass, ClassNode actualType) {
+            this.genericsClass = genericsClass;
+            this.actualType = actualType;
+        }
+
+        public ClassNode getGenericsClass() {
+            return genericsClass;
+        }
+
+        public void setGenericsClass(ClassNode genericsClass) {
+            this.genericsClass = genericsClass;
+        }
+
+        public ClassNode getActualType() {
+            return actualType;
+        }
+
+        public void setActualType(ClassNode actualType) {
+            this.actualType = actualType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ParameterizedTypeCacheKey cacheKey = (ParameterizedTypeCacheKey) o;
+
+            return genericsClass == cacheKey.genericsClass &&
+                    actualType == cacheKey.actualType;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(genericsClass, actualType);
+        }
     }
 }

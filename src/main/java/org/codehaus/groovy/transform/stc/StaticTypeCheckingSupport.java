@@ -1196,7 +1196,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static Parameter[] makeRawTypes(Parameter[] params, ClassNode declaringClassForDistance, ClassNode actualReceiverForDistance) {
-        Map<String, GenericsType> placeholderInfo = GenericsUtils.extractPlaceholders(GenericsUtils.findParameterizedType(declaringClassForDistance, actualReceiverForDistance));
+        Map<String, GenericsType> placeholderInfo = GenericsUtils.extractPlaceholders(GenericsUtils.findParameterizedTypeFromCache(declaringClassForDistance, actualReceiverForDistance));
 
         Parameter[] newParam = new Parameter[params.length];
         for (int i = 0; i < params.length; i++) {
