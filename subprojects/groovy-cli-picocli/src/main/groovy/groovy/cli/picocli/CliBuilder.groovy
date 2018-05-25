@@ -608,7 +608,7 @@ class CliBuilder {
      * Make options accessible from command line args with parser.
      * Returns null on bad command lines after displaying usage message.
      */
-    groovy.cli.picocli.OptionAccessor parse(args) {
+    OptionAccessor parse(args) {
         CommandLine commandLine = createCommandLine()
         try {
             def accessor = new OptionAccessor(commandLine.parseArgs(args as String[]))

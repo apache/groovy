@@ -215,7 +215,8 @@ allprojects {
                     'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class',
                     'groovy/cli/commons/CliBuilder*.class',
                     'groovy/cli/commons/OptionAccessor*.class',
-                    'groovy/cli/picocli/CliBuilder*.class'
+                    'groovy/cli/picocli/CliBuilder*.class',
+                    'groovy/cli/picocli/OptionAccessor*.class'
             ]
             patterns = [
                     'antlr.**'                 : 'groovyjarjarantlr.@1', // antlr2
