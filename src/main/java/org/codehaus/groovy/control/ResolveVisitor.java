@@ -1484,7 +1484,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         upperBoundsToResolve.add(new Tuple2<>(upperBound, classNode));
                     }
 
-                    if (asBoolean(upperBound.isUsingGenerics())) {
+                    if (upperBound.isUsingGenerics()) {
                         upperBoundsWithGenerics.add(new Tuple2<>(upperBound, type));
                     }
                 }
