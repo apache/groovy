@@ -10293,8 +10293,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return createSimilarMap(self);
         }
         Map<K, V> ret = createSimilarMap(self);
-        for (K key : self.keySet()) {
-            ret.put(key, self.get(key));
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            K key = entry.getKey();
+            V value = entry.getValue();
+
+            ret.put(key, value);
             if (--num <= 0) {
                 break;
             }
@@ -10588,9 +10591,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return cloneSimilarMap(self);
         }
         Map<K, V> ret = createSimilarMap(self);
-        for (K key : self.keySet()) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            K key = entry.getKey();
+            V value = entry.getValue();
+
             if (num-- <= 0) {
-                ret.put(key, self.get(key));
+                ret.put(key, value);
             }
         }
         return ret;
@@ -12739,8 +12745,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (!self.keySet().equals(other.keySet())) {
             return false;
         }
-        for (Object key : self.keySet()) {
-            if (!coercedEquals(self.get(key), other.get(key))) {
+        for (Object o : self.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+
+            if (!coercedEquals(value, other.get(key))) {
                 return false;
             }
         }
