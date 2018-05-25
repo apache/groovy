@@ -176,6 +176,10 @@ Please note that the following Gradle tasks generate both indy and non indy vari
 
 The official CI server runs {groovy-ci}[here] and is sponsored by http://www.jetbrains.com[JetBrains].
 
+== Java Profiler
+
+Groovy core team tunes performance through YourKit Java Profiler, which is sponsored by https://www.yourkit.com[YourKit].
+
 == License
 
 Groovy is licensed under the terms of the http://www.apache.org/licenses/LICENSE-2.0.html[Apache License, Version 2.0]
