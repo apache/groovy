@@ -616,7 +616,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            ClassNode parameterizedType = GenericsUtils.findParameterizedType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
+            ClassNode parameterizedType = GenericsUtils.findParameterizedTypeFromCache(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
             if (null != parameterizedType) {
                 ClassNode originalType = fieldNode.getOriginType();
                 ClassNode actualType = findActualTypeByPlaceholderName(originalType.getUnresolvedName(), GenericsUtils.extractPlaceholders(parameterizedType));
