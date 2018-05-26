@@ -910,7 +910,7 @@ class CliBuilder {
         commons2picocli(shortname, details).each { key, value ->
             if (builder.hasProperty(key)) {
                 builder[key] = value
-            } else {
+            } else if (key != 'opt') {    // GROOVY-8607 ignore opt since we already have that
                 builder.invokeMethod(key, value)
             }
         }
