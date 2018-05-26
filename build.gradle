@@ -177,6 +177,7 @@ dependencies {
     compile "org.ow2.asm:asm-tree:$asmVersion"
     compile "org.ow2.asm:asm-util:$asmVersion"
 
+    compile "commons-cli:commons-cli:$commonsCliVersion" // keep in 2_5_X for deprecated methods in FSF
     compile "info.picocli:picocli:$picocliVersion"
     compile "org.apache.ant:ant:$antVersion"
     compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
