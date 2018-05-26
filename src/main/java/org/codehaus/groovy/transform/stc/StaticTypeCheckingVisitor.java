@@ -169,6 +169,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.findActualTypeByGenericsPlaceholderName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.makeDeclaringAndActualGenericsTypeMap;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
 import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
@@ -221,7 +223,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.choose
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findActualTypeByPlaceholderName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
@@ -619,15 +620,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            ClassNode parameterizedType = GenericsUtils.findParameterizedTypeFromCache(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode());
-            if (null != parameterizedType) {
-                ClassNode originalType = fieldNode.getOriginType();
-                ClassNode actualType = findActualTypeByPlaceholderName(originalType.getUnresolvedName(), GenericsUtils.extractPlaceholders(parameterizedType));
+            ClassNode actualType =
+                    findActualTypeByGenericsPlaceholderName(
+                        fieldNode.getOriginType().getUnresolvedName(),
+                        makeDeclaringAndActualGenericsTypeMap(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())
+                    );
 
-                if (null != actualType) {
-                    storeType(vexp, actualType);
-                    return;
-                }
+            if (null != actualType) {
+                storeType(vexp, actualType);
+                return;
             }
         }
 
