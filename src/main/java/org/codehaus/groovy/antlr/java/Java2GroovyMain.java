@@ -24,10 +24,11 @@ public class Java2GroovyMain {
 
     public static void main(String[] args) {
         try {
-            if (args.length == 0) {
-                System.err.println("Needs at least one filename");
+            if (args.length == 0 || (args.length == 1 && args[0].equals("-h"))) {
+                System.err.println("Usage: java2groovy <one or more filenames>");
+            } else {
+                Java2GroovyProcessor.processFiles(Arrays.asList(args));
             }
-            Java2GroovyProcessor.processFiles(Arrays.asList(args));
         } catch (Throwable t) {
             t.printStackTrace();
         }
