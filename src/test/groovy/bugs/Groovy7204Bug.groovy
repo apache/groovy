@@ -550,4 +550,28 @@ class Groovy7204Bug extends GroovyTestCase {
         assert new Derived().getFirstElement() instanceof Trie
         '''
     }
+
+    void testCompileStatic8() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class Trie<T> {}
+        
+        @groovy.transform.CompileStatic
+        class Base<T> extends ArrayList<Trie<T>> {
+            
+            Base() {
+                this.add(new Trie<String>())
+            }
+        }
+        
+        @groovy.transform.CompileStatic
+        class Derived extends Base<String> {
+            Trie<String> getFirstElement() {
+                this.get(0)
+            }
+        }
+        
+        assert new Derived().getFirstElement() instanceof Trie
+        '''
+    }
 }
