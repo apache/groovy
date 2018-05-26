@@ -65,13 +65,12 @@ dependencies {
     testCompile project(':groovy-test')
 }
 
-sourceSets.main.java.srcDirs += file("$srcMain/java");
-sourceSets.main.groovy.srcDirs += file("$srcMain/groovy");
-sourceSets.main.resources.srcDirs += file("$srcMain/resources");
-sourceSets.test.java.srcDirs += file("$srcTest/java");
-sourceSets.test.groovy.srcDirs += file("$srcTest/groovy");
-sourceSets.test.resources.srcDirs += file("$srcTest/resources");
-
+sourceSets.main.java.srcDirs += file("$srcMain/java")
+sourceSets.main.groovy.srcDirs += file("$srcMain/groovy")
+sourceSets.main.resources.srcDirs += file("$srcMain/resources")
+sourceSets.test.java.srcDirs += file("$srcTest/java")
+sourceSets.test.groovy.srcDirs += file("$srcTest/groovy")
+sourceSets.test.resources.srcDirs += file("$srcTest/resources")
 
 tasks.withType(Test) {
     jvmArgs "-Dgroovy.attach.groovydoc=true", "-Dgroovy.antlr4.cache.threshold=100"
