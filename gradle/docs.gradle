@@ -59,8 +59,11 @@ def groovydocBaseSpec = {
     link 'http://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
     link 'http://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
     link 'http://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
+    link 'http://junit.org/junit5/docs/current/api/', 'org.junit.jupiter.', 'org.junit.platform.'
     link 'http://www.antlr2.org/javadoc/', 'antlr.'
+    link 'http://www.antlr.org/api/Java/', 'org.antlr.v4.'
     link 'http://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
+    link 'http://picocli.info/apidocs/', 'picocli.'
 }
 
 def groovydocSpec = groovydocBaseSpec >> {

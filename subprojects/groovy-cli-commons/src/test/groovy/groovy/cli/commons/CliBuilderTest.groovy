@@ -25,7 +25,6 @@ import groovy.transform.TypeChecked
 import org.apache.commons.cli.BasicParser
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.GnuParser
-import org.codehaus.groovy.cli.GroovyPosixParser
 
 import java.math.RoundingMode
 
@@ -100,19 +99,19 @@ class CliBuilderTest extends GroovyTestCase {
     }
 
     void testSampleShort() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+        [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             runSample(parser, ['-h', '-c', expectedParameter])
         }
     }
 
     void testSampleLong() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+        [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             runSample(parser, ['--help', '--encoding', expectedParameter])
         }
     }
 
     void testSimpleArg() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+        [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
             cli.a([:], '')
             def options = cli.parse(['-a', '1', '2'])
@@ -121,7 +120,7 @@ class CliBuilderTest extends GroovyTestCase {
     }
 
     void testMultipleArgs() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+        [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
             cli.a(longOpt: 'arg', args: 2, valueSeparator: ',' as char, 'arguments')
             def options = cli.parse(['-a', '1,2'])
@@ -144,7 +143,7 @@ usage: groovy
     }
 
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
+        [new DefaultParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
             def anOption = builder().longOpt('anOption').hasArg().desc('An option.')
                     .build()
@@ -160,7 +159,7 @@ usage: groovy
     }
 
     void testLongAndShortOpts_allOptionsValid() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+        [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
             def anOption = builder().longOpt('anOption').hasArg().desc('An option.').build()
             cli.options.addOption(anOption)
@@ -174,7 +173,7 @@ usage: groovy
     }
 
     void testUnrecognizedOptions() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+        [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
             cli.v(longOpt: 'verbose', 'verbose mode')
             def options = cli.parse(['-x', '-yyy', '--zzz', 'something'])
@@ -183,7 +182,7 @@ usage: groovy
     }
 
     void testMultipleOccurrencesSeparateSeparate() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser(), new BasicParser()].each { parser ->
+        [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
             cli.a(longOpt: 'arg', args: UNLIMITED_VALUES, 'arguments')
             def options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
@@ -196,7 +195,7 @@ usage: groovy
     }
 
     void testMultipleOccurrencesSeparateJuxtaposed() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
+        [new DefaultParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
             //cli.a ( longOpt : 'arg' , args : UNLIMITED_VALUES , 'arguments' )
             cli.a(longOpt: 'arg', args: 1, 'arguments')
@@ -210,7 +209,7 @@ usage: groovy
     }
 
     void testMultipleOccurrencesTogetherSeparate() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
+        [new DefaultParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
             cli.a(longOpt: 'arg', args: UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
             def options = cli.parse(['-a 1,2,3'])
@@ -223,7 +222,7 @@ usage: groovy
     }
 
     void testMultipleOccurrencesTogetherJuxtaposed() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
+        [new DefaultParser(), new GnuParser()].each { parser ->
             def cli1 = new CliBuilder(parser: parser)
             cli1.a(longOpt: 'arg', args: UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
             def options = cli1.parse(['-a1,2,3'])
@@ -279,7 +278,7 @@ usage: groovy
     }
 
     void testMultiCharShortOpt() {
-        [new DefaultParser(), new GroovyPosixParser(), new GnuParser()].each { parser ->
+        [new DefaultParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(writer: printWriter, parser: parser)
             cli.abc('abc option')
             cli.def(longOpt: 'defdef', 'def option')

@@ -181,7 +181,6 @@ dependencies {
     compile "org.ow2.asm:asm-tree:$asmVersion"
     compile "org.ow2.asm:asm-util:$asmVersion"
 
-    compile "commons-cli:commons-cli:$commonsCliVersion"
     compile "info.picocli:picocli:$picocliVersion"
     compile "org.apache.ant:ant:$antVersion"
     compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
