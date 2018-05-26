@@ -193,8 +193,7 @@ allprojects {
                         if (component instanceof ModuleComponentIdentifier) {
                             return component.module in [
                                     'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
-                                    'asm', 'asm-commons', 'asm-tree', 'asm-util',
-                                    'commons-cli', 'picocli']
+                                    'asm', 'asm-commons', 'asm-tree', 'asm-util', 'picocli']
                         }
                         return false
                     }
@@ -204,12 +203,6 @@ allprojects {
             }
             jarjarToolClasspath = rootProject.configurations.tools
             untouchedFiles = [
-                    'org/codehaus/groovy/cli/GroovyPosixParser*.class',
-                    'groovy/util/CliBuilder*.class',
-                    'groovy/util/OptionAccessor*.class',
-                    'org/codehaus/groovy/tools/shell/util/HelpFormatter*.class',
-                    'groovy/cli/commons/CliBuilder*.class',
-                    'groovy/cli/commons/OptionAccessor*.class',
                     'groovy/cli/picocli/CliBuilder*.class',
                     'groovy/cli/picocli/OptionAccessor*.class'
             ]
@@ -217,8 +210,7 @@ allprojects {
                     'antlr.**'                 : 'groovyjarjarantlr.@1', // antlr2
                     'org.antlr.**'             : 'groovyjarjarantlr4.@1', // antlr4
                     'org.objectweb.**'         : 'groovyjarjarasm.@1',
-                    'org.apache.commons.cli.**': 'groovyjarjarcommonscli.@1',
-                    'picocli.**': 'groovyjarjarpicocli.@1'
+                    'picocli.**'               : 'groovyjarjarpicocli.@1'
             ]
             excludesPerLibrary = [
                     '*': ['META-INF/maven/**', 'META-INF/*', 'META-INF/services/javax.annotation.processing.Processor', 'module-info.class']
