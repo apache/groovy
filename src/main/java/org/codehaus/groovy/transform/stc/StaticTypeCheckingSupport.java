@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
@@ -62,7 +63,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1100,7 +1100,7 @@ public abstract class StaticTypeCheckingSupport {
                 Person p = foo(b)
              */
 
-            Map<GenericsType, GenericsType> declaringAndActualGenericsTypeMap = makeDeclaringAndActualGenericsTypeMap(declaringClassForDistance, actualReceiverForDistance);
+            Map<GenericsType, GenericsType> declaringAndActualGenericsTypeMap = GeneralUtils.makeDeclaringAndActualGenericsTypeMap(declaringClassForDistance, actualReceiverForDistance);
             Parameter[] params = makeRawTypes(safeNode.getParameters(), declaringAndActualGenericsTypeMap);
             int dist = measureParametersAndArgumentsDistance(params, safeArgs);
             if (dist >= 0) {
@@ -1191,62 +1191,13 @@ public abstract class StaticTypeCheckingSupport {
         return isExtensionMethodNode ? 0 : 1;
     }
 
-    private static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
-        for (Map.Entry<GenericsType, GenericsType> entry : genericsPlaceholderAndTypeMap.entrySet()) {
-            GenericsType declaringGenericsType = entry.getKey();
-
-            if (placeholderName.equals(declaringGenericsType.getName())) {
-                return entry.getValue().getType();
-            }
-        }
-
-        return null;
-    }
-
-    public static ClassNode findActualTypeByPlaceholderName(String placeholderName, Map<String, GenericsType> placeholderInfo) {
-        GenericsType gt = placeholderInfo.get(placeholderName);
-
-        return null == gt ? null : gt.getType().redirect();
-    }
-
-    /**
-     * map declaring generics type to actual generics type, e.g. GROOVY-7204:
-     * declaring generics types:      T,      S extends Serializable
-     * actual generics types   : String,      Long
-     *
-     * the result map is [
-     *  T: String,
-     *  S: Long
-     * ]
-     *
-     * The resolved types can not help us to choose methods correctly if the argument is a string:  T: Object, S: Serializable
-     * so we need actual types:  T: String, S: Long
-     */
-    private static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(ClassNode declaringClass, ClassNode actualReceiver) {
-        ClassNode parameterizedType = GenericsUtils.findParameterizedType(declaringClass, actualReceiver);
-
-        if (null == parameterizedType) {
-            return Collections.emptyMap();
-        }
-
-        GenericsType[] declaringGenericsTypes = declaringClass.getGenericsTypes();
-        GenericsType[] actualGenericsTypes = parameterizedType.getGenericsTypes();
-
-        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
-        for (int i = 0, n = declaringGenericsTypes.length; i < n; i++) {
-            result.put(declaringGenericsTypes[i], actualGenericsTypes[i]);
-        }
-
-        return result;
-    }
-
     private static Parameter[] makeRawTypes(Parameter[] params, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
 
         Parameter[] newParam = new Parameter[params.length];
         for (int i = 0; i < params.length; i++) {
             Parameter oldP = params[i];
 
-            ClassNode actualType = findActualTypeByGenericsPlaceholderName(oldP.getType().getUnresolvedName(), genericsPlaceholderAndTypeMap);
+            ClassNode actualType = GeneralUtils.findActualTypeByGenericsPlaceholderName(oldP.getType().getUnresolvedName(), genericsPlaceholderAndTypeMap);
             Parameter newP = new Parameter(makeRawType(null == actualType ? oldP.getType() : actualType), oldP.getName());
             newParam[i] = newP;
         }
