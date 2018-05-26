@@ -21,21 +21,18 @@ import org.junit.jupiter.api.*
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.util.stream.Stream
-import static org.junit.jupiter.api.Assertions.assertTrue
 import static org.junit.jupiter.api.DynamicTest.dynamicTest
 
 class MyTestJUnit5 {
 
   @Test
   void streamSum() {
-    assertTrue(Stream.of(1, 2, 3)
-      .mapToInt(i -> i)
-      .sum() > 5, () -> "Sum should be greater than 5")
+    assert Stream.of(1, 2, 3).mapToInt{ i -> i }.sum() > 5
   }
 
   @RepeatedTest(value=2, name = "{displayName} {currentRepetition}/{totalRepetitions}")
   void streamSumRepeated() {
-    assert Stream.of(1, 2, 3).mapToInt(i -> i).sum() == 6
+    assert Stream.of(1, 2, 3).mapToInt{ i -> i }.sum() == 6
   }
 
   private boolean isPalindrome(s) { s == s.reverse()  }
@@ -49,6 +46,6 @@ class MyTestJUnit5 {
   @TestFactory
   def dynamicTestCollection() {[
     dynamicTest("Add test") { -> assert 1 + 1 == 2 },
-    dynamicTest("Multiply Test", () -> { assert 2 * 3 == 6 })
+    dynamicTest("Multiply Test") { -> assert 2 * 3 == 6 }
   ]}
 }
