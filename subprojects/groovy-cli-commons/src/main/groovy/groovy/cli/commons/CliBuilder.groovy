@@ -605,7 +605,9 @@ class CliBuilder {
             option = new CliOption(shortname, info)
         }
         adjustDetails(details).each { key, value ->
-            option[key] = value
+            if (key != 'opt') { // GROOVY-8607 ignore opt since we already have that
+                option[key] = value
+            }
         }
         return option
     }

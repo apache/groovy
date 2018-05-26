@@ -73,23 +73,23 @@ class CliBuilderTest extends GroovyTestCase {
   -h, --help                 usage information
   -i= [<extension>]          modify files in place, create backup if extension is
                                specified (e.g. '.bak')"""
-        groovy.util.GroovyTestCase.assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         resetPrintWriter()
         cli.writer = printWriter
         if (options.help) { cli.usage() }
-        groovy.util.GroovyTestCase.assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         assert options.hasOption('c')
         assert options.c
         assert options.hasOption('encoding')
         assert options.encoding
-        groovy.util.GroovyTestCase.assertEquals(expectedParameter, options.getOptionValue('c'))
-        groovy.util.GroovyTestCase.assertEquals(expectedParameter, options.c)
-        groovy.util.GroovyTestCase.assertEquals(expectedParameter, options.getOptionValue('encoding'))
-        groovy.util.GroovyTestCase.assertEquals(expectedParameter, options.encoding)
-        groovy.util.GroovyTestCase.assertEquals(false, options.noSuchOptionGiven)
-        junit.framework.TestCase.assertEquals(false, options.hasOption('noSuchOptionGiven'))
-        groovy.util.GroovyTestCase.assertEquals(false, options.x)
-        junit.framework.TestCase.assertEquals(false, options.hasOption('x'))
+        assertEquals(expectedParameter, options.getOptionValue('c'))
+        assertEquals(expectedParameter, options.c)
+        assertEquals(expectedParameter, options.getOptionValue('encoding'))
+        assertEquals(expectedParameter, options.encoding)
+        assertEquals(false, options.noSuchOptionGiven)
+        assertEquals(false, options.hasOption('noSuchOptionGiven'))
+        assertEquals(false, options.x)
+        assertEquals(false, options.hasOption('x'))
     }
 
     private void resetPrintWriter() {
@@ -109,17 +109,17 @@ class CliBuilderTest extends GroovyTestCase {
         def cli = new CliBuilder()
         cli.a([:], '')
         def options = cli.parse(['-a', '1', '2'])
-        groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.arguments())
+        assertEquals(['1', '2'], options.arguments())
     }
 
     void testMultipleArgs() {
         def cli = new CliBuilder()
         cli.a(longOpt: 'arg', args: 2, valueSeparator: ',' as char, 'arguments')
         def options = cli.parse(['-a', '1,2'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.as)
-        groovy.util.GroovyTestCase.assertEquals('1', options.arg)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.args)
+        assertEquals('1', options.a)
+        assertEquals(['1', '2'], options.as)
+        assertEquals('1', options.arg)
+        assertEquals(['1', '2'], options.args)
     }
 
     void testPosixNullValueHandledCorrectly_inConstructor() {
@@ -195,18 +195,18 @@ class CliBuilderTest extends GroovyTestCase {
         def cli = new CliBuilder()
         cli.v(longOpt: 'verbose', 'verbose mode')
         def options = cli.parse(['-x', '-yyy', '--zzz', 'something'])
-        groovy.util.GroovyTestCase.assertEquals(['-x', '-yyy', '--zzz', 'something'], options.arguments())
+        assertEquals(['-x', '-yyy', '--zzz', 'something'], options.arguments())
     }
 
     void testMultipleOccurrencesSeparateSeparate() {
         def cli = new CliBuilder()
         cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, 'arguments')
         def options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3'], options.as)
-        groovy.util.GroovyTestCase.assertEquals('1', options.arg)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3'], options.args)
-        groovy.util.GroovyTestCase.assertEquals([], options.arguments())
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)
+        assertEquals(['1', '2', '3'], options.args)
+        assertEquals([], options.arguments())
     }
 
     void testMandatoryParametersDoNotConsumeOtherOptions() {
@@ -216,10 +216,10 @@ class CliBuilderTest extends GroovyTestCase {
         cli.c(args: '+', valueSeparator: ',', 'arguments')
 
         def options = cli.parse(['-a', '1', '-a', '2'])
-        junit.framework.TestCase.assertNull(options)
+        assertNull(options)
 
         options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
-        junit.framework.TestCase.assertNull(options)
+        assertNull(options)
     }
 
     void testMultipleOccurrencesSeparateSeparate3() {
@@ -230,49 +230,49 @@ class CliBuilderTest extends GroovyTestCase {
         cli.c(args: '+', valueSeparator: ',', 'arguments')
 
         def options = cli.parse(['-a', '1'])
-        junit.framework.TestCase.assertNull(options)
+        assertNull(options)
 
         options = cli.parse(['-a1'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1'], options.as)
+        assertEquals('1', options.a)
+        assertEquals(['1'], options.as)
 
 //        options = cli.parse(['-a', '1', '-a', '2']) // TODO
 //        assertNull(options)
 
         options = cli.parse(['-a1', '-a2'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.as)
+        assertEquals('1', options.a)
+        assertEquals(['1', '2'], options.as)
 
         options = cli.parse(['-a1', '-a2', '-a3'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
 
 //        options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
 //        assertNull(options)
 
         options = cli.parse(['-a', '1', '2'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2'], options.as)
+        assertEquals('1', options.a)
+        assertEquals(['1', '2'], options.as)
 
         options = cli.parse(['-a1', '2'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
+        assertEquals('1', options.a)
         assert options.arguments() == ['2']
-        groovy.util.GroovyTestCase.assertEquals(['1'], options.as)
+        assertEquals(['1'], options.as)
 
         options = cli.parse(['-a', '1', '2', '-a', '3', '4'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3', '4'], options.as)
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3', '4'], options.as)
 
         options = cli.parse(['-a', '1', '2', '-a3', '-a4', '-a5'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3', '4', '5'], options.as)
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3', '4', '5'], options.as)
 
         options = cli.parse(['-a', '1', '2', '-a3', '-a', '4', '5' ])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3', '4', '5'], options.as)
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3', '4', '5'], options.as)
 
         options = cli.parse(['-a1', '2', '-a3', '4'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
+        assertEquals('1', options.a)
         assert options.arguments() == ['2', '-a3', '4']
         //assertEquals(['1', '2', '3', '4'], options.as)
 
@@ -299,33 +299,33 @@ class CliBuilderTest extends GroovyTestCase {
 //        cli.a ( longOpt : 'arg' , args : COMMONS_CLI_UNLIMITED_VALUES , 'arguments' )
         cli.a(longOpt: 'arg', args: 1, 'arguments')
         def options = cli.parse(['-a1', '-a2', '-a3'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3'], options.as)
-        groovy.util.GroovyTestCase.assertEquals('1', options.arg)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3'], options.args)
-        groovy.util.GroovyTestCase.assertEquals([], options.arguments())
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)
+        assertEquals(['1', '2', '3'], options.args)
+        assertEquals([], options.arguments())
     }
 
     void testMultipleOccurrencesTogetherSeparate() {
         def cli = new CliBuilder()
         cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
         def options = cli.parse(['-a 1,2,3'])
-        groovy.util.GroovyTestCase.assertEquals(' 1', options.a)
-        groovy.util.GroovyTestCase.assertEquals([' 1', '2', '3'], options.as)
-        groovy.util.GroovyTestCase.assertEquals(' 1', options.arg)
-        groovy.util.GroovyTestCase.assertEquals([' 1', '2', '3'], options.args)
-        groovy.util.GroovyTestCase.assertEquals([], options.arguments())
+        assertEquals(' 1', options.a)
+        assertEquals([' 1', '2', '3'], options.as)
+        assertEquals(' 1', options.arg)
+        assertEquals([' 1', '2', '3'], options.args)
+        assertEquals([], options.arguments())
     }
 
     void testMultipleOccurrencesTogetherJuxtaposed() {
         def cli1 = new CliBuilder()
         cli1.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
         def options = cli1.parse(['-a1,2,3'])
-        groovy.util.GroovyTestCase.assertEquals('1', options.a)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3'], options.as)
-        groovy.util.GroovyTestCase.assertEquals('1', options.arg)
-        groovy.util.GroovyTestCase.assertEquals(['1', '2', '3'], options.args)
-        groovy.util.GroovyTestCase.assertEquals([], options.arguments()) }
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)
+        assertEquals(['1', '2', '3'], options.args)
+        assertEquals([], options.arguments()) }
 
     /*
      *  Behaviour with unrecognized options.
@@ -334,7 +334,7 @@ class CliBuilderTest extends GroovyTestCase {
     void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter)
         def options = cli.parse(['-v'])
-        groovy.util.GroovyTestCase.assertEquals('''''', stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals('''''', stringWriter.toString().tokenize('\r\n').join('\n'))
         assert !options.v
     }
 
@@ -356,7 +356,7 @@ class CliBuilderTest extends GroovyTestCase {
         checkNoOutput()
         assert !options.v
         assert !options.h
-        groovy.util.GroovyTestCase.assertEquals(['-v', '-h'], options.arguments())
+        assertEquals(['-v', '-h'], options.arguments())
     }
 
     void testUnrecognizedOptionTerminatesParse_DefaultParser() {
@@ -366,7 +366,7 @@ class CliBuilderTest extends GroovyTestCase {
         checkNoOutput()
         assert !options.v
         assert !options.h
-        groovy.util.GroovyTestCase.assertEquals(['-v', '-h'], options.arguments())
+        assertEquals(['-v', '-h'], options.arguments())
     }
 
     void testMultiCharShortOpt() {
@@ -859,7 +859,7 @@ class CliBuilderTest extends GroovyTestCase {
         ''', 'CliBuilderTestScript.groovy', argz)
     }
 
-    public void testOptionProperties() {
+    void testOptionProperties() {
         CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
         cli.with {
             D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'description')
@@ -871,11 +871,11 @@ class CliBuilderTest extends GroovyTestCase {
         assert 'v2' == props.getProperty('k2')
     }
 
-    public void testAcceptLongOptionsWithSingleHyphen_defaultFalse() {
+    void testAcceptLongOptionsWithSingleHyphen_defaultFalse() {
         assert !new CliBuilder().acceptLongOptionsWithSingleHyphen
     }
 
-    public void testAcceptLongOptionsWithSingleHyphen_DuplicateOptionAnnotationsException() {
+    void testAcceptLongOptionsWithSingleHyphen_DuplicateOptionAnnotationsException() {
         CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
         try {
             cli.with {
@@ -887,7 +887,7 @@ class CliBuilderTest extends GroovyTestCase {
         }
     }
 
-    public void testLongOptionsRequireDoubleHyphenByDefault() {
+    void testLongOptionsRequireDoubleHyphenByDefault() {
         CliBuilder cli = new CliBuilder()
         cli.with {
             classpath('description')
@@ -941,7 +941,7 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.arguments() == ['-configscript', 'abc']
     }
 
-    public void testAcceptLongOptionsWithSingleHyphen_registersLongOptionsTwice() {
+    void testAcceptLongOptionsWithSingleHyphen_registersLongOptionsTwice() {
         CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
         cli.with {
             cp(longOpt: 'classpath', 'cli.option.cp.description')
@@ -977,7 +977,17 @@ class CliBuilderTest extends GroovyTestCase {
         assert cli.parse( '-configscript abc'.split()).configscript == 'abc'
     }
 
-    public void testAcceptLongOptionsWithSingleHyphen_usage() {
+    // GROOVY-8607
+    void testOptIgnoredWhenSupplyingMapOfArgs() {
+        def builder = new CliBuilder()
+        def helpOpt = [opt:'h', longOpt: 'help']
+        builder."$helpOpt.opt"(helpOpt, 'help option').with {
+            assert opt == 'h'
+            assert longOpt == 'help'
+        }
+    }
+
+    void testAcceptLongOptionsWithSingleHyphen_usage() {
         resetPrintWriter()
         CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true, writer: printWriter)
         cli.with {
@@ -1003,7 +1013,7 @@ Usage: groovy [-hiV] [-cp] [-pa] [-configscript=PARAM] [-D=<String>=<String>]...
       -pa, -parameters, --parameters
                             cli.option.parameters.description
   -V, -version, --version   cli.option.version.description"""
-        groovy.util.GroovyTestCase.assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
 
         resetPrintWriter()
         cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: false, writer: printWriter)
@@ -1028,6 +1038,6 @@ Usage: groovy [-hiV] [-cp] [-pa] [--configscript=PARAM]
   -i, --indy                 cli.option.indy.description
       -pa, --parameters      cli.option.parameters.description
   -V, --version              cli.option.version.description"""
-        groovy.util.GroovyTestCase.assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
     }
 }

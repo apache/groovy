@@ -652,6 +652,16 @@ usage: groovy
         @Unparsed List remaining()
     }
 
+    // GROOVY-8607
+    void testOptIgnoredWhenSupplyingMapOfArgs() {
+        def builder = new CliBuilder()
+        def helpOpt = [opt:'h', longOpt: 'help']
+        builder."$helpOpt.opt"(helpOpt, 'help option').with {
+            assert opt == 'h'
+            assert longOpt == 'help'
+        }
+    }
+
     void testParseFromInstanceFlagEdgeCases() {
         def cli = new CliBuilder()
         def options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -efg true --ijk foo --lmn bar baz'.split())
