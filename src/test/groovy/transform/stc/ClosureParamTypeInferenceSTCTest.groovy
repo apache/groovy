@@ -234,7 +234,7 @@ def items = []
     void testDGM_collectOnIterator() {
         assertScript '''
             List<String> list = ['foo', 'bar', 'baz']
-            list.iterator().collect { it.startsWith('ba') } == [false, true, true]
+            assert list.iterator().collect { it.startsWith('ba') } == [false, true, true]
         '''
     }
 
