@@ -3520,7 +3520,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 2.5.0
      */
-    public static <S,T> List<T> collect(Iterator<S> self, @ClosureParams(FirstParam.Component.class) Closure<T> transform) {
+    public static <S,T> List<T> collect(Iterator<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
         return (List<T>) collect(self, new ArrayList<T>(), transform);
     }
 
