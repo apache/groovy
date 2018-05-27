@@ -3238,6 +3238,49 @@ IMPORTANT: Notice that we're using `@CompileDynamic`. That's because the way we 
 were actually implementing it. So if you were using `@CompileStatic` it will complain because an implementation of
 an abstract class can't be another different class.
 
+===== @Macro methods
+
+You have seen that by using `macro` you can save yourself a lot of work but you might wonder where
+that method came from. You didn't declare it or static import it. You can think of it as a special
+global method (or if you prefer, a method on every `Object`). This is much like how the `println`
+extension method is defined. But unlike `println` which becomes a method selected for execution
+later in the compilation process, `macro` expansion is done early in the compilation process.
+The declaration of `macro` as one of the available methods for this early expansion is done
+by annotating a `macro` method definition with the `@Macro` annotation and making that method
+available using a similar mechanism for extension modules. Such methods are known as _macro_ methods
+and the good news is you can define your own.
+
+To define your own macro method, create a class in a similar way to an extension module and
+add a method such as:
+
+[source,groovy]
+----
+public class ExampleMacroMethods {
+
+    @Macro
+    public static Expression safe(MacroContext macroContext, MethodCallExpression callExpression) {
+        return ternaryX(
+                notNullX(callExpression.getObjectExpression()),
+                callExpression,
+                constX(null)
+        );
+    }
+    ...
+}
+----
+
+Now you would register this as an extension module using a `org.codehaus.groovy.runtime.ExtensionModule`
+file within the `META-INF/groovy` directory.
+
+Now, assuming that the class and meta info file are on your classpath, you can use the
+macro method in the following way:
+
+[source,groovy]
+----
+def nullObject = null
+assert null == safe(safe(nullObject.hashcode()).toString())
+----
+
 ==== Testing AST transformations
 ===== Separating source trees
 
