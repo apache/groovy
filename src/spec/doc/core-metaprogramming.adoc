@@ -3272,7 +3272,7 @@ public class ExampleMacroMethods {
 Now you would register this as an extension module using a `org.codehaus.groovy.runtime.ExtensionModule`
 file within the `META-INF/groovy` directory.
 
-Now, assuming that the class and meta info file are on your claspath, you can use the
+Now, assuming that the class and meta info file are on your classpath, you can use the
 macro method in the following way:
 
 [source,groovy]
