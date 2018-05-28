@@ -163,7 +163,10 @@ public class GenericsUtils {
         GenericsType[] parameterized = node.getGenericsTypes();
         if (parameterized == null || parameterized.length == 0) return;
         GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
-        if (redirectGenericsTypes == null) redirectGenericsTypes = parameterized;
+        if (redirectGenericsTypes == null ||
+                (node.isGenericsPlaceHolder() && redirectGenericsTypes.length != parameterized.length) /* GROOVY-8609 */ ) {
+            redirectGenericsTypes = parameterized;
+        }
         if (redirectGenericsTypes.length != parameterized.length) {
             throw new GroovyBugError("Expected earlier checking to detect generics parameter arity mismatch" +
                     "\nExpected: " + node.getName() + toGenericTypesString(redirectGenericsTypes) +
