@@ -160,9 +160,19 @@ public class GenericsUtils {
         }
 
         if (!node.isUsingGenerics() || !node.isRedirectNode()) return;
-        GenericsType[] parameterized = node.getGenericsTypes();
+
+        ClassNode redirect = node.redirect();
+
+        GenericsType[] parameterized;
+        if (node.isGenericsPlaceHolder()) {
+            // GROOVY-8609, e.g. given `E extends Map<String, Integer>`, `node.getGenericsTypes()` gets `[E]`, which is not correct!
+            parameterized = redirect.getGenericsTypes();
+        } else {
+            parameterized = node.getGenericsTypes();
+        }
+
         if (parameterized == null || parameterized.length == 0) return;
-        GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
+        GenericsType[] redirectGenericsTypes = redirect.getGenericsTypes();
         if (redirectGenericsTypes == null) redirectGenericsTypes = parameterized;
         if (redirectGenericsTypes.length != parameterized.length) {
             throw new GroovyBugError("Expected earlier checking to detect generics parameter arity mismatch" +
