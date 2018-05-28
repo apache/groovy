@@ -36,7 +36,6 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
@@ -1100,7 +1099,7 @@ public abstract class StaticTypeCheckingSupport {
                 Person p = foo(b)
              */
 
-            Map<GenericsType, GenericsType> declaringAndActualGenericsTypeMap = GeneralUtils.makeDeclaringAndActualGenericsTypeMap(declaringClassForDistance, actualReceiverForDistance);
+            Map<GenericsType, GenericsType> declaringAndActualGenericsTypeMap = GenericsUtils.makeDeclaringAndActualGenericsTypeMap(declaringClassForDistance, actualReceiverForDistance);
             Parameter[] params = makeRawTypes(safeNode.getParameters(), declaringAndActualGenericsTypeMap);
             int dist = measureParametersAndArgumentsDistance(params, safeArgs);
             if (dist >= 0) {
@@ -1197,7 +1196,7 @@ public abstract class StaticTypeCheckingSupport {
         for (int i = 0; i < params.length; i++) {
             Parameter oldP = params[i];
 
-            ClassNode actualType = GeneralUtils.findActualTypeByGenericsPlaceholderName(oldP.getType().getUnresolvedName(), genericsPlaceholderAndTypeMap);
+            ClassNode actualType = GenericsUtils.findActualTypeByGenericsPlaceholderName(oldP.getType().getUnresolvedName(), genericsPlaceholderAndTypeMap);
             Parameter newP = new Parameter(makeRawType(null == actualType ? oldP.getType() : actualType), oldP.getName());
             newParam[i] = newP;
         }
