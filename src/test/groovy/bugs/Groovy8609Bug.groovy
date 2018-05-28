@@ -77,4 +77,25 @@ class Groovy8609Bug extends CompilableTestSupport {
         }
         '''
     }
+
+    void testUpperBoundWithGenericsThroughWrongType() {
+        def errMsg = shouldFail '''
+        @groovy.transform.CompileStatic
+        public class A<T extends List<E>, E extends Map<String, Integer>> {
+            E getFirstRecord(T recordList) {
+                return recordList.get(0)
+            }
+            
+            static void main(args) {
+                def list = new ArrayList<TreeMap<String, Integer>>()
+                def record = new TreeMap<String, Integer>()
+                list.add(record)
+                def a = new A<ArrayList<HashMap<String, Integer>>, HashMap<String, Integer>>()
+                assert record.is(a.getFirstRecord(list))
+            }
+        }
+        '''
+
+        assert errMsg.contains('[Static type checking] - Cannot call A <ArrayList, HashMap>#getFirstRecord(T) with arguments [java.util.ArrayList <TreeMap>]')
+    }
 }
