@@ -421,7 +421,7 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=ch
 [[fields]]
 ==== Fields
 
-A field is a member of a class or a trait which:
+A field is a member of a class or a trait which has:
 
 * a mandatory _access modifier_ (`public`, `protected`, or `private`)
 * one or more optional _modifiers_ (`static`, `final`, `synchronized`)
