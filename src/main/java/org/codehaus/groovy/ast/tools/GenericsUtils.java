@@ -45,6 +45,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -739,6 +740,59 @@ public class GenericsUtils {
     }
 
     private static final EvictableCache<ParameterizedTypeCacheKey, ClassNode> PARAMETERIZED_TYPE_CACHE = new ConcurrentCommonCache<>(128);
+
+
+    /**
+     * map declaring generics type to actual generics type, e.g. GROOVY-7204:
+     * declaring generics types:      T,      S extends Serializable
+     * actual generics types   : String,      Long
+     *
+     * the result map is [
+     *  T: String,
+     *  S: Long
+     * ]
+     *
+     * The resolved types can not help us to choose methods correctly if the argument is a string:  T: Object, S: Serializable
+     * so we need actual types:  T: String, S: Long
+     */
+    public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMap(ClassNode declaringClass, ClassNode actualReceiver) {
+        ClassNode parameterizedType = findParameterizedTypeFromCache(declaringClass, actualReceiver);
+
+        if (null == parameterizedType) {
+            return Collections.emptyMap();
+        }
+
+        GenericsType[] declaringGenericsTypes = declaringClass.getGenericsTypes();
+        GenericsType[] actualGenericsTypes = parameterizedType.getGenericsTypes();
+
+        Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
+        for (int i = 0, n = declaringGenericsTypes.length; i < n; i++) {
+            result.put(declaringGenericsTypes[i], actualGenericsTypes[i]);
+        }
+
+        return result;
+    }
+
+    /**
+     * Get the actual type according to the placeholder name
+     *
+     * @param placeholderName the placeholder name, e.g. T, E
+     * @param genericsPlaceholderAndTypeMap the result of {@link #makeDeclaringAndActualGenericsTypeMap(ClassNode, ClassNode}
+     * @return the actual type
+     */
+    public static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
+        for (Map.Entry<GenericsType, GenericsType> entry : genericsPlaceholderAndTypeMap.entrySet()) {
+            GenericsType declaringGenericsType = entry.getKey();
+
+            if (placeholderName.equals(declaringGenericsType.getName())) {
+                return entry.getValue().getType().redirect();
+            }
+        }
+
+        return null;
+    }
+
+
     private static class ParameterizedTypeCacheKey {
         private ClassNode genericsClass;
         private ClassNode actualType;
