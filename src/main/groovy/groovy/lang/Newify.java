@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  * method or "Python-style" by just omitting the 'new' keyword.
  * <p>
  * WARNING: For the Python style with class-name-matching pattern, the pattern should be chosen as to avoid matching
- * method names if possible. If following Java/Groovy naming convention, class names (contrary to method names) start
+ * method names if possible. If following Java/Groovy naming conventions, class names (contrary to method names) start
  * with an uppercase letter. In this case {@code pattern="[A-Z].*"} (see {@link java.util.regex.Pattern} for supported
  * Java pattern syntax) is the recommended pattern to allow all classes to be created without requiring a new keyword.
  * Using a pattern that also matches method names (e.g. ".+", ".*" or "[a-zA-Z].*") might negatively impact build
@@ -77,8 +77,8 @@ import java.lang.annotation.Target;
  * using meta programming.
  * <p>
  * For the "Python-style" conversions you can either specify each class name on which you want them
- * to apply, or supply a pattern to match class names against. The transformation then works by matching the basename
- * of the provided classes to any
+ * to apply, or supply a pattern to match class names against. The transformation then works by
+ * matching the basename of the provided classes to any
  * similarly named instance method calls not specifically bound to an object, i.e. associated
  * with the 'this' object. In other words <code>Leaf("A")</code> would be transformed to
  * <code>new Leaf("A")</code> but <code>x.Leaf("A")</code> would not be touched.
@@ -110,15 +110,15 @@ import java.lang.annotation.Target;
  * Though it is OK to have different packages in different contexts. Also, there is
  * no support for turning "Ruby-style" conversions off at the method, constructor or
  * field level if already turned on at the class level.
- *
- * @author Paul King
- * @author mgroovy
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.LOCAL_VARIABLE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.NewifyASTTransformation")
 public @interface Newify {
+    /**
+     * @return one or more classes where "Python-style" constructor notation will be supported
+     */
     Class<?>[] value() default {};
 
     /**
@@ -126,5 +126,9 @@ public @interface Newify {
      */
     boolean auto() default true;
 
+    /**
+     * @since 2.5.0
+     * @return a regex pattern for class names where "Python-style" constructor notation will be supported
+     */
     String pattern() default "";
 }
