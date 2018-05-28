@@ -51,6 +51,7 @@ import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 public class GroovyShell extends GroovyObjectSupport {
 
     public static final String DEFAULT_CODE_BASE = "/groovy/shell";
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private final Binding context;
     private int counter;
@@ -156,8 +157,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param list       the command line arguments to pass in
      */
     public Object run(File scriptFile, List list) throws CompilationFailedException, IOException {
-        String[] args = new String[list.size()];
-        return run(scriptFile, (String[]) list.toArray(args));
+        return run(scriptFile, (String[]) list.toArray(EMPTY_STRING_ARRAY));
     }
 
     /**
@@ -168,9 +168,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param list       the command line arguments to pass in
      */
     public Object run(String scriptText, String fileName, List list) throws CompilationFailedException {
-        String[] args = new String[list.size()];
-        list.toArray(args);
-        return run(scriptText, fileName, args);
+        return run(scriptText, fileName, (String[]) list.toArray(EMPTY_STRING_ARRAY));
     }
 
     /**
@@ -364,7 +362,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args      the command line arguments to pass in
      */
     public Object run(GroovyCodeSource source, List args) throws CompilationFailedException {
-        return run(source, ((String[]) args.toArray(new String[0])));
+        return run(source, ((String[]) args.toArray(EMPTY_STRING_ARRAY)));
     }
 
     /**
@@ -385,7 +383,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args      the command line arguments to pass in
      */
     public Object run(URI source, List args) throws CompilationFailedException, IOException {
-        return run(new GroovyCodeSource(source), ((String[]) args.toArray(new String[0])));
+        return run(new GroovyCodeSource(source), ((String[]) args.toArray(EMPTY_STRING_ARRAY)));
     }
 
     /**
@@ -406,7 +404,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param list     the command line arguments to pass in
      */
     public Object run(final Reader in, final String fileName, List list) throws CompilationFailedException {
-        return run(in, fileName, (String[]) list.toArray(new String[0]));
+        return run(in, fileName, (String[]) list.toArray(EMPTY_STRING_ARRAY));
     }
 
     /**
