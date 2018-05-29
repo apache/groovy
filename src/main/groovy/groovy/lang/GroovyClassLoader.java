@@ -45,6 +45,7 @@ import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
+import org.codehaus.groovy.util.URLStreams;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -811,7 +812,7 @@ public class GroovyClassLoader extends URLClassLoader {
                         // do nothing and fall back to the other version
                     }
                 }
-                return parseClass(new InputStreamReader(source.openStream(), sourceEncoding), name);
+                return parseClass(new InputStreamReader(URLStreams.openUncachedStream(source), sourceEncoding), name);
             }
         }
         return oldClass;
