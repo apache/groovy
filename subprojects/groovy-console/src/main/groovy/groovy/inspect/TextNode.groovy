@@ -23,6 +23,9 @@
  */
 package groovy.inspect
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 class TextNode {
     Object userObject
     List<List<String>> properties
