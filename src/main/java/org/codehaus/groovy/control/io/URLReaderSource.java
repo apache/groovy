@@ -20,6 +20,7 @@ package org.codehaus.groovy.control.io;
 
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.util.URLStreams;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -50,7 +51,7 @@ public class URLReaderSource extends AbstractReaderSource {
     *  Returns a new Reader on the underlying source object.  
     */
     public Reader getReader() throws IOException {
-       return new InputStreamReader( url.openStream(), configuration.getSourceEncoding() );
+       return new InputStreamReader(URLStreams.openUncachedStream(url), configuration.getSourceEncoding() );
     }
 
     /**

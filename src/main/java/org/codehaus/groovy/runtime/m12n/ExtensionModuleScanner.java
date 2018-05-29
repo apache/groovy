@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime.m12n;
 
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.util.URLStreams;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,7 +71,7 @@ public class ExtensionModuleScanner {
         Properties properties = new Properties();
         InputStream inStream = null;
         try {
-            inStream = metadata.openStream();
+            inStream = URLStreams.openUncachedStream(metadata);
             properties.load(inStream);
         } catch (IOException e) {
             throw new GroovyRuntimeException("Unable to load module META-INF descriptor", e);

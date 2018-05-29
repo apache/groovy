@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast.decompiled;
 
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.util.URLStreams;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -78,7 +79,7 @@ public abstract class AsmDecompiler {
         if (stub == null) {
             DecompilingVisitor visitor = new DecompilingVisitor();
 
-            try (InputStream stream = new BufferedInputStream(url.openStream())) {
+            try (InputStream stream = new BufferedInputStream(URLStreams.openUncachedStream(url))) {
                 new ClassReader(stream).accept(visitor, ClassReader.SKIP_FRAMES);
             }
             stub = visitor.result;
