@@ -24,7 +24,9 @@
 package groovy.inspect
 
 import groovy.inspect.swingui.AstBrowserNodeMaker
+import groovy.transform.CompileStatic
 
+@CompileStatic
 class TextTreeNodeMaker implements AstBrowserNodeMaker<TextNode> {
     TextNode makeNode(Object userObject) {
         new TextNode(userObject)

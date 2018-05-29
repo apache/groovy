@@ -23,6 +23,7 @@ import groovy.cli.picocli.OptionAccessor
 import groovy.inspect.swingui.AstBrowser
 import groovy.inspect.swingui.ObjectBrowser
 import groovy.swing.SwingBuilder
+import groovy.transform.CompileStatic
 import groovy.transform.ThreadInterrupt
 import groovy.ui.text.FindReplaceUtility
 import org.apache.groovy.io.StringBuilderWriter
@@ -1547,8 +1548,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     public void focusLost(FocusEvent e) { }
 }
 
+@CompileStatic
 class GroovyFileFilter extends FileFilter {
-    private static final GROOVY_SOURCE_EXTENSIONS = ['*.groovy', '*.gvy', '*.gy', '*.gsh', '*.story', '*.gpp', '*.grunit']
+    private static final java.util.List GROOVY_SOURCE_EXTENSIONS = ['*.groovy', '*.gvy', '*.gy', '*.gsh', '*.story', '*.gpp', '*.grunit']
     private static final GROOVY_SOURCE_EXT_DESC = GROOVY_SOURCE_EXTENSIONS.join(',')
 
     public boolean accept(File f) {
@@ -1562,7 +1564,7 @@ class GroovyFileFilter extends FileFilter {
         "Groovy Source Files ($GROOVY_SOURCE_EXT_DESC)"
     }
     
-    static String getExtension(f) {
+    static String getExtension(File f) {
         def ext = null;
         def s = f.getName()
         def i = s.lastIndexOf('.')

@@ -18,16 +18,19 @@
  */
 package groovy.ui.text
 
+import groovy.transform.CompileStatic
+
 import javax.swing.*
 import javax.swing.text.AttributeSet
 import javax.swing.text.SimpleAttributeSet
 import java.awt.event.ActionEvent
 
+@CompileStatic
 class AutoIndentAction extends AbstractAction {
     AttributeSet simpleAttributeSet = new SimpleAttributeSet()
 
-    public void actionPerformed(ActionEvent evt) {
-        def inputArea = evt.source
+    void actionPerformed(ActionEvent evt) {
+        JTextPane inputArea = (JTextPane) evt.source
         def rootElement = inputArea.document.defaultRootElement
         def cursorPos = inputArea.getCaretPosition()
         int rowNum = rootElement.getElementIndex(cursorPos)

@@ -18,7 +18,9 @@
  */
 package groovy.ui
 
+import groovy.transform.CompileStatic
 
+@CompileStatic
 class HistoryRecord {
     String allText
     int selectionStart
