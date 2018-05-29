@@ -38,6 +38,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
@@ -54,7 +55,7 @@ public class GroovyShell extends GroovyObjectSupport {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private final Binding context;
-    private int counter;
+    private AtomicInteger counter;
     private final CompilerConfiguration config;
     private GroovyClassLoader loader;
 
@@ -603,7 +604,7 @@ public class GroovyShell extends GroovyObjectSupport {
         return parse(in, generateScriptName());
     }
 
-    protected synchronized String generateScriptName() {
-        return "Script" + (++counter) + ".groovy";
+    protected String generateScriptName() {
+        return "Script" + counter.incrementAndGet() + ".groovy";
     }
 }
