@@ -53,7 +53,7 @@ public class ReleaseInfo {
         if (url != null) {
             InputStream is = null;
             try {
-                is = url.openStream();
+                is = URLStreams.openUncachedStream(url);
                 if (is != null) {
                     RELEASE_INFO.load(is);
                 }
