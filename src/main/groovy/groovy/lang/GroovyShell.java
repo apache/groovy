@@ -55,7 +55,7 @@ public class GroovyShell extends GroovyObjectSupport {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private final Binding context;
-    private AtomicInteger counter = new AtomicInteger(0);
+    private final AtomicInteger counter = new AtomicInteger(0);
     private final CompilerConfiguration config;
     private GroovyClassLoader loader;
 
