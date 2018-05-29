@@ -19,6 +19,8 @@
  */
 package groovy.inspect.swingui
 
+import groovy.transform.CompileStatic
+
 import javax.swing.*
 import javax.swing.table.DefaultTableCellRenderer
 import java.awt.*
@@ -28,6 +30,7 @@ import java.awt.*
  * or call the default in the case of a non component object.
  * This hack allows to render a button shape in a table cell.
  */
+@CompileStatic
 class ButtonOrDefaultRenderer extends DefaultTableCellRenderer {
     Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof JComponent) {
