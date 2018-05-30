@@ -120,8 +120,6 @@ task docProjectVersionInfo(type: Copy) {
 task docGDK {
     outputs.cacheIf { true }
     dependsOn([project(':groovy-groovydoc'), project(':groovy-docgenerator'), project(':groovy-cli-picocli')]*.classes)
-    // TODO don't hard-code these
-    dependsOn([project(':groovy-nio'), project(':groovy-sql'), project(':groovy-xml'), project(':groovy-swing')]*.classes)
     dependsOn docProjectVersionInfo
     ext.destinationDir = "$buildDir/html/groovy-jdk"
     inputs.files sourceSets.main.runtimeClasspath + configurations.tools + files(docProjectVersionInfo.destinationDir)
@@ -155,8 +153,8 @@ task docGDK {
                     arg(value: 'org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods')
                     // TODO don't hard-code these
                     arg(value: 'subprojects/groovy-dateutil/src/main/java/org/apache/groovy/dateutil/extensions/DateUtilExtensions.java')
-                    arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/dateutil/extensions/DateTimeExtensions.java')
-                    arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/dateutil/extensions/DateTimeStaticExtensions.java')
+                    arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/datetime/extensions/DateTimeExtensions.java')
+                    arg(value: 'subprojects/groovy-datetime/src/main/java/org/apache/groovy/datetime/extensions/DateTimeStaticExtensions.java')
                     arg(value: 'subprojects/groovy-sql/src/main/java/org/apache/groovy/sql/extensions/SqlExtensions.java')
                     arg(value: 'subprojects/groovy-swing/src/main/java/org/codehaus/groovy/runtime/SwingGroovyMethods.java')
                     arg(value: 'subprojects/groovy-xml/src/main/java/org/codehaus/groovy/runtime/XmlGroovyMethods.java')
