@@ -80,16 +80,16 @@ allprojects {
                 destination reportFile
             }
         }
-        task("${name}Report") {
-            def configDir = file("$rootProject.projectDir/config/checkstyle")
-            def templateFile = 'checkstyle-report.groovy'
-            def htmlReportFile = file("${buildDir}/reports/checkstyle/${name}.html")
-            inputs.file file("$configDir/$templateFile")
-            inputs.file reportFile
-            outputs.file htmlReportFile
+        if (!source.empty) {
+            task("${name}Report") {
+                def configDir = file("$rootProject.projectDir/config/checkstyle")
+                def templateFile = 'checkstyle-report.groovy'
+                def htmlReportFile = file("${buildDir}/reports/checkstyle/${name}.html")
+                inputs.file file("$configDir/$templateFile")
+                inputs.file reportFile
+                outputs.file htmlReportFile
 
-            doLast {
-                if (reportFile.exists()) {
+                doLast {
                     def templateConfiguration = new TemplateConfiguration()
                     templateConfiguration.with {
                         autoIndent = true
@@ -123,8 +123,8 @@ allprojects {
                     }
                 }
             }
+            finalizedBy "${name}Report"
         }
-        finalizedBy "${name}Report"
     }
 
     findbugs {
