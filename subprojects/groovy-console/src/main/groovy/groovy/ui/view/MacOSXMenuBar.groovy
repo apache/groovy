@@ -125,6 +125,7 @@ menuBar {
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)
+        menuItem(listClasspath)
         menuItem(clearClassloader)
         separator()
         menuItem(inspectLastAction, icon:null)

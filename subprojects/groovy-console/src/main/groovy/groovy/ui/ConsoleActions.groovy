@@ -224,6 +224,11 @@ addClasspathDir = action(
     mnemonic: 'D',
 )
 
+listClasspath = action(
+    name: 'List Classpath',
+    closure: controller.&listClasspath
+)
+
 clearClassloader = action(
     name: 'Clear Script Context',
     closure: controller.&clearContext,
