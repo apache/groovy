@@ -1068,6 +1068,35 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
     }
 
+    void listClasspath(EventObject evt = null) {
+        List<URL> urls = []
+
+        ClassLoader cl = shell.classLoader
+        while(cl instanceof URLClassLoader) {
+            cl.getURLs().each { url -> urls << url }
+            cl = cl.parent
+        }
+
+        List data = urls.unique().collect { url -> [name: new File(url.toURI()).name, path: url.path] }
+        data.sort { it.name }
+
+        JScrollPane scrollPane = swing.scrollPane{
+            table {
+                tableModel(list : data) {
+                    propertyColumn(header: 'Name', propertyName: 'name')
+                    propertyColumn(header:' Path', propertyName: 'path')
+                }
+            }
+        }
+
+        def pane = swing.optionPane()
+        pane.message = scrollPane
+        def dialog = pane.createDialog(frame, 'Classpath')
+        dialog.setSize(800, 600)
+        dialog.resizable = true
+        dialog.visible = true
+    }
+
     void clearContext(EventObject evt = null) {
         def binding = new Binding()
         newScript(null, binding)
