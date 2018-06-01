@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.util.URLStreams;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,7 +46,7 @@ public class SourceExtensionHandler {
                 BufferedReader svcIn = null;
                 URL service = globalServices.nextElement();
                 try {
-                    svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
+                    svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service)));
                     String extension = svcIn.readLine();
                     while (extension != null) {
                         extension = extension.trim();

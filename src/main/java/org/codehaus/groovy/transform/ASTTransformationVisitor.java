@@ -34,6 +34,7 @@ import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.util.URLStreams;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -221,7 +222,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 String className;
                 BufferedReader svcIn = null;
                 try {
-                    svcIn = new BufferedReader(new InputStreamReader(service.openStream(), "UTF-8"));
+                    svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service), "UTF-8"));
                     try {
                         className = svcIn.readLine();
                     } catch (IOException ioe) {
