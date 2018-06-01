@@ -47,22 +47,26 @@ and other features.
 [source,groovy]
 -----------------------------------------------------------------
 ./bin/groovysh --help
-usage: groovysh [options] [...]
-  -C, --color[=FLAG]         Enable or disable use of ANSI colors
-  -D, --define=NAME=VALUE    Define a system property
-  -T, --terminal=TYPE        Specify the terminal TYPE to use
-  -V, --version              Display the version
-  -classpath                 Specify where to find the class files - must
-                             be first argument
-  -cp, --classpath           Aliases for '-classpath'
-  -d, --debug                Enable debug output
-  -e, --evaluate=arg         Evaluate option first when starting
-                             interactive session
-  -h, --help                 Display this help message
-  -pa, --parameters          Generate metadata for reflection on method
-                             parameter names (jdk8+ only)
-  -q, --quiet                Suppress superfluous output
-  -v, --verbose              Enable verbose output
+
+Usage: groovysh [options] [...]
+The Groovy Shell, aka groovysh, is a command-line application which allows easy
+access to evaluate Groovy expressions, define classes and run simple
+experiments.
+  -C, --color[=<FLAG>]    Enable or disable use of ANSI colors
+      -cp, -classpath, --classpath
+                          Specify where to find the class files - must be first
+                            argument
+  -d, --debug             Enable debug output
+  -D, --define=<name=value>
+                          Define a system property
+  -e, --evaluate=<CODE>   Evaluate the code first when starting interactive session
+  -h, --help              Display this help message
+      -pa, --parameters   Generate metadata for reflection on method parameter names
+                            (jdk8+ only)
+  -q, --quiet             Suppress superfluous output
+  -T, --terminal=<TYPE>   Specify the terminal TYPE to use
+  -v, --verbose           Enable verbose output
+  -V, --version           Display the version
 -----------------------------------------------------------------
 
 [[GroovyShell-EvaluatingExpressions]]
