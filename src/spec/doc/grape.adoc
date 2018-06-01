@@ -321,7 +321,7 @@ Grape added a command line executable `grape' that allows for the
 inspection and management of the local grape cache.
 
 ------------------------------------------------
-grape install <groupId> <artifactId> [<version>]
+grape install [-hv] <group> <module> [<version>] [<classifier>]
 ------------------------------------------------
 
 This installs the specified groovy module or maven artifact. If a
@@ -336,15 +336,22 @@ Lists locally installed modules (with their full maven name in the case
 of groovy modules) and versions.
 
 -------------------------------------------------
-grape resolve (<groupId> <artifactId> <version>)+
+grape resolve [-adhisv] (<groupId> <artifactId> <version>)+
 -------------------------------------------------
 
-This returns the file locations of the jars representing the artifcats
+This returns the file locations of the jars representing the artifacts
 for the specified module(s) and the respective transitive dependencies.
 You may optionally pass in -ant, -dos, or -shell to get the dependencies
 expressed in a format applicable for an ant script, windows batch file,
 or unix shell script respectively. -ivy may be passed to see the
 dependencies expressed in an ivy like format.
+
+-------------------------------------------------
+grape uninstall [-hv] <group> <module> <version>
+-------------------------------------------------
+
+This uninstalls a particular grape: it non-transitively removes the
+respective jar file from the grape cache.
 
 [[Grape-Advancedconfiguration]]
 === Advanced configuration
