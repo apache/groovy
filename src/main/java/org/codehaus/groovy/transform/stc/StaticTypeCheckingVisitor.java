@@ -3349,7 +3349,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * e.g. c(b(a())),      a() and b() are sandwiched method call, but c() is not
+     * e.g. c(b(a())),      a() and b() are nested method call, but c() is not
      *      a().b().c(),    a() and b() are sandwiched method call, but c() is not
      *      a().b().c       a() and b() are sandwiched method call
      *
