@@ -40,4 +40,24 @@ class Groovy8595Bug extends CompilableTestSupport {
             }
         '''
     }
+
+    void testMethodCallInPropertyExpression() {
+        shouldCompile '''
+            @groovy.transform.CompileStatic
+            class Test {
+                List<Foo> foo() {
+                    return []
+                }
+            
+                List<String> bar() {
+                    return foo()*.instanceId
+                }
+            }
+            
+            @groovy.transform.CompileStatic
+            class Foo {
+              String instanceId
+            }
+        '''
+    }
 }
