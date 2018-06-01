@@ -707,12 +707,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitPropertyExpression(final PropertyExpression pexp) {
-        if (visitPropertyExpressionSilent(pexp, pexp)) return;
+        typeCheckingContext.pushPropertyExpression(pexp);
+        try {
+            if (visitPropertyExpressionSilent(pexp, pexp)) return;
 
-        if (!extension.handleUnresolvedProperty(pexp)) {
-            Expression objectExpression = pexp.getObjectExpression();
-            addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
-                    " for class: " + findCurrentInstanceOfClass(objectExpression, getType(objectExpression)).toString(false), pexp);
+            if (!extension.handleUnresolvedProperty(pexp)) {
+                Expression objectExpression = pexp.getObjectExpression();
+                addStaticTypeError("No such property: " + pexp.getPropertyAsString() +
+                        " for class: " + findCurrentInstanceOfClass(objectExpression, getType(objectExpression)).toString(false), pexp);
+            }
+        } finally {
+            typeCheckingContext.popPropertyExpression();
         }
     }
 
@@ -3344,12 +3349,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * e.g. a(b()),         b() is nested method call
-     *      a().b().c(),    a() and b() are sandwiched method call
+     * e.g. c(b(a())),      a() and b() are sandwiched method call, but c() is not
+     *      a().b().c(),    a() and b() are sandwiched method call, but c() is not
+     *      a().b().c       a() and b() are sandwiched method call
      *
      */
     private boolean isNestedOrSandwichedMethodCall() {
-        return typeCheckingContext.getEnclosingMethodCalls().size() > 1;
+        return typeCheckingContext.getEnclosingMethodCalls().size() > 1 || typeCheckingContext.getPropertyExpressions().size() > 0;
     }
 
     /**
