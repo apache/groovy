@@ -1077,8 +1077,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             cl = cl.parent
         }
 
-        List data = urls.unique().collect { url -> [name: new File(url.toURI()).name, path: url.path] }
-        data.sort { it.name }
+        boolean isWin = isWindows()
+        List data = urls.unique().collect { url -> [name: new File(url.toURI()).name, path: isWin ? url.path.substring(1).replace('/', '\\') : url.path] }
+        data.sort { it.name.toLowerCase() }
 
         JScrollPane scrollPane = swing.scrollPane{
             table {
@@ -1574,6 +1575,13 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     public void focusLost(FocusEvent e) { }
+
+    private static boolean isWindows() {
+        return getOsName().startsWith("windows")
+    }
+    private static String getOsName() {
+        return System.getProperty("os.name").toLowerCase()
+    }
 }
 
 class GroovyFileFilter extends FileFilter {
