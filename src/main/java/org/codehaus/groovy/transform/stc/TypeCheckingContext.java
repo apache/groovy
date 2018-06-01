@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -56,6 +57,7 @@ public class TypeCheckingContext {
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<Expression>();
     protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<BlockStatement>();
     protected final LinkedList<ReturnStatement> enclosingReturnStatements = new LinkedList<ReturnStatement>();
+    protected final LinkedList<PropertyExpression> propertyExpressions = new LinkedList<PropertyExpression>();
 
 
     // used for closure return type inference
@@ -298,6 +300,42 @@ public class TypeCheckingContext {
         temporaryIfBranchTypeInformation.pop();
     }
 
+
+    /**
+     * Pushes a property expression into the property expression stack.
+     * @param propertyExpression the property expression to be pushed
+     */
+    public void pushPropertyExpression(PropertyExpression propertyExpression) {
+        propertyExpressions.addFirst((PropertyExpression) propertyExpression);
+    }
+
+    /**
+     * Pops a property expression from the property expression stack.
+     * @return the popped property expression
+     */
+    public Expression popPropertyExpression() {
+        return propertyExpressions.removeFirst();
+    }
+
+    /**
+     * Returns the property expression which is on the top of the stack, or null
+     * if there's no such element.
+     * @return the property expression on top of the stack, or null if no such element.
+     */
+    public Expression getPropertyExpression() {
+        if (propertyExpressions.isEmpty()) return null;
+        return propertyExpressions.getFirst();
+    }
+
+    /**
+     * Returns the current stack of property expressions. The first
+     * element is the top of the stack, that is to say the currently visited property expression.
+     * @return an immutable list of property expressions.
+     */
+    public List<PropertyExpression> getPropertyExpressions() {
+        return Collections.unmodifiableList(propertyExpressions);
+    }
+
     /**
      * Pushes a method call into the method call stack.
      * @param call the call expression to be pushed, either a {@link MethodCallExpression} or a {@link StaticMethodCallExpression}
@@ -329,9 +367,9 @@ public class TypeCheckingContext {
     }
 
     /**
-     * Returns the current stack of enclosing classes. The first
-     * element is the top of the stack, that is to say the currently visited class.
-     * @return an immutable list of class nodes.
+     * Returns the current stack of enclosing method calls. The first
+     * element is the top of the stack, that is to say the currently visited method call.
+     * @return an immutable list of enclosing method calls.
      */
     public List<Expression> getEnclosingMethodCalls() {
         return Collections.unmodifiableList(enclosingMethodCalls);
