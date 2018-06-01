@@ -1083,8 +1083,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         JScrollPane scrollPane = swing.scrollPane{
             table {
                 tableModel(list : data) {
-                    propertyColumn(header: 'Name', propertyName: 'name')
-                    propertyColumn(header:' Path', propertyName: 'path')
+                    propertyColumn(header: 'Name', propertyName: 'name', editable: false)
+                    propertyColumn(header:' Path', propertyName: 'path', editable: false)
                 }
             }
         }
