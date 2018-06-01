@@ -54,6 +54,7 @@ import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -786,7 +787,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     && leftExpression instanceof VariableExpression
                     && leftExpression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == null) {
                 storeType(leftExpression, lType);
+            } else if (op == ELVIS_EQUAL) {
+                ElvisOperatorExpression elvisOperatorExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
+                elvisOperatorExpression.setSourcePosition(expression);
+                elvisOperatorExpression.visit(this);
+                resultType = getType(elvisOperatorExpression);
+                storeType(leftExpression, resultType);
             }
+
             if (resultType == null) {
                 resultType = lType;
             }
