@@ -53,15 +53,18 @@ The Groovy Console supports several options to control classpath and other featu
 [source,groovy]
 -----------------------------------------------------------------
 ./bin/groovyConsole --help
-usage: groovyConsole [options] [filename]
- -classpath         Specify where to find the class files - must be first
-                    argument
- -cp,--classpath    Aliases for '-classpath'
- -h,--help          Display this help message
- -pa,--parameters   Generate metadata for reflection on method parameter
-                    names (jdk8+ only)
- -i,--indy          Enable InvokeDynamic (Indy) compilation for scripts
- -V,--version       Display the version
+Usage: groovyConsole [options] [filename]
+The Groovy Swing Console allows a user to enter and run Groovy scripts.
+      --configscript=PARAM   A script for tweaking the compiler configuration options
+      -cp, -classpath, --classpath
+                             Specify where to find the class files - must be first
+                               argument
+  -D, --define=<name=value>  Define a system property
+  -h, --help                 Display this help message
+  -i, --indy                 Enable InvokeDynamic (Indy) compilation for scripts
+      -pa, --parameters      Generate metadata for reflection on method parameter
+                               names (jdk8+ only)
+  -V, --version              Display the version
 -----------------------------------------------------------------
 
 [[GroovyConsole-RunningScripts]]
