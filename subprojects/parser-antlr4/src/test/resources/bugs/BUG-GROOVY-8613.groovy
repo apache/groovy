@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 class Groovy8613Bug extends GroovyTestCase {
     void testElvisAssign() {
