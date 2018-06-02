@@ -199,15 +199,15 @@ class GrapeMain implements Runnable {
                     'Prints the file locations of the jars representing the artifcats for the specified module(s) and the respective transitive dependencies.',
                     '',
                     'Parameters:',
-                    '      <group>          Which module group the module comes from. Translates directly',
-                    '                         to a Maven groupId or an Ivy Organization. Any group',
-                    '                         matching /groovy[x][\\..*]^/ is reserved and may have',
-                    '                         special meaning to the groovy endorsed modules.',
-                    '      <module>         The name of the module to load. Translated directly to a',
-                    '                         Maven artifactId or an Ivy artifact.',
-                    '      <version>        The version of the module to use. Either a literal version `1.',
-                    '                         1-RC3` or an Ivy Range `[2.2.1,)` meaning 2.2.1 or any',
-                    '                         greater version).'
+                    '      <group>     Which module group the module comes from. Translates directly',
+                    '                    to a Maven groupId or an Ivy Organization. Any group',
+                    '                    matching /groovy[x][\\..*]^/ is reserved and may have',
+                    '                    special meaning to the groovy endorsed modules.',
+                    '      <module>    The name of the module to load. Translated directly to a',
+                    '                    Maven artifactId or an Ivy artifact.',
+                    '      <version>   The version of the module to use. Either a literal version',
+                    '                    `1.1-RC3` or an Ivy Range `[2.2.1,)` meaning 2.2.1 or any',
+                    '                    greater version).'
     ])
     private static class Resolve implements Runnable {
 
