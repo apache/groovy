@@ -16,39 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
-
-class Groovy8613Bug extends GroovyTestCase {
-    void testElvisAssign() {
-        assertScript '''
-        @groovy.transform.CompileStatic
-        def foo() {
-          def a = 0
-          a ?= 1
-          assert 1 == a
-          def b = 0
-          b ?= "hello"
-          assert 'hello' == b
-        }
-        
-        foo()
-        '''
-    }
-
-
-    void testElvisOp() {
-        assertScript '''
-        @groovy.transform.CompileStatic
-        def foo() {
-          def a = 0
-          a = a ?: 1
-          assert 1 == a
-          def b = 0
-          b = b ?: "hello"
-          assert 'hello' == b
-        }
-        
-        foo()
-        '''
-    }
+@groovy.transform.CompileStatic
+def foo() {
+    def a = 0
+    a ?= 1
+    assert 1 == a
+    def b = 0
+    b ?= "hello"
+    assert 'hello' == b
 }
+
+foo()
+
+@groovy.transform.CompileStatic
+def foo2() {
+    def a = 0
+    a = a ?: 1
+    assert 1 == a
+    def b = 0
+    b = b ?: "hello"
+    assert 'hello' == b
+}
+
+foo2()
