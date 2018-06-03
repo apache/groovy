@@ -18,10 +18,8 @@
  */
 package groovy.bugs
 
-import groovy.transform.NotYetImplemented
-
 class Groovy7753Bug extends GroovyTestCase {
-    @NotYetImplemented
+
     void testGroovy7753() {
         assertScript '''
         @groovy.transform.Field
