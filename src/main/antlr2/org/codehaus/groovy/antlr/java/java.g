@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 // Note: Please don't use physical tabs.  Logical tabs for indent are width 4.
 header {
 package org.codehaus.groovy.antlr.java;
@@ -370,10 +371,10 @@ classTypeSpec[boolean addImagNode]  {Token first = LT(1);}
 
 // A non-built in type name, with possible type parameters
 classOrInterfaceType[boolean addImagNode]  {Token first = LT(1);}
-	:	IDENT^ (typeArguments|typeArgumentsDiamond)?
+	:	IDENT^ (typeArgumentsOrDiamond)?
 		(options{greedy=true;}: // match as many as possible
 			DOT^
-			IDENT (typeArguments)?
+			IDENT (typeArgumentsOrDiamond)?
 		)*
 		{
 			if ( addImagNode ) {
@@ -402,10 +403,9 @@ wildcardType
 		(("extends" | "super")=> typeArgumentBounds)?
 	;
 
-typeArgumentsDiamond
-{Token first = LT(1);}
+typeArgumentsOrDiamond
     :   LT! GT!
-    {#typeArgumentsDiamond = #(create(TYPE_ARGUMENTS, "TYPE_ARGUMENTS",first,LT(1)), #typeArgumentsDiamond);}
+    |   typeArguments
     ;
 
 // Type arguments to a class or interface type
