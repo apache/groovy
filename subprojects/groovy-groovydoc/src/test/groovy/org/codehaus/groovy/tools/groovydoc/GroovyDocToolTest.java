@@ -333,6 +333,18 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("stringList not found in: \"" + doc + "\"", doc.contains("stringList"));
     }
 
+    public void testJavaStaticNestedClassWithDiamondOperator() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/JavaStaticNestedClassWithDiamond";
+        srcList.add(base + ".java");
+        xmlTool.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String doc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, doc);
+        assertTrue("expectedObject not found in: \"" + doc + "\"", doc.contains("expectedObject"));
+    }
+
     public void testVisibilityPublic() throws Exception {
         Properties props = new Properties();
         props.put("publicScope", "true");
