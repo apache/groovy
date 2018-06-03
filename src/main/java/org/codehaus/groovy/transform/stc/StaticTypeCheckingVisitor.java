@@ -3821,6 +3821,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (currentProperty != null) {
             return adjustForTargetType(currentProperty.getType(), type);
         }
+        MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
+        if (enclosingMethod != null) {
+            return adjustForTargetType(enclosingMethod.getReturnType(), type);
+        }
         return type;
     }
 
