@@ -36,12 +36,13 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
-import org.codehaus.groovy.runtime.memoize.StampedCommonCache;
 import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
 
 import java.io.StringReader;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -669,7 +670,9 @@ public class GenericsUtils {
      * If no cached item found, cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode)}
      */
     public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
-        return PARAMETERIZED_TYPE_CACHE.getAndPut(new ParameterizedTypeCacheKey(genericsClass, actualType), key -> findParameterizedType(key.getGenericsClass(), key.getActualType()));
+        SoftReference<ClassNode> sr = PARAMETERIZED_TYPE_CACHE.getAndPut(new ParameterizedTypeCacheKey(genericsClass, actualType), key -> new SoftReference<>(findParameterizedType(key.getGenericsClass(), key.getActualType())));
+
+        return null == sr ? null : sr.get();
     }
 
     /**
@@ -737,7 +740,7 @@ public class GenericsUtils {
         return superClassNodeList;
     }
 
-    private static final EvictableCache<ParameterizedTypeCacheKey, ClassNode> PARAMETERIZED_TYPE_CACHE = new StampedCommonCache<>(128);
+    private static final EvictableCache<ParameterizedTypeCacheKey, SoftReference<ClassNode>> PARAMETERIZED_TYPE_CACHE = new ConcurrentSoftCache<>(256);
 
     /**
      * map declaring generics type to actual generics type, e.g. GROOVY-7204:
