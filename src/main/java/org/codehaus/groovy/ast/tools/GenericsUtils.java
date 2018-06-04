@@ -740,7 +740,7 @@ public class GenericsUtils {
         return superClassNodeList;
     }
 
-    private static final EvictableCache<ParameterizedTypeCacheKey, SoftReference<ClassNode>> PARAMETERIZED_TYPE_CACHE = new ConcurrentSoftCache<>(128);
+    private static final EvictableCache<ParameterizedTypeCacheKey, SoftReference<ClassNode>> PARAMETERIZED_TYPE_CACHE = new ConcurrentSoftCache<>(256);
 
     /**
      * map declaring generics type to actual generics type, e.g. GROOVY-7204:
