@@ -278,7 +278,8 @@ different to the JRE, or the JUnit runtime.
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>2.1.6</version>
+            <version>2.5.0</version>
+            <type>pom</type> <!-- required JUST since Groovy 2.5.0 -->
         </dependency>
     </dependencies>
     <build>
