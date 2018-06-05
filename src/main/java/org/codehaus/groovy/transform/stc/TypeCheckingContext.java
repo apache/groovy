@@ -390,7 +390,7 @@ public class TypeCheckingContext {
      * Pops a constructor call from the enclosing constructor call stack.
      * @return the popped call
      */
-    public Expression popEnclosingConstructorCall() {
+    public ConstructorCallExpression popEnclosingConstructorCall() {
         return enclosingConstructorCalls.removeFirst();
     }
 
@@ -399,7 +399,7 @@ public class TypeCheckingContext {
      * if there's no such element.
      * @return the enclosing constructor call on top of the stack, or null if no such element.
      */
-    public Expression getEnclosingConstructorCall() {
+    public ConstructorCallExpression getEnclosingConstructorCall() {
         if (enclosingConstructorCalls.isEmpty()) return null;
         return enclosingConstructorCalls.getFirst();
     }
@@ -409,7 +409,7 @@ public class TypeCheckingContext {
      * element is the top of the stack, that is to say the currently visited constructor call.
      * @return an immutable list of enclosing constructor calls.
      */
-    public List<Expression> getEnclosingConstructorCalls() {
+    public List<ConstructorCallExpression> getEnclosingConstructorCalls() {
         return Collections.unmodifiableList(enclosingConstructorCalls);
     }
 
