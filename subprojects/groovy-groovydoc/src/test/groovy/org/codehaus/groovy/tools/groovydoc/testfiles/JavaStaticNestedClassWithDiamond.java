@@ -18,12 +18,17 @@
  */
 package org.codehaus.groovy.tools.groovydoc.testfiles;
 
-public abstract class JavaStaticNestedClassWithDiamond<E> {
+public class JavaStaticNestedClassWithDiamond<E> {
 
     JavaStaticNestedClassWithDiamond() {
     }
 
-    static class Nested<E> extends JavaStaticNestedClassWithDiamond<E> {
+    /**
+     * static nested class comment
+     *
+     * @param <E>
+     */
+    public static class Nested<E> extends JavaStaticNestedClassWithDiamond<E> {
         Nested() {
         }
     }
