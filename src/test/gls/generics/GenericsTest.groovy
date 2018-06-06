@@ -327,7 +327,7 @@ class GenericsTest extends GenericsTestBase {
     void testGenericsDiamondShortcutIllegalPosition() {
         shouldFailCompilationWithAnyMessage '''
             List<> list4 = []
-        ''', ['unexpected token: <', 'Unexpected input: \'List<>\'']
+        ''', ['unexpected token: <', 'Unexpected input: \'<\'']
     }
 
     void testGenericsInAsType() {
@@ -411,7 +411,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
             shouldFailCompilationWithMessage """
                 def m(Class<Integer someParam) {}
-            """, "Unexpected input: '<'"
+            """, "Unexpected input: 'Class<Integer someParam'"
 
             shouldFailCompilationWithMessage """
                 abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
