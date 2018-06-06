@@ -22,6 +22,7 @@ dist: trusty
 
 matrix:
   include:
+    - jdk: openjdk10
 # Java 10 "Oracle JDK"
 #    - env: JDK_RELEASE='Oracle JDK 10' EXTRA_GRADLE_ARGS=''
 #      install: . ./src/install/install-jdk.sh -F 10 -L BCL
