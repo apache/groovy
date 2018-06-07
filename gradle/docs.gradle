@@ -174,7 +174,8 @@ task docGDK {
         }
         copy {
             into task.destinationDir
-            from 'src/tools/org/codehaus/groovy/tools/groovy.ico', 'src/tools/org/codehaus/groovy/tools/stylesheet.css'
+            from 'subprojects/groovy-docgenerator/src/main/resources/org/apache/groovy/docgenerator/groovy.ico',
+                    'subprojects/groovy-docgenerator/src/main/resources/org/apache/groovy/docgenerator/stylesheet.css'
         }
     }
 }

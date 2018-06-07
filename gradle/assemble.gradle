@@ -398,7 +398,7 @@ ext.distSpec = copySpec {
             fileMode = 0755
             exclude 'groovy.icns'
         }
-        from('src/tools/org/codehaus/groovy/tools/groovy.ico')
+        from('subprojects/groovy-docgenerator/src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
     }
     into('licenses') {
         from 'licenses'
