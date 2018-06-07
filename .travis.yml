@@ -20,9 +20,10 @@ dist: trusty
 
 matrix:
   include:
-    - jdk: openjdk7
+    - jdk: openjdk10
+    - jdk: oraclejdk9
     - jdk: oraclejdk8
-
+    - jdk: openjdk7
 
 before_install:
   - |
