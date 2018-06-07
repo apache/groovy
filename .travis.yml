@@ -20,30 +20,10 @@ dist: trusty
 
 matrix:
   include:
-# Java 10 "Oracle JDK"
-#    - env: JDK_RELEASE='Oracle JDK 10' EXTRA_GRADLE_ARGS=''
-#      install: . ./src/install/install-jdk.sh -F 10 -L BCL
-# Java 10 "OpenJDK"
-#    - env: JDK_RELEASE='OpenJDK 10' EXTRA_GRADLE_ARGS=''
-#      install: . ./src/install/install-jdk.sh -F 10 -L GPL
-# Java 9 "Oracle JDK" (provided by Travis CI)
+    - jdk: openjdk10
     - jdk: oraclejdk9
-      env: JDK_RELEASE='Oracle JDK 9' EXTRA_GRADLE_ARGS=''
-      install: echo "Don't let Travis CI execute './gradlew assemble' by default"
-# Java 9 "OpenJDK"
-#    - env: TRAVIS_JDK_VERSION='openjdk9' JDK_RELEASE='OpenJDK 9' EXTRA_GRADLE_ARGS=''
-#      install: . ./src/install/install-jdk.sh -F 9 -L GPL
-# Java 8 "Oracle JDK" (provided by Travis CI)
     - jdk: oraclejdk8
-      env: JDK_RELEASE='Oracle JDK 8' EXTRA_GRADLE_ARGS=''
-      install: echo "Don't let Travis CI execute './gradlew assemble' by default"
-# Java 8 "OpenJDK"
-#    - env: JDK_RELEASE='OpenJDK 8' EXTRA_GRADLE_ARGS=''
-#      install: . ./src/install/install-jdk.sh -F 8 -L GPL
-# Java 7 "OpenJDK"
     - jdk: openjdk7
-      env: JDK_RELEASE='OpenJDK 7' EXTRA_GRADLE_ARGS=''
-      install: echo "Don't let Travis CI execute './gradlew assemble' by default"
 
 before_install:
   - |
