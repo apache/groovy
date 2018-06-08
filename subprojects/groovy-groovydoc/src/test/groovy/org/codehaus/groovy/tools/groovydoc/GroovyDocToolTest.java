@@ -333,6 +333,21 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("stringList not found in: \"" + doc + "\"", doc.contains("stringList"));
     }
 
+    public void testJavaStaticNestedClassWithDiamondOperator() throws Exception {
+        List<String> srcList = new ArrayList<String>();
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/JavaStaticNestedClassWithDiamond";
+        srcList.add(base + ".java");
+        xmlTool.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String doc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for outer class " + base, doc);
+        assertTrue("Outer class expectedObject not found in: \"" + doc + "\"", doc.contains("expectedObject"));
+        String docNested = output.getText(MOCK_DIR + "/" + base + ".Nested.html");
+        assertNotNull("No GroovyDoc found for nested class " + base, docNested);
+        assertTrue("Nested class comment not found in: \"" + docNested + "\"", docNested.contains("static nested class comment"));
+    }
+
     public void testVisibilityPublic() throws Exception {
         Properties props = new Properties();
         props.put("publicScope", "true");
