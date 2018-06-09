@@ -103,7 +103,22 @@ public abstract class AsmDecompiler {
 
         @Override
         public void visitInnerClass(String name, String outerName, String innerName, int access) {
-            result.innerClassModifiers.put(innerName, access);
+            // Class files generated for static nested classes have an INNERCLASS reference to self.
+            // The top level class access modifiers do not include the static modifier but the
+            // INNERCLASS self reference does so we capture those modifiers here.
+            //
+            // Must compare against the fully qualified name because there may be other INNERCLASS
+            // references to same named nested classes from other classes.
+            //
+            // Example:
+            //
+            //    public final class org/foo/Groovy8632$Builder extends org/foo/Groovy8632Abstract$Builder  {
+            //        public final static INNERCLASS org/foo/Groovy8632$Builder org/foo/Groovy8632 Builder
+            //        public static abstract INNERCLASS org/foo/Groovy8632Abstract$Builder org/foo/Groovy8632Abstract Builder
+            //
+            if (fromInternalName(name).equals(result.className)) {
+                result.innerClassModifiers = access;
+            }
         }
 
         @Override
