@@ -35,7 +35,9 @@ public class ClassStub extends MemberStub {
     final String[] interfaceNames;
     List<MethodStub> methods;
     List<FieldStub> fields;
-    int innerClassModifiers;
+
+    // Used to store the real access modifiers for inner classes
+    int innerClassModifiers = -1;
 
     public ClassStub(String className, int accessModifiers, String signature, String superName, String[] interfaceNames) {
         this.className = className;

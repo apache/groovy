@@ -51,10 +51,13 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     /**
-     * Handle the case of static nested classes so the static modifier can be included.
+     * Handle the case of inner classes returning the correct modifiers from
+     * the INNERCLASS reference since the top-level modifiers for inner classes
+     * wont include static or private/protected.
      */
     private static int getFullModifiers(ClassStub data) {
-        return data.accessModifiers | data.innerClassModifiers;
+        return (data.innerClassModifiers == -1)
+                ? data.accessModifiers : data.innerClassModifiers;
     }
 
     public long getCompilationTimeStamp() {

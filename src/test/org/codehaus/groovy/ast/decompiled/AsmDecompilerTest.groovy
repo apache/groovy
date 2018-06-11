@@ -317,6 +317,18 @@ class AsmDecompilerTest extends TestCase {
         assert (cn.modifiers & Opcodes.ACC_ABSTRACT) == 0
     }
 
+    void "test private inner class"() {
+        ClassNode cn = decompile(Groovy8632.InnerPrivate.name)
+        assert (cn.modifiers & Opcodes.ACC_PRIVATE) != 0
+        assert (cn.modifiers & Opcodes.ACC_PUBLIC) == 0
+    }
+
+    void "test protected inner class"() {
+        ClassNode cn = decompile(Groovy8632.InnerProtected.name)
+        assert (cn.modifiers & Opcodes.ACC_PROTECTED) != 0
+        assert (cn.modifiers & Opcodes.ACC_PUBLIC) == 0
+    }
+
     void "test non-parameterized generics"() {
         assert decompile().getDeclaredMethod("nonParameterizedGenerics").genericsTypes == null
     }
