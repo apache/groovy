@@ -367,7 +367,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_2,indent=0]
 ----
 
 [NOTE]
-Not only expressions are actually allowed in between the `${}` placeholder. Statements are also allowed, but a statement's value is just `null`.
+Not only are expressions allowed in between the `${}` placeholder, but so are statements. However, a statement's value is just `null`.
 So if several statements are inserted in that placeholder, the last one should somehow return a meaningful value to be inserted. 
 For instance, +"The sum of 1 and 2 is equal to ${def a = 1; def b = 2; a + b}"+ is supported and works as expected but a good practice is usually to stick to simple expressions inside GString placeholders.
 
