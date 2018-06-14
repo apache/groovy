@@ -3277,12 +3277,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, mn.get(0), call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
 
+                            /*
                             if (null != typeCheckingContext.getEnclosingReturnStatement() && !isNestedOrSandwichedMethodCall()) {
                                 ClassNode inferredType = infer(returnType, typeCheckingContext.getEnclosingMethod().getReturnType());
                                 if (null != inferredType) {
                                     returnType = inferredType;
                                 }
                             }
+                            */
 
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
