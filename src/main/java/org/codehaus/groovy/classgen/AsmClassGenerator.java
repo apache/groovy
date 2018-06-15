@@ -1432,7 +1432,7 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode icl =  controller.getInterfaceClassLoadingClass();
 
         if (referencedClasses.isEmpty()) {
-            Iterator<InnerClassNode> it = controller.getClassNode().getInnerClasses();
+            Iterator<InnerClassNode> it = icl.getOuterClass().getInnerClasses();
             while(it.hasNext()) {
                 InnerClassNode inner = it.next();
                 if (inner==icl) {
