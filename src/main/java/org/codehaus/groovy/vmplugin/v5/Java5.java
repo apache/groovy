@@ -54,6 +54,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -384,7 +385,9 @@ public class Java5 implements VMPlugin {
             }
             Constructor[] constructors = clazz.getDeclaredConstructors();
             for (Constructor ctor : constructors) {
-                Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), ctor.getParameterAnnotations());
+                Type[] paramTypes = ctor.getGenericParameterTypes();
+                Annotation[][] annoTypes = adjustParameterAnnotationsIfNeeded(paramTypes, ctor.getParameterAnnotations());
+                Parameter[] params = makeParameters(compileUnit, paramTypes, ctor.getParameterTypes(), annoTypes);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
                 classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
             }
@@ -403,6 +406,32 @@ public class Java5 implements VMPlugin {
         } catch (MalformedParameterizedTypeException e) {
             throw new RuntimeException("Unable to configure class node for class "+classNode.toString(false)+" due to malformed parameterized types", e);
         }
+    }
+
+    /**
+     * Synthetic parameters such as those added for inner class constructors may not be
+     * included in the parameter annotations array.  This is the case when at least one
+     * parameter of an inner class constructor is annotated with a RUNTIME retention
+     * policy.  This method will normalize the annotation array so that it contains the
+     * same number of elements as the array returned from {@link Constructor#getParameterTypes()}.
+     *
+     * If adjustment is required, the adjusted array will be pre-pended will zero-length
+     * elements.  If no adjustment is required, the original array will be returned.
+     *
+     * @param paramTypes array of parameter types
+     * @param annotationTypes array fo annotation types
+     * @return array of annotation types with the same length as the {@code paramTypes} if
+     *          the size differs, else the original {@code annotationTypes} array.
+     */
+    private Annotation[][] adjustParameterAnnotationsIfNeeded(Type[] paramTypes, Annotation[][] annotationTypes) {
+        int diff = paramTypes.length - annotationTypes.length;
+        if (diff > 0) {
+            Annotation[][] adjusted = new Annotation[paramTypes.length][];
+            Arrays.fill(adjusted, 0, diff, new Annotation[0]);
+            System.arraycopy(annotationTypes, 0, adjusted, diff, annotationTypes.length);
+            return adjusted;
+        }
+        return annotationTypes;
     }
 
     private void makeInterfaceTypes(CompileUnit cu, ClassNode classNode, Class clazz) {
