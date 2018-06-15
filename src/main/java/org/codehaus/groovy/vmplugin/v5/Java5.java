@@ -384,7 +384,12 @@ public class Java5 implements VMPlugin {
             }
             Constructor[] constructors = clazz.getDeclaredConstructors();
             for (Constructor ctor : constructors) {
-                Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes(), ctor.getParameterAnnotations());
+                Parameter[] params = makeParameters(
+                        compileUnit,
+                        ctor.getGenericParameterTypes(),
+                        ctor.getParameterTypes(),
+                        getConstructorParameterAnnotations(ctor)
+                );
                 ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
                 classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
             }
@@ -403,6 +408,49 @@ public class Java5 implements VMPlugin {
         } catch (MalformedParameterizedTypeException e) {
             throw new RuntimeException("Unable to configure class node for class "+classNode.toString(false)+" due to malformed parameterized types", e);
         }
+    }
+
+    /**
+     * Synthetic parameters such as those added for inner class constructors may
+     * not be included in the parameter annotations array. This is the case when
+     * at least one parameter of an inner class constructor has an annotation with
+     * a RUNTIME retention (this occurs for JDK8 and below). This method will
+     * normalize the annotations array so that it contains the same number of
+     * elements as the array returned from {@link Constructor#getParameterTypes()}.
+     *
+     * If adjustment is required, the adjusted array will be prepended with a
+     * zero-length element. If no adjustment is required, the original array
+     * from {@link Constructor#getParameterAnnotations()} will be returned.
+     *
+     * @param constructor the Constructor for which to return parameter annotations
+     * @return array of arrays containing the annotations on the parameters of the given Constructor
+     */
+    private Annotation[][] getConstructorParameterAnnotations(Constructor<?> constructor) {
+        /*
+         * TODO: Remove after JDK9 is the minimum JDK supported
+         *
+         * JDK9+ correctly accounts for the synthetic parameter and when it becomes
+         * the minimum version this method should no longer be required.
+         */
+        int parameterCount = constructor.getParameterTypes().length;
+        Annotation[][] annotations = constructor.getParameterAnnotations();
+        int diff = parameterCount - annotations.length;
+        if (diff > 0) {
+            // May happen on JDK8 and below, but we only expect to have to
+            // add a single element to the front of the array to account
+            // for the synthetic outer reference
+            if (diff > 1) {
+                throw new GroovyBugError(
+                        "Constructor parameter annotations length [" + annotations.length + "] " +
+                        "does not match the parameter length: " + constructor
+                );
+            }
+            Annotation[][] adjusted = new Annotation[parameterCount][];
+            adjusted[0] = new Annotation[0];
+            System.arraycopy(annotations, 0, adjusted, 1, annotations.length);
+            return adjusted;
+        }
+        return annotations;
     }
 
     private void makeInterfaceTypes(CompileUnit cu, ClassNode classNode, Class clazz) {
