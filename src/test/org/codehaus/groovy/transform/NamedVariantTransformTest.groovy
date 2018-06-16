@@ -143,4 +143,17 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testGeneratedMethodsSkipped() {
+        assertScript '''
+            import groovy.transform.*
+            import static org.codehaus.groovy.transform.NamedVariantTransformTest.*
+
+            @NamedVariant
+            def baz(@NamedDelegate Storm st, @NamedDelegate Switch sw) { st.front + sw.back }
+            assert baz(front: 'Hello', back: 'World') == 'HelloWorld'
+        '''
+    }
+
+    static class Storm { String front }
+    static class Switch { String back }
 }
