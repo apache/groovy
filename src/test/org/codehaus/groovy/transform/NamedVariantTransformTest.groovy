@@ -49,6 +49,24 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    void testNamedParamWithRename() {
+        assertScript '''
+            import groovy.transform.*
+
+            @ToString(includeNames=true)
+            class Color {
+                Integer r, g, b
+            }
+
+            @NamedVariant
+            String m(@NamedDelegate Color color, @NamedParam('a') int alpha) {
+                return [color, alpha].join(' ')
+            }
+
+            assert m(r:1, g:2, b:3, a: 0) == 'Color(r:1, g:2, b:3) 0'
+        '''
+    }
+
     void testNamedParamConstructor() {
         assertScript """
             import groovy.transform.*
