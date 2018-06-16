@@ -113,7 +113,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                 if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
                     AnnotationNode namedParam = fromParam.getAnnotations(NAMED_PARAM_TYPE).get(0);
                     boolean required = memberHasValue(namedParam, "required", true);
-                    if (getMemberValue(namedParam, "name") == null) {
+                    if (getMemberStringValue(namedParam, "value") == null) {
                         namedParam.addMember("value", constX(fromParam.getName()));
                     }
                     String name = getMemberStringValue(namedParam, "value");
