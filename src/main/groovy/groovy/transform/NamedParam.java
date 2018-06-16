@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 @Repeatable(NamedParams.class)
 public @interface NamedParam {
-    String value();
+    String value() default Undefined.STRING;
     Class type() default Object.class;
     boolean required() default false;
 }
