@@ -415,15 +415,21 @@ public class Java5 implements VMPlugin {
      * policy.  This method will normalize the annotation array so that it contains the
      * same number of elements as the array returned from {@link Constructor#getParameterTypes()}.
      *
-     * If adjustment is required, the adjusted array will be pre-pended will zero-length
+     * If adjustment is required, the adjusted array will be pre-pended with zero-length
      * elements.  If no adjustment is required, the original array will be returned.
      *
      * @param paramTypes array of parameter types
-     * @param annotationTypes array fo annotation types
+     * @param annotationTypes array of annotation types
      * @return array of annotation types with the same length as the {@code paramTypes} if
      *          the size differs, else the original {@code annotationTypes} array.
      */
     private Annotation[][] adjustParameterAnnotationsIfNeeded(Type[] paramTypes, Annotation[][] annotationTypes) {
+        /*
+         * TODO(jwagenleitner): Remove after JDK9 is the minimum JDK supported
+         *
+         * JDK9+ seems to correctly account for the synthetic parameters and when
+         * it becomes the minimum version this method should no longer be required.
+         */
         int diff = paramTypes.length - annotationTypes.length;
         if (diff > 0) {
             Annotation[][] adjusted = new Annotation[paramTypes.length][];
