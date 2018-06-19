@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -155,6 +156,14 @@ public class JavaStubGenerator {
                     List<Statement> savedStatements = new ArrayList<Statement>(node.getObjectInitializerStatements());
                     super.visitClass(node);
                     node.getObjectInitializerStatements().addAll(savedStatements);
+                    for (ClassNode inode : node.getAllInterfaces()) {
+                        if (Traits.isTrait(inode)) {
+                            List<PropertyNode> traitProps = inode.getProperties();
+                            for (PropertyNode pn : traitProps) {
+                                visitProperty(pn);
+                            }
+                        }
+                    }
                 }
 
                 public void addCovariantMethods(ClassNode cn) {}
