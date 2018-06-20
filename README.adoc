@@ -155,7 +155,7 @@ Then open the generated project and the generated subprojects in Eclipse. But be
 
 To build the documentation (Groovy Language Documentation):
 
-    gradlew assembleAsciidoc
+    gradlew asciidoc
 
 All code samples of the documentation guide are pulled from actual test cases. To run a single documentation test case, take for example `src/spec/test/semantics/PowerAssertTest.groovy`
 
