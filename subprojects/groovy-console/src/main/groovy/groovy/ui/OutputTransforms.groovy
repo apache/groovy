@@ -18,17 +18,19 @@
  */
 package groovy.ui
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.InvokerHelper
 
 import javax.swing.*
 import java.awt.*
 import java.awt.image.BufferedImage
 
+@CompileStatic
 class OutputTransforms {
 
-    @Lazy static localTransforms = loadOutputTransforms()
+    @Lazy static java.util.List<Closure> localTransforms = loadOutputTransforms()
 
-    static loadOutputTransforms() {
+    static java.util.List<Closure> loadOutputTransforms() {
         def transforms = []
 
         //
@@ -82,10 +84,10 @@ class OutputTransforms {
         // final case, non-nulls just get inspected as strings
         transforms << { it -> if (it != null) "${InvokerHelper.inspect(it)}" }
 
-        return transforms
+        return (java.util.List<Closure>) transforms
     }
 
-    static transformResult(base, transforms = localTransforms) {
+    static transformResult(base, java.util.List<Closure> transforms = localTransforms) {
         for (Closure c : transforms) {
             def result = c(base as Object)
             if (result != null)  {
@@ -94,5 +96,4 @@ class OutputTransforms {
         }
         return base
     }
-
 }

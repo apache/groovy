@@ -20,6 +20,7 @@ package groovy.inspect.swingui
 
 import groovy.lang.GroovyClassLoader.ClassCollector
 import groovy.swing.SwingBuilder
+import groovy.transform.CompileStatic
 import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
@@ -553,6 +554,7 @@ class AstBrowserUiPreferences {
 /**
  * An adapter for the CompilePhase enum that can be entered into a Swing combobox.
  */
+@CompileStatic
 enum CompilePhaseAdapter {
     INITIALIZATION(Phases.INITIALIZATION, 'Initialization'),
     PARSING(Phases.PARSING, 'Parsing'),
@@ -567,7 +569,7 @@ enum CompilePhaseAdapter {
     final int phaseId
     final String string
 
-    def CompilePhaseAdapter(phaseId, string) {
+    def CompilePhaseAdapter(int phaseId, String string) {
         this.phaseId = phaseId
         this.string = string
     }
@@ -580,6 +582,7 @@ enum CompilePhaseAdapter {
 /**
  * This class is a TreeNode and you can store additional properties on it.
  */
+@CompileStatic
 class TreeNodeWithProperties extends DefaultMutableTreeNode {
 
     List<List<String>> properties
@@ -611,6 +614,7 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
 /**
  * This interface is used to create tree nodes of various types 
  */
+@CompileStatic
 interface AstBrowserNodeMaker<T> {
     T makeNode(Object userObject)
 
@@ -620,6 +624,7 @@ interface AstBrowserNodeMaker<T> {
 /**
  * Creates tree nodes for swing UI  
  */
+@CompileStatic
 class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> {
     DefaultMutableTreeNode makeNode(Object userObject) {
         new DefaultMutableTreeNode(userObject)
@@ -647,6 +652,7 @@ class BytecodeCollector extends ClassCollector {
 
 }
 
+@CompileStatic
 class GeneratedBytecodeAwareGroovyClassLoader extends GroovyClassLoader {
 
     private final Map<String, byte[]> bytecode = new HashMap<String, byte[]>()
