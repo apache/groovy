@@ -21,16 +21,38 @@ package groovy.ui
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.InvokerHelper
 
-import javax.swing.*
-import java.awt.*
+import javax.swing.Icon
+import javax.swing.ImageIcon
+import javax.swing.JComponent
+import java.awt.Component
+import java.awt.Dimension
+import java.awt.Graphics2D
+import java.awt.GraphicsConfiguration
+import java.awt.GraphicsDevice
+import java.awt.GraphicsEnvironment
+import java.awt.Image
+import java.awt.Transparency
+import java.awt.Window
 import java.awt.image.BufferedImage
 
 @CompileStatic
 class OutputTransforms {
 
-    @Lazy static java.util.List<Closure> localTransforms = loadOutputTransforms()
+    @Lazy static List<Closure> localTransforms = loadOutputTransforms()
 
-    static java.util.List<Closure> loadOutputTransforms() {
+    // for binary compatibility only - don't use
+    @Deprecated
+    static getLocalTransforms$$bridge() {
+        localTransforms
+    }
+
+    // for binary compatibility only - don't use
+    @Deprecated
+    static loadOutputTransforms$$bridge() {
+        loadOutputTransforms()
+    }
+
+    static List<Closure> loadOutputTransforms() {
         def transforms = []
 
         //
@@ -56,7 +78,7 @@ class OutputTransforms {
 
         // remaining components get printed to an image
         transforms << { it ->
-            if (it instanceof javax.swing.JComponent) {
+            if (it instanceof JComponent) {
                 Dimension d = it.size
                 if (d.width == 0) {
                     d = it.preferredSize
@@ -84,10 +106,15 @@ class OutputTransforms {
         // final case, non-nulls just get inspected as strings
         transforms << { it -> if (it != null) "${InvokerHelper.inspect(it)}" }
 
-        return (java.util.List<Closure>) transforms
+        return (List<Closure>) transforms
     }
 
-    static transformResult(base, java.util.List<Closure> transforms = localTransforms) {
+    @Deprecated
+    static transformResult(base, transforms) {
+        transformResult(base, (List) transforms)
+    }
+
+    static transformResult(base, List<Closure> transforms = localTransforms) {
         for (Closure c : transforms) {
             def result = c(base as Object)
             if (result != null)  {

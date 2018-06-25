@@ -54,13 +54,17 @@ import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.Style
 import javax.swing.text.StyleConstants
 import javax.swing.text.html.HTML
-import java.awt.*
+import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.Dimension
+import java.awt.EventQueue
+import java.awt.Font
+import java.awt.Window
 import java.awt.event.ActionEvent
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
-import java.util.List
 import java.util.prefs.Preferences
 
 /**
@@ -395,7 +399,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         swing.bind(source:swing.inputEditor.undoAction, sourceProperty:'enabled', target:swing.undoAction, targetProperty:'enabled')
         swing.bind(source:swing.inputEditor.redoAction, sourceProperty:'enabled', target:swing.redoAction, targetProperty:'enabled')
 
-        if (swing.consoleFrame instanceof java.awt.Window) {
+        if (swing.consoleFrame instanceof Window) {
             nativeFullScreenForMac(swing.consoleFrame)
             swing.consoleFrame.pack()
             swing.consoleFrame.show()
@@ -411,7 +415,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
      *
      * @param frame the application window
      */
-    private void nativeFullScreenForMac(java.awt.Window frame) {
+    private void nativeFullScreenForMac(Window frame) {
         if (System.getProperty('os.name').contains('Mac OS X')) {
             new GroovyShell(new Binding([frame: frame])).evaluate('''
                     try {
@@ -678,7 +682,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     void exit(EventObject evt = null) {
         if(askToInterruptScript()) {
             if (askToSaveFile()) {
-                if (frame instanceof java.awt.Window) {
+                if (frame instanceof Window) {
                     frame.hide()
                     frame.dispose()
                     outputWindow?.dispose()
@@ -1587,22 +1591,29 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
 @CompileStatic
 class GroovyFileFilter extends FileFilter {
-    private static final java.util.List GROOVY_SOURCE_EXTENSIONS = ['*.groovy', '*.gvy', '*.gy', '*.gsh', '*.story', '*.gpp', '*.grunit']
+    private static final List GROOVY_SOURCE_EXTENSIONS = ['*.groovy', '*.gvy', '*.gy', '*.gsh', '*.story', '*.gpp', '*.grunit']
     private static final GROOVY_SOURCE_EXT_DESC = GROOVY_SOURCE_EXTENSIONS.join(',')
 
-    public boolean accept(File f) {
+    boolean accept(File f) {
         if (f.isDirectory()) {
             return true
         }
         GROOVY_SOURCE_EXTENSIONS.find {it == getExtension(f)} ? true : false
     }
 
-    public String getDescription() {
+    String getDescription() {
         "Groovy Source Files ($GROOVY_SOURCE_EXT_DESC)"
     }
-    
+
+    // for binary compatibility - don't use
+    @Deprecated
+    static String getExtension(f) {
+        assert f instanceof File
+        getExtension((File) f)
+    }
+
     static String getExtension(File f) {
-        def ext = null;
+        def ext = null
         def s = f.getName()
         def i = s.lastIndexOf('.')
         if (i > 0 &&  i < s.length() - 1) {

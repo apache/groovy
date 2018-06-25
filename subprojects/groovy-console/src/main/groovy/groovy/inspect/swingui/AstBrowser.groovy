@@ -510,7 +510,7 @@ class AstBrowserUiPreferences {
     int decompiledSourceFontSize
     final CompilePhaseAdapter selectedPhase
 
-    def AstBrowserUiPreferences() {
+    AstBrowserUiPreferences() {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         frameLocation = [
                 prefs.getInt('frameX', 200),
@@ -533,7 +533,7 @@ class AstBrowserUiPreferences {
         }
     }
 
-    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView, showIndyBytecode) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView, showIndyBytecode=false) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt('decompiledFontSize', decompiledSourceFontSize as int)
         prefs.putInt('frameX', frame.location.x as int)
@@ -569,12 +569,17 @@ enum CompilePhaseAdapter {
     final int phaseId
     final String string
 
-    def CompilePhaseAdapter(int phaseId, String string) {
+    @Deprecated
+    CompilePhaseAdapter(phaseId, string) {
+        this((int) phaseId, (String) string)
+    }
+
+    CompilePhaseAdapter(int phaseId, String string) {
         this.phaseId = phaseId
         this.string = string
     }
 
-    public String toString() {
+    String toString() {
         return string
     }
 }
@@ -592,7 +597,7 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
      * @param userObject same as a DefaultMutableTreeNode requires
      * @param properties a list of String lists
      */
-    def TreeNodeWithProperties(userObject, List<List<String>> properties) {
+    TreeNodeWithProperties(userObject, List<List<String>> properties) {
         super(userObject)
         this.properties = properties
     }
@@ -667,11 +672,11 @@ class GeneratedBytecodeAwareGroovyClassLoader extends GroovyClassLoader {
         new BytecodeCollector(collector, bytecode)
     }
 
-    public void clearBytecodeTable() {
+    void clearBytecodeTable() {
         bytecode.clear()
     }
 
-    public byte[] getBytecode(final String className) {
+    byte[] getBytecode(final String className) {
         bytecode[className]
     }
 }
