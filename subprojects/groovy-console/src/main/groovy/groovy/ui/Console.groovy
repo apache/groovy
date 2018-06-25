@@ -1605,13 +1605,6 @@ class GroovyFileFilter extends FileFilter {
         "Groovy Source Files ($GROOVY_SOURCE_EXT_DESC)"
     }
 
-    // for binary compatibility - don't use
-    @Deprecated
-    static String getExtension(f) {
-        assert f instanceof File
-        getExtension((File) f)
-    }
-
     static String getExtension(File f) {
         def ext = null
         def s = f.getName()

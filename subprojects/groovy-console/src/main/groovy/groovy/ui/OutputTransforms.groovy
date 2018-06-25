@@ -40,18 +40,6 @@ class OutputTransforms {
 
     @Lazy static List<Closure> localTransforms = loadOutputTransforms()
 
-    // for binary compatibility only - don't use
-    @Deprecated
-    static getLocalTransforms$$bridge() {
-        localTransforms
-    }
-
-    // for binary compatibility only - don't use
-    @Deprecated
-    static loadOutputTransforms$$bridge() {
-        loadOutputTransforms()
-    }
-
     static List<Closure> loadOutputTransforms() {
         def transforms = []
 
@@ -107,11 +95,6 @@ class OutputTransforms {
         transforms << { it -> if (it != null) "${InvokerHelper.inspect(it)}" }
 
         return (List<Closure>) transforms
-    }
-
-    @Deprecated
-    static transformResult(base, transforms) {
-        transformResult(base, (List) transforms)
     }
 
     static transformResult(base, List<Closure> transforms = localTransforms) {

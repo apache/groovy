@@ -569,11 +569,6 @@ enum CompilePhaseAdapter {
     final int phaseId
     final String string
 
-    @Deprecated
-    CompilePhaseAdapter(phaseId, string) {
-        this((int) phaseId, (String) string)
-    }
-
     CompilePhaseAdapter(int phaseId, String string) {
         this.phaseId = phaseId
         this.string = string
