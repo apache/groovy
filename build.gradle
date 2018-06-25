@@ -339,7 +339,7 @@ compileJava {
             arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
             arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/classgen/Verifier.class")
         }
-        ant.echo('Bridger: ' + ant.properties.stdout)
+        ant.echo('Bridger (groovy): ' + ant.properties.stdout)
     }
 }
 
