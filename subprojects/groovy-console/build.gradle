@@ -27,15 +27,6 @@ dependencies {
     testCompile project(':groovy-swing').sourceSets.test.runtimeClasspath
 }
 
-compileGroovy {
-    doLast {
-        ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            arg(value: "${sourceSets.main.groovy.outputDir.canonicalPath}/groovy/ui/OutputTransforms.class")
-        }
-        ant.echo('Bridger (groovy-console): ' + ant.properties.stdout)
-    }
-}
-
 task console(type: JavaExec, dependsOn:classes) {
     jvmArgs += ["-Dgroovy.attach.groovydoc=true"]
 
