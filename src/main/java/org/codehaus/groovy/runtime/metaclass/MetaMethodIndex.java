@@ -208,7 +208,7 @@ public class MetaMethodIndex {
         int h = hash(31 * cls.hashCode() + name.hashCode());
         Entry e = table[h & (table.length - 1)];
         for (; e != null; e = e.nextHashEntry)
-            if (e.hash == h && cls == e.cls && (Objects.equals(e.name, name) || e.name.equals(name)) )
+            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name) )
                 return e;
 
         return null;
@@ -221,7 +221,7 @@ public class MetaMethodIndex {
         final int index = h & (t.length - 1);
         Entry e = t[index];
         for (; e != null; e = e.nextHashEntry)
-            if (e.hash == h && cls == e.cls && (Objects.equals(e.name, name) || e.name.equals(name)) )
+            if (e.hash == h && cls == e.cls && Objects.equals(e.name, name) )
                 return e;
 
         Entry entry = new Entry();
