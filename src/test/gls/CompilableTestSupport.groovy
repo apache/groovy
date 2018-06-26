@@ -18,9 +18,11 @@
  */
 package gls
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 
-public abstract class CompilableTestSupport extends GroovyTestCase {
+@CompileStatic
+abstract class CompilableTestSupport extends GroovyTestCase {
     protected shouldNotCompile(String script) {
         try {
             GroovyClassLoader gcl = new GroovyClassLoader()

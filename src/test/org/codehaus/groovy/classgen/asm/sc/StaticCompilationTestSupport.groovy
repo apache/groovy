@@ -18,19 +18,21 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.transform.Trait
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.control.CompilationUnit
-import java.security.CodeSource
-import org.codehaus.groovy.control.customizers.CompilationCustomizer
-import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.ast.ClassNode
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.util.CheckClassAdapter
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.tools.GroovyClass
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.util.CheckClassAdapter
+
+import java.security.CodeSource
 
 /**
  * A mixin class which can be used to transform a static type checking test case into a
@@ -83,7 +85,7 @@ trait StaticCompilationTestSupport {
         }
     }
 
-    public static class CompilationUnitAwareGroovyClassLoader extends GroovyClassLoader {
+    static class CompilationUnitAwareGroovyClassLoader extends GroovyClassLoader {
         StaticCompilationTestSupport testCase
 
         CompilationUnitAwareGroovyClassLoader(
@@ -102,14 +104,14 @@ trait StaticCompilationTestSupport {
         }
     }
 
-    public static class CustomCompilationUnit extends CompilationUnit {
+    static class CustomCompilationUnit extends CompilationUnit {
         CustomCompilationUnit(final CompilerConfiguration configuration, final CodeSource security, final GroovyClassLoader loader) {
             super(configuration, security, loader)
         }
 
     }
 
-    public static class ASTTreeCollector extends CompilationCustomizer {
+    static class ASTTreeCollector extends CompilationCustomizer {
         StaticCompilationTestSupport testCase
 
         ASTTreeCollector(StaticCompilationTestSupport testCase) {
@@ -118,7 +120,7 @@ trait StaticCompilationTestSupport {
         }
 
         @Override
-        void call(final org.codehaus.groovy.control.SourceUnit source, final org.codehaus.groovy.classgen.GeneratorContext context, final ClassNode classNode) {
+        void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
             def unit = testCase.compilationUnit
             if (!unit) return
             List<GroovyClass> classes = unit.generatedClasses
