@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
@@ -322,7 +323,7 @@ public class ClassNodeUtils {
     public static boolean samePackageName(ClassNode first, ClassNode second) {
         String firstPackage = first.getPackageName();
         String secondPackage = second.getPackageName();
-        return (firstPackage == secondPackage)
+        return (Objects.equals(firstPackage, secondPackage))
                 || (firstPackage != null && firstPackage.equals(secondPackage));
     }
 
