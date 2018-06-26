@@ -62,6 +62,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
@@ -256,9 +257,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 if (!fn.isProtected()) {
                     return false;
                 }
-                String pkg1 = receiverType.getPackageName();
-                String pkg2 = current.getPackageName();
-                if (pkg1!=pkg2 && !pkg1.equals(pkg2)) {
+                if (!Objects.equals(receiverType.getPackageName(), current.getPackageName())) {
                     return false;
                 }
                 OperandStack operandStack = controller.getOperandStack();
