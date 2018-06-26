@@ -18,16 +18,18 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 
 /**
  * Support class for static type checking test cases.
  */
+@CompileStatic
 abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
     protected CompilerConfiguration config
     protected GroovyShell shell
