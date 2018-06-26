@@ -321,10 +321,7 @@ public class ClassNodeUtils {
      * @throws NullPointerException if either of the given nodes are null
      */
     public static boolean samePackageName(ClassNode first, ClassNode second) {
-        String firstPackage = first.getPackageName();
-        String secondPackage = second.getPackageName();
-        return (Objects.equals(firstPackage, secondPackage))
-                || (firstPackage != null && firstPackage.equals(secondPackage));
+        return Objects.equals(first.getPackageName(), second.getPackageName());
     }
 
 }
