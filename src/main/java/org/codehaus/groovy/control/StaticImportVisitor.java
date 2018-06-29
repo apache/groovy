@@ -272,8 +272,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
         if (mce.isImplicitThis() || isExplicitThisOrSuper) {
             if (mce.isImplicitThis()) {
-                if (!currentClass.hasPossibleMethod(mce.getMethodAsString(), args)
-                        && !currentClass.hasPossibleStaticMethod(mce.getMethodAsString(), args)) {
+                if (null == currentClass.tryFindPossibleMethod(mce.getMethodAsString(), args)) {
 
                     Expression ret = findStaticMethodImportFromModule(method, args);
                     if (ret != null) {
