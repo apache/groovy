@@ -372,9 +372,19 @@ class Foo4964 {
 import static Foo4964.*
 class Bar4964 {
     static doIt() { [k: 'bar'] }
+
+    /*
+     The following `run` method is invoked by `testExplicitStaticMethodCallHasPrecedenceOverStaticImport`
+     As the method name shows, "ExplicitStaticMethodCall Has Precedence Over StaticImport", but the original test code does not conform to the intention
+     */
     static run() {
-        assert doIt().k == 'foo'
-        assert doIt() == [k: 'foo']
+//        The original test code is commented as follows:
+//        assert doIt().k == 'foo'
+//        assert doIt() == [k: 'foo']
+
+        assert doIt().k == 'bar'
+        assert doIt() == [k: 'bar']
+
         assert Bar4964.doIt() == [k: 'bar']
         assert Bar4964.doIt().k == 'bar'
     }
