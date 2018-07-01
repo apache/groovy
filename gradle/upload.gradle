@@ -201,7 +201,11 @@ allprojects {
     }
 }
 
-def optionalModules = ['groovy-dateutil', 'groovy-json-direct']
+def optionalModules = [
+        'groovy-dateutil',
+        'groovy-jaxb',
+        'groovy-json-direct'
+]
 
 ext.pomAll = {
     addFilter('groovy') { artifact, file ->

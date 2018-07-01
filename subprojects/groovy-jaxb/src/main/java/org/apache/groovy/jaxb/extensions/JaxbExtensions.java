@@ -16,24 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.xml.jaxb
+package org.apache.groovy.jaxb.extensions;
 
-import groovy.transform.CompileStatic
-
-import javax.xml.bind.JAXBContext
-import javax.xml.bind.Marshaller
-import javax.xml.bind.Unmarshaller
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import java.io.StringReader;
+import java.io.StringWriter;
 
 /**
  * This class defines new groovy methods which appear on Jaxb-related JDK
  * classes ({@code JAXBContext}, {@code Marshaller}) inside the Groovy environment.
  * Static methods are used with the first parameter being the destination class.
- *
- * @deprecated use org.apache.groovy.jaxb.extensions.JaxbExtensions
  */
-@CompileStatic
-@Deprecated
-class JaxbGroovyMethods {
+public class JaxbExtensions {
 
     /**
      * Marshall an object to a xml {@code String}.
@@ -42,11 +39,10 @@ class JaxbGroovyMethods {
      * @param jaxbElement object to marshall to a {@code String}
      * @return {@code String} representing the object as xml
      */
-    @Deprecated
-    static <T> String marshal(Marshaller self, T jaxbElement) {
-        StringWriter sw = new StringWriter()
-        self.marshal(jaxbElement, sw)
-        sw.toString()
+    public static <T> String marshal(Marshaller self, T jaxbElement) throws JAXBException {
+        StringWriter sw = new StringWriter();
+        self.marshal(jaxbElement, sw);
+        return sw.toString();
     }
 
     /**
@@ -56,9 +52,8 @@ class JaxbGroovyMethods {
      * @param jaxbElement object to marshall to a {@code String}
      * @return String representing the object as xml
      */
-    @Deprecated
-    static <T> String marshal(JAXBContext self, T jaxbElement) {
-        marshal(self.createMarshaller(), jaxbElement)
+    public static <T> String marshal(JAXBContext self, T jaxbElement) throws JAXBException {
+        return marshal(self.createMarshaller(), jaxbElement);
     }
 
     /**
@@ -69,10 +64,9 @@ class JaxbGroovyMethods {
      * @param declaredType appropriate JAXB mapped class to hold node's xml data
      * @return instance of destination class unmarshalled from xml
      */
-    @Deprecated
-    static <T> T unmarshal(Unmarshaller self, String xml, Class<T> declaredType) {
-        StringReader sr = new StringReader(xml)
-        declaredType.cast(self.unmarshal(sr))
+    public static <T> T unmarshal(Unmarshaller self, String xml, Class<T> declaredType) throws JAXBException {
+        StringReader sr = new StringReader(xml);
+        return declaredType.cast(self.unmarshal(sr));
     }
 
     /**
@@ -83,8 +77,7 @@ class JaxbGroovyMethods {
      * @param declaredType appropriate JAXB mapped class to hold node's xml data
      * @return instance of destination class unmarshalled from xml
      */
-    @Deprecated
-    static <T> T unmarshal(JAXBContext self, String xml, Class<T> declaredType) {
-        unmarshal(self.createUnmarshaller(), xml, declaredType)
+    public static <T> T unmarshal(JAXBContext self, String xml, Class<T> declaredType) throws JAXBException {
+        return unmarshal(self.createUnmarshaller(), xml, declaredType);
     }
 }

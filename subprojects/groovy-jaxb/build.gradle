@@ -16,26 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.xml.jaxb
-
-import javax.xml.bind.JAXBContext
-
-/**
- * Test cases for {@link JaxbGroovyMethods}
- *
- * @author Dominik Przybysz
- */
-class JaxbGroovyMethodsTest extends GroovyTestCase {
-    JAXBContext jaxbContext = JAXBContext.newInstance(Person)
-    Person p = new Person(name: 'JT', age: 20)
-
-    void testMarshallAndUnmarshallObjectUsingExtensionMethodsForMarshallerAndUnmarshaller() {
-        String xml = jaxbContext.createMarshaller().marshal(p)
-        assert jaxbContext.createUnmarshaller().unmarshal(xml, Person) == p
-    }
-
-    void testMarshallAndUnmarshallObjectUsingExtensionMethodsForJaxbContext() {
-        String xml = jaxbContext.marshal(p)
-        assert jaxbContext.unmarshal(xml, Person) == p
-    }
+dependencies {
+    compile rootProject
+    testCompile project(':groovy-test')
 }
+
+task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
+    extensionClasses = 'org.apache.groovy.jaxb.extensions.JaxbExtensions'
+}
+compileJava.dependsOn moduleDescriptor
