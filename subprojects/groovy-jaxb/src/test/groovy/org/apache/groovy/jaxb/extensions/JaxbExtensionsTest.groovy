@@ -16,23 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.xml.jaxb
+package org.apache.groovy.jaxb.extensions
 
-import groovy.transform.EqualsAndHashCode
-
-import javax.xml.bind.annotation.XmlAccessType
-import javax.xml.bind.annotation.XmlAccessorType
-import javax.xml.bind.annotation.XmlRootElement
+import javax.xml.bind.JAXBContext
 
 /**
- * DTO class for {@link JaxbGroovyMethodsTest}
- *
- * @author Dominik Przybysz
+ * Test cases for {@link JaxbExtensions}
  */
-@EqualsAndHashCode
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlRootElement
-public class Person {
-    String name
-    int age
+class JaxbExtensionsTest extends GroovyTestCase {
+    JAXBContext jaxbContext = JAXBContext.newInstance(Person)
+    Person p = new Person(name: 'JT', age: 20)
+
+    void testMarshallAndUnmarshallObjectUsingExtensionMethodsForMarshallerAndUnmarshaller() {
+        String xml = jaxbContext.createMarshaller().marshal(p)
+        assert jaxbContext.createUnmarshaller().unmarshal(xml, Person) == p
+    }
+
+    void testMarshallAndUnmarshallObjectUsingExtensionMethodsForJaxbContext() {
+        String xml = jaxbContext.marshal(p)
+        assert jaxbContext.unmarshal(xml, Person) == p
+    }
 }

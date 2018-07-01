@@ -16,14 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    compile rootProject
-    testCompile rootProject.sourceSets.test.runtimeClasspath
-    testCompile "xmlunit:xmlunit:$xmlunitVersion"
-    testCompile project(':groovy-test')
-}
+package org.apache.groovy.jaxb.extensions
 
-task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
-    extensionClasses = 'org.codehaus.groovy.runtime.XmlGroovyMethods'
+import groovy.transform.EqualsAndHashCode
+
+import javax.xml.bind.annotation.XmlAccessType
+import javax.xml.bind.annotation.XmlAccessorType
+import javax.xml.bind.annotation.XmlRootElement
+
+/**
+ * DTO class for {@link JaxbExtensionsTest}
+ */
+@EqualsAndHashCode
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement
+class Person {
+    String name
+    int age
 }
-compileJava.dependsOn moduleDescriptor

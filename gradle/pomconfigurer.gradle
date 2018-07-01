@@ -633,6 +633,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             contributor {
                 name 'mgroovy'
             }
+            contributor {
+                name 'Dominik Przybysz'
+            }
         }
         mailingLists {
             mailingList {
