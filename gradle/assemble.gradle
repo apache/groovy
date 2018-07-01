@@ -138,6 +138,7 @@ ext.subprojectOsgiManifest = {
     version = groovyBundleVersion
     instruction '-nouses', 'true'
     instruction 'Export-Package', "*;version=${groovyBundleVersion}"
+    instruction 'Fragment-Host', 'groovy'
     classpath = sourceSets.main.runtimeClasspath
 }
 
