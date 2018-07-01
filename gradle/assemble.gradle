@@ -142,6 +142,7 @@ ext.subprojectOsgiManifest = {
     version = groovyBundleVersion
     instruction '-nouses', 'true'
     instruction 'Export-Package', "*;version=${groovyBundleVersion}"
+    instruction 'Fragment-Host', 'groovy'
     def folder = new File( "${projectDir}/subprojects/${symbolicName}/src/main/resources/META-INF/services" )
     if( folder.exists() ) {
         if (folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
