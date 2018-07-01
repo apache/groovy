@@ -18,9 +18,6 @@
  */
 dependencies {
     compile rootProject
-    runtime('org.testng:testng:6.9.10') {
-        // exclude 'optional' beanshell even though testng's pom doesn't say optional
-        exclude(group: 'org.beanshell', module: 'bsh')
-    }
+    runtime('org.testng:testng:6.13.1')
     testCompile project(':groovy-test')
 }
