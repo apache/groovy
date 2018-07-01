@@ -202,6 +202,7 @@ allprojects {
 }
 
 def optionalModules = [
+        'groovy-bsf',
         'groovy-cli-commons',
         'groovy-dateutil',
         'groovy-jaxb',
