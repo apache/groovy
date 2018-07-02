@@ -136,15 +136,15 @@ allprojects {
     	//To parse test cases, you need to use ./gradlew spotbugsTest.
 	}
 
-	// To generate an HTML report instead of XML
-	tasks.withType(SpotBugsTask) {
-	    effort = 'max'
-    	reports {
-        	xml.enabled = false
-        	html.enabled = true
-    	}
-    	maxHeapSize '2g'
-	} 
+    // To generate an HTML report instead of XML
+    tasks.withType(SpotBugsTask) {
+        effort = 'max'
+        reports {
+            xml.enabled = false
+            html.enabled = true
+        }
+        maxHeapSize '2g'
+    } 
 }
 
 subprojects { sp ->
