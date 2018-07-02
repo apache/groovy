@@ -24,7 +24,6 @@ allprojects {
     //apply plugin: "com.github.hierynomus.license"
     apply plugin: 'checkstyle'
     apply plugin: 'codenarc'
-    apply plugin: 'findbugs'
     configurations.codenarc {
         // because we will rely on the version we build
         // because version ranges are evil
@@ -127,19 +126,24 @@ allprojects {
         }
     }
 
-    findbugs {
-        // continue build despite findbug warnings
-        ignoreFailures = true
-        sourceSets = [sourceSets.main]
-    }
-    tasks.withType(FindBugs) {
-        effort = 'max'
-        reports {
-            xml.enabled = false
-            html.enabled = true
-        }
-        maxHeapSize = '2g'
-    }
+	spotbugs {
+    	toolVersion = '3.1.1'
+    	// continue build despite findbug warnings
+    	ignoreFailures = true
+    	//defining source set is needless
+    	//just run ./gradlew spotbugsMain then it will parse src/main/java. 
+    	//To parse test cases, you need to use ./gradlew spotbugsTest.
+	}
+
+	// To generate an HTML report instead of XML
+	tasks.withType(SpotBugsTask) {
+	    effort = 'max'
+    	reports {
+        	xml.enabled = false
+        	html.enabled = true
+    	}
+    	maxHeapSize '2g'
+	} 
 }
 
 subprojects { sp ->
