@@ -127,14 +127,14 @@ allprojects {
         }
     }
 
-	spotbugs {
-    	toolVersion = '3.1.1'
-    	// continue build despite findbug warnings
-    	ignoreFailures = true
-    	//defining source set is needless
-    	//just run ./gradlew spotbugsMain then it will parse src/main/java. 
-    	//To parse test cases, you need to use ./gradlew spotbugsTest.
-	}
+    spotbugs {
+        toolVersion = '3.1.1'
+        // continue build despite findbug warnings
+        ignoreFailures = true
+        //defining source set is needless
+        //just run ./gradlew spotbugsMain then it will parse src/main/java. 
+        //To parse test cases, you need to use ./gradlew spotbugsTest.
+    }
 
     // To generate an HTML report instead of XML
     tasks.withType(SpotBugsTask) {
