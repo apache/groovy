@@ -132,10 +132,10 @@ class NumberMathTest extends GroovyTestCase {
         assert BI1.intdiv(BI2) == 0
 
         assert I1 / I3 instanceof BigDecimal
-        assert I1 / I3 == new BigDecimal("0.3333333333")
+        assert I1 / I3 == new BigDecimal("0.33333333333333333333333333333333")
 
         assert I2 / I3 instanceof BigDecimal
-        assert I2 / I3 == new BigDecimal("0.6666666667")
+        assert I2 / I3 == new BigDecimal("0.66666666666666666666666666666667")
 
         assert I1 / BD2 instanceof BigDecimal
 
