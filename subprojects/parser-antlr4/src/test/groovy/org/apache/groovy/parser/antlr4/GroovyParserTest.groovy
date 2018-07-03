@@ -415,6 +415,10 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/NonStaticClass_01x.groovy');
     }
 
+    void "test groovy core - MethodCall"() {
+        doRunAndTestAntlr4('core/MethodCall_01x.groovy');
+    }
+
     void "test groovy core - BUG"() {
         doRunAndTestAntlr4('bugs/BUG-GROOVY-4757.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-5652.groovy')

@@ -957,7 +957,7 @@ pathElement returns [int t]
         { $t = 2; }
 
     // Can always append a block, as foo{bar}
-    |   nls closure
+    |   closure
         { $t = 3; }
 
     // Element selection is always an option, too.
