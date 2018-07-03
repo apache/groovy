@@ -21,6 +21,7 @@ package org.codehaus.groovy.ast.tools;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import groovy.transform.stc.IncorrectTypeHintException;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.AntlrParserPlugin;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
@@ -665,18 +666,9 @@ public class GenericsUtils {
         return newTypes;
     }
 
-    private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED;
     private static final String TRUE_STR = "true";
-    static {
-        boolean tmp;
-        try {
-            tmp = TRUE_STR.equals(System.getProperty("groovy.enable.parameterized.type.cache", TRUE_STR));
-        } catch (Exception e) {
-            tmp = true;
-        }
-
-        PARAMETERIZED_TYPE_CACHE_ENABLED = tmp;
-    }
+    private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED =
+            TRUE_STR.equals(SystemUtil.getSystemPropertySafe("groovy.enable.parameterized.type.cache", TRUE_STR));
 
     /**
      * Try to get the parameterized type from the cache.
