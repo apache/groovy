@@ -42,14 +42,15 @@ buildscript {
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
-
+        if (JavaVersion.current() >= JavaVersion.VERSION_1_8) {
+            classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.2"
+        }
     }
 }
 
 plugins {
     id 'com.gradle.build-scan' version '1.13.4'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '1.6.2'
 }
 
 buildScan {
@@ -475,7 +476,9 @@ if (!JavaVersion.current().java8Compatible) {
 
 // Workaround to be able to access SpotBugsTask from external gradle script.
 // More info: https://discuss.gradle.org/t/buildscript-dependencies-in-external-script/23243
-project.extensions.extraProperties.set('SpotBugsTask', com.github.spotbugs.SpotBugsTask)
+if (JavaVersion.current() >= JavaVersion.VERSION_1_8) {
+    project.extensions.extraProperties.set('SpotBugsTask', com.github.spotbugs.SpotBugsTask)
+}
 
 apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
