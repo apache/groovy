@@ -665,11 +665,28 @@ public class GenericsUtils {
         return newTypes;
     }
 
+    private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED;
+    private static final String TRUE_STR = "true";
+    static {
+        boolean tmp;
+        try {
+            tmp = TRUE_STR.equals(System.getProperty("groovy.enable.parameterized.type.cache", TRUE_STR));
+        } catch (Exception e) {
+            tmp = true;
+        }
+
+        PARAMETERIZED_TYPE_CACHE_ENABLED = tmp;
+    }
+
     /**
      * Try to get the parameterized type from the cache.
      * If no cached item found, cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode)}
      */
     public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
+        if (!PARAMETERIZED_TYPE_CACHE_ENABLED) {
+            return findParameterizedType(genericsClass, actualType);
+        }
+
         SoftReference<ClassNode> sr = PARAMETERIZED_TYPE_CACHE.getAndPut(new ParameterizedTypeCacheKey(genericsClass, actualType), key -> new SoftReference<>(findParameterizedType(key.getGenericsClass(), key.getActualType())));
 
         return null == sr ? null : sr.get();
@@ -741,6 +758,14 @@ public class GenericsUtils {
     }
 
     private static final EvictableCache<ParameterizedTypeCacheKey, SoftReference<ClassNode>> PARAMETERIZED_TYPE_CACHE = new ConcurrentSoftCache<>(64);
+
+    /**
+     * Clear the parameterized type cache
+     * It is useful to IDE as the type being compiled are continuously being edited/altered, see GROOVY-8675
+     */
+    public static void clearParameterizedTypeCache() {
+        PARAMETERIZED_TYPE_CACHE.clearAll();
+    }
 
     /**
      * map declaring generics type to actual generics type, e.g. GROOVY-7204:
