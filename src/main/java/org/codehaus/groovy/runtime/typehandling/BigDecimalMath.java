@@ -40,8 +40,7 @@ public final class BigDecimalMath extends NumberMath {
 
     public static final BigDecimalMath INSTANCE = new BigDecimalMath();
 
-    private BigDecimalMath() {
-    }
+    private BigDecimalMath() {}
 
     protected Number absImpl(Number number) {
         return toBigDecimal(number).abs();
