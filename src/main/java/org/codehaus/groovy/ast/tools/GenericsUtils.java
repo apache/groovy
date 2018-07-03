@@ -665,11 +665,29 @@ public class GenericsUtils {
         return newTypes;
     }
 
+    private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED;
+    private static final String TRUE_STR = "true";
+
+    static {
+        boolean tmp;
+        try {
+            tmp = TRUE_STR.equals(System.getProperty("groovy.enable.parameterized.type.cache", TRUE_STR));
+        } catch (Exception e) {
+            tmp = true;
+        }
+
+        PARAMETERIZED_TYPE_CACHE_ENABLED = tmp;
+    }
+
     /**
      * Try to get the parameterized type from the cache.
      * If no cached item found, cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode)}
      */
     public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
+        if (!PARAMETERIZED_TYPE_CACHE_ENABLED) {
+            return findParameterizedType(genericsClass, actualType);
+        }
+
         SoftReference<ClassNode> sr = PARAMETERIZED_TYPE_CACHE.getAndPut(new ParameterizedTypeCacheKey(genericsClass, actualType), key -> new SoftReference<>(findParameterizedType(key.getGenericsClass(), key.getActualType())));
 
         return null == sr ? null : sr.get();
