@@ -119,4 +119,21 @@ public class SystemUtil {
         }
         return false;
     }
+
+    /**
+     * Retrieves an Integer System property
+     *
+     * @param name the name of the system property.
+     * @param def the default value
+     * @return value of the Integer system property or false
+     */
+    public static Integer getIntegerSafe(String name, Integer def) {
+        try {
+            return Integer.getInteger(name, def);
+        } catch (SecurityException ignore) {
+            // suppress exception
+        }
+
+        return def;
+    }
 }
