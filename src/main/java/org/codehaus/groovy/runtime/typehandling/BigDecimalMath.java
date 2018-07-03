@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.typehandling;
 
+import org.apache.groovy.util.SystemUtil;
+
 import java.math.BigDecimal;
 import java.math.MathContext;
 
@@ -30,16 +32,15 @@ public final class BigDecimalMath extends NumberMath {
 
     // This is an arbitrary value, picked as a reasonable choice for a precision
     // for typical user math when a non-terminating result would otherwise occur.
-    public static final int DIVISION_EXTRA_PRECISION = 10;
+    public static final int DIVISION_EXTRA_PRECISION = SystemUtil.getIntegerSafe("groovy.division.extra.precision", 10);
 
     //This is an arbitrary value, picked as a reasonable choice for a rounding point
     //for typical user math.
-    public static final int DIVISION_MIN_SCALE = 10;
+    public static final int DIVISION_MIN_SCALE = SystemUtil.getIntegerSafe("groovy.division.min.scale", 10);
 
     public static final BigDecimalMath INSTANCE = new BigDecimalMath();
 
-    private BigDecimalMath() {
-    }
+    private BigDecimalMath() {}
 
     protected Number absImpl(Number number) {
         return toBigDecimal(number).abs();
