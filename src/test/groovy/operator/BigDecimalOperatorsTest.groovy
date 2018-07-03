@@ -90,10 +90,10 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         assert y == 10 , "y = " + y
 
         y = 34 / 3.000
-        assert y == 11.33333333333333333333333333333333 , "y = " + y
+        assert y == 11.3333333333 , "y = " + y
 
         y = 34.00000000000 / 3
-        assert y == 11.33333333333333333333333333333333 , "y = " + y
+        assert y == 11.33333333333 , "y = " + y
     }
     
     BigDecimal echoX ( BigDecimal x, BigDecimal y) {x}
