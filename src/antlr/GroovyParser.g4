@@ -113,7 +113,6 @@ importDeclaration
     :   annotationsOpt IMPORT STATIC? qualifiedName (DOT MUL | AS alias=identifier)?
     ;
 
-
 typeDeclaration
     :   classOrInterfaceModifiersOpt classDeclaration
     ;
@@ -957,7 +956,7 @@ pathElement returns [int t]
         { $t = 2; }
 
     // Can always append a block, as foo{bar}
-    |   closure
+    |   nls closure
         { $t = 3; }
 
     // Element selection is always an option, too.
