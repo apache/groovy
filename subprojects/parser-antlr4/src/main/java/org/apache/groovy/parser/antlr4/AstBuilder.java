@@ -2845,18 +2845,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         ExpressionContext expressionCtx = ctx.expression();
         Expression expression = (Expression) this.visit(expressionCtx);
 
-        Boolean insidePar = isInsideParentheses(expression);
-
         switch (ctx.op.getType()) {
             case ADD: {
-                if (expression instanceof ConstantExpression && !insidePar) {
+                if (isNonStringConstantOutsideParentheses(expression)) {
                     return configureAST(expression, ctx);
                 }
 
                 return configureAST(new UnaryPlusExpression(expression), ctx);
             }
             case SUB: {
-                if (expression instanceof ConstantExpression && !insidePar) {
+                if (isNonStringConstantOutsideParentheses(expression)) {
                     ConstantExpression constantExpression = (ConstantExpression) expression;
 
                     try {
@@ -2895,6 +2893,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             default:
                 throw createParsingFailedException("Unsupported unary operation: " + ctx.getText(), ctx);
         }
+    }
+
+    private boolean isNonStringConstantOutsideParentheses(Expression expression) {
+        return expression instanceof ConstantExpression
+                && !(((ConstantExpression) expression).getValue() instanceof String)
+                && !isInsideParentheses(expression);
     }
 
     @Override
