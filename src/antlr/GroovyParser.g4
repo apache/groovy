@@ -113,6 +113,7 @@ importDeclaration
     :   annotationsOpt IMPORT STATIC? qualifiedName (DOT MUL | AS alias=identifier)?
     ;
 
+
 typeDeclaration
     :   classOrInterfaceModifiersOpt classDeclaration
     ;
@@ -1144,6 +1145,10 @@ identifier
         // if 'static' followed by DOT, we can treat them as identifiers, e.g. static.unused = { -> }
         { DOT == _input.LT(2).getType() }?
         STATIC
+    |   IN
+    |   DEF
+    |   TRAIT
+    |   AS
     ;
 
 builtInType
