@@ -951,7 +951,7 @@ pathElement returns [int t]
         namePart
         { $t = 1; }
     |
-        DOT nls NEW creator[1]
+        nls DOT nls NEW creator[1]
         { $t = 6; }
     |   arguments
         { $t = 2; }

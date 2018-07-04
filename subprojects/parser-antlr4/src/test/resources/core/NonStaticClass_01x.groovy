@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 public class Y {
     public class X {
         def name
@@ -52,6 +53,11 @@ public class Y {
                 new X('Daniel')
                                 .getName()
     }
+    public static String getXName4() {
+        return createY()
+                .new X('Daniel')
+                .getName()
+    }
 }
 
 assert 'Daniel' == Y.createX(new Y()).name
@@ -59,3 +65,4 @@ assert 'Daniel' == Y.createX().name
 assert 'Daniel' == Y.getXName()
 assert 'Daniel' == Y.getXName2()
 assert 'Daniel' == Y.getXName3()
+assert 'Daniel' == Y.getXName4()
