@@ -69,6 +69,7 @@ ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 apply from: 'gradle/publish.gradle'
 apply plugin: 'javadocHotfix'
 apply plugin: "com.github.jk1.dependency-license-report"
+apply plugin: 'maven'
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
@@ -137,7 +138,7 @@ configurations {
 
 ext {
     antVersion = '1.9.9'
-    asmVersion = '6.1.1'
+    asmVersion = '6.2'
     antlrVersion = '2.7.7'
     bridgerVersion = '1.1.Final'
     coberturaVersion = '1.9.4.1'
