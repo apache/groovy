@@ -21,10 +21,6 @@ import org.codehaus.groovy.gradle.ReleaseInfoGenerator
 buildscript {
     repositories {
         jcenter()
-        maven {
-            name 'Bintray Asciidoctor repo'
-            url 'http://dl.bintray.com/content/aalmiray/asciidoctor'
-        }
         maven{
             name 'Bintray Javadoc Hotfix repo'
             url 'http://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
@@ -39,7 +35,7 @@ buildscript {
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.7'
+        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.8'
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
         classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
