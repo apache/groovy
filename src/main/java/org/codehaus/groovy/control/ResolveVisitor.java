@@ -738,9 +738,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         if (currentClass.getModule().hasPackageName() && name.indexOf('.') == -1) return false;
-        LookupResult lr = null;
-        lr = classNodeResolver.resolveName(name, compilationUnit);
-        if (lr!=null) {
+
+        LookupResult lr = classNodeResolver.resolveName(name, compilationUnit);
+        if (lr != null) {
             if (lr.isSourceUnit()) {
                 SourceUnit su = lr.getSourceUnit();
                 currentClass.getCompileUnit().addClassNodeToCompile(type, su);
@@ -755,7 +755,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     public Expression transform(Expression exp) {
         if (exp == null) return null;
-        Expression ret = null;
+        Expression ret;
         if (exp instanceof VariableExpression) {
             ret = transformVariableExpression((VariableExpression) exp);
         } else if (exp.getClass() == PropertyExpression.class) {
