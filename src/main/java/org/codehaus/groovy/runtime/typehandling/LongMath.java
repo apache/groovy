@@ -52,7 +52,7 @@ public final class LongMath extends NumberMath {
     public int compareToImpl(Number left, Number right) {
         long leftVal = left.longValue();
         long rightVal = right.longValue();
-        return (leftVal<rightVal ? -1 : (leftVal==rightVal ? 0 : 1));
+        return Long.compare(leftVal, rightVal);
     }
 
     protected Number intdivImpl(Number left, Number right) {
