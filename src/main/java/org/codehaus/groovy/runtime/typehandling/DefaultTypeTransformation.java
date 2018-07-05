@@ -111,37 +111,37 @@ public class DefaultTypeTransformation {
 
     @Deprecated
     public static Object box(byte value) {
-        return Byte.valueOf(value);
+        return value;
     }
 
     @Deprecated
     public static Object box(char value) {
-        return Character.valueOf(value);
+        return value;
     }
 
     @Deprecated
     public static Object box(short value) {
-        return Short.valueOf(value);
+        return value;
     }
 
     @Deprecated
     public static Object box(int value) {
-        return Integer.valueOf(value);
+        return value;
     }
 
     @Deprecated
     public static Object box(long value) {
-        return Long.valueOf(value);
+        return value;
     }
 
     @Deprecated
     public static Object box(float value) {
-        return Float.valueOf(value);
+        return value;
     }
 
     @Deprecated
     public static Object box(double value) {
-        return Double.valueOf(value);
+        return value;
     }
 
     public static Number castToNumber(Object object) {
@@ -153,12 +153,12 @@ public class DefaultTypeTransformation {
         if (object instanceof Number)
             return (Number) object;
         if (object instanceof Character) {
-            return Integer.valueOf(((Character) object).charValue());
+            return (int) (Character) object;
         }
         if (object instanceof GString) {
             String c = ((GString) object).toString();
             if (c.length() == 1) {
-                return Integer.valueOf(c.charAt(0));
+                return (int) c.charAt(0);
             } else {
                 throw new GroovyCastException(c, type);
             }
@@ -166,7 +166,7 @@ public class DefaultTypeTransformation {
         if (object instanceof String) {
             String c = (String) object;
             if (c.length() == 1) {
-                return Integer.valueOf(c.charAt(0));
+                return (int) c.charAt(0);
             } else {
                 throw new GroovyCastException(c, type);
             }
@@ -189,7 +189,7 @@ public class DefaultTypeTransformation {
 
         // equality check is enough and faster than instanceof check, no need to check superclasses since Boolean is final
         if (object.getClass() == Boolean.class) {
-            return ((Boolean) object).booleanValue();
+            return (Boolean) object;
         }
 
         // if the object is not null and no Boolean, try to call an asBoolean() method on the object
@@ -199,7 +199,7 @@ public class DefaultTypeTransformation {
     @Deprecated
     public static char castToChar(Object object) {
         if (object instanceof Character) {
-            return ((Character) object).charValue();
+            return (Character) object;
         } else if (object instanceof Number) {
             Number value = (Number) object;
             return (char) value.intValue();
@@ -344,10 +344,10 @@ public class DefaultTypeTransformation {
         } else if (type == float.class) {
             return floatUnbox(object);
         } else if (type == double.class) {
-            Double answer = new Double(doubleUnbox(object));
+            Double answer = doubleUnbox(object);
             //throw a runtime exception if conversion would be out-of-range for the type.
-            if (!(object instanceof Double) && (answer.doubleValue() == Double.NEGATIVE_INFINITY
-                    || answer.doubleValue() == Double.POSITIVE_INFINITY)) {
+            if (!(object instanceof Double) && (answer == Double.NEGATIVE_INFINITY
+                    || answer == Double.POSITIVE_INFINITY)) {
                 throw new GroovyRuntimeException("Automatic coercion of " + object.getClass().getName()
                         + " value " + object + " to double failed.  Value is out of range.");
             }
@@ -648,7 +648,7 @@ public class DefaultTypeTransformation {
             }
             return false;
         }
-        return ((Boolean) InvokerHelper.invokeMethod(left, "equals", right)).booleanValue();
+        return (Boolean) InvokerHelper.invokeMethod(left, "equals", right);
     }
 
     public static boolean compareArrayEqual(Object left, Object right) {
@@ -714,7 +714,7 @@ public class DefaultTypeTransformation {
             ans = new boolean[ia.length];
             for (int i = 0; i < ia.length; i++) {
                 if (ia[i] == null) continue;
-                ans[i] = ((Boolean) ia[i]).booleanValue();
+                ans[i] = (Boolean) ia[i];
             }
         }
         return ans;
@@ -770,7 +770,7 @@ public class DefaultTypeTransformation {
                 if (ia[i] == null) {
                     continue;
                 }
-                ans[i] = ((Character) ia[i]).charValue();
+                ans[i] = (Character) ia[i];
             }
         }
         return ans;
@@ -872,7 +872,7 @@ public class DefaultTypeTransformation {
         if (value instanceof String) {
             String s = (String) value;
             if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
-            return Character.valueOf(s.charAt(0));
+            return s.charAt(0);
         } else {
             return ((Character) value);
         }
