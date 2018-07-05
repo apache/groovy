@@ -23,16 +23,21 @@ import org.codehaus.groovy.ast.ClassNode;
 /**
  * A class meant to hold reference to the helper and field helper of a trait.
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 class TraitHelpersTuple {
     private final ClassNode helper;
     private final ClassNode fieldHelper;
+    private final ClassNode staticFieldHelper;
 
     public TraitHelpersTuple(final ClassNode helper, final ClassNode fieldHelper) {
+        this(helper, fieldHelper, null);
+    }
+
+    public TraitHelpersTuple(final ClassNode helper, final ClassNode fieldHelper, final ClassNode staticFieldHelper) {
         this.helper = helper;
         this.fieldHelper = fieldHelper;
+        this.staticFieldHelper = staticFieldHelper;
     }
 
     public ClassNode getHelper() {
@@ -41,5 +46,12 @@ class TraitHelpersTuple {
 
     public ClassNode getFieldHelper() {
         return fieldHelper;
+    }
+
+    /**
+     * @since 2.5.1
+     */
+    public ClassNode getStaticFieldHelper() {
+        return staticFieldHelper;
     }
 }

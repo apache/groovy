@@ -162,7 +162,7 @@ public class JavaStubGenerator {
                         if (Traits.isTrait(inode)) {
                             List<PropertyNode> traitProps = inode.getProperties();
                             for (PropertyNode pn : traitProps) {
-                                visitProperty(pn);
+                                super.visitProperty(pn);
                             }
                         }
                     }
@@ -171,6 +171,14 @@ public class JavaStubGenerator {
                 @Override
                 protected FinalVariableAnalyzer.VariableNotFinalCallback getFinalVariablesCallback() {
                     return null;
+                }
+
+                @Override
+                public void visitProperty(PropertyNode node) {
+                    // GROOVY-8233 skip static properties for traits since they don't make the interface
+                    if (!node.isStatic() || !Traits.isTrait(node.getDeclaringClass())) {
+                        super.visitProperty(node);
+                    }
                 }
 
                 public void addCovariantMethods(ClassNode cn) {}
