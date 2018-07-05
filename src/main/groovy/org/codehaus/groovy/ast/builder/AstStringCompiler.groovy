@@ -26,6 +26,9 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 
+import java.security.AccessController
+import java.security.PrivilegedAction
+
 /**
  * This class handles converting Strings to ASTNode lists.
  *
@@ -46,7 +49,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
     List<ASTNode> compile(String script, CompilePhase compilePhase, boolean statementsOnly) {
         final scriptClassName = makeScriptClassName()
         GroovyCodeSource codeSource = new GroovyCodeSource(script, "${scriptClassName}.groovy", "/groovy/script")
-        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, new GroovyClassLoader())
+        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, AccessController.doPrivileged({ new GroovyClassLoader() } as PrivilegedAction<GroovyClassLoader>))
         cu.addSource(codeSource.getName(), script)
         cu.compile(compilePhase.getPhaseNumber())
         // collect all the ASTNodes into the result, possibly ignoring the script body if desired
