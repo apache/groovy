@@ -46,7 +46,7 @@ class A {
 
    void sayHello() {
       // also fails: def greeter = createGreeter()
-      // successfull: def greeter = (Greeter)createGreeter()
+      // successful: def greeter = (Greeter)createGreeter()
       Greeter greeter = createGreeter()
       greeter.sayHello()
    }
