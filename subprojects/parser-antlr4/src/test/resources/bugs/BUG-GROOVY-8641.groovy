@@ -26,7 +26,7 @@ def delegate = new Object() {
 
 delegate.with {
     in.foo
-    def.foo
+//    def.foo
     trait.foo
     as.foo
 }
