@@ -609,7 +609,7 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("meta method is number method");
                 if (IndyMath.chooseMathMethod(this, metaMethod)) {
                     catchException = false;
-                    if (LOG_ENABLED) LOG.info("indy math successfull");
+                    if (LOG_ENABLED) LOG.info("indy math successful");
                     return;
                 }
             }
