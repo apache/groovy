@@ -3496,7 +3496,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         // statements like `foo(String a)` is invalid
         MethodCallExpression methodCallExpression = (MethodCallExpression) expression;
         String methodName = methodCallExpression.getMethodAsString();
-        if (Character.isUpperCase(methodName.codePointAt(0)) || PRIMITIVE_TYPE_SET.contains(methodName)) {
+        if (methodCallExpression.isImplicitThis() && Character.isUpperCase(methodName.codePointAt(0)) || PRIMITIVE_TYPE_SET.contains(methodName)) {
             throw createParsingFailedException("Invalid method declaration", ctx);
         }
     }
