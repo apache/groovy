@@ -141,6 +141,7 @@ public abstract class TraitComposer {
     private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
+        ClassNode staticFieldHelperClassNode = helpers.getStaticFieldHelper();
         Map<String,ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(cNode);
         genericsSpec = GenericsUtils.createGenericsSpec(trait, genericsSpec);
 
@@ -206,6 +207,17 @@ public abstract class TraitComposer {
                     declaredMethods.add(declaredMethod);
                 }
             }
+
+            if (staticFieldHelperClassNode != null) {
+                for (MethodNode declaredMethod : staticFieldHelperClassNode.getAllDeclaredMethods()) {
+                    if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
+                        declaredMethods.add(0, declaredMethod);
+                    } else {
+                        declaredMethods.add(declaredMethod);
+                    }
+                }
+            }
+
             for (MethodNode methodNode : declaredMethods) {
                 String fieldName = methodNode.getName();
                 if (fieldName.endsWith(Traits.DIRECT_GETTER_SUFFIX) || fieldName.endsWith(Traits.DIRECT_SETTER_SUFFIX)) {
