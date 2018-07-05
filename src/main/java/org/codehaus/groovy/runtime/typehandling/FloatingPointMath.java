@@ -30,23 +30,23 @@ public final class FloatingPointMath extends NumberMath {
     private FloatingPointMath() {}
                 
     protected Number absImpl(Number number) {
-        return new Double(Math.abs(number.doubleValue()));
+        return Math.abs(number.doubleValue());
     }
     
     public Number addImpl(Number left, Number right) {
-        return new Double(left.doubleValue() + right.doubleValue());
+        return left.doubleValue() + right.doubleValue();
     }
 
     public Number subtractImpl(Number left, Number right) {
-        return new Double(left.doubleValue() - right.doubleValue());
+        return left.doubleValue() - right.doubleValue();
     }
 
     public Number multiplyImpl(Number left, Number right) {
-        return new Double(left.doubleValue() * right.doubleValue());
+        return left.doubleValue() * right.doubleValue();
     }
 
     public Number divideImpl(Number left, Number right) {
-        return new Double(left.doubleValue() / right.doubleValue());
+        return left.doubleValue() / right.doubleValue();
     }
 
     public int compareToImpl(Number left, Number right) {
@@ -54,14 +54,14 @@ public final class FloatingPointMath extends NumberMath {
     }
     
     protected Number modImpl(Number left, Number right) {
-        return new Double(left.doubleValue() % right.doubleValue());
+        return left.doubleValue() % right.doubleValue();
     }
     
     protected Number unaryMinusImpl(Number left) {
-        return new Double(-left.doubleValue());
+        return -left.doubleValue();
     }
 
     protected Number unaryPlusImpl(Number left) {
-        return new Double(left.doubleValue());
+        return left.doubleValue();
     }
 }
