@@ -1146,7 +1146,7 @@ identifier
         { DOT == _input.LT(2).getType() }?
         STATIC
     |   IN
-    |   DEF
+//    |   DEF
     |   TRAIT
     |   AS
     ;
