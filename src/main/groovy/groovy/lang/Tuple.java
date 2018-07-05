@@ -34,6 +34,7 @@ public class Tuple<E> extends AbstractList<E> implements Serializable {
     private static final long serialVersionUID = -6707770506387821031L;
     private final E[] contents;
 
+    @SafeVarargs
     public Tuple(E... contents) {
         if (contents == null) throw new NullPointerException();
         this.contents = contents;
