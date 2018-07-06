@@ -152,7 +152,8 @@ class ObjectBrowser {
     void showAbout(EventObject evt) {
          def pane = swing.optionPane()
          // work around GROOVY-1048
-         pane.setMessage('An interactive GUI to explore object capabilities.')
+         def version = GroovySystem.version
+         pane.setMessage('An interactive GUI to explore object capabilities.\nVersion ' + version)
          def dialog = pane.createDialog(frame, 'About Groovy Object Browser')
          dialog.show()
     }
