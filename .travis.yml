@@ -20,8 +20,13 @@ language: groovy
 sudo: required
 dist: trusty
 
+before_install:
+  - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+
 matrix:
   include:
+    - env: JDK='Oracle JDK 11'
+      install: . ./install-jdk.sh -F 11 -L BCL
     - jdk: openjdk10
     - jdk: oraclejdk9
     - jdk: oraclejdk8
