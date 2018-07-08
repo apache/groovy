@@ -18,10 +18,15 @@
  */
 allprojects {
     tasks.withType(Test) {
-        if (JavaVersion.current().isJava8Compatible()) {
-            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:+UseConcMarkSweepGC", "-Duser.language=en"
+        def jdk8 = ['-XX:+UseConcMarkSweepGC']
+        def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
+        def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-Duser.language=en" ]
+        if (JavaVersion.current().isJava9Compatible()) {
+            jvmArgs (*common, *jdk9)
+        } else if (JavaVersion.current().isJava8Compatible()) {
+            jvmArgs (*common, *jdk8)
         } else {
-            jvmArgs '-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}", "-XX:+UseConcMarkSweepGC", "-Duser.language=en"
+            jvmArgs (*common, "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}")
         }
         def headless = System.properties['java.awt.headless']
         if (headless == 'true') {
