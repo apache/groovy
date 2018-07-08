@@ -45,7 +45,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan-plugin' version '1.15.1'
+    id 'com.gradle.build-scan-plugin' version '1.13.4'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
     id 'com.github.spotbugs' version '1.6.2'
 }
