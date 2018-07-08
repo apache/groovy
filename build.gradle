@@ -204,9 +204,6 @@ dependencies {
     testCompile "org.apache.logging.log4j:log4j-core:$log4j2Version"
     testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
-    if (JavaVersion.current().isJava9Compatible()) {
-        testRuntime 'javax.xml.bind:jaxb-api:2.3.0'
-    }
 
     tools "org.pantsbuild:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
@@ -484,7 +481,6 @@ apply from: 'gradle/upload.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/quality.gradle'
-apply from: 'gradle/jdk9.gradle'
 apply from: 'gradle/parallel-build-fixes.gradle'
 
 // If a local configuration file for tweaking the build is present, apply it

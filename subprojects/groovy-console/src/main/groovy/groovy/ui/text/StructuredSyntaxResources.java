@@ -41,7 +41,7 @@ public final class StructuredSyntaxResources {
             // a security exception
             SecurityManager mgr = System.getSecurityManager();
             if (mgr != null) {
-                mgr.checkSystemClipboardAccess();
+                mgr.checkPermission(new AWTPermission("accessClipboard"));
             }
             systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         }
