@@ -25,8 +25,7 @@ before_install:
 
 matrix:
   include:
-    - env: JDK='Oracle JDK 11'
-      install: . ./install-jdk.sh -F 11 -L BCL
+    - jdk: oraclejdk11
     - jdk: openjdk10
     - jdk: oraclejdk9
     - jdk: oraclejdk8
