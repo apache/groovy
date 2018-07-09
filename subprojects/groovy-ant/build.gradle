@@ -25,8 +25,11 @@ dependencies {
     runtime "org.apache.ant:ant-launcher:$antVersion"
     runtime "org.apache.ant:ant-antlr:$antVersion"
     // for groovydoc ant command
-    compile project(':groovy-groovydoc')
+    compile project(':groovy-groovydoc'), {
+        transitive = false
+    }
     testCompile project(':groovy-test')
+    testCompile project(':groovy-xml')
 }
 
 apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"
