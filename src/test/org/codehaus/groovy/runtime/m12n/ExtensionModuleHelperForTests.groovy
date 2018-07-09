@@ -20,7 +20,7 @@ package org.codehaus.groovy.runtime.m12n
 
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods
 
-public class ExtensionModuleHelperForTests {
+class ExtensionModuleHelperForTests {
     static void doInFork(String code) {
         doInFork("GroovyTestCase", code)
     }
@@ -40,9 +40,9 @@ public class ExtensionModuleHelperForTests {
         Set<String> cp = System.getProperty("java.class.path").split(File.pathSeparator) as Set
         cp << baseDir.absolutePath
 
-        boolean jdk9 = false;
+        boolean jdk9 = false
         try {
-            jdk9 = this.classLoader.loadClass("java.lang.reflect.Module") != null
+            jdk9 = new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("9.0")) >= 0
         } catch (e) {
             // ignore
         }
@@ -56,30 +56,26 @@ public class ExtensionModuleHelperForTests {
             ant.with {
                 taskdef(name:'groovyc', classname:"org.codehaus.groovy.ant.Groovyc")
                 groovyc(srcdir: baseDir.absolutePath, destdir:baseDir.absolutePath, includes:'Temp.groovy', fork:true)
-                java(   classname:'Temp',
-                        fork:'true',
-                        outputproperty: 'out',
-                        errorproperty: 'err',
-                        {
-                            classpath {
-                                cp.each {
-                                    pathelement location: it
-                                }
-                            }
-                            if (jdk9) {
-                                jvmarg(value: '--add-modules')
-                                jvmarg(value: 'java.xml.bind')
-                            }
+                java(classname: 'Temp', fork: 'true', outputproperty: 'out', errorproperty: 'err') {
+                    classpath {
+                        cp.each {
+                            pathelement location: it
                         }
-                )
+                    }
+                }
             }
         } finally {
             String out = ant.project.properties.out
             String err = ant.project.properties.err
             baseDir.deleteDir()
+            // FIX_JDK9: remove once we have no warnings when running Groovy
+            if (jdk9) {
+                err = err?.replaceAll(/WARNING: .*/, "")?.trim()
+            }
             if (err && !allowed.any{ err.trim().matches(it) }) {
                 throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
-            } else if ( out.contains('FAILURES') || ! out.contains("OK")) {
+            }
+            if (out && (out.contains('FAILURES') || !out.contains("OK"))) {
                 throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")
             }
         }
