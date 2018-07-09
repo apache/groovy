@@ -20,56 +20,58 @@ package groovy.util
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import groovy.xml.MarkupBuilder
-import java.io.StringWriter
 
-public class DelegatingScriptTest extends GroovyTestCase {
-    public void testDelegatingScript() throws Exception {
-        def cc = new CompilerConfiguration();
-        cc.scriptBaseClass = DelegatingScript.class.name;
-        def sh = new GroovyShell(new Binding(), cc);
-        def script = (DelegatingScript)sh.parse("""
-            println DelegatingScript.class
-            foo(3,2){ a,b -> a*b };
-            bar='test';
-            assert 'testsetget'==bar
-        """)
+class DelegatingScriptTest extends GroovyTestCase {
+    void testDelegatingScript() throws Exception {
+        def cc = new CompilerConfiguration()
+        cc.scriptBaseClass = DelegatingScript.name
+        def sh = new GroovyShell(new Binding(), cc)
+        def script = (DelegatingScript) sh.parse('''
+            // println DelegatingScript.class
+            foo(3, 2) { a, b -> a * b }
+            bar = 'test'
+            assert 'testsetget' == bar
+        ''')
         def dsl = new MyDSL()
-        script.setDelegate(dsl);
-        script.run();
-        assert dsl.foo==6;
-        assert dsl.innerBar()=='testset';
+        script.setDelegate(dsl)
+        script.run()
+        assert dsl.foo == 6
+        assert dsl.innerBar() == 'testset'
     }
 
-    public void testUseMarkupBuilderAsDelegate() throws Exception {
+    void testUseMarkupBuilderAsDelegate() throws Exception {
         def cc = new CompilerConfiguration()
         cc.scriptBaseClass = DelegatingScript.class.name
         def sh = new GroovyShell(new Binding(), cc)
-        def script = sh.parse(''' foo{ bar() }
+        def script = sh.parse('''
+            foo{ bar() }
         ''')
         StringWriter sw = new StringWriter()
         def markupBuilder = new MarkupBuilder(sw)
         script.setDelegate(markupBuilder)
         script.run()
 
-        assert sw.toString() == """<foo>
+        assert sw.toString() == '''<foo>
   <bar />
-</foo>"""
+</foo>'''
     }
 }
 
 class MyDSL {
-    protected int foo;
-    protected String bar;
+    protected int foo
+    protected String bar
 
-    public void foo(int x, int y, Closure z) { foo = z(x, y); }
-    public void setBar(String a) {
-        this.bar = a+"set";
+    void foo(int x, int y, Closure z) { foo = z(x, y) }
+
+    void setBar(String a) {
+        this.bar = a + "set"
     }
-    public String getBar() {
-        return this.bar+"get";
+
+    String getBar() {
+        this.bar + "get"
     }
 
     String innerBar() {
-        return this.bar;
+        this.bar
     }
 }
