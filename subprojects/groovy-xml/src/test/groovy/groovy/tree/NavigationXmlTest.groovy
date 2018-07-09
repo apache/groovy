@@ -19,22 +19,11 @@
 package groovy.tree
 
 /**
- * Simple test of tree walking
+ * Simple test of tree walking for XML
+ *
+ * @see groovy.tree.NavigationNodeTest
  */
-class NavigationTest extends GroovyTestCase {
-
-    void testDepthFirst() {
-        def tree = createTreeFromNodeBuilder()
-        def names = tree.depthFirst().collect { it.name() }
-        assert names == ['a', 'b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
-    }
-
-    void testBreadthFirst() {
-        def tree = createTreeFromNodeBuilder()
-        def names = tree.breadthFirst().collect { it.name() }
-        assert names == ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
-    }
-
+class NavigationXmlTest extends GroovyTestCase {
     void testPrePostOrder() {
         def root = createTreeFromXmlParser()
         def combos = [[false, true], ['depthFirst', 'breadthFirst']].combinations()
@@ -75,25 +64,6 @@ class NavigationTest extends GroovyTestCase {
         }
         assert result == [1: ['root'], 2: ['parent1', 'parent2'], 4: ['grandchild2'],
                           3: ['child1a', 'child1b', 'child2a', 'child2b', 'child2c']]
-    }
-
-    private static createTreeFromNodeBuilder() {
-        def b = NodeBuilder.newInstance()
-        def root = b.a(a: 5, b: 7) {
-            b1()
-            b2 {
-                c1()
-                c2()
-            }
-            b3()
-            b4 {
-                c3()
-                c4()
-            }
-            b5()
-        }
-        assert root != null
-        return root
     }
 
     private static createTreeFromXmlParser() {
