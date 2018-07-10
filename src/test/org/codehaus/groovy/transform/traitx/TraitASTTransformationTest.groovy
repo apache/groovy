@@ -524,7 +524,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             @groovy.transform.CompileStatic
             class StringProvider implements Provider<String> {}
             def c = new StringProvider()
-            assert c.get('foo') == 'foo\'
+            assert c.get('foo') == 'foo'
         '''
     }
 
@@ -1344,7 +1344,8 @@ class Person implements ListTrait<String> {
 }
 def p = new Person()
 p.foo()
-assert p.get(0) == 'bar\''''
+assert p.get(0) == 'bar'
+'''
     }
 
     void testAnnotationShouldBeCarriedOver() {
@@ -2423,10 +2424,10 @@ assert c.b() == 2
                 String version
             }
             def module = configure(Module) {
-                name = 'test\'
-                version = '1.0\'
+                name = 'test'
+                version = '1.0'
             }
-            assert module.value == 'test-1.0\'
+            assert module.value == 'test-1.0'
         '''
 
         assertScript '''
@@ -2455,6 +2456,21 @@ assert c.b() == 2
 
             def sc = new Foo(title: 'some title')
             assert 'some title' == sc.title
+        '''
+    }
+
+    //GROOVY-8281
+    void testFinalFieldsDependency() {
+        assertScript '''
+            trait MyTrait {
+                private final String foo = 'foo'
+                private final String foobar = foo.toUpperCase() + 'bar'
+                int foobarSize() { foobar.size() }
+            }
+
+            class Baz implements MyTrait {}
+
+            assert new Baz().foobarSize() == 6
         '''
     }
 
