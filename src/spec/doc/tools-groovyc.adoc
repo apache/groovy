@@ -74,9 +74,9 @@ Compiles Groovy source files and, if joint compilation option is used, Java sour
 Required taskdef
 ^^^^^^^^^^^^^^^^
 
-Assuming `groovy-all-VERSION.jar` is in _my.classpath_ you will need to
-declare this task at some point in the `build.xml` prior to the `groovyc`
-task being invoked.
+Assuming all the groovy jars you need are in _my.classpath_ (this will be `groovy-VERSION.jar`,
+`groovy-ant-VERSION.jar` plus any modules and transitive dependencies you might be using)
+you will need to declare this task at some point in the `build.xml` prior to the `groovyc` task being invoked.
 
 [source,xml]
 ----------------------------------------------------
@@ -115,6 +115,9 @@ classpath; defaults to yes. |No
 |includeJavaRuntime |Whether to include the default run-time libraries
 from the executing VM in the classpath; defaults to no. |No
 
+|includeDestClasses |This property controls whether to include the destination
+classes directory in the classpath given to the compiler. The default value is "true". |No
+
 |fork |Whether to execute groovyc using a spawned instance of the JVM;
 defaults to no. |No
 
@@ -128,6 +131,8 @@ memory setting. (Examples: 83886080, 81920k, or 80m) |No
 
 |failonerror |Indicates whether compilation errors will fail the build;
 defaults to true. |No
+
+|proceed |Inverse alias for _failonerror_. |No
 
 |listfiles |Indicates whether the source files to be compiled will be
 listed; defaults to no. |No
@@ -157,7 +162,24 @@ you need to set this flag to true. Defaults to false. |No
 
 |configscript |Set the configuration file used to customize the compilation configuration. |No
 
-|parameters |Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
+|parameters |Generates metadata for reflection on method parameter names on JDK 8 and above.
+Defaults to false. |No
+
+|targetBytecode |Sets the bytecode compatibility level. |No
+
+|javahome |Sets the `java.home` value to use, default is the current JDK's home. |No
+
+|executable |Sets the name of the java executable to use when invoking the compiler in forked mode,
+ignored otherwise. |No
+
+|scriptExtension |Set the extension to use when searching for Groovy source files.
+Accepts extensions in the form *.groovy, .groovy or groovy. |No
+
+|updatedProperty |The property to set on compilation success. This property will not be set if
+the compilation fails, or if there are no files to compile. |No
+
+|errorProperty |The property to set on compilation failure. This property will be set if
+the compilation fails. |No
 
 |=======================================================================
 

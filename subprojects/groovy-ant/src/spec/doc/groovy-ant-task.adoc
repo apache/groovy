@@ -26,15 +26,35 @@ Statements can either be read in from a text file using the `src` attribute or f
 
 == Required taskdef
 
-Assuming `groovy-all-VERSION.jar` is in `my.classpath` you will need to declare this task in the `build.xml` prior to using it:
+Assuming all the groovy jars you need are in _my.classpath_ (this will be `groovy-VERSION.jar`,
+`groovy-ant-VERSION.jar` plus any modules and transitive dependencies you might be using)
+you will need to declare this task at some point in the `build.xml` prior to
+the `groovy` task being invoked.
 
 [source,xml]
 ----
 <taskdef name="groovy"
          classname="org.codehaus.groovy.ant.Groovy"
          classpathref="my.classpath"/>
-<groovy>
 ----
+
+Now use the task like this:
+
+[source,xml]
+----
+<groovy src="..." otherAttributes="...">
+----
+
+Or this:
+
+[source,xml]
+----
+<groovy>
+...
+</groovy>
+----
+
+You might need to use the _contextClassLoader_ attribute (see below) if any of your modules load services via the classpath, e.g. `groovy-json`.
 
 == <groovy> attributes
 
@@ -45,10 +65,16 @@ Assuming `groovy-all-VERSION.jar` is in `my.classpath` you will need to declare 
 |classpath|The classpath to use.|No
 |classpathref|The classpath to use, given as reference to a PATH defined elsewhere.|No
 |output|Set the output file; defaults to the Ant log.|No
-|fork|If enabled the script will be executed in another JVM (disabled by default).|No
+|append|If enabled and output is to a file, append to existing file rather than overwrite. Defaults to false.|No
+|fork|If enabled the script will be executed in a forked JVM process (disabled by default).|No
 |scriptBaseClass|The name of the base class for scripts.|No
 |indy|If enabled the script will be executed with `invokedynamic` (disabled by default).|No
-|parameters |Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
+|parameters|Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
+|useGroovyShell|If enabled a new GroovyShell is used to run the script. Special variables won't be available but you don't need Ant in the classpath. Defaults to false. |No
+|includeAntRuntime|If enabled the system classpath will be included on the classpath when forking. Defaults to true. |No
+|stacktrace|If enabled a stacktrace will be reported if an error occurs during compilation. Defaults to false. |No
+|configScript|Sets the configuration script for the groovy compiler configuration. |No
+|contextClassLoader|If enabled, the contextClassLoader to be set with the classLoader of the shell used to run the script. Not used if fork is true. |No
 |============================================
 
 == Parameters specified as nested elements
