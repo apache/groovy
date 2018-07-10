@@ -452,32 +452,33 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         returnS(initCode.getExpression())
                 );
                 helper.addMethod(fieldInitializer);
-            }
-            BlockStatement code = (BlockStatement) selectedMethod.getCode();
-            MethodCallExpression mce;
-            if (field.isStatic()) {
-                if (staticFieldHelper != null) {
-                    target = staticFieldHelper;
-                }
-                mce = new MethodCallExpression(
-                        new ClassExpression(INVOKERHELPER_CLASSNODE),
-                        "invokeStaticMethod",
-                        new ArgumentListExpression(
-                                thisObject,
-                                new ConstantExpression(Traits.helperSetterName(field)),
-                                initCode.getExpression()
-                        )
-                );
             } else {
-                mce = new MethodCallExpression(
-                        new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
-                        Traits.helperSetterName(field),
-                        new CastExpression(field.getOriginType(),initCode.getExpression())
-                );
+                BlockStatement code = (BlockStatement) selectedMethod.getCode();
+                MethodCallExpression mce;
+                if (field.isStatic()) {
+                    if (staticFieldHelper != null) {
+                        target = staticFieldHelper;
+                    }
+                    mce = new MethodCallExpression(
+                            new ClassExpression(INVOKERHELPER_CLASSNODE),
+                            "invokeStaticMethod",
+                            new ArgumentListExpression(
+                                    thisObject,
+                                    new ConstantExpression(Traits.helperSetterName(field)),
+                                    initCode.getExpression()
+                            )
+                    );
+                } else {
+                    mce = new MethodCallExpression(
+                            new CastExpression(createReceiverType(field.isStatic(), fieldHelper), thisObject),
+                            Traits.helperSetterName(field),
+                            new CastExpression(field.getOriginType(),initCode.getExpression())
+                    );
+                }
+                mce.setImplicitThis(false);
+                mce.setSourcePosition(initialExpression);
+                code.addStatement(new ExpressionStatement(mce));
             }
-            mce.setImplicitThis(false);
-            mce.setSourcePosition(initialExpression);
-            code.addStatement(new ExpressionStatement(mce));
         }
         // define setter/getter helper methods (setter added even for final fields for legacy compatibility)
         target.addMethod(
