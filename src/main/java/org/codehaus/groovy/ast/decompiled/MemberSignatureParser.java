@@ -117,8 +117,12 @@ class MemberSignatureParser {
             result = new ConstructorNode(method.accessModifiers, parameters, exceptions, null);
         } else {
             result = new MethodNode(method.methodName, method.accessModifiers, returnType[0], parameters, exceptions, null);
-            if (method.annotationDefault != null) {
-                result.setCode(new ReturnStatement(new ConstantExpression(method.annotationDefault)));
+            Object annDefault = method.annotationDefault;
+            if (annDefault != null) {
+                if (annDefault instanceof TypeWrapper) {
+                    annDefault = resolver.resolveType(Type.getType(((TypeWrapper) annDefault).desc));
+                }
+                result.setCode(new ReturnStatement(new ConstantExpression(annDefault)));
                 result.setAnnotationDefault(true);
             } else {
                 // Seems wrong but otherwise some tests fail (e.g. TestingASTTransformsTest)
