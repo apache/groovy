@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -58,7 +59,6 @@ import java.util.List;
  * In a nutshell, code like the following method definition in a trait:<p></p> <code>void foo() { this.bar() }</code> is
  * transformed into: <code>void foo() { TraitHelper$bar(this) }</code>
  *
- * @author Cedric Champeau
  * @since 2.3.0
  */
 class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
@@ -438,8 +438,8 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private ArgumentListExpression createArgumentList(final Expression origCallArgs) {
         ArgumentListExpression newArgs = new ArgumentListExpression();
         newArgs.addExpression(new VariableExpression(weaved));
-        if (origCallArgs instanceof ArgumentListExpression) {
-            List<Expression> expressions = ((ArgumentListExpression) origCallArgs).getExpressions();
+        if (origCallArgs instanceof TupleExpression) {
+            List<Expression> expressions = ((TupleExpression) origCallArgs).getExpressions();
             for (Expression expression : expressions) {
                 newArgs.addExpression(transform(expression));
             }
