@@ -212,7 +212,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'russel'
                 name 'Russel Winder'
-                email 'russel@russel.org.uk'
+                email 'russel@winder.org.uk'
                 organization 'Concertant LLP & It\'z Interactive Ltd'
                 roles {
                     role 'Developer'
