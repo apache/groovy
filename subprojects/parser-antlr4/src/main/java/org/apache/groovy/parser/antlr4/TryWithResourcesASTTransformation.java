@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -42,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
+import static org.codehaus.groovy.syntax.Token.newSymbol;
 
 /**
  * Transform try-with-resources to try-catch-finally
@@ -202,7 +204,7 @@ public class TryWithResourcesASTTransformation {
                 new ExpressionStatement(
                         new DeclarationExpression(
                                 new VariableExpression(primaryExcName, ClassHelper.make(Throwable.class)),
-                                org.codehaus.groovy.syntax.Token.newSymbol(Types.ASSIGN, -1, -1),
+                                newSymbol(Types.ASSIGN, -1, -1),
                                 new ConstantExpression(null)
                         )
                 );
@@ -246,7 +248,7 @@ public class TryWithResourcesASTTransformation {
                 new ExpressionStatement(
                         new BinaryExpression(
                                 new VariableExpression(primaryExcName),
-                                org.codehaus.groovy.syntax.Token.newSymbol(Types.ASSIGN, -1, -1),
+                                newSymbol(Types.ASSIGN, -1, -1),
                                 new VariableExpression(tExcName)));
         astBuilder.appendStatementsToBlockStatement(blockStatement, primaryExcAssignStatement);
 
@@ -303,7 +305,7 @@ public class TryWithResourcesASTTransformation {
                 new BooleanExpression(
                         new BinaryExpression(
                                 new VariableExpression(primaryExcName),
-                                org.codehaus.groovy.syntax.Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1),
+                                newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1),
                                 new ConstantExpression(null)));
 
         // try-catch statement
@@ -365,6 +367,32 @@ public class TryWithResourcesASTTransformation {
         addSuppressedMethodCallExpression.setSafe(true);
 
         return new ExpressionStatement(addSuppressedMethodCallExpression);
+    }
+
+    /**
+     * See https://docs.oracle.com/javase/specs/jls/se9/html/jls-14.html
+     * 14.20.3.1. Basic try-with-resources
+     *
+     * If a basic try-with-resource statement is of the form:
+     * try (VariableAccess ...)
+     *      Block
+     *
+     * then the resource is first converted to a local variable declaration by the following translation:
+     * try (T #r = VariableAccess ...) {
+     *      Block
+     * }
+     */
+    public BinaryExpression transformResourceAccess(Expression variableAccessExpression) {
+        return new BinaryExpression(
+                new VariableExpression(genResourceName()),
+                newSymbol(Types.ASSIGN, -1, -1),
+                variableAccessExpression
+        );
+    }
+
+    private int resourceCnt = 0;
+    private String genResourceName() {
+        return "__$$resource" + resourceCnt++;
     }
 
 }

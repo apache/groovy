@@ -843,24 +843,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             if (isVariableDeclaration) {
                 assignmentExpression = (BinaryExpression) expression;
             } else if (isVariableAccess) {
-                /* See https://docs.oracle.com/javase/specs/jls/se9/html/jls-14.html
-                 * 14.20.3.1. Basic try-with-resources
-                 *
-                 * If a basic try-with-resource statement is of the form:
-                 * try (VariableAccess ...)
-                 *      Block
-                 *
-                 * then the resource is first converted to a local variable declaration by the following translation:
-                 * try (T #r = VariableAccess ...) {
-                 *      Block
-                 * }
-                 */
-                assignmentExpression =
-                        new BinaryExpression(
-                                new VariableExpression(genResourceName()),
-                                org.codehaus.groovy.syntax.Token.newSymbol(Types.ASSIGN, -1, -1),
-                                expression
-                        );
+                assignmentExpression = tryWithResourcesASTTransformation.transformResourceAccess(expression);
             } else {
                 throw createParsingFailedException("Unsupported resource declaration", ctx);
             }
@@ -880,11 +863,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         throw createParsingFailedException("Unsupported resource declaration: " + ctx.getText(), ctx);
-    }
-
-    private int resourceCnt = 0;
-    private String genResourceName() {
-        return "__$$resource" + resourceCnt++;
     }
 
     /**
