@@ -2474,4 +2474,22 @@ assert c.b() == 2
         '''
     }
 
+    //GROOVY-8282
+    void testBareNamedArgumentPrivateMethodCall() {
+        assertScript '''
+            trait BugReproduction {
+                def foo() {
+                    bar(a: 1)
+                }
+                private String bar(Map args) {
+                    args.collect{ k, v -> "$k$v" }.join()
+                }
+            }
+
+            class Main implements BugReproduction {}
+
+            assert new Main().foo() == 'a1'
+        '''
+    }
+
 }
