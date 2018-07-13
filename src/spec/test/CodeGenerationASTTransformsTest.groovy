@@ -1212,6 +1212,81 @@ public int compareTo(java.lang.Object obj) {
 // end::sortable_custom_generated_compareTo[]
 */
         '''
+
+        assertScript '''
+import groovy.transform.*
+
+// tag::sortable_example_superProperties[]
+class Person {
+  String name
+}
+
+@Canonical(includeSuperProperties = true)
+@Sortable(includeSuperProperties = true)
+class Citizen extends Person {
+  String country
+}
+
+def people = [
+  new Citizen('Bob', 'Italy'),
+  new Citizen('Cathy', 'Hungary'),
+  new Citizen('Cathy', 'Egypt'),
+  new Citizen('Bob', 'Germany'),
+  new Citizen('Alan', 'France')
+]
+
+assert people.sort()*.name == ['Alan', 'Bob', 'Bob', 'Cathy', 'Cathy']
+assert people.sort()*.country == ['France', 'Germany', 'Italy', 'Egypt', 'Hungary']
+// end::sortable_example_superProperties[]
+        '''
+
+        assertScript '''
+import groovy.transform.*
+
+// tag::sortable_example_allNames[]
+import groovy.transform.*
+
+@Canonical(allNames = true)
+@Sortable(allNames = false)
+class Player {
+  String $country
+  String name
+}
+
+def finalists = [
+  new Player('USA', 'Serena'),
+  new Player('USA', 'Venus'),
+  new Player('USA', 'CoCo'),
+  new Player('Croatian', 'Mirjana')
+]
+
+assert finalists.sort()*.name == ['Mirjana', 'CoCo', 'Serena', 'Venus']
+// end::sortable_example_allNames[]
+        '''
+
+        assertScript '''
+import groovy.transform.*
+
+// tag::sortable_example_allProperties[]
+import groovy.transform.*
+
+@Canonical(includeFields = true)
+@Sortable(allProperties = true, includes = 'nameSize')
+class Player {
+  String name
+  int getNameSize() { name.size() }
+}
+
+def finalists = [
+  new Player('Serena'),
+  new Player('Venus'),
+  new Player('CoCo'),
+  new Player('Mirjana')
+]
+
+assert finalists.sort()*.name == ['CoCo', 'Venus', 'Serena', 'Mirjana']
+// end::sortable_example_allProperties[]
+        '''
     }
 
     void testBuilderSimple() {

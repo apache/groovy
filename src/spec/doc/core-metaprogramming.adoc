@@ -1321,8 +1321,9 @@ The `Ruby` version can be disabled by setting the `auto` flag to `false`.
 [[xform-Sortable]]
 ===== `@groovy.transform.Sortable`
 
-The `@Sortable` AST transformation is used to help write classes that are `Comparable` and easily sorted by
-numerous properties. It is easy to use as shown in the following example where we annotate the `Person` class:
+The `@Sortable` AST transformation is used to help write classes that are `Comparable` and easily sorted
+typically by numerous properties. It is easy to use as shown in the following example where we annotate
+the `Person` class:
 
 [source,groovy]
 ----
@@ -1379,6 +1380,28 @@ This `Person` class can be used as follows:
 ----
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_custom_usage,indent=0]
 ----
+
+The behavior of the `@Sortable` AST transformation can be further changed using the following additional parameters:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|allProperties|True|Should JavaBean properties (ordered after native properties) be used|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_example_allProperties,indent=0]
+----
+|allNames|False|Should properties with "internal" names be used|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_example_allNames,indent=0]
+----
+|includeSuperProperties|False|Should super properties also be used (ordered first)|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=sortable_example_superProperties,indent=0]
+----
+|=======================================================================
 
 [[xform-Builder]]
 ===== `@groovy.transform.builder.Builder`
