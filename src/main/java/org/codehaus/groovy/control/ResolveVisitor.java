@@ -1019,7 +1019,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // referencedClassVariables, but must be removed
                 // for each parentscope too
                 for (VariableScope scope = currentScope; scope != null && !scope.isRoot(); scope = scope.getParent()) {
-                    if (scope.isRoot()) break;
                     if (scope.removeReferencedClassVariable(ve.getName()) == null) break;
                 }
                 ClassExpression ce = new ClassExpression(t);
