@@ -118,17 +118,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      */
     private static class ConstructedNestedClass extends ClassNode {
         final ClassNode knownEnclosingType;
+
         public ConstructedNestedClass(ClassNode outer, String inner) {
-            super(outer.getName()+"$"+(inner=replacePoints(inner)), Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
+            super(outer.getName() + "$" + replacePoints(inner), Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             this.knownEnclosingType = outer;
             this.isPrimaryNode = false;
         }
+
         public boolean hasPackageName() {
-            if (redirect()!=this) return super.hasPackageName();
+            if (redirect() != this) return super.hasPackageName();
             return knownEnclosingType.hasPackageName();
         }
+
         public String setName(String name) {
-            if (redirect()!=this) {
+            if (redirect() != this) {
                 return super.setName(name);
             } else {
                 throw new GroovyBugError("ConstructedNestedClass#setName should not be called");
@@ -280,8 +283,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (type instanceof ConstructedNestedClass) return false;
         String name = type.getName();
         String saved = name;
-        while (true) {
-            if (-1 == name.lastIndexOf('.')) break;
+        while (-1 != name.lastIndexOf('.')) {
             name = replaceLastPointWithDollar(name);
             type.setName(name);
             if (resolve(type)) return true;
@@ -1142,8 +1144,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             addError("You cannot create an instance from the abstract " + getDescription(type) + ".", cce);
         }
 
-        Expression ret = cce.transformExpression(this);
-        return ret;
+        return cce.transformExpression(this);
     }
 
     private static String getDescription(ClassNode node) {
@@ -1407,7 +1408,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 for(ClassNode intf : interfacesToCompare) {
                     checkCyclicInheritance(originalNode, null, intf.getInterfaces());
                 }
-            } else {
             }
         }
     }
