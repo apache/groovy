@@ -373,10 +373,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         String typeName = type.getName();
 
-        if (genericParameterNames.get(typeName) != null) {
-            GenericsType gt = genericParameterNames.get(typeName);
-            type.setRedirect(gt.getType());
-            type.setGenericsTypes(new GenericsType[]{ gt });
+        GenericsType genericsType = genericParameterNames.get(typeName);
+        if (genericsType != null) {
+            type.setRedirect(genericsType.getType());
+            type.setGenericsTypes(new GenericsType[]{ genericsType });
             type.setGenericsPlaceHolder(true);
             return true;
         }
