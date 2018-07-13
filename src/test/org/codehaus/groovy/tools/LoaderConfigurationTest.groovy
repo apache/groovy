@@ -25,7 +25,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
 
         def config = new LoaderConfiguration()
         config.requireMain = false
-        config.configure(new StringBufferInputStream(txt))
+        configFromString(config, txt)
 
         assert config.classPathUrls.length == 0
     }
@@ -37,32 +37,23 @@ class LoaderConfigurationTest extends GroovyTestCase {
 
         def config = new LoaderConfiguration()
         config.requireMain = false
-        config.configure(new StringBufferInputStream(txt))
+        configFromString(config, txt)
 
         assert config.classPathUrls.length == 1
         assert config.classPathUrls[0].sameFile(file.toURI().toURL())
     }
 
-    void testNonexistingPath() {
+    void testNonExistingPath() {
         // generate a load instruction with a non-existing path
-        def file = getNonexistantFile(new File("."))
+        def file = getNonExistingFile(new File("."))
 
         def txt = "load $file"
 
         def config = new LoaderConfiguration()
         config.requireMain = false
-        config.configure(new StringBufferInputStream(txt))
+        configFromString(config, txt)
 
         assert config.classPathUrls.length == 0
-    }
-
-    private File getNonexistantFile(File base) {
-        def number = "0"
-        while (base.exists()) {
-            base = new File(base, number)
-            number++
-        }
-        return base
     }
 
     void testExistingProperty() {
@@ -70,7 +61,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
 
         def config = new LoaderConfiguration()
         config.requireMain = false
-        config.configure(new StringBufferInputStream(txt))
+        configFromString(config, txt)
 
         assert config.classPathUrls.length == 1
         def url1 = config.classPathUrls[0]
@@ -78,58 +69,71 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert url1.sameFile(url2)
     }
 
-    void testPropertyDefn() {
+    void testPropertyDefinition() {
         System.setProperty('myprop', 'baz')
         def txt = 'property foo1=bar\nproperty foo2=${myprop}\nproperty foo3=!{myprop}'
 
         def config = new LoaderConfiguration()
         config.requireMain = false
-        config.configure(new StringBufferInputStream(txt))
+        configFromString(config, txt)
         assert System.getProperty('foo1') == 'bar'
         assert System.getProperty('foo2') == 'baz'
         assert System.getProperty('foo3') == 'baz'
     }
 
-    void testNonexistingProperty() {
-        String name = getNonexistingPropertyName("foo")
+    void testNonExistingProperty() {
+        String name = getNonExistingPropertyName("foo")
 
         def txt = 'load !{' + name + '}'
 
         def config = new LoaderConfiguration()
         config.requireMain = false
         shouldFail {
-            config.configure(new StringBufferInputStream(txt))
+            configFromString(config, txt)
         }
 
         txt = 'load ${' + name + '}'
 
         config = new LoaderConfiguration()
         config.requireMain = false
-        config.configure(new StringBufferInputStream(txt))
+        configFromString(config, txt)
 
         assert config.classPathUrls.length == 0
     }
 
-    private getNonexistingPropertyName(String base) {
+    void testSlashCorrection() {
+        def prop = getNonExistingPropertyName("nope")
+        System.setProperty(prop,'/')
+
+        def txt = "load \${$prop}/"
+
+        def config = new LoaderConfiguration()
+        config.requireMain = false
+        configFromString(config, txt)
+
+        assert config.classPathUrls.length == 1
+        def url = config.classPathUrls[0]
+        assert !url.path.endsWith("//")
+        System.setProperty(prop, "")
+    }
+
+    private static configFromString(LoaderConfiguration config, String txt) {
+        config.configure(new ByteArrayInputStream(txt.bytes))
+    }
+
+    private static getNonExistingPropertyName(String base) {
         while (System.getProperty(base) != null) {
             base += "x"
         }
         return base
     }
-    
-    void testSlashCorrection() {
-        def prop = getNonexistingPropertyName("nope")
-        System.setProperty("prop",'/')
-        
-        def txt = 'load ${prop}/'
 
-        def config = new LoaderConfiguration()
-        config.requireMain = false
-        config.configure(new StringBufferInputStream(txt))
-
-        assert config.classPathUrls.length == 1
-        def url = config.classPathUrls[0]
-        assert !url.path.endsWith("//")
-        System.setProperty("prop","")
+    private static File getNonExistingFile(File base) {
+        def number = "0"
+        while (base.exists()) {
+            base = new File(base, number)
+            number++
+        }
+        return base
     }
 }
