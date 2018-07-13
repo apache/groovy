@@ -42,7 +42,9 @@ import org.codehaus.groovy.runtime.StringGroovyMethods;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
@@ -59,6 +61,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
@@ -98,17 +101,20 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private void createSortable(AnnotationNode annotation, ClassNode classNode) {
-        List<String> includes = getMemberStringList(annotation, "includes");
-        List<String> excludes = getMemberStringList(annotation, "excludes");
-        boolean reversed = memberHasValue(annotation, "reversed", true);
-        if (!checkIncludeExcludeUndefinedAware(annotation, excludes, includes, MY_TYPE_NAME)) return;
-        if (!checkPropertyList(classNode, includes, "includes", annotation, MY_TYPE_NAME, false)) return;
-        if (!checkPropertyList(classNode, excludes, "excludes", annotation, MY_TYPE_NAME, false)) return;
+    private void createSortable(AnnotationNode anno, ClassNode classNode) {
+        List<String> includes = getMemberStringList(anno, "includes");
+        List<String> excludes = getMemberStringList(anno, "excludes");
+        boolean reversed = memberHasValue(anno, "reversed", true);
+        boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);
+        boolean allNames = memberHasValue(anno, "allNames", true);
+        boolean allProperties = !memberHasValue(anno, "allProperties", false);
+        if (!checkIncludeExcludeUndefinedAware(anno, excludes, includes, MY_TYPE_NAME)) return;
+        if (!checkPropertyList(classNode, includes, "includes", anno, MY_TYPE_NAME, false, includeSuperProperties, allProperties)) return;
+        if (!checkPropertyList(classNode, excludes, "excludes", anno, MY_TYPE_NAME, false, includeSuperProperties, allProperties)) return;
         if (classNode.isInterface()) {
-            addError(MY_TYPE_NAME + " cannot be applied to interface " + classNode.getName(), annotation);
+            addError(MY_TYPE_NAME + " cannot be applied to interface " + classNode.getName(), anno);
         }
-        List<PropertyNode> properties = findProperties(annotation, classNode, includes, excludes);
+        List<PropertyNode> properties = findProperties(anno, classNode, includes, excludes, allProperties, includeSuperProperties, allNames);
         implementComparable(classNode);
 
         classNode.addMethod(new MethodNode(
@@ -211,12 +217,16 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         ));
     }
 
-    private List<PropertyNode> findProperties(AnnotationNode annotation, ClassNode classNode, final List<String> includes, final List<String> excludes) {
+    private List<PropertyNode> findProperties(AnnotationNode annotation, final ClassNode classNode, final List<String> includes,
+                                              final List<String> excludes, final boolean allProperties,
+                                              final boolean includeSuperProperties, final boolean allNames) {
+        Set<String> names = new HashSet<String>();
+        List<PropertyNode> props = getAllProperties(names, classNode, classNode, true, false, allProperties,
+                false, includeSuperProperties, false, false, allNames, false);
         List<PropertyNode> properties = new ArrayList<PropertyNode>();
-        for (PropertyNode property : classNode.getProperties()) {
+        for (PropertyNode property : props) {
             String propertyName = property.getName();
-            if (property.isStatic() ||
-                    (excludes != null && excludes.contains(propertyName)) ||
+            if ((excludes != null && excludes.contains(propertyName)) ||
                     includes != null && !includes.contains(propertyName)) continue;
             properties.add(property);
         }
