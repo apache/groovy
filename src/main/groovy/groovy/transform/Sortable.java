@@ -26,7 +26,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A class annotation used to make a class Comparable by multiple Comparators.
+ * A class annotation used to make a class Comparable by (potentially) multiple Comparators.
  *
  * As an example, given this class:
  * <pre>
@@ -174,4 +174,34 @@ public @interface Sortable {
      * @since 2.5.0
      */
     boolean reversed() default false;
+
+    /**
+     * Whether to include super properties in the comparison algorithm.
+     * Groovy properties and potentially JavaBean properties (in that order) from superclasses come before
+     * the members from a subclass (unless 'includes' is used to determine the order).
+     *
+     * @since 2.5.2
+     */
+    boolean includeSuperProperties() default false;
+
+    /**
+     * Whether to include all properties (as per the JavaBean spec) in the comparison algorithm.
+     * Groovy recognizes any field-like definitions with no explicit visibility as property definitions
+     * and always includes them in the comparison algorithm. Groovy also treats any explicitly created getXxx() or isYyy()
+     * methods as property getters as per the JavaBean specification.
+     * Set this flag to false explicitly exclude such properties.
+     * JavaBean properties come after any Groovy properties for a given class
+     * (unless 'includes' is used to determine the order).
+     *
+     * @since 2.5.2
+     */
+    boolean allProperties() default true;
+
+    /**
+     * Whether to include all fields and/or properties in the comparison algorithm, including those with names that
+     * are considered internal.
+     *
+     * @since 2.5.2
+     */
+    boolean allNames() default false;
 }
