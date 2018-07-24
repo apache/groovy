@@ -340,6 +340,8 @@ task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
     classifier = 'groovydoc'
 }
 
+evaluationDependsOn('groovy-jaxb')
+
 ext.distSpec = copySpec {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from("$projectDir/licenses/LICENSE-BINZIP")
@@ -371,6 +373,16 @@ ext.distSpec = copySpec {
                             it.file.name.startsWith('openbeans-')
                 }
             }
+        }
+    }
+    project(':groovy-jaxb').configurations.jaxb.each { conf ->
+        into('lib/extras-jaxb') {
+            from conf
+        }
+    }
+    project(':groovy-jaxb').configurations.jaxbRuntime.each { conf ->
+        into('lib/extras-jaxb') {
+            from conf
         }
     }
     if (!rootProject.hasProperty('skipIndy')) {
