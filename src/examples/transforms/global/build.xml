@@ -21,7 +21,7 @@
 -->
 <project name="groovy-global-ast-transformation-example" default="jar-transform">
 
-    <!-- groovy-all .jar is assumed to be on your classpath. -->
+    <!-- necessary groovy jars are assumed to be on your classpath. -->
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" />
     
     <target name="init" description="cleanup old class files">

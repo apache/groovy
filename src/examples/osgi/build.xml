@@ -23,7 +23,7 @@
 
   <property name="build.dir" value="build"/>
   <property file="build.properties"/>
-  <property name="groovy.jar" value="groovy-all-${groovy.version}.jar" />
+  <property name="groovy.jar" value="groovy-${groovy.version}.jar" />
   <property name="hello.bundle" value="hello-bundle-imports-groovy.jar" />
   <property name="hello.bundle.contains" value="hello-bundle-contains-groovy.jar" />
   <property name="harness.bundle" value="hello-groovy-test-harness.jar" />

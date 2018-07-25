@@ -21,7 +21,7 @@
 -->
 <project name="groovy-local-ast-transformation-example" default="compile-transform">
 
-    <!-- groovy-all .jar is assumed to be on your classpath. -->
+    <!-- necessary groovy jars are assumed to be on your classpath. -->
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" />
     
     

@@ -80,9 +80,9 @@ The `groovydoc` Ant task allows generating groovydocs from an Ant build.
 [[ThegroovydocAnttask-Requiredtaskdef]]
 === Required taskdef
 
-Assuming `groovy-all-{groovyversion}.jar` is in _my.classpath_ you will need to
-declare this task at some point in the build.xml prior to the groovydoc
-task being invoked.
+Assuming all the groovy jars you need are in _my.classpath_ (this will be `groovy-VERSION.jar`,
+`groovy-ant-VERSION.jar`, `groovy-groovydoc-VERSION.jar` plus any modules and transitive dependencies you might be using)
+you will need to declare this task at some point in the build.xml prior to the groovydoc task being invoked.
 
 [source,xml]
 -----------------------------------------------------------
