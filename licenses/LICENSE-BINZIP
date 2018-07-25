@@ -219,14 +219,14 @@ ASM 4 uses a 3-clause BSD license. For details, see licenses/asm-license.txt.
 Hamcrest License (needed when using optional JUnit dependency)
 
 This product bundles the Hamcrest jar, which is available under a
-BSD license.  For details, see licenses/hamcrest-license.
+BSD license.  For details, see licenses/hamcrest-license.txt.
 
 ------------------------------------------------------------------------
 
 JLine2 License (optional dependency used with groovysh)
 
 This product bundles the JLine2 jar, which is available under a
-BSD License.  For details, see licenses/jline2-license.
+BSD License.  For details, see licenses/jline2-license.txt.
 
 ------------------------------------------------------------------------
 
@@ -234,7 +234,7 @@ JSR166y License (optionally used by the optional GPars dependency)
 
 This product bundles the jsr166y jar (containing works from
 the JSR-166 EG, Doug Lea, and Jason T. Greene) made available in
-the public domain.  For details, see licenses/jsr166y-license.
+the public domain.  For details, see licenses/jsr166y-license.txt.
 
 ------------------------------------------------------------------------
 
@@ -255,10 +255,10 @@ has a BSD-style license. Details can be found in: licenses/jsr223-license.txt
 JUnit Licenses (optional dependencies when using Groovy for testing)
 
 This product bundles the JUnit 4 jar, which is available under the
-Eclipse Public License v1.0.  For details, see licenses/junit4-license.
+Eclipse Public License v1.0.  For details, see licenses/junit4-license.txt.
 
 This product bundles several JUnit 5 jars, which are available under the
-Eclipse Public License v2.0.  For details, see licenses/junit5-license.
+Eclipse Public License v2.0.  For details, see licenses/junit5-license.txt.
 
 ------------------------------------------------------------------------
 
@@ -266,11 +266,12 @@ normalize.css License
 
 The stylesheet.css file (originally normalize.css) is used by the
 groovydoc and docgenerator components for groovy-jdk/gapi documentation.
-It is made available under a MIT License. Details: licenses/normalize-stylesheet-license.txt
+It is made available under a MIT License:
+licenses/normalize-stylesheet-license.txt
 
 ------------------------------------------------------------------------
 
 XStream License (optional dependency when serializing AST as XML)
 
 This product bundles the XStream jar, which is available under a
-"3-clause BSD" license.  For details, see licenses/xstream-license.
+"3-clause BSD" license.  For details, see licenses/xstream-license.txt.

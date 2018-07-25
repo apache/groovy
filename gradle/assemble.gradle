@@ -533,12 +533,11 @@ task updateLicenses {
         def jarjarFiles = fileTree(licensesDir).include('*-JARJAR*.txt').sort { it.name }
         def binzipFiles = fileTree(licensesDir) {
             include '*-JARJAR*.txt'
-            include '*-ALLJARJAR*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
         def docgeneratorFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-docgenerator.txt')
         def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
-        def jsr223Files = fileTree(licensesDir).include('jsr223-ALLJARJAR-SRC.txt')
+        def jsr223Files = fileTree(licensesDir).include('jsr223-BINZIP-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
                 (licenseBinZipFile)      : binzipFiles,
@@ -572,14 +571,13 @@ task updateNotices {
 
     ext.noticeSrcFile = "${projectDir}/NOTICE"
     ext.noticeGroovyConsoleFile = "${projectDir}/subprojects/groovy-console/NOTICE"
-    ext.noticeAllJarJarFile = "${noticesDir}/NOTICE-ALLJARJAR"
     ext.noticeBinZipFile = "${noticesDir}/NOTICE-BINZIP"
     ext.noticeGrooidFile = "${noticesDir}/NOTICE-GROOID"
     ext.noticeGrooidJarJarFile = "${noticesDir}/NOTICE-GROOIDJARJAR"
     ext.noticeJarJarFile = "${noticesDir}/NOTICE-JARJAR"
     ext.noticeSdkFile = "${noticesDir}/NOTICE-SDK"
     inputs.files(noticeBaseFile, fileTree(noticesDir).include('*.txt'))
-    outputs.files(noticeAllJarJarFile, noticeBinZipFile, noticeGrooidFile, noticeGrooidJarJarFile,
+    outputs.files(noticeBinZipFile, noticeGrooidFile, noticeGrooidJarJarFile,
             noticeJarJarFile, noticeSrcFile, noticeGroovyConsoleFile, noticeSdkFile)
 
     doLast {
@@ -592,11 +590,10 @@ task updateNotices {
         }.sort { it.name }
         def binzipFiles = fileTree(noticesDir) {
             include '*-JARJAR*.txt'
-            include '*-ALLJARJAR*.txt'
             include '*-GROOID*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
-        def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-ALLJARJAR-SRC.txt')
+        def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-BINZIP-SRC.txt')
         [
                 (noticeBinZipFile)       : binzipFiles,
                 (noticeGrooidFile)       : grooidFiles,
