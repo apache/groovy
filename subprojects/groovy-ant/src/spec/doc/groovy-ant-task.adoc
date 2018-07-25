@@ -216,7 +216,7 @@ Calling out to a web service from your Ant script:
     <target name="main">
         <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy">
             <classpath>
-                <fileset dir="${env.GROOVY_HOME}" includes="embeddable/groovy-all-*.jar,lib/ivy*.jar"/>
+                <fileset dir="${env.GROOVY_HOME}" includes="lib/groovy-*.jar,lib/ivy*.jar"/>
             </classpath>
         </taskdef>
         <groovy>

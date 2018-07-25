@@ -71,8 +71,8 @@ import java.util.StringTokenizer;
  *   &lt;property name="groovy.home" value="/Path/To/Groovy"/&gt;
  *   &lt;property name="groovy.version" value="X.Y.Z"/&gt;
  *   &lt;path id="groovy.classpath"&gt;
- *     &lt;fileset dir="${groovy.home}/embeddable"&gt;
- *       &lt;include name="groovy-all-${groovy.version}.jar" /&gt;
+ *     &lt;fileset dir="${groovy.home}/lib"&gt;
+ *       &lt;include name="groovy-*${groovy.version}.jar" /&gt;
  *     &lt;/fileset&gt;
  *   &lt;/path&gt;
  *   &lt;taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovy.classpath"/&gt;
@@ -135,8 +135,8 @@ import java.util.StringTokenizer;
  *   &lt;property name="groovy.version" value="X.Y.Z"/&gt;
  *
  *   &lt;path id="groovy.classpath"&gt;
- *     &lt;fileset dir="${groovy.home}/embeddable"&gt;
- *       &lt;include name="groovy-all-${groovy.version}.jar" /&gt;
+ *     &lt;fileset dir="${groovy.home}/lib"&gt;
+ *       &lt;include name="groovy-*${groovy.version}.jar" /&gt;
  *     &lt;/fileset&gt;
  *   &lt;/path&gt;
  *

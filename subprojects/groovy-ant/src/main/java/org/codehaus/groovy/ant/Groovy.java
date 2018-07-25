@@ -583,9 +583,9 @@ public class Groovy extends Java {
         if (groovyHome == null) {
             throw new IllegalStateException("Neither ${groovy.home} nor GROOVY_HOME defined.");
         }
-        File jarDir = new File(groovyHome, "embeddable");
+        File jarDir = new File(groovyHome, "lib");
         if (!jarDir.exists()) {
-            throw new IllegalStateException("GROOVY_HOME incorrectly defined. No embeddable directory found in: " + groovyHome);
+            throw new IllegalStateException("GROOVY_HOME incorrectly defined. No lib directory found in: " + groovyHome);
         }
         final File[] files = jarDir.listFiles();
         for (File file : files) {

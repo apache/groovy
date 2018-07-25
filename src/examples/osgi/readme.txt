@@ -36,8 +36,8 @@ Building this Example
 IMPORTANT: You must edit build.properties before building the example. There are 
 three properties that must be set in build.properties: 
   groovy.bin.dir - The example requires you specify the location of your 
-                   groovy-all jar. This is hwo the build finds groovyc. 
-  groovy.version - The example requires you specify the version of your groovy-all 
+                   groovy jar. This is how the build finds groovyc.
+  groovy.version - The example requires you specify the version of your groovy
                    jar. This is so that the jar files can be built correctly. 
   osgi.jar - The example requires you specify the location of the OSGi jar. 
                    This is required to compile the code. 
@@ -53,9 +53,9 @@ Once these properties are set, simply run ant to build:
 
 The build creates three jar files: 
   hello-bundle-imports-groovy.jar - OSGi bundle written in Groovy that resolves the 
-        groovy-all Jar file from the container.
+        groovy Jar file from the container.
   hello-bundle-contains-groovy.jar - OSGi bundle written in Groovy that resolves the
-        groovy-all Jar file from within itself. The container never sees Groovy. 
+        groovy Jar file from within itself. The container never sees Groovy.
   hello-groovy-test-harness.jar - OSGi bundle that loads and tests one of the previous
         two services. 
   
@@ -66,7 +66,7 @@ container. The final output of the Ant script may look like this:
      [echo] To run the OSGi console, run the following command:
      [echo]  java -jar ../../../../equinox-3.4/eclipse/plugins/org.eclipse.osgi_3.4.0.v20080605-1900.jar -console
      [echo] To install these applications in the container, run the following commands in the OSGi container:
-     [echo]  install file:/home/user/dev/groovy-core/target/dist/groovy-all-1.7-beta-1-SNAPSHOT.jar
+     [echo]  install file:/home/user/dev/groovy-core/target/dist/groovy-all-1.7.0.jar
      [echo]  install file:/home/user/dev/groovy-core/src/examples/osgi/build/hello-bundle-imports-groovy.jar
      [echo]  install file:/home/user/dev/groovy-core/src/examples/osgi/build/hello-bundle-contains-groovy.jar
      [echo]  install file:/home/user/dev/groovy-core/src/examples/osgi/build/hello-groovy-test-harness.jar
@@ -99,9 +99,9 @@ Type the command "ss" to get a system status:
 
 Install the three bundles using the "install" command and the file URLs of the 
 jars built by Ant. Remember, the Ant script printed the file URLs to the console 
-as part of the build. 
+as part of the build (replace groovy-all with groovy for 2.5+).
 
-osgi> install file:/home/user/dev/groovy-core/target/dist/groovy-all-1.7-beta-1-SNAPSHOT.jar
+osgi> install file:/home/user/dev/groovy-core/target/dist/groovy-all-1.7.0.jar
 Bundle id is 1
 
 osgi> install file:/home/user/dev/groovy-core/src/examples/osgi/build/hello-bundle-imports-groovy.jar
@@ -119,7 +119,7 @@ Framework is launched.
 
 id      State       Bundle
 0       ACTIVE      org.eclipse.osgi_3.4.0.v20080605-1900
-1       INSTALLED   groovy-all_1.7.0.beta-1-SNAPSHOT
+1       INSTALLED   groovy-all_1.7.0
 2       INSTALLED   org.codehaus.groovy.osgi.hello-groovy-bundle_1.0.0
 3       INSTALLED   org.codehaus.groovy.osgi.harness.hello-groovy-test-harness_1.0.0
 
