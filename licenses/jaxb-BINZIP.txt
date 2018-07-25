@@ -1,0 +1,9 @@
+JAXB License (for optional groovy-jaxb extensions)
+
+This product bundles several JAXB related jars in binary form.
+
+The "javax.activation" jar is available under the CDDL 1.0 license:
+licenses/activation-license.txt
+
+The jaxb-api, jaxb-core and jaxb-impl jars use the CDDL 1.1 license:
+licenses/jaxb-license.txt
