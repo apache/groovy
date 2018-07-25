@@ -1,7 +1,7 @@
 JUnit Licenses (optional dependencies when using Groovy for testing)
 
 This product bundles the JUnit 4 jar, which is available under the
-Eclipse Public License v1.0.  For details, see licenses/junit4-license.
+Eclipse Public License v1.0.  For details, see licenses/junit4-license.txt.
 
 This product bundles several JUnit 5 jars, which are available under the
-Eclipse Public License v2.0.  For details, see licenses/junit5-license.
+Eclipse Public License v2.0.  For details, see licenses/junit5-license.txt.
