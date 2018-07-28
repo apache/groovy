@@ -32,7 +32,7 @@ handler.setAboutHandler(controller.&showAbout)
 handler.setQuitHandler(controller.&exit)
 handler.setPreferencesHandler(controller.&preferences)
 handler
-""" : """"
+""" : """
 package groovy.ui
 
 import com.apple.mrj.*
