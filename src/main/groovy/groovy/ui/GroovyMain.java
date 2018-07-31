@@ -481,10 +481,10 @@ public class GroovyMain {
         Script s = groovy.parse(getScriptSource(isScriptFile, script));
 
         if (args.isEmpty()) {
-            try(BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                PrintWriter writer = new PrintWriter(System.out)) {
-
+            try(BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+                PrintWriter writer = new PrintWriter(System.out);
                 processReader(s, reader, writer);
+                writer.flush();
             }
         } else {
             Iterator i = args.iterator();
@@ -510,10 +510,10 @@ public class GroovyMain {
 
         if (!editFiles) {
 
-            try(BufferedReader reader = new BufferedReader(new FileReader(file));
-                PrintWriter writer = new PrintWriter(System.out)) {
-
+            try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                PrintWriter writer = new PrintWriter(System.out);
                 processReader(s, reader, writer);
+                writer.flush();
             }
         } else {
             File backup;
@@ -530,7 +530,6 @@ public class GroovyMain {
 
             try(BufferedReader reader = new BufferedReader(new FileReader(backup));
                 PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-
                 processReader(s, reader, writer);
             }
         }
