@@ -123,6 +123,7 @@ ext.groovyOsgiManifest = {
     version = groovyBundleVersion
     instruction '-nouses', 'true'
     instruction 'Export-Package', "*;version=${groovyBundleVersion}"
+    instruction 'Eclipse-ExtensibleAPI', 'true'
     classpath = sourceSets.main.runtimeClasspath
 }
 
