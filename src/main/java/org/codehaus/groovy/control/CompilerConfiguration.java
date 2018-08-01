@@ -65,6 +65,10 @@ public class CompilerConfiguration {
     public static final String JDK8 = "1.8";
     /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. **/
     public static final String JDK9 = "9";
+    /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. **/
+    public static final String JDK10 = "10";
+    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. **/
+    public static final String JDK11 = "11";
 
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5 or later JVM. **/
     public static final String POST_JDK5 = JDK5; // for backwards compatibility
@@ -73,7 +77,7 @@ public class CompilerConfiguration {
     public static final String PRE_JDK5 = JDK4;
 
     /** An array of the valid targetBytecode values **/
-    public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8, JDK9 };
+    public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8, JDK9, JDK10, JDK11 };
 
     @Deprecated
     public static final String CURRENT_JVM_VERSION = getMinBytecodeVersion();
@@ -103,7 +107,7 @@ public class CompilerConfiguration {
      * Encoding for source files
      */
     private String sourceEncoding;
-    
+
     /**
       * The <code>PrintWriter</code> does nothing.
       */
@@ -150,17 +154,17 @@ public class CompilerConfiguration {
      * extension used to find a groovy file
      */
     private String defaultScriptExtension;
-    
+
     /**
      * extensions used to find a groovy files
      */
     private Set<String> scriptExtensions = new LinkedHashSet<String>();
-    
+
     /**
      * if set to true recompilation is enabled
      */
     private boolean recompileGroovySource;
-    
+
     /**
      * sets the minimum of time after a script can be recompiled.
      */
@@ -175,7 +179,7 @@ public class CompilerConfiguration {
      * options for joint compilation (null by default == no joint compilation)
      */
     private Map<String, Object> jointCompilationOptions;
-    
+
     /**
      * options for optimizations (empty map by default)
      */
@@ -364,7 +368,7 @@ public class CompilerConfiguration {
      * Checks if the specified bytecode version string represents a JDK 1.8+ compatible
      * bytecode version.
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
-     * @return true if the bytecode version is JDK 1.87+
+     * @return true if the bytecode version is JDK 1.8+
      */
     public static boolean isPostJDK8(String bytecodeVersion) {
         return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK8)) >= 0;
@@ -416,9 +420,9 @@ public class CompilerConfiguration {
         }
         setWarningLevel(numeric);
 
-        // 
-        // Source file encoding 
-        // 
+        //
+        // Source file encoding
+        //
         text = configuration.getProperty("groovy.source.encoding");
         if (text == null) {
             text = configuration.getProperty("file.encoding", DEFAULT_SOURCE_ENCODING);
@@ -430,10 +434,10 @@ public class CompilerConfiguration {
         //
         text = configuration.getProperty("groovy.target.directory");
         if (text != null) setTargetDirectory(text);
-        
+
         text = configuration.getProperty("groovy.target.bytecode");
         if (text != null) setTargetBytecode(text);
-        
+
         //
         // Classpath
         //
@@ -459,7 +463,7 @@ public class CompilerConfiguration {
 
         //
         // Tolerance
-        // 
+        //
         numeric = 10;
         try {
             text = configuration.getProperty("groovy.errors.tolerance", "10");
@@ -474,7 +478,7 @@ public class CompilerConfiguration {
         //
         text = configuration.getProperty("groovy.script.base");
         if (text!=null) setScriptBaseClass(text);
-        
+
         //
         // recompilation options
         //
@@ -482,7 +486,7 @@ public class CompilerConfiguration {
         if (text != null) {
             setRecompileGroovySource(text.equalsIgnoreCase("true"));
         }
-        
+
         numeric = 100;
         try {
             text = configuration.getProperty("groovy.recompile.minimumIntervall");
@@ -545,7 +549,7 @@ public class CompilerConfiguration {
      * Gets the currently configured output writer.
      * @deprecated not used anymore
      */
-    @Deprecated 
+    @Deprecated
     public PrintWriter getOutput() {
         return this.output;
     }
@@ -606,7 +610,7 @@ public class CompilerConfiguration {
             this.classpath.add(tokenizer.nextToken());
         }
     }
-    
+
     /**
      * sets the classpath using a list of Strings
      * @param parts list of strings containing the classpath parts
@@ -704,11 +708,11 @@ public class CompilerConfiguration {
         if(scriptExtensions == null) scriptExtensions = new LinkedHashSet<String>();
         this.scriptExtensions = scriptExtensions;
     }
-    
+
     public Set<String> getScriptExtensions() {
         if(scriptExtensions == null || scriptExtensions.isEmpty()) {
             /*
-             *  this happens 
+             *  this happens
              *  *    when groovyc calls FileSystemCompiler in forked mode, or
              *  *    when FileSystemCompiler is run from the command line directly, or
              *  *    when groovy was not started using groovyc or FileSystemCompiler either
@@ -718,7 +722,7 @@ public class CompilerConfiguration {
         }
         return scriptExtensions;
     }
-    
+
     public String getDefaultScriptExtension() {
         return defaultScriptExtension;
     }
@@ -727,19 +731,19 @@ public class CompilerConfiguration {
     public void setDefaultScriptExtension(String defaultScriptExtension) {
         this.defaultScriptExtension = defaultScriptExtension;
     }
-    
+
     public void setRecompileGroovySource(boolean recompile) {
         recompileGroovySource = recompile;
     }
-    
+
     public boolean getRecompileGroovySource(){
         return recompileGroovySource;
     }
-    
+
     public void setMinimumRecompilationInterval(int time) {
         minimumRecompilationInterval = Math.max(0,time);
     }
-    
+
     public int getMinimumRecompilationInterval() {
         return minimumRecompilationInterval;
     }
@@ -768,11 +772,11 @@ public class CompilerConfiguration {
     public String getTargetBytecode() {
         return this.targetBytecode;
     }
-    
+
     private static String getMinBytecodeVersion() {
         return JDK7;
     }
-    
+
     /**
      * Gets the joint compilation options for this configuration.
      * @return the options
@@ -780,9 +784,9 @@ public class CompilerConfiguration {
     public Map<String, Object> getJointCompilationOptions() {
         return jointCompilationOptions;
     }
-    
+
     /**
-     * Sets the joint compilation options for this configuration. 
+     * Sets the joint compilation options for this configuration.
      * Using null will disable joint compilation.
      * @param options the options
      */
@@ -797,11 +801,11 @@ public class CompilerConfiguration {
     public Map<String, Boolean> getOptimizationOptions() {
         return optimizationOptions;
     }
-    
+
     /**
-     * Sets the optimization options for this configuration. 
-     * No entry or a true for that entry means to enable that optimization, 
-     * a false means the optimization is disabled. 
+     * Sets the optimization options for this configuration.
+     * No entry or a true for that entry means to enable that optimization,
+     * a false means the optimization is disabled.
      * Valid keys are "all" and "int".
      * @param options the options.
      * @throws IllegalArgumentException if the options are null
