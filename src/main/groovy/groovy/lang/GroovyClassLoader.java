@@ -801,7 +801,7 @@ public class GroovyClassLoader extends URLClassLoader {
     protected Class recompile(URL source, String className, Class oldClass) throws CompilationFailedException, IOException {
         if (source != null) {
             // found a source, compile it if newer
-            if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
+            if (oldClass == null || isSourceNewer(source, oldClass)) {
                 String name = source.toExternalForm();
 
                 sourceCache.remove(name);
