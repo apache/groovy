@@ -158,8 +158,7 @@ public class CachedClass {
             if (superClass != null) {
                 superClass.getMethods();
                 final CachedMethod[] superMopMethods = superClass.mopMethods;
-                for (int i = 0; i != superMopMethods.length; ++i)
-                  mopMethods.add(superMopMethods[i]);
+                mopMethods.addAll(Arrays.asList(superMopMethods));
             }
             CachedClass.this.mopMethods = mopMethods.toArray(CachedMethod.EMPTY_ARRAY);
             Arrays.sort(CachedClass.this.mopMethods, CachedMethodComparatorByName.INSTANCE);
