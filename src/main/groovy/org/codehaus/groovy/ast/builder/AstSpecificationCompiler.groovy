@@ -166,7 +166,6 @@ class AstSpecificationCompiler implements GroovyInterceptable {
 
         def oldProps = new ArrayList(expression)
         expression.clear()
-        new AstSpecificationCompiler(argBlock)
         def result = constructorStatement(expression) // invoke custom constructor for node
         expression.clear()
         expression.addAll(oldProps)
