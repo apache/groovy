@@ -61,6 +61,10 @@ public class CompilerConfiguration {
     public static final String JDK8 = "1.8";
     /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. **/
     public static final String JDK9 = "9";
+    /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. **/
+    public static final String JDK10 = "10";
+    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. **/
+    public static final String JDK11 = "11";
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5 or later JVM. **/
     public static final String POST_JDK5 = JDK5; // for backwards compatibility
 
@@ -76,7 +80,9 @@ public class CompilerConfiguration {
             JDK6, Opcodes.V1_6,
             JDK7, Opcodes.V1_7,
             JDK8, Opcodes.V1_8,
-            JDK9, Opcodes.V9
+            JDK9, Opcodes.V9,
+            JDK10, Opcodes.V10,
+            JDK11, Opcodes.V11
     );
 
     /** An array of the valid targetBytecode values **/
@@ -389,7 +395,7 @@ public class CompilerConfiguration {
      * Checks if the specified bytecode version string represents a JDK 1.8+ compatible
      * bytecode version.
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
-     * @return true if the bytecode version is JDK 1.87+
+     * @return true if the bytecode version is JDK 1.8+
      */
     public static boolean isPostJDK8(String bytecodeVersion) {
         return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK8)) >= 0;
