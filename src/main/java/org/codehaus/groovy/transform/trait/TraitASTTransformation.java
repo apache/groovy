@@ -224,7 +224,10 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                             methodNode.getLineNumber(), methodNode.getColumnNumber()));
                     return null;
                 }
-                helper.addMethod(processMethod(cNode, helper, methodNode, fieldHelper, fieldNames));
+                if (!methodNode.isAbstract()) {
+                    // add non-abstract methods; abstract methods covered from trait interface
+                    helper.addMethod(processMethod(cNode, helper, methodNode, fieldHelper, fieldNames));
+                }
                 if (methodNode.isPrivate() || methodNode.isStatic()) {
                     nonPublicAPIMethods.add(methodNode);
                 }
