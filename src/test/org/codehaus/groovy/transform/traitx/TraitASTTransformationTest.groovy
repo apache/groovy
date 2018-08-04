@@ -2492,4 +2492,23 @@ assert c.b() == 2
         '''
     }
 
+    //GROOVY-8730
+    void testAbstractMethodsNotNeededInHelperClass() {
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
+
+            trait Foo { abstract bar() }
+
+            // appears in interface as expected
+            assert Foo.getMethod("bar", [] as Class[])
+
+            // shouldn't appear in trait helper
+            shouldFail(NoSuchMethodException) {
+                // first and only inner class is the trait helper
+                // fragile if current implementation changes drastically
+                Foo.classes[0].getMethod("bar", [Foo] as Class[])
+            }
+        '''
+    }
+
 }
