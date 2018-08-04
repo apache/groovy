@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
@@ -160,14 +161,15 @@ class AstSpecificationCompiler implements GroovyInterceptable {
     *       the actual parameters being specified for the node
     * @param constructorStatement
     *       the type specific construction code that will be run
-    */ 
+    */
+    @CompileStatic
     private void captureAndCreateNode(String name, @DelegatesTo(AstSpecificationCompiler) Closure argBlock, Closure constructorStatement) {
         if (!argBlock) throw new IllegalArgumentException("nodes of type $name require arguments to be specified")
 
         def oldProps = new ArrayList(expression)
         expression.clear()
         new AstSpecificationCompiler(argBlock)
-        def result = constructorStatement(expression) // invoke custom constructor for node
+        ASTNode result = (ASTNode) constructorStatement(expression) // invoke custom constructor for node
         expression.clear()
         expression.addAll(oldProps)
         expression.add(result)
