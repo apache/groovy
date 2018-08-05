@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompileStatic;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -108,7 +109,7 @@ public abstract class TraitComposer {
             List<ClassNode> traits = findTraits(cNode);
             for (ClassNode trait : traits) {
                 TraitHelpersTuple helpers = Traits.findHelpers(trait);
-                applyTrait(trait, cNode, helpers);
+                applyTrait(trait, cNode, helpers, unit);
                 superCallTransformer.visitClass(cNode);
                 if (unit!=null) {
                     ASTTransformationCollectorCodeVisitor collector = new ASTTransformationCollectorCodeVisitor(unit, cu.getTransformLoader());
@@ -138,7 +139,7 @@ public abstract class TraitComposer {
         }
     }
 
-    private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers) {
+    private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers, SourceUnit unit) {
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
         ClassNode staticFieldHelperClassNode = helpers.getStaticFieldHelper();
@@ -174,7 +175,7 @@ public abstract class TraitComposer {
                     origParams[i-1] = parameter;
                     argList.addExpression(new VariableExpression(params[i - 1]));
                 }
-                createForwarderMethod(trait, cNode, methodNode, originalMethod, helperClassNode, methodGenericsSpec, helperMethodParams, origParams, params, argList);
+                createForwarderMethod(trait, cNode, methodNode, originalMethod, helperClassNode, methodGenericsSpec, helperMethodParams, origParams, params, argList, unit);
             }
         }
         cNode.addObjectInitializerStatements(new ExpressionStatement(
@@ -330,11 +331,11 @@ public abstract class TraitComposer {
             MethodNode helperMethod,
             MethodNode originalMethod,
             ClassNode helperClassNode,
-            Map<String,ClassNode> genericsSpec,
+            Map<String, ClassNode> genericsSpec,
             Parameter[] helperMethodParams,
             Parameter[] traitMethodParams,
             Parameter[] forwarderParams,
-            ArgumentListExpression helperMethodArgList) {
+            ArgumentListExpression helperMethodArgList, SourceUnit unit) {
         MethodCallExpression mce = new MethodCallExpression(
                 new ClassExpression(helperClassNode),
                 helperMethod.getName(),
@@ -396,11 +397,49 @@ public abstract class TraitComposer {
                 bridgeAnnotation
         );
 
+        MethodNode existingMethod = findExistingMethod(targetNode, forwarder);
+        if (existingMethod != null) {
+            if (!forwarder.isStatic() && existingMethod.isStatic()) {
+                // found an existing static method that is going to conflict with interface
+                unit.addError(createException(trait, targetNode, forwarder, existingMethod));
+                return;
+            }
+        }
+
         if (!shouldSkipMethod(targetNode, forwarder.getName(), forwarderParams)) {
             targetNode.addMethod(forwarder);
         }
 
         createSuperForwarder(targetNode, forwarder, genericsSpec);
+    }
+
+    private static SyntaxException createException(ClassNode trait, ClassNode targetNode, MethodNode forwarder, MethodNode existingMethod) {
+        String middle;
+        ASTNode errorTarget;
+        if (existingMethod.getLineNumber() == -1) {
+            // came from a trait
+            errorTarget = targetNode;
+            List<AnnotationNode> allAnnos = existingMethod.getAnnotations(Traits.TRAITBRIDGE_CLASSNODE);
+            AnnotationNode bridgeAnno = allAnnos == null ? null : allAnnos.get(0);
+            String fromTrait = null;
+            if (bridgeAnno != null) {
+                Expression traitClass = bridgeAnno.getMember("traitClass");
+                if (traitClass instanceof ClassExpression) {
+                    ClassExpression ce = (ClassExpression) traitClass;
+                    fromTrait = ce.getType().getNameWithoutPackage();
+                }
+            }
+            middle = "in '" + targetNode.getNameWithoutPackage();
+            if (fromTrait != null) {
+                middle += "' from trait '" + fromTrait;
+            }
+        } else {
+            errorTarget = existingMethod;
+            middle = "declared in '" + targetNode.getNameWithoutPackage();
+        }
+        String message = "The static '" + forwarder.getName() + "' method " + middle +
+                "' conflicts with the instance method having the same signature from trait '" + trait.getNameWithoutPackage() + "'";
+        return new SyntaxException(message, errorTarget);
     }
 
     private static GenericsType[] removeNonPlaceHolders(GenericsType[] oldTypes) {
@@ -542,8 +581,16 @@ public abstract class TraitComposer {
         return exceptionNodes;
     }
 
+    private static MethodNode findExistingMethod(final ClassNode cNode, final MethodNode forwarder) {
+        return findExistingMethod(cNode, forwarder.getName(), forwarder.getParameters());
+    }
+
+    private static MethodNode findExistingMethod(final ClassNode cNode, final String name, final Parameter[] params) {
+        return cNode.getDeclaredMethod(name, params);
+    }
+
     private static boolean shouldSkipMethod(final ClassNode cNode, final String name, final Parameter[] params) {
-        if (isExistingProperty(name, cNode, params) || cNode.getDeclaredMethod(name, params)!=null) {
+        if (isExistingProperty(name, cNode, params) || findExistingMethod(cNode, name, params) != null) {
             // override exists in the weaved class itself
             return true;
         }
