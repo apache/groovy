@@ -2511,4 +2511,29 @@ assert c.b() == 2
         '''
     }
 
+    //GROOVY-8731
+    void testStaticMethodsIgnoredWhenExistingInstanceMethodsFound() {
+        assertScript '''
+            trait StaticFooBarBaz {
+                static int foo() { 100 }
+                static int baz() { 200 }
+                static int bar() { 300 }
+            }
+
+            trait InstanceBar {
+                int bar() { -10 }
+            }
+
+            class FooBarBaz implements StaticFooBarBaz, InstanceBar {
+                int baz() { -20 }
+            }
+
+            assert FooBarBaz.foo() == 100
+            new FooBarBaz().with {
+                assert bar() == -10
+                assert baz() == -20
+            }
+        '''
+    }
+
 }
