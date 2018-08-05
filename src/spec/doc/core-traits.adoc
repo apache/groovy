@@ -320,7 +320,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=multiple
 === User conflict resolution
 
 In case this behavior is not the one you want, you can explicitly choose which method to call using the `Trait.super.foo` syntax.
-In the example above, we can force to choose the method from trait A, by writing this:
+In the example above, we can ensure the method from trait A is invoked by writing this:
 
 [source,groovy]
 ----
@@ -669,9 +669,16 @@ information below is valid for {groovyVersion} only.
 
 It is possible to define static methods in a trait, but it comes with numerous limitations:
 
-* traits with static methods cannot be compiled statically or type checked. All static methods/properties/field are accessed dynamically (it's a limitation from the JVM).
-* the trait is interpreted as a _template_ for the implementing class, which means that each implementing class will get its own static methods/properties/methods. So a
-static member declared on a trait doesn't belong to the `Trait`, but to it's implementing class.
+* Traits with static methods cannot be compiled statically or type checked. All static methods,
+properties and field are accessed dynamically (it's a limitation from the JVM).
+* The trait is interpreted as a _template_ for the implementing class, which means that each
+implementing class will get its own static methods, properties and fields. So a static member
+declared on a trait doesn't belong to the `Trait`, but to it's implementing class.
+* You should typically not mix static and instance methods of the same signature. The normal
+rules for applying traits apply (including multiple inheritance conflict resolution). If the
+method chosen is static but some implemented trait has an instance variant, a compilation error
+will occur. If the method chosen is the instance variant, the static variant will be ignored
+(the behavior is similar to static methods in Java interfaces for this case).
 
 Let's start with a simple example:
 
