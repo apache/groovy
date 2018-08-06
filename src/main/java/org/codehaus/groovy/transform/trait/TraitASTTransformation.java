@@ -200,14 +200,14 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             fieldHelper = new InnerClassNode(
                     cNode,
                     Traits.fieldHelperClassName(cNode),
-                    ACC_STATIC | ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT,
+                    ACC_STATIC | ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT | ACC_SYNTHETIC,
                     ClassHelper.OBJECT_TYPE
             );
             if (hasStatic) {
                 staticFieldHelper = new InnerClassNode(
                         cNode,
                         Traits.staticFieldHelperClassName(cNode),
-                        ACC_STATIC | ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT,
+                        ACC_STATIC | ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT | ACC_SYNTHETIC,
                         ClassHelper.OBJECT_TYPE
                 );
             }
