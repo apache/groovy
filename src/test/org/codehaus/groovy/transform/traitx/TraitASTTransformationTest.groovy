@@ -2536,4 +2536,21 @@ assert c.b() == 2
         '''
     }
 
+    //GROOVY-6716
+    void testAnonymousInnerClassStyleTraitUsage() {
+        assertScript '''
+            interface Foo { def foo() }
+            def f = new Foo() { def foo() { 42 } }
+            assert f.foo() == 42
+
+            abstract class Baz { abstract baz() }
+            def bz = new Baz() { def baz() { 42 } }
+            assert bz.baz() == 42
+
+            trait Bar { def bar() { 42 } }
+            def b = new Bar() {}
+            assert b.bar() == 42
+        '''
+    }
+
 }

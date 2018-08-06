@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
@@ -79,7 +80,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         if (node.isEnum() || node.isInterface()) return;
         if (innerClass == null) return;
 
-        if (node.getSuperClass().isInterface()) {
+        if (node.getSuperClass().isInterface() || Traits.isAnnotatedWithTrait(node.getSuperClass())) {
             node.addInterface(node.getUnresolvedSuperClass());
             node.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
         }
