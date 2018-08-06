@@ -100,6 +100,18 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=private_
 WARNING: Traits only support `public` and `private` methods. Neither `protected` nor `package private` scopes are
 supported.
 
+=== Final methods
+
+If we have a class implementing a trait, conceptually implementations from the trait methods
+are "inherited" into the class. But, in reality, there is no base class containing such
+implementations. Rather, they are woven directly into the class. A final modifier on a method
+just indicates what the modifier will be for the woven method. While it would likely be
+considered bad style to inherit and override or multiply inherit methods with the same
+signature but a mix of final and non-final variants, Groovy doesn't prohibit this scenario.
+Normal method selection applies and the modifier used will be determined from the resulting method.
+You might consider creating a base class which implements the desired trait(s) if you
+want trait implementation methods that can't be overridden.
+
 == The meaning of this
 
 `this` represents the implementing instance. Think of a trait as a superclass. This means that when you write:
@@ -639,7 +651,7 @@ runtime mixins, not the @Mixin annotation which is deprecated in favour of trait
 
 First of all, methods defined in a trait are visible in bytecode:
 
-* internally, the trait is represented as an interface (without default methods) and several helper classes
+* internally, the trait is represented as an interface (without default or static methods) and several helper classes
 * this means that an object implementing a trait effectively implements an _interface_
 * those methods are visible from Java
 * they are compatible with type checking and static compilation
@@ -671,6 +683,7 @@ It is possible to define static methods in a trait, but it comes with numerous l
 
 * Traits with static methods cannot be compiled statically or type checked. All static methods,
 properties and field are accessed dynamically (it's a limitation from the JVM).
+* Static methods do not appear within the generated interfaces for each trait.
 * The trait is interpreted as a _template_ for the implementing class, which means that each
 implementing class will get its own static methods, properties and fields. So a static member
 declared on a trait doesn't belong to the `Trait`, but to it's implementing class.

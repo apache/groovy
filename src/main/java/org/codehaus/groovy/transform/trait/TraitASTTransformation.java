@@ -543,7 +543,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         Parameter[] newParams = new Parameter[initialParams.length + 1];
         newParams[0] = createSelfParameter(traitClass, methodNode.isStatic());
         System.arraycopy(initialParams, 0, newParams, 1, initialParams.length);
-        final int mod = methodNode.isPrivate()?ACC_PRIVATE:ACC_PUBLIC;
+        final int mod = methodNode.isPrivate() ? ACC_PRIVATE : ACC_PUBLIC | (methodNode.isFinal() ? ACC_FINAL : 0);
         MethodNode mNode = new MethodNode(
                 methodNode.getName(),
                 mod | ACC_STATIC,

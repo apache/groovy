@@ -2553,4 +2553,58 @@ assert c.b() == 2
         '''
     }
 
+    //GROOVY-8722
+    void testFinalModifierSupport() {
+        assertScript '''
+            import static java.lang.reflect.Modifier.isFinal
+
+            trait Foo {
+                final int bar() { 2 }
+                final int baz() { 4 }
+            }
+
+            trait Foo2 {
+                int baz() { 6 }
+            }
+
+            class FooFoo2 implements Foo, Foo2 { }
+
+            class Foo2Foo implements Foo2, Foo {
+                int bar() { 8 }
+            }
+
+            def isFinal(Class k, String methodName) {
+                isFinal(k.getMethod(methodName, [] as Class[]).modifiers)
+            }
+
+            new Foo2Foo().with {
+                assert bar() == 8
+                assert baz() == 4
+                assert !isFinal(Foo2Foo, 'bar')
+                assert isFinal(Foo2Foo, 'baz')
+            }
+
+            new FooFoo2().with {
+                assert bar() == 2
+                assert baz() == 6
+                assert isFinal(FooFoo2, 'bar')
+                assert !isFinal(FooFoo2, 'baz')
+            }
+        '''
+        assertScript '''
+            trait Startable {
+                final int start() { doStart() * 2 }
+                abstract int doStart() { }
+            }
+
+            abstract class Base implements Startable { }
+
+            class Application extends Base {
+                int doStart() { 21 }
+            }
+
+            assert new Application().start() == 42
+        '''
+    }
+
 }
