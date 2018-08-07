@@ -24,19 +24,24 @@ import org.codehaus.groovy.vmplugin.v7.Java7;
  * Factory class to get functionality based on the VM version.
  * The usage of this class is not for public use, only for the
  * runtime.
- * @author Jochen Theodorou
  */
 public class VMPluginFactory {
 
     private static final String JDK8_CLASSNAME_CHECK = "java.util.Optional";
+    private static final String JDK9_CLASSNAME_CHECK = "java.lang.Module";
+
     private static final String JDK8_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v8.Java8";
+    private static final String JDK9_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v9.Java9";
 
     private static final VMPlugin plugin;
 
     static {
-        VMPlugin target = createPlugin(JDK8_CLASSNAME_CHECK, JDK8_PLUGIN_NAME);
+        VMPlugin target = createPlugin(JDK9_CLASSNAME_CHECK, JDK9_PLUGIN_NAME);
         if (target == null) {
-            target = new Java7();
+            target = createPlugin(JDK8_CLASSNAME_CHECK, JDK8_PLUGIN_NAME);
+            if (target == null) {
+                target = new Java7();
+            }
         }
         plugin = target;
     }

@@ -27,8 +27,6 @@ import java.lang.reflect.Method;
 /**
  * Interface to access VM version based actions.
  * This interface is for internal use only!
- * 
- * @author Jochen Theodorou
  */
 public interface VMPlugin {
     void setAdditionalClassInformation(ClassNode c);
@@ -58,7 +56,7 @@ public interface VMPlugin {
 
     /**
      * Gives the version the plugin is made for
-     * @return 5 for jdk5, 6 for jdk6, 7 for jdk7, 8 for jdk8 or higher
+     * @return 7 for jdk7, 8 for jdk8, 9 for jdk9 or higher
      */
     int getVersion();
 
