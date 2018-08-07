@@ -2594,7 +2594,7 @@ assert c.b() == 2
         assertScript '''
             trait Startable {
                 final int start() { doStart() * 2 }
-                abstract int doStart() { }
+                abstract int doStart()
             }
 
             abstract class Base implements Startable { }
