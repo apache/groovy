@@ -786,7 +786,7 @@ include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype
 <5> The method from the trait is called, and `id` is resolved
 
 It is clear, here, that the `Communicating` trait can only apply to `Device`. However, there's no explicit
-contract to tell that, because traits cannot extend classes. However, the code compiles and runs perfectly
+contract to indicate that, because traits cannot extend classes. However, the code compiles and runs perfectly
 fine, because `id` in the trait method will be resolved dynamically. The problem is that there is nothing that
 prevents the trait from being applied to any class which is *not* a `Device`. Any class which has an `id` would
 work, while any class that does not have an `id` property would cause a runtime error.
@@ -803,8 +803,8 @@ requires `this` as a parameter, and actually requires it to be a `Device`?
 include::{projectdir}/src/spec/test/TraitsSpecificationTest.groovy[tags=selftype_securityservice,indent=0]
 ----
 
-If you want to be able to call this in the trait, then you will explicitly need to cast `this` into a `Device`. This can
-quickly become unreadable with explicit casts to this everywhere.
+If you want to be able to call `this` in the trait, then you will explicitly need to cast `this` into a `Device`. This can
+quickly become unreadable with explicit casts to `this` everywhere.
 
 [[traits-selftype]]
 === The @SelfType annotation
