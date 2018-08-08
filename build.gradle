@@ -259,6 +259,7 @@ sourceSets {
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
+                exclude '**/v9/*'
             }
         }
         groovy {
@@ -266,6 +267,7 @@ sourceSets {
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
+                exclude '**/v9/*'
             }
         }
         resources {
