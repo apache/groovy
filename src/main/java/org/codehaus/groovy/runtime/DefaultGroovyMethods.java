@@ -12529,13 +12529,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Chops the array into pieces, returning a piece for each chop size plus the remainder.
-     * Returns a list of all the pieces leaving the original array intact.
-     * If the array is too small, truncated (possibly empty) pieces are returned.
+     * Chops the array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
+     * If the array isn't large enough, truncated (possibly empty) pieces are returned.
+     * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
      *
      * @param self      an Array to be chopped
-     * @param chopSizes an Array of sizes
-     * @return a list of lists chopping the original array into pieces determined by chopSizes
+     * @param chopSizes the sizes for the returned pieces
+     * @return a list of lists chopping the original array elements into pieces determined by chopSizes
      * @see #collate(Object[], int) to chop a list into pieces of a fixed size
      * @since 2.5.2
      */
@@ -12544,21 +12544,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Chops the Iterable into pieces, returning a piece for each chop size plus the remainder.
-     * Returns a list of all the pieces leaving the original Iterable intact.
-     * If the Iterable is too small, truncated (possibly empty) pieces are returned.
+     * Chops the Iterable into pieces, returning lists with sizes corresponding to the supplied chop sizes.
+     * If the Iterable isn't large enough, truncated (possibly empty) pieces are returned.
+     * Using a chop size of -1 will cause that piece to contain all remaining items from the Iterable.
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * assert [1, 2, 3, 4].chop(1) == [[1], [2, 3, 4]]
-     * assert ('a'..'h').chop(2, 4) == [['a', 'b'], ['c', 'd', 'e', 'f'], ['g', 'h']]
-     * assert ['a', 'b', 'c', 'd', 'e'].chop(3) == [['a', 'b', 'c'], ['d', 'e']]
+     * assert [1, 2, 3, 4].chop(1) == [[1]]
+     * assert [1, 2, 3, 4].chop(1,-1) == [[1], [2, 3, 4]]
+     * assert ('a'..'h').chop(2, 4) == [['a', 'b'], ['c', 'd', 'e', 'f']]
+     * assert ['a', 'b', 'c', 'd', 'e'].chop(3) == [['a', 'b', 'c']]
      * assert ['a', 'b', 'c', 'd', 'e'].chop(1, 2, 3) == [['a'], ['b', 'c'], ['d', 'e']]
      * assert ['a', 'b', 'c', 'd', 'e'].chop(1, 2, 3, 3, 3) == [['a'], ['b', 'c'], ['d', 'e'], [], []]
      * </pre>
      *
      * @param self      an Iterable to be chopped
-     * @param chopSizes an Array of sizes
+     * @param chopSizes the sizes for the returned pieces
      * @return a list of lists chopping the original iterable into pieces determined by chopSizes
      * @see #collate(Iterable, int) to chop an Iterable into pieces of a fixed size
      * @since 2.5.2
@@ -12566,32 +12567,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<List<T>> chop(Iterable<T> self, int... chopSizes) {
         return chop(self.iterator(), chopSizes);
     }
+
     /**
-     * Chops the iterator items into pieces, returning a piece for each chop size plus the remainder.
-     * Returns a list of all the pieces.
+     * Chops the iterator items into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the iterator is exhausted early, truncated (possibly empty) pieces are returned.
+     * Using a chop size of -1 will cause that piece to contain all remaining items from the iterator.
      *
      * @param self      an Iterator to be chopped
-     * @param chopSizes an Array of sizes
-     * @return a list of lists chopping the original array into pieces determined by chopSizes
+     * @param chopSizes the sizes for the returned pieces
+     * @return a list of lists chopping the original iterator elements into pieces determined by chopSizes
      * @since 2.5.2
      */
     public static <T> List<List<T>> chop(Iterator<T> self, int... chopSizes) {
         List<List<T>> result = new ArrayList<List<T>>();
         for (Integer nextSize : chopSizes) {
             int size = nextSize;
-            if (size < 0) {
-                throw new IllegalArgumentException("chop found negative chopSize: " + nextSize);
-            }
             List<T> next = new ArrayList<T>();
-            while (size-- > 0 && self.hasNext()) {
-                next.add(self.next());
-            }
-            result.add(next);
-        }
-        if (self.hasNext()) {
-            List<T> next = new ArrayList<T>();
-            while (self.hasNext()) {
+            while (size-- != 0 && self.hasNext()) {
                 next.add(self.next());
             }
             result.add(next);
