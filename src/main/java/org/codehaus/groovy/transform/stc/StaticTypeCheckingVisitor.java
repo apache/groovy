@@ -88,6 +88,7 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -482,12 +483,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Given a field node, checks if we are accessing or setting a private field from an inner class.
      */
     private void checkOrMarkPrivateAccess(Expression source, FieldNode fn, boolean lhsOfAssignment) {
+        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
+        ClassNode declaringClass = fn.getDeclaringClass();
         if (fn != null && Modifier.isPrivate(fn.getModifiers()) &&
-                (fn.getDeclaringClass() != typeCheckingContext.getEnclosingClassNode() || typeCheckingContext.getEnclosingClosure() != null) &&
-                fn.getDeclaringClass().getModule() == typeCheckingContext.getEnclosingClassNode().getModule()) {
+                (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) &&
+                declaringClass.getModule() == enclosingClassNode.getModule()) {
+            if (!lhsOfAssignment && enclosingClassNode.isDerivedFrom(declaringClass)) {
+                // check for a public/protected getter since JavaBean getters haven't been recognised as properties
+                // at this point and we don't want private field access for that case which will be handled later
+                boolean isPrimBool = fn.getOriginType().equals(ClassHelper.boolean_TYPE);
+                String suffix = Verifier.capitalize(fn.getName());
+                MethodNode getterNode = findValidGetter(enclosingClassNode, "get" + suffix);
+                if (getterNode == null && isPrimBool) {
+                    getterNode = findValidGetter(enclosingClassNode, "is" + suffix);
+                }
+                if (getterNode != null) {
+                    source.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, getterNode.getReturnType());
+                    return;
+                }
+            }
             StaticTypesMarker marker = lhsOfAssignment ? StaticTypesMarker.PV_FIELDS_MUTATION : StaticTypesMarker.PV_FIELDS_ACCESS;
-            addPrivateFieldOrMethodAccess(source, fn.getDeclaringClass(), marker, fn);
+            addPrivateFieldOrMethodAccess(source, declaringClass, marker, fn);
         }
+    }
+
+    private MethodNode findValidGetter(ClassNode classNode, String name) {
+        MethodNode getterMethod = classNode.getGetterMethod(name);
+        if (getterMethod != null && (getterMethod.isPublic() || getterMethod.isProtected())) {
+            return getterMethod;
+        }
+        return null;
     }
 
     /**
