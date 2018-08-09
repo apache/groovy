@@ -27,6 +27,7 @@ def jdk9plus = VMPluginFactory.getPlugin().getVersion() > 8
 if (!handler) {
     try {
         handler = build(jdk9plus ? """
+import java.awt.Desktop
 def handler = Desktop.getDesktop()
 handler.setAboutHandler(controller.&showAbout)
 handler.setQuitHandler(controller.&exit)
