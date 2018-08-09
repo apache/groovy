@@ -679,8 +679,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         runThread?.interrupt()
     }
 
-    void exit(EventObject evt = null) {
-        if(askToInterruptScript()) {
+    void exit(EventObject evt = null, desktopQuitResponse = null) {
+        if (askToInterruptScript()) {
             if (askToSaveFile()) {
                 if (frame instanceof Window) {
                     frame.hide()
