@@ -1625,26 +1625,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             }
         }
 
-        /*
         if (2 == ctx.t) {
             if (asBoolean(ctx.methodBody())) {
                 throw createParsingFailedException("Abstract method should not have method body", ctx);
             }
         }
-        */
 
         boolean isAbstractMethod = methodNode.isAbstract();
         boolean hasMethodBody = asBoolean(methodNode.getCode());
-
-        if (isAbstractMethod && hasMethodBody) {
-            throw createParsingFailedException("Abstract method should not have method body", ctx);
-        }
 
         if (9 == ctx.ct) { // script
             if (isAbstractMethod || !hasMethodBody) { // method should not be declared abstract in the script
                 throw createParsingFailedException("You can not define a " + (isAbstractMethod ? "abstract" : "") + " method[" + methodNode.getName() + "] " + (!hasMethodBody ? "without method body" : "") + " in the script. Try " + (isAbstractMethod ? "removing the 'abstract'" : "") + (isAbstractMethod && !hasMethodBody ? " and" : "") + (!hasMethodBody ? " adding a method body" : ""), methodNode);
             }
         } else {
+            if (4 == ctx.ct) { // trait
+                if (isAbstractMethod && hasMethodBody) {
+                    throw createParsingFailedException("Abstract method should not have method body", ctx);
+                }
+            }
+
             if (!isAbstractMethod && !hasMethodBody) { // non-abstract method without body in the non-script(e.g. class, enum, trait) is not allowed!
                 throw createParsingFailedException("You defined a method[" + methodNode.getName() + "] without body. Try adding a method body, or declare it abstract", methodNode);
             }
