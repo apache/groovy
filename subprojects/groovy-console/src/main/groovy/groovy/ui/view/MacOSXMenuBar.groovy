@@ -30,7 +30,7 @@ if (!handler) {
 import java.awt.Desktop
 def handler = Desktop.getDesktop()
 handler.setAboutHandler(controller.&showAbout)
-handler.setQuitHandler(controller.&exit)
+handler.setQuitHandler(controller.&exitDesktop)
 handler.setPreferencesHandler(controller.&preferences)
 handler
 """ : """
