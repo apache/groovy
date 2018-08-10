@@ -18,6 +18,7 @@
  */
 package groovy.util
 
+import groovy.cli.commons.OptionAccessor
 import org.apache.commons.cli.CommandLineParser
 import org.apache.commons.cli.HelpFormatter
 
@@ -31,7 +32,8 @@ class CliBuilder {
 
     // explicit delegate to convert return type to expected legacy package
     OptionAccessor parse(args) {
-        return new OptionAccessor(delegate: delegate.parse(args))
+        def result = delegate.parse(args)
+        return result == null ? null : new OptionAccessor(delegate: result)
     }
 
     // explicit delegate since groovyObject methods ignored by @Delegate
