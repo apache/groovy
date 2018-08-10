@@ -581,6 +581,8 @@ public class DefaultTypeTransformation {
                 return ((String) left).compareTo(right.toString());
             } else if (left instanceof GString && right instanceof String) {
                 return ((GString) left).compareTo(right);
+            } else if (left instanceof GString && right instanceof Character) {
+                return ((GString) left).compareTo(right);
             }
             if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
                     || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
@@ -673,13 +675,7 @@ public class DefaultTypeTransformation {
      * @return true if the given value is a valid character string (i.e. has length of 1)
      */
     private static boolean isValidCharacterString(Object value) {
-        if (value instanceof String) {
-            String s = (String) value;
-            if (s.length() == 1) {
-                return true;
-            }
-        }
-        return false;
+        return (value instanceof String || value instanceof GString) && value.toString().length() == 1;
     }
 
     @Deprecated
