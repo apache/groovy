@@ -155,4 +155,40 @@ class DefaultTypeTransformationTest extends GroovyTestCase {
             throw e
         }
     }
+
+    void testNumberEqualsCharacterGString() {
+        final String S = 'A'
+        final GString G = "$S"
+        final Number N = 65
+
+        assert N == S && S == G
+        assert N      ==      G
+    }
+
+    void testCharacterEqualsCharacterGString() {
+        final String S = 'A'
+        final Character C = 'A'
+        final GString G = "$S"
+
+        assert C == S && S == G
+        assert C      ==      G
+    }
+
+    void testCharacterGStringsEqualsCharacter() {
+        final String S = 'A'
+        final Character C = 'A'
+        final GString G = "$S"
+
+        assert S == C && G == S
+        assert      G == C
+    }
+
+    void testCharacterGStringEqualsNumber() {
+        final String S = 'A'
+        final GString G = "$S"
+        final Number N = 65
+
+        assert S == N && G == S
+        assert      G == N
+    }
 }
