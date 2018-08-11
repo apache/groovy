@@ -1122,14 +1122,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 resolveOrFail(t, ce);
                 visitAnnotations(para);
                 if (para.hasInitialExpression()) {
-                    Object initialVal = para.getInitialExpression();
-                    if (initialVal instanceof Expression) {
-                        para.setInitialExpression(transform((Expression) initialVal));
-                    }
+                    para.setInitialExpression(transform(para.getInitialExpression()));
                 }
                 visitAnnotations(para);
             }
         }
+
         Statement code = ce.getCode();
         if (code != null) code.visit(this);
         inClosure = oldInClosure;
