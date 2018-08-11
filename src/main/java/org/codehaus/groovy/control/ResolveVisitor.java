@@ -93,6 +93,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static final String BIGINTEGER_STR = "BigInteger";
     private static final String BIGDECIMAL_STR = "BigDecimal";
     public static final String QUESTION_MARK = "?";
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private ClassNode currentClass;
     private final CompilationUnit compilationUnit;
@@ -501,6 +502,38 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    private static final Map<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_MAP = new HashMap<>();
+
+    private boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
+        final String typeName = type.getName();
+
+        for (String packagePrefix : packagePrefixes) {
+            // We limit the inner class lookups here by using ConstructedClassWithPackage.
+            // This way only the name will change, the packagePrefix will
+            // not be included in the lookup. The case where the
+            // packagePrefix is really a class is handled elsewhere.
+            // WARNING: This code does not expect a class that has a static
+            //          inner class in DEFAULT_IMPORTS
+            ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, typeName);
+            if (resolve(tmp, false, false, false)) {
+                type.setRedirect(tmp.redirect());
+
+                if (DEFAULT_IMPORTS == packagePrefixes) { // Only the non-cached type and packages should be cached
+                    Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_MAP.get(typeName);
+                    if (null == packagePrefixSet) {
+                        packagePrefixSet = new HashSet<>();
+                        DEFAULT_IMPORT_CLASS_AND_PACKAGES_MAP.put(typeName, packagePrefixSet);
+                    }
+                    packagePrefixSet.add(packagePrefix);
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private boolean resolveFromDefaultImports(final ClassNode type, boolean testDefaultImports) {
         // test default imports
         testDefaultImports &= !type.hasPackageName();
@@ -511,18 +544,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         final String typeName = type.getName();
 
         if (testDefaultImports) {
-            for (String packagePrefix : DEFAULT_IMPORTS) {
-                // We limit the inner class lookups here by using ConstructedClassWithPackage.
-                // This way only the name will change, the packagePrefix will
-                // not be included in the lookup. The case where the
-                // packagePrefix is really a class is handled elsewhere.
-                // WARNING: This code does not expect a class that has a static
-                //          inner class in DEFAULT_IMPORTS
-                ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(packagePrefix, typeName);
-                if (resolve(tmp, false, false, false)) {
-                    type.setRedirect(tmp.redirect());
+            Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_MAP.get(typeName);
+            if (null != packagePrefixSet) {
+                // if the type name was resolved before, we can try the successfully resolved packages first, which are much less and very likely successful to resolve.
+                // As a result, we can avoid trying other default import packages and further resolving, which can improve the resolving performance to some extent.
+                if (resolveFromDefaultImports(type, packagePrefixSet.toArray(EMPTY_STRING_ARRAY))) {
                     return true;
                 }
+            }
+
+            if (resolveFromDefaultImports(type, DEFAULT_IMPORTS)) {
+                return true;
             }
 
             if (BIGINTEGER_STR.equals(typeName)) {
