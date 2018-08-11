@@ -59,6 +59,8 @@ import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.ClassNodeResolver.LookupResult;
+import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
+import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
@@ -502,7 +504,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
-    private static final Map<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_MAP = new HashMap<>();
+    private static final EvictableCache<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new ConcurrentCommonCache<>();
 
     private boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
         final String typeName = type.getName();
@@ -519,11 +521,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 type.setRedirect(tmp.redirect());
 
                 if (DEFAULT_IMPORTS == packagePrefixes) { // Only the non-cached type and packages should be cached
-                    Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_MAP.get(typeName);
-                    if (null == packagePrefixSet) {
-                        packagePrefixSet = new HashSet<>(2);
-                        DEFAULT_IMPORT_CLASS_AND_PACKAGES_MAP.put(typeName, packagePrefixSet);
-                    }
+                    Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.getAndPut(typeName, new ConcurrentCommonCache.ValueProvider<String, Set<String>>() {
+                        @Override
+                        public Set<String> provide(String key) {
+                            return new HashSet<>(2);
+                        }
+                    });
                     packagePrefixSet.add(packagePrefix);
                 }
 
@@ -544,7 +547,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         final String typeName = type.getName();
 
         if (testDefaultImports) {
-            Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_MAP.get(typeName);
+            Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
             if (null != packagePrefixSet) {
                 // if the type name was resolved before, we can try the successfully resolved packages first, which are much less and very likely successful to resolve.
                 // As a result, we can avoid trying other default import packages and further resolving, which can improve the resolving performance to some extent.
