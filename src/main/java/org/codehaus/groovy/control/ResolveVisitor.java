@@ -521,12 +521,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 type.setRedirect(tmp.redirect());
 
                 if (DEFAULT_IMPORTS == packagePrefixes) { // Only the non-cached type and packages should be cached
-                    Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.getAndPut(typeName, new UnlimitedConcurrentCache.ValueProvider<String, Set<String>>() {
-                        @Override
-                        public Set<String> provide(String key) {
-                            return new HashSet<>(2);
-                        }
-                    });
+                    Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.getAndPut(typeName, key -> new HashSet<>(2));
                     packagePrefixSet.add(packagePrefix);
                 }
 
