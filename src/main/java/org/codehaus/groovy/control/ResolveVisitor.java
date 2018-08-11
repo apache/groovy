@@ -331,11 +331,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         int modifiers = innerClassNode.getModifiers();
-        if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
-            return true;
-        }
-
-        return false;
+        return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers);
     }
 
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {
