@@ -124,16 +124,13 @@ test.dependsOn(copyTestResources)
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-    maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // examples, tools
+    maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
     maven { url 'http://repo.bodar.com' } // tools - jarjar
 }
 
-// todo do we need compile and runtime scope for examples?
 configurations {
     compilerCompile
     tools
-    examplesCompile.extendsFrom compile
-    examplesRuntime.extendsFrom examplesCompile
     antlr2
     spec
 }
@@ -145,8 +142,6 @@ ext {
     bridgerVersion = '1.5.Final'
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.4'
-    commonsHttpClientVersion = '3.1'
-    eclipseOsgiVersion = '3.9.1-v20140110-1610'
     gparsVersion = '1.2.1'
     ivyVersion = '2.5.0-rc1'
     jansiVersion = '1.17.1'
@@ -156,9 +151,7 @@ ext {
     logbackVersion = '1.1.7'
     log4jVersion = '1.2.17'
     log4j2Version = '2.8'
-    luceneVersion = '4.7.2'
     openbeansVersion = '1.0'
-    openejbVersion = '1.0'
     picocliVersion = '3.5.0'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.21'
@@ -218,27 +211,6 @@ dependencies {
     tools "org.ow2.asm:asm:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-    examplesCompile project(':groovy-test')
-    examplesCompile project(':groovy-swing')
-
-    examplesCompile "org.apache.lucene:lucene-core:$luceneVersion"
-    examplesCompile "org.apache.lucene:lucene-analyzers-common:$luceneVersion"
-    examplesCompile "org.apache.lucene:lucene-queryparser:$luceneVersion"
-    examplesCompile "org.eclipse:osgi:$eclipseOsgiVersion"
-    examplesRuntime("commons-httpclient:commons-httpclient:$commonsHttpClientVersion") {
-        exclude(module: 'junit')
-        exclude(module: 'commons-logging')
-        exclude(module: 'commons-codec')
-    }
-    examplesRuntime("openejb:openejb-loader:$openejbVersion") {
-        exclude(module: 'log4j')
-        exclude(module: 'openejb-core')
-        exclude(module: 'geronimo-jta_1.0.1B_spec')
-        exclude(module: 'geronimo-servlet_2.4_spec')
-        exclude(module: 'geronimo-ejb_2.1_spec')
-        exclude(module: 'geronimo-j2ee-connector_1.5_spec')
-    }
-
     antlr2 "org.apache.ant:ant-antlr:$antVersion"
 
     testCompile project(':groovy-ant')
@@ -293,15 +265,6 @@ sourceSets {
         compileClasspath = sourceSets.main.runtimeClasspath + configurations.tools
         runtimeClasspath = output + compileClasspath
     }
-    examples {
-        groovy {
-            srcDirs = ['src/examples']
-        }
-        resources {
-            srcDirs = ['src/examples']
-        }
-        compileClasspath = configurations.examplesRuntime + sourceSets.main.output + project(':groovy-xml').sourceSets.main.output
-    }
 }
 
 task sourceJar(type: Jar) {
@@ -320,12 +283,6 @@ subprojects {
 }
 
 apply from: 'subprojects/parser-antlr4/build.gradle'
-
-// make sure examples can be compiled, even if we don't run them
-// todo: reorganize examples so that we can run them too
-check {
-    dependsOn examplesClasses
-}
 
 compileJava {
     doLast {
