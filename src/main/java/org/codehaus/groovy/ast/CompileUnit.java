@@ -23,6 +23,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.util.ListHashMap;
 
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -39,10 +40,8 @@ import java.util.Map;
  * <p>
  * It's attached to MethodNodes and ClassNodes and is used to find fully qualified names of classes,
  * resolve imports, and that sort of thing.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
  */
-public class CompileUnit {
+public class CompileUnit implements NodeMetaDataHandler {
 
     private final List<ModuleNode> modules = new ArrayList<ModuleNode>();
     private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
@@ -52,6 +51,7 @@ public class CompileUnit {
     private final Map<String, ClassNode> classesToCompile = new HashMap<String, ClassNode>();
     private final Map<String, SourceUnit> classNameToSource = new HashMap<String, SourceUnit>();
     private final Map<String, InnerClassNode> generatedInnerClasses = new HashMap();
+    private Map metaDataMap = null;
 
     public CompileUnit(GroovyClassLoader classLoader, CompilerConfiguration config) {
         this(classLoader, null, config);
@@ -189,5 +189,15 @@ public class CompileUnit {
 
     public Map<String, InnerClassNode> getGeneratedInnerClasses() {
         return Collections.unmodifiableMap(generatedInnerClasses);
+    }
+
+    @Override
+    public ListHashMap getMetaDataMap() {
+        return (ListHashMap) metaDataMap;
+    }
+
+    @Override
+    public void setMetaDataMap(Map<?, ?> metaDataMap) {
+        this.metaDataMap = metaDataMap;
     }
 }
