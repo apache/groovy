@@ -410,7 +410,6 @@ class GrapeIvy implements GrapeEngine {
         }
     }
 
-    @CompileStatic
     ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
         ResolutionCacheManager cacheManager = ivyInstance.resolutionCacheManager
 
