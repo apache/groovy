@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.shell.util
 
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 
 import java.util.jar.JarEntry
@@ -31,6 +32,7 @@ import java.util.zip.ZipException
  * Helper class that crawls all items of the classpath for packages.
  * Retrieves from those sources the list of subpackages and classes on demand.
  */
+@CompileStatic
 class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
 
     // Pattern for regular Classnames
@@ -124,6 +126,7 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
     }
 
     // TODO: review after jdk9 is released
+    @CompileDynamic
     private static boolean isModularRuntime() {
         try {
             return this.classLoader.loadClass('java.lang.reflect.Module', false) != null
@@ -387,14 +390,13 @@ Files.walkFileTree(fs.getPath('modules'),
      * @param packagename
      * @return
      */
-    @CompileStatic
     static Set<String> getClassnames(final Set<URL> urls, final String packagename) {
         Set<String> classes = new TreeSet<String>()
         // normal slash even in Windows
         String pathname = packagename.replace('.', '/')
-        for (Iterator it = urls.iterator(); it.hasNext();) {
-            URL url = (URL) it.next()
-            if (url.protocol=='jrt') {
+        for (Iterator<URL> it = urls.iterator(); it.hasNext();) {
+            URL url = it.next()
+            if (url.protocol == 'jrt') {
                 getPackagesAndClassesFromJigsaw(url) { boolean isPackage, String name ->
                     !isPackage && name.startsWith(packagename)
                 }.collect(classes) { it - "${packagename}." }
@@ -466,7 +468,7 @@ Files.walkFileTree(fs.getPath('modules'),
     }
 }
 
-
+@CompileStatic
 class CachedPackage {
     String name
     boolean containsClasses
