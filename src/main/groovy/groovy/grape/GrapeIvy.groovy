@@ -384,20 +384,48 @@ class GrapeIvy implements GrapeEngine {
     @CompileStatic
     private Collection<String> processMetaInfServices(ClassLoader loader, File f) {
         List<String> services = new ArrayList<>()
+        ZipFile zf = null
         try {
-            ZipFile zf = new ZipFile(f)
+            zf = new ZipFile(f)
             String providerConfig = 'org.codehaus.groovy.runtime.SerializedCategoryMethods'
             ZipEntry serializedCategoryMethods = zf.getEntry(METAINF_PREFIX + providerConfig)
             if (serializedCategoryMethods != null) {
                 services.add(providerConfig)
-                processSerializedCategoryMethods(zf.getInputStream(serializedCategoryMethods))
+
+                InputStream is = null
+                try {
+                    is = zf.getInputStream(serializedCategoryMethods)
+                    processSerializedCategoryMethods(is)
+                } finally {
+                    if (null != is) {
+                        try {
+                            is.close()
+                        } catch (e) {
+                            // ignore
+                        }
+                    }
+                }
+
             }
             // TODO: remove in a future release (replaced by GroovyRunnerRegistry)
             providerConfig = 'org.codehaus.groovy.plugins.Runners'
             ZipEntry pluginRunners = zf.getEntry(METAINF_PREFIX + providerConfig)
             if (pluginRunners != null) {
                 services.add(providerConfig)
-                processRunners(zf.getInputStream(pluginRunners), f.getName(), loader)
+
+                InputStream is = null
+                try {
+                    is = zf.getInputStream(pluginRunners)
+                    processRunners(is, f.getName(), loader)
+                } finally {
+                    if (null != is) {
+                        try {
+                            is.close()
+                        } catch (e) {
+                            // ignore
+                        }
+                    }
+                }
             }
             // GroovyRunners are loaded per ClassLoader using a ServiceLoader so here
             // it only needs to be indicated that the service provider file was found
@@ -407,6 +435,14 @@ class GrapeIvy implements GrapeEngine {
         } catch(ZipException ignore) {
             // ignore files we can't process, e.g. non-jar/zip artifacts
             // TODO log a warning
+        } finally {
+            if (null != zf) {
+                try {
+                    zf.close()
+                } catch (e) {
+                    // ignore
+                }
+            }
         }
         return services
     }
