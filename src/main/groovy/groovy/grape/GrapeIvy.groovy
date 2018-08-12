@@ -315,15 +315,29 @@ class GrapeIvy implements GrapeEngine {
         if (file.name.toLowerCase().endsWith(".jar")) {
             def mcRegistry = GroovySystem.metaClassRegistry
             if (mcRegistry instanceof MetaClassRegistryImpl) {
+                JarFile jar = null
                 try {
-                    JarFile jar = new JarFile(file)
+                    jar = new JarFile(file)
                     def entry = jar.getEntry(ExtensionModuleScanner.MODULE_META_INF_FILE)
                     if (!entry) {
                         entry = jar.getEntry(ExtensionModuleScanner.LEGACY_MODULE_META_INF_FILE)
                     }
                     if (entry) {
                         Properties props = new Properties()
-                        props.load(jar.getInputStream(entry))
+                        InputStream is = null
+                        try {
+                            is = jar.getInputStream(entry)
+                            props.load(is)
+                        } finally {
+                            if (null != is) {
+                                try {
+                                    is.close()
+                                } catch (e) {
+                                    // ignore
+                                }
+                            }
+                        }
+
                         Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
                         mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
                         // add old methods to the map
@@ -339,9 +353,16 @@ class GrapeIvy implements GrapeEngine {
                             classesToBeUpdated*.addNewMopMethods(methods)
                         }
                     }
-                }
-                catch(ZipException zipException) {
+                } catch(ZipException zipException) {
                     throw new RuntimeException("Grape could not load jar '$file'", zipException)
+                } finally {
+                    if (null != jar) {
+                        try {
+                            jar.close()
+                        } catch (e) {
+                            // ignore
+                        }
+                    }
                 }
             }
         }
