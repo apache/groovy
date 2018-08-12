@@ -40,6 +40,7 @@ buildscript {
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
         if (JavaVersion.current() >= JavaVersion.VERSION_1_8) {
             classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.2"
+            classpath "com.github.ben-manes:gradle-versions-plugin:0.20.0"
         }
     }
 }
@@ -47,8 +48,6 @@ buildscript {
 plugins {
     id 'com.gradle.build-scan' version '1.13.4'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '1.6.2'
-    id "com.github.ben-manes.versions" version '0.20.0'
 }
 
 buildScan {
@@ -71,6 +70,9 @@ ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 apply from: 'gradle/publish.gradle'
 apply plugin: 'javadocHotfix'
 apply plugin: "com.github.jk1.dependency-license-report"
+if (JavaVersion.current() >= JavaVersion.VERSION_1_8) {
+    apply plugin: 'com.github.ben-manes.versions'
+}
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
