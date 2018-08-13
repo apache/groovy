@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyClassLoader;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -41,7 +42,7 @@ import java.util.Map;
  * It's attached to MethodNodes and ClassNodes and is used to find fully qualified names of classes,
  * resolve imports, and that sort of thing.
  */
-public class CompileUnit implements NodeMetaDataHandler {
+public class CompileUnit {
 
     private final List<ModuleNode> modules = new ArrayList<ModuleNode>();
     private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
@@ -51,7 +52,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     private final Map<String, ClassNode> classesToCompile = new HashMap<String, ClassNode>();
     private final Map<String, SourceUnit> classNameToSource = new HashMap<String, SourceUnit>();
     private final Map<String, InnerClassNode> generatedInnerClasses = new HashMap();
-    private Map metaDataMap = null;
+    private ListHashMap metaDataMap = null;
 
     public CompileUnit(GroovyClassLoader classLoader, CompilerConfiguration config) {
         this(classLoader, null, config);
@@ -191,13 +192,78 @@ public class CompileUnit implements NodeMetaDataHandler {
         return Collections.unmodifiableMap(generatedInnerClasses);
     }
 
-    @Override
-    public ListHashMap getMetaDataMap() {
-        return (ListHashMap) metaDataMap;
+    /**
+     * Gets the node meta data for the provided key.
+     *
+     * @param key - the meta data key
+     * @return the node meta data value for this key
+     */
+    public <T> T getNodeMetaData(Object key) {
+        if (metaDataMap == null) {
+            return (T) null;
+        }
+        return (T) metaDataMap.get(key);
     }
 
-    @Override
-    public void setMetaDataMap(Map<?, ?> metaDataMap) {
-        this.metaDataMap = metaDataMap;
+    /**
+     * Sets the node meta data for the provided key.
+     *
+     * @param key - the meta data key
+     * @param value - the meta data value
+     * @throws GroovyBugError if key is null or there is already meta
+     *                        data under that key
+     */
+    public void setNodeMetaData(Object key, Object value) {
+        if (key==null) throw new GroovyBugError("Tried to set meta data with null key on "+this+".");
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+        }
+        Object old = metaDataMap.put(key,value);
+        if (old!=null) throw new GroovyBugError("Tried to overwrite existing meta data "+this+".");
+    }
+
+    /**
+     * Sets the node meta data but allows overwriting values.
+     *
+     * @param key   - the meta data key
+     * @param value - the meta data value
+     * @return the old node meta data value for this key
+     * @throws GroovyBugError if key is null
+     */
+    public Object putNodeMetaData(Object key, Object value) {
+        if (key == null) throw new GroovyBugError("Tried to set meta data with null key on " + this + ".");
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+        }
+        return metaDataMap.put(key, value);
+    }
+
+    /**
+     * Removes a node meta data entry.
+     *
+     * @param key - the meta data key
+     * @throws GroovyBugError if the key is null
+     */
+    public void removeNodeMetaData(Object key) {
+        if (key==null) throw new GroovyBugError("Tried to remove meta data with null key "+this+".");
+        if (metaDataMap == null) {
+            return;
+        }
+        metaDataMap.remove(key);
+    }
+
+    /**
+     * Returns an unmodifiable view of the current node metadata.
+     * @return the node metadata. Always not null.
+     */
+    public Map<?,?> getNodeMetaData() {
+        if (metaDataMap==null) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(metaDataMap);
+    }
+
+    public ListHashMap getMetaDataMap() {
+        return metaDataMap;
     }
 }
