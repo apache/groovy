@@ -25,10 +25,6 @@ import java.lang.reflect.Method;
 
 /**
  * This class is a general adapter to adapt a closure to any Java interface.
- * <p>
- * @author Ben Yu
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * Jul 27, 2006 3:50:51 PM
  */
 public class ConvertedClosure extends ConversionHandler implements Serializable {
     private final String methodName;

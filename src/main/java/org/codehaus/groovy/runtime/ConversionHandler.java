@@ -37,9 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * This class is a general adapter to map a call to a Java interface
  * to a given delegate.
- *
- * @author Ben Yu
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
     private final Object delegate;
