@@ -266,7 +266,7 @@ if not "%TOOLS_JAR%" == "" set GROOVY_OPTS=%GROOVY_OPTS% -Dtools.jar="%TOOLS_JAR
 set GROOVY_OPTS=%GROOVY_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
 set GROOVY_OPTS=%GROOVY_OPTS% -Dscript.name="%GROOVY_SCRIPT_NAME%"
 
-for /f "tokens=3" %%g in ('%JAVA_EXE% -version 2^>^&1 ^| findstr /i "version"') do (
+for /f "tokens=3" %%g in ('call "%JAVA_EXE%" -version 2^>^&1 ^| findstr /i "version"') do (
   SET JAVA_VERSION=%%g
 )
 for /f "useback tokens=*" %%a in ('%JAVA_VERSION%') do set JAVA_VERSION=%%~a
