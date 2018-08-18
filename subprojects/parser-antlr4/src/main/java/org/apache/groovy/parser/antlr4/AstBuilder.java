@@ -2097,13 +2097,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return list;
     }
 
+    private int visitingArrayInitializerCnt = 0;
+
     @Override
     public List<Expression> visitArrayInitializer(ArrayInitializerContext ctx) {
         if (!asBoolean(ctx)) {
             return Collections.emptyList();
         }
 
-        return this.visitVariableInitializers(ctx.variableInitializers());
+        try {
+            visitingArrayInitializerCnt++;
+            return this.visitVariableInitializers(ctx.variableInitializers());
+        } finally {
+            visitingArrayInitializerCnt--;
+        }
     }
 
     @Override
@@ -2142,6 +2149,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ExpressionStatement visitCommandExprAlt(CommandExprAltContext ctx) {
+        if (visitingArrayInitializerCnt > 0) {
+            // To avoid ambiguities, command chain expression should not be used in array initializer
+            // the old parser does not support either, so no breaking changes
+            // SEE http://groovy.329449.n5.nabble.com/parrot-Command-expressions-in-array-initializer-tt5752273.html
+            throw createParsingFailedException("Command chain expression can not be used in array initializer", ctx);
+        }
+
         return configureAST(new ExpressionStatement(this.visitCommandExpression(ctx.commandExpression())), ctx);
     }
 
