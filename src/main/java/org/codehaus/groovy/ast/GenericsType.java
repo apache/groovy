@@ -499,6 +499,10 @@ public class GenericsType extends ASTNode {
         return superClass;
     }
 
+    /**
+     * Represents GenericsType name
+     * TODO In order to distinguish GenericsType with same name, we should add an enclosing class full name property to this class
+     */
     public static class GenericsTypeName {
         private String name;
 
