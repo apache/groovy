@@ -781,4 +781,19 @@ import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
             //println astTrees
         }
     }
+
+    //GROOVY-8753
+    void testPrivateFieldWithPublicGetter() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class A {
+               private List<String> fooNames = []
+               public A(Collection<String> names) {
+                  names.each { fooNames << it }
+               }
+               public List<String> getFooNames() { fooNames }
+            }
+            assert new A(['foo1', 'foo2']).fooNames.size() == 2
+        '''
+    }
 }

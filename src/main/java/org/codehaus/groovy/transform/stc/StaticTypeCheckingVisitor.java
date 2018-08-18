@@ -503,7 +503,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     getterNode = findValidGetter(enclosingClassNode, "is" + suffix);
                 }
                 if (getterNode != null) {
-                    source.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, getterNode.getReturnType());
+                    source.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, getterNode.getReturnType());
                     return;
                 }
             }
