@@ -501,7 +501,8 @@ public class GenericsType extends ASTNode {
 
     /**
      * Represents GenericsType name
-     * TODO In order to distinguish GenericsType with same name, we should add an enclosing class full name property to this class
+     * TODO In order to distinguish GenericsType with same name, we should add an enclosing class full name property to this class. See GROOVY-8409
+     *
      */
     public static class GenericsTypeName {
         private String name;
@@ -525,6 +526,11 @@ public class GenericsType extends ASTNode {
         @Override
         public int hashCode() {
             return Objects.hash(name);
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 }
