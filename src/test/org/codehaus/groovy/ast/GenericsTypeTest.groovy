@@ -20,6 +20,8 @@ package org.codehaus.groovy.ast
 
 import org.codehaus.groovy.ast.tools.GenericsUtils
 
+import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName
+
 /**
  * Various tests aimed at testing the {@link GenericsType} class.
  */
@@ -135,23 +137,23 @@ public class GenericsTypeTest extends GenericsTestCase {
     void testPlaceholderExtract() {
         def type = extractTypesFromCode("List<String> type").type
         def placeholders = GenericsUtils.extractPlaceholders(type)
-        assert placeholders.E?.type == ClassHelper.STRING_TYPE
+        assert placeholders[new GenericsTypeName('E')]?.type == ClassHelper.STRING_TYPE
     }
 
     void testPlaceholderExtract2() {
         def type = extractTypesFromCode("Map<String,Integer> type").type
         def placeholders = GenericsUtils.extractPlaceholders(type)
-        assert placeholders.K?.type == ClassHelper.STRING_TYPE
-        assert placeholders.V?.type == ClassHelper.Integer_TYPE
+        assert placeholders[new GenericsTypeName('K')]?.type == ClassHelper.STRING_TYPE
+        assert placeholders[new GenericsTypeName('V')]?.type == ClassHelper.Integer_TYPE
     }
 
     void testPlaceholderExtract3() {
         def type = extractTypesFromCode("List<Map<String,Integer>> type").type
         def placeholders = GenericsUtils.extractPlaceholders(type)
-        assert placeholders.E?.type == ClassHelper.MAP_TYPE
-        placeholders = GenericsUtils.extractPlaceholders(placeholders.E.type)
-        assert placeholders.K?.type == ClassHelper.STRING_TYPE
-        assert placeholders.V?.type == ClassHelper.Integer_TYPE
+        assert placeholders[new GenericsTypeName('E')]?.type == ClassHelper.MAP_TYPE
+        placeholders = GenericsUtils.extractPlaceholders(placeholders[new GenericsTypeName('E')].type)
+        assert placeholders[new GenericsTypeName('K')]?.type == ClassHelper.STRING_TYPE
+        assert placeholders[new GenericsTypeName('V')]?.type == ClassHelper.Integer_TYPE
     }
 
     // ------------------ Support methods -------------------------
