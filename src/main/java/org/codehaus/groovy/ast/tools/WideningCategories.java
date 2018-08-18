@@ -52,7 +52,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
-
+import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 /**
  * This class provides helper methods to determine the type from a widening
  * operation for example for a plus operation.
@@ -303,14 +303,14 @@ public class WideningCategories {
         ClassNode superClass = source.getUnresolvedSuperClass();
         // copy generic type information if available
         if (superClass!=null && superClass.isUsingGenerics()) {
-            Map<String, GenericsType> genericsTypeMap = GenericsUtils.extractPlaceholders(source);
+            Map<GenericsTypeName, GenericsType> genericsTypeMap = GenericsUtils.extractPlaceholders(source);
             GenericsType[] genericsTypes = superClass.getGenericsTypes();
             if (genericsTypes!=null) {
                 GenericsType[] copyTypes = new GenericsType[genericsTypes.length];
                 for (int i = 0; i < genericsTypes.length; i++) {
                     GenericsType genericsType = genericsTypes[i];
-                    if (genericsType.isPlaceholder() && genericsTypeMap.containsKey(genericsType.getName())) {
-                        copyTypes[i] = genericsTypeMap.get(genericsType.getName());
+                    if (genericsType.isPlaceholder() && genericsTypeMap.containsKey(new GenericsTypeName(genericsType.getName()))) {
+                        copyTypes[i] = genericsTypeMap.get(new GenericsTypeName(genericsType.getName()));
                     } else {
                         copyTypes[i] = genericsType;
                     }

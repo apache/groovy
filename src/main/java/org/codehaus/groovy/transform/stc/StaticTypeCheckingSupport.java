@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.GroovyBugError;
@@ -107,6 +108,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
+import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.getSuperClass;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
@@ -152,7 +154,6 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
-
 /**
  * Static support methods for {@link StaticTypeCheckingVisitor}.
  */
@@ -1295,8 +1296,8 @@ public abstract class StaticTypeCheckingSupport {
      * @return the parameterized arguments
      */
     public static Parameter[] parameterizeArguments(final ClassNode receiver, final MethodNode m) {
-        Map<String, GenericsType> genericFromReceiver = GenericsUtils.extractPlaceholders(receiver);
-        Map<String, GenericsType> contextPlaceholders = extractGenericsParameterMapOfThis(m);
+        Map<GenericsTypeName, GenericsType> genericFromReceiver = GenericsUtils.extractPlaceholders(receiver);
+        Map<GenericsTypeName, GenericsType> contextPlaceholders = extractGenericsParameterMapOfThis(m);
         Parameter[] methodParameters = m.getParameters();
         Parameter[] params = new Parameter[methodParameters.length];
         for (int i = 0; i < methodParameters.length; i++) {
@@ -1316,7 +1317,7 @@ public abstract class StaticTypeCheckingSupport {
      * @param paramType                the (unresolved) type of the method parameter
      * @return a new parameter with the same name and type as the original one, but with resolved generic types
      */
-    private static Parameter buildParameter(final Map<String, GenericsType> genericFromReceiver, final Map<String, GenericsType> placeholdersFromContext, final Parameter methodParameter, final ClassNode paramType) {
+    private static Parameter buildParameter(final Map<GenericsTypeName, GenericsType> genericFromReceiver, final Map<GenericsTypeName, GenericsType> placeholdersFromContext, final Parameter methodParameter, final ClassNode paramType) {
         if (genericFromReceiver.isEmpty() && (placeholdersFromContext == null || placeholdersFromContext.isEmpty())) {
             return methodParameter;
         }
@@ -1349,8 +1350,8 @@ public abstract class StaticTypeCheckingSupport {
      * Given a generics type representing SomeClass&lt;T,V&gt; and a resolved placeholder map, returns a new generics type
      * for which placeholders are resolved recursively.
      */
-    protected static GenericsType fullyResolve(GenericsType gt, Map<String, GenericsType> placeholders) {
-        GenericsType fromMap = placeholders.get(gt.getName());
+    protected static GenericsType fullyResolve(GenericsType gt, Map<GenericsTypeName, GenericsType> placeholders) {
+        GenericsType fromMap = placeholders.get(new GenericsTypeName(gt.getName()));
         if (gt.isPlaceholder() && fromMap != null) {
             gt = fromMap;
         }
@@ -1372,15 +1373,15 @@ public abstract class StaticTypeCheckingSupport {
         return genericsType;
     }
 
-    protected static ClassNode fullyResolveType(final ClassNode type, final Map<String, GenericsType> placeholders) {
+    protected static ClassNode fullyResolveType(final ClassNode type, final Map<GenericsTypeName, GenericsType> placeholders) {
         if (type.isUsingGenerics() && !type.isGenericsPlaceHolder()) {
             GenericsType[] gts = type.getGenericsTypes();
             if (gts != null) {
                 GenericsType[] copy = new GenericsType[gts.length];
                 for (int i = 0; i < gts.length; i++) {
                     GenericsType genericsType = gts[i];
-                    if (genericsType.isPlaceholder() && placeholders.containsKey(genericsType.getName())) {
-                        copy[i] = placeholders.get(genericsType.getName());
+                    if (genericsType.isPlaceholder() && placeholders.containsKey(new GenericsTypeName(genericsType.getName()))) {
+                        copy[i] = placeholders.get(new GenericsTypeName(genericsType.getName()));
                     } else {
                         copy[i] = fullyResolve(genericsType, placeholders);
                     }
@@ -1392,7 +1393,7 @@ public abstract class StaticTypeCheckingSupport {
             return result;
         } else if (type.isUsingGenerics() && OBJECT_TYPE.equals(type) && type.getGenericsTypes() != null) {
             // Object<T>
-            GenericsType genericsType = placeholders.get(type.getGenericsTypes()[0].getName());
+            GenericsType genericsType = placeholders.get(new GenericsTypeName(type.getGenericsTypes()[0].getName()));
             if (genericsType != null) {
                 return genericsType.getType();
             }
@@ -1444,7 +1445,7 @@ public abstract class StaticTypeCheckingSupport {
         return true;
     }
 
-    static void addMethodLevelDeclaredGenerics(MethodNode method, Map<String, GenericsType> resolvedPlaceholders) {
+    static void addMethodLevelDeclaredGenerics(MethodNode method, Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
         ClassNode dummy = OBJECT_TYPE.getPlainNodeReference();
         dummy.setGenericsTypes(method.getGenericsTypes());
         GenericsUtils.extractPlaceholders(dummy, resolvedPlaceholders);
@@ -1486,7 +1487,7 @@ public abstract class StaticTypeCheckingSupport {
         boolean skipBecauseOfInnerClassNotReceiver = isOuterClassOf(receiver, candidateMethod.getDeclaringClass());
 
         Parameter[] parameters = candidateMethod.getParameters();
-        Map<String, GenericsType> classGTs;
+        Map<GenericsTypeName, GenericsType> classGTs;
         if (skipBecauseOfInnerClassNotReceiver) {
             classGTs = Collections.EMPTY_MAP;
         } else {
@@ -1502,12 +1503,12 @@ public abstract class StaticTypeCheckingSupport {
         // There is firstly the context given through the class, and the method.
         // The method context may hide generics given through the class, but use 
         // the non-hidden ones.
-        Map<String, GenericsType> resolvedMethodGenerics = new HashMap<String, GenericsType>();
+        Map<GenericsTypeName, GenericsType> resolvedMethodGenerics = new HashMap<GenericsTypeName, GenericsType>();
         if (!skipBecauseOfInnerClassNotReceiver) {
             addMethodLevelDeclaredGenerics(candidateMethod, resolvedMethodGenerics);
         }
         // so first we remove hidden generics
-        for (String key : resolvedMethodGenerics.keySet()) classGTs.remove(key);
+        for (GenericsTypeName key : resolvedMethodGenerics.keySet()) classGTs.remove(key);
         // then we use the remaining information to refine the given generics
         applyGenericsConnections(classGTs, resolvedMethodGenerics);
         // and then start our checks with the receiver
@@ -1519,7 +1520,7 @@ public abstract class StaticTypeCheckingSupport {
         // extension methods are special, since they set the receiver as 
         // first parameter. While we normally allow generalization for the first
         // parameter, in case of an extension method we must not. 
-        Set<String> fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
+        Set<GenericsTypeName> fixedGenericsPlaceHolders = extractResolvedPlaceHolders(resolvedMethodGenerics);
 
         for (int i = 0; i < arguments.length; i++) {
             int pindex = min(i, parameters.length - 1);
@@ -1540,10 +1541,10 @@ public abstract class StaticTypeCheckingSupport {
         return true;
     }
 
-    private static Set<String> extractResolvedPlaceHolders(Map<String, GenericsType> resolvedMethodGenerics) {
+    private static Set<GenericsTypeName> extractResolvedPlaceHolders(Map<GenericsTypeName, GenericsType> resolvedMethodGenerics) {
         if (resolvedMethodGenerics.isEmpty()) return Collections.EMPTY_SET;
-        Set<String> result = new HashSet<String>();
-        for (Map.Entry<String, GenericsType> entry : resolvedMethodGenerics.entrySet()) {
+        Set<GenericsTypeName> result = new HashSet<GenericsTypeName>();
+        for (Entry<GenericsTypeName, GenericsType> entry : resolvedMethodGenerics.entrySet()) {
             GenericsType value = entry.getValue();
             if (value.isPlaceholder()) continue;
             result.add(entry.getKey());
@@ -1551,8 +1552,8 @@ public abstract class StaticTypeCheckingSupport {
         return result;
     }
 
-    private static boolean inferenceCheck(Set<String> fixedGenericsPlaceHolders, Map<String, GenericsType> resolvedMethodGenerics, ClassNode type, ClassNode wrappedArgument, boolean lastArg) {
-        Map<String, GenericsType> connections = new HashMap<String, GenericsType>();
+    private static boolean inferenceCheck(Set<GenericsTypeName> fixedGenericsPlaceHolders, Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, ClassNode type, ClassNode wrappedArgument, boolean lastArg) {
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<GenericsTypeName, GenericsType>();
         if (isPrimitiveType(wrappedArgument)) wrappedArgument = getWrapper(wrappedArgument);
         // the context we compare with in the end is the one of the callsite
         // so far we specified the context of the method declaration only
@@ -1587,8 +1588,8 @@ public abstract class StaticTypeCheckingSupport {
         return gt;
     }
 
-    private static boolean compatibleConnections(Map<String, GenericsType> connections, Map<String, GenericsType> resolvedMethodGenerics, Set<String> fixedGenericsPlaceHolders) {
-        for (Map.Entry<String, GenericsType> entry : connections.entrySet()) {
+    private static boolean compatibleConnections(Map<GenericsTypeName, GenericsType> connections, Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, Set<GenericsTypeName> fixedGenericsPlaceHolders) {
+        for (Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
             GenericsType resolved = resolvedMethodGenerics.get(entry.getKey());
             if (resolved == null) continue;
             GenericsType connection = entry.getValue();
@@ -1634,8 +1635,8 @@ public abstract class StaticTypeCheckingSupport {
         return gt.isCompatibleWith(compareNode);
     }
 
-    private static void addMissingEntries(Map<String, GenericsType> connections, Map<String, GenericsType> resolved) {
-        for (Entry<String, GenericsType> entry : connections.entrySet()) {
+    private static void addMissingEntries(Map<GenericsTypeName, GenericsType> connections, Map<GenericsTypeName, GenericsType> resolved) {
+        for (Entry<GenericsTypeName, GenericsType> entry : connections.entrySet()) {
             if (resolved.containsKey(entry.getKey())) continue;
             GenericsType gt = entry.getValue();
             ClassNode cn = gt.getType();
@@ -1644,12 +1645,12 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    public static ClassNode resolveClassNodeGenerics(Map<String, GenericsType> resolvedPlaceholders, final Map<String, GenericsType> placeholdersFromContext, ClassNode currentType) {
+    public static ClassNode resolveClassNodeGenerics(Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final Map<GenericsTypeName, GenericsType> placeholdersFromContext, ClassNode currentType) {
         ClassNode target = currentType.redirect();
-        resolvedPlaceholders = new HashMap<String, GenericsType>(resolvedPlaceholders);
+        resolvedPlaceholders = new HashMap<GenericsTypeName, GenericsType>(resolvedPlaceholders);
         applyContextGenerics(resolvedPlaceholders, placeholdersFromContext);
 
-        Map<String, GenericsType> connections = new HashMap<String, GenericsType>();
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<GenericsTypeName, GenericsType>();
         extractGenericsConnections(connections, currentType, target);
         applyGenericsConnections(connections, resolvedPlaceholders);
         currentType = applyGenericsContext(resolvedPlaceholders, currentType);
@@ -1657,16 +1658,16 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static void applyGenericsConnections(
-            Map<String, GenericsType> connections,
-            Map<String, GenericsType> resolvedPlaceholders
+            Map<GenericsTypeName, GenericsType> connections,
+            Map<GenericsTypeName, GenericsType> resolvedPlaceholders
     ) {
         if (connections == null) return;
         int count = 0;
         while (count < 10000) {
             count++;
             boolean checkForMorePlaceHolders = false;
-            for (Map.Entry<String, GenericsType> entry : resolvedPlaceholders.entrySet()) {
-                String name = entry.getKey();
+            for (Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
+                GenericsTypeName name = entry.getKey();
                 GenericsType replacement = connections.get(name);
                 if (replacement == null) {
                     GenericsType value = entry.getValue();
@@ -1681,7 +1682,7 @@ public abstract class StaticTypeCheckingSupport {
                 }
                 boolean placeholderReplacement = replacement.isPlaceholder();
                 if (placeholderReplacement) {
-                    GenericsType connectedType = resolvedPlaceholders.get(replacement.getName());
+                    GenericsType connectedType = resolvedPlaceholders.get(new GenericsTypeName(replacement.getName()));
                     if (replacement == connectedType) continue;
                 }
                 // GROOVY-6787: Don't override the original if the replacement placeholder doesn't respect the bounds,
@@ -1771,7 +1772,7 @@ public abstract class StaticTypeCheckingSupport {
      * to get E=Integer, since IntRange is an AbstractList&lt;Integer&gt;)
      * Should the target not have any generics this method does nothing.
      */
-    static void extractGenericsConnections(Map<String, GenericsType> connections, ClassNode type, ClassNode target) {
+    static void extractGenericsConnections(Map<GenericsTypeName, GenericsType> connections, ClassNode type, ClassNode target) {
         if (target == null || type == target || !isUsingGenericsOrIsArrayUsingGenerics(target)) return;
         if (type == null || type == UNKNOWN_PARAMETER_TYPE) return;
         if (type.isArray() && target.isArray()) {
@@ -1779,7 +1780,7 @@ public abstract class StaticTypeCheckingSupport {
         } else if (target.isGenericsPlaceHolder() || type.equals(target) || !implementsInterfaceOrIsSubclassOf(type, target)) {
             // structural match route
             if (target.isGenericsPlaceHolder()) {
-                connections.put(target.getGenericsTypes()[0].getName(), new GenericsType(type));
+                connections.put(new GenericsTypeName(target.getGenericsTypes()[0].getName()), new GenericsType(type));
             } else {
                 extractGenericsConnections(connections, type.getGenericsTypes(), target.getGenericsTypes());
             }
@@ -1807,7 +1808,7 @@ public abstract class StaticTypeCheckingSupport {
         return corrected;
     }
 
-    private static void extractGenericsConnections(Map<String, GenericsType> connections, GenericsType[] usage, GenericsType[] declaration) {
+    private static void extractGenericsConnections(Map<GenericsTypeName, GenericsType> connections, GenericsType[] usage, GenericsType[] declaration) {
         // if declaration does not provide generics, there is no connection to make 
         if (usage == null || declaration == null || declaration.length == 0) return;
         if (usage.length != declaration.length) return;
@@ -1817,7 +1818,7 @@ public abstract class StaticTypeCheckingSupport {
             GenericsType ui = usage[i];
             GenericsType di = declaration[i];
             if (di.isPlaceholder()) {
-                connections.put(di.getName(), ui);
+                connections.put(new GenericsTypeName(di.getName()), ui);
             } else if (di.isWildcard()) {
                 if (ui.isWildcard()) {
                     extractGenericsConnections(connections, ui.getLowerBound(), di.getLowerBound());
@@ -1838,7 +1839,7 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    private static void extractGenericsConnections(Map<String, GenericsType> connections, ClassNode[] usage, ClassNode[] declaration) {
+    private static void extractGenericsConnections(Map<GenericsTypeName, GenericsType> connections, ClassNode[] usage, ClassNode[] declaration) {
         if (usage == null || declaration == null || declaration.length == 0) return;
         // both have generics
         for (int i = 0; i < usage.length; i++) {
@@ -1847,7 +1848,7 @@ public abstract class StaticTypeCheckingSupport {
             if (di.isGenericsPlaceHolder()) {
                 GenericsType gt = new GenericsType(di);
                 gt.setPlaceholder(di.isGenericsPlaceHolder());
-                connections.put(di.getGenericsTypes()[0].getName(), gt);
+                connections.put(new GenericsTypeName(di.getGenericsTypes()[0].getName()), gt);
             } else if (di.isUsingGenerics()) {
                 extractGenericsConnections(connections, ui.getGenericsTypes(), di.getGenericsTypes());
             }
@@ -1859,8 +1860,8 @@ public abstract class StaticTypeCheckingSupport {
         return type.getGenericsTypes();
     }
 
-    static Map<String, GenericsType> applyGenericsContextToParameterClass(
-            Map<String, GenericsType> spec, ClassNode parameterUsage
+    static Map<GenericsTypeName, GenericsType> applyGenericsContextToParameterClass(
+            Map<GenericsTypeName, GenericsType> spec, ClassNode parameterUsage
     ) {
         GenericsType[] gts = parameterUsage.getGenericsTypes();
         if (gts == null) return Collections.EMPTY_MAP;
@@ -1872,7 +1873,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static GenericsType[] applyGenericsContext(
-            Map<String, GenericsType> spec, GenericsType[] gts
+            Map<GenericsTypeName, GenericsType> spec, GenericsType[] gts
     ) {
         if (gts == null) return null;
         GenericsType[] newGTs = new GenericsType[gts.length];
@@ -1883,9 +1884,9 @@ public abstract class StaticTypeCheckingSupport {
         return newGTs;
     }
 
-    private static GenericsType applyGenericsContext(Map<String, GenericsType> spec, GenericsType gt) {
+    private static GenericsType applyGenericsContext(Map<GenericsTypeName, GenericsType> spec, GenericsType gt) {
         if (gt.isPlaceholder()) {
-            String name = gt.getName();
+            GenericsTypeName name = new GenericsTypeName(gt.getName());
             GenericsType specType = spec.get(name);
             if (specType != null) return specType;
             if (hasNonTrivialBounds(gt)) {
@@ -1918,7 +1919,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static ClassNode[] applyGenericsContext(
-            Map<String, GenericsType> spec, ClassNode[] bounds
+            Map<GenericsTypeName, GenericsType> spec, ClassNode[] bounds
     ) {
         if (bounds == null) return null;
         ClassNode[] newBounds = new ClassNode[bounds.length];
@@ -1929,7 +1930,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static ClassNode applyGenericsContext(
-            Map<String, GenericsType> spec, ClassNode bound
+            Map<GenericsTypeName, GenericsType> spec, ClassNode bound
     ) {
         if (bound == null) return null;
         if (bound.isArray()) {
@@ -1966,12 +1967,12 @@ public abstract class StaticTypeCheckingSupport {
         return genericsType.getType();
     }
 
-    private static void applyContextGenerics(Map<String, GenericsType> resolvedPlaceholders, Map<String, GenericsType> placeholdersFromContext) {
+    private static void applyContextGenerics(Map<GenericsTypeName, GenericsType> resolvedPlaceholders, Map<GenericsTypeName, GenericsType> placeholdersFromContext) {
         if (placeholdersFromContext == null) return;
-        for (Map.Entry<String, GenericsType> entry : resolvedPlaceholders.entrySet()) {
+        for (Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
             GenericsType gt = entry.getValue();
             if (gt.isPlaceholder()) {
-                String name = gt.getName();
+                GenericsTypeName name = new GenericsTypeName(gt.getName());
                 GenericsType outer = placeholdersFromContext.get(name);
                 if (outer == null) continue;
                 entry.setValue(outer);
@@ -1979,9 +1980,9 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-    private static Map<String, GenericsType> getGenericsParameterMapOfThis(ClassNode cn) {
+    private static Map<GenericsTypeName, GenericsType> getGenericsParameterMapOfThis(ClassNode cn) {
         if (cn == null) return null;
-        Map<String, GenericsType> map = null;
+        Map<GenericsTypeName, GenericsType> map = null;
         if (cn.getEnclosingMethod() != null) {
             map = extractGenericsParameterMapOfThis(cn.getEnclosingMethod());
         } else if (cn.getOuterClass() != null) {
@@ -2039,10 +2040,10 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
-    static Map<String, GenericsType> extractGenericsParameterMapOfThis(MethodNode mn) {
+    static Map<GenericsTypeName, GenericsType> extractGenericsParameterMapOfThis(MethodNode mn) {
         if (mn == null) return null;
 
-        Map<String, GenericsType> map;
+        Map<GenericsTypeName, GenericsType> map;
         if (mn.isStatic()) {
             map = new HashMap<>();
         } else {
@@ -2052,12 +2053,12 @@ public abstract class StaticTypeCheckingSupport {
         return mergeGenerics(map, mn.getGenericsTypes());
     }
 
-    private static Map<String, GenericsType> mergeGenerics(Map<String, GenericsType> current, GenericsType[] newGenerics) {
+    private static Map<GenericsTypeName, GenericsType> mergeGenerics(Map<GenericsTypeName, GenericsType> current, GenericsType[] newGenerics) {
         if (newGenerics == null || newGenerics.length == 0) return current;
-        if (current == null) current = new HashMap<String, GenericsType>();
+        if (current == null) current = new HashMap<GenericsTypeName, GenericsType>();
         for (GenericsType gt : newGenerics) {
             if (!gt.isPlaceholder()) continue;
-            String name = gt.getName();
+            GenericsTypeName name = new GenericsTypeName(gt.getName());
             if (!current.containsKey(name)) current.put(name, gt);
         }
         return current;

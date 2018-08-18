@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
@@ -371,18 +372,18 @@ public class GenericsType extends ASTNode {
                 return true;
             }
             GenericsType[] redirectBoundGenericTypes = bound.redirect().getGenericsTypes();
-            Map<String, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
-            Map<String, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
+            Map<GenericsType.GenericsTypeName, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
+            Map<GenericsType.GenericsTypeName, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
             boolean match = true;
             for (int i = 0; redirectBoundGenericTypes!=null && i < redirectBoundGenericTypes.length && match; i++) {
                 GenericsType redirectBoundType = redirectBoundGenericTypes[i];
                 GenericsType classNodeType = cnTypes[i];
                 if (classNodeType.isPlaceholder()) {
-                    String name = classNodeType.getName();
+                    GenericsTypeName name = new GenericsTypeName(classNodeType.getName());
                     if (redirectBoundType.isPlaceholder()) {
-                        match = name.equals(redirectBoundType.getName());
+                        match = name.equals(new GenericsTypeName(redirectBoundType.getName()));
                         if (!match) {
-                            GenericsType genericsType = boundPlaceHolders.get(redirectBoundType.getName());
+                            GenericsType genericsType = boundPlaceHolders.get(new GenericsTypeName(redirectBoundType.getName()));
                             match = false;
                             if (genericsType!=null) {
                                 if (genericsType.isPlaceholder()) {
@@ -408,7 +409,7 @@ public class GenericsType extends ASTNode {
                         if (classNodeType.isPlaceholder()) {
                             match = classNodeType.getName().equals(redirectBoundType.getName());
                         } else {
-                            String name = redirectBoundType.getName();
+                            GenericsTypeName name = new GenericsTypeName(redirectBoundType.getName());
                             if (boundPlaceHolders.containsKey(name)) {
                                 redirectBoundType = boundPlaceHolders.get(name);
                                 boolean wildcard = redirectBoundType.isWildcard();
@@ -423,8 +424,8 @@ public class GenericsType extends ASTNode {
                                             if (gt.isPlaceholder()) {
                                                 // check for recursive generic typedef, like in
                                                 // <T extends Comparable<? super T>>
-                                                if (classNodePlaceholders.containsKey(gt.getName())) {
-                                                    gt = classNodePlaceholders.get(gt.getName());
+                                                if (classNodePlaceholders.containsKey(new GenericsTypeName(gt.getName()))) {
+                                                    gt = classNodePlaceholders.get(new GenericsTypeName(gt.getName()));
                                                 }
                                             }
                                             match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
@@ -435,8 +436,8 @@ public class GenericsType extends ASTNode {
                                                 if (gt.isPlaceholder()) {
                                                     // check for recursive generic typedef, like in
                                                     // <T extends Comparable<? super T>>
-                                                    if (classNodePlaceholders.containsKey(gt.getName())) {
-                                                        gt = classNodePlaceholders.get(gt.getName());
+                                                    if (classNodePlaceholders.containsKey(new GenericsTypeName(gt.getName()))) {
+                                                        gt = classNodePlaceholders.get(new GenericsTypeName(gt.getName()));
                                                     }
                                                 }
                                                 match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())
@@ -496,5 +497,39 @@ public class GenericsType extends ASTNode {
             }
         }
         return superClass;
+    }
+
+    /**
+     * Represents GenericsType name
+     * TODO In order to distinguish GenericsType with same name(See GROOVY-8409), we should add a property to keep the declaring class full name.
+     */
+    public static class GenericsTypeName {
+        private String name;
+
+        public GenericsTypeName(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            GenericsTypeName that = (GenericsTypeName) o;
+            return Objects.equals(name, that.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name);
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
     }
 }

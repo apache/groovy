@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCorrectedClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
@@ -140,8 +141,8 @@ public class GenericsUtils {
         return gt;
     }
 
-    public static Map<String, GenericsType> extractPlaceholders(ClassNode cn) {
-        Map<String, GenericsType> ret = new HashMap<String, GenericsType>();
+    public static Map<GenericsTypeName, GenericsType> extractPlaceholders(ClassNode cn) {
+        Map<GenericsTypeName, GenericsType> ret = new HashMap<GenericsTypeName, GenericsType>();
         extractPlaceholders(cn, ret);
         return ret;
     }
@@ -153,7 +154,7 @@ public class GenericsUtils {
      * @param node the class node to check
      * @param map the generics type information collector
      */
-    public static void extractPlaceholders(ClassNode node, Map<String, GenericsType> map) {
+    public static void extractPlaceholders(ClassNode node, Map<GenericsTypeName, GenericsType> map) {
         if (node == null) return;
 
         if (node.isArray()) {
@@ -179,7 +180,7 @@ public class GenericsUtils {
         for (int i = 0; i < redirectGenericsTypes.length; i++) {
             GenericsType redirectType = redirectGenericsTypes[i];
             if (redirectType.isPlaceholder()) {
-                String name = redirectType.getName();
+                GenericsTypeName name = new GenericsTypeName(redirectType.getName());
                 if (!map.containsKey(name)) {
                     GenericsType value = parameterized[i];
                     map.put(name, value);

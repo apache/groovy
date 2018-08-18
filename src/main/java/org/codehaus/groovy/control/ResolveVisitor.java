@@ -77,9 +77,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
-
 /**
  * Visitor to resolve Types and convert VariableExpression to
  * ClassExpressions if needed. The ResolveVisitor will try to
@@ -106,7 +106,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
 
-    private Map<String, GenericsType> genericParameterNames = new HashMap<String, GenericsType>();
+    private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
     private final Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
     private boolean checkingVariableTypeInDeclaration = false;
     private ImportNode currImportNode = null;
@@ -228,10 +228,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
-        Map<String, GenericsType> oldPNames = genericParameterNames;
+        Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
         genericParameterNames = node.isStatic()
-                ? new HashMap<String, GenericsType>()
-                : new HashMap<String, GenericsType>(genericParameterNames);
+                ? new HashMap<GenericsTypeName, GenericsType>()
+                : new HashMap<GenericsTypeName, GenericsType>(genericParameterNames);
 
         resolveGenericsHeader(node.getGenericsTypes());
 
@@ -265,9 +265,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     public void visitProperty(PropertyNode node) {
-        Map<String, GenericsType> oldPNames = genericParameterNames;
+        Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
         if (node.isStatic()) {
-            genericParameterNames = new HashMap<String, GenericsType>();
+            genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
         }
 
         ClassNode t = node.getType();
@@ -372,7 +372,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         String typeName = type.getName();
 
-        GenericsType genericsType = genericParameterNames.get(typeName);
+        GenericsType genericsType = genericParameterNames.get(new GenericsTypeName(typeName));
         if (genericsType != null) {
             type.setRedirect(genericsType.getType());
             type.setGenericsTypes(new GenericsType[]{ genericsType });
@@ -1337,7 +1337,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         if (node instanceof InnerClassNode) {
             if (Modifier.isStatic(node.getModifiers())) {
-                genericParameterNames = new HashMap<String, GenericsType>();
+                genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
             }
 
             InnerClassNode innerClassNode = (InnerClassNode) node;
@@ -1348,7 +1348,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
             }
         } else {
-            genericParameterNames = new HashMap<String, GenericsType>();
+            genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
         }
 
         resolveGenericsHeader(node.getGenericsTypes());
@@ -1493,7 +1493,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             String name = type.getName();
             ClassNode[] bounds = type.getUpperBounds();
             boolean isWild = QUESTION_MARK.equals(name);
-            boolean toDealWithGenerics = 0 == level || (level > 0 && null != genericParameterNames.get(name));
+            boolean toDealWithGenerics = 0 == level || (level > 0 && null != genericParameterNames.get(new GenericsTypeName(name)));
 
             if (bounds != null) {
                 boolean nameAdded = false;
@@ -1501,7 +1501,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     if (!isWild) {
                         if (!nameAdded && upperBound != null || !resolve(classNode)) {
                             if (toDealWithGenerics) {
-                                genericParameterNames.put(name, type);
+                                genericParameterNames.put(new GenericsTypeName(name), type);
                                 type.setPlaceholder(true);
                                 classNode.setRedirect(upperBound);
                                 nameAdded = true;
@@ -1518,8 +1518,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             } else {
                 if (!isWild) {
                     if (toDealWithGenerics) {
-                        GenericsType originalGt = genericParameterNames.get(name);
-                        genericParameterNames.put(name, type);
+                        GenericsType originalGt = genericParameterNames.get(new GenericsTypeName(name));
+                        genericParameterNames.put(new GenericsTypeName(name), type);
                         type.setPlaceholder(true);
 
                         if (null == originalGt) {
@@ -1550,7 +1550,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         currentClass.setUsingGenerics(true);
         ClassNode type = genericsType.getType();
         // save name before redirect
-        String name = type.getName();
+        GenericsTypeName name = new GenericsTypeName(type.getName());
         ClassNode[] bounds = genericsType.getUpperBounds();
         if (!genericParameterNames.containsKey(name)) {
             if (bounds != null) {
