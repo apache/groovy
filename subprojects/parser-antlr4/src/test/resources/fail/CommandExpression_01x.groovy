@@ -17,4 +17,5 @@
  *  under the License.
  */
 
+def a(b, c, d) { 1 }
 new int[] { a b, c, d }
