@@ -16,10 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime.vm8;
 
 import groovy.lang.GroovyShell;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.junit.Assert;
 import org.junit.Test;
 
