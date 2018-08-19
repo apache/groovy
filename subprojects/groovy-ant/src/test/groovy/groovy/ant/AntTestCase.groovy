@@ -16,23 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util
+package groovy.ant
 
-/**
- * Make sure FileNameFinder uses Ant filesets correctly.
- *
- * @author Dierk Koenig
- * @author Paul King
- */
-class FileNameFinderTest extends GroovyLogTestCase {
-
-    void testFilesInTestDirArePickedUp() {
-        def finder = new FileNameFinder()
-        def groovyFiles = finder.getFileNames('src/test/groovy', '**/*.groovy')
-        assert groovyFiles, 'There should be groovy files in src/test/groovy'
-        // now collect all those not starting with the 'Ant'
-        def nonAntFiles = finder.getFileNames('src/test/groovy', '**/*.groovy', '**/Ant*')
-        assert nonAntFiles, 'There should be non-Ant files in src/test/groovy'
-        assert groovyFiles.size() > nonAntFiles.size()
+abstract class AntTestCase extends GroovyTestCase {
+    protected void doInTmpDir(Closure cl) {
+        // tag::create_zip_builder[]
+        def ant = new AntBuilder()
+        // end::create_zip_builder[]
+        def baseDir = File.createTempDir()
+        ant.project.baseDir = baseDir
+        try {
+            cl.call(ant, new FileTreeBuilder(baseDir))
+        } finally {
+            baseDir.deleteDir()
+        }
     }
 }

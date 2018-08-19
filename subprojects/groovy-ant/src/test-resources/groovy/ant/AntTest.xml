@@ -28,8 +28,8 @@ as what we expect from the AntBuilder
         <path id="task.path">
             <pathelement location="classes"/>
         </path>
-        <taskdef name="spoofcontainer" classname="groovy.util.SpoofTaskContainer" classpathref="task.path"/>
-        <taskdef name="spoof" classname="groovy.util.SpoofTask" classpathref="task.path"/>
+        <taskdef name="spoofcontainer" classname="groovy.ant.SpoofTaskContainer" classpathref="task.path"/>
+        <taskdef name="spoof" classname="groovy.ant.SpoofTask" classpathref="task.path"/>
 
         <spoofcontainer>
             <spoof foo="123"/>

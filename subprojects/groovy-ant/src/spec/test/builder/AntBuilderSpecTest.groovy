@@ -17,25 +17,20 @@
  *  under the License.
  */
 package builder
+
+import groovy.ant.AntTestCase
+
 /**
  * Test cases for the Ant builder documentation.
  */
-class AntBuilderSpecTest extends GroovyTestCase {
+class AntBuilderSpecTest extends AntTestCase {
 
-    void doInTmpDir(Closure cl) {
+    void testEcho() {
+        /*
         // tag::create_zip_builder[]
         def ant = new AntBuilder()
         // end::create_zip_builder[]
-        def baseDir = File.createTempDir()
-        ant.project.baseDir = baseDir
-        try {
-            cl.call(ant, new FileTreeBuilder(baseDir))
-        } finally {
-            baseDir.deleteDir()
-        }
-    }
-
-    void testEcho() {
+        */
         // tag::example_echo[]
         def ant = new AntBuilder()          // <1>
         ant.echo('hello from Ant!')         // <2>

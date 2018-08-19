@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.ant;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
@@ -24,11 +24,10 @@ import org.apache.tools.ant.TaskContainer;
 import org.apache.tools.ant.UnknownElement;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class SpoofTaskContainer extends Task implements TaskContainer {
-    private List tasks = new ArrayList();
+    private List<Task> tasks = new ArrayList<Task>();
     static StringBuffer spoof = new StringBuffer();
 
     public SpoofTaskContainer() {
@@ -62,8 +61,8 @@ public class SpoofTaskContainer extends Task implements TaskContainer {
 
     public void execute() throws BuildException {
         spoof("begin SpoofTaskContainer execute");
-        for (Iterator iter = tasks.iterator(); iter.hasNext();) {
-            Task task = (Task) iter.next();
+        for (Object task1 : tasks) {
+            Task task = (Task) task1;
             task.perform();
         }
         spoof("end SpoofTaskContainer execute");
