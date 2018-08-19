@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.ant;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;

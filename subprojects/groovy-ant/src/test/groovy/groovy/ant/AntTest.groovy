@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util
+package groovy.ant
 
 import org.apache.tools.ant.BuildEvent
 import org.apache.tools.ant.Project
@@ -49,7 +49,7 @@ class AntTest extends GroovyTestCase {
             echo('done')
         }
         // now let's do some normal Groovy again
-        def file = new File('target/AntTest/groovy/util/AntTest.groovy')
+        def file = new File('target/AntTest/groovy/ant/AntTest.groovy')
         assert file.exists()
     }
 
@@ -75,7 +75,7 @@ class AntTest extends GroovyTestCase {
     void testJunitTask() {
         def ant = new AntBuilder()
         ant.junit {
-            test(name: 'groovy.util.SomethingThatDoesNotExist')
+            test(name: 'groovy.ant.SomethingThatDoesNotExist')
         }
     }
 
@@ -92,7 +92,7 @@ class AntTest extends GroovyTestCase {
 
     void testTaskContainerExecutionSequence() {
         SpoofTaskContainer.getSpoof().length = 0
-        def antFile = new File('src/test-resources/groovy/util/AntTest.xml')
+        def antFile = new File('src/test-resources/groovy/ant/AntTest.xml')
         assertTrue "Couldn't find ant test script", antFile.exists()
         // run it with ant, to be sure that our assumptions are correct
         def project = new Project()
@@ -190,7 +190,7 @@ end SpoofTaskContainer execute
      * (test for GROOVY-1602)
      */
     void testAntBuilderWithinGroovyTask() {
-        def antFile = new File('src/test-resources/groovy/util/AntTest.xml')
+        def antFile = new File('src/test-resources/groovy/ant/AntTest.xml')
         assertTrue "Couldn't find ant test script", antFile.exists()
 
         def project = new Project()
@@ -222,7 +222,7 @@ finished: echo[message:after groovy task]
      * Test usage of import
      */
     void testImport() {
-        def antFile = new File('src/test-resources/groovy/util/AntTest_import.xml')
+        def antFile = new File('src/test-resources/groovy/ant/AntTest_import.xml')
         assertTrue "Couldn't find ant test script", antFile.exists()
 
         def ant = new AntBuilder()
