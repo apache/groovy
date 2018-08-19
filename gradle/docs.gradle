@@ -76,6 +76,8 @@ allprojects {
     groovydoc groovydocSpec
 }
 
+evaluationDependsOn('groovy-jaxb')
+
 // Root project has an extra 'all' javadoc task
 task javadocAll(type: Javadoc)
 javadocAll {

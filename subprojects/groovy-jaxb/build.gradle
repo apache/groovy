@@ -39,6 +39,9 @@ if (JavaVersion.current().isJava9Compatible()) {
     tasks.withType(JavaCompile) {
         classpath += configurations.jaxb
     }
+    tasks.withType(Javadoc) {
+        classpath += configurations.jaxb
+    }
     tasks.withType(GroovyCompile) {
         groovyClasspath += configurations.jaxb
         classpath += configurations.jaxb
