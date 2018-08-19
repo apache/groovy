@@ -27,8 +27,6 @@ import org.junit.Assert
 
 /**
  * Tests for the <groovy> task.
- *
- * @author Marc Guillemot
  */
 class AntTest extends GroovyTestCase {
 
@@ -70,13 +68,6 @@ class AntTest extends GroovyTestCase {
             assert f.name.endsWith('.groovy')
         }
         assert found
-    }
-
-    void testJunitTask() {
-        def ant = new AntBuilder()
-        ant.junit {
-            test(name: 'groovy.ant.SomethingThatDoesNotExist')
-        }
     }
 
     void testPathBuilding() {
