@@ -67,7 +67,7 @@ class AntBuilderSpecTest extends GroovyTestCase {
                 }
             }
             // tag::copy_files[]
-            // lets just call one task
+            // let's just call one task
             ant.echo("hello")
 
             // here is an example of a block of Ant inside GroovyMarkup
@@ -83,7 +83,7 @@ class AntBuilderSpecTest extends GroovyTestCase {
                 echo("done")
             }
 
-            // now lets do some normal Groovy again
+            // now let's do some normal Groovy again
             def file = new File(ant.project.baseDir,"target/AntTest/groovy/util/AntTest.groovy")
             assert file.exists()
             // end::copy_files[]
@@ -104,14 +104,14 @@ class AntBuilderSpecTest extends GroovyTestCase {
                 }
             }
             // tag::filescanner[]
-            // lets create a scanner of filesets
+            // let's create a scanner of filesets
             def scanner = ant.fileScanner {
                 fileset(dir:"src/test") {
                     include(name:"**/Ant*.groovy")
                 }
             }
 
-            // now lets iterate over
+            // now let's iterate over
             def found = false
             for (f in scanner) {
                 println("Found file $f")
@@ -127,7 +127,7 @@ class AntBuilderSpecTest extends GroovyTestCase {
     void testExecuteJUnit() {
         doInTmpDir {ant, baseDir ->
             // tag::run_junit[]
-            // lets create a scanner of filesets
+            // let's create a scanner of filesets
             ant.junit {
                 test(name:'groovy.util.SomethingThatDoesNotExist')
             }
