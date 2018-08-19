@@ -52,11 +52,11 @@ class AntBuilderSpecTest extends AntTestCase {
         doInTmpDir {ant, baseDir ->
             baseDir.src {
                 test {
-                    groovy {
+                    some {
                         'test1.groovy'('assert 1+1==2')
                         'test2.groovy'('assert 1+1==2')
-                        util {
-                            'AntTest.groovy'('assert 1+1==2')
+                        pkg {
+                            'MyTest.groovy'('assert 1+1==2')
                         }
                     }
                 }
@@ -79,7 +79,7 @@ class AntBuilderSpecTest extends AntTestCase {
             }
 
             // now let's do some normal Groovy again
-            def file = new File(ant.project.baseDir,"target/AntTest/groovy/util/AntTest.groovy")
+            def file = new File(ant.project.baseDir,"target/AntTest/some/pkg/MyTest.groovy")
             assert file.exists()
             // end::copy_files[]
         }
@@ -89,11 +89,11 @@ class AntBuilderSpecTest extends AntTestCase {
         doInTmpDir {ant, baseDir ->
             baseDir.src {
                 test {
-                    groovy {
+                    some {
                         'test1.groovy'('assert 1+1==2')
                         'test2.groovy'('assert 1+1==2')
-                        util {
-                            'AntTest.groovy'('assert 1+1==2')
+                        pkg {
+                            'MyTest.groovy'('assert 1+1==2')
                         }
                     }
                 }
@@ -102,7 +102,7 @@ class AntBuilderSpecTest extends AntTestCase {
             // let's create a scanner of filesets
             def scanner = ant.fileScanner {
                 fileset(dir:"src/test") {
-                    include(name:"**/Ant*.groovy")
+                    include(name:"**/My*.groovy")
                 }
             }
 
@@ -121,10 +121,24 @@ class AntBuilderSpecTest extends AntTestCase {
 
     void testExecuteJUnit() {
         doInTmpDir {ant, baseDir ->
+            baseDir.some {
+                pkg {
+                    'MyTest.java'('''
+                        package some.pkg;
+                        import junit.framework.TestCase;
+                        public class MyTest extends TestCase {
+                            public void testAddition() {
+                                assertEquals(1+1, 2);
+                            }
+                        }
+                    ''')
+                }
+            }
+            ant.javac(srcdir:'.', includes:'**/*.java', fork:'true')
             // tag::run_junit[]
-            // let's create a scanner of filesets
             ant.junit {
-                test(name:'groovy.util.SomethingThatDoesNotExist')
+                classpath { pathelement(path: '.') }
+                test(name:'some.pkg.MyTest')
             }
             // end::run_junit[]
         }

@@ -50,7 +50,7 @@ include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilde
 <1> creates an instance of `AntBuilder`
 <2> executes the `echo` task with the message in parameter
 
-Imagine that you need to create a ZIP file:
+Imagine that you need to create a ZIP file. It can be as simple as:
 
 [source,groovy]
 ----
@@ -73,7 +73,7 @@ Another example would be iterating over a list of files matching a specific patt
 include::{rootProjectDir}/subprojects/groovy-ant/src/spec/test/builder/AntBuilderSpecTest.groovy[tags=filescanner,indent=0]
 ----
 
-Or execute a JUnit test:
+Or executing a JUnit test:
 
 [source,groovy]
 ----
