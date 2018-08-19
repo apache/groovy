@@ -48,14 +48,22 @@ class Annotations {
 
         AnnotationNode node = new DecompiledAnnotationNode(classNode);
         for (Map.Entry<String, Object> entry : annotation.members.entrySet()) {
-            node.addMember(entry.getKey(), annotationValueToExpression(entry.getValue(), resolver));
+            addMemberIfFound(resolver, node, entry);
         }
         return node;
     }
 
+    private static void addMemberIfFound(AsmReferenceResolver resolver, AnnotationNode node, Map.Entry<String, Object> entry) {
+        Expression value = annotationValueToExpression(entry.getValue(), resolver);
+        if (value != null) {
+            node.addMember(entry.getKey(), value);
+        }
+    }
+
     private static Expression annotationValueToExpression(Object value, AsmReferenceResolver resolver) {
         if (value instanceof TypeWrapper) {
-            return new ClassExpression(resolver.resolveType(Type.getType(((TypeWrapper) value).desc)));
+            ClassNode type = resolver.resolveClassNullable(Type.getType(((TypeWrapper) value).desc).getClassName());
+            return type != null ? new ClassExpression(type) : null;
         }
 
         if (value instanceof EnumConstantWrapper) {
