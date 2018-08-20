@@ -96,7 +96,6 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
@@ -126,6 +125,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
+import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
@@ -1284,7 +1285,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             " for class: " + receiverType.getName(), receiver);
                 } else {
                     ClassNode valueType = getType(entryExpression.getValueExpression());
-                    MethodNode setter = receiverType.getSetterMethod("set" + MetaClassHelper.capitalize(pexp.getPropertyAsString()), false);
+                    MethodNode setter = receiverType.getSetterMethod("set" + capitalize(pexp.getPropertyAsString()), false);
                     ClassNode toBeAssignedTo = setter == null ? lookup.get() : setter.getParameters()[0].getType();
                     if (!isAssignableTo(valueType, toBeAssignedTo)
                             && !extension.handleIncompatibleAssignment(toBeAssignedTo, valueType, entryExpression)) {
@@ -1440,7 +1441,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<Receiver<String>> owners = makeOwnerList(objectExpression);
         addReceivers(receivers, owners, pexp.isImplicitThis());
 
-        String capName = MetaClassHelper.capitalize(propertyName);
+        String capName = capitalize(propertyName);
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
         HashSet<ClassNode> handledNodes = new HashSet<ClassNode>();
         for (Receiver<String> receiver : receivers) {
@@ -1756,7 +1757,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<Receiver<String>> owners = makeOwnerList(objectExpression);
         addReceivers(receivers, owners, pexp.isImplicitThis());
 
-        String capName = MetaClassHelper.capitalize(propertyName);
+        String capName = capitalize(propertyName);
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
 
         for (Receiver<String> receiver : receivers) {
@@ -4594,8 +4595,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (prefix == null || methodName == null) return null;
         if (methodName.startsWith(prefix) && prefix.length() < methodName.length()) {
             String result = methodName.substring(prefix.length());
-            String propertyName = java.beans.Introspector.decapitalize(result);
-            if (result.equals(MetaClassHelper.capitalize(propertyName))) return propertyName;
+            String propertyName = decapitalize(result);
+            if (result.equals(capitalize(propertyName))) return propertyName;
         }
         return null;
     }

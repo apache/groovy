@@ -45,7 +45,6 @@ import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -61,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
@@ -213,8 +213,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, methodName, safe, implicitThis)) return;
 
         // GROOVY-5580, it is still possible that we're calling a superinterface property
-        String getterName = "get" + MetaClassHelper.capitalize(methodName);
-        String altGetterName = "is" + MetaClassHelper.capitalize(methodName);
+        String getterName = "get" + capitalize(methodName);
+        String altGetterName = "is" + capitalize(methodName);
         if (receiverType.isInterface()) {
             Set<ClassNode> allInterfaces = receiverType.getAllInterfaces();
             MethodNode getterMethod = null;
@@ -506,10 +506,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
     private boolean makeGetPropertyWithGetter(final Expression receiver, final ClassNode receiverType, final String methodName, final boolean safe, final boolean implicitThis) {
         // does a getter exists ?
-        String getterName = "get" + MetaClassHelper.capitalize(methodName);
+        String getterName = "get" + capitalize(methodName);
         MethodNode getterNode = receiverType.getGetterMethod(getterName);
         if (getterNode==null) {
-            getterName = "is" + MetaClassHelper.capitalize(methodName);
+            getterName = "is" + capitalize(methodName);
             getterNode = receiverType.getGetterMethod(getterName);
         }
         if (getterNode!=null && receiver instanceof ClassExpression && !CLASS_Type.equals(receiverType) && !getterNode.isStatic()) {
@@ -526,7 +526,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (boolean_TYPE.equals(propertyNode.getOriginType())) {
                 prefix = "is";
             }
-            getterName = prefix + MetaClassHelper.capitalize(methodName);
+            getterName = prefix + capitalize(methodName);
             getterNode = new MethodNode(
                     getterName,
                     ACC_PUBLIC,
@@ -875,7 +875,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         controller.getOperandStack().doGroovyCast(Number_TYPE);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/dgmimpl/NumberNumber" + MetaClassHelper.capitalize(message), message, "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/dgmimpl/NumberNumber" + capitalize(message), message, "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
         controller.getOperandStack().replace(Number_TYPE, m2 - m1);
     }
 

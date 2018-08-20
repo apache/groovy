@@ -38,6 +38,8 @@ import java.lang.reflect.Array
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
+import static org.apache.groovy.util.BeanUtils.capitalize
+
 /**
  * Provides a builder to assist the processing of command line arguments.
  * Two styles are supported: dynamic api style (declarative method calls provide a mini DSL for describing options)
@@ -417,7 +419,7 @@ class CliBuilder {
         }
         optionFields.each { Field f ->
             Annotation annotation = f.getAnnotation(Option)
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            String setterName = "set" + capitalize(f.getName());
             Method m = optionClass.getMethod(setterName, f.getType())
             def typedOption = processAddAnnotation(annotation, m, true)
             options.addOption(typedOption.cliOption)
@@ -513,7 +515,7 @@ class CliBuilder {
         }
         optionClass.declaredFields.findAll { it.getAnnotation(Option) }.each { Field f ->
             Annotation annotation = f.getAnnotation(Option)
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            String setterName = "set" + capitalize(f.getName());
             Method m = optionClass.getMethod(setterName, f.getType())
             Map names = calculateNames(annotation.longName(), annotation.shortName(), m, true)
             processSetAnnotation(m, t, names.long ?: names.short, cli, true)
@@ -523,7 +525,7 @@ class CliBuilder {
             processSetRemaining(m, remaining, t, cli, namesAreSetters)
         }
         optionClass.declaredFields.findAll{ it.getAnnotation(Unparsed) }.each { Field f ->
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            String setterName = "set" + capitalize(f.getName());
             Method m = optionClass.getMethod(setterName, f.getType())
             processSetRemaining(m, remaining, t, cli, namesAreSetters)
         }

@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.beans.Introspector.decapitalize;
+import static org.apache.groovy.util.BeanUtils.decapitalize;
 
 public class BeanUtils {
     static final String GET_PREFIX = "get";
@@ -155,4 +155,5 @@ public class BeanUtils {
             names.add(propName);
         }
     }
+
 }

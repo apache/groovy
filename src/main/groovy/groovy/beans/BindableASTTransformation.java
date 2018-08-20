@@ -35,7 +35,6 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
@@ -44,6 +43,7 @@ import org.objectweb.asm.Opcodes;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -184,8 +184,8 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      * Wrap an existing setter.
      */
     private static void wrapSetterMethod(ClassNode classNode, String propertyName) {
-        String getterName = "get" + MetaClassHelper.capitalize(propertyName);
-        MethodNode setter = classNode.getSetterMethod("set" + MetaClassHelper.capitalize(propertyName));
+        String getterName = "get" + capitalize(propertyName);
+        MethodNode setter = classNode.getSetterMethod("set" + capitalize(propertyName));
 
         if (setter != null) {
             // Get the existing code block
@@ -213,7 +213,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createListenerSetter(ClassNode classNode, PropertyNode propertyNode) {
-        String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
+        String setterName = "set" + capitalize(propertyNode.getName());
         if (classNode.getMethods(setterName).isEmpty()) {
             Statement setterBlock = createBindableStatement(propertyNode, fieldX(propertyNode.getField()));
 

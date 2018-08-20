@@ -29,10 +29,10 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 
 import java.util.List;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
@@ -132,6 +132,6 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
     }
 
     private static String makeName(FieldNode fNode, String prefix) {
-        return prefix + MetaClassHelper.capitalize(fNode.getName());
+        return prefix + capitalize(fNode.getName());
     }
 }

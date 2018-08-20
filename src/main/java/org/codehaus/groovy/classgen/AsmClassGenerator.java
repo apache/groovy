@@ -102,7 +102,6 @@ import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.AnnotationVisitor;
@@ -123,6 +122,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.groovy.util.BeanUtils.capitalize;
 
 /**
  * Generates Java class versions of Groovy classes using ASM.
@@ -1031,7 +1032,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     } else {
                         prefix = "get";
                     }
-                    String propName = prefix + MetaClassHelper.capitalize(name);
+                    String propName = prefix + capitalize(name);
                     visitMethodCallExpression(new MethodCallExpression(objectExpression, propName, MethodCallExpression.NO_ARGUMENTS));
                     return;
                 }
@@ -1140,13 +1141,13 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private MethodNode findSetterOfSuperClass(ClassNode classNode, FieldNode fieldNode) {
-        String setterMethodName = "set" + MetaClassHelper.capitalize(fieldNode.getName());
+        String setterMethodName = "set" + capitalize(fieldNode.getName());
 
         return classNode.getSuperClass().getSetterMethod(setterMethodName);
     }
 
     private MethodNode findGetterOfSuperClass(ClassNode classNode, FieldNode fieldNode) {
-        String getterMethodName = "get" + MetaClassHelper.capitalize(fieldNode.getName());
+        String getterMethodName = "get" + capitalize(fieldNode.getName());
 
         return classNode.getSuperClass().getGetterMethod(getterMethodName);
     }

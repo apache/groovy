@@ -35,7 +35,6 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
@@ -44,6 +43,7 @@ import java.beans.PropertyVetoException;
 import java.beans.VetoableChangeListener;
 import java.beans.VetoableChangeSupport;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -168,8 +168,8 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * Wrap an existing setter.
      */
     private static void wrapSetterMethod(ClassNode classNode, boolean bindable, String propertyName) {
-        String getterName = "get" + MetaClassHelper.capitalize(propertyName);
-        MethodNode setter = classNode.getSetterMethod("set" + MetaClassHelper.capitalize(propertyName));
+        String getterName = "get" + capitalize(propertyName);
+        MethodNode setter = classNode.getSetterMethod("set" + capitalize(propertyName));
 
         if (setter != null) {
             // Get the existing code block
@@ -210,7 +210,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         if (needsVetoableChangeSupport(declaringClass, source)) {
             addVetoableChangeSupport(declaringClass);
         }
-        String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
+        String setterName = "set" + capitalize(propertyNode.getName());
         if (declaringClass.getMethods(setterName).isEmpty()) {
             Expression fieldExpression = fieldX(propertyNode.getField());
             BlockStatement setterBlock = new BlockStatement();

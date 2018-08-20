@@ -37,10 +37,10 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 
 import java.lang.ref.SoftReference;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -163,7 +163,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
     private static void addMethod(FieldNode fieldNode, BlockStatement body, ClassNode type) {
         int visibility = ACC_PUBLIC;
         if (fieldNode.isStatic()) visibility |= ACC_STATIC;
-        String propName = MetaClassHelper.capitalize(fieldNode.getName().substring(1));
+        String propName = capitalize(fieldNode.getName().substring(1));
         fieldNode.getDeclaringClass().addMethod("get" + propName, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
         if (ClassHelper.boolean_TYPE.equals(type)) {
             fieldNode.getDeclaringClass().addMethod("is" + propName, visibility, type,
@@ -209,7 +209,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
     private static void createSoftSetter(FieldNode fieldNode, ClassNode type) {
         final BlockStatement body = new BlockStatement();
         final Expression fieldExpr = varX(fieldNode);
-        final String name = "set" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
+        final String name = "set" + capitalize(fieldNode.getName().substring(1));
         final Parameter parameter = param(type, "value");
         final Expression paramExpr = varX(parameter);
         body.addStatement(ifElseS(

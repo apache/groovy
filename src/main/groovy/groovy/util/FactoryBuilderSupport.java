@@ -28,7 +28,6 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.Reference;
 import groovy.lang.Script;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.lang.reflect.InvocationTargetException;
@@ -47,6 +46,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.apache.groovy.util.BeanUtils.capitalize;
 
 /**
  * Mix of BuilderSupport and SwingBuilder's factory support.
@@ -620,7 +621,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         if (getter != null) getter.setDelegate(this);
         if (setter != null) setter.setDelegate(this);
         explicitProperties.put(name, new Closure[]{getter, setter});
-        String methodNameBase = MetaClassHelper.capitalize(name);
+        String methodNameBase = capitalize(name);
         if (getter != null) {
             getRegistrationGroup(groupName).add("get" + methodNameBase);
         }

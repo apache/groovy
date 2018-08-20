@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.reflect.Modifier.isFinal;
+import static org.apache.groovy.util.BeanUtils.decapitalize;
 
 /**
  * goes through an AST and initializes the scopes
@@ -205,7 +206,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (!(name.startsWith("set") || name.startsWith("get"))) return null;
         String pname = name.substring(3);
         if (pname.length() == 0) return null;
-        pname = java.beans.Introspector.decapitalize(pname);
+        pname = decapitalize(pname);
 
         if (name.startsWith("get") && (m.getReturnType() == ClassHelper.VOID_TYPE || m.getParameters().length != 0)) {
             return null;

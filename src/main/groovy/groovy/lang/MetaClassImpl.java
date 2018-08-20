@@ -19,6 +19,7 @@
 package groovy.lang;
 
 import org.apache.groovy.internal.util.UncheckedThrow;
+import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -2543,7 +2544,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (name == null) {
             // assume "is" or "[gs]et"
             String stripped = methodName.startsWith("is") ? methodName.substring(2) : methodName.substring(3);
-            String propName = Introspector.decapitalize(stripped);
+            String propName = BeanUtils.decapitalize(stripped);
             PROP_NAMES.putIfAbsent(methodName, propName);
             name = PROP_NAMES.get(methodName);
         }

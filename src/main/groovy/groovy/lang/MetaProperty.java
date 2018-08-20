@@ -18,9 +18,9 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.MetaClassHelper;
-
 import java.lang.reflect.Modifier;
+
+import static org.apache.groovy.util.BeanUtils.capitalize;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
@@ -88,7 +88,7 @@ public abstract class MetaProperty {
      */
     public static String getGetterName(String propertyName, Class type) {
         String prefix = type == boolean.class || type == Boolean.class ? "is" : "get";
-        return prefix + MetaClassHelper.capitalize(propertyName);
+        return prefix + capitalize(propertyName);
     }
 
     /**
@@ -97,6 +97,6 @@ public abstract class MetaProperty {
      * @return The name of the property. The name is "set"+ the capitalized propertyName.
      */
     public static String getSetterName(String propertyName) {
-        return PROPERTY_SET_PREFIX + MetaClassHelper.capitalize(propertyName);
+        return PROPERTY_SET_PREFIX + capitalize(propertyName);
     }
 }

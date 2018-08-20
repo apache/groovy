@@ -60,7 +60,6 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
@@ -73,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IDENTICAL;
 
 /**
@@ -766,10 +766,10 @@ public class GeneralUtils {
     }
 
     private static String getterName(ClassNode annotatedNode, PropertyNode pNode) {
-        String getterName = "get" + MetaClassHelper.capitalize(pNode.getName());
+        String getterName = "get" + capitalize(pNode.getName());
         boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
         if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
-            getterName = "is" + MetaClassHelper.capitalize(pNode.getName());
+            getterName = "is" + capitalize(pNode.getName());
         }
         return getterName;
     }
