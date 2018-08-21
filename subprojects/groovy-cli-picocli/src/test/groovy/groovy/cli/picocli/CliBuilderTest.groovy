@@ -1043,4 +1043,11 @@ Usage: groovy [-hiV] [-cp] [-pa] [--configscript=PARAM]
   -V, --version              cli.option.version.description"""
         assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
     }
+
+    void testNonOption() {
+        CliBuilder cli = new CliBuilder(stopAtNonOption: false)
+        def optionAccessor = cli.parse(['-x'])
+        assertNull(optionAccessor)
+    }
+
 }
