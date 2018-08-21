@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -49,8 +50,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * Any method annotated with {@code @}WithReadLock will obtain a read lock and release it in a finally block.<br>
  * Any method annotated with {@code @}WithWriteLock will obtain a write lock and release it in a finally block.<br>
  * For more information see {@link WithReadLock} and {@link WithWriteLock}
- *
- * @author Hamlet D'Arcy
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
@@ -81,19 +80,19 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
         if (parent instanceof MethodNode) {
             MethodNode mNode = (MethodNode) parent;
             ClassNode cNode = mNode.getDeclaringClass();
-            String lockExpr = determineLock(value, cNode, mNode.isStatic(), myTypeName);
+            FieldNode lockExpr = determineLock(value, cNode, mNode.isStatic(), myTypeName);
             if (lockExpr == null) return;
 
             // get lock type
-            final Expression lockType;
-            if (isWriteLock) {
-                lockType = callX(varX(lockExpr, LOCK_TYPE), "writeLock");
-            } else {
-                lockType = callX(varX(lockExpr, LOCK_TYPE), "readLock");
-            }
+            final MethodCallExpression lockType = callX(varX(lockExpr), isWriteLock ? "writeLock" : "readLock");
+            lockType.setImplicitThis(false);
 
-            Expression acquireLock = callX(lockType, "lock");
-            Expression releaseLock = callX(lockType, "unlock");
+            MethodCallExpression acquireLock = callX(lockType, "lock");
+            acquireLock.setImplicitThis(false);
+
+            MethodCallExpression releaseLock = callX(lockType, "unlock");
+            releaseLock.setImplicitThis(false);
+
             Statement originalCode = mNode.getCode();
 
             mNode.setCode(block(
@@ -102,7 +101,7 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private String determineLock(String value, ClassNode targetClass, boolean isStatic, String myTypeName) {
+    private FieldNode determineLock(String value, ClassNode targetClass, boolean isStatic, String myTypeName) {
         if (value != null && value.length() > 0 && !value.equalsIgnoreCase(DEFAULT_INSTANCE_LOCKNAME)) {
             FieldNode existingLockField = targetClass.getDeclaredField(value);
             if (existingLockField == null) {
@@ -113,28 +112,28 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
                 addError("Error during " + myTypeName + " processing: lock field with name '" + value + "' should " + (isStatic ? "" : "not ") + "be static", existingLockField);
                 return null;
             }
-            return value;
+            return existingLockField;
         }
         if (isStatic) {
             FieldNode field = targetClass.getDeclaredField(DEFAULT_STATIC_LOCKNAME);
             if (field == null) {
                 int visibility = ACC_PRIVATE | ACC_STATIC | ACC_FINAL;
-                targetClass.addField(DEFAULT_STATIC_LOCKNAME, visibility, LOCK_TYPE, createLockObject());
+                field = targetClass.addField(DEFAULT_STATIC_LOCKNAME, visibility, LOCK_TYPE, createLockObject());
             } else if (!field.isStatic()) {
                 addError("Error during " + myTypeName + " processing: " + DEFAULT_STATIC_LOCKNAME + " field must be static", field);
                 return null;
             }
-            return DEFAULT_STATIC_LOCKNAME;
+            return field;
         }
         FieldNode field = targetClass.getDeclaredField(DEFAULT_INSTANCE_LOCKNAME);
         if (field == null) {
             int visibility = ACC_PRIVATE | ACC_FINAL;
-            targetClass.addField(DEFAULT_INSTANCE_LOCKNAME, visibility, LOCK_TYPE, createLockObject());
+            field = targetClass.addField(DEFAULT_INSTANCE_LOCKNAME, visibility, LOCK_TYPE, createLockObject());
         } else if (field.isStatic()) {
             addError("Error during " + myTypeName + " processing: " + DEFAULT_INSTANCE_LOCKNAME + " field must not be static", field);
             return null;
         }
-        return DEFAULT_INSTANCE_LOCKNAME;
+        return field;
     }
 
     private static Expression createLockObject() {
