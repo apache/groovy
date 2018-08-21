@@ -530,6 +530,7 @@ class CliBuilder {
     void setStopAtNonOption(boolean stopAtNonOption) {
         this.stopAtNonOption = stopAtNonOption
         parser.stopAtPositional(stopAtNonOption)
+        parser.unmatchedOptionsArePositionalParams(stopAtNonOption)
     }
 
     /**
