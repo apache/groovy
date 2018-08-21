@@ -95,6 +95,11 @@ class AstBrowser {
         }
     }
 
+    void initAuxViews() {
+        bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+        asmifierView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+    }
+
     void run(Closure script) {
         run(script, null)
     }
@@ -147,6 +152,7 @@ class AstBrowser {
                         refreshAction = action(name: 'Refresh', closure: {
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
+                            initAuxViews()
                         }, mnemonic: 'R', accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
                     }
                 }
@@ -162,8 +168,7 @@ class AstBrowser {
                         selectedItem: prefs.selectedPhase,
                         actionPerformed: {
                             // reset text to the default as the phase change removes the focus from the class node
-                            bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
-                            asmifierView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+                            initAuxViews()
 
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
@@ -173,6 +178,7 @@ class AstBrowser {
                         actionPerformed: {
                             decompile(phasePicker.selectedItem.phaseId, script())
                             compile(jTree, script(), phasePicker.selectedItem.phaseId)
+                            initAuxViews()
                         },
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
@@ -205,8 +211,7 @@ class AstBrowser {
             }
         }
 
-        bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
-        asmifierView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+        initAuxViews()
 
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
@@ -411,8 +416,7 @@ class AstBrowser {
 
     void showIndyBytecode(EventObject evt = null) {
         showIndyBytecode = evt.source.selected
-        bytecodeView.textEditor.text = BYTECODE_MSG_SELECT_NODE
-        asmifierView.textEditor.text = BYTECODE_MSG_SELECT_NODE
+        initAuxViews()
         refreshAction.actionPerformed(null)
         updateTabTitles()
     }
