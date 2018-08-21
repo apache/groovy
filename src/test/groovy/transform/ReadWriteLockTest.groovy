@@ -23,12 +23,10 @@ import java.lang.reflect.Modifier
 
 /**
  * Unit test for WithReadLock and WithWriteLock annotations.
- *
- * @author Hamlet D'Arcy
  */
 class ReadWriteLockTest extends GroovyTestCase {
 
-    public void testLockFieldDefaultsForReadLock() {
+    void testLockFieldDefaultsForReadLock() {
         def tester = new GroovyClassLoader().parseClass('''
         class MyClass {
             @groovy.transform.WithReadLock
@@ -44,7 +42,7 @@ class ReadWriteLockTest extends GroovyTestCase {
         assert field.type == ReentrantReadWriteLock
     }
 
-    public void testLockFieldDefaultsForWriteLock() {
+    void testLockFieldDefaultsForWriteLock() {
         def tester = new GroovyClassLoader().parseClass('''
         class MyClass {
             @groovy.transform.WithWriteLock
@@ -60,7 +58,7 @@ class ReadWriteLockTest extends GroovyTestCase {
         assert field.type == ReentrantReadWriteLock
     }
 
-    public void testLockFieldDefaultsForStaticReadLock() {
+    void testLockFieldDefaultsForStaticReadLock() {
         def tester = new GroovyClassLoader().parseClass('''
         class MyClass {
             @groovy.transform.WithReadLock
@@ -76,7 +74,7 @@ class ReadWriteLockTest extends GroovyTestCase {
         assert field.type == ReentrantReadWriteLock
     }
 
-    public void testLockFieldDefaultsForStaticWriteLock() {
+    void testLockFieldDefaultsForStaticWriteLock() {
         def tester = new GroovyClassLoader().parseClass('''
         class MyClass {
             @groovy.transform.WithWriteLock
@@ -92,7 +90,7 @@ class ReadWriteLockTest extends GroovyTestCase {
         assert field.type == ReentrantReadWriteLock
     }
 
-    public void testLocking() {
+    void testLocking() {
 
         def tester = new MyClass()
         tester.readerMethod1()
@@ -111,7 +109,7 @@ class ReadWriteLockTest extends GroovyTestCase {
         tester.readerMethod1()
     }
 
-    public void testStaticLocking() {
+    void testStaticLocking() {
 
         def tester = new MyClass()
         tester.staticReaderMethod1()
@@ -130,7 +128,7 @@ class ReadWriteLockTest extends GroovyTestCase {
         tester.staticReaderMethod1()
     }
 
-    public void testDeadlockingDoesNotOccur() {
+    void testDeadlockingDoesNotOccur() {
         def tester = new MyClass()
 
         // this tests for deadlocks from not releaseing in finally block 
@@ -145,7 +143,7 @@ class ReadWriteLockTest extends GroovyTestCase {
         shouldFail { tester.namedReaderMethod1() }
     }
 
-    public void testCompileError_NamingConflict() {
+    void testCompileError_NamingConflict() {
         shouldFail("lock field with name 'unknown' not found") {
             '''
             class MyClass {
@@ -175,6 +173,29 @@ class ReadWriteLockTest extends GroovyTestCase {
         }
     }
 
+    // GROOVY-8758
+    void testShouldBeAllowedInInnerClassWithCompileStatic() {
+        assertScript '''
+            import groovy.transform.*
+
+            @CompileStatic
+            class A {
+                private class B {
+                    @WithReadLock
+                    int getFoo() { 0 }
+                }
+
+                private B b
+
+                A() {
+                    b = new B()
+                }
+            }
+
+            def a = new A()
+        '''
+    }
+
     def shouldFail(String expectedText, Closure c) {
         String script = c()
         try {
@@ -198,54 +219,54 @@ class MyClass {
     def staticWriterMethod2Called = false
     def myLock = new ReentrantReadWriteLock()
     
-    @groovy.transform.WithReadLock
-    public void readerMethod1() {
+    @WithReadLock
+    void readerMethod1() {
         readerMethod1Called = true
     }
-    @groovy.transform.WithReadLock
-    public void readerMethod2() {
+    @WithReadLock
+    void readerMethod2() {
         readerMethod2Called = true
     }
-    @groovy.transform.WithWriteLock
-    public void writerMethod1() {
+    @WithWriteLock
+    void writerMethod1() {
         writerMethod1Called = true
     }
-    @groovy.transform.WithWriteLock
-    public void writerMethod2() {
+    @WithWriteLock
+    void writerMethod2() {
         writerMethod2Called = true
     }
 
-    @groovy.transform.WithReadLock('myLock')
-    public void namedReaderMethod1() {
+    @WithReadLock('myLock')
+    void namedReaderMethod1() {
         throw new Exception()
     }
-    @groovy.transform.WithReadLock('myLock')
-    public void namedReaderMethod2() {
+    @WithReadLock('myLock')
+    void namedReaderMethod2() {
         throw new Exception()
     }
-    @groovy.transform.WithWriteLock('myLock')
-    public void namedWriterMethod1() {
+    @WithWriteLock('myLock')
+    void namedWriterMethod1() {
         throw new Exception()
     }
-    @groovy.transform.WithWriteLock('myLock')
-    public void namedWriterMethod2() {
+    @WithWriteLock('myLock')
+    void namedWriterMethod2() {
         throw new Exception()
     }
 
-    @groovy.transform.WithReadLock
-    public void staticReaderMethod1() {
+    @WithReadLock
+    void staticReaderMethod1() {
         staticReaderMethod1Called = true
     }
-    @groovy.transform.WithReadLock
-    public void staticReaderMethod2() {
+    @WithReadLock
+    void staticReaderMethod2() {
         staticReaderMethod2Called = true
     }
-    @groovy.transform.WithWriteLock
-    public void staticWriterMethod1() {
+    @WithWriteLock
+    void staticWriterMethod1() {
         staticWriterMethod1Called = true
     }
-    @groovy.transform.WithWriteLock
-    public void staticWriterMethod2() {
+    @WithWriteLock
+    void staticWriterMethod2() {
         staticWriterMethod2Called = true
     }
 }
