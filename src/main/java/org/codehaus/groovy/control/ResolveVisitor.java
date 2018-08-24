@@ -607,7 +607,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
          * foo.foo.bar rather than foo.bar. This means to cut at the dot in foo.bar and
          * foo for import
          */
-        while (true) {
+        do {
             pname = name.substring(0, index);
             ClassNode aliasedNode = null;
             ImportNode importNode = module.getImport(pname);
@@ -647,7 +647,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // completely and use a ConstructedClassWithPackage to prevent lookups against the package.
                     String className = aliasedNode.getNameWithoutPackage() + '$' +
                             name.substring(pname.length() + 1).replace('.', '$');
-                    ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(aliasedNode.getPackageName()+".", className);
+                    ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(aliasedNode.getPackageName() + ".", className);
                     if (resolve(tmp, true, true, false)) {
                         type.setRedirect(tmp.redirect());
                         return true;
@@ -655,8 +655,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
             }
             index = pname.lastIndexOf('.');
-            if (index == -1) break;
-        }
+        } while (index != -1);
         return false;
     }
 
