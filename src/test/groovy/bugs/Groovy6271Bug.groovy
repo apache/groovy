@@ -38,7 +38,7 @@ TestScripttestTraitWithCompileStaticAndCoercedClosure0.groovy: 33: [Static type 
 2 errors
      */
     @NotYetImplemented
-    void testTraitWithCompileStaticAndCoercedClosure() {
+    void testGroovy6271Bug() {
         shouldCompile '''
             @Grab('org.functionaljava:functionaljava:3.1')
             import static fj.data.hlist.HList.HCons;
