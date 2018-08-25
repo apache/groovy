@@ -309,8 +309,9 @@ public class WideningCategories {
                 GenericsType[] copyTypes = new GenericsType[genericsTypes.length];
                 for (int i = 0; i < genericsTypes.length; i++) {
                     GenericsType genericsType = genericsTypes[i];
-                    if (genericsType.isPlaceholder() && genericsTypeMap.containsKey(new GenericsTypeName(genericsType.getName()))) {
-                        copyTypes[i] = genericsTypeMap.get(new GenericsTypeName(genericsType.getName()));
+                    GenericsTypeName gtn = new GenericsTypeName(genericsType.getName());
+                    if (genericsType.isPlaceholder() && genericsTypeMap.containsKey(gtn)) {
+                        copyTypes[i] = genericsTypeMap.get(gtn);
                     } else {
                         copyTypes[i] = genericsType;
                     }

@@ -1490,9 +1490,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             ClassNode classNode = type.getType();
             String name = type.getName();
+            GenericsTypeName gtn = new GenericsTypeName(name);
             ClassNode[] bounds = type.getUpperBounds();
             boolean isWild = QUESTION_MARK.equals(name);
-            boolean toDealWithGenerics = 0 == level || (level > 0 && null != genericParameterNames.get(new GenericsTypeName(name)));
+            boolean toDealWithGenerics = 0 == level || (level > 0 && null != genericParameterNames.get(gtn));
 
             if (bounds != null) {
                 boolean nameAdded = false;
@@ -1500,7 +1501,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     if (!isWild) {
                         if (!nameAdded && upperBound != null || !resolve(classNode)) {
                             if (toDealWithGenerics) {
-                                genericParameterNames.put(new GenericsTypeName(name), type);
+                                genericParameterNames.put(gtn, type);
                                 type.setPlaceholder(true);
                                 classNode.setRedirect(upperBound);
                                 nameAdded = true;
@@ -1517,8 +1518,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             } else {
                 if (!isWild) {
                     if (toDealWithGenerics) {
-                        GenericsType originalGt = genericParameterNames.get(new GenericsTypeName(name));
-                        genericParameterNames.put(new GenericsTypeName(name), type);
+                        GenericsType originalGt = genericParameterNames.get(gtn);
+                        genericParameterNames.put(gtn, type);
                         type.setPlaceholder(true);
 
                         if (null == originalGt) {
