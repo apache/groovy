@@ -460,7 +460,23 @@ public class GenericsUtils {
         GenericsType[] sgts = current.getGenericsTypes();
         if (sgts != null) {
             for (GenericsType sgt : sgts) {
-                ret.put(sgt.getName(), sgt.getType());
+                String name = sgt.getName();
+                if (sgt.isPlaceholder()) {
+                    ClassNode redirect;
+                    if (sgt.getUpperBounds() != null) {
+                        redirect = sgt.getUpperBounds()[0];
+                    } else if (sgt.getLowerBound() != null) {
+                        redirect = sgt.getLowerBound();
+                    } else {
+                        redirect = ClassHelper.OBJECT_TYPE;
+                    }
+                    ClassNode type = ClassHelper.makeWithoutCaching(name);
+                    type.setGenericsPlaceHolder(true);
+                    type.setRedirect(redirect);
+                    ret.put(name, type);
+                } else {
+                    ret.put(name, sgt.getType());
+                }
             }
         }
         return ret;
