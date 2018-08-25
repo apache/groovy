@@ -142,21 +142,21 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
-    private final ThreadLocal<LinkedList<Map<String, Object>>> contexts = new ThreadLocal<>();
-    protected LinkedList<Closure> attributeDelegates = new LinkedList<>(); //
-    private final List<Closure> disposalClosures = new ArrayList<>(); // because of reverse iteration use ArrayList
-    private final Map<String, Factory> factories = new HashMap<>();
+    private final ThreadLocal<LinkedList<Map<String, Object>>> contexts = new ThreadLocal<LinkedList<Map<String, Object>>>();
+    protected LinkedList<Closure> attributeDelegates = new LinkedList<Closure>(); //
+    private final List<Closure> disposalClosures = new ArrayList<Closure>(); // because of reverse iteration use ArrayList
+    private final Map<String, Factory> factories = new HashMap<String, Factory>();
     private Closure nameMappingClosure;
-    private final ThreadLocal<FactoryBuilderSupport> localProxyBuilder = new ThreadLocal<>();
+    private final ThreadLocal<FactoryBuilderSupport> localProxyBuilder = new ThreadLocal<FactoryBuilderSupport>();
     private FactoryBuilderSupport globalProxyBuilder;
-    protected LinkedList<Closure> preInstantiateDelegates = new LinkedList<>();
-    protected LinkedList<Closure> postInstantiateDelegates = new LinkedList<>();
-    protected LinkedList<Closure> postNodeCompletionDelegates = new LinkedList<>();
+    protected LinkedList<Closure> preInstantiateDelegates = new LinkedList<Closure>();
+    protected LinkedList<Closure> postInstantiateDelegates = new LinkedList<Closure>();
+    protected LinkedList<Closure> postNodeCompletionDelegates = new LinkedList<Closure>();
     protected Closure methodMissingDelegate;
     protected Closure propertyMissingDelegate;
-    protected Map<String, Closure[]> explicitProperties = new HashMap<>();
-    protected Map<String, Closure> explicitMethods = new HashMap<>();
-    protected Map<String, Set<String>> registrationGroup = new HashMap<>();
+    protected Map<String, Closure[]> explicitProperties = new HashMap<String, Closure[]>();
+    protected Map<String, Closure> explicitMethods = new HashMap<String, Closure>();
+    protected Map<String, Set<String>> registrationGroup = new HashMap<String, Set<String>>();
     protected String registrationGroupName = ""; // use binding to store?
 
     protected boolean autoRegistrationRunning = false;
@@ -168,7 +168,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     public FactoryBuilderSupport(boolean init) {
         globalProxyBuilder = this;
-        registrationGroup.put(registrationGroupName, new TreeSet<>());
+        registrationGroup.put(registrationGroupName, new TreeSet<String>());
         if (init) {
             autoRegisterNodes();
         }
@@ -177,7 +177,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     private Set<String> getRegistrationGroup(String name) {
         Set<String> group = registrationGroup.get(name);
         if (group == null ) {
-            group = new TreeSet<>();
+            group = new TreeSet<String>();
             registrationGroup.put(name, group);
         }
         return group;
@@ -214,7 +214,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         for (Method method : declaredMethods) {
             if (method.getName().startsWith("register") && method.getParameterTypes().length == 0) {
                 registrationGroupName = method.getName().substring("register".length());
-                registrationGroup.put(registrationGroupName, new TreeSet<>());
+                registrationGroup.put(registrationGroupName, new TreeSet<String>());
                 try {
                     if (Modifier.isPublic(method.getModifiers())) {
                         method.invoke(this);
@@ -995,7 +995,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * Pushes a new context on the stack.
      */
     protected void newContext() {
-        getContexts().addFirst(new HashMap<>());
+        getContexts().addFirst(new HashMap<String, Object>());
     }
 
     /**
@@ -1129,7 +1129,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     protected LinkedList<Map<String, Object>> getContexts() {
         LinkedList<Map<String, Object>> contexts = getProxyBuilder().contexts.get();
         if (contexts == null) {
-            contexts = new LinkedList<>();
+            contexts = new LinkedList<Map<String, Object>>();
             getProxyBuilder().contexts.set(contexts);
         }
         return contexts;
@@ -1140,7 +1140,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the map
      */
     protected Map<String, Object> getContinuationData() {
-        Map<String, Object> data = new HashMap<>();
+        Map<String, Object> data = new HashMap<String, Object>();
         data.put("proxyBuilder", localProxyBuilder.get());
         data.put("contexts", contexts.get());
         return data;

@@ -74,7 +74,7 @@ public class ObservableSet<E> implements Set<E> {
     public static final String CONTENT_PROPERTY = "content";
 
     public ObservableSet() {
-        this(new HashSet<>(), null);
+        this(new HashSet<E>(), null);
     }
 
     public ObservableSet(Set<E> delegate) {
@@ -82,7 +82,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public ObservableSet(Closure test) {
-        this(new HashSet<>(), test);
+        this(new HashSet<E>(), test);
     }
 
     public ObservableSet(Set<E> delegate, Closure test) {
@@ -174,7 +174,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public Iterator<E> iterator() {
-        return new ObservableIterator<>(delegate.iterator());
+        return new ObservableIterator<E>(delegate.iterator());
     }
 
     public Object[] toArray() {
@@ -218,7 +218,7 @@ public class ObservableSet<E> implements Set<E> {
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        Set<E> duplicates = new HashSet<>();
+        Set<E> duplicates = new HashSet<E>();
         if (null != c) {
             for (E e : c) {
                 if (!delegate.contains(e)) continue;
@@ -230,7 +230,7 @@ public class ObservableSet<E> implements Set<E> {
         boolean success = delegate.addAll(c);
 
         if (success && c != null) {
-            List<E> values = new ArrayList<>();
+            List<E> values = new ArrayList<E>();
             for (E element : c) {
                 if (test != null) {
                     Object result = test.call(element);
@@ -300,7 +300,7 @@ public class ObservableSet<E> implements Set<E> {
 
     public void clear() {
         int oldSize = size();
-        List<E> values = new ArrayList<>(delegate);
+        List<E> values = new ArrayList<E>(delegate);
         delegate.clear();
         if (!values.isEmpty()) {
             fireElementClearedEvent(values);
@@ -310,7 +310,7 @@ public class ObservableSet<E> implements Set<E> {
 
     protected class ObservableIterator<E> implements Iterator<E> {
         private final Iterator<E> iterDelegate;
-        private final Stack<E> stack = new Stack<>();
+        private final Stack<E> stack = new Stack<E>();
 
         public ObservableIterator(Iterator<E> iterDelegate) {
             this.iterDelegate = iterDelegate;

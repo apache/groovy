@@ -60,7 +60,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader,
                                     GroovyClassLoader transformClassLoader) {
         super(configuration, null, groovyClassLoader, transformClassLoader);
-        javaSources = new LinkedList<>();
+        javaSources = new LinkedList<String>();
         Map options = configuration.getJointCompilationOptions();
         generationGoal = (File) options.get("stubDir");
         boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());

@@ -152,14 +152,14 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             addError("Annotations are not supported in the current runtime. " + JVM_ERROR_MESSAGE, node);
             return;
         }
-        Map<String, List<AnnotationNode>> runtimeAnnotations = new LinkedHashMap<>();
+        Map<String, List<AnnotationNode>> runtimeAnnotations = new LinkedHashMap<String, List<AnnotationNode>>();
         for (AnnotationNode unvisited : node.getAnnotations()) {
             AnnotationNode visited = visitAnnotation(unvisited);
             String name = visited.getClassNode().getName();
             if (visited.hasRuntimeRetention()) {
                 List<AnnotationNode> seen = runtimeAnnotations.get(name);
                 if (seen == null) {
-                    seen = new ArrayList<>();
+                    seen = new ArrayList<AnnotationNode>();
                 }
                 seen.add(visited);
                 runtimeAnnotations.put(name, seen);
@@ -200,7 +200,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 if (repeatable != null) {
                     AnnotationNode collector = new AnnotationNode(repeatable);
                     collector.setRuntimeRetention(true); // checked earlier
-                    List<Expression> annos = new ArrayList<>();
+                    List<Expression> annos = new ArrayList<Expression>();
                     for (AnnotationNode an : next.getValue()) {
                         annos.add(new AnnotationConstantExpression(an));
                     }
@@ -267,7 +267,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 MethodNode found = getDeclaredMethodCorrected(genericsSpec, mn, correctedNext);
                 if (found != null) break;
             }
-            List<ClassNode> ifaces = new ArrayList<>(Arrays.asList(next.getInterfaces()));
+            List<ClassNode> ifaces = new ArrayList<ClassNode>(Arrays.asList(next.getInterfaces()));
             Map updatedGenericsSpec = new HashMap(genericsSpec);
             while (!ifaces.isEmpty()) {
                 ClassNode origInterface = ifaces.remove(0);

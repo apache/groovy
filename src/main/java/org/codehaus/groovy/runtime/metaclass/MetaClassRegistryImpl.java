@@ -69,9 +69,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private final FastArray instanceMethods = new FastArray();
     private final FastArray staticMethods = new FastArray();
 
-    private final LinkedList<MetaClassRegistryChangeEventListener> changeListenerList = new LinkedList<>();
-    private final LinkedList<MetaClassRegistryChangeEventListener> nonRemoveableChangeListenerList = new LinkedList<>();
-    private final ManagedConcurrentLinkedQueue<MetaClass> metaClassInfo = new ManagedConcurrentLinkedQueue<>(ReferenceBundle.getWeakBundle());
+    private final LinkedList<MetaClassRegistryChangeEventListener> changeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
+    private final LinkedList<MetaClassRegistryChangeEventListener> nonRemoveableChangeListenerList = new LinkedList<MetaClassRegistryChangeEventListener>();
+    private final ManagedConcurrentLinkedQueue<MetaClass> metaClassInfo = new ManagedConcurrentLinkedQueue<MetaClass>(ReferenceBundle.getWeakBundle());
     private final ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
 
     public static final int LOAD_DEFAULT = 0;
@@ -99,7 +99,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         this.useAccessible = useAccessible;
 
         if (loadDefault == LOAD_DEFAULT) {
-            final Map<CachedClass, List<MetaMethod>> map = new HashMap<>();
+            final Map<CachedClass, List<MetaMethod>> map = new HashMap<CachedClass, List<MetaMethod>>();
 
             // let's register the default methods
             registerMethods(null, true, true, map);
@@ -211,7 +211,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                     final CachedClass declClass = method.getDeclaringClass();
                     List<MetaMethod> arr = map.get(declClass);
                     if (arr == null) {
-                        arr = new ArrayList<>(4);
+                        arr = new ArrayList<MetaMethod>(4);
                         map.put(declClass, arr);
                     }
                     arr.add(method);
@@ -232,7 +232,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                     if (paramTypes.length > 0) {
                         List<MetaMethod> arr = map.get(paramTypes[0]);
                         if (arr == null) {
-                            arr = new ArrayList<>(4);
+                            arr = new ArrayList<MetaMethod>(4);
                             map.put(paramTypes[0], arr);
                         }
                         if (useInstanceMethods) {
@@ -256,7 +256,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             final CachedClass declClass = method.getDeclaringClass();
             List<MetaMethod> arr = map.get(declClass);
             if (arr == null) {
-                arr = new ArrayList<>(4);
+                arr = new ArrayList<MetaMethod>(4);
                 map.put(declClass, arr);
             }
             arr.add(method);
@@ -411,7 +411,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners() {
         synchronized (changeListenerList) {
             ArrayList<MetaClassRegistryChangeEventListener> ret =
-                    new ArrayList<>(changeListenerList.size() + nonRemoveableChangeListenerList.size());
+                    new ArrayList<MetaClassRegistryChangeEventListener>(changeListenerList.size()+nonRemoveableChangeListenerList.size());
             ret.addAll(nonRemoveableChangeListenerList);
             ret.addAll(changeListenerList);
             return ret.toArray(new MetaClassRegistryChangeEventListener[0]);
@@ -528,7 +528,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 CachedClass cachedClass = metaMethod.getDeclaringClass();
                 List<MetaMethod> methods = map.get(cachedClass);
                 if (methods == null) {
-                    methods = new ArrayList<>(4);
+                    methods = new ArrayList<MetaMethod>(4);
                     map.put(cachedClass, methods);
                 }
                 methods.add(metaMethod);

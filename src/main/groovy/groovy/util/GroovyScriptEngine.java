@@ -78,16 +78,16 @@ public class GroovyScriptEngine implements ResourceConnector {
     private static class LocalData {
         CompilationUnit cu;
         final StringSetMap dependencyCache = new StringSetMap();
-        final Map<String, String> precompiledEntries = new HashMap<>();
+        final Map<String, String> precompiledEntries = new HashMap<String, String>();
     }
 
-    private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<>(null);
+    private static WeakReference<ThreadLocal<LocalData>> localData = new WeakReference<ThreadLocal<LocalData>>(null);
 
     private static synchronized ThreadLocal<LocalData> getLocalData() {
         ThreadLocal<LocalData> local = localData.get();
         if (local != null) return local;
-        local = new ThreadLocal<>();
-        localData = new WeakReference<>(local);
+        local = new ThreadLocal<LocalData>();
+        localData = new WeakReference<ThreadLocal<LocalData>>(local);
         return local;
     }
 
@@ -95,7 +95,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     private final ResourceConnector rc;
     private final ClassLoader parentLoader;
     private GroovyClassLoader groovyLoader;
-    private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<>();
+    private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
     private CompilerConfiguration config;
 
     {
@@ -261,7 +261,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             Set<String> origDep = null;
             if (origEntry != null) origDep = origEntry.dependencies;
             if (origDep != null) {
-                Set<String> newDep = new HashSet<>(origDep.size());
+                Set<String> newDep = new HashSet<String>(origDep.size());
                 for (String depName : origDep) {
                     ScriptCacheEntry dep = scriptCache.get(depName);
                     try {
@@ -281,7 +281,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             StringSetMap cache = localData.dependencyCache;
             cache.makeTransitiveHull();
             long time = getCurrentTime();
-            Set<String> entryNames = new HashSet<>();
+            Set<String> entryNames = new HashSet<String>();
             for (Map.Entry<String, Set<String>> entry : cache.entrySet()) {
                 String className = entry.getKey();
                 Class clazz = getClassCacheEntry(className);
@@ -317,7 +317,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         }
 
         private Set<String> convertToPaths(Set<String> orig, Map<String, String> precompiledEntries) {
-            Set<String> ret = new HashSet<>();
+            Set<String> ret = new HashSet<String>();
             for (String className : orig) {
                 Class clazz = getClassCacheEntry(className);
                 if (clazz == null) continue;

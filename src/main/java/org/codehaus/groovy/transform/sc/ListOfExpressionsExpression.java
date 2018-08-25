@@ -36,7 +36,7 @@ public class ListOfExpressionsExpression extends Expression {
     private final List<Expression> expressions;
 
     public ListOfExpressionsExpression() {
-        expressions = new LinkedList<>();
+        expressions = new LinkedList<Expression>();
     }
 
     public ListOfExpressionsExpression(final List<Expression> expressions) {

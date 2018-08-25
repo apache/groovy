@@ -81,7 +81,7 @@ public class ClassNodeUtils {
     public static Map<String, MethodNode> getDeclaredMethodsFromSuper(ClassNode cNode) {
         ClassNode parent = cNode.getSuperClass();
         if (parent == null) {
-            return new HashMap<>();
+            return new HashMap<String, MethodNode>();
         }
         return parent.getDeclaredMethodsMap();
     }
@@ -114,7 +114,7 @@ public class ClassNodeUtils {
      * @return A map of methods
      */
     public static Map<String, MethodNode> getDeclaredMethodsFromInterfaces(ClassNode cNode) {
-        Map<String, MethodNode> result = new HashMap<>();
+        Map<String, MethodNode> result = new HashMap<String, MethodNode>();
         ClassNode[] interfaces = cNode.getInterfaces();
         for (ClassNode iface : interfaces) {
             result.putAll(iface.getDeclaredMethodsMap());

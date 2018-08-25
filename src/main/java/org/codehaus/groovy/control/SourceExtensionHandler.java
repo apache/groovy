@@ -35,7 +35,7 @@ import java.util.Set;
 public class SourceExtensionHandler {
 
     public static Set<String> getRegisteredExtensions(ClassLoader loader) {
-        Set<String> extensions = new LinkedHashSet<>();
+        Set<String> extensions = new LinkedHashSet<String>();
         extensions.add("groovy");
         try {
             Enumeration<URL> globalServices = loader.getResources("META-INF/groovy/org.codehaus.groovy.source.Extensions");

@@ -317,10 +317,10 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
         // static init
         List<FieldNode> fields = enumClass.getFields();
-        List<Expression> arrayInit = new ArrayList<>();
+        List<Expression> arrayInit = new ArrayList<Expression>();
         int value = -1;
         Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
-        List<Statement> block = new ArrayList<>();
+        List<Statement> block = new ArrayList<Statement>();
         FieldNode tempMin = null;
         FieldNode tempMax = null;
         for (FieldNode field : fields) {
@@ -340,7 +340,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 }
             } else {
                 ListExpression oldArgs = (ListExpression) field.getInitialExpression();
-                List<MapEntryExpression> savedMapEntries = new ArrayList<>();
+                List<MapEntryExpression> savedMapEntries = new ArrayList<MapEntryExpression>();
                 for (Expression exp : oldArgs.getExpressions()) {
                     if (exp instanceof MapEntryExpression) {
                         savedMapEntries.add((MapEntryExpression) exp);

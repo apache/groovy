@@ -212,7 +212,7 @@ public class ObservableMap implements Map {
     public void putAll(Map map) {
         int oldSize = size();
         if (map != null) {
-            List<PropertyEvent> events = new ArrayList<>();
+            List<PropertyEvent> events = new ArrayList<PropertyEvent>();
             for (Object o : map.entrySet()) {
                 Entry entry = (Entry) o;
 

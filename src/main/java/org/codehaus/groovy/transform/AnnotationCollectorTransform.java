@@ -115,7 +115,7 @@ public class AnnotationCollectorTransform {
 
             // add static value():Object[][] method
             List<AnnotationNode> meta = getMeta(cn); 
-            List<Expression> outer = new ArrayList<>(meta.size());
+            List<Expression> outer = new ArrayList<Expression>(meta.size());
             for (AnnotationNode an : meta) {
                 Expression serialized = serialize(an);
                 outer.add(serialized);
@@ -146,7 +146,7 @@ public class AnnotationCollectorTransform {
                 boolean annotationConstant = false;
                 ListExpression le = (ListExpression) e;
                 List<Expression> list = le.getExpressions();
-                List<Expression> newList = new ArrayList<>(list.size());
+                List<Expression> newList = new ArrayList<Expression>(list.size());
                 for (Expression exp: list) {
                     annotationConstant = annotationConstant || exp instanceof AnnotationConstantExpression;
                     newList.add(serialize(exp));
@@ -163,7 +163,7 @@ public class AnnotationCollectorTransform {
             for (String key : an.getMembers().keySet()) {
                 map.addMapEntryExpression(new ConstantExpression(key), serialize(an.getMember(key)));
             }
-            List<Expression> l = new ArrayList<>(2);
+            List<Expression> l = new ArrayList<Expression>(2);
             l.add(new ClassExpression(an.getClassNode()));
             l.add(map);
             return new ArrayExpression(ClassHelper.OBJECT_TYPE, l);
@@ -197,7 +197,7 @@ public class AnnotationCollectorTransform {
         if (memberList.isEmpty()) {
             return Collections.emptyList();
         }
-        List<AnnotationNode> ret = new ArrayList<>();
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>();
         for (Expression e : memberList) {
             AnnotationNode toAdd = new AnnotationNode(e.getType());
             toAdd.setSourcePosition(aliasAnnotationUsage);
@@ -214,7 +214,7 @@ public class AnnotationCollectorTransform {
 
     private static List<AnnotationNode> copy(List<AnnotationNode> orig, AnnotationNode aliasAnnotationUsage) {
         if (orig.isEmpty()) return orig;
-        List<AnnotationNode> ret = new ArrayList<>(orig.size());
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(orig.size());
         for (AnnotationNode an : orig) {
             AnnotationNode newAn = new AnnotationNode(an.getClassNode());
             copyMembers(an, newAn);
@@ -229,7 +229,7 @@ public class AnnotationCollectorTransform {
         if (annotations.size() < 2) {
             return Collections.emptyList();
         }
-        List<AnnotationNode> ret = new ArrayList<>(annotations.size());
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(annotations.size());
         for (AnnotationNode an : annotations) {
             ClassNode type = an.getClassNode();
             if (type.getName().equals(AnnotationCollector.class.getName())) continue;
@@ -267,7 +267,7 @@ public class AnnotationCollectorTransform {
         if (data.length == 0) {
             return Collections.emptyList();
         }
-        List<AnnotationNode> ret = new ArrayList<>(data.length);
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(data.length);
         for (Object[] inner : data) {
             Class<?> anno = (Class) inner[0];
             AnnotationNode toAdd = new AnnotationNode(ClassHelper.make(anno));
@@ -278,7 +278,7 @@ public class AnnotationCollectorTransform {
             if (member.isEmpty()) {
                 continue;
             }
-            Map<String, Expression> generated = new HashMap<>(member.size());
+            Map<String, Expression> generated = new HashMap<String, Expression>(member.size());
             for (Map.Entry<String, Object> entry : member.entrySet()) {
                 generated.put(entry.getKey(), makeExpression(entry.getValue()));
             }
@@ -325,7 +325,7 @@ public class AnnotationCollectorTransform {
         if (size == 0) {
             return Collections.emptyList();
         }
-        List<AnnotationNode> ret = new ArrayList<>(size);
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(size);
         ret.addAll(stored);
         ret.addAll(targetList);
 
@@ -348,7 +348,7 @@ public class AnnotationCollectorTransform {
      */
     public List<AnnotationNode> visit(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, AnnotatedNode aliasAnnotated, SourceUnit source) {
         List<AnnotationNode> ret =  getTargetAnnotationList(collector, aliasAnnotationUsage, source);
-        Set<String> unusedNames = new HashSet<>(aliasAnnotationUsage.getMembers().keySet());
+        Set<String> unusedNames = new HashSet<String>(aliasAnnotationUsage.getMembers().keySet());
         
         for (AnnotationNode an: ret) {
             for (String name : aliasAnnotationUsage.getMembers().keySet()) {

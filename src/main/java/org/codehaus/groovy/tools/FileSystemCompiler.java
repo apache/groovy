@@ -251,7 +251,7 @@ public class FileSystemCompiler {
         if (filenames == null) {
             return new String[0];
         }
-        List<String> fileList = new ArrayList<>(filenames.size());
+        List<String> fileList = new ArrayList<String>(filenames.size());
         boolean errors = false;
         for (String filename : filenames) {
             if (filename.startsWith("@")) {
@@ -377,7 +377,7 @@ public class FileSystemCompiler {
 
             // joint compilation parameters
             if (jointCompilation) {
-                Map<String, Object> compilerOptions = new HashMap<>();
+                Map<String, Object> compilerOptions = new HashMap<String, Object>();
                 compilerOptions.put("namedValues", javacOptionsList());
                 compilerOptions.put("flags", flagsWithParameterMetaData());
                 configuration.setJointCompilationOptions(compilerOptions);
@@ -390,7 +390,7 @@ public class FileSystemCompiler {
 
             String configScripts = System.getProperty("groovy.starter.configscripts", null);
             if (configScript != null || (configScripts != null && !configScripts.isEmpty())) {
-                List<String> scripts = new ArrayList<>();
+                List<String> scripts = new ArrayList<String>();
                 if (configScript != null) {
                     scripts.add(configScript);
                 }
@@ -411,7 +411,7 @@ public class FileSystemCompiler {
             if (javacOptionsMap == null) {
                 return null;
             }
-            List<String> result = new ArrayList<>();
+            List<String> result = new ArrayList<String>();
             for (Map.Entry<String, String> entry : javacOptionsMap.entrySet()) {
                 result.add(entry.getKey());
                 result.add(entry.getValue());

@@ -76,7 +76,7 @@ public class ClosureWriter {
 
     public ClosureWriter(WriterController wc) {
         this.controller = wc;
-        closureClassMap = new HashMap<>();
+        closureClassMap = new HashMap<Expression,ClassNode>();
         factory = new WriterControllerFactory() {
             public WriterController makeController(final WriterController normalController) {
                 return controller;

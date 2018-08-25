@@ -51,7 +51,7 @@ public abstract class LazyReference<T> extends LockableObject {
             if (res == null) {
                 reference = NULL_REFERENCE;
             } else {
-                reference = new ManagedReference<>(bundle, res);
+                reference = new ManagedReference<T>(bundle,res);
             }
             return res;
         } finally {

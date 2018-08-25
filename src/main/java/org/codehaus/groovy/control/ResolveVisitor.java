@@ -106,8 +106,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
 
-    private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<>();
-    private final Set<FieldNode> fieldTypesChecked = new HashSet<>();
+    private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
+    private final Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
     private boolean checkingVariableTypeInDeclaration = false;
     private ImportNode currImportNode = null;
     private MethodNode currentMethod;
@@ -230,8 +230,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         currentScope = node.getVariableScope();
         Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
         genericParameterNames = node.isStatic()
-                ? new HashMap<>()
-                : new HashMap<>(genericParameterNames);
+                ? new HashMap<GenericsTypeName, GenericsType>()
+                : new HashMap<GenericsTypeName, GenericsType>(genericParameterNames);
 
         resolveGenericsHeader(node.getGenericsTypes());
 
@@ -267,7 +267,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public void visitProperty(PropertyNode node) {
         Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
         if (node.isStatic()) {
-            genericParameterNames = new HashMap<>();
+            genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
         }
 
         ClassNode t = node.getType();
@@ -400,7 +400,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // to access that class directly, so A becomes a valid
         // name in X.
         // GROOVY-4043: Do this check up the hierarchy, if needed
-        Map<String, ClassNode> hierClasses = new LinkedHashMap<>();
+        Map<String, ClassNode> hierClasses = new LinkedHashMap<String, ClassNode>();
         for(ClassNode classToCheck = currentClass; classToCheck != ClassHelper.OBJECT_TYPE;
             classToCheck = classToCheck.getSuperClass()) {
             if(classToCheck == null || hierClasses.containsKey(classToCheck.getName())) break;
@@ -428,7 +428,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // A.B.C.D.E.F and accessing E from F we test A$E=failed, 
         // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success
         
-        LinkedList<ClassNode> outerClasses = new LinkedList<>();
+        LinkedList<ClassNode> outerClasses = new LinkedList<ClassNode>();
         ClassNode outer = currentClass.getOuterClass();
         while (outer!=null) {
             outerClasses.addFirst(outer);
@@ -866,7 +866,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             name.insert(0, varName + ".");
         }
 
-        return new Tuple2<>(name, doInitialClassTest);
+        return new Tuple2<StringBuilder, Boolean>(name, doInitialClassTest);
     }
 
     // iterate from the inner most to the outer and check for classes
@@ -874,7 +874,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // a PropertyExpression with the ClassExpression of Integer as objectExpression
     // and class as property
     private static Expression correctClassClassChain(PropertyExpression pe) {
-        LinkedList<Expression> stack = new LinkedList<>();
+        LinkedList<Expression> stack = new LinkedList<Expression>();
         ClassExpression found = null;
         for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
             if (it instanceof ClassExpression) {
@@ -1234,7 +1234,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public void visitAnnotations(AnnotatedNode node) {
         List<AnnotationNode> annotations = node.getAnnotations();
         if (annotations.isEmpty()) return;
-        Map<String, AnnotationNode> tmpAnnotations = new HashMap<>();
+        Map<String, AnnotationNode> tmpAnnotations = new HashMap<String, AnnotationNode>();
         ClassNode annType;
         for (AnnotationNode an : annotations) {
             // skip built-in properties
@@ -1331,7 +1331,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         if (node instanceof InnerClassNode) {
             if (Modifier.isStatic(node.getModifiers())) {
-                genericParameterNames = new HashMap<>();
+                genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
             }
 
             InnerClassNode innerClassNode = (InnerClassNode) node;
@@ -1342,7 +1342,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
             }
         } else {
-            genericParameterNames = new HashMap<>();
+            genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
         }
 
         resolveGenericsHeader(node.getGenericsTypes());

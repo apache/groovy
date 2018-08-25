@@ -104,7 +104,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
     }
 
     private List<Expression> buildParams(Parameter[] origParams, Parameter[] params, Map<String, ClassNode> genericsSpec, boolean copyParameterAnnotations) {
-        List<Expression> theArgs = new ArrayList<>();
+        List<Expression> theArgs = new ArrayList<Expression>();
         for (int i = 0; i < origParams.length; i++) {
             Parameter p = origParams[i];
             ClassNode newType = correctToGenericsSpecRecurse(genericsSpec, p.getType());

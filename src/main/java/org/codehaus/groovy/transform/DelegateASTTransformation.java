@@ -223,8 +223,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if (cNode.getGetterMethod("get" + suffix) != null && cNode.getGetterMethod("is" + suffix) == null)
                 willHaveIsAccessor = false;
         }
-        Reference<Boolean> ownerWillHaveGetAccessor = new Reference<>();
-        Reference<Boolean> ownerWillHaveIsAccessor = new Reference<>();
+        Reference<Boolean> ownerWillHaveGetAccessor = new Reference<Boolean>();
+        Reference<Boolean> ownerWillHaveIsAccessor = new Reference<Boolean>();
         extractAccessorInfo(delegate.owner, name, ownerWillHaveGetAccessor, ownerWillHaveIsAccessor);
 
         for (String prefix : new String[]{"get", "is"}) {
@@ -343,7 +343,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
     private static List<String> genericPlaceholderNames(MethodNode candidate) {
         GenericsType[] candidateGenericsTypes = candidate.getGenericsTypes();
-        List<String> names = new ArrayList<>();
+        List<String> names = new ArrayList<String>();
         if (candidateGenericsTypes != null) {
             for (GenericsType gt : candidateGenericsTypes) {
                 names.add(gt.getName());

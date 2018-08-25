@@ -54,9 +54,9 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
     }
 
     private void init() {
-        visitedLabels = new LinkedList<>();
-        continueLabels = new LinkedList<>();
-        breakLabels = new LinkedList<>();
+        visitedLabels = new LinkedList<String>();
+        continueLabels = new LinkedList<ContinueStatement>();
+        breakLabels = new LinkedList<BreakStatement>();
         inLoop = false;
         inSwitch = false;
     }

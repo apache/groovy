@@ -116,7 +116,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     }
 
     private void doMakeImmutable(ClassNode cNode, AnnotationNode node, PropertyHandler handler) {
-        List<PropertyNode> newProperties = new ArrayList<>();
+        List<PropertyNode> newProperties = new ArrayList<PropertyNode>();
 
         String cName = cNode.getName();
         if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;

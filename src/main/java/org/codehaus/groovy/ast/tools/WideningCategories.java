@@ -397,9 +397,9 @@ public class WideningCategories {
             // which are common
             ClassNode[] interfacesFromA = a.getInterfaces();
             ClassNode[] interfacesFromB = b.getInterfaces();
-            Set<ClassNode> common = new HashSet<>();
+            Set<ClassNode> common = new HashSet<ClassNode>();
             Collections.addAll(common, interfacesFromA);
-            Set<ClassNode> fromB = new HashSet<>();
+            Set<ClassNode> fromB = new HashSet<ClassNode>();
             Collections.addAll(fromB, interfacesFromB);
             common.retainAll(fromB);
 
@@ -423,7 +423,7 @@ public class WideningCategories {
             // for a ClassNode. Therefore, even if b doesn't implement
             // interface a, a could "implement" other interfaces that b
             // implements too, so we must create a list of matching interfaces
-            List<ClassNode> matchingInterfaces = new LinkedList<>();
+            List<ClassNode> matchingInterfaces = new LinkedList<ClassNode>();
             extractMostSpecificImplementedInterfaces(b, a, matchingInterfaces);
             if (matchingInterfaces.isEmpty()) {
                 // no interface in common
@@ -449,12 +449,12 @@ public class WideningCategories {
         ClassNode sb = b.getUnresolvedSuperClass();
 
         // extract implemented interfaces before "going up"
-        Set<ClassNode> ifa = new HashSet<>();
+        Set<ClassNode> ifa = new HashSet<ClassNode>();
         extractInterfaces(a, ifa);
-        Set<ClassNode> ifb = new HashSet<>();
+        Set<ClassNode> ifb = new HashSet<ClassNode>();
         extractInterfaces(b, ifb);
-        interfacesImplementedByA = interfacesImplementedByA==null? new LinkedList<>(ifa):interfacesImplementedByA;
-        interfacesImplementedByB = interfacesImplementedByB==null? new LinkedList<>(ifb):interfacesImplementedByB;
+        interfacesImplementedByA = interfacesImplementedByA==null?new LinkedList<ClassNode>(ifa):interfacesImplementedByA;
+        interfacesImplementedByB = interfacesImplementedByB==null?new LinkedList<ClassNode>(ifb):interfacesImplementedByB;
 
         // check if no superclass is defined
         // meaning that we reached the top of the object hierarchy
@@ -486,9 +486,9 @@ public class WideningCategories {
      */
     private static List<ClassNode> keepLowestCommonInterfaces(List<ClassNode> fromA, List<ClassNode> fromB) {
         if (fromA==null||fromB==null) return EMPTY_CLASSNODE_LIST;
-        Set<ClassNode> common = new HashSet<>(fromA);
+        Set<ClassNode> common = new HashSet<ClassNode>(fromA);
         common.retainAll(fromB);
-        List<ClassNode> result = new ArrayList<>(common.size());
+        List<ClassNode> result = new ArrayList<ClassNode>(common.size());
         for (ClassNode classNode : common) {
             addMostSpecificInterface(classNode, result);
         }
@@ -618,7 +618,7 @@ public class WideningCategories {
             compileTimeClassNode = upper.equals(OBJECT_TYPE) && interfaces.length>0?interfaces[0]:upper;
             this.name = name;
             usesGenerics = upper.isUsingGenerics();
-            List<GenericsType[]> genericsTypesList = new LinkedList<>();
+            List<GenericsType[]> genericsTypesList = new LinkedList<GenericsType[]>();
             genericsTypesList.add(upper.getGenericsTypes());
 			for (ClassNode anInterface : interfaces) {
                 usesGenerics |= anInterface.isUsingGenerics();
@@ -630,7 +630,7 @@ public class WideningCategories {
 			}
             setUsingGenerics(usesGenerics);
             if (usesGenerics) {
-                List<GenericsType> asArrayList = new ArrayList<>();
+                List<GenericsType> asArrayList = new ArrayList<GenericsType>();
                 for (GenericsType[] genericsTypes : genericsTypesList) {
                     if (genericsTypes!=null) {
                         Collections.addAll(asArrayList, genericsTypes);

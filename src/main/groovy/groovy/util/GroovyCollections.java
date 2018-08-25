@@ -57,16 +57,16 @@ public class GroovyCollections {
      */
     public static <T> Set<List<T>> subsequences(List<T> items) {
         // items.inject([]){ ss, h -> ss.collect { it + [h] }  + ss + [[h]] }
-        Set<List<T>> ans = new HashSet<>();
+        Set<List<T>> ans = new HashSet<List<T>>();
         for (T h : items) {
-            Set<List<T>> next = new HashSet<>();
+            Set<List<T>> next = new HashSet<List<T>>();
             for (List<T> it : ans) {
-                List<T> sublist = new ArrayList<>(it);
+                List<T> sublist = new ArrayList<T>(it);
                 sublist.add(h);
                 next.add(sublist);
             }
             next.addAll(ans);
-            List<T> hlist = new ArrayList<>();
+            List<T> hlist = new ArrayList<T>();
             hlist.add(h);
             next.add(hlist);
             ans = next;
@@ -128,7 +128,7 @@ public class GroovyCollections {
 
     public static <T> List<List<T>> inits(Iterable<T> collections) {
         List<T> copy = DefaultGroovyMethods.toList(collections);
-        List<List<T>> result = new ArrayList<>();
+        List<List<T>> result = new ArrayList<List<T>>();
         for (int i = copy.size(); i >= 0; i--) {
             List<T> next = copy.subList(0, i);
             result.add(next);
@@ -138,7 +138,7 @@ public class GroovyCollections {
 
     public static <T> List<List<T>> tails(Iterable<T> collections) {
         List<T> copy = DefaultGroovyMethods.toList(collections);
-        List<List<T>> result = new ArrayList<>();
+        List<List<T>> result = new ArrayList<List<T>>();
         for (int i = 0; i <= copy.size(); i++) {
             List<T> next = copy.subList(i, copy.size());
             result.add(next);

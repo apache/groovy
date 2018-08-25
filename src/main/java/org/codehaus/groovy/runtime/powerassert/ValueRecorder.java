@@ -28,7 +28,7 @@ import java.util.List;
  * @author Peter Niederwieser
  */
 public class ValueRecorder {
-    private final List<Value> values = new ArrayList<>();
+    private final List<Value> values = new ArrayList<Value>();
 
     public void clear() {
         values.clear();

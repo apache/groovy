@@ -44,7 +44,7 @@ public class IndyArrayAccess {
 
     private static final HashMap<Class,MethodHandle> getterMap, setterMap;
     static {
-        getterMap = new HashMap<>();
+        getterMap = new HashMap<Class,MethodHandle>();
         Class[] classes = new Class[]{
                 int[].class, byte[].class, short[].class, long[].class,
                 double[].class, float[].class,
@@ -53,7 +53,7 @@ public class IndyArrayAccess {
             MethodHandle handle = buildGetter(arrayClass);
             getterMap.put(arrayClass, handle);
         }
-        setterMap = new HashMap<>();
+        setterMap = new HashMap<Class,MethodHandle>();
         for (Class arrayClass : classes) {
             MethodHandle handle = buildSetter(arrayClass);
             setterMap.put(arrayClass, handle);

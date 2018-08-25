@@ -72,7 +72,7 @@ public class ListExpressionTransformer {
 
     private List<Expression> transformArguments(final ListExpression expr) {
         List<Expression> expressions = expr.getExpressions();
-        List<Expression> transformedArgs = new LinkedList<>();
+        List<Expression> transformedArgs = new LinkedList<Expression>();
         for (Expression expression : expressions) {
             transformedArgs.add(transformer.transform(expression));
         }

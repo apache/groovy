@@ -148,12 +148,12 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
             if (next.getFirstStatement() == null) iterator.remove();
         }
 
-        Set<String> names = new HashSet<>();
+        Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
             superList = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, false, allProperties, true, false, false, allNames, includeStatic);
         } else {
-            superList = new ArrayList<>();
+            superList = new ArrayList<PropertyNode>();
         }
         List<PropertyNode> list = getAllProperties(names, cNode, cNode, includeProperties, includeFields, false, allProperties, false, false, false, allNames, includeStatic);
 

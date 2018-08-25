@@ -301,7 +301,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     protected static Set<MethodNode> findDGMMethodsForClassNode(final ClassLoader loader, ClassNode clazz, String name) {
-        TreeSet<MethodNode> accumulator = new TreeSet<>(DGM_METHOD_NODE_COMPARATOR);
+        TreeSet<MethodNode> accumulator = new TreeSet<MethodNode>(DGM_METHOD_NODE_COMPARATOR);
         findDGMMethodsForClassNode(loader, clazz, name, accumulator);
         return accumulator;
     }
@@ -1008,7 +1008,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassLoader loader, final ClassNode receiver, final String name, final ClassNode[] args) {
-        return findDGMMethodsByNameAndArguments(loader, receiver, name, args, new LinkedList<>());
+        return findDGMMethodsByNameAndArguments(loader, receiver, name, args, new LinkedList<MethodNode>());
     }
 
     /**
@@ -1072,7 +1072,7 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode raw = makeRawType(receiver);
             return chooseBestMethod(raw, methods, args);
         }
-        List<MethodNode> bestChoices = new LinkedList<>();
+        List<MethodNode> bestChoices = new LinkedList<MethodNode>();
         int bestDist = Integer.MAX_VALUE;
         Collection<MethodNode> choicesLeft = removeCovariantsAndInterfaceEquivalents(methods);
         for (MethodNode candidateNode : choicesLeft) {
@@ -1116,7 +1116,7 @@ public abstract class StaticTypeCheckingSupport {
         }
         if (bestChoices.size() > 1) {
             // GROOVY-6849: prefer extension methods in case of ambiguity
-            List<MethodNode> onlyExtensionMethods = new LinkedList<>();
+            List<MethodNode> onlyExtensionMethods = new LinkedList<MethodNode>();
             for (MethodNode choice : bestChoices) {
                 if (choice instanceof ExtensionMethodNode) {
                     onlyExtensionMethods.add(choice);
@@ -1215,8 +1215,8 @@ public abstract class StaticTypeCheckingSupport {
 
     private static Collection<MethodNode> removeCovariantsAndInterfaceEquivalents(Collection<MethodNode> collection) {
         if (collection.size() <= 1) return collection;
-        List<MethodNode> toBeRemoved = new LinkedList<>();
-        List<MethodNode> list = new LinkedList<>(new LinkedHashSet<>(collection));
+        List<MethodNode> toBeRemoved = new LinkedList<MethodNode>();
+        List<MethodNode> list = new LinkedList<MethodNode>(new LinkedHashSet<MethodNode>(collection));
         for (int i = 0; i < list.size() - 1; i++) {
             MethodNode one = list.get(i);
             if (toBeRemoved.contains(one)) continue;
@@ -1241,7 +1241,7 @@ public abstract class StaticTypeCheckingSupport {
             }
         }
         if (toBeRemoved.isEmpty()) return list;
-        List<MethodNode> result = new LinkedList<>(list);
+        List<MethodNode> result = new LinkedList<MethodNode>(list);
         result.removeAll(toBeRemoved);
         return result;
     }
@@ -1508,7 +1508,7 @@ public abstract class StaticTypeCheckingSupport {
         // There is firstly the context given through the class, and the method.
         // The method context may hide generics given through the class, but use 
         // the non-hidden ones.
-        Map<GenericsTypeName, GenericsType> resolvedMethodGenerics = new HashMap<>();
+        Map<GenericsTypeName, GenericsType> resolvedMethodGenerics = new HashMap<GenericsTypeName, GenericsType>();
         if (!skipBecauseOfInnerClassNotReceiver) {
             addMethodLevelDeclaredGenerics(candidateMethod, resolvedMethodGenerics);
         }
@@ -1548,7 +1548,7 @@ public abstract class StaticTypeCheckingSupport {
 
     private static Set<GenericsTypeName> extractResolvedPlaceHolders(Map<GenericsTypeName, GenericsType> resolvedMethodGenerics) {
         if (resolvedMethodGenerics.isEmpty()) return Collections.EMPTY_SET;
-        Set<GenericsTypeName> result = new HashSet<>();
+        Set<GenericsTypeName> result = new HashSet<GenericsTypeName>();
         for (Entry<GenericsTypeName, GenericsType> entry : resolvedMethodGenerics.entrySet()) {
             GenericsType value = entry.getValue();
             if (value.isPlaceholder()) continue;
@@ -1558,7 +1558,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static boolean inferenceCheck(Set<GenericsTypeName> fixedGenericsPlaceHolders, Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, ClassNode type, ClassNode wrappedArgument, boolean lastArg) {
-        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<GenericsTypeName, GenericsType>();
         if (isPrimitiveType(wrappedArgument)) wrappedArgument = getWrapper(wrappedArgument);
         // the context we compare with in the end is the one of the callsite
         // so far we specified the context of the method declaration only
@@ -1652,10 +1652,10 @@ public abstract class StaticTypeCheckingSupport {
 
     public static ClassNode resolveClassNodeGenerics(Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final Map<GenericsTypeName, GenericsType> placeholdersFromContext, ClassNode currentType) {
         ClassNode target = currentType.redirect();
-        resolvedPlaceholders = new HashMap<>(resolvedPlaceholders);
+        resolvedPlaceholders = new HashMap<GenericsTypeName, GenericsType>(resolvedPlaceholders);
         applyContextGenerics(resolvedPlaceholders, placeholdersFromContext);
 
-        Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
+        Map<GenericsTypeName, GenericsType> connections = new HashMap<GenericsTypeName, GenericsType>();
         extractGenericsConnections(connections, currentType, target);
         applyGenericsConnections(connections, resolvedPlaceholders);
         currentType = applyGenericsContext(resolvedPlaceholders, currentType);
@@ -2060,7 +2060,7 @@ public abstract class StaticTypeCheckingSupport {
 
     private static Map<GenericsTypeName, GenericsType> mergeGenerics(Map<GenericsTypeName, GenericsType> current, GenericsType[] newGenerics) {
         if (newGenerics == null || newGenerics.length == 0) return current;
-        if (current == null) current = new HashMap<>();
+        if (current == null) current = new HashMap<GenericsTypeName, GenericsType>();
         for (GenericsType gt : newGenerics) {
             if (!gt.isPlaceholder()) continue;
             GenericsTypeName name = new GenericsTypeName(gt.getName());
@@ -2207,7 +2207,7 @@ public abstract class StaticTypeCheckingSupport {
      * a method lookup.
      */
     private static class ExtensionMethodCache {
-        private final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<>(new WeakHashMap<>());
+        private final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
 
         public Map<String, List<MethodNode>> getExtensionMethods(ClassLoader loader) {
             return cache.getAndPut(
@@ -2215,7 +2215,7 @@ public abstract class StaticTypeCheckingSupport {
                     new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
                         @Override
                         public Map<String, List<MethodNode>> provide(final ClassLoader key) {
-                            final List<ExtensionModule> modules = new LinkedList<>();
+                            final List<ExtensionModule> modules = new LinkedList<ExtensionModule>();
                             ExtensionModuleScanner scanner =
                                     new ExtensionModuleScanner(
                                             new ExtensionModuleScanner.ExtensionModuleListener() {
@@ -2248,8 +2248,8 @@ public abstract class StaticTypeCheckingSupport {
          * @return
          */
         private static Map<String, List<MethodNode>> getDGMMethods(List<ExtensionModule> modules) {
-            Set<Class> instanceExtClasses = new LinkedHashSet<>();
-            Set<Class> staticExtClasses = new LinkedHashSet<>();
+            Set<Class> instanceExtClasses = new LinkedHashSet<Class>();
+            Set<Class> staticExtClasses = new LinkedHashSet<Class>();
             for (ExtensionModule module : modules) {
                 if (module instanceof MetaInfExtensionModule) {
                     MetaInfExtensionModule extensionModule = (MetaInfExtensionModule) module;
@@ -2257,7 +2257,7 @@ public abstract class StaticTypeCheckingSupport {
                     staticExtClasses.addAll(extensionModule.getStaticMethodsExtensionClasses());
                 }
             }
-            Map<String, List<MethodNode>> methods = new HashMap<>();
+            Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
             Collections.addAll(instanceExtClasses, DefaultGroovyMethods.DGM_LIKE_CLASSES);
             Collections.addAll(instanceExtClasses, DefaultGroovyMethods.ADDITIONAL_CLASSES);
             staticExtClasses.add(DefaultGroovyStaticMethods.class);
@@ -2306,7 +2306,7 @@ public abstract class StaticTypeCheckingSupport {
 
                         List<MethodNode> nodes = accumulator.get(declaringClassName);
                         if (nodes == null) {
-                            nodes = new LinkedList<>();
+                            nodes = new LinkedList<MethodNode>();
                             accumulator.put(declaringClassName, nodes);
                         }
                         nodes.add(node);
@@ -2409,7 +2409,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return a set of interfaces implemented by this class node
      */
     public static Set<ClassNode> collectAllInterfaces(ClassNode node) {
-        Set<ClassNode> result = new HashSet<>();
+        Set<ClassNode> result = new HashSet<ClassNode>();
         collectAllInterfaces(node, result);
         return result;
     }
@@ -2453,7 +2453,7 @@ public abstract class StaticTypeCheckingSupport {
                     && (!voidOnly || VOID_TYPE == method.getReturnType())
                     && method.getParameters().length == 1) {
                 if (result == null) {
-                    result = new LinkedList<>();
+                    result = new LinkedList<MethodNode>();
                 }
                 result.add(method);
             }

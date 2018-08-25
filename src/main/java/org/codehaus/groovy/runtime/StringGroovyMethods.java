@@ -1151,7 +1151,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static List<String> findAll(CharSequence self, Pattern pattern) {
         Matcher matcher = pattern.matcher(self.toString());
         boolean hasGroup = hasGroup(matcher);
-        List<String> list = new ArrayList<>();
+        List<String> list = new ArrayList<String>();
         for (Iterator iter = iterator(matcher); iter.hasNext();) {
             if (hasGroup) {
                 list.add((String) ((List) iter.next()).get(0));
@@ -1159,7 +1159,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 list.add((String) iter.next());
             }
         }
-        return new ArrayList<>(list);
+        return new ArrayList<String>(list);
     }
 
     /**
@@ -1596,7 +1596,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         int count = matcher.groupCount();
-        List<String> groups = new ArrayList<>();
+        List<String> groups = new ArrayList<String>();
         for (int i = 0; i <= count; i++) {
             groups.add(matcher.group(i));
         }
@@ -1933,7 +1933,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (hasGroup(matcher)) {
                     // are we using groups?
                     // yes, so return the specified group as list
-                    List<String> list = new ArrayList<>(matcher.groupCount());
+                    List<String> list = new ArrayList<String>(matcher.groupCount());
                     for (int i = 0; i <= matcher.groupCount(); i++) {
                        list.add(matcher.group(i));
                     }
@@ -3588,7 +3588,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static List<String> toList(CharSequence self) {
         String s = self.toString();
         int size = s.length();
-        List<String> answer = new ArrayList<>(size);
+        List<String> answer = new ArrayList<String>(size);
         for (int i = 0; i < size; i++) {
             answer.add(s.substring(i, i + 1));
         }
@@ -3634,7 +3634,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static Set<String> toSet(CharSequence self) {
-        return new HashSet<>(toList(self));
+        return new HashSet<String>(toList(self));
     }
 
     /**

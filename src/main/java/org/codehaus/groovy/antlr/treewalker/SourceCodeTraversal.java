@@ -48,7 +48,7 @@ public class SourceCodeTraversal extends TraversalHelper {
         super.setUp(t);
         
         // gather and sort all unvisited AST nodes
-        unvisitedNodes = new ArrayList<>();
+        unvisitedNodes = new ArrayList<GroovySourceAST>();
         traverse(t);
         Collections.sort(unvisitedNodes);
     }

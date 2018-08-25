@@ -32,7 +32,7 @@ import java.util.List;
 public class SwitchStatement extends Statement {
 
     private Expression expression;
-    private List<CaseStatement> caseStatements = new ArrayList<>();
+    private List<CaseStatement> caseStatements = new ArrayList<CaseStatement>();
     private Statement defaultStatement;
     
 

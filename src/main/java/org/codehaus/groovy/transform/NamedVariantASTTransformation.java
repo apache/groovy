@@ -90,12 +90,12 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         }
 
         Parameter mapParam = param(GenericsUtils.nonGeneric(ClassHelper.MAP_TYPE), "__namedArgs");
-        List<Parameter> genParams = new ArrayList<>();
+        List<Parameter> genParams = new ArrayList<Parameter>();
         genParams.add(mapParam);
         ClassNode cNode = mNode.getDeclaringClass();
         final BlockStatement inner = new BlockStatement();
         ArgumentListExpression args = new ArgumentListExpression();
-        final List<String> propNames = new ArrayList<>();
+        final List<String> propNames = new ArrayList<String>();
 
         // first pass, just check for absence of annotations of interest
         boolean annoFound = false;
@@ -194,12 +194,12 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             }
         }
 
-        Set<String> names = new HashSet<>();
+        Set<String> names = new HashSet<String>();
         List<PropertyNode> props = getAllProperties(names, fromParam.getType(), true, false, false, true, false, true);
         for (String next : names) {
             if (hasDuplicates(mNode, propNames, next)) return false;
         }
-        List<MapEntryExpression> entries = new ArrayList<>();
+        List<MapEntryExpression> entries = new ArrayList<MapEntryExpression>();
         for (PropertyNode pNode : props) {
             String name = pNode.getName();
             entries.add(new MapEntryExpression(constX(name), propX(varX(mapParam), name)));

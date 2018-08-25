@@ -136,7 +136,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
     }
 
     private static List<AnnotationNode> filterAnnotations(List<AnnotationNode> annotations) {
-        List<AnnotationNode> result = new ArrayList<>(annotations.size());
+        List<AnnotationNode> result = new ArrayList<AnnotationNode>(annotations.size());
         for (AnnotationNode annotation : annotations) {
             if (!OVERRIDE_CLASSNODE.equals(annotation.getClassNode())) {
                 result.add(annotation);
@@ -154,7 +154,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
                                                                    int protectedCacheSize, int maxCacheSize) {
         Parameter[] srcParams = privateMethod.getParameters();
         Parameter[] newParams = cloneParams(srcParams);
-        List<Expression> argList = new ArrayList<>(newParams.length);
+        List<Expression> argList = new ArrayList<Expression>(newParams.length);
         for (int i = 0; i < srcParams.length; i++) {
             argList.add(varX(newParams[i]));
         }

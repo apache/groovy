@@ -33,7 +33,7 @@ import java.util.List;
  * @since 2.0.0
  */
 public class ExtensionModuleRegistry {
-    private final List<ExtensionModule> modules = new LinkedList<>();
+    private final List<ExtensionModule> modules = new LinkedList<ExtensionModule>();
 
     public ExtensionModuleRegistry() {
     }
@@ -47,7 +47,7 @@ public class ExtensionModuleRegistry {
     }
 
     public List<ExtensionModule> getModules() {
-        return new ArrayList<>(modules);
+        return new ArrayList<ExtensionModule>(modules);
     }
 
     public boolean hasModule(final String moduleName) {

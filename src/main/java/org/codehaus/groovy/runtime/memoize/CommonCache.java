@@ -53,7 +53,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
      * Constructs a cache with unlimited size
      */
     public CommonCache() {
-        this(new LinkedHashMap<>());
+        this(new LinkedHashMap<K, V>());
     }
 
     /**
@@ -212,7 +212,7 @@ public class CommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable
      */
     @Override
     public Map<K, V> clearAll() {
-        Map<K, V> result = new LinkedHashMap<>(map);
+        Map<K, V> result = new LinkedHashMap<K, V>(map);
         map.clear();
         return result;
     }

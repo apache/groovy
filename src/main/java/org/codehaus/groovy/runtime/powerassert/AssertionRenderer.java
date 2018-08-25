@@ -33,9 +33,9 @@ import java.util.List;
 public final class AssertionRenderer {
     private final String text;
     private final ValueRecorder recorder;
-    private final List<StringBuilder> lines = new ArrayList<>();
+    private final List<StringBuilder> lines = new ArrayList<StringBuilder>();
     // startColumns.get(i) is the first non-empty column of lines.get(i)
-    private final List<Integer> startColumns = new ArrayList<>();
+    private final List<Integer> startColumns = new ArrayList<Integer>();
 
     private AssertionRenderer(String text, ValueRecorder recorder) {
         if (text.contains("\n"))

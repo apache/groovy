@@ -95,7 +95,7 @@ public abstract class SimpleExtensionModule extends ExtensionModule {
 
     @Override
     public List<MetaMethod> getMetaMethods() {
-        List<MetaMethod> metaMethods = new LinkedList<>();
+        List<MetaMethod> metaMethods = new LinkedList<MetaMethod>();
         List<Class> extensionClasses = getInstanceMethodsExtensionClasses();
         for (Class extensionClass : extensionClasses) {
             try {

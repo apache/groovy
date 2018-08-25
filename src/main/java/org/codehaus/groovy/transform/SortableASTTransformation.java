@@ -139,7 +139,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     }
 
     private static Statement createCompareToMethodBody(List<PropertyNode> properties, boolean reversed) {
-        List<Statement> statements = new ArrayList<>();
+        List<Statement> statements = new ArrayList<Statement>();
 
         // if (this.is(other)) return 0;
         statements.add(ifS(callThisX("is", args(OTHER)), returnS(constX(0))));
@@ -220,10 +220,10 @@ public class SortableASTTransformation extends AbstractASTTransformation {
     private List<PropertyNode> findProperties(AnnotationNode annotation, final ClassNode classNode, final List<String> includes,
                                               final List<String> excludes, final boolean allProperties,
                                               final boolean includeSuperProperties, final boolean allNames) {
-        Set<String> names = new HashSet<>();
+        Set<String> names = new HashSet<String>();
         List<PropertyNode> props = getAllProperties(names, classNode, classNode, true, false, allProperties,
                 false, includeSuperProperties, false, false, allNames, false);
-        List<PropertyNode> properties = new ArrayList<>();
+        List<PropertyNode> properties = new ArrayList<PropertyNode>();
         for (PropertyNode property : props) {
             String propertyName = property.getName();
             if ((excludes != null && excludes.contains(propertyName)) ||

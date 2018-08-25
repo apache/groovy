@@ -34,7 +34,7 @@ public class ListExpression extends Expression {
     private boolean wrapped = false;
 
     public ListExpression() {
-        this(new ArrayList<>());
+        this(new ArrayList<Expression>());
     }
 
     public ListExpression(List<Expression> expressions) {

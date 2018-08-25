@@ -45,7 +45,7 @@ import java.util.List;
  */
 public class ImportCustomizer extends CompilationCustomizer {
 
-    private final List<Import> imports = new LinkedList<>();
+    private final List<Import> imports = new LinkedList<Import>();
 
     public ImportCustomizer() {
         super(CompilePhase.CONVERSION);

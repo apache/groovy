@@ -482,7 +482,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             private boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
         }
         private OptimizeFlagsEntry current = new OptimizeFlagsEntry();
-        private final LinkedList<OptimizeFlagsEntry> olderEntries = new LinkedList<>();
+        private final LinkedList<OptimizeFlagsEntry> olderEntries = new LinkedList<OptimizeFlagsEntry>();
         public void push() {
             olderEntries.addLast(current);
             current = new OptimizeFlagsEntry();

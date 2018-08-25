@@ -169,14 +169,14 @@ public class GroovyMain {
         private String classpath;
 
         @Option(names = {"-D", "--define"}, paramLabel = "<property=value>", description = "Define a system property")
-        private Map<String, String> systemProperties = new LinkedHashMap<>();
+        private Map<String, String> systemProperties = new LinkedHashMap<String, String>();
 
         @Option(names = "--disableopt", paramLabel = "optlist", split = ",",
                 description = {
                         "Disables one or all optimization elements; optlist can be a comma separated list with the elements: ",
                                 "all (disables all optimizations), ",
                                 "int (disable any int based optimizations)"})
-        private List<String> disableopt = new ArrayList<>();
+        private List<String> disableopt = new ArrayList<String>();
 
         @Option(names = {"-d", "--debug"}, description = "Debug mode will print out full stack traces")
         private boolean debug;
@@ -221,7 +221,7 @@ public class GroovyMain {
         private boolean versionRequested;
 
         @Unmatched
-        List<String> arguments = new ArrayList<>();
+        List<String> arguments = new ArrayList<String>();
 
         /**
          * Process the users request.
@@ -292,7 +292,7 @@ public class GroovyMain {
         }
 
         private List<String> getConfigScripts() {
-            List<String> scripts = new ArrayList<>();
+            List<String> scripts = new ArrayList<String>();
             if (this.configscript != null) {
                 scripts.add(this.configscript);
             }

@@ -1423,7 +1423,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void traverse(final File self, @ClosureParams(value=SimpleType.class, options="java.io.File") final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
-        traverse(self, new HashMap<>(), closure);
+        traverse(self, new HashMap<String, Object>(), closure);
     }
 
     /**
@@ -1709,7 +1709,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             same++;
         }
 
-        List<String> relativePathStack = new ArrayList<>();
+        List<String> relativePathStack = new ArrayList<String>();
 
         // if "from" part is longer, fill it up with ".."
         // to reach path which is equal to both paths

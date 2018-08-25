@@ -174,7 +174,7 @@ public class GroovyCategorySupport {
         // Precondition: accessorName.length() > prefixLength
         private Map<String, String> putPropertyAccessor(int prefixLength, String accessorName, Map<String, String> map) {
             if (map == null) {
-              map = new HashMap<>();
+              map = new HashMap<String, String>();
             }
             String property = accessorName.substring(prefixLength, prefixLength+1).toLowerCase() + accessorName.substring(prefixLength+1);
             map.put(property, accessorName);
@@ -183,7 +183,7 @@ public class GroovyCategorySupport {
 
         private void use(Class categoryClass) {
             CachedClass cachedClass = ReflectionCache.getCachedClass(categoryClass);
-            LinkedList<CachedClass> classStack = new LinkedList<>();
+            LinkedList<CachedClass> classStack = new LinkedList<CachedClass>();
             for (CachedClass superClass = cachedClass; superClass.getTheClass()!=Object.class; superClass = superClass.getCachedSuperClass()) {
                 classStack.add(superClass);
             }
@@ -327,7 +327,7 @@ public class GroovyCategorySupport {
 
     private static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
-        final ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<>();
+        final ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
 
         public ThreadCategoryInfo getInfo() {
             final SoftReference reference = get();

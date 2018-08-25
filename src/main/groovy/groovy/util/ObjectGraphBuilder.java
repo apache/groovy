@@ -63,10 +63,10 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     private final ObjectRefFactory objectRefFactory = new ObjectRefFactory();
     private ReferenceResolver referenceResolver;
     private RelationNameResolver relationNameResolver;
-    private final Map<String, Class> resolvedClasses = new HashMap<>();
+    private final Map<String, Class> resolvedClasses = new HashMap<String, Class>();
     private ClassLoader classLoader;
     private boolean lazyReferencesAllowed = true;
-    private final List<NodeReference> lazyReferences = new ArrayList<>();
+    private final List<NodeReference> lazyReferences = new ArrayList<NodeReference>();
     private String beanFactoryName = "bean";
 
     public ObjectGraphBuilder() {

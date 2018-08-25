@@ -97,7 +97,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     static {
         final ConstantExpression zero = constX(0);
         final ConstantExpression zeroDecimal = constX(.0);
-        primitivesInitialValues = new HashMap<>();
+        primitivesInitialValues = new HashMap<Class<?>, Expression>();
         primitivesInitialValues.put(int.class, zero);
         primitivesInitialValues.put(long.class, zero);
         primitivesInitialValues.put(short.class, zero);
@@ -171,12 +171,12 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         boolean callSuper = xform.memberHasValue(anno, "callSuper", true);
         boolean force = xform.memberHasValue(anno, "force", true);
         boolean defaults = !xform.memberHasValue(anno, "defaults", false);
-        Set<String> names = new HashSet<>();
+        Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
             superList = getAllProperties(names, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, false, allProperties, true, true);
         } else {
-            superList = new ArrayList<>();
+            superList = new ArrayList<PropertyNode>();
         }
 
         List<PropertyNode> list = getAllProperties(names, cNode, includeProperties, includeFields, false, allProperties, false, true);
@@ -188,8 +188,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         // no processing if existing constructors found unless forced or ImmutableBase in play
         if (hasExplicitConstructor(null, cNode) && !force && !makeImmutable) return;
 
-        final List<Parameter> params = new ArrayList<>();
-        final List<Expression> superParams = new ArrayList<>();
+        final List<Parameter> params = new ArrayList<Parameter>();
+        final List<Expression> superParams = new ArrayList<Expression>();
         final BlockStatement preBody = new BlockStatement();
         boolean superInPre = false;
         if (pre != null) {
@@ -202,7 +202,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         final BlockStatement body = new BlockStatement();
 
-        List<PropertyNode> tempList = new ArrayList<>(list);
+        List<PropertyNode> tempList = new ArrayList<PropertyNode>(list);
         tempList.addAll(superList);
         if (!handler.validateProperties(xform, body, cNode, tempList)) {
             return;
