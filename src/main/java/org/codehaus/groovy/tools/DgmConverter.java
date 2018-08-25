@@ -46,13 +46,13 @@ public class DgmConverter implements Opcodes {
             targetDirectory = args[1];
             if (!targetDirectory.endsWith("/")) targetDirectory += "/";
         }
-        List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod>();
+        List<CachedMethod> cachedMethodsList = new ArrayList<>();
         for (Class aClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
             Collections.addAll(cachedMethodsList, ReflectionCache.getCachedClass(aClass).getMethods());
         }
         final CachedMethod[] cachedMethods = cachedMethodsList.toArray(CachedMethod.EMPTY_ARRAY);
 
-        List<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<GeneratedMetaMethod.DgmMethodRecord>();
+        List<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<>();
 
         int cur = 0;
         for (CachedMethod method : cachedMethods) {

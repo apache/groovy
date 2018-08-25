@@ -52,7 +52,7 @@ class MemberStub {
 
     AnnotationStub addAnnotation(String desc) {
         AnnotationStub stub = new AnnotationStub(desc);
-        if (annotations == null) annotations = new ArrayList<AnnotationStub>(1);
+        if (annotations == null) annotations = new ArrayList<>(1);
         annotations.add(stub);
         return stub;
     }
@@ -92,7 +92,7 @@ class FieldStub extends MemberStub {
 
 class AnnotationStub {
     final String className;
-    final Map<String, Object> members = new LinkedHashMap<String, Object>();
+    final Map<String, Object> members = new LinkedHashMap<>();
 
     public AnnotationStub(String className) {
         this.className = className;

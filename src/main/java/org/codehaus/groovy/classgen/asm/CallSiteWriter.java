@@ -102,7 +102,7 @@ public class CallSiteWriter {
         METHOD_OO_DESC          = "(Ljava/lang/Object;)Ljava/lang/Object;",
         CREATE_CSA_METHOD       = "$createCallSiteArray";
     public static final String CONSTRUCTOR = "<$constructor$>";
-    private final List<String> callSites = new ArrayList<String>(32);
+    private final List<String> callSites = new ArrayList<>(32);
     private int callSiteArrayVarIndex = -1;
     private final WriterController controller;
 
@@ -163,7 +163,7 @@ public class CallSiteWriter {
     }
         
     private void generateCreateCallSiteArray() { 
-        List<String> callSiteInitMethods = new LinkedList<String>(); 
+        List<String> callSiteInitMethods = new LinkedList<>();
         int index = 0; 
         int methodIndex = 0; 
         final int size = callSites.size(); 

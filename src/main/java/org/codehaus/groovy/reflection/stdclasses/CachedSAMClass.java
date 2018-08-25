@@ -84,7 +84,7 @@ public class CachedSAMClass extends CachedClass {
                     new Class[]{clazz},
                     new ConvertedClosure(argument));
         } else {
-            Map<String, Object> m = new HashMap<String,Object>();
+            Map<String, Object> m = new HashMap<>();
             m.put(method.getName(), argument);
             return ProxyGenerator.INSTANCE.
                     instantiateAggregateFromBaseClass(m, clazz);

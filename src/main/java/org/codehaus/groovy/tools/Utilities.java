@@ -28,11 +28,11 @@ import java.util.Set;
 
 public abstract class Utilities
 {
-    private static final Set<String> INVALID_JAVA_IDENTIFIERS = new HashSet<String>(Arrays.asList((
+    private static final Set<String> INVALID_JAVA_IDENTIFIERS = new HashSet<>(Arrays.asList((
             "abstract assert boolean break byte case catch char class const continue default do double else enum " +
-            "extends final finally float for goto if implements import instanceof int interface long native new " +
-            "package private protected public short static strictfp super switch synchronized this throw throws " +
-            "transient try void volatile while true false null").split(" ")));
+                    "extends final finally float for goto if implements import instanceof int interface long native new " +
+                    "package private protected public short static strictfp super switch synchronized this throw throws " +
+                    "transient try void volatile while true false null").split(" ")));
 
    /**
     *  Returns a string made up of repetitions of the specified string.

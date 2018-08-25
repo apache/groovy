@@ -73,7 +73,7 @@ import java.util.Map;
 public final class ClosureMetaClass extends MetaClassImpl {
     private volatile boolean initialized;
     private final FastArray closureMethods = new FastArray(3);
-    private Map<String, CachedField> attributes = new HashMap<String, CachedField>();
+    private Map<String, CachedField> attributes = new HashMap<>();
     private MethodChooser chooser;
     private volatile boolean attributeInitDone = false;
 

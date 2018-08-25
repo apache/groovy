@@ -43,7 +43,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
     abstract void finished(ClassNode result);
 
     private String baseName;
-    private final List<GenericsType> arguments = new ArrayList<GenericsType>();
+    private final List<GenericsType> arguments = new ArrayList<>();
 
     @Override
     public void visitTypeVariable(String name) {

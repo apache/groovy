@@ -333,7 +333,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         Parameter[] localVariableParameters = getLambdaSharedVariables(expression);
         removeInitialValues(localVariableParameters);
 
-        List<Parameter> methodParameterList = new LinkedList<Parameter>(Arrays.asList(parametersWithExactType));
+        List<Parameter> methodParameterList = new LinkedList<>(Arrays.asList(parametersWithExactType));
         prependEnclosingThis(methodParameterList);
 
         MethodNode methodNode =

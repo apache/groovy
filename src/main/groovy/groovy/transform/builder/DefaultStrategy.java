@@ -190,8 +190,8 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     }
 
     public void buildClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
-        List<String> excludes = new ArrayList<String>();
-        List<String> includes = new ArrayList<String>();
+        List<String> excludes = new ArrayList<>();
+        List<String> includes = new ArrayList<>();
         includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;

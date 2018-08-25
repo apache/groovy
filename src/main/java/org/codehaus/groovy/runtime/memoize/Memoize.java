@@ -52,7 +52,7 @@ public abstract class Memoize {
      * @return A new memoized closure
      */
     public static <V> Closure<V> buildMemoizeFunction(final MemoizeCache<Object, Object> cache, final Closure<V> closure) {
-        return new MemoizeFunction<V>(cache, closure);
+        return new MemoizeFunction<>(cache, closure);
     }
 
     /**
@@ -81,7 +81,7 @@ public abstract class Memoize {
 
         final ReferenceQueue queue = new ReferenceQueue();
 
-        return new SoftReferenceMemoizeFunction<V>(cache, closure, lruProtectionStorage, queue);
+        return new SoftReferenceMemoizeFunction<>(cache, closure, lruProtectionStorage, queue);
     }
 
     /**

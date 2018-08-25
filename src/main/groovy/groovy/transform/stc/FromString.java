@@ -53,7 +53,7 @@ public class FromString extends ClosureSignatureHint {
 
     @Override
     public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
-        List<ClassNode[]> list = new ArrayList<ClassNode[]>(options.length);
+        List<ClassNode[]> list = new ArrayList<>(options.length);
         for (String option : options) {
             list.add(parseOption(option, sourceUnit, compilationUnit, node, usage));
         }

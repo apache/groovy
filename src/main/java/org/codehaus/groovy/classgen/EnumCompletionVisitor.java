@@ -81,7 +81,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
     private static void addImplicitConstructors(ClassNode enumClass, boolean aic) {
         if (aic) {
             ClassNode sn = enumClass.getSuperClass();
-            List<ConstructorNode> sctors = new ArrayList<ConstructorNode>(sn.getDeclaredConstructors());
+            List<ConstructorNode> sctors = new ArrayList<>(sn.getDeclaredConstructors());
             if (sctors.isEmpty()) {
                 addMapConstructors(enumClass);
             } else {
@@ -127,7 +127,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
             argsExprs.add(1, intVariable);
         } else {
             // add a super call
-            List<Expression> args = new ArrayList<Expression>();
+            List<Expression> args = new ArrayList<>();
             args.add(stringVariable);
             args.add(intVariable);
             if (isAic) {

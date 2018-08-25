@@ -157,7 +157,7 @@ public class AssertionWriter {
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         // push expression string onto stack
         String expressionText = booleanExpression.getText();
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         addVariableNames(booleanExpression, list);
         if (list.isEmpty()) {
             mv.visitLdcInsn(expressionText);

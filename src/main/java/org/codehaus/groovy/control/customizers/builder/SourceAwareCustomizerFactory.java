@@ -110,7 +110,7 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
     }
 
     private static void addExtensionValidator(final SourceAwareCustomizer sourceAwareCustomizer, final SourceOptions data) {
-        final List<String> extensions = data.extensions!=null?data.extensions : new LinkedList<String>();
+        final List<String> extensions = data.extensions!=null?data.extensions : new LinkedList<>();
         if (data.extension!=null) extensions.add(data.extension);
         Closure<Boolean> extensionValidator = data.extensionValidator;
         if (extensionValidator==null && !extensions.isEmpty()) {
@@ -128,7 +128,7 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
     }
 
     private static void addBasenameValidator(final SourceAwareCustomizer sourceAwareCustomizer, final SourceOptions data) {
-        final List<String> basenames = data.basenames!=null?data.basenames : new LinkedList<String>();
+        final List<String> basenames = data.basenames!=null?data.basenames : new LinkedList<>();
         if (data.basename!=null) basenames.add(data.basename);
         Closure<Boolean> basenameValidator = data.basenameValidator;
         if (basenameValidator==null && !basenames.isEmpty()) {

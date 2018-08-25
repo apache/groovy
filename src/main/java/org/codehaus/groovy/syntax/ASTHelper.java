@@ -68,7 +68,7 @@ public class ASTHelper {
     }
 
     public void setPackageName(String packageName) {
-        setPackage(packageName, new ArrayList<AnnotationNode>());
+        setPackage(packageName, new ArrayList<>());
     }
 
     public PackageNode setPackage(String packageName, List<AnnotationNode> annotations) {
@@ -127,7 +127,7 @@ public class ASTHelper {
     }
 
     protected void addImport(ClassNode type, String name, String aliasName) {
-        addImport(type, name, aliasName, new ArrayList<AnnotationNode>());
+        addImport(type, name, aliasName, new ArrayList<>());
     }
 
     protected void addImport(ClassNode type, String name, String aliasName, List<AnnotationNode> annotations) {
@@ -136,7 +136,7 @@ public class ASTHelper {
     }
 
     protected void addStaticImport(ClassNode type, String name, String alias) {
-        addStaticImport(type, name, alias, new ArrayList<AnnotationNode>());
+        addStaticImport(type, name, alias, new ArrayList<>());
     }
 
     protected void addStaticImport(ClassNode type, String name, String alias, List<AnnotationNode> annotations) {
@@ -145,7 +145,7 @@ public class ASTHelper {
     }
 
     protected void addStaticStarImport(ClassNode type, String importClass) {
-        addStaticStarImport(type, importClass, new ArrayList<AnnotationNode>());
+        addStaticStarImport(type, importClass, new ArrayList<>());
     }
 
     protected void addStaticStarImport(ClassNode type, String importClass, List<AnnotationNode> annotations) {
@@ -153,7 +153,7 @@ public class ASTHelper {
     }
 
     protected void addStarImport(String importPackage) {
-        addStarImport(importPackage, new ArrayList<AnnotationNode>());
+        addStarImport(importPackage, new ArrayList<>());
     }
 
     protected void addStarImport(String importPackage, List<AnnotationNode> annotations) {

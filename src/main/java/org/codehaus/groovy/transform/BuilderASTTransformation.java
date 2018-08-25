@@ -88,7 +88,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
 
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
-            List<PropertyInfo> props = new ArrayList<PropertyInfo>();
+            List<PropertyInfo> props = new ArrayList<>();
             for (FieldNode fNode : getInstancePropertyFields(cNode)) {
                 if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
@@ -97,7 +97,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
 
         protected static List<PropertyInfo> getPropertyInfoFromBeanInfo(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
-            final List<PropertyInfo> result = new ArrayList<PropertyInfo>();
+            final List<PropertyInfo> result = new ArrayList<>();
             try {
                 BeanInfo beanInfo = Introspector.getBeanInfo(cNode.getTypeClass());
                 for (PropertyDescriptor descriptor : beanInfo.getPropertyDescriptors()) {
@@ -188,8 +188,8 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
 
         protected List<PropertyInfo> getPropertyInfoFromClassNode(BuilderASTTransformation transform, AnnotationNode anno, ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames, boolean allProperties) {
-            List<PropertyInfo> props = new ArrayList<PropertyInfo>();
-            List<String> seen = new ArrayList<String>();
+            List<PropertyInfo> props = new ArrayList<>();
+            List<String> seen = new ArrayList<>();
             for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, false, false, allProperties)) {
                 if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(pNode.getName(), pNode.getType()));

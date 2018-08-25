@@ -94,7 +94,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     }
 
     public static List<MetaMethod> createMethodList(final String name, final Class declaringClass, final Closure closure) {
-        List<MetaMethod> res = new ArrayList<MetaMethod>();
+        List<MetaMethod> res = new ArrayList<>();
         if (closure instanceof MethodClosure) {
             MethodClosure methodClosure = (MethodClosure) closure;
             Object owner = closure.getOwner();

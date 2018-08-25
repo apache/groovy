@@ -33,8 +33,8 @@ import java.util.List;
 public class TryCatchStatement extends Statement {
 
     private Statement tryStatement;
-    private List<ExpressionStatement> resourceStatements = new ArrayList<ExpressionStatement>();
-    private List<CatchStatement> catchStatements = new ArrayList<CatchStatement>();
+    private List<ExpressionStatement> resourceStatements = new ArrayList<>();
+    private List<CatchStatement> catchStatements = new ArrayList<>();
     private Statement finallyStatement;
     
 

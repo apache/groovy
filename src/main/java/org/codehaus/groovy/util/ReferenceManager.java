@@ -79,7 +79,7 @@ public class ReferenceManager {
     private static class CallBackedManager extends ReferenceManager {
 
         private static final ConcurrentHashMap<ReferenceQueue, ReferenceManager> queuesInProcess =
-                new ConcurrentHashMap<ReferenceQueue, ReferenceManager>(4, 0.9f, 2);
+                new ConcurrentHashMap<>(4, 0.9f, 2);
 
         public CallBackedManager(ReferenceQueue queue) {
             super(queue);

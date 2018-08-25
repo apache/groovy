@@ -43,13 +43,13 @@ import java.util.Map;
  */
 public class CompileUnit implements NodeMetaDataHandler {
 
-    private final List<ModuleNode> modules = new ArrayList<ModuleNode>();
-    private final Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
+    private final List<ModuleNode> modules = new ArrayList<>();
+    private final Map<String, ClassNode> classes = new HashMap<>();
     private final CompilerConfiguration config;
     private final GroovyClassLoader classLoader;
     private final CodeSource codeSource;
-    private final Map<String, ClassNode> classesToCompile = new HashMap<String, ClassNode>();
-    private final Map<String, SourceUnit> classNameToSource = new HashMap<String, SourceUnit>();
+    private final Map<String, ClassNode> classesToCompile = new HashMap<>();
+    private final Map<String, SourceUnit> classNameToSource = new HashMap<>();
     private final Map<String, InnerClassNode> generatedInnerClasses = new HashMap();
     private Map metaDataMap = null;
 
@@ -91,7 +91,7 @@ public class CompileUnit implements NodeMetaDataHandler {
      * @return a list of all the classes in each module in the compilation unit
      */
     public List getClasses() {
-        List<ClassNode> answer = new ArrayList<ClassNode>();
+        List<ClassNode> answer = new ArrayList<>();
         for (ModuleNode module : modules) {
             answer.addAll(module.getClasses());
         }

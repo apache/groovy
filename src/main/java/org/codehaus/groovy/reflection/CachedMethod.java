@@ -243,7 +243,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
                   constr = CallSiteGenerator.compilePogoMethod(this);
                 }
                 if (constr != null) {
-                     pogoCallSiteConstructor = new SoftReference<Constructor> (constr);
+                     pogoCallSiteConstructor = new SoftReference<>(constr);
                 } else {
                     skipCompiled = true;
                 }
@@ -272,7 +272,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
                   constr = CallSiteGenerator.compilePojoMethod(this);
                 }
                 if (constr != null) {
-                    pojoCallSiteConstructor = new SoftReference<Constructor> (constr);
+                    pojoCallSiteConstructor = new SoftReference<>(constr);
                 } else {
                     skipCompiled = true;
                 }
@@ -300,7 +300,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
                   constr = CallSiteGenerator.compileStaticMethod(this);
                 }
                 if (constr != null) {
-                    staticCallSiteConstructor = new SoftReference<Constructor> (constr);
+                    staticCallSiteConstructor = new SoftReference<>(constr);
                 } else {
                     skipCompiled = true;
                 }

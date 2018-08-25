@@ -96,7 +96,7 @@ public class MopWriter {
 
     private static Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
         if (methods.isEmpty()) return Collections.EMPTY_SET;
-        Set<MopKey> result = new HashSet<MopKey>(methods.size());
+        Set<MopKey> result = new HashSet<>(methods.size());
         for (MethodNode mn : methods) {
             MopKey key = new MopKey(mn.getName(), mn.getParameters());
             result.add(key);
@@ -116,8 +116,8 @@ public class MopWriter {
      * @see #generateMopCalls(LinkedList, boolean)
      */
     private void visitMopMethodList(List<MethodNode> methods, boolean isThis, Set<MopKey> useOnlyIfDeclaredHereToo, List<String> orNameMentionedHere) {
-        Map<MopKey, MethodNode> mops = new HashMap<MopKey, MethodNode>();
-        LinkedList<MethodNode> mopCalls = new LinkedList<MethodNode>();
+        Map<MopKey, MethodNode> mops = new HashMap<>();
+        LinkedList<MethodNode> mopCalls = new LinkedList<>();
         for (MethodNode mn : methods) {
             // mop methods are helper for this and super calls and do direct calls
             // to the target methods. Such a method cannot be abstract or a bridge

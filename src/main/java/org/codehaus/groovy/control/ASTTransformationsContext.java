@@ -32,7 +32,7 @@ public class ASTTransformationsContext {
     protected final GroovyClassLoader transformLoader;  // Classloader for global and local transforms
 
     protected final CompilationUnit compilationUnit; // The compilation unit global AST transformations are applied on
-    protected final Set<String> globalTransformNames = new HashSet<String>(); // collected AST transformation names
+    protected final Set<String> globalTransformNames = new HashSet<>(); // collected AST transformation names
 
     public ASTTransformationsContext(final CompilationUnit compilationUnit, final GroovyClassLoader transformLoader) {
         this.compilationUnit = compilationUnit;

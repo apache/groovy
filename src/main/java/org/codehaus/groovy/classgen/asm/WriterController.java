@@ -75,7 +75,7 @@ public class WriterController {
     private int bytecodeVersion = Opcodes.V1_8;
     private int lineNumber = -1;
     private int helperMethodIndex = 0;
-    private List<String> superMethodNames = new ArrayList<String>();
+    private List<String> superMethodNames = new ArrayList<>();
 
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         CompilerConfiguration config = cn.getCompileUnit().getConfig();

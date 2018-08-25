@@ -101,7 +101,7 @@ public class ManagedLinkedList<T> {
      * @param value the value
      */
     public void add(T value) {
-        Element<T> element = new Element<T>(bundle, value);
+        Element<T> element = new Element<>(bundle, value);
         element.previous = tail;
         if (tail != null) tail.next = element;
         tail = element;
@@ -126,7 +126,7 @@ public class ManagedLinkedList<T> {
      * @return the array
      */
     public T[] toArray(T[] tArray) {
-        List<T> array = new ArrayList<T>(100);
+        List<T> array = new ArrayList<>(100);
         for (Iterator<T> it = iterator(); it.hasNext();) {
             T val = it.next();
             if (val != null) array.add(val);

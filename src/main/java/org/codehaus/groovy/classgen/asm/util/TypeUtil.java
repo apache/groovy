@@ -142,7 +142,7 @@ public abstract class TypeUtil {
             dimension++;
         } while ((type = type.getComponentType()).isArray());
 
-        return new Tuple2<ClassNode, Integer>(type, dimension);
+        return new Tuple2<>(type, dimension);
     }
 
     private static final String REF_DESCRIPTION = "L";

@@ -56,12 +56,12 @@ import java.util.Map;
 public class ModuleNode extends ASTNode implements Opcodes {
 
     private final BlockStatement statementBlock = new BlockStatement();
-    List<ClassNode> classes = new LinkedList<ClassNode>();
-    private final List<MethodNode> methods = new ArrayList<MethodNode>();
-    private final Map<String, ImportNode> imports = new HashMap<String, ImportNode>();
-    private final List<ImportNode> starImports = new ArrayList<ImportNode>();
-    private final Map<String, ImportNode> staticImports = new LinkedHashMap<String, ImportNode>();
-    private final Map<String, ImportNode> staticStarImports = new LinkedHashMap<String, ImportNode>();
+    List<ClassNode> classes = new LinkedList<>();
+    private final List<MethodNode> methods = new ArrayList<>();
+    private final Map<String, ImportNode> imports = new HashMap<>();
+    private final List<ImportNode> starImports = new ArrayList<>();
+    private final Map<String, ImportNode> staticImports = new LinkedHashMap<>();
+    private final Map<String, ImportNode> staticStarImports = new LinkedHashMap<>();
     private CompileUnit unit;
     private PackageNode packageNode;
     private String description;
@@ -105,7 +105,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public List<ImportNode> getImports() {
-        return new ArrayList<ImportNode>(imports.values());
+        return new ArrayList<>(imports.values());
     }
 
     public List<ImportNode> getStarImports() {
@@ -130,7 +130,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void addImport(String alias, ClassNode type) {
-        addImport(alias, type, new ArrayList<AnnotationNode>());
+        addImport(alias, type, new ArrayList<>());
     }
 
     public void addImport(String alias, ClassNode type, List<AnnotationNode> annotations) {
@@ -141,7 +141,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void addStarImport(String packageName) {
-        addStarImport(packageName, new ArrayList<AnnotationNode>());
+        addStarImport(packageName, new ArrayList<>());
     }
 
     public void addStarImport(String packageName, List<AnnotationNode> annotations) {
@@ -420,7 +420,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     public void sortClasses(){
         if (isEmpty()) return;
         List<ClassNode> classes = getClasses();
-        LinkedList<ClassNode> sorted = new LinkedList<ClassNode>();
+        LinkedList<ClassNode> sorted = new LinkedList<>();
         int level=1;
         while (!classes.isEmpty()) {
             for (Iterator<ClassNode> cni = classes.iterator(); cni.hasNext();) {
@@ -453,7 +453,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void addStaticImport(ClassNode type, String fieldName, String alias) {
-        addStaticImport(type, fieldName, alias, new ArrayList<AnnotationNode>());
+        addStaticImport(type, fieldName, alias, new ArrayList<>());
     }
 
     public void addStaticImport(ClassNode type, String fieldName, String alias, List<AnnotationNode> annotations) {
@@ -464,7 +464,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void addStaticStarImport(String name, ClassNode type) {
-        addStaticStarImport(name, type, new ArrayList<AnnotationNode>());
+        addStaticStarImport(name, type, new ArrayList<>());
     }
 
     public void addStaticStarImport(String name, ClassNode type, List<AnnotationNode> annotations) {

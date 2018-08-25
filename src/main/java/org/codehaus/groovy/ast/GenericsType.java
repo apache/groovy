@@ -68,7 +68,7 @@ public class GenericsType extends ASTNode {
     }
 
     public String toString() {
-        Set<String> visited = new HashSet<String>();
+        Set<String> visited = new HashSet<>();
         return toString(visited);
     }
 
@@ -114,7 +114,7 @@ public class GenericsType extends ASTNode {
             if (Modifier.isStatic(innerClassNode.getModifiers()) || innerClassNode.isInterface()) {
                 ret.append(innerClassNode.getOuterClass().getName());
             } else {
-                ret.append(genericsBounds(innerClassNode.getOuterClass(), new HashSet<String>()));
+                ret.append(genericsBounds(innerClassNode.getOuterClass(), new HashSet<>()));
             }
             ret.append(".");
             String typeName = theType.getName();

@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class GrapeUtil {
     public static Map<String, Object> getIvyParts(String allstr) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         String ext = "";
         String[] parts;
         if (allstr.contains("@")) {

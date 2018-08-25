@@ -109,7 +109,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
     private List<MethodNode> convertToDynamicCall(MethodCall call, ClassNode receiver, String[] decomposed, ClassNode[] argumentTypes) {
         String traitName = decomposed[0];
         String name = decomposed[1];
-        LinkedHashSet<ClassNode> traitsAsList = Traits.collectAllInterfacesReverseOrder(receiver, new LinkedHashSet<ClassNode>());
+        LinkedHashSet<ClassNode> traitsAsList = Traits.collectAllInterfacesReverseOrder(receiver, new LinkedHashSet<>());
         ClassNode[] implementedTraits = traitsAsList.toArray(ClassNode.EMPTY_ARRAY);
         ClassNode nextTrait = null;
         for (int i = 0; i < implementedTraits.length - 1; i++) {

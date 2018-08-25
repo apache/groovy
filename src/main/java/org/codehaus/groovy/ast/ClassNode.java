@@ -119,12 +119,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
         public void put(Object key, MethodNode value) {
             if (map == null) {
-                 map = new LinkedHashMap<Object, List<MethodNode>>();
+                 map = new LinkedHashMap<>();
             }
             if (map.containsKey(key)) {
                 get(key).add(value);
             } else {
-                List<MethodNode> list = new ArrayList<MethodNode>(2);
+                List<MethodNode> list = new ArrayList<>(2);
                 list.add(value);
                 map.put(key, list);
             }
@@ -365,7 +365,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (redirect!=null) return redirect().getFields();
         lazyClassInit();
         if (fields == null)
-            fields = new LinkedList<FieldNode> ();
+            fields = new LinkedList<>();
         return fields;
     }
 
@@ -412,7 +412,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * ClassNode or null if there are no such methods
      */
     public List<MethodNode> getAbstractMethods() {
-        List<MethodNode> result = new ArrayList<MethodNode>(3);
+        List<MethodNode> result = new ArrayList<>(3);
         for (MethodNode method : getDeclaredMethodsMap().values()) {
             if (method.isAbstract()) {
                 result.add(method);
@@ -428,11 +428,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List<MethodNode> getAllDeclaredMethods() {
-        return new ArrayList<MethodNode>(getDeclaredMethodsMap().values());
+        return new ArrayList<>(getDeclaredMethodsMap().values());
     }
 
     public Set<ClassNode> getAllInterfaces () {
-        Set<ClassNode> res = new LinkedHashSet<ClassNode>();
+        Set<ClassNode> res = new LinkedHashSet<>();
         getAllInterfaces(res);
         return res;
     }
@@ -482,7 +482,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public List<PropertyNode> getProperties() {
         final ClassNode r = redirect();
         if (r.properties == null)
-            r.properties = new ArrayList<PropertyNode> ();
+            r.properties = new ArrayList<>();
         return r.properties;
     }
 
@@ -490,7 +490,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (redirect != null) return redirect().getDeclaredConstructors();
         lazyClassInit();
         if (constructors == null)
-            constructors = new ArrayList<ConstructorNode> ();
+            constructors = new ArrayList<>();
         return constructors;
     }
 
@@ -562,7 +562,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         addField(field);
         final ClassNode r = redirect();
         if (r.properties == null)
-            r.properties = new ArrayList<PropertyNode> ();
+            r.properties = new ArrayList<>();
         r.properties.add(node);
     }
 
@@ -607,7 +607,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         node.setDeclaringClass(this);
         final ClassNode r = redirect();
         if (r.constructors == null)
-            r.constructors = new ArrayList<ConstructorNode> ();
+            r.constructors = new ArrayList<>();
         r.constructors.add(node);
     }
 
@@ -621,7 +621,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         node.setDeclaringClass(this);
         ClassNode base = redirect();
         if (base.methodsList.isEmpty()) {
-            base.methodsList = new ArrayList<MethodNode>();
+            base.methodsList = new ArrayList<>();
         }
         base.methodsList.add(node);
         base.methods.put(node.getName(), node);
@@ -819,7 +819,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public List<Statement> getObjectInitializerStatements() {
         if (objectInitializers == null)
-            objectInitializers = new LinkedList<Statement> ();
+            objectInitializers = new LinkedList<>();
         return objectInitializers;
     }
 
@@ -912,7 +912,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @see #getDeclaredMethods(String)
      */
     public List<MethodNode> getMethods(String name) {
-        List<MethodNode> answer = new ArrayList<MethodNode>();
+        List<MethodNode> answer = new ArrayList<>();
         ClassNode node = this;
         while (node != null) {
             answer.addAll(node.getDeclaredMethods(name));
@@ -1478,7 +1478,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
         Set<ASTNode> nodes = getTransformInstances().get(annotation.phase()).get(transform);
         if (nodes == null) {
-            nodes = new LinkedHashSet<ASTNode>();
+            nodes = new LinkedHashSet<>();
             getTransformInstances().get(annotation.phase()).put(transform, nodes);
         }
         nodes.add(node);
@@ -1491,7 +1491,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public void renameField(String oldName, String newName) {
         ClassNode r = redirect ();
         if (r.fieldIndex == null)
-            r.fieldIndex = new LinkedHashMap<String,FieldNode> ();
+            r.fieldIndex = new LinkedHashMap<>();
         final Map<String,FieldNode> index = r.fieldIndex;
         index.put(newName, index.remove(oldName));
     }
@@ -1499,7 +1499,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public void removeField(String oldName) {
         ClassNode r = redirect ();
         if (r.fieldIndex == null)
-            r.fieldIndex = new LinkedHashMap<String,FieldNode> ();
+            r.fieldIndex = new LinkedHashMap<>();
         final Map<String,FieldNode> index = r.fieldIndex;
         r.fields.remove(index.get(oldName));
         index.remove(oldName);
@@ -1518,9 +1518,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> getTransformInstances() {
         if(transformInstances == null){
-            transformInstances = new EnumMap<CompilePhase, Map<Class <? extends ASTTransformation>, Set<ASTNode>>>(CompilePhase.class);
+            transformInstances = new EnumMap<>(CompilePhase.class);
             for (CompilePhase phase : CompilePhase.values()) {
-                transformInstances.put(phase, new LinkedHashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());
+                transformInstances.put(phase, new LinkedHashMap<>());
             }
         }
         return transformInstances;

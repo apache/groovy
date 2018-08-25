@@ -192,7 +192,7 @@ public class DefaultGroovyMethodsSupport {
         if (iterable instanceof Collection) {
             return createSimilarCollection((Collection<T>) iterable);
         } else {
-            return new ArrayList<T>();
+            return new ArrayList<>();
         }
     }
 
@@ -210,23 +210,23 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof Queue) {
             return createSimilarQueue((Queue<T>) orig);
         }
-        return new ArrayList<T>(newCapacity);
+        return new ArrayList<>(newCapacity);
     }
 
     protected static <T> List<T> createSimilarList(List<T> orig, int newCapacity) {
         if (orig instanceof LinkedList)
-            return new LinkedList<T>();
+            return new LinkedList<>();
 
         if (orig instanceof Stack)
-            return new Stack<T>();
+            return new Stack<>();
 
         if (orig instanceof Vector)
-            return new Vector<T>();
+            return new Vector<>();
 
         if (orig instanceof CopyOnWriteArrayList)
-            return new CopyOnWriteArrayList<T>();
+            return new CopyOnWriteArrayList<>();
 
-        return new ArrayList<T>(newCapacity);
+        return new ArrayList<>(newCapacity);
     }
 
     @SuppressWarnings("unchecked")
@@ -246,10 +246,10 @@ public class DefaultGroovyMethodsSupport {
             }
         } else {
             if (orig instanceof CopyOnWriteArraySet) {
-                return new CopyOnWriteArraySet<T>();
+                return new CopyOnWriteArraySet<>();
             } else {
                 // Do not use HashSet
-                return new LinkedHashSet<T>();
+                return new LinkedHashSet<>();
             }
         }
     }
@@ -258,25 +258,25 @@ public class DefaultGroovyMethodsSupport {
     protected static <T> Queue<T> createSimilarQueue(Queue<T> orig) {
         if (orig instanceof ArrayBlockingQueue) {
             ArrayBlockingQueue queue = (ArrayBlockingQueue) orig;
-            return new ArrayBlockingQueue<T>(queue.size() + queue.remainingCapacity());
+            return new ArrayBlockingQueue<>(queue.size() + queue.remainingCapacity());
         } else if (orig instanceof ArrayDeque) {
-            return new ArrayDeque<T>();
+            return new ArrayDeque<>();
         } else if (orig instanceof ConcurrentLinkedQueue) {
-            return new ConcurrentLinkedQueue<T>();
+            return new ConcurrentLinkedQueue<>();
         } else if (orig instanceof DelayQueue) {
             return new DelayQueue();
         } else if (orig instanceof LinkedBlockingDeque) {
-            return new LinkedBlockingDeque<T>();
+            return new LinkedBlockingDeque<>();
         } else if (orig instanceof LinkedBlockingQueue) {
-            return new LinkedBlockingQueue<T>();
+            return new LinkedBlockingQueue<>();
         } else if (orig instanceof PriorityBlockingQueue) {
-            return new PriorityBlockingQueue<T>();
+            return new PriorityBlockingQueue<>();
         } else if (orig instanceof PriorityQueue) {
             return new PriorityQueue<T>(11, ((PriorityQueue) orig).comparator());
         } else if (orig instanceof SynchronousQueue) {
-            return new SynchronousQueue<T>();
+            return new SynchronousQueue<>();
         } else {
-            return new LinkedList<T>();
+            return new LinkedList<>();
         }
     }
 
@@ -291,20 +291,20 @@ public class DefaultGroovyMethodsSupport {
             }
         } else {
             if (orig instanceof ConcurrentHashMap) {
-                return new ConcurrentHashMap<K, V>();
+                return new ConcurrentHashMap<>();
             } else if (orig instanceof Hashtable) {
                 if (orig instanceof Properties) {
                     return (Map<K, V>) new Properties();
                 } else {
-                    return new Hashtable<K, V>();
+                    return new Hashtable<>();
                 }
             } else if (orig instanceof IdentityHashMap) {
-                return new IdentityHashMap<K, V>();
+                return new IdentityHashMap<>();
             } else if (orig instanceof WeakHashMap) {
-                return new WeakHashMap<K, V>();
+                return new WeakHashMap<>();
             } else {
                 // Do not use HashMap
-                return new LinkedHashMap<K, V>();
+                return new LinkedHashMap<>();
             }
         }
     }
@@ -317,28 +317,28 @@ public class DefaultGroovyMethodsSupport {
         // fall back to some defaults
         if (orig instanceof SortedMap) {
             if (orig instanceof ConcurrentSkipListMap) {
-                return new ConcurrentSkipListMap<K, V>(orig);
+                return new ConcurrentSkipListMap<>(orig);
             } else {
-                return new TreeMap<K, V>(orig);
+                return new TreeMap<>(orig);
             }
         } else {
             if (orig instanceof ConcurrentHashMap) {
-                return new ConcurrentHashMap<K, V>(orig);
+                return new ConcurrentHashMap<>(orig);
             } else if (orig instanceof Hashtable) {
                 if (orig instanceof Properties) {
                     Map<K, V> map = (Map<K, V>) new Properties();
                     map.putAll(orig);
                     return map;
                 } else {
-                    return new Hashtable<K, V>(orig);
+                    return new Hashtable<>(orig);
                 }
             } else if (orig instanceof IdentityHashMap) {
-                return new IdentityHashMap<K, V>(orig);
+                return new IdentityHashMap<>(orig);
             } else if (orig instanceof WeakHashMap) {
-                return new WeakHashMap<K, V>(orig);
+                return new WeakHashMap<>(orig);
             } else {
                 // Do not use HashMap
-                return new LinkedHashMap<K, V>(orig);
+                return new LinkedHashMap<>(orig);
             }
         }
     }

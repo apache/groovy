@@ -582,7 +582,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     private static FieldNode getField(ClassNode classNode, String fieldName) {
         ClassNode node = classNode;
-        Set<String> visited = new HashSet<String>();
+        Set<String> visited = new HashSet<>();
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);
             if (fn != null) return fn;

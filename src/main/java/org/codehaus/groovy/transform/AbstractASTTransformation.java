@@ -67,8 +67,8 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
      * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported for now.
      */
     protected List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, String myTypeName) {
-        final List<AnnotationNode> copiedAnnotations = new ArrayList<AnnotationNode>();
-        final List<AnnotationNode> notCopied = new ArrayList<AnnotationNode>();
+        final List<AnnotationNode> copiedAnnotations = new ArrayList<>();
+        final List<AnnotationNode> notCopied = new ArrayList<>();
         GeneralUtils.copyAnnotatedNodeAnnotations(annotatedNode, copiedAnnotations, notCopied);
         for (AnnotationNode annotation : notCopied) {
             addError(myTypeName + " does not support keeping Closure annotation members.", annotation);
@@ -188,7 +188,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     private static List<String> getValueStringList(ListExpression listExpression) {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         for (Expression itemExpr : listExpression.getExpressions()) {
             if (itemExpr instanceof ConstantExpression) {
                 Object value = ((ConstantExpression) itemExpr).getValue();
@@ -200,7 +200,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
 
     @Deprecated
     public List<ClassNode> getClassList(AnnotationNode anno, String name) {
-        List<ClassNode> list = new ArrayList<ClassNode>();
+        List<ClassNode> list = new ArrayList<>();
         Expression expr = anno.getMember(name);
         if (expr instanceof ListExpression) {
             final ListExpression listExpression = (ListExpression) expr;
@@ -213,7 +213,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     public List<ClassNode> getMemberClassList(AnnotationNode anno, String name) {
-        List<ClassNode> list = new ArrayList<ClassNode>();
+        List<ClassNode> list = new ArrayList<>();
         Expression expr = anno.getMember(name);
         if (expr == null) {
             return null;
@@ -233,7 +233,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     private static List<ClassNode> getTypeList(ListExpression listExpression) {
-        List<ClassNode> list = new ArrayList<ClassNode>();
+        List<ClassNode> list = new ArrayList<>();
         for (Expression itemExpr : listExpression.getExpressions()) {
             if (itemExpr instanceof ClassExpression) {
                 ClassNode cn = itemExpr.getType();
@@ -265,7 +265,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
     }
 
     public static List<String> tokenize(String rawExcludes) {
-        return rawExcludes == null ? new ArrayList<String>() : StringGroovyMethods.tokenize(rawExcludes, ", ");
+        return rawExcludes == null ? new ArrayList<>() : StringGroovyMethods.tokenize(rawExcludes, ", ");
     }
 
     public static boolean deemedInternalName(String name) {
@@ -297,7 +297,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         String descriptor = mNode.getTypeDescriptor();
         String descriptorNoReturn = MethodNodeUtils.methodDescriptorWithoutReturnType(mNode);
         for (ClassNode cn : excludeTypes) {
-            List<ClassNode> remaining = new LinkedList<ClassNode>();
+            List<ClassNode> remaining = new LinkedList<>();
             remaining.add(cn);
             Map updatedGenericsSpec = new HashMap(genericsSpec);
             while (!remaining.isEmpty()) {
@@ -320,7 +320,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
         if (includeTypes.isEmpty()) return false;
         for (ClassNode cn : includeTypes) {
-            List<ClassNode> remaining = new LinkedList<ClassNode>();
+            List<ClassNode> remaining = new LinkedList<>();
             remaining.add(cn);
             Map updatedGenericsSpec = new HashMap(genericsSpec);
             while (!remaining.isEmpty()) {
@@ -349,7 +349,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         String descriptorNoReturn = MethodNodeUtils.methodDescriptorWithoutReturnType(mNode);
         if (excludeTypes != null) {
             for (ClassNode cn : excludeTypes) {
-                List<ClassNode> remaining = new LinkedList<ClassNode>();
+                List<ClassNode> remaining = new LinkedList<>();
                 remaining.add(cn);
                 Map updatedGenericsSpec = new HashMap(genericsSpec);
                 while (!remaining.isEmpty()) {
@@ -373,7 +373,7 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         }
         if (includeTypes == null) return false;
         for (ClassNode cn : includeTypes) {
-            List<ClassNode> remaining = new LinkedList<ClassNode>();
+            List<ClassNode> remaining = new LinkedList<>();
             remaining.add(cn);
             Map updatedGenericsSpec = new HashMap(genericsSpec);
             while (!remaining.isEmpty()) {
@@ -450,13 +450,13 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
         if (propertyNameList == null || propertyNameList.isEmpty()) {
             return true;
         }
-        final List<String> pNames = new ArrayList<String>();
+        final List<String> pNames = new ArrayList<>();
         for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, includeSuperProperties, includeStatic, allProperties)) {
             pNames.add(pNode.getField().getName());
         }
         boolean result = true;
         if (includeFields || includeSuperFields) {
-            final List<String> fNames = new ArrayList<String>();
+            final List<String> fNames = new ArrayList<>();
             if (includeFields) {
                 fNames.addAll(getInstanceNonPropertyFieldNames(cNode));
             }

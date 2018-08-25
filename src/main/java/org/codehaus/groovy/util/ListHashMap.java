@@ -207,7 +207,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
 
     public Collection<V> values() {
         if (innerMap == null) {
-            List<V> list = new ArrayList<V>(size);
+            List<V> list = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
                 list.add((V) listValues[i]);
             }

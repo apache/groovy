@@ -116,8 +116,8 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         }
         if (value.contains(PackageScopeTarget.FIELDS)) {
             final List<PropertyNode> pList = cNode.getProperties();
-            List<PropertyNode> foundProps = new ArrayList<PropertyNode>();
-            List<String> foundNames = new ArrayList<String>();
+            List<PropertyNode> foundProps = new ArrayList<>();
+            List<String> foundNames = new ArrayList<>();
             for (PropertyNode pNode : pList) {
                 foundProps.add(pNode);
                 foundNames.add(pNode.getName());
@@ -163,7 +163,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
     }
 
     private static List<groovy.transform.PackageScopeTarget> determineTargets(Expression expr) {
-        List<groovy.transform.PackageScopeTarget> list = new ArrayList<groovy.transform.PackageScopeTarget>();
+        List<groovy.transform.PackageScopeTarget> list = new ArrayList<>();
         if (expr instanceof PropertyExpression) {
             list.add(extractTarget((PropertyExpression) expr));
         } else if (expr instanceof ListExpression) {

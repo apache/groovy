@@ -33,7 +33,7 @@ import java.util.LinkedList;
  */
 public abstract class ClassGenerator extends ClassCodeVisitorSupport implements Opcodes {
     // inner classes created while generating bytecode
-    protected LinkedList<ClassNode> innerClasses = new LinkedList<ClassNode>();
+    protected LinkedList<ClassNode> innerClasses = new LinkedList<>();
 
     public LinkedList<ClassNode> getInnerClasses() {
         return innerClasses;

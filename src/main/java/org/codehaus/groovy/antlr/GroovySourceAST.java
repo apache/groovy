@@ -162,7 +162,7 @@ public class GroovySourceAST extends CommonAST implements Comparable, SourceInfo
     }
 
     public List<GroovySourceAST> childrenOfType(int type) {
-        List<GroovySourceAST> result = new ArrayList<GroovySourceAST>();
+        List<GroovySourceAST> result = new ArrayList<>();
         AST child = this.getFirstChild();
         while (child != null) {
             if (child.getType() == type) { result.add((GroovySourceAST) child); }

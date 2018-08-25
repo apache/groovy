@@ -39,7 +39,7 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
      * Constructs a cache with unlimited size
      */
     public UnlimitedConcurrentCache() {
-        map = new ConcurrentHashMap<K, V>();
+        map = new ConcurrentHashMap<>();
     }
 
     /**
@@ -47,7 +47,7 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
      * @param initialCapacity the initial capacity
      */
     public UnlimitedConcurrentCache(int initialCapacity) {
-        map = new ConcurrentHashMap<K, V>(initialCapacity);
+        map = new ConcurrentHashMap<>(initialCapacity);
     }
 
     /**
@@ -87,7 +87,7 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
      */
     @Override
     public Map<K, V> clearAll() {
-        Map<K, V> result = new LinkedHashMap<K, V>(map.size());
+        Map<K, V> result = new LinkedHashMap<>(map.size());
 
         for (Map.Entry<K, V> entry : map.entrySet()) {
             K key = entry.getKey();

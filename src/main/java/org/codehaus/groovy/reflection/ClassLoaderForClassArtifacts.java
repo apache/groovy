@@ -36,7 +36,7 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
 
     public ClassLoaderForClassArtifacts(Class klazz) {
         super(klazz.getClassLoader());
-        this.klazz = new SoftReference<Class> (klazz);
+        this.klazz = new SoftReference<>(klazz);
     }
 
     public Class define (String name, byte [] bytes) {

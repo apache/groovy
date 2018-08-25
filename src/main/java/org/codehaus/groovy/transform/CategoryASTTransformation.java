@@ -92,10 +92,10 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
         ClassNode targetClass = getTargetClass(source, annotation);
         thisExpression.setType(targetClass);
 
-        final LinkedList<Set<String>> varStack = new LinkedList<Set<String>>();
+        final LinkedList<Set<String>> varStack = new LinkedList<>();
         if (!ensureNoInstanceFieldOrProperty(source, parent)) return;
 
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
         for (FieldNode field : parent.getFields()) {
             names.add(field.getName());
         }
@@ -111,7 +111,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             }
 
             private void addVariablesToStack(Parameter[] params) {
-                Set<String> names = new HashSet<String>(varStack.getLast());
+                Set<String> names = new HashSet<>(varStack.getLast());
                 for (Parameter param : params) {
                     names.add(param.getName());
                 }
@@ -134,7 +134,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
 
             @Override
             public void visitBlockStatement(BlockStatement block) {
-                Set<String> names = new HashSet<String>(varStack.getLast());
+                Set<String> names = new HashSet<>(varStack.getLast());
                 varStack.add(names);
                 super.visitBlockStatement(block);
                 varStack.remove(names);

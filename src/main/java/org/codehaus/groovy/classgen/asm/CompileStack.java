@@ -100,8 +100,8 @@ public class CompileStack implements Opcodes {
     // list containing finally blocks
     // such a block is created by synchronized or finally and
     // must be called for break/continue/return
-    private LinkedList<BlockRecorder> finallyBlocks = new LinkedList<BlockRecorder>();
-    private final LinkedList<BlockRecorder> visitedBlocks = new LinkedList<BlockRecorder>();
+    private LinkedList<BlockRecorder> finallyBlocks = new LinkedList<>();
+    private final LinkedList<BlockRecorder> visitedBlocks = new LinkedList<>();
 
     private Label thisStartLabel, thisEndLabel;
 
@@ -111,9 +111,9 @@ public class CompileStack implements Opcodes {
     private final LinkedList stateStack = new LinkedList();
 
     // handle different states for the implicit "this"
-    private final LinkedList<Boolean> implicitThisStack = new LinkedList<Boolean>();
+    private final LinkedList<Boolean> implicitThisStack = new LinkedList<>();
     // handle different states for being on the left hand side
-    private final LinkedList<Boolean> lhsStack = new LinkedList<Boolean>();
+    private final LinkedList<Boolean> lhsStack = new LinkedList<>();
     {
         implicitThisStack.add(false);
         lhsStack.add(false);
@@ -129,8 +129,8 @@ public class CompileStack implements Opcodes {
     // in a loop where foo is a label.
     private final Map namedLoopContinueLabel = new HashMap();
     private String className;
-    private final LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<ExceptionTableEntry>();
-    private final LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<ExceptionTableEntry>();
+    private final LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<>();
+    private final LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<>();
     // stores if on left-hand-side during compilation
     private boolean lhs;
     // stores if implicit or explicit this is used.
@@ -148,7 +148,7 @@ public class CompileStack implements Opcodes {
         public Runnable excludedStatement;
         public final LinkedList<LabelRange> ranges;
         public BlockRecorder() {
-            ranges = new LinkedList<LabelRange>();
+            ranges = new LinkedList<>();
         }
         public BlockRecorder(Runnable excludedStatement) {
             this();
@@ -768,7 +768,7 @@ public class CompileStack implements Opcodes {
             blocksToRemove = result.finallyBlocks;
         }
 
-        List<BlockRecorder> blocks = new LinkedList<BlockRecorder>(finallyBlocks);
+        List<BlockRecorder> blocks = new LinkedList<>(finallyBlocks);
         blocks.removeAll(blocksToRemove);
         applyBlockRecorder(blocks);
     }

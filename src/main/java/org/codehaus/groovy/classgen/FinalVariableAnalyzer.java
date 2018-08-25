@@ -88,7 +88,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
-    private final Deque<Map<Variable, VariableState>> assignmentTracker = new LinkedList<Map<Variable, VariableState>>();
+    private final Deque<Map<Variable, VariableState>> assignmentTracker = new LinkedList<>();
 
     public FinalVariableAnalyzer(final SourceUnit sourceUnit) {
         this(sourceUnit, null);
@@ -138,7 +138,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     @Override
     public void visitBlockStatement(final BlockStatement block) {
         Set<Variable> old = declaredFinalVariables;
-        declaredFinalVariables = new HashSet<Variable>();
+        declaredFinalVariables = new HashSet<>();
         super.visitBlockStatement(block);
         declaredFinalVariables = old;
     }
@@ -283,7 +283,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
         // merge if/else branches
         Map<Variable, VariableState> curState = getState();
-        Set<Variable> allVars = new HashSet<Variable>();
+        Set<Variable> allVars = new HashSet<>();
         allVars.addAll(curState.keySet());
         allVars.addAll(ifState.keySet());
         allVars.addAll(elseState.keySet());
@@ -317,24 +317,24 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     @Override
     public void visitTryCatchFinally(final TryCatchStatement statement) {
         visitStatement(statement);
-        Map<Variable, VariableState> beforeTryState = new HashMap<Variable, VariableState>(getState());
+        Map<Variable, VariableState> beforeTryState = new HashMap<>(getState());
         pushState();
         Statement tryStatement = statement.getTryStatement();
         tryStatement.visit(this);
-        Map<Variable, VariableState> afterTryState = new HashMap<Variable, VariableState>(getState());
+        Map<Variable, VariableState> afterTryState = new HashMap<>(getState());
         Statement finallyStatement = statement.getFinallyStatement();
         List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
         // the try finally case
         visitPossiblyEmptyStatement(finallyStatement);
         if (!returningBlock(tryStatement)) {
-            afterStates.add(new HashMap<Variable, VariableState>(getState()));
+            afterStates.add(new HashMap<>(getState()));
         }
         popState();
         // now the finally only case but only if no catches
         if (statement.getCatchStatements().isEmpty()) {
             visitPossiblyEmptyStatement(finallyStatement);
             if (!returningBlock(tryStatement)) {
-                afterStates.add(new HashMap<Variable, VariableState>(getState()));
+                afterStates.add(new HashMap<>(getState()));
             }
         }
         for (CatchStatement catchStatement : statement.getCatchStatements()) {
@@ -376,7 +376,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         catchStatement.visit(this);
         visitPossiblyEmptyStatement(finallyStatement);
         if (code == null || !returningBlock(code)) {
-            afterTryCatchStates.add(new HashMap<Variable, VariableState>(getState()));
+            afterTryCatchStates.add(new HashMap<>(getState()));
         }
         popState();
     }

@@ -36,7 +36,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
     private final Visitor v;
 
     public TraversalHelper(Visitor visitor) {
-        this.unvisitedNodes = new ArrayList<GroovySourceAST>();
+        this.unvisitedNodes = new ArrayList<>();
         this.v = visitor;
     }
 

@@ -98,8 +98,8 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         boolean useSetters = transform.memberHasValue(anno, "useSetters", true);
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
 
-        List<String> excludes = new ArrayList<String>();
-        List<String> includes = new ArrayList<String>();
+        List<String> excludes = new ArrayList<>();
+        List<String> includes = new ArrayList<>();
         includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;

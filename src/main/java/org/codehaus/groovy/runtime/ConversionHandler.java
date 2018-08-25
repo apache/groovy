@@ -45,7 +45,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
     private final ConcurrentHashMap<Method, Object> handleCache;
     {
         if (VMPluginFactory.getPlugin().getVersion() >= 7) {
-            handleCache = new ConcurrentHashMap<Method, Object>(16, 0.9f, 2);
+            handleCache = new ConcurrentHashMap<>(16, 0.9f, 2);
         } else {
             handleCache = null;
         }

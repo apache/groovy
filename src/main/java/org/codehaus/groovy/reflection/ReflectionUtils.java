@@ -31,7 +31,7 @@ import java.util.Set;
 public class ReflectionUtils {
 
     // these are packages in the call stack that are only part of the groovy MOP
-    private static final Set<String> IGNORED_PACKAGES = new HashSet<String>();
+    private static final Set<String> IGNORED_PACKAGES = new HashSet<>();
 
     static {
         //IGNORED_PACKAGES.add("java.lang.reflect");

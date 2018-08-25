@@ -1097,9 +1097,9 @@ public class Types
   //---------------------------------------------------------------------------
   // TEXTS
 
-    private static final Map<Integer,String> TEXTS  = new HashMap<Integer,String>();  // symbol/keyword type -> text
-    private static final Map<String,Integer> LOOKUP = new HashMap<String,Integer>();  // text -> symbol/keyword type
-    private static final Set<String> KEYWORDS = new HashSet<String>();  // valid keywords
+    private static final Map<Integer,String> TEXTS  = new HashMap<>();  // symbol/keyword type -> text
+    private static final Map<String,Integer> LOOKUP = new HashMap<>();  // text -> symbol/keyword type
+    private static final Set<String> KEYWORDS = new HashSet<>();  // valid keywords
 
     public static Collection<String> getKeywords() {
         return Collections.unmodifiableSet(KEYWORDS);
@@ -1338,7 +1338,7 @@ public class Types
   // DESCRIPTIONS
 
 
-    private static final Map<Integer,String> DESCRIPTIONS = new HashMap<Integer,String>();
+    private static final Map<Integer,String> DESCRIPTIONS = new HashMap<>();
 
 
    /**

@@ -105,7 +105,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         // only descend if we have annotations to look for
         Map<Class<? extends ASTTransformation>, Set<ASTNode>> baseTransforms = classNode.getTransforms(phase);
         if (!baseTransforms.isEmpty()) {
-            final Map<Class<? extends ASTTransformation>, ASTTransformation> transformInstances = new HashMap<Class<? extends ASTTransformation>, ASTTransformation>();
+            final Map<Class<? extends ASTTransformation>, ASTTransformation> transformInstances = new HashMap<>();
             for (Class<? extends ASTTransformation> transformClass : baseTransforms.keySet()) {
                 try {
                     transformInstances.put(transformClass, transformClass.newInstance());
@@ -121,19 +121,19 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
 
             // invert the map, is now one to many
-            transforms = new HashMap<ASTNode, List<ASTTransformation>>();
+            transforms = new HashMap<>();
             for (Map.Entry<Class<? extends ASTTransformation>, Set<ASTNode>> entry : baseTransforms.entrySet()) {
                 for (ASTNode node : entry.getValue()) {
                     List<ASTTransformation> list = transforms.get(node);
                     if (list == null)  {
-                        list = new ArrayList<ASTTransformation>();
+                        list = new ArrayList<>();
                         transforms.put(node, list);
                     }
                     list.add(transformInstances.get(entry.getKey()));
                 }
             }
 
-            targetNodes = new LinkedList<ASTNode[]>();
+            targetNodes = new LinkedList<>();
 
             // first pass, collect nodes
             super.visitClass(classNode);
@@ -208,7 +208,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
     private static void doAddGlobalTransforms(ASTTransformationsContext context, boolean isFirstScan) {
         final CompilationUnit compilationUnit = context.getCompilationUnit();
         GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
-        Map<String, URL> transformNames = new LinkedHashMap<String, URL>();
+        Map<String, URL> transformNames = new LinkedHashMap<>();
         try {
             Enumeration<URL> globalServices = transformLoader.getResources("META-INF/services/org.codehaus.groovy.transform.ASTTransformation");
             while (globalServices.hasMoreElements()) {

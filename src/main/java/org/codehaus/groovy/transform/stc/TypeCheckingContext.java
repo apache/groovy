@@ -52,18 +52,18 @@ public class TypeCheckingContext {
     protected Set<MethodNode> methodsToBeVisited = Collections.emptySet();
     protected boolean isInStaticContext = false;
 
-    protected final LinkedList<ErrorCollector> errorCollectors = new LinkedList<ErrorCollector>();
-    protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<ClassNode>();
-    protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
-    protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<Expression>();
-    protected final LinkedList<ConstructorCallExpression> enclosingConstructorCalls = new LinkedList<ConstructorCallExpression>();
-    protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<BlockStatement>();
-    protected final LinkedList<ReturnStatement> enclosingReturnStatements = new LinkedList<ReturnStatement>();
-    protected final LinkedList<PropertyExpression> enclosingPropertyExpressions = new LinkedList<PropertyExpression>();
+    protected final LinkedList<ErrorCollector> errorCollectors = new LinkedList<>();
+    protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<>();
+    protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<>();
+    protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<>();
+    protected final LinkedList<ConstructorCallExpression> enclosingConstructorCalls = new LinkedList<>();
+    protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<>();
+    protected final LinkedList<ReturnStatement> enclosingReturnStatements = new LinkedList<>();
+    protected final LinkedList<PropertyExpression> enclosingPropertyExpressions = new LinkedList<>();
 
 
     // used for closure return type inference
-    protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<EnclosingClosure>();
+    protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<>();
 
     // whenever a method using a closure as argument (typically, "with") is detected, this list is updated
     // with the receiver type of the with method
@@ -89,34 +89,34 @@ public class TypeCheckingContext {
      * }
      * // Here var1 instance of Runnable
      */
-    protected final IdentityHashMap<BlockStatement, Map<VariableExpression, List<ClassNode>>> blockStatements2Types = new IdentityHashMap<BlockStatement, Map<VariableExpression, List<ClassNode>>>();
+    protected final IdentityHashMap<BlockStatement, Map<VariableExpression, List<ClassNode>>> blockStatements2Types = new IdentityHashMap<>();
 
 
     /**
      * Stores information which is only valid in the "if" branch of an if-then-else statement. This is used when the if
      * condition expression makes use of an instanceof check
      */
-    protected Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation = new Stack<Map<Object, List<ClassNode>>>();
-    protected Set<MethodNode> alreadyVisitedMethods = new HashSet<MethodNode>();
+    protected Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation = new Stack<>();
+    protected Set<MethodNode> alreadyVisitedMethods = new HashSet<>();
     /**
      * Some expressions need to be visited twice, because type information may be insufficient at some point. For
      * example, for closure shared variables, we need a first pass to collect every type which is assigned to a closure
      * shared variable, then a second pass to ensure that every method call on such a variable is made on a LUB.
      */
-    protected final LinkedHashSet<SecondPassExpression> secondPassExpressions = new LinkedHashSet<SecondPassExpression>();
+    protected final LinkedHashSet<SecondPassExpression> secondPassExpressions = new LinkedHashSet<>();
     /**
      * A map used to store every type used in closure shared variable assignments. In a second pass, we will compute the
      * LUB of each type and check that method calls on those variables are valid.
      */
-    protected final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<VariableExpression, List<ClassNode>>();
-    protected Map<Parameter, ClassNode> controlStructureVariables = new HashMap<Parameter, ClassNode>();
+    protected final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<>();
+    protected Map<Parameter, ClassNode> controlStructureVariables = new HashMap<>();
 
     // this map is used to ensure that two errors are not reported on the same line/column
-    protected final Set<Long> reportedErrors = new TreeSet<Long>();
+    protected final Set<Long> reportedErrors = new TreeSet<>();
 
     // stores the current binary expression. This is used when assignments are made with a null object, for type
     // inference
-    protected final LinkedList<BinaryExpression> enclosingBinaryExpressions = new LinkedList<BinaryExpression>();
+    protected final LinkedList<BinaryExpression> enclosingBinaryExpressions = new LinkedList<>();
 
     protected final StaticTypeCheckingVisitor visitor;
 
@@ -294,7 +294,7 @@ public class TypeCheckingContext {
     }
 
     public void pushTemporaryTypeInfo() {
-        Map<Object, List<ClassNode>> potentialTypes = new HashMap<Object, List<ClassNode>>();
+        Map<Object, List<ClassNode>> potentialTypes = new HashMap<>();
         temporaryIfBranchTypeInformation.push(potentialTypes);
     }
 
@@ -460,7 +460,7 @@ public class TypeCheckingContext {
 
         public EnclosingClosure(final ClosureExpression closureExpression) {
             this.closureExpression = closureExpression;
-            this.returnTypes = new LinkedList<ClassNode>();
+            this.returnTypes = new LinkedList<>();
         }
 
         public ClosureExpression getClosureExpression() {
