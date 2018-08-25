@@ -372,8 +372,8 @@ public class GenericsType extends ASTNode {
                 return true;
             }
             GenericsType[] redirectBoundGenericTypes = bound.redirect().getGenericsTypes();
-            Map<GenericsType.GenericsTypeName, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
-            Map<GenericsType.GenericsTypeName, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
+            Map<GenericsTypeName, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
+            Map<GenericsTypeName, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
             boolean match = true;
             for (int i = 0; redirectBoundGenericTypes!=null && i < redirectBoundGenericTypes.length && match; i++) {
                 GenericsType redirectBoundType = redirectBoundGenericTypes[i];
@@ -381,9 +381,10 @@ public class GenericsType extends ASTNode {
                 if (classNodeType.isPlaceholder()) {
                     GenericsTypeName name = new GenericsTypeName(classNodeType.getName());
                     if (redirectBoundType.isPlaceholder()) {
-                        match = name.equals(new GenericsTypeName(redirectBoundType.getName()));
+                        GenericsTypeName gtn = new GenericsTypeName(redirectBoundType.getName());
+                        match = name.equals(gtn);
                         if (!match) {
-                            GenericsType genericsType = boundPlaceHolders.get(new GenericsTypeName(redirectBoundType.getName()));
+                            GenericsType genericsType = boundPlaceHolders.get(gtn);
                             match = false;
                             if (genericsType!=null) {
                                 if (genericsType.isPlaceholder()) {
@@ -424,8 +425,9 @@ public class GenericsType extends ASTNode {
                                             if (gt.isPlaceholder()) {
                                                 // check for recursive generic typedef, like in
                                                 // <T extends Comparable<? super T>>
-                                                if (classNodePlaceholders.containsKey(new GenericsTypeName(gt.getName()))) {
-                                                    gt = classNodePlaceholders.get(new GenericsTypeName(gt.getName()));
+                                                GenericsTypeName gtn = new GenericsTypeName(gt.getName());
+                                                if (classNodePlaceholders.containsKey(gtn)) {
+                                                    gt = classNodePlaceholders.get(gtn);
                                                 }
                                             }
                                             match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
@@ -436,8 +438,9 @@ public class GenericsType extends ASTNode {
                                                 if (gt.isPlaceholder()) {
                                                     // check for recursive generic typedef, like in
                                                     // <T extends Comparable<? super T>>
-                                                    if (classNodePlaceholders.containsKey(new GenericsTypeName(gt.getName()))) {
-                                                        gt = classNodePlaceholders.get(new GenericsTypeName(gt.getName()));
+                                                    GenericsTypeName gtn = new GenericsTypeName(gt.getName());
+                                                    if (classNodePlaceholders.containsKey(gtn)) {
+                                                        gt = classNodePlaceholders.get(gtn);
                                                     }
                                                 }
                                                 match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())

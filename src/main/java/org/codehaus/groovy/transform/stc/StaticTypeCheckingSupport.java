@@ -1687,7 +1687,7 @@ public abstract class StaticTypeCheckingSupport {
                 }
                 boolean placeholderReplacement = replacement.isPlaceholder();
                 if (placeholderReplacement) {
-                    GenericsType connectedType = resolvedPlaceholders.get(new GenericsTypeName(replacement.getName()));
+                    GenericsType connectedType = resolvedPlaceholders.get(name);
                     if (replacement == connectedType) continue;
                 }
                 // GROOVY-6787: Don't override the original if the replacement placeholder doesn't respect the bounds,
