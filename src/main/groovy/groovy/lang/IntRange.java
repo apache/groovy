@@ -202,7 +202,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
 
     private void checkSize() {
         // size() in the Collection interface returns an integer, so ranges can have no more than Integer.MAX_VALUE elements
-        final Long size = (long) to - from + 1;
+        final long size = (long) to - from + 1;
         if (size > Integer.MAX_VALUE) {
             throw new IllegalArgumentException("A range must have no more than " + Integer.MAX_VALUE + " elements but attempted " + size + " elements");
         }
