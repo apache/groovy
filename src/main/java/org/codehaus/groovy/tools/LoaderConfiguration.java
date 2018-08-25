@@ -104,8 +104,7 @@ public class LoaderConfiguration {
      * @throws IOException if reading or parsing the contents of the stream fails
      */
     public void configure(InputStream is) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        try {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             int lineNumber = 0;
 
             while (true) {
@@ -139,8 +138,6 @@ public class LoaderConfiguration {
                     throw new IOException("unexpected line in " + lineNumber + " : " + line);
                 }
             }
-        } finally {
-            reader.close();
         }
 
         if (requireMain && main == null) throw new IOException("missing main class definition in config file");

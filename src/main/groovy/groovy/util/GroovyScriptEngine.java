@@ -450,16 +450,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     private static void verifyInputStream(URLConnection urlConnection) throws IOException {
-        InputStream in = null;
-        try {
-            in = urlConnection.getInputStream();
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException ignore) {
-                }
-            }
+        try (InputStream in = urlConnection.getInputStream()) {
         }
     }
 

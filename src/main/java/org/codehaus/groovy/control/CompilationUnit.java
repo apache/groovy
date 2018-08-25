@@ -733,20 +733,10 @@ public class CompilationUnit extends ProcessingUnit {
             //
             byte[] bytes = gclass.getBytes();
 
-            FileOutputStream stream = null;
-            try {
-                stream = new FileOutputStream(path);
+            try (FileOutputStream stream = new FileOutputStream(path)) {
                 stream.write(bytes, 0, bytes.length);
             } catch (IOException e) {
                 getErrorCollector().addError(Message.create(e.getMessage(), CompilationUnit.this));
-            } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (Exception e) {
-                        // Ignore
-                    }
-                }
             }
         }
     };

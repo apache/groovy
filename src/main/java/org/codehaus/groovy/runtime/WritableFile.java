@@ -42,21 +42,16 @@ public class WritableFile extends File implements Writable {
     }
 
     public Writer writeTo(final Writer out) throws IOException {
-        final Reader reader =
-            (this.encoding == null)
-                ? ResourceGroovyMethods.newReader(this)
-                : ResourceGroovyMethods.newReader(this, this.encoding);
 
-        try {
+        try (Reader reader = (this.encoding == null)
+                ? ResourceGroovyMethods.newReader(this)
+                : ResourceGroovyMethods.newReader(this, this.encoding)) {
             int c = reader.read();
 
             while (c != -1) {
                 out.write(c);
                 c = reader.read();
             }
-        }
-        finally {
-            reader.close();
         }
         return out;
     }

@@ -214,9 +214,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             while (globalServices.hasMoreElements()) {
                 URL service = globalServices.nextElement();
                 String className;
-                BufferedReader svcIn = null;
-                try {
-                    svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service), "UTF-8"));
+                try (BufferedReader svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service), "UTF-8"))) {
                     try {
                         className = svcIn.readLine();
                     } catch (IOException ioe) {
@@ -265,9 +263,6 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                             continue;
                         }
                     }
-                } finally {
-                    if (svcIn != null)
-                        svcIn.close();
                 }
             }
         } catch (IOException e) {

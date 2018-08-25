@@ -117,18 +117,16 @@ public class JavaStubGenerator {
 
         File file = new File(outputPath, fileName + ".java");
         Charset charset = Charset.forName(encoding);
-        PrintWriter out =
-                new PrintWriter(
-                        new OutputStreamWriter(
-                                new BufferedOutputStream(
-                                        new FileOutputStream(file),
-                                        DEFAULT_BUFFER_SIZE
-                                ),
-                                charset
-                        )
-                );
 
-        try {
+        try (PrintWriter out = new PrintWriter(
+                new OutputStreamWriter(
+                        new BufferedOutputStream(
+                                new FileOutputStream(file),
+                                DEFAULT_BUFFER_SIZE
+                        ),
+                        charset
+                )
+        )) {
             String packageName = classNode.getPackageName();
             if (packageName != null) {
                 out.println("package " + packageName + ";\n");
@@ -137,12 +135,6 @@ public class JavaStubGenerator {
             printImports(out, classNode);
             printClassContents(out, classNode);
 
-        } finally {
-            try {
-                out.close();
-            } catch (Exception e) {
-                // ignore
-            }
         }
     }
 
