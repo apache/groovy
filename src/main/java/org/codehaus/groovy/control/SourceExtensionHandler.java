@@ -43,10 +43,8 @@ public class SourceExtensionHandler {
                 globalServices = loader.getResources("META-INF/services/org.codehaus.groovy.source.Extensions");
             }
             while (globalServices.hasMoreElements()) {
-                BufferedReader svcIn = null;
                 URL service = globalServices.nextElement();
-                try {
-                    svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service)));
+                try (BufferedReader svcIn = new BufferedReader(new InputStreamReader(URLStreams.openUncachedStream(service)))) {
                     String extension = svcIn.readLine();
                     while (extension != null) {
                         extension = extension.trim();
@@ -58,8 +56,6 @@ public class SourceExtensionHandler {
                 } catch (IOException ex) {
                     throw new GroovyRuntimeException("IO Exception attempting to load registered source extension " +
                             service.toExternalForm() + ". Exception: " + ex.toString());
-                } finally {
-                    if (svcIn != null) svcIn.close();
                 }
             }
         } catch (IOException ex) {

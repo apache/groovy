@@ -75,24 +75,17 @@ public class CharsetToolkit {
         this.file = file;
         this.defaultCharset = getDefaultSystemCharset();
         this.charset = null;
-        InputStream input = new FileInputStream(file);
-        try {
+        try (InputStream input = new FileInputStream(file)) {
             byte[] bytes = new byte[4096];
             int bytesRead = input.read(bytes);
             if (bytesRead == -1) {
                 this.buffer = EMPTY_BYTE_ARRAY;
-            }
-            else if (bytesRead < 4096) {
+            } else if (bytesRead < 4096) {
                 byte[] bytesToGuess = new byte[bytesRead];
                 System.arraycopy(bytes, 0, bytesToGuess, 0, bytesRead);
                 this.buffer = bytesToGuess;
-            }
-            else {
+            } else {
                 this.buffer = bytes;
-            }
-        } finally {
-            try {input.close();} catch (IOException e){
-                // IGNORE
             }
         }
     }
