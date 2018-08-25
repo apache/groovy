@@ -262,12 +262,8 @@ public class GroovyShell extends GroovyObjectSupport {
             try {
                 Script script = InvokerHelper.newScript(scriptClass, context);
                 return script.run();
-            } catch (InstantiationException e) {
+            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
                 // ignore instantiation errors,, try to do main
-            } catch (IllegalAccessException e) {
-               // ignore instantiation errors, try to do main
-            } catch (InvocationTargetException e) {
-                // ignore instantiation errors, try to do main
             }
         }
         try {

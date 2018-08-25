@@ -2736,11 +2736,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     typeCheckingContext.source,
                     typeCheckingContext.compilationUnit,
                     convertToStringArray(options), expression);
-        } catch (ClassNotFoundException e) {
-            throw new GroovyBugError(e);
-        } catch (InstantiationException e) {
-            throw new GroovyBugError(e);
-        } catch (IllegalAccessException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
             throw new GroovyBugError(e);
         }
         return closureSignatures;
@@ -2762,11 +2758,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     typeCheckingContext.source,
                     typeCheckingContext.compilationUnit,
                     convertToStringArray(options));
-        } catch (ClassNotFoundException e) {
-            throw new GroovyBugError(e);
-        } catch (InstantiationException e) {
-            throw new GroovyBugError(e);
-        } catch (IllegalAccessException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
             throw new GroovyBugError(e);
         }
     }

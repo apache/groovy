@@ -224,9 +224,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                     if (klass != null) {
                         try {
                             act = (AnnotationCollectorTransform) klass.newInstance();
-                        } catch (InstantiationException e) {
-                            source.getErrorCollector().addErrorAndContinue(new ExceptionMessage(e, true, source));
-                        } catch (IllegalAccessException e) {
+                        } catch (InstantiationException | IllegalAccessException e) {
                             source.getErrorCollector().addErrorAndContinue(new ExceptionMessage(e, true, source));
                         }
                     }

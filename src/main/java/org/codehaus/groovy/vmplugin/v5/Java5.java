@@ -285,8 +285,7 @@ public class Java5 implements VMPlugin {
                     if (valueExpression == null)
                         continue;
                     node.setMember(declaredMethod.getName(), valueExpression);
-                } catch (IllegalAccessException e) {
-                } catch (InvocationTargetException e) {
+                } catch (IllegalAccessException | InvocationTargetException e) {
                 }
             }
         }

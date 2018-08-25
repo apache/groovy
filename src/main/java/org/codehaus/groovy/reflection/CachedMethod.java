@@ -102,9 +102,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         }
         try {
             return cachedMethod.invoke(object, arguments);
-        } catch (IllegalArgumentException e) {
-            throw new InvokerInvocationException(e);
-        } catch (IllegalAccessException e) {
+        } catch (IllegalArgumentException | IllegalAccessException e) {
             throw new InvokerInvocationException(e);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause(); 

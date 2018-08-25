@@ -139,24 +139,18 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                     typeCheckingVisitor.addTypeCheckingExtension(extension);
                     extension.setup();
                     return;
-                } catch (InstantiationException e) {
-                    addLoadingError(config);
-                } catch (IllegalAccessException e) {
+                } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
                     addLoadingError(config);
                 } catch (NoSuchMethodException e) {
                     context.getErrorCollector().addFatalError(
                             new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded because it doesn't have a constructor accepting StaticTypeCheckingVisitor.",
                                     config.getDebug(), typeCheckingVisitor.getSourceUnit())
                     );
-                } catch (InvocationTargetException e) {
-                    addLoadingError(config);
                 }
             }
         } catch (ClassNotFoundException e) {
             // silent
-        } catch (InstantiationException e) {
-            addLoadingError(config);
-        } catch (IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException e) {
             addLoadingError(config);
         }
         if (script==null) {

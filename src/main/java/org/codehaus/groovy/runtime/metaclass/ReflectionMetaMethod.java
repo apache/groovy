@@ -52,9 +52,7 @@ public class ReflectionMetaMethod extends MetaMethod {
     public Object invoke(Object object, Object[] arguments) {
         try {
             return method.setAccessible().invoke(object, arguments);
-        } catch (IllegalArgumentException e) {
-            throw new InvokerInvocationException(e);
-        } catch (IllegalAccessException e) {
+        } catch (IllegalArgumentException | IllegalAccessException e) {
             throw new InvokerInvocationException(e);
         } catch (InvocationTargetException e) {
             throw e.getCause() instanceof RuntimeException ? (RuntimeException)e.getCause() : new InvokerInvocationException(e);

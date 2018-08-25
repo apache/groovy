@@ -1095,11 +1095,9 @@ public class CompilationUnit extends ProcessingUnit {
             } catch (GroovyBugError e) {
                 changeBugText(e, context);
                 throw e;
-            } catch (NoClassDefFoundError e) {
+            } catch (NoClassDefFoundError | Exception e) {
                 // effort to get more logging in case a dependency of a class is loaded
                 // although it shouldn't have
-                convertUncaughtExceptionToCompilationError(e);
-            } catch (Exception e) {
                 convertUncaughtExceptionToCompilationError(e);
             }
         }

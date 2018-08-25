@@ -103,22 +103,14 @@ public class GroovyStarter {
         try {
             Class c = loader.loadClass(lc.getMainClass());
             m = c.getMethod("main", String[].class);
-        } catch (ClassNotFoundException e1) {
+        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e1) {
             exit(e1);
-        } catch (SecurityException e2) {
-            exit(e2);
-        } catch (NoSuchMethodException e2) {
-            exit(e2);
         }
         try {
             m.invoke(null, new Object[]{newArgs});
-        } catch (IllegalArgumentException e3) {
+        } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException e3) {
             exit(e3);
-        } catch (IllegalAccessException e3) {
-            exit(e3);
-        } catch (InvocationTargetException e3) {
-            exit(e3);
-        } 
+        }
     }
     
     private static void exit(Exception e) {

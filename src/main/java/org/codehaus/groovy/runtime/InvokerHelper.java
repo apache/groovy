@@ -639,13 +639,7 @@ public class InvokerHelper {
             try {
                 Method serialize = Class.forName("groovy.xml.XmlUtil").getMethod("serialize", Element.class);
                 return (String) serialize.invoke(null, arguments);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            } catch (IllegalAccessException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -921,10 +915,8 @@ public class InvokerHelper {
     public static List createRange(Object from, Object to, boolean inclusive) {
         try {
             return ScriptBytecodeAdapter.createRange(from, to, inclusive);
-        } catch (RuntimeException re) {
+        } catch (RuntimeException | Error re) {
             throw re;
-        } catch (Error e) {
-            throw e;
         } catch (Throwable t) {
             throw new RuntimeException(t);
         }

@@ -1866,10 +1866,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (method == null && mp != null) {
             try {
                 return mp.getProperty(object);
-            } catch (IllegalArgumentException e) {
-                // can't access the field directly but there may be a getter
-                mp = null;
-            } catch (CacheAccessControlException e) {
+            } catch (IllegalArgumentException | CacheAccessControlException e) {
                 // can't access the field directly but there may be a getter
                 mp = null;
             }

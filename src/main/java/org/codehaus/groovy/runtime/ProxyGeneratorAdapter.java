@@ -823,11 +823,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             // if there isn't any argument, we can make invocation faster using the cached constructor
             try {
                 return (GroovyObject) cachedNoArgConstructor.newInstance(map);
-            } catch (InstantiationException e) {
-                throw new GroovyRuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new GroovyRuntimeException(e);
-            } catch (InvocationTargetException e) {
+            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
                 throw new GroovyRuntimeException(e);
             }
         }
@@ -844,11 +840,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             // if there isn't any argument, we can make invocation faster using the cached constructor
             try {
                 return (GroovyObject) cachedNoArgConstructor.newInstance(map, delegate);
-            } catch (InstantiationException e) {
-                throw new GroovyRuntimeException(e);
-            } catch (IllegalAccessException e) {
-                throw new GroovyRuntimeException(e);
-            } catch (InvocationTargetException e) {
+            } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
                 throw new GroovyRuntimeException(e);
             }
         }
