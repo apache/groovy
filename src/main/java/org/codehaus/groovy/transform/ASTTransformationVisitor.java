@@ -109,13 +109,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             for (Class<? extends ASTTransformation> transformClass : baseTransforms.keySet()) {
                 try {
                     transformInstances.put(transformClass, transformClass.newInstance());
-                } catch (InstantiationException e) {
-                    source.getErrorCollector().addError(
-                            new SimpleMessage(
-                                    "Could not instantiate Transformation Processor " + transformClass
-                                    , //+ " declared by " + annotation.getClassNode().getName(),
-                                    source));
-                } catch (IllegalAccessException e) {
+                } catch (InstantiationException | IllegalAccessException e) {
                     source.getErrorCollector().addError(
                             new SimpleMessage(
                                     "Could not instantiate Transformation Processor " + transformClass

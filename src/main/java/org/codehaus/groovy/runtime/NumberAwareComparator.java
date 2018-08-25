@@ -35,11 +35,7 @@ public class NumberAwareComparator<T> implements Comparator<T>, Serializable {
     public int compare(T o1, T o2) {
         try {
             return DefaultTypeTransformation.compareTo(o1, o2);
-        } catch (ClassCastException cce) {
-            /* ignore */
-        } catch (GroovyRuntimeException gre) {
-            /* ignore */
-        } catch (IllegalArgumentException iae) {
+        } catch (ClassCastException | IllegalArgumentException | GroovyRuntimeException cce) {
             /* ignore */
         }
         // since the object does not have a valid compareTo method

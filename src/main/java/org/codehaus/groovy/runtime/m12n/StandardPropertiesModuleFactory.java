@@ -42,9 +42,7 @@ public class StandardPropertiesModuleFactory extends PropertiesModuleFactory {
                 return delegate.newModule(properties, classLoader);
             } catch (ClassNotFoundException e) {
                 throw new GroovyRuntimeException("Unable to load module factory ["+factoryName+"]",e);
-            } catch (InstantiationException e) {
-                throw new GroovyRuntimeException("Unable to instantiate module factory ["+factoryName+"]",e);
-            } catch (IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException e) {
                 throw new GroovyRuntimeException("Unable to instantiate module factory ["+factoryName+"]",e);
             }
         }

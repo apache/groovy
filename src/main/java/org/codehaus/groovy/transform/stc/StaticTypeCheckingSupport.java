@@ -2264,11 +2264,7 @@ public abstract class StaticTypeCheckingSupport {
         Class aClass = cu.getClassLoader().defineClass(className, classes.get(0).getBytes());
         try {
             return aClass.getMethod("eval").invoke(null);
-        } catch (IllegalAccessException e) {
-            throw new GroovyBugError(e);
-        } catch (InvocationTargetException e) {
-            throw new GroovyBugError(e);
-        } catch (NoSuchMethodException e) {
+        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new GroovyBugError(e);
         }
     }

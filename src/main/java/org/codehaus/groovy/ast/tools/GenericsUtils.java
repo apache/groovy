@@ -583,11 +583,7 @@ public class GenericsUtils {
                 signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
             }
             return signature;
-        } catch (RecognitionException e) {
-            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
-        } catch (TokenStreamException e) {
-            sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
-        } catch (ParserException e) {
+        } catch (RecognitionException | ParserException | TokenStreamException e) {
             sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         }
         return null;

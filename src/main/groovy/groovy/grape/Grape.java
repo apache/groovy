@@ -119,11 +119,7 @@ public class Grape {
                 // by default use GrapeIvy
                 //TODO META-INF/services resolver?
                 instance = (GrapeEngine) Class.forName("groovy.grape.GrapeIvy").newInstance();
-            } catch (InstantiationException e) {
-                //LOGME
-            } catch (IllegalAccessException e) {
-                //LOGME
-            } catch (ClassNotFoundException e) {
+            } catch (InstantiationException | ClassNotFoundException | IllegalAccessException e) {
                 //LOGME
             }
         }

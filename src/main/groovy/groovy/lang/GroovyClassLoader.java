@@ -960,14 +960,8 @@ public class GroovyClassLoader extends URLClassLoader {
                     newURI = new URI(path);
                     // check if we can create a URL from that URI
                     newURI.toURL();
-                } catch (URISyntaxException e) {
+                } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
                     // the URI has a false format, so lets try it with files ...
-                    newURI=new File(path).toURI();
-                } catch (MalformedURLException e) {
-                    // the URL has a false format, so lets try it with files ...
-                    newURI=new File(path).toURI();
-                } catch (IllegalArgumentException e) {
-                    // the URL is not absolute, so lets try it with files ...
                     newURI=new File(path).toURI();
                 }
 
