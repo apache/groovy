@@ -209,9 +209,7 @@ public class GStringTemplateEngine extends TemplateEngine {
                 // books = 'foo' in a template would store 'books' in the binding of the template script itself ("script")
                 // instead of storing it in the delegate, which is a Binding too
                 this.template.setResolveStrategy(Closure.DELEGATE_FIRST);
-            } catch (InstantiationException e) {
-                throw new ClassNotFoundException(e.getMessage());
-            } catch (IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException e) {
                 throw new ClassNotFoundException(e.getMessage());
             }
         }

@@ -131,9 +131,7 @@ public class XmlParser implements ContentHandler {
         try {
             factory.setFeature(feature, value);
         }
-        catch (ParserConfigurationException ignored) { }
-        catch (SAXNotRecognizedException ignored) { }
-        catch (SAXNotSupportedException ignored) { }
+        catch (ParserConfigurationException | SAXNotSupportedException | SAXNotRecognizedException ignored) { }
     }
 
     /**

@@ -528,9 +528,7 @@ public class Groovy extends Java {
                 shell.run(txt, scriptName, cmdline.getCommandline());
             }
         }
-        catch (final CompilationFailedException e) {
-            processError(e);
-        } catch (IOException e) {
+        catch (final CompilationFailedException | IOException e) {
             processError(e);
         }
     }
