@@ -530,7 +530,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
         }
         int index = name.lastIndexOf('.');
         if (index == -1) return name + pxyCounter.incrementAndGet() + "_groovyProxy";
-        return name.substring(index + 1, name.length()) + pxyCounter.incrementAndGet() + "_groovyProxy";
+        return name.substring(index + 1) + pxyCounter.incrementAndGet() + "_groovyProxy";
     }
 
     private static boolean isImplemented(Class clazz, String name, String desc) {

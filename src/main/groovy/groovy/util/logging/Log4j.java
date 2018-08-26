@@ -105,7 +105,7 @@ public @interface Log4j {
                 // log4j api is inconsistent, so trace requires special handling
                 condition = new MethodCallExpression(
                         logVariable,
-                        "is" + methodName.substring(0, 1).toUpperCase(Locale.ENGLISH) + methodName.substring(1, methodName.length()) + "Enabled",
+                        "is" + methodName.substring(0, 1).toUpperCase(Locale.ENGLISH) + methodName.substring(1) + "Enabled",
                         ArgumentListExpression.EMPTY_ARGUMENTS);
             }
             condition.setImplicitThis(false);

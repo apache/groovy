@@ -78,7 +78,7 @@ public class StringBufferWriter extends Writer {
      * @param length Number of characters to write
      */
     public void write(String text, int offset, int length) {
-        buffer.append(text.substring(offset, offset + length));
+        buffer.append(text, offset, offset + length);
     }
 
     /**

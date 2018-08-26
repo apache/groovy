@@ -717,7 +717,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 // output differs from input; we write to our local buffer
                 if (sb == null) {
                     sb = new StringBuilder((int) (1.1 * len));
-                    sb.append(orig.substring(0, i));
+                    sb.append(orig, 0, i);
                 }
                 sb.append(replacement);
             } else if (sb != null) {
