@@ -369,7 +369,7 @@ public class Groovy extends Java {
 
         while ((line = in.readLine()) != null) {
             line = getProject().replaceProperties(line);
-            if (line.indexOf("--") >= 0) {
+            if (line.contains("--")) {
                 txt.append("\n");
             }
         }

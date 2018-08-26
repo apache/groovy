@@ -31,7 +31,7 @@ class Sys {
     static {
         BigDecimal v = new BigDecimal("-1");
         String sversion = System.getProperty("java.version");
-        if (sversion.indexOf("_") != -1) {
+        if (sversion.contains("_")) {
             final String[] split = sversion.split("_");
             try {
                 String ver = split[0];
