@@ -379,15 +379,9 @@ public class StreamingTemplateEngine extends TemplateEngine {
         private int getLinesInSource() throws IOException {
             int result = 0;
 
-            LineNumberReader reader = null;
-            try {
-                reader = new LineNumberReader(new StringReader(templateSource.toString()));
+            try (LineNumberReader reader = new LineNumberReader(new StringReader(templateSource.toString()))) {
                 reader.skip(Long.MAX_VALUE);
                 result = reader.getLineNumber();
-            } finally {
-                if (reader != null) {
-                    reader.close();
-                }
             }
 
             return result;
