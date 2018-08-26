@@ -624,9 +624,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
                 Closure chicken = (Closure) object.invokeMethod("getTemplate", null);
                 //bind the two first parameters of the generated closure to this class and the sections list
                 result = chicken.curry(this, sections);
-            } catch (InstantiationException e) {
-                throw new ClassNotFoundException(e.getMessage());
-            } catch (IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException e) {
                 throw new ClassNotFoundException(e.getMessage());
             }
 

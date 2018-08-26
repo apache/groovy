@@ -3577,13 +3577,7 @@ public class Sql {
             connection.setAutoCommit(false);
             callClosurePossiblyWithConnection(closure, connection);
             connection.commit();
-        } catch (SQLException e) {
-            handleError(connection, e);
-            throw e;
-        } catch (RuntimeException e) {
-            handleError(connection, e);
-            throw e;
-        } catch (Error e) {
+        } catch (SQLException | Error | RuntimeException e) {
             handleError(connection, e);
             throw e;
         } catch (Exception e) {

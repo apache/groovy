@@ -640,9 +640,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private Class resolveFromJavaLang(String name) {
         try {
             return Class.forName("java.lang." + name, false, getClass().getClassLoader());
-        } catch (NoClassDefFoundError e) {
-            // ignore
-        } catch (ClassNotFoundException e) {
+        } catch (NoClassDefFoundError | ClassNotFoundException e) {
             // ignore
         }
         return null;
@@ -693,9 +691,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 try {
                     // TODO cache these??
                     return Class.forName(candidate, false, getClass().getClassLoader());
-                } catch (NoClassDefFoundError e) {
-                    // ignore
-                } catch (ClassNotFoundException e) {
+                } catch (NoClassDefFoundError | ClassNotFoundException e) {
                     // ignore
                 }
             }
@@ -708,9 +704,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         try {
             // TODO cache these??
             return Class.forName(candidate, false, getClass().getClassLoader());
-        } catch (NoClassDefFoundError e) {
-            // ignore
-        } catch (ClassNotFoundException e) {
+        } catch (NoClassDefFoundError | ClassNotFoundException e) {
             // ignore
         }
         return null;

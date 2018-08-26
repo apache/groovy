@@ -119,9 +119,7 @@ public class GroovyServlet extends AbstractHttpServlet {
                 public Object call() {
                     try {
                         return ((GroovyScriptEngine) getDelegate()).run(scriptUri, binding);
-                    } catch (ResourceException e) {
-                        throw new RuntimeException(e);
-                    } catch (ScriptException e) {
+                    } catch (ResourceException | ScriptException e) {
                         throw new RuntimeException(e);
                     }
                 }
