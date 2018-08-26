@@ -184,7 +184,6 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
             if (configEntry == null) {
                 config.put(key, value);
 
-                continue;
             } else {
                 if (configEntry instanceof Map && !((Map) configEntry).isEmpty() && value instanceof Map) {
                     // recur
