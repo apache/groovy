@@ -204,7 +204,7 @@ public class DomToGroovy {
     }
 
     protected void printQuoted(String text) {
-        if (text.indexOf("\n") != -1) {
+        if (text.contains("\n")) {
             print("'''");
             print(text);
             print("'''");
