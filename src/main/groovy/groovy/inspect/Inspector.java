@@ -303,7 +303,7 @@ public class Inspector {
             for (String s : metaMethod) {
                 out.print(s + " ");
             }
-            out.println("");
+            out.println();
         }
     }
 

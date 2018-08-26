@@ -293,7 +293,7 @@ public class SourceUnit extends ProcessingUnit {
                     int start = column - 30 - 1;
                     int end = (column + 10 > text.length() ? text.length() : column + 10 - 1);
                     sample = "   " + text.substring(start, end) + Utilities.eol() + "   " +
-                            marker.substring(start, marker.length());
+                            marker.substring(start);
                 } else {
                     sample = "   " + text + Utilities.eol() + "   " + marker;
                 }

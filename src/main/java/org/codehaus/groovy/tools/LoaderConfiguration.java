@@ -168,7 +168,7 @@ public class LoaderConfiguration {
                 requireProperty = propertyIndexStart == i2;
             }
             if (propertyIndexStart == -1) break;
-            result.append(str.substring(propertyIndexEnd, propertyIndexStart));
+            result.append(str, propertyIndexEnd, propertyIndexStart);
 
             propertyIndexEnd = str.indexOf("}", propertyIndexStart);
             if (propertyIndexEnd == -1) break;

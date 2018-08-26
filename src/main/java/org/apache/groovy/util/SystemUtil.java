@@ -38,7 +38,7 @@ public class SystemUtil {
             value = Boolean.TRUE.toString();
         } else {
             name = nameValue.substring(0, i);
-            value = nameValue.substring(i + 1, nameValue.length());
+            value = nameValue.substring(i + 1);
         }
         name = name.trim();
 

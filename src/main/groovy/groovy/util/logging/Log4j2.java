@@ -92,7 +92,7 @@ public @interface Log4j2 {
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             MethodCallExpression condition = new MethodCallExpression(
                     logVariable,
-                    "is" + methodName.substring(0, 1).toUpperCase(Locale.ENGLISH) + methodName.substring(1, methodName.length()) + "Enabled",
+                    "is" + methodName.substring(0, 1).toUpperCase(Locale.ENGLISH) + methodName.substring(1) + "Enabled",
                     ArgumentListExpression.EMPTY_ARGUMENTS);
             condition.setImplicitThis(false);
 
