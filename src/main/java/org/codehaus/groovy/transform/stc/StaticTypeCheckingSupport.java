@@ -1560,6 +1560,15 @@ public abstract class StaticTypeCheckingSupport {
     private static boolean inferenceCheck(Set<GenericsTypeName> fixedGenericsPlaceHolders, Map<GenericsTypeName, GenericsType> resolvedMethodGenerics, ClassNode type, ClassNode wrappedArgument, boolean lastArg) {
         Map<GenericsTypeName, GenericsType> connections = new HashMap<GenericsTypeName, GenericsType>();
         if (isPrimitiveType(wrappedArgument)) wrappedArgument = getWrapper(wrappedArgument);
+
+        if (lastArg &&
+                type.isArray() && type.getComponentType().isGenericsPlaceHolder() &&
+                !wrappedArgument.isArray() && wrappedArgument.isGenericsPlaceHolder()) {
+            // GROOVY-8090 handle generics varargs, e.g. `U x = ...; Arrays.asList(x)`
+            // we should connect the type of vararg(e.g. T is the type of T...) to the argument type
+
+            type = type.getComponentType();
+        }
         // the context we compare with in the end is the one of the callsite
         // so far we specified the context of the method declaration only
         // thus for each argument, we try to find the connected generics first
