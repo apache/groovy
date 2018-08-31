@@ -111,25 +111,7 @@ public class Attribute extends GPathResult {
     }
 
     public Iterator nodeIterator() {
-        return new Iterator() {
-            private boolean hasNext = true;
-
-            public boolean hasNext() {
-                return this.hasNext;
-            }
-
-            public Object next() {
-                try {
-                    return (this.hasNext) ? Attribute.this : null;
-                } finally {
-                    this.hasNext = false;
-                }
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
+        return createIterator(this);
     }
 
     public Writer writeTo(final Writer out) throws IOException {
