@@ -2854,7 +2854,7 @@ There are two kinds of transformations: global and local transformations.
 * <<transforms-global,Global transformations>> are applied to by the compiler on the code being compiled,
 wherever the transformation apply. Compiled classes that implement global transformations
 are in a JAR added to the classpath of the compiler and contain service locator file
-`META-INF/services/org.codehaus.groovy.transform.ASTTransformation` with a line with the name of the
+`META-INF/groovy/org.codehaus.groovy.transform.ASTTransformation` with a line with the name of the
 transformation class. The transformation class must have a no-args constructor and implement the
 `org.codehaus.groovy.transform.ASTTransformation` interface.
 It will be run against *every source in the compilation*, so be sure to not create transformations which
@@ -3029,13 +3029,13 @@ include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags
 
 To make this work, there are two steps:
 
-. create the `org.codehaus.groovy.transform.ASTTransformation` descriptor inside the `META-INF/services` directory
+. create the `org.codehaus.groovy.transform.ASTTransformation` descriptor inside the `META-INF/groovy` directory (`META-INF/services` is supported for backwards compatibility but not recommended)
 . create the `ASTTransformation` implementation
 
 The descriptor file is required and must be found on classpath. It will contain a single line:
 
 [source,groovy]
-.META-INF/services/org.codehaus.groovy.transform.ASTTransformation
+.META-INF/groovy/org.codehaus.groovy.transform.ASTTransformation
 ----
 include::{projectdir}/src/spec/test/metaprogramming/ASTXFormSpecTest.groovy[tags=xform_descriptor_file,indent=0]
 ----

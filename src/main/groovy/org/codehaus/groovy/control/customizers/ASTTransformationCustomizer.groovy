@@ -73,7 +73,7 @@ import java.lang.annotation.Annotation
  * {@link ASTTransformationCustomizer#ASTTransformationCustomizer(ASTTransformation) AST transformation
  * constructor}. In that case, the transformation is applied once for the whole source unit.
  *
- * Unlike a global AST transformation declared in the META-INF/services/org.codehaus.groovy.transform.ASTTransformation
+ * Unlike a global AST transformation declared in the META-INF/groovy/org.codehaus.groovy.transform.ASTTransformation
  * file, which are applied if the file is in the classpath, using this customizer you'll have the choice to apply
  * your transformation selectively. It can also be useful to debug global AST transformations without having to
  * package your annotation in a jar file.

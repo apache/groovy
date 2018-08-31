@@ -196,7 +196,7 @@ public class CompilerConfiguration {
 
     /**
      * Sets a list of global AST transformations which should not be loaded even if they are
-     * defined in META-INF/org.codehaus.groovy.transform.ASTTransformation files. By default,
+     * defined in META-INF/groovy/org.codehaus.groovy.transform.ASTTransformation files. By default,
      * none is disabled.
      */
     private Set<String> disabledGlobalASTTransformations;
@@ -874,7 +874,7 @@ public class CompilerConfiguration {
      * Disables global AST transformations. In order to avoid class loading side effects, it is not recommended
      * to use MyASTTransformation.class.getName() by directly use the class name as a string. Disabled AST transformations
      * only apply to automatically loaded global AST transformations, that is to say transformations defined in a
-     * META-INF/org.codehaus.groovy.transform.ASTTransformation file. If you explicitly add a global AST transformation
+     * META-INF/groovy/org.codehaus.groovy.transform.ASTTransformation file. If you explicitly add a global AST transformation
      * in your compilation process, for example using the {@link org.codehaus.groovy.control.customizers.ASTTransformationCustomizer} or
      * using a {@link org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation}, then nothing will prevent
      * the transformation from being loaded.

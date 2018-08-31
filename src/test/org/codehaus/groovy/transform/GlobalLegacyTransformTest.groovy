@@ -18,19 +18,19 @@
  */
 package org.codehaus.groovy.transform
 
-class GlobalTestTransformClassLoader extends GroovyClassLoader {
-    private final String transformDescriptor
+class GlobalLegacyTransformTest extends GroovyTestCase {
+    def path = "org/codehaus/groovy/transform/META-INF/services/org.codehaus.groovy.transform.ASTTransformation"
+    URL transformRoot = new File(getClass().classLoader.getResource(path).toURI()).parentFile.parentFile.parentFile.toURI().toURL()
 
-    GlobalTestTransformClassLoader(ClassLoader parent, Class<?>... transformClasses) {
-        super(parent)
-        transformDescriptor = transformClasses*.name.join("\n")
-    }
+    void testGlobalTransform() {
+        def shell = new GroovyShell()
+        shell.classLoader.addURL(transformRoot)
+        shell.evaluate("""
+            import static org.codehaus.groovy.control.CompilePhase.*
 
-    Enumeration getResources(String name) {
-        if (name == "META-INF/groovy/org.codehaus.groovy.transform.ASTTransformation") {
-            return Collections.enumeration(Collections.singleton(new FakeURLFactory().createURL(transformDescriptor)))
-        }
-
-        super.getResources(name)
+            def ph = org.codehaus.groovy.transform.TestTransform.phases
+            assert ph.TestTransformConversion == [CONVERSION]
+            assert ph.TestTransformClassGeneration == [CLASS_GENERATION]
+        """)
     }
 }

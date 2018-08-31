@@ -18,16 +18,16 @@
  */
 package org.codehaus.groovy.transform
 
-class GlobalTestTransformClassLoader extends GroovyClassLoader {
+class GlobalLegacyTestTransformClassLoader extends GroovyClassLoader {
     private final String transformDescriptor
 
-    GlobalTestTransformClassLoader(ClassLoader parent, Class<?>... transformClasses) {
+    GlobalLegacyTestTransformClassLoader(ClassLoader parent, Class<?>... transformClasses) {
         super(parent)
         transformDescriptor = transformClasses*.name.join("\n")
     }
 
     Enumeration getResources(String name) {
-        if (name == "META-INF/groovy/org.codehaus.groovy.transform.ASTTransformation") {
+        if (name == "META-INF/services/org.codehaus.groovy.transform.ASTTransformation") {
             return Collections.enumeration(Collections.singleton(new FakeURLFactory().createURL(transformDescriptor)))
         }
 

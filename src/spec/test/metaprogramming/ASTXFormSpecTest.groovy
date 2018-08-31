@@ -235,7 +235,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
             File dir = builder.baseDir
             builder {
                 'META-INF' {
-                    services {
+                    groovy {
                         'org.codehaus.groovy.transform.ASTTransformation'(Utils.stripAsciidocMarkup('''
 // tag::xform_descriptor_file[]
 gep.WithLoggingASTTransformation
