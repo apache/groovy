@@ -18,28 +18,19 @@
  */
 package org.codehaus.groovy.transform
 
-/**
- * @author Danno.Ferrin
- * @author Alex Tkachman
- */
-class GlobalTransformTest extends GroovyShellTestCase {
-
-    URL transformRoot = new File(getClass().classLoader.
-            getResource("org/codehaus/groovy/transform/META-INF/services/org.codehaus.groovy.transform.ASTTransformation").
-            toURI()).parentFile.parentFile.parentFile.toURL()
+class GlobalTransformTest extends GroovyTestCase {
+    def path = "org/codehaus/groovy/transform/META-INF/groovy/org.codehaus.groovy.transform.ASTTransformation"
+    URL transformRoot = new File(getClass().classLoader.getResource(path).toURI()).parentFile.parentFile.parentFile.toURI().toURL()
 
     void testGlobalTransform() {
+        def shell = new GroovyShell()
         shell.classLoader.addURL(transformRoot)
         shell.evaluate("""
-            import org.codehaus.groovy.control.CompilePhase
+            import static org.codehaus.groovy.control.CompilePhase.*
 
-            if (org.codehaus.groovy.transform.TestTransform.phases == [CompilePhase.CONVERSION, CompilePhase.CLASS_GENERATION]) {
-               println "Phase sync bug fixed"
-            } else if (org.codehaus.groovy.transform.TestTransform.phases == [CompilePhase.CONVERSION, CompilePhase.INSTRUCTION_SELECTION]) {
-               println "Phase sync bug still present"
-            } else {
-               assert false, "FAIL"
-            }
+            def ph = org.codehaus.groovy.transform.TestTransform.phases
+            assert ph.TestTransformSemanticAnalysis == [SEMANTIC_ANALYSIS]
+            assert ph.TestTransformClassGeneration == [CLASS_GENERATION]
         """)
     }
 }
