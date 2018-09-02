@@ -146,15 +146,11 @@ public class WriterController {
         return new LoggableClassVisitor(cv);
     }
     private static int chooseBytecodeVersion(final boolean invokedynamic, final String targetBytecode) {
-        if (invokedynamic) {
-            if (CompilerConfiguration.JDK7.equals(targetBytecode)) {
-                return Opcodes.V1_7;
-            }
+        Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
 
+        if (invokedynamic && bytecodeVersion < Opcodes.V1_8) {
             return Opcodes.V1_8;
         } else {
-            Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
-
             if (null != bytecodeVersion) {
                 return bytecodeVersion;
             }
