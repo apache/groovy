@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control;
 
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
@@ -50,7 +51,7 @@ import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
  */
 public class CompilerConfiguration {
 
-    /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> complilation. */
+    /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> compilation. */
     public static final String INVOKEDYNAMIC = "indy";
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
@@ -76,8 +77,20 @@ public class CompilerConfiguration {
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
     public static final String PRE_JDK5 = JDK4;
 
+    /** JDK version to bytecode version mapping */
+    public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Maps.of(
+            JDK4, Opcodes.V1_4,
+            JDK5, Opcodes.V1_5,
+            JDK6, Opcodes.V1_6,
+            JDK7, Opcodes.V1_7,
+            JDK8, Opcodes.V1_8,
+            JDK9, Opcodes.V9,
+            JDK10, Opcodes.V10,
+            JDK11, Opcodes.V11
+    );
+
     /** An array of the valid targetBytecode values **/
-    public static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8, JDK9, JDK10, JDK11 };
+    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[0]);
 
     @Deprecated
     public static final String CURRENT_JVM_VERSION = getMinBytecodeVersion();
@@ -755,10 +768,8 @@ public class CompilerConfiguration {
      * @param version the bytecode compatibility level
      */
     public void setTargetBytecode(String version) {
-        for (String allowedJdk : ALLOWED_JDKS) {
-            if (allowedJdk.equals(version)) {
-                this.targetBytecode = version;
-            }
+        if (JDK_TO_BYTECODE_VERSION_MAP.keySet().contains(version)) {
+            this.targetBytecode = version;
         }
     }
 
