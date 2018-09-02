@@ -18,33 +18,31 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.transform.CompilationUnitAware
 import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.transform.ASTTransformation
-import org.codehaus.groovy.transform.GroovyASTTransformation
 
-/**
- * @author Danno.Ferrin
- */
-class TestTransform implements ASTTransformation {
-
+class TestTransform implements ASTTransformation, CompilationUnitAware {
     static List<ASTNode[]> visitedNodes = []
-    static List<CompilePhase> phases = []
+    static Map<String, List<CompilePhase>> phases = [:].withDefault{ [] }
+    CompilationUnit unit = null
 
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    void visit(ASTNode[] nodes, SourceUnit source) {
         visitedNodes += nodes
-        phases += CompilePhase.phases[source.getPhase()]
+        // TODO work out why source.phase is not equal to unit.phase in all cases
+        phases[getClass().simpleName] += CompilePhase.phases[unit.phase]
     }
 
+    @Override
+    void setCompilationUnit(CompilationUnit unit) {
+        this.unit = unit
+    }
 }
 
 @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
-class TestTransformConversion extends TestTransform {
-
-}
+class TestTransformConversion extends TestTransform { }
 
 @GroovyASTTransformation(phase=CompilePhase.CLASS_GENERATION)
-class TestTransformClassGeneration extends TestTransform {
-
-}
+class TestTransformClassGeneration extends TestTransform { }
