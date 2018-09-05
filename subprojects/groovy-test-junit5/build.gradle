@@ -16,13 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+ext {
+    junit5Version = '5.3.0'
+}
+
 dependencies {
     compile rootProject
     compile 'org.junit.platform:junit-platform-launcher:1.2.0'
-    runtime 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
-    testCompile 'org.junit.jupiter:junit-jupiter-params:5.2.0'
+    runtime "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
+    testCompile "org.junit.jupiter:junit-jupiter-params:$junit5Version"
     testRuntime 'org.junit.platform:junit-platform-runner:1.2.0'
-    testRuntime 'org.junit.vintage:junit-vintage-engine:5.2.0'
+    testRuntime "org.junit.vintage:junit-vintage-engine:$junit5Version"
     testCompile project(':groovy-test')
 }
 
