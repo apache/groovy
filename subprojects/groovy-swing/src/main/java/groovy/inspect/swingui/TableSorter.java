@@ -122,9 +122,9 @@ space and avoid unnecessary heap allocation.
 
     private static int compareBooleans(TableModel data, int row1, int column, int row2) {
         Boolean bool1 = (Boolean) data.getValueAt(row1, column);
-        boolean b1 = bool1.booleanValue();
+        boolean b1 = bool1;
         Boolean bool2 = (Boolean) data.getValueAt(row2, column);
-        boolean b2 = bool2.booleanValue();
+        boolean b2 = bool2;
 
         if (b1 == b2)
             return 0;
@@ -174,7 +174,7 @@ space and avoid unnecessary heap allocation.
     public int compare(int row1, int row2) {
         for (int level = 0; level < sortingColumns.size(); level++) {
             Integer column = (Integer) sortingColumns.elementAt(level);
-            int result = compareRowsByColumn(row1, row2, column.intValue());
+            int result = compareRowsByColumn(row1, row2, column);
             if (result != 0)
                 return ascending ? result : -result;
         }

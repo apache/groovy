@@ -567,8 +567,8 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         }
         
         private int valueOf(Object obj) {
-            return obj instanceof Integer ? 
-                    ((Integer)obj).intValue() : 
+            return obj instanceof Integer ?
+                    (Integer) obj :
                     (obj instanceof MultiLineRun) ?
                         ((MultiLineRun)obj).start() :
                         ((Position)obj).getOffset();
