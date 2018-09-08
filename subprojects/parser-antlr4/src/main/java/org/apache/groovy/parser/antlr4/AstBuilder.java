@@ -2332,19 +2332,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             return configureAST(
                     new BinaryExpression(baseExpr, createGroovyToken(tuple.getFirst()), tuple.getSecond(), isSafeChain || asBoolean(ctx.indexPropertyArgs().QUESTION())),
                     ctx);
-        } else if (asBoolean(ctx.namedPropertyArgs())) { // this is a special way to new instance, e.g. Person[name: 'Daniel.Sun', location: 'Shanghai']
+        } else if (asBoolean(ctx.namedPropertyArgs())) { // this is a special way to signify a cast, e.g. Person[name: 'Daniel.Sun', location: 'Shanghai']
             List<MapEntryExpression> mapEntryExpressionList =
                     this.visitNamedPropertyArgs(ctx.namedPropertyArgs());
 
             Expression right;
-            if (mapEntryExpressionList.size() == 1) {
-                MapEntryExpression mapEntryExpression = mapEntryExpressionList.get(0);
-
-                if (mapEntryExpression.getKeyExpression() instanceof SpreadMapExpression) {
-                    right = mapEntryExpression.getKeyExpression();
-                } else {
-                    right = mapEntryExpression;
-                }
+            if (mapEntryExpressionList.size() == 0) {
+                // expecting list of MapEntryExpressions later so use SpreadMap to smuggle empty MapExpression to later stages
+                right = configureAST(
+                        new SpreadMapExpression(configureAST(new MapExpression(), ctx.namedPropertyArgs())),
+                        ctx.namedPropertyArgs());
+            } else if (mapEntryExpressionList.size() == 1 && mapEntryExpressionList.get(0).getKeyExpression() instanceof SpreadMapExpression) {
+                right = mapEntryExpressionList.get(0).getKeyExpression();
             } else {
                 ListExpression listExpression =
                         configureAST(
