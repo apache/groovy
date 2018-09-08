@@ -35,7 +35,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
     private static final ThreadLocal<Integer> consoleId = new InheritableThreadLocal<Integer>() {
         @Override
         protected Integer initialValue() {
-            return Integer.valueOf(0);
+            return 0;
         }
     };
 
@@ -121,7 +121,7 @@ public class SystemOutputInterceptor extends FilterOutputStream {
      * @param consoleId id of the Console instance executing the script
      */
     public void setConsoleId(int consoleId) {
-        this.consoleId.set(Integer.valueOf(consoleId));
+        this.consoleId.set(consoleId);
     }
 
     /**
