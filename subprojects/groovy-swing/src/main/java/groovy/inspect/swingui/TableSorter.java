@@ -295,7 +295,7 @@ space and avoid unnecessary heap allocation.
     public void sortByColumn(int column, boolean ascending) {
         this.ascending = ascending;
         sortingColumns.removeAllElements();
-        sortingColumns.addElement(Integer.valueOf(column));
+        sortingColumns.addElement(column);
         sort(this);
         super.tableChanged(new TableModelEvent(this));
     }
