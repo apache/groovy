@@ -29,6 +29,12 @@ public class EncodingGroovyMethodsTest {
     }
 
     @Test
+    public void sha256() throws Exception {
+        Assert.assertEquals("6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090", EncodingGroovyMethods.sha256("abc123"));
+        Assert.assertEquals("6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090", EncodingGroovyMethods.sha256("abc123".getBytes("UTF-8")));
+    }
+
+    @Test
     public void digest() throws Exception {
         Assert.assertEquals("e99a18c428cb38d5f260853678922e03", EncodingGroovyMethods.digest("abc123", "MD5"));
         Assert.assertEquals("e99a18c428cb38d5f260853678922e03", EncodingGroovyMethods.digest("abc123".getBytes("UTF-8"), "MD5"));
