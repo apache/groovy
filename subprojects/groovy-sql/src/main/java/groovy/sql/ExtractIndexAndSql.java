@@ -191,7 +191,7 @@ class ExtractIndexAndSql {
 
         Matcher matcher = NAMED_QUERY_PATTERN.matcher(sql);
         while (matcher.find()) {
-            newSql.append(sql.substring(txtIndex, matcher.start())).append('?');
+            newSql.append(sql, txtIndex, matcher.start()).append('?');
             String indexStr = matcher.group(1);
             if (indexStr == null) indexStr = matcher.group(3);
             int index = (indexStr == null || indexStr.length() == 0 || ":".equals(indexStr)) ? 0 : Integer.parseInt(indexStr) - 1;
