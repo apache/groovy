@@ -394,7 +394,7 @@ public class EncodingGroovyMethods {
      * Calculate SHA-256 of the CharSequence instance
      * @return SHA-256 value
      * @throws NoSuchAlgorithmException if SHA-256 algorithm not found
-     * @since 2.5.0
+     * @since 2.5.3
      */
     public static String sha256(CharSequence self) throws NoSuchAlgorithmException {
         return digest(self, SHA_256);
@@ -404,7 +404,7 @@ public class EncodingGroovyMethods {
      * Calculate SHA-256 of the byte array
      * @return SHA-256 value
      * @throws NoSuchAlgorithmException if SHA-256 algorithm not found
-     * @since 2.5.0
+     * @since 2.5.3
      */
     public static String sha256(byte[] self) throws NoSuchAlgorithmException {
         return digest(self, SHA_256);
