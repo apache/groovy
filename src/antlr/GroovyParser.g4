@@ -1013,7 +1013,7 @@ indexPropertyArgs
     ;
 
 namedPropertyArgs
-    :   LBRACK mapEntryList RBRACK
+    :   LBRACK (mapEntryList | COLON) RBRACK
     ;
 
 primary
