@@ -187,9 +187,25 @@ include::{projectdir}/src/spec/test/metaprogramming/MethodPropertyMissingTest.gr
 As with `methodMissing` it is best practice to dynamically register new properties at runtime to improve the overall lookup
 performance.
 
-[NOTE]
-`methodMissing` and `propertyMissing` methods that deal with static methods and properties can be added via
-the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
+=== static methodMissing
+
+Static variant of `methodMissing` method can be added via the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>
+or can be implemented at the class level with `$static_methodMissing` method.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/StaticPropertyMissingAndMethodMissingTest.groovy[tags=static_method_missing,indent=0]
+----
+
+=== static propertyMissing
+
+Static variant of `propertyMissing` method can be added via the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>
+or can be implemented at the class level with `$static_propertyMissing` method.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/metaprogramming/StaticPropertyMissingAndMethodMissingTest.groovy[tags=static_property_missing,indent=0]
+----
 
 === GroovyInterceptable
 The gapi:groovy.lang.GroovyInterceptable[] interface is marker interface that extends `GroovyObject` and is used to notify the Groovy runtime that all methods should be intercepted through the method dispatcher mechanism of the Groovy runtime.
