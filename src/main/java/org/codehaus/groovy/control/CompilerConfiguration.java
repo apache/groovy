@@ -65,7 +65,7 @@ public class CompilerConfiguration {
     public static final String JDK10 = "10";
     /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. **/
     public static final String JDK11 = "11";
-    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 12. **/
+    /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. **/
     public static final String JDK12 = "12";
 
     /**
