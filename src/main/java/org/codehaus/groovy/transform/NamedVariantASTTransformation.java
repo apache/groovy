@@ -89,6 +89,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             return;
         }
 
+        boolean autoDelegate = memberHasValue(anno, "autoDelegate", true);
         Parameter mapParam = param(GenericsUtils.nonGeneric(ClassHelper.MAP_TYPE), "__namedArgs");
         List<Parameter> genParams = new ArrayList<Parameter>();
         genParams.add(mapParam);
@@ -105,35 +106,15 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             }
         }
 
-        if (!annoFound) {
+        if (!annoFound && autoDelegate) {
             // assume the first param is the delegate by default
             processDelegateParam(mNode, mapParam, args, propNames, fromParams[0]);
         } else {
             for (Parameter fromParam : fromParams) {
-                if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
-                    AnnotationNode namedParam = fromParam.getAnnotations(NAMED_PARAM_TYPE).get(0);
-                    boolean required = memberHasValue(namedParam, "required", true);
-                    if (getMemberStringValue(namedParam, "value") == null) {
-                        namedParam.addMember("value", constX(fromParam.getName()));
-                    }
-                    String name = getMemberStringValue(namedParam, "value");
-                    if (getMemberValue(namedParam, "type") == null) {
-                        namedParam.addMember("type", classX(fromParam.getType()));
-                    }
-                    if (hasDuplicates(mNode, propNames, name)) return;
-                    // TODO check specified type is assignable from declared param type?
-                    // ClassNode type = getMemberClassValue(namedParam, "type");
-                    if (required) {
-                        if (fromParam.hasInitialExpression()) {
-                            addError("Error during " + MY_TYPE_NAME + " processing. A required parameter can't have an initial value.", mNode);
-                            return;
-                        }
-                        inner.addStatement(new AssertStatement(boolX(callX(varX(mapParam), "containsKey", args(constX(name)))),
-                                plusX(new ConstantExpression("Missing required named argument '" + name + "'. Keys found: "), callX(varX(mapParam), "keySet"))));
-                    }
-                    args.addExpression(propX(varX(mapParam), name));
-                    mapParam.addAnnotation(namedParam);
-                    fromParam.getAnnotations().remove(namedParam);
+                if (!annoFound) {
+                    if (!processImplicitNamedParam(mNode, mapParam, args, propNames, fromParam)) return;
+                } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_PARAM_TYPE)) {
+                    if (!processExplicitNamedParam(mNode, mapParam, inner, args, propNames, fromParam)) return;
                 } else if (AnnotatedNodeUtils.hasAnnotation(fromParam, NAMED_DELEGATE_TYPE)) {
                     if (!processDelegateParam(mNode, mapParam, args, propNames, fromParam)) return;
                 } else {
@@ -143,6 +124,86 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                 }
             }
         }
+        createMapVariant(mNode, anno, mapParam, genParams, cNode, inner, args, propNames);
+    }
+
+    private boolean processImplicitNamedParam(MethodNode mNode, Parameter mapParam, ArgumentListExpression args, List<String> propNames, Parameter fromParam) {
+        boolean required = fromParam.hasInitialExpression();
+        String name = fromParam.getName();
+        if (hasDuplicates(mNode, propNames, name)) return false;
+        AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
+        namedParam.addMember("value", constX(name));
+        namedParam.addMember("type", classX(fromParam.getType()));
+        namedParam.addMember("required", constX(required, true));
+        mapParam.addAnnotation(namedParam);
+        args.addExpression(propX(varX(mapParam), name));
+        return true;
+    }
+
+    private boolean processExplicitNamedParam(MethodNode mNode, Parameter mapParam, BlockStatement inner, ArgumentListExpression args, List<String> propNames, Parameter fromParam) {
+        AnnotationNode namedParam = fromParam.getAnnotations(NAMED_PARAM_TYPE).get(0);
+        boolean required = memberHasValue(namedParam, "required", true);
+        if (getMemberStringValue(namedParam, "value") == null) {
+            namedParam.addMember("value", constX(fromParam.getName()));
+        }
+        String name = getMemberStringValue(namedParam, "value");
+        if (getMemberValue(namedParam, "type") == null) {
+            namedParam.addMember("type", classX(fromParam.getType()));
+        }
+        if (hasDuplicates(mNode, propNames, name)) return false;
+        // TODO check specified type is assignable from declared param type?
+        // ClassNode type = getMemberClassValue(namedParam, "type");
+        if (required) {
+            if (fromParam.hasInitialExpression()) {
+                addError("Error during " + MY_TYPE_NAME + " processing. A required parameter can't have an initial value.", mNode);
+                return false;
+            }
+            inner.addStatement(new AssertStatement(boolX(callX(varX(mapParam), "containsKey", args(constX(name)))),
+                    plusX(new ConstantExpression("Missing required named argument '" + name + "'. Keys found: "), callX(varX(mapParam), "keySet"))));
+        }
+        args.addExpression(propX(varX(mapParam), name));
+        mapParam.addAnnotation(namedParam);
+        fromParam.getAnnotations().remove(namedParam);
+        return true;
+    }
+
+    private boolean processDelegateParam(MethodNode mNode, Parameter mapParam, ArgumentListExpression args, List<String> propNames, Parameter fromParam) {
+        if (isInnerClass(fromParam.getType())) {
+            if (mNode.isStatic()) {
+                addError("Error during " + MY_TYPE_NAME + " processing. Delegate type '" + fromParam.getType().getNameWithoutPackage() + "' is an inner class which is not supported.", mNode);
+                return false;
+            }
+        }
+
+        Set<String> names = new HashSet<String>();
+        List<PropertyNode> props = getAllProperties(names, fromParam.getType(), true, false, false, true, false, true);
+        for (String next : names) {
+            if (hasDuplicates(mNode, propNames, next)) return false;
+        }
+        List<MapEntryExpression> entries = new ArrayList<MapEntryExpression>();
+        for (PropertyNode pNode : props) {
+            String name = pNode.getName();
+            entries.add(new MapEntryExpression(constX(name), propX(varX(mapParam), name)));
+            AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
+            namedParam.addMember("value", constX(name));
+            namedParam.addMember("type", classX(pNode.getType()));
+            mapParam.addAnnotation(namedParam);
+        }
+        Expression delegateMap = new MapExpression(entries);
+        args.addExpression(castX(fromParam.getType(), delegateMap));
+        return true;
+    }
+
+    private boolean hasDuplicates(MethodNode mNode, List<String> propNames, String next) {
+        if (propNames.contains(next)) {
+            addError("Error during " + MY_TYPE_NAME + " processing. Duplicate property '" + next + "' found.", mNode);
+            return true;
+        }
+        propNames.add(next);
+        return false;
+    }
+
+    private void createMapVariant(MethodNode mNode, AnnotationNode anno, Parameter mapParam, List<Parameter> genParams, ClassNode cNode, BlockStatement inner, ArgumentListExpression args, List<String> propNames) {
         Parameter namedArgKey = param(STRING_TYPE, "namedArgKey");
         inner.addStatement(
                 new ForStatement(
@@ -184,41 +245,5 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
                     body
             );
         }
-    }
-
-    private boolean processDelegateParam(MethodNode mNode, Parameter mapParam, ArgumentListExpression args, List<String> propNames, Parameter fromParam) {
-        if (isInnerClass(fromParam.getType())) {
-            if (mNode.isStatic()) {
-                addError("Error during " + MY_TYPE_NAME + " processing. Delegate type '" + fromParam.getType().getNameWithoutPackage() + "' is an inner class which is not supported.", mNode);
-                return false;
-            }
-        }
-
-        Set<String> names = new HashSet<String>();
-        List<PropertyNode> props = getAllProperties(names, fromParam.getType(), true, false, false, true, false, true);
-        for (String next : names) {
-            if (hasDuplicates(mNode, propNames, next)) return false;
-        }
-        List<MapEntryExpression> entries = new ArrayList<MapEntryExpression>();
-        for (PropertyNode pNode : props) {
-            String name = pNode.getName();
-            entries.add(new MapEntryExpression(constX(name), propX(varX(mapParam), name)));
-            AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
-            namedParam.addMember("value", constX(name));
-            namedParam.addMember("type", classX(pNode.getType()));
-            mapParam.addAnnotation(namedParam);
-        }
-        Expression delegateMap = new MapExpression(entries);
-        args.addExpression(castX(fromParam.getType(), delegateMap));
-        return true;
-    }
-
-    private boolean hasDuplicates(MethodNode mNode, List<String> propNames, String next) {
-        if (propNames.contains(next)) {
-            addError("Error during " + MY_TYPE_NAME + " processing. Duplicate property '" + next + "' found.", mNode);
-            return true;
-        }
-        propNames.add(next);
-        return false;
     }
 }
