@@ -40,37 +40,51 @@ import java.lang.annotation.Target;
  * type information. The generated method however contains no business logic
  * so the chance of errors is minimal.
  *
- * Any arguments identified as named arguments will be supplied as
- * part of the map. Any additional arguments are supplied in the normal
- * tuple style.
+ * Any arguments identified as named arguments will be supplied as part of the map.
+ * Any additional arguments are supplied in the normal tuple style.
  *
- * Named arguments are identified in one of three ways:
+ * Named parameters are identified in one of three ways:
  * <ol>
- *     <li>Use one or more {@code @NamedParam} annotations to explicitly identify such arguments</li>
- *     <li>Use one or more {@code @NamedDelegate} annotations to explicitly identify such arguments as
- *     delegate arguments</li>
- *     <li>If no arguments with {@code @NamedParam} or {@code @NamedDelegate} annotations are found the
- *     first argument is assumed to be an implicit named delegate</li>
+ *     <li>Use one or more {@code @NamedParam} annotations to explicitly identify such parameters</li>
+ *     <li>Use one or more {@code @NamedDelegate} annotations to explicitly identify such parameters as
+ *     delegate parameters</li>
+ *     <li>If no parameters with {@code @NamedParam} or {@code @NamedDelegate} annotations are found then:
+ *     <ul>
+ *         <li>If {@code autoDelegate} is false (the default), all parameters are treated as if they were named parameters</li>
+ *         <li>If {@code autoDelegate} is true, the first parameters is treated as if it was a delegate parameter</li>
+ *     </ul>
+ *     </li>
  * </ol>
  * You can also mix and match the {@code @NamedParam} and {@code @NamedDelegate} annotations.
  *
  * Named arguments will be supplied via the map with their property name (configurable via
  * annotation attributes within {@code @NamedParam}) being the key and value being the argument value.
- * For named delegates, any properties of the delegate can become map keys. Duplicate keys across
- * delegates or named parameters are not allowed. Delegate arguments must be
- * compatible with Groovy's {@code as} cast operation from a {@code Map}.
+ * For named delegates, any properties of the delegate can become map keys.
+ * Duplicate keys across delegate properties or named parameters are not allowed.
+ * The type of delegate parameters must be compatible with Groovy's {@code as} cast operation from a {@code Map}.
  *
- * Here is an example using the implicit delegate approach.
+ * Here is an example using implicit named parameters.
  * <pre class="groovyTestCase">
  * import groovy.transform.*
  *
- * {@code @ToString(includeNames=true, includeFields=true)}
+ * {@code @NamedVariant}
+ * int makeSense(int dollars, int cents) {
+ *     100 * dollars + cents
+ * }
+ *
+ * assert makeSense(dollars: 2, cents: 50) == 250
+ * </pre>
+ * Here is an example using a delegate parameter.
+ * <pre class="groovyTestCase">
+ * import groovy.transform.*
+ *
+ * {@code @ToString(includeNames=true)}
  * class Color {
  *     Integer r, g, b
  * }
  *
  * {@code @NamedVariant}
- * String foo(Color shade) {
+ * String foo(@NamedDelegate Color shade) {
  *     shade
  * }
  *
@@ -103,4 +117,11 @@ public @interface NamedVariant {
      * If specified, must match the optional "id" attribute in an applicable {@code VisibilityOptions} annotation.
      */
     String visibilityId() default Undefined.STRING;
+
+    /**
+     * If true, add an implicit @NamedDelegate to the first parameter if no @NamedDelegate or @NamedParam annotations are found on any parameter.
+     *
+     * @since 2.5.3
+     */
+    boolean autoDelegate() default false;
 }
