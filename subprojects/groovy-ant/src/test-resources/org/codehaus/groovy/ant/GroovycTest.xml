@@ -25,7 +25,7 @@
     <property name="srcPath" value="."/>
     <property name="destPath" value="${user.dir}/target/classes/groovy/test"/>
 
-    <property name="javaVersion" value="6"/>
+    <property name="javaVersion" value="7"/>
 
     <path id="groovyMaterials">
         <pathelement path="${java.class.path}"/>
