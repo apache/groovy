@@ -70,11 +70,21 @@ public class CompilerConfiguration {
     public static final String JDK10 = "10";
     /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. **/
     public static final String JDK11 = "11";
+    /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. **/
+    public static final String JDK12 = "12";
 
-    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5 or later JVM. **/
+    /**
+     * This constant is for comparing targetBytecode to ensure it is set to JDK 1.5 or later.
+     * @deprecated
+     */
+    @Deprecated
     public static final String POST_JDK5 = JDK5; // for backwards compatibility
 
-    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
+    /**
+     * This constant is for comparing targetBytecode to ensure it is set to an earlier value than JDK 1.5.
+     * @deprecated
+     */
+    @Deprecated
     public static final String PRE_JDK5 = JDK4;
 
     /** JDK version to bytecode version mapping */
@@ -86,7 +96,8 @@ public class CompilerConfiguration {
             JDK8, Opcodes.V1_8,
             JDK9, Opcodes.V9,
             JDK10, Opcodes.V10,
-            JDK11, Opcodes.V11
+            JDK11, Opcodes.V11,
+            JDK12, Opcodes.V12
     );
 
     /** An array of the valid targetBytecode values **/
