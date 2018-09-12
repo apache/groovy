@@ -142,8 +142,8 @@ task compileTestExtensionModule(type: JavaCompile) {
     classpath = files(jar)
     source fileTree("$extModuleFixtureDir/src/main/java")
     destinationDir = file("$extModuleOutputDir/classes")
-    sourceCompatibility = 1.6
-    targetCompatibility = 1.6
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
 }
 
 task testExtensionModuleJar(type: Jar) {
