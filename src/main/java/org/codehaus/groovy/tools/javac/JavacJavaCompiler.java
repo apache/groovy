@@ -127,6 +127,9 @@ public class JavacJavaCompiler implements JavaCompiler {
         if (namedValues != null) {
             for (int i = 0; i < namedValues.length; i += 2) {
                 String name = namedValues[i];
+                if (name.equals("classpathOverride")) {
+                    name = "classpath";
+                }
                 if (name.equals("classpath")) hadClasspath = true;
                 paras.add('-' + name);
                 paras.add(namedValues[i + 1]);
