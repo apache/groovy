@@ -62,10 +62,6 @@ class ExtensionModuleHelperForTests {
                             pathelement location: it
                         }
                     }
-                    if (jdk9) {
-                        jvmarg(value: '--add-modules')
-                        jvmarg(value: 'java.xml.bind')
-                    }
                 }
             }
         } finally {
