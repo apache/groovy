@@ -961,9 +961,10 @@ public class Groovyc extends MatchingTask {
                 // false is default, so something to do only in true case
                 if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value))
                     jointOptions.add("-F" + key);
-            } else if (key.contains("classpath")) {
+            } else if (key.contains("classpath") && !key.contains("classpathOverride")) {
                 classpath.add(javac.getClasspath());
             } else if ((key.contains("depend"))
+                    || (key.contains("classpathOverride"))
                     || (key.contains("extdirs"))
                     || (key.contains("encoding"))
                     || (key.contains("source"))
