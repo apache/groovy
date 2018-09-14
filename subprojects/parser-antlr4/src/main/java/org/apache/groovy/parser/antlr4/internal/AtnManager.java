@@ -22,6 +22,7 @@ import org.antlr.v4.runtime.atn.ATN;
 import org.apache.groovy.parser.antlr4.GroovyLangLexer;
 import org.apache.groovy.parser.antlr4.GroovyLangParser;
 import org.apache.groovy.util.Maps;
+import org.apache.groovy.util.SystemUtil;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,11 +37,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class AtnManager {
     public static final ReentrantReadWriteLock RRWL = new ReentrantReadWriteLock(true);
     private static final String DFA_CACHE_THRESHOLD_OPT = "groovy.antlr4.cache.threshold";
+    private static final String GROOVY_CLEAR_LEXER_DFA_CACHE = "groovy.clear.lexer.dfa.cache";
     private static final int DEFAULT_DFA_CACHE_THRESHOLD = 64;
     private static final int MIN_DFA_CACHE_THRESHOLD = 32;
     private static final int DFA_CACHE_THRESHOLD;
     private final Class ownerClass;
     private final ATN atn;
+    private static final boolean TO_CLEAR_LEXER_DFA_CACHE;
     private static final Map<Class, AtnWrapper> ATN_MAP = Maps.of(
             GroovyLangLexer.class, new AtnWrapper(GroovyLangLexer._ATN),
             GroovyLangParser.class, new AtnWrapper(GroovyLangParser._ATN)
@@ -59,11 +62,13 @@ public class AtnManager {
         }
 
         DFA_CACHE_THRESHOLD = t;
+
+        TO_CLEAR_LEXER_DFA_CACHE = SystemUtil.getBooleanSafe(GROOVY_CLEAR_LEXER_DFA_CACHE);
     }
 
     public AtnManager(GroovyLangLexer lexer) {
         this.ownerClass = lexer.getClass();
-        this.atn = GroovyLangLexer._ATN; //getAtnWrapper(this.ownerClass).checkAndClear();
+        this.atn = TO_CLEAR_LEXER_DFA_CACHE ? getAtnWrapper(this.ownerClass).checkAndClear() : GroovyLangLexer._ATN;
     }
 
     public AtnManager(GroovyLangParser parser) {
