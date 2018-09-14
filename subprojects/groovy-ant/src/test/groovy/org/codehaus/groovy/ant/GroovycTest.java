@@ -22,6 +22,7 @@ import groovy.util.GroovyTestCase;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 
 import java.io.*;
 import java.util.regex.Pattern;
@@ -87,20 +88,33 @@ public class GroovycTest extends GroovyTestCase {
         final File result = new File(classDirectory + classname + "_Result.txt");
         final char[] buffer = new char[10];
         FileReader fr = null;
-        try {
-            fr = new FileReader(result);
-            fr.read(buffer);
-            assertEquals("OK.", new String(buffer).trim());
-        } catch (final FileNotFoundException fnfe) {
-            fail("File " + result.getName() + " should have been created but wasn't.");
-        } catch (final IOException ioe) {
-            fail("Error reading file " + result.getName() + ".");
-        } finally {
-            if (null != fr) {
-                try {
-                    fr.close();
-                } catch (IOException e) {
-                    fail("Error close file reader " + result.getName() + ".");
+        // try twice for robustness
+        for (int i = 0; i < 2; i++) {
+            try {
+                fr = new FileReader(result);
+                fr.read(buffer);
+                assertEquals("OK.", new String(buffer).trim());
+                break;
+            } catch (final FileNotFoundException fnfe) {
+                String message = "File " + result.getName() + " should have been created but wasn't.";
+                if (i == 0) {
+                    System.err.println(message);
+                    DefaultGroovyStaticMethods.sleep(this, 50L);
+                } else fail(message);
+            } catch (final IOException ioe) {
+                String message = "Error reading file " + result.getName() + ".";
+                fail(message);
+                if (i == 0) System.err.println(message);
+                else fail(message);
+            } finally {
+                if (null != fr) {
+                    try {
+                        fr.close();
+                    } catch (IOException e) {
+                        String message = "Error closing file reader: " + result.getName() + ".";
+                        if (i == 0) System.err.println(message);
+                        else fail(message);
+                    }
                 }
             }
         }
