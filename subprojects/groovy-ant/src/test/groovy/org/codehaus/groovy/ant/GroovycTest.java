@@ -97,27 +97,28 @@ public class GroovycTest extends GroovyTestCase {
                 break;
             } catch (final FileNotFoundException fnfe) {
                 String message = "File " + result.getName() + " should have been created but wasn't.";
-                if (i == 0) {
-                    System.err.println(message);
-                    DefaultGroovyStaticMethods.sleep(this, 50L);
-                } else fail(message);
+                reportOrFail(i, message);
             } catch (final IOException ioe) {
                 String message = "Error reading file " + result.getName() + ".";
-                fail(message);
-                if (i == 0) System.err.println(message);
-                else fail(message);
+                reportOrFail(i, message);
             } finally {
                 if (null != fr) {
                     try {
                         fr.close();
                     } catch (IOException e) {
                         String message = "Error closing file reader: " + result.getName() + ".";
-                        if (i == 0) System.err.println(message);
-                        else fail(message);
+                        reportOrFail(i, message);
                     }
                 }
             }
         }
+    }
+
+    private void reportOrFail(int i, String message) {
+        if (i == 0) {
+            System.err.println(message);
+            DefaultGroovyStaticMethods.sleep(this, 50L);
+        } else fail(message);
     }
 
     public void testGroovycTest1_NoFork_NoClasspath() {
