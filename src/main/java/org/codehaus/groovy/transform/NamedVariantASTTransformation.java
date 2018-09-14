@@ -47,6 +47,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
@@ -227,7 +229,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         if (mNode instanceof ConstructorNode) {
             body.addStatement(stmt(ctorX(ClassNode.THIS, args)));
             body.addStatement(inner);
-            cNode.addConstructor(
+            addGeneratedConstructor(cNode,
                     modifiers,
                     genParamsArray,
                     mNode.getExceptions(),
@@ -236,7 +238,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         } else {
             body.addStatement(inner);
             body.addStatement(stmt(callThisX(mNode.getName(), args)));
-            cNode.addMethod(
+            addGeneratedMethod(cNode,
                     mNode.getName(),
                     modifiers,
                     mNode.getReturnType(),

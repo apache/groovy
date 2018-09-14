@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.lang.reflect.Modifier;
@@ -39,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 
 /**
@@ -70,6 +72,53 @@ public class ClassNodeUtils {
             return sb.toString();
         }
         return cNode.getName();
+    }
+
+    /**
+     * Add a method that is marked as @Generated.
+     *
+     * @see ClassNode#addMethod(String, int, ClassNode, Parameter[], ClassNode[], Statement)
+     */
+    public static MethodNode addGeneratedMethod(ClassNode cNode, String name,
+                                int modifiers,
+                                ClassNode returnType,
+                                Parameter[] parameters,
+                                ClassNode[] exceptions,
+                                Statement code) {
+        MethodNode result = cNode.addMethod(name, modifiers, returnType, parameters, exceptions, code);
+        markAsGenerated(cNode, result);
+        return result;
+    }
+
+    /**
+     * Add a method that is marked as @Generated.
+     *
+     * @see ClassNode#addMethod(MethodNode)
+     */
+    public static void addGeneratedMethod(ClassNode cNode, MethodNode mNode) {
+        cNode.addMethod(mNode);
+        markAsGenerated(cNode, mNode);
+    }
+
+    /**
+     * Add a method that is marked as @Generated.
+     *
+     * @see ClassNode#addConstructor(int, Parameter[], ClassNode[], Statement)
+     */
+    public static ConstructorNode addGeneratedConstructor(ClassNode classNode, int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+        ConstructorNode consNode = classNode.addConstructor(modifiers, parameters, exceptions, code);
+        markAsGenerated(classNode, consNode);
+        return consNode;
+    }
+
+    /**
+     * Add a method that is marked as @Generated.
+     *
+     * @see ClassNode#addConstructor(ConstructorNode)
+     */
+    public static void addGeneratedConstructor(ClassNode classNode, ConstructorNode consNode) {
+        classNode.addConstructor(consNode);
+        markAsGenerated(classNode, consNode);
     }
 
     /**

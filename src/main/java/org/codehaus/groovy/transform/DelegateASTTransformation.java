@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -166,7 +167,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if (delegate.type.isArray()) {
                 boolean skipLength = delegate.excludes != null && (delegate.excludes.contains("length") || delegate.excludes.contains("getLength"));
                 if (!skipLength) {
-                    delegate.owner.addMethod("getLength",
+                    addGeneratedMethod(delegate.owner, "getLength",
                             ACC_PUBLIC,
                             ClassHelper.int_TYPE,
                             Parameter.EMPTY_ARRAY,
@@ -200,7 +201,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         if ((prop.getModifiers() & ACC_FINAL) == 0
                 && delegate.owner.getSetterMethod(setterName) == null && delegate.owner.getProperty(name) == null
                 && !shouldSkipPropertyMethod(name, setterName, delegate.excludes, delegate.includes, allNames)) {
-            delegate.owner.addMethod(setterName,
+            addGeneratedMethod(delegate.owner, setterName,
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,
                     params(new Parameter(GenericsUtils.nonGeneric(prop.getType()), "value")),
@@ -232,7 +233,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if ((prefix.equals("get") && willHaveGetAccessor && !ownerWillHaveGetAccessor.get()
                     || prefix.equals("is") && willHaveIsAccessor && !ownerWillHaveIsAccessor.get())
                     && !shouldSkipPropertyMethod(name, getterName, delegate.excludes, delegate.includes, allNames)) {
-                delegate.owner.addMethod(getterName,
+                addGeneratedMethod(delegate.owner, getterName,
                         ACC_PUBLIC,
                         GenericsUtils.nonGeneric(prop.getType()),
                         Parameter.EMPTY_ARRAY,
@@ -327,7 +328,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                     args);
             mce.setSourcePosition(delegate.delegate);
             ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, candidate.getReturnType(), currentMethodGenPlaceholders);
-            MethodNode newMethod = delegate.owner.addMethod(candidate.getName(),
+            MethodNode newMethod = addGeneratedMethod(delegate.owner, candidate.getName(),
                     candidate.getModifiers() & (~ACC_ABSTRACT) & (~ACC_NATIVE),
                     returnType,
                     newParams,

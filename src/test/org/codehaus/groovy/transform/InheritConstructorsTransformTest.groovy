@@ -97,16 +97,16 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
                 def ans = cons.annotations.toString() + cons.parameterAnnotations.toString()
                 switch(cons.toString()) {
                     case 'public Baz(java.lang.String,java.lang.Integer)':
-                        assert ans == '[][[], [@Foo3()]]'
+                        assert ans == '[@groovy.transform.Generated()][[], [@Foo3()]]'
                         break
                     case 'public Baz(java.lang.String)':
-                        assert ans == '[][[@Foo3()]]'
+                        assert ans == '[@groovy.transform.Generated()][[@Foo3()]]'
                         break
                     case 'public Baz(java.lang.Integer)':
-                        assert ans == '[@Foo1()][[]]'
+                        assert ans == '[@groovy.transform.Generated(), @Foo1()][[]]'
                         break
                     case 'public Baz()':
-                        assert ans == '[@Foo1()][]'
+                        assert ans == '[@groovy.transform.Generated(), @Foo1()][]'
                         break
                 }
             }

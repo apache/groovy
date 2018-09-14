@@ -941,7 +941,8 @@ class Base {
 @InheritConstructors(constructorAnnotations=true)
 class Child extends Base {}
 
-assert Child.constructors[0].annotations[0].annotationType().name == 'ConsAnno'
+assert Child.constructors[0].annotations[0].annotationType().name == 'groovy.transform.Generated'
+assert Child.constructors[0].annotations[1].annotationType().name == 'ConsAnno'
 // end::inheritconstructors_constructor_annotations[]
 '''
         assertScript '''
