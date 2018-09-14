@@ -408,7 +408,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
             metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
-            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !shouldAnnotate,
                     "getMetaClass",
                     ACC_PUBLIC,
                     ClassHelper.METACLASS_TYPE,
@@ -476,7 +476,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 setMetaClassCode = new BytecodeSequence(list);
             }
 
-            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !shouldAnnotate,
                     "setMetaClass",
                     ACC_PUBLIC, ClassHelper.VOID_TYPE,
                     SET_METACLASS_PARAMS, ClassNode.EMPTY_ARRAY,
@@ -492,7 +492,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             blockScope.putReferencedLocalVariable(vMethods);
             blockScope.putReferencedLocalVariable(vArguments);
 
-            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !shouldAnnotate,
                     "invokeMethod",
                     ACC_PUBLIC,
                     ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
@@ -513,7 +513,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
-            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !shouldAnnotate,
                     "getProperty",
                     ACC_PUBLIC,
                     ClassHelper.OBJECT_TYPE,
@@ -534,7 +534,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
-            MethodNode methodNode = addMethod(node, !isAbstract(node.getModifiers()),
+            MethodNode methodNode = addMethod(node, !shouldAnnotate,
                     "setProperty",
                     ACC_PUBLIC,
                     ClassHelper.VOID_TYPE,

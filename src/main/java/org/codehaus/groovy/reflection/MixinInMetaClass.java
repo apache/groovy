@@ -25,6 +25,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
+import groovy.transform.Generated;
 import org.codehaus.groovy.runtime.HandleMetaClass;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
@@ -135,6 +136,9 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
                     continue;
 
                 if (method instanceof CachedMethod && ((CachedMethod) method).getCachedMethod().isSynthetic())
+                    continue;
+
+                if (method instanceof CachedMethod && ((CachedMethod) method).getCachedMethod().getAnnotation(Generated.class) != null)
                     continue;
 
                 if (Modifier.isStatic(mod)) {

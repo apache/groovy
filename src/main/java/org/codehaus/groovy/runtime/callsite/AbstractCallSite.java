@@ -23,6 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaProperty;
+import groovy.transform.Generated;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.ParameterTypes;
@@ -334,7 +335,7 @@ public class AbstractCallSite implements CallSite {
         Class aClass = receiver.getClass();
         try {
             final Method method = aClass.getMethod("getProperty", String.class);
-            if (method != null && method.isSynthetic() && ((GroovyObject) receiver).getMetaClass() instanceof MetaClassImpl)
+            if (method != null && (method.isSynthetic() || method.getAnnotation(Generated.class) != null) && ((GroovyObject) receiver).getMetaClass() instanceof MetaClassImpl)
                 return createPogoMetaClassGetPropertySite((GroovyObject) receiver);
         } catch (NoSuchMethodException e) {
             // fall threw
