@@ -39,6 +39,8 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+
 /**
  * Handles transformation for the @BaseScript annotation.
  *
@@ -145,7 +147,7 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
                 // The AST node metadata has the flag that indicates that this method is a script body.
                 // It may also be carrying data for other AST transforms.
                 methodNode.copyNodeMetaData(defaultMethod);
-                cNode.addMethod(methodNode);
+                addGeneratedMethod(cNode, methodNode);
             }
         }
 

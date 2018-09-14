@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -229,7 +230,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             }
             type.removeConstructor(constructor);
             // code doesn't mention the removed param at this point, okay to leave as is
-            type.addConstructor(constructor.getModifiers(), newParams, constructor.getExceptions(), constructor.getCode());
+            addGeneratedConstructor(type, constructor.getModifiers(), newParams, constructor.getExceptions(), constructor.getCode());
             type.removeField(variableName);
         }
     }

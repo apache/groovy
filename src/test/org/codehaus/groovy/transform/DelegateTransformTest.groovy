@@ -346,6 +346,7 @@ class DelegateTransformTest extends CompilableTestSupport {
 
             def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
             def delegateAnno = delegateMethod.parameterAnnotations[0][0]
+            println delegateMethod.parameterAnnotations
 
             assert delegateAnno == originalAnno
         """
@@ -375,7 +376,7 @@ class DelegateTransformTest extends CompilableTestSupport {
             def originalAnno = originalMethod.declaredAnnotations[0]
 
             def delegateMethod = A_Delegate.getMethod('method', [Object.class] as Class[])
-            def delegateAnno = delegateMethod.declaredAnnotations[0]
+            def delegateAnno = delegateMethod.declaredAnnotations[1]
 
             assert delegateAnno == originalAnno
 

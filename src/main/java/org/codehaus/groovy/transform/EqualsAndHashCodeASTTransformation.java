@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -45,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -143,13 +143,13 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes, allNames, allProperties));
         }
 
-        cNode.addMethod(new MethodNode(
+        addGeneratedMethod(cNode,
                 hasExistingHashCode ? "_hashCode" : "hashCode",
                 hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.int_TYPE,
                 Parameter.EMPTY_ARRAY,
                 ClassNode.EMPTY_ARRAY,
-                body));
+                body);
     }
 
     private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
@@ -204,14 +204,13 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         final BlockStatement body = new BlockStatement();
         VariableExpression other = varX("other");
         body.addStatement(returnS(isInstanceOfX(other, GenericsUtils.nonGeneric(cNode))));
-        cNode.addMethod(new MethodNode(
+        addGeneratedMethod(cNode,
                 hasExistingCanEqual ? "_canEqual" : "canEqual",
                 hasExistingCanEqual ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.boolean_TYPE,
                 params(param(OBJECT_TYPE, other.getName())),
                 ClassNode.EMPTY_ARRAY,
-                body));
-
+                body);
     }
 
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes) {
@@ -295,13 +294,13 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // default
         body.addStatement(returnS(constX(Boolean.TRUE,true)));
 
-        cNode.addMethod(new MethodNode(
+        addGeneratedMethod(cNode,
                 hasExistingEquals ? "_equals" : "equals",
                 hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
                 ClassHelper.boolean_TYPE,
                 params(param(OBJECT_TYPE, other.getName())),
                 ClassNode.EMPTY_ARRAY,
-                body));
+                body);
     }
 
     private static BinaryExpression differentSelfRecursivePropertyX(PropertyNode pNode, Expression other) {

@@ -34,6 +34,8 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -78,7 +80,7 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
         createConstructor(classNode, fieldNode, propertyName, isStrict);
         final BlockStatement body = new BlockStatement();
         body.addStatement(isLazy ? lazyBody(classNode, fieldNode) : nonLazyBody(fieldNode));
-        classNode.addMethod(getGetterName(propertyName), ACC_STATIC | ACC_PUBLIC, newClass(classNode), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        addGeneratedMethod(classNode, getGetterName(propertyName), ACC_STATIC | ACC_PUBLIC, newClass(classNode), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private static Statement nonLazyBody(FieldNode fieldNode) {
@@ -130,7 +132,7 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
                             ctorX(make(RuntimeException.class),
                                     args(constX("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + "." + propertyName))))
             ));
-            classNode.addConstructor(new ConstructorNode(ACC_PRIVATE, body));
+            addGeneratedConstructor(classNode, new ConstructorNode(ACC_PRIVATE, body));
         }
     }
 }

@@ -46,6 +46,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
@@ -117,14 +118,14 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         List<PropertyNode> properties = findProperties(anno, classNode, includes, excludes, allProperties, includeSuperProperties, allNames);
         implementComparable(classNode);
 
-        classNode.addMethod(new MethodNode(
+        addGeneratedMethod(classNode,
                 "compareTo",
                 ACC_PUBLIC,
                 ClassHelper.int_TYPE,
                 params(param(newClass(classNode), OTHER)),
                 ClassNode.EMPTY_ARRAY,
                 createCompareToMethodBody(properties, reversed)
-        ));
+        );
 
         for (PropertyNode property : properties) {
             createComparatorFor(classNode, property, reversed);
@@ -190,14 +191,14 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         InnerClassNode cmpClass = new InnerClassNode(classNode, className, ACC_PRIVATE | ACC_STATIC, superClass);
         classNode.getModule().addClass(cmpClass);
 
-        cmpClass.addMethod(new MethodNode(
+        addGeneratedMethod(cmpClass,
                 "compare",
                 ACC_PUBLIC,
                 ClassHelper.int_TYPE,
                 params(param(newClass(classNode), ARG0), param(newClass(classNode), ARG1)),
                 ClassNode.EMPTY_ARRAY,
                 createCompareMethodBody(property, reversed)
-        ));
+        );
 
         String fieldName = "this$" + propName + "Comparator";
         // private final Comparator this$<property>Comparator = new <type>$<property>Comparator();
@@ -207,14 +208,14 @@ public class SortableASTTransformation extends AbstractASTTransformation {
                 COMPARATOR_TYPE,
                 ctorX(cmpClass));
 
-        classNode.addMethod(new MethodNode(
+        addGeneratedMethod(classNode,
                 "comparatorBy" + propName,
                 ACC_PUBLIC | ACC_STATIC,
                 COMPARATOR_TYPE,
                 Parameter.EMPTY_ARRAY,
                 ClassNode.EMPTY_ARRAY,
                 returnS(fieldX(cmpField))
-        ));
+        );
     }
 
     private List<PropertyNode> findProperties(AnnotationNode annotation, final ClassNode classNode, final List<String> includes,

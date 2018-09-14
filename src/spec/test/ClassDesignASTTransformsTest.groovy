@@ -132,8 +132,8 @@ class DelegatingWithAnnotations {
 }
 def d1 = new DelegatingWithoutAnnotations()
 def d2 = new DelegatingWithAnnotations()
-assert d1.class.getDeclaredMethod('method').annotations.length==0
-assert d2.class.getDeclaredMethod('method').annotations.length==1
+assert d1.class.getDeclaredMethod('method').annotations.length==1
+assert d2.class.getDeclaredMethod('method').annotations.length==2
 // end::delegate_example_annotations[]
         '''
 

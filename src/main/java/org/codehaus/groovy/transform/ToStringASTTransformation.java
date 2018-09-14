@@ -47,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callSuperX;
@@ -157,8 +158,8 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
         body.addStatement(returnS(tempToString));
 
-        cNode.addMethod(new MethodNode(hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        addGeneratedMethod(cNode, hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private static class ToStringElement {

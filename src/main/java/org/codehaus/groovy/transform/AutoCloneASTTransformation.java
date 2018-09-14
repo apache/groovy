@@ -50,6 +50,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -158,7 +160,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
 
         new VariableScopeVisitor(sourceUnit, true).visitClass(cNode);
         ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
-        cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
+        addGeneratedMethod(cNode, "clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
     }
 
     private static void createCloneCopyConstructor(ClassNode cNode, List<FieldNode> list, List<String> excludes) {
@@ -166,7 +168,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             // add no-arg constructor
             BlockStatement noArgBody = new BlockStatement();
             noArgBody.addStatement(EmptyStatement.INSTANCE);
-            cNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, noArgBody);
+            addGeneratedConstructor(cNode, ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, noArgBody);
         }
         boolean hasThisCons = false;
         for (ConstructorNode consNode : cNode.getDeclaredConstructors()) {
@@ -200,10 +202,10 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
                     initBody.addStatement(ifElseS(isInstanceOfX(direct, CLONEABLE_TYPE), assignClonedDynamic, assignDirect));
                 }
             }
-            cNode.addConstructor(ACC_PROTECTED, params(initParam), ClassNode.EMPTY_ARRAY, initBody);
+            addGeneratedConstructor(cNode, ACC_PROTECTED, params(initParam), ClassNode.EMPTY_ARRAY, initBody);
         }
         ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
-        cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(stmt(ctorX(cNode, args(varX("this"))))));
+        addGeneratedMethod(cNode, "clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(stmt(ctorX(cNode, args(varX("this"))))));
     }
 
     private static boolean isCloneableType(ClassNode fieldType) {
@@ -225,12 +227,12 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     private static void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         if (cNode.getDeclaredConstructors().isEmpty()) {
             // add no-arg constructor
-            cNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block(EmptyStatement.INSTANCE));
+            addGeneratedConstructor(cNode, ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block(EmptyStatement.INSTANCE));
         }
         addSimpleCloneHelperMethod(cNode, fieldNodes, excludes);
         final Expression result = varX("_result", cNode);
         ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
-        cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(
+        addGeneratedMethod(cNode, "clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(
             declS(result, ctorX(cNode)),
             stmt(callThisX("cloneOrCopyMembers", args(result))),
             returnS(result)));
@@ -262,7 +264,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             }
         }
         ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
-        cNode.addMethod("cloneOrCopyMembers", ACC_PROTECTED, ClassHelper.VOID_TYPE, params(methodParam), exceptions, methodBody);
+        addGeneratedMethod(cNode, "cloneOrCopyMembers", ACC_PROTECTED, ClassHelper.VOID_TYPE, params(methodParam), exceptions, methodBody);
     }
 
     private static void createClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
@@ -284,7 +286,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         }
         body.addStatement(returnS(result));
         ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
-        cNode.addMethod("clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
+        addGeneratedMethod(cNode, "clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
     }
 
     private static AutoCloneStyle getStyle(AnnotationNode node, String name) {
