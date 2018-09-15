@@ -23,13 +23,14 @@ import java.beans.SimpleBeanInfo;
 import java.lang.reflect.Method;
 
 public class StrangeBeanBeanInfo extends SimpleBeanInfo {
+    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
     public EventSetDescriptor[] getEventSetDescriptors() {
         try {
             Method[] events = StrangeEventListener.class.getMethods();
-            Method addListener = StrangeBean.class.getMethod("addStrangeEventListener", new Class[] {StrangeEventListener.class});
-            Method removeListener = StrangeBean.class.getMethod("removeStrangeEventListener", new Class[] {StrangeEventListener.class});
-            Method getListeners = StrangeBean.class.getMethod("getStrangeEventListeners", new Class[0]);
+            Method addListener = StrangeBean.class.getMethod("addStrangeEventListener", StrangeEventListener.class);
+            Method removeListener = StrangeBean.class.getMethod("removeStrangeEventListener", StrangeEventListener.class);
+            Method getListeners = StrangeBean.class.getMethod("getStrangeEventListeners", EMPTY_CLASS_ARRAY);
             
             return new EventSetDescriptor[] {
                 new EventSetDescriptor( 

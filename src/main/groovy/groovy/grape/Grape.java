@@ -31,6 +31,8 @@ public class Grape {
     public static final String AUTO_DOWNLOAD_SETTING = "autoDownload";
     public static final String DISABLE_CHECKSUMS_SETTING = "disableChecksums";
     public static final String SYSTEM_PROPERTIES_SETTING = "systemProperties";
+    private static final URI[] EMPTY_URI_ARRAY = new URI[0];
+    private static final Map[] EMPTY_MAP_ARRAY = new Map[0];
 
     private static boolean enableGrapes = Boolean.valueOf(System.getProperty("groovy.grape.enable", "true"));
     private static boolean enableAutoDownload = Boolean.valueOf(System.getProperty("groovy.grape.autoDownload", "true"));
@@ -199,7 +201,7 @@ public class Grape {
             }
         }
         if (uris == null) {
-            return new URI[0];
+            return EMPTY_URI_ARRAY;
         } else {
             return uris;
         }
@@ -214,7 +216,7 @@ public class Grape {
             }
         }
         if (maps == null) {
-            return new Map[0];
+            return EMPTY_MAP_ARRAY;
         } else {
             return maps;
         }

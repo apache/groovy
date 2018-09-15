@@ -33,6 +33,13 @@ import java.util.List;
  * Represents a class not in the codebase being processed.
  */
 public class ExternalGroovyClassDoc implements GroovyClassDoc {
+    private static final GroovyAnnotationRef[] EMPTY_GROOVYANNOTATIONREF_ARRAY = new GroovyAnnotationRef[0];
+    private static final GroovyConstructorDoc[] EMPTY_GROOVYCONSTRUCTORDOC_ARRAY = new GroovyConstructorDoc[0];
+    private static final GroovyFieldDoc[] EMPTY_GROOVYFIELDDOC_ARRAY = new GroovyFieldDoc[0];
+    private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
+    private static final GroovyPackageDoc[] EMPTY_GROOVYPACKAGEDOC_ARRAY = new GroovyPackageDoc[0];
+    private static final GroovyMethodDoc[] EMPTY_GROOVYMETHODDOC_ARRAY = new GroovyMethodDoc[0];
+    private static final GroovyType[] EMPTY_GROOVYTYPE_ARRAY = new GroovyType[0];
     private final Class externalClass;
     private final List<GroovyAnnotationRef> annotationRefs;
 
@@ -46,7 +53,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     }
 
     public GroovyAnnotationRef[] annotations() {
-        return annotationRefs.toArray(new GroovyAnnotationRef[0]);
+        return annotationRefs.toArray(EMPTY_GROOVYANNOTATIONREF_ARRAY);
     }
 
     public String qualifiedTypeName() {
@@ -95,11 +102,11 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     }
 
     public GroovyConstructorDoc[] constructors() {
-        return new GroovyConstructorDoc[0];
+        return EMPTY_GROOVYCONSTRUCTORDOC_ARRAY;
     }
 
     public GroovyConstructorDoc[] constructors(boolean filter) {
-        return new GroovyConstructorDoc[0];
+        return EMPTY_GROOVYCONSTRUCTORDOC_ARRAY;
     }
 
     public boolean definesSerializableFields() {
@@ -107,19 +114,19 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     }
 
     public GroovyFieldDoc[] enumConstants() {
-        return new GroovyFieldDoc[0];
+        return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
     public GroovyFieldDoc[] fields() {
-        return new GroovyFieldDoc[0];
+        return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
     public GroovyFieldDoc[] properties() {
-        return new GroovyFieldDoc[0];
+        return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
     public GroovyFieldDoc[] fields(boolean filter) {
-        return new GroovyFieldDoc[0];
+        return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
     public GroovyClassDoc findClass(String className) {
@@ -127,27 +134,27 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     }
 
     public GroovyClassDoc[] importedClasses() {
-        return new GroovyClassDoc[0];
+        return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
     public GroovyPackageDoc[] importedPackages() {
-        return new GroovyPackageDoc[0];
+        return EMPTY_GROOVYPACKAGEDOC_ARRAY;
     }
 
     public GroovyClassDoc[] innerClasses() {
-        return new GroovyClassDoc[0];
+        return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
     public GroovyClassDoc[] innerClasses(boolean filter) {
-        return new GroovyClassDoc[0];
+        return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
     public GroovyClassDoc[] interfaces() {
-        return new GroovyClassDoc[0];
+        return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
     public GroovyType[] interfaceTypes() {
-        return new GroovyType[0];
+        return EMPTY_GROOVYTYPE_ARRAY;
     }
 
     public boolean isAbstract() {
@@ -163,19 +170,19 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     }
 
     public GroovyMethodDoc[] methods() {
-        return new GroovyMethodDoc[0];
+        return EMPTY_GROOVYMETHODDOC_ARRAY;
     }
 
     public GroovyMethodDoc[] methods(boolean filter) {
-        return new GroovyMethodDoc[0];
+        return EMPTY_GROOVYMETHODDOC_ARRAY;
     }
 
     public GroovyFieldDoc[] serializableFields() {
-        return new GroovyFieldDoc[0];
+        return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
     public GroovyMethodDoc[] serializationMethods() {
-        return new GroovyMethodDoc[0];
+        return EMPTY_GROOVYMETHODDOC_ARRAY;
     }
 
     public boolean subclassOf(GroovyClassDoc gcd) {

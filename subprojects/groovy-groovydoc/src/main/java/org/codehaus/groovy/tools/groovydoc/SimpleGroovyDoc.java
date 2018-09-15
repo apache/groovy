@@ -34,6 +34,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private static final Pattern TAG3_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(\\S*)\\s+(.*)");
     private static final Pattern RAW_COMMENT_PATTERN = Pattern.compile("\"(?s).*?\\\\*\\\\s*@\"");
     private static final Pattern TRIMMED_COMMENT_PATTERN = Pattern.compile("(?m)^\\s*\\*\\s*([^*]*)$");
+    private static final GroovyTag[] EMPTY_GROOVYTAG_ARRAY = new GroovyTag[0];
     private final String name;
     private String commentText = null;
     private String rawCommentText = "";
@@ -110,7 +111,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
                 setDeprecated(true);
             }
         }
-        tags = result.toArray(new GroovyTag[0]);
+        tags = result.toArray(EMPTY_GROOVYTAG_ARRAY);
     }
 
     public static String calculateFirstSentence(String raw) {

@@ -59,6 +59,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     public static final Pattern SPLIT_ARGS_REGEX = Pattern.compile(",\\s*");
     private static final List<String> PRIMITIVES = Arrays.asList("void", "boolean", "byte", "short", "char", "int", "long", "float", "double");
     private static final Map<String, String> TAG_TEXT = new LinkedHashMap<String, String>();
+    private static final GroovyConstructorDoc[] EMPTY_GROOVYCONSTRUCTORDOC_ARRAY = new GroovyConstructorDoc[0];
+    private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
+    private static final GroovyFieldDoc[] EMPTY_GROOVYFIELDDOC_ARRAY = new GroovyFieldDoc[0];
+    private static final GroovyMethodDoc[] EMPTY_GROOVYMETHODDOC_ARRAY = new GroovyMethodDoc[0];
+
     static {
         TAG_TEXT.put("see", "See Also");
         TAG_TEXT.put("param", "Parameters");
@@ -119,7 +124,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyConstructorDoc[] constructors() {
         Collections.sort(constructors);
-        return constructors.toArray(new GroovyConstructorDoc[0]);
+        return constructors.toArray(EMPTY_GROOVYCONSTRUCTORDOC_ARRAY);
     }
 
     public boolean add(GroovyConstructorDoc constructor) {
@@ -148,7 +153,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyClassDoc[] innerClasses() {
         Collections.sort(nested);
-        return nested.toArray(new GroovyClassDoc[0]);
+        return nested.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public boolean addNested(GroovyClassDoc nestedClass) {
@@ -160,7 +165,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyFieldDoc[] fields() {
         Collections.sort(fields);
-        return fields.toArray(new GroovyFieldDoc[0]);
+        return fields.toArray(EMPTY_GROOVYFIELDDOC_ARRAY);
     }
 
     public boolean add(GroovyFieldDoc field) {
@@ -172,7 +177,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyFieldDoc[] properties() {
         Collections.sort(properties);
-        return properties.toArray(new GroovyFieldDoc[0]);
+        return properties.toArray(EMPTY_GROOVYFIELDDOC_ARRAY);
     }
 
     public boolean addProperty(GroovyFieldDoc property) {
@@ -184,7 +189,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyFieldDoc[] enumConstants() {
         Collections.sort(enumConstants);
-        return enumConstants.toArray(new GroovyFieldDoc[0]);
+        return enumConstants.toArray(EMPTY_GROOVYFIELDDOC_ARRAY);
     }
 
     public boolean addEnumConstant(GroovyFieldDoc field) {
@@ -196,7 +201,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      */
     public GroovyMethodDoc[] methods() {
         Collections.sort(methods);
-        return methods.toArray(new GroovyMethodDoc[0]);
+        return methods.toArray(EMPTY_GROOVYMETHODDOC_ARRAY);
     }
 
     public boolean add(GroovyMethodDoc method) {
@@ -751,7 +756,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     public GroovyClassDoc[] interfaces() {
         Collections.sort(interfaceClasses);
-        return interfaceClasses.toArray(new GroovyClassDoc[0]);
+        return interfaceClasses.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public GroovyType[] interfaceTypes() {/*todo*/

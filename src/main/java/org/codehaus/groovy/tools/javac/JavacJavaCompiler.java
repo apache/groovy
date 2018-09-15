@@ -44,6 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public class JavacJavaCompiler implements JavaCompiler {
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private final CompilerConfiguration config;
 
     public JavacJavaCompiler(CompilerConfiguration config) {
@@ -172,7 +173,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         // files to compile
         paras.addAll(files);
 
-        return paras.toArray(new String[0]);
+        return paras.toArray(EMPTY_STRING_ARRAY);
     }
 
     private Class findJavac(CompilationUnit cu) throws ClassNotFoundException {

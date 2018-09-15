@@ -59,6 +59,7 @@ import java.util.Collection;
  * @author Guillaume Laforge
  */
 public class CharsetToolkit {
+    private static final Charset[] EMPTY_CHARSET_ARRAY = new Charset[0];
     private final byte[] buffer;
     private Charset defaultCharset;
     private Charset charset;
@@ -407,6 +408,6 @@ public class CharsetToolkit {
      */
     public static Charset[] getAvailableCharsets() {
         Collection collection = Charset.availableCharsets().values();
-        return (Charset[]) collection.toArray(new Charset[0]);
+        return (Charset[]) collection.toArray(EMPTY_CHARSET_ARRAY);
     }
 }

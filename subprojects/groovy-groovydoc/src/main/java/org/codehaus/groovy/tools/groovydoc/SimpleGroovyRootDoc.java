@@ -32,6 +32,8 @@ import java.util.regex.Pattern;
 
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
     private final static Pattern EQUIVALENT_PACKAGE_IMPORT = Pattern.compile("[^/]+$");
+    private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
+    private static final GroovyPackageDoc[] EMPTY_GROOVYPACKAGEDOC_ARRAY = new GroovyPackageDoc[0];
 
     private final Map<String, GroovyPackageDoc> packageDocs;
     private List<GroovyPackageDoc> packageDocValues = null;
@@ -80,7 +82,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
             Collections.sort(classDocValues);
         }
-        return classDocValues.toArray(new GroovyClassDoc[0]);
+        return classDocValues.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public String[][] options() {/*todo*/
@@ -110,7 +112,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             packageDocValues = new ArrayList<GroovyPackageDoc>(packageDocs.values());
             Collections.sort(packageDocValues);
         }
-        return packageDocValues.toArray(new GroovyPackageDoc[0]);
+        return packageDocValues.toArray(EMPTY_GROOVYPACKAGEDOC_ARRAY);
     }
 
     public Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages) {

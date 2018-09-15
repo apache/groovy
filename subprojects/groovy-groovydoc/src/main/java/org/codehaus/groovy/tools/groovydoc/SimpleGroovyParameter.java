@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleGroovyParameter implements GroovyParameter {
+    private static final GroovyAnnotationRef[] EMPTY_GROOVYANNOTATIONREF_ARRAY = new GroovyAnnotationRef[0];
     private final String name;
     private String typeName;
     private String defaultValue;
@@ -62,7 +63,7 @@ public class SimpleGroovyParameter implements GroovyParameter {
     }
 
     public GroovyAnnotationRef[] annotations() {
-        return annotationRefs.toArray(new GroovyAnnotationRef[0]);
+        return annotationRefs.toArray(EMPTY_GROOVYANNOTATIONREF_ARRAY);
     }
 
     public void addAnnotationRef(GroovyAnnotationRef ref) {

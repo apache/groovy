@@ -46,13 +46,14 @@ import java.util.Vector;
  * @author Minimal adjustments by Dierk Koenig, June 2005
  */
 public class TableSorter extends TableMap {
+    private static final int[] EMPTY_INT_ARRAY = new int[0];
     int indexes[];
     Vector sortingColumns = new Vector();
     boolean ascending = true;
     int lastSortedColumn = -1;
 
     public TableSorter() {
-        indexes = new int[0]; // For consistency.
+        indexes = EMPTY_INT_ARRAY; // For consistency.
     }
 
     public TableSorter(TableModel model) {

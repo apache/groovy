@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements GroovyProgramElementDoc {
+    private static final GroovyAnnotationRef[] EMPTY_GROOVYANNOTATIONREF_ARRAY = new GroovyAnnotationRef[0];
     private GroovyPackageDoc packageDoc;
     private boolean staticElement;
     private boolean finalElement;
@@ -98,7 +99,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
     }
 
     public GroovyAnnotationRef[] annotations() {
-        return annotationRefs.toArray(new GroovyAnnotationRef[0]);
+        return annotationRefs.toArray(EMPTY_GROOVYANNOTATIONREF_ARRAY);
     }
 
     public void addAnnotationRef(GroovyAnnotationRef ref) {
