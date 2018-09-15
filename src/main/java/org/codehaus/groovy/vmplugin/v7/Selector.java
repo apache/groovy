@@ -31,7 +31,7 @@ import groovy.lang.MetaClassImpl.MetaConstructor;
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
-import groovy.transform.Generated;
+import groovy.transform.Internal;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -301,7 +301,7 @@ public abstract class Selector {
                 Method reflectionMethod = null;
                 try {
                     reflectionMethod = aClass.getMethod("getProperty", String.class);
-                    if (!reflectionMethod.isSynthetic() && reflectionMethod.getAnnotation(Generated.class) == null) {
+                    if (!reflectionMethod.isSynthetic() && !isMarkedInternal(reflectionMethod)) {
                         handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
                         return;
                     }
@@ -341,6 +341,10 @@ public abstract class Selector {
             } else {
                 handle = META_PROPERTY_GETTER.bindTo(res);
             } 
+        }
+
+        private boolean isMarkedInternal(Method reflectionMethod) {
+            return reflectionMethod.getAnnotation(Internal.class) != null;
         }
 
         /**
