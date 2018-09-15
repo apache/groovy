@@ -20,8 +20,8 @@ package groovy.bugs
 
 class Groovy3175_Bug extends GroovyTestCase {
 
-   void testSyntheticModifier() {
-     assertScript """
+    void testSyntheticModifier() {
+        assertScript """
         import groovy.transform.Generated
 
         class MyService {
@@ -35,7 +35,7 @@ class Groovy3175_Bug extends GroovyTestCase {
         def methods = MyService.getDeclaredMethods().grep { !it.synthetic }
         assert methods.size() == 9
         methods = methods.grep { !it.getAnnotation(Generated) }
-        assert methods.size() == 4
-     """
-   } 
+        assert methods.size() == 2
+        """
+    }
 }

@@ -84,11 +84,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
@@ -764,6 +764,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     protected void addPropertyMethod(MethodNode method) {
         classNode.addMethod(method);
+        markAsGenerated(classNode, method);
         // GROOVY-4415 / GROOVY-4645: check that there's no abstract method which corresponds to this one
         List<MethodNode> abstractMethods = classNode.getAbstractMethods();
         if (abstractMethods == null) return;
@@ -887,7 +888,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
-        node.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
+        ConstructorNode genConstructor = node.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
+        markAsGenerated(node, genConstructor);
     }
 
     /**
