@@ -54,7 +54,7 @@ class GeneratedTransformTest extends GroovyShellTestCase {
 
         GroovyObject.declaredMethods.each { m ->
             def method = person.class.declaredMethods.find { it.name == m.name }
-            assert method.annotations*.annotationType().name == ['groovy.transform.Generated']
+            assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
         }
     }
 

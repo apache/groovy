@@ -22,6 +22,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.transform.Generated;
+import groovy.transform.Internal;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -140,6 +141,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     };
 
     private static final Class GENERATED_ANNOTATION = Generated.class;
+    private static final Class INTERNAL_ANNOTATION = Internal.class;
 
     private ClassNode classNode;
     private MethodNode methodNode;
@@ -405,6 +407,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         boolean shouldAnnotate = classNode.getModule().getContext() != null;
         AnnotationNode generatedAnnotation = shouldAnnotate ? new AnnotationNode(ClassHelper.make(GENERATED_ANNOTATION)) : null;
+        AnnotationNode internalAnnotation = shouldAnnotate ? new AnnotationNode(ClassHelper.make(INTERNAL_ANNOTATION)) : null;
 
         if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
             metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
@@ -447,7 +450,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         }
                     })
             );
-            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
+            if (shouldAnnotate) {
+                methodNode.addAnnotation(generatedAnnotation);
+                methodNode.addAnnotation(internalAnnotation);
+            }
         }
 
         Parameter[] parameters = new Parameter[]{new Parameter(ClassHelper.METACLASS_TYPE, "mc")};
@@ -482,7 +488,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     SET_METACLASS_PARAMS, ClassNode.EMPTY_ARRAY,
                     setMetaClassCode
             );
-            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
+            if (shouldAnnotate) {
+                methodNode.addAnnotation(generatedAnnotation);
+                methodNode.addAnnotation(internalAnnotation);
+            }
         }
 
         if (!node.hasMethod("invokeMethod", INVOKE_METHOD_PARAMS)) {
@@ -509,7 +518,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         }
                     })
             );
-            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
+            if (shouldAnnotate) {
+                methodNode.addAnnotation(generatedAnnotation);
+                methodNode.addAnnotation(internalAnnotation);
+            }
         }
 
         if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
@@ -530,7 +542,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         }
                     })
             );
-            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
+            if (shouldAnnotate) {
+                methodNode.addAnnotation(generatedAnnotation);
+                methodNode.addAnnotation(internalAnnotation);
+            }
         }
 
         if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
@@ -552,7 +567,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         }
                     })
             );
-            if (shouldAnnotate) methodNode.addAnnotation(generatedAnnotation);
+            if (shouldAnnotate) {
+                methodNode.addAnnotation(generatedAnnotation);
+                methodNode.addAnnotation(internalAnnotation);
+            }
         }
     }
 

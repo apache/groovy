@@ -25,7 +25,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
-import groovy.transform.Generated;
+import groovy.transform.Internal;
 import org.codehaus.groovy.runtime.HandleMetaClass;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
@@ -138,7 +138,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
                 if (method instanceof CachedMethod && ((CachedMethod) method).getCachedMethod().isSynthetic())
                     continue;
 
-                if (method instanceof CachedMethod && ((CachedMethod) method).getCachedMethod().getAnnotation(Generated.class) != null)
+                if (method instanceof CachedMethod && hasAnnotation((CachedMethod) method, Internal.class))
                     continue;
 
                 if (Modifier.isStatic(mod)) {
@@ -161,6 +161,10 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
                 mc.registerSubclassInstanceMethod(metaMethod);
             }
         }
+    }
+
+    private static boolean hasAnnotation(CachedMethod method, Class<Internal> annotationClass) {
+        return method.getCachedMethod().getAnnotation(annotationClass) != null;
     }
 
     private static void staticMethod(final MetaClass self, List<MetaMethod> arr, final CachedMethod method) {

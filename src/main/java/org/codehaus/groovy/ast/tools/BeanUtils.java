@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.ast.tools;
 
-import groovy.transform.Generated;
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -31,12 +31,13 @@ import java.util.List;
 import java.util.Set;
 
 import static java.beans.Introspector.decapitalize;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 
 public class BeanUtils {
     static final String GET_PREFIX = "get";
     static final String SET_PREFIX = "set";
     static final String IS_PREFIX = "is";
-    private static final ClassNode GENERATED_TYPE = ClassHelper.make(Generated.class);
+    private static final ClassNode INTERNAL_TYPE = ClassHelper.make(Internal.class);
 
     /**
      * Get all properties including JavaBean pseudo properties matching getter conventions.
@@ -99,7 +100,7 @@ public class BeanUtils {
         List<MethodNode> methods = cNode.getAllDeclaredMethods();
         for (MethodNode mNode : methods) {
             if (!includeStatic && mNode.isStatic()) continue;
-            if (mNode.getAnnotations(GENERATED_TYPE).size() > 0) continue;
+            if (hasAnnotation(mNode, INTERNAL_TYPE)) continue;
             String name = mNode.getName();
             if ((name.length() <= 3 && !name.startsWith(IS_PREFIX)) || name.equals("getClass") || name.equals("getMetaClass") || name.equals("getDeclaringClass")) {
                 // Optimization: skip invalid propertyNames
