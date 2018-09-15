@@ -31,13 +31,15 @@ import java.util.List;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class FileSystemCompilerFacade {
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     public static void main(String[] args) {
         List<String> argList = new ArrayList<String>(Arrays.asList(args));
         boolean forceLookupUnnamedFiles = argList.contains("--forceLookupUnnamedFiles");
         if (forceLookupUnnamedFiles) {
             argList.remove("--forceLookupUnnamedFiles");
         }
-        String[] newArgs = forceLookupUnnamedFiles ? argList.toArray(new String[0]) : args;
+        String[] newArgs = forceLookupUnnamedFiles ? argList.toArray(EMPTY_STRING_ARRAY) : args;
         FileSystemCompiler.commandLineCompileWithErrorHandling(newArgs, forceLookupUnnamedFiles);
     }
 }

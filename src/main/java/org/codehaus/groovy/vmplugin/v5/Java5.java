@@ -64,6 +64,8 @@ import java.util.List;
 public class Java5 implements VMPlugin {
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
+    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
+    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
 
     public void setAdditionalClassInformation(ClassNode cn) {
         setGenericsTypes(cn);
@@ -276,7 +278,7 @@ public class Java5 implements VMPlugin {
             try {
                 declaredMethods = type.getDeclaredMethods();
             } catch (SecurityException se) {
-                declaredMethods = new Method[0];
+                declaredMethods = EMPTY_METHOD_ARRAY;
             }
             for (Method declaredMethod : declaredMethods) {
                 try {
@@ -445,7 +447,7 @@ public class Java5 implements VMPlugin {
                 );
             }
             Annotation[][] adjusted = new Annotation[parameterCount][];
-            adjusted[0] = new Annotation[0];
+            adjusted[0] = EMPTY_ANNOTATION_ARRAY;
             System.arraycopy(annotations, 0, adjusted, 1, annotations.length);
             return adjusted;
         }

@@ -100,8 +100,9 @@ public class CompilerConfiguration {
             JDK12, Opcodes.V12
     );
 
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
     /** An array of the valid targetBytecode values **/
-    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[0]);
+    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(EMPTY_STRING_ARRAY);
 
     @Deprecated
     public static final String CURRENT_JVM_VERSION = getMinBytecodeVersion();

@@ -22,9 +22,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class StringHelper {
-    private static final char 
+    private static final char
         SPACE = ' ', SINGLE_QUOTE = '\'', DOUBLE_QUOTE = '"';
-    
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     /**
      * This method tokenizes a string by space characters, 
      * but ignores spaces in quoted parts,that are parts in 
@@ -46,7 +47,7 @@ public class StringHelper {
             }
             first = last;
         }
-        return (String[])tokens.toArray(new String[0]);
+        return (String[])tokens.toArray(EMPTY_STRING_ARRAY);
     }
 
     private static int scanToken(String s, int pos0) {

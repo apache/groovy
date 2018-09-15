@@ -167,6 +167,8 @@ import java.util.StringTokenizer;
  */
 public class Groovyc extends MatchingTask {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
+    private static final File[] EMPTY_FILE_ARRAY = new File[0];
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private final LoggingHelper log = new LoggingHelper(this);
 
     private Path src;
@@ -188,7 +190,7 @@ public class Groovyc extends MatchingTask {
 
     protected boolean failOnError = true;
     protected boolean listFiles = false;
-    protected File[] compileList = new File[0];
+    protected File[] compileList = EMPTY_FILE_ARRAY;
 
     private String updatedProperty;
     private String errorProperty;
@@ -860,7 +862,7 @@ public class Groovyc extends MatchingTask {
      * Clear the list of files to be compiled and copied.
      */
     protected void resetFileLists() {
-        compileList = new File[0];
+        compileList = EMPTY_FILE_ARRAY;
         scriptExtensions = new LinkedHashSet<String>();
     }
 
@@ -1149,7 +1151,7 @@ public class Groovyc extends MatchingTask {
 
     private String[] makeCommandLine(List<String> commandLineList) {
         log.verbose("Compilation arguments:\n" + DefaultGroovyMethods.join((Iterable)commandLineList, "\n"));
-        return commandLineList.toArray(new String[0]);
+        return commandLineList.toArray(EMPTY_STRING_ARRAY);
     }
 
     private void runForked(String[] commandLine) {

@@ -249,6 +249,7 @@ public class Sql {
 
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
     private static final int USE_COLUMN_NAMES = -1;
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     private DataSource dataSource;
 
@@ -4583,7 +4584,7 @@ public class Sql {
         @Override
         protected PreparedStatement execute(Connection connection, String sql) throws SQLException {
             if (returnGeneratedKeys == USE_COLUMN_NAMES && keyColumnNames != null) {
-                return connection.prepareStatement(sql, keyColumnNames.toArray(new String[0]));
+                return connection.prepareStatement(sql, keyColumnNames.toArray(EMPTY_STRING_ARRAY));
             }
             if (returnGeneratedKeys != 0) {
                 return connection.prepareStatement(sql, returnGeneratedKeys);

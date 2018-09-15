@@ -29,6 +29,7 @@ import java.util.TreeMap;
 
 public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPackageDoc {
     private static final char FS = '/';
+    private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
     final Map<String, GroovyClassDoc> classDocs;
     private String description = "";
     private String summary = "";
@@ -39,7 +40,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] allClasses() {
-        return classDocs.values().toArray(new GroovyClassDoc[0]);
+        return classDocs.values().toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public void setDescription(String description) {
@@ -68,7 +69,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     public GroovyClassDoc[] allClasses(boolean arg0) {
         List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
-        return classDocValues.toArray(new GroovyClassDoc[0]);
+        return classDocValues.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public GroovyClassDoc[] enums() {
@@ -78,7 +79,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[0]);
+        return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public GroovyClassDoc[] errors() {
@@ -88,7 +89,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[0]);
+        return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public GroovyClassDoc[] exceptions() {
@@ -98,7 +99,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[0]);
+        return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public GroovyClassDoc findClass(String arg0) {/*todo*/
@@ -112,7 +113,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[0]);
+        return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public GroovyClassDoc[] ordinaryClasses() {
@@ -122,7 +123,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
                 result.add(doc);
             }
         }
-        return result.toArray(new GroovyClassDoc[0]);
+        return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public String description() {

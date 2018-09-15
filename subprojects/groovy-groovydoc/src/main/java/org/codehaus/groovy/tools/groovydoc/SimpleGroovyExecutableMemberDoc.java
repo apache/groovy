@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc implements GroovyExecutableMemberDoc {
+    private static final GroovyParameter[] EMPTY_GROOVYPARAMETER_ARRAY = new GroovyParameter[0];
     List parameters;
     
     public SimpleGroovyExecutableMemberDoc(String name, GroovyClassDoc belongsToClass) {
@@ -35,7 +36,7 @@ public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc imple
     }
 
     public GroovyParameter[] parameters() {
-        return (GroovyParameter[]) parameters.toArray(new GroovyParameter[0]);
+        return (GroovyParameter[]) parameters.toArray(EMPTY_GROOVYPARAMETER_ARRAY);
     }
 
     public void add(GroovyParameter parameter) {

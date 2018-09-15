@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
-
+    private static final BindPath[] EMPTY_BINDPATH_ARRAY = new BindPath[0];
     Map<String, TriggerBinding> syntheticBindings;
     Closure closure;
 
@@ -55,7 +55,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         for (Map.Entry<String, BindPathSnooper> entry : snooper.fields.entrySet()) {
             childPaths.add(createBindPath(entry.getKey(), entry.getValue()));
         }
-        bp.children = childPaths.toArray(new BindPath[0]);
+        bp.children = childPaths.toArray(EMPTY_BINDPATH_ARRAY);
         return bp;
     }
 
@@ -123,7 +123,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         PropertyPathFullBinding fb = new PropertyPathFullBinding();
         fb.setSourceBinding(new ClosureSourceBinding(closure));
         fb.setTargetBinding(target);
-        fb.bindPaths = rootPaths.toArray(new BindPath[0]);
+        fb.bindPaths = rootPaths.toArray(EMPTY_BINDPATH_ARRAY);
         return fb;
     }
 

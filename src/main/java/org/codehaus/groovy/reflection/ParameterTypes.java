@@ -26,7 +26,7 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import java.lang.reflect.Array;
 
 public class ParameterTypes {
-    private final static Class[] NO_PARAMETERS = new Class[0];
+    private static final Class[] NO_PARAMETERS = new Class[0];
 
     protected volatile Class[] nativeParamTypes;
     protected volatile CachedClass[] parameterTypes;
