@@ -63,6 +63,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     @Deprecated
     public static final String MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
+    private static final MetaClass[] EMPTY_METACLASS_ARRAY = new MetaClass[0];
+    private static final MetaClassRegistryChangeEventListener[] EMPTY_METACLASSREGISTRYCHANGEEVENTLISTENER_ARRAY = new MetaClassRegistryChangeEventListener[0];
 
     private final boolean useAccessible;
 
@@ -414,7 +416,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                     new ArrayList<MetaClassRegistryChangeEventListener>(changeListenerList.size()+nonRemoveableChangeListenerList.size());
             ret.addAll(nonRemoveableChangeListenerList);
             ret.addAll(changeListenerList);
-            return ret.toArray(new MetaClassRegistryChangeEventListener[0]);
+            return ret.toArray(EMPTY_METACLASSREGISTRYCHANGEEVENTLISTENER_ARRAY);
         }
     }
     
@@ -458,7 +460,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @return the iterator.
      */    
     public Iterator iterator() {
-        final MetaClass[] refs = metaClassInfo.toArray(new MetaClass[0]);
+        final MetaClass[] refs = metaClassInfo.toArray(EMPTY_METACLASS_ARRAY);
         
         return new Iterator() {
             // index in the ref array
