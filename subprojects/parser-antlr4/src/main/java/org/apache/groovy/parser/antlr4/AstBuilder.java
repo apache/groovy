@@ -2337,13 +2337,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                     this.visitNamedPropertyArgs(ctx.namedPropertyArgs());
 
             Expression right;
-            if (mapEntryExpressionList.size() == 0) {
+            Expression firstKeyExpression;
+            int mapEntryExpressionListSize = mapEntryExpressionList.size();
+            if (mapEntryExpressionListSize == 0) {
                 // expecting list of MapEntryExpressions later so use SpreadMap to smuggle empty MapExpression to later stages
                 right = configureAST(
                         new SpreadMapExpression(configureAST(new MapExpression(), ctx.namedPropertyArgs())),
                         ctx.namedPropertyArgs());
-            } else if (mapEntryExpressionList.size() == 1 && mapEntryExpressionList.get(0).getKeyExpression() instanceof SpreadMapExpression) {
-                right = mapEntryExpressionList.get(0).getKeyExpression();
+            } else if (mapEntryExpressionListSize == 1 && (firstKeyExpression = mapEntryExpressionList.get(0).getKeyExpression()) instanceof SpreadMapExpression) {
+                right = firstKeyExpression;
             } else {
                 ListExpression listExpression =
                         configureAST(
