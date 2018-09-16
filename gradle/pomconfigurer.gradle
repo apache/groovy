@@ -642,6 +642,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             contributor {
                 name 'Ben Yu'
             }
+            contributor {
+                name 'Dejan Bosanac'
+            }
         }
         mailingLists {
             mailingList {
