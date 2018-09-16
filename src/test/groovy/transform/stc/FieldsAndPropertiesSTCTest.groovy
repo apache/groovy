@@ -637,7 +637,7 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
 
     void testPropertyAssignmentInSubClassAndMultiSetter() {
         10.times {
-            assertScript '''import org.codehaus.groovy.ast.PropertyNode
+            assertScript '''
 
             public class Activity {
                 int debug
@@ -665,7 +665,7 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
 
     void testPropertyAssignmentInSubClassAndMultiSetterThroughDelegation() {
         10.times {
-            assertScript '''import org.codehaus.groovy.ast.PropertyNode
+            assertScript '''
 
             public class Activity {
                 int debug

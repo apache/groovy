@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.reflect.Modifier.isFinal;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 
 /**
  * goes through an AST and initializes the scopes
@@ -187,8 +188,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         for (MethodNode mn : cn.getMethods()) {
             String pName = getPropertyName(mn);
-            if (pName != null && pName.equals(name))
-                return new PropertyNode(pName, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
+            if (name.equals(pName)) {
+                PropertyNode property = new PropertyNode(name, mn.getModifiers(), ClassHelper.OBJECT_TYPE, cn, null, null, null);
+                property.getField().setHasNoRealSourcePosition(true);
+                property.getField().setSynthetic(true);
+                property.getField().setDeclaringClass(cn);
+                property.setDeclaringClass(cn);
+                return property;
+            }
         }
 
         for (PropertyNode pn : cn.getProperties()) {
@@ -198,22 +205,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         Variable ret = findClassMember(cn.getSuperClass(), name);
         if (ret != null) return ret;
         return findClassMember(cn.getOuterClass(), name);
-    }
-
-    private static String getPropertyName(MethodNode m) {
-        String name = m.getName();
-        if (!(name.startsWith("set") || name.startsWith("get"))) return null;
-        String pname = name.substring(3);
-        if (pname.length() == 0) return null;
-        pname = java.beans.Introspector.decapitalize(pname);
-
-        if (name.startsWith("get") && (m.getReturnType() == ClassHelper.VOID_TYPE || m.getParameters().length != 0)) {
-            return null;
-        }
-        if (name.startsWith("set") && m.getParameters().length != 1) {
-            return null;
-        }
-        return pname;
     }
 
     // -------------------------------
