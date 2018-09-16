@@ -19,11 +19,8 @@
 package org.apache.groovy.ast.tools;
 
 import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-
-import static org.apache.groovy.util.BeanUtils.decapitalize;
 
 /**
  * Utility class for working with MethodNodes
@@ -78,7 +75,7 @@ public class MethodNodeUtils {
     public static String getPropertyName(MethodNode mNode) {
         String name = mNode.getName();
         if (name.startsWith("set") || name.startsWith("get") || name.startsWith("is")) {
-            String pname = decapitalize(name.substring(name.startsWith("is") ? 2 : 3));
+            String pname = java.beans.Introspector.decapitalize(name.substring(name.startsWith("is") ? 2 : 3));
             if (!pname.isEmpty()) {
                 if (name.startsWith("set")) {
                     if (mNode.getParameters().length == 1) {
