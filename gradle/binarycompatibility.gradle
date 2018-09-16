@@ -37,7 +37,7 @@ check.dependsOn(checkBinaryCompatibility)
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.
 def excludeModules = [
         'groovy-cli-picocli', 'groovy-cli-commons', 'groovy-dateutil', 'groovy-datetime', 'groovy-jaxb',
-        'groovy-macro', 'groovy-json-direct', 'groovy-test-junit5', 'performance', 'tests-vm8'
+        'groovy-macro', 'groovy-json-direct', 'groovy-test-junit5', 'groovy-yaml', 'performance', 'tests-vm8'
 ]
 //def excludeModules = []
 
