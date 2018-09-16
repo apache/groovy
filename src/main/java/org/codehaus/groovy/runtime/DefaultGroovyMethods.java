@@ -7839,6 +7839,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Support subscript operator for list access.
+     */
+    public static <T> T getAt(List<T> self, Number idx) {
+        return getAt(self, idx.intValue());
+    }
+
+    /**
      * Support the subscript operator for an Iterator. The iterator
      * will be partially exhausted up until the idx entry after returning
      * if a +ve or 0 idx is used, or fully exhausted if a -ve idx is used
@@ -7933,6 +7940,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             self.add(idx, value);
         }
+    }
+
+    /**
+     * Support subscript operator for list modification.
+     */
+    public static <T> void putAt(List<T> self, Number idx, T value) {
+        putAt(self, idx.intValue(), value);
     }
 
     /**
