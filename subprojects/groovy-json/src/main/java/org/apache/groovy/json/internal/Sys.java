@@ -54,7 +54,7 @@ class Sys {
         } else if ("1.8.0".equals(sversion)) {
             v = new BigDecimal("1.8");
         } else {
-            Pattern p = Pattern.compile("^([1-9]\\.[0-9]+)");
+            Pattern p = Pattern.compile("^([1-9]\\d*(\\.\\d+)?)");
             Matcher matcher = p.matcher(sversion);
             if (matcher.find()) {
                 v = new BigDecimal(matcher.group(0));
