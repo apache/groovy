@@ -205,7 +205,8 @@ def optionalModules = [
         'groovy-bsf',
         'groovy-cli-commons',
         'groovy-dateutil',
-        'groovy-jaxb'
+        'groovy-jaxb',
+        'groovy-yaml'
 ]
 
 ext.pomAll = {

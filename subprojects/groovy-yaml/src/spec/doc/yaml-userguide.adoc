@@ -1,0 +1,98 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Processing YAML
+
+Groovy has an optional `groovy-yaml` module which provides support for converting between Groovy objects and YAML. The classes dedicated to
+YAML serialisation and parsing are found in the `groovy.yaml` package.
+
+[[yaml_yamlslurper]]
+== YamlSlurper
+
+`YamlSlurper` is a class that parses YAML text or reader content into Groovy data structures (objects) such as maps, lists and
+primitive types like `Integer`, `Double`, `Boolean` and `String`.
+
+The class comes with a bunch of overloaded `parse` methods plus some special methods such as `parseText`
+and others. For the next example we will use the `parseText` method. It parses a YAML `String` and recursively converts it to a
+list or map of objects. The other `parse*` methods are similar in that they return a YAML `String` but for different parameter
+types.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-yaml/src/spec/test/groovy/yaml/YamlParserTest.groovy[tags=parse_text,indent=0]
+----
+
+Notice the result is a plain map and can be handled like a normal Groovy object instance. `YamlSlurper` parses the
+given YAML as defined by the http://yaml.org/spec/1.2/spec.html[YAML Ain’t Markup Language (YAML™)].
+
+
+As `YamlSlurper` is returning pure Groovy object instances without any special YAML classes in the back, its usage
+is transparent. In fact, `YamlSlurper` results conform to GPath expressions. GPath is a powerful expression language
+that is supported by multiple slurpers for different data formats (`XmlSlurper` for XML being one example).
+
+[NOTE]
+For more details please have a look at the section on <<core-semantics.adoc#gpath_expressions,GPath expressions>>.
+
+The following table gives an overview of the YAML types and the corresponding Groovy data types:
+
+[cols="1,3" options="header"]
+|===
+|YAML
+|Groovy
+
+|string
+|`java.lang.String`
+
+|number
+|`java.lang.BigDecimal` or `java.lang.Integer`
+
+|object
+|`java.util.LinkedHashMap`
+
+|array
+|`java.util.ArrayList`
+
+|true
+|`true`
+
+|false
+|`false`
+
+|null
+|`null`
+
+|date
+|`java.util.Date` based on the `yyyy-MM-dd'T'HH:mm:ssZ` date format
+|===
+
+[NOTE]
+Whenever a value in YAML is `null`, `YamlSlurper` supplements it with the Groovy `null` value. This is in contrast to other
+YAML parsers that represent a `null` value with a library-provided singleton object.
+
+=== Builders
+
+Another way to create YAML from Groovy is to use `YamlBuilder`. The builder provide a
+DSL which allows to formulate an object graph which is then converted to YAML.
+
+[source,groovy]
+----
+include::{rootProjectDir}/subprojects/groovy-yaml/src/spec/test/groovy/yaml/YamlBuilderTest.groovy[tags=build_text,indent=0]
+----
