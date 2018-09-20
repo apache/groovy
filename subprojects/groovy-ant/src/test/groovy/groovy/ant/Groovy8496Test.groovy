@@ -18,7 +18,10 @@
  */
 package groovy.ant
 
+import groovy.transform.NotYetImplemented
+
 class Groovy8496Test extends AntTestCase {
+    @NotYetImplemented
     void testGetProperty() {
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()
 //        debugLogger.setMessageOutputLevel(4)

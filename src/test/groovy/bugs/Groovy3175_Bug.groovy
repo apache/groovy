@@ -23,6 +23,7 @@ class Groovy3175_Bug extends GroovyTestCase {
     void testSyntheticModifier() {
         assertScript """
         import groovy.transform.Generated
+        import groovy.transform.Internal
 
         class MyService {
             private fio
@@ -30,12 +31,15 @@ class Groovy3175_Bug extends GroovyTestCase {
             def something() { }
             def anotherSomething() { assert true }
         }
+
         def fields = MyService.getDeclaredFields().grep { !it.synthetic }
         assert fields.size() == 2
         def methods = MyService.getDeclaredMethods().grep { !it.synthetic }
-        assert methods.size() == 9
+        assert methods.size() == 4 // two explicit plus getter/setter
+        methods = methods.grep { !it.getAnnotation(Internal) }
+        assert methods.size() == 4 // two explicit plus getter/setter
         methods = methods.grep { !it.getAnnotation(Generated) }
-        assert methods.size() == 2
+        assert methods.size() == 2 // two explicit
         """
     }
 }
