@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.apache.groovy.parser.antlr4;
 
 import org.antlr.v4.runtime.TokenStream;
