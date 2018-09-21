@@ -30,7 +30,7 @@ import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.groovy.parser.antlr4.internal.AtnManager;
+import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.apache.groovy.util.Maps;
@@ -391,7 +391,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         try {
             // parsing have to wait util clearing is complete.
-            AtnManager.RRWL.readLock().lock();
+            AtnManager.READ_LOCK.lock();
             try {
                 result = buildCST(PredictionMode.SLL);
             } catch (Throwable t) {
@@ -402,7 +402,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
                 result = buildCST(PredictionMode.LL);
             } finally {
-                AtnManager.RRWL.readLock().unlock();
+                AtnManager.READ_LOCK.unlock();
             }
         } catch (Throwable t) {
             throw convertException(t);
