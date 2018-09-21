@@ -92,6 +92,19 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         execute (100000, 200000, 2)
     }
 
+    void testDeleteDependent() {
+        sleep 10000
+        MapFileSystem.instance.modFile('ClassA.groovy','DependentClass ic = new DependentClass()',gse.@time as long)
+        MapFileSystem.instance.modFile('DependentClass.groovy','class DependentClass {}',gse.@time as long)
+        def clazz = gse.loadScriptByName('ClassA.groovy')
+        assert clazz != null //classA is valid with dep
+        sleep 11000
+        MapFileSystem.instance.modFile('ClassA.groovy',"println 'this is a valid script'",gse.@time as long)
+        MapFileSystem.instance.deleteFile('DependentClass.groovy')
+        clazz = gse.loadScriptByName('ClassA.groovy')
+        assert clazz != null //classA is valid with dep removed
+    }
+
     public void testReloadWith2ScriptsDependentOnSameBeanAndReloadForSecond() {
         gse.config.minimumRecompilationInterval = 1000
         writeBean(1)
@@ -456,7 +469,11 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
                 fileCache.put(name, new MapFileEntry(content, lutime))
             }
         }
-    
+
+        def deleteFile(String name) {
+            return fileCache.remove(name)
+        }
+
         String getFilesrc(String name) {
             return fileCache.get(name).content
         }
