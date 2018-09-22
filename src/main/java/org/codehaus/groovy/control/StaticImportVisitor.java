@@ -329,6 +329,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                             return smce;
                         }
                     }
+
+                    if (mce.isImplicitThis() && lookForPossibleStaticMethod && hasPossibleStaticMethod(currentClass, methodName, args, true)) {
+                        StaticMethodCallExpression result = new StaticMethodCallExpression(currentClass, methodName, args);
+                        result.setSourcePosition(mce);
+                        return result;
+                    }
                 }
             }
         }
