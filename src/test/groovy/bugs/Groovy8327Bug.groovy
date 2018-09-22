@@ -22,11 +22,12 @@ class Groovy8327Bug extends GroovyTestCase {
     void testCallStaticMethodInClosureParamOfThisConstructor() {
         assertScript '''
             class A {
+                static String x = '123'
                 static String g() { 'abc' }
                 A() {
-                    this({g()})
+                    this({g() + getX()})
                 }
-                A(a) { assert 'abc' == a() }
+                A(a) { assert 'abc123' == a() }
             }
             
             assert new A()
@@ -36,11 +37,12 @@ class Groovy8327Bug extends GroovyTestCase {
     void testCallStaticMethodInThisConstructor() {
         assertScript '''
             class A {
+                static String x = '123'
                 static String g() { 'abc' }
                 A() {
-                    this(g())
+                    this(g() + getX())
                 }
-                A(a) { assert 'abc' == a }
+                A(a) { assert 'abc123' == a }
             }
             
             assert new A()
@@ -50,12 +52,13 @@ class Groovy8327Bug extends GroovyTestCase {
     void testCallStaticMethodInClosureParamOfSuperConstructor() {
         assertScript '''
             class B {
-                B(b) { assert 'abc' == b() }
+                B(b) { assert 'abc123' == b() }
             }
             class A extends B {
+                static String x = '123'
                 static String g() { 'abc' }
                 A() {
-                    super({g()})
+                    super({g() + getX()})
                 }
             }
             
@@ -66,12 +69,13 @@ class Groovy8327Bug extends GroovyTestCase {
     void testCallStaticMethodInSuperConstructor() {
         assertScript '''
             class B {
-                B(b) { assert 'abc' == b }
+                B(b) { assert 'abc123' == b }
             }
             class A extends B {
+                static String x = '123'
                 static String g() { 'abc' }
                 A() {
-                    super(g())
+                    super(g() + getX())
                 }
             }
             
@@ -82,12 +86,13 @@ class Groovy8327Bug extends GroovyTestCase {
     void testCallSuperStaticMethodInClosureParamOfSuperConstructor() {
         assertScript '''
             class B {
-                B(b) { assert 'abc' == b() }
+                B(b) { assert 'abc123' == b() }
+                static String x = '123'
                 static String g() { 'abc' }
             }
             class A extends B {
                 A() {
-                    super({g()})
+                    super({g() + getX()})
                 }
             }
             
@@ -98,12 +103,13 @@ class Groovy8327Bug extends GroovyTestCase {
     void testCallSuperStaticMethodInSuperConstructor() {
         assertScript '''
             class B {
-                B(b) { assert 'abc' == b }
+                B(b) { assert 'abc123' == b }
+                static String x = '123'
                 static String g() { 'abc' }
             }
             class A extends B {
                 A() {
-                    super(g())
+                    super(g() + getX())
                 }
             }
             
