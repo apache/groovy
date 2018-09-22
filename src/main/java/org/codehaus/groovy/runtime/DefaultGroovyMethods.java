@@ -56,6 +56,7 @@ import groovy.util.MapEntry;
 import groovy.util.OrderBy;
 import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
+import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -19730,5 +19731,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <E> boolean removeElement(Collection<E> self, Object o) {
         return self.remove(o);
+    }
+
+    /**
+     * Get the detail information of {@link Throwable} instance's stack trace
+     *
+     * @param self a Throwable instance
+     * @return the detail information of stack trace
+     * @since 2.5.3
+     */
+    public static String asString(Throwable self) {
+        StringBuilderWriter sw = new StringBuilderWriter();
+
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            self.printStackTrace(pw);
+        }
+
+        return sw.toString();
     }
 }
