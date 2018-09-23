@@ -105,6 +105,22 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             A a = [:]
             assert a != null
         '''
+        assertScript '''
+            class A {
+                int x
+                int y
+            }
+            def a = [:] as A
+            assert a != null
+        '''
+        assertScript '''
+            class A {
+                int x
+                int y
+            }
+            def a = A[:]
+            assert a != null
+        '''
     }
 
     void testConstructMap() {
@@ -123,6 +139,27 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = [x:100, y:200]
+            assert a.x == 100
+            assert a.y == 200
+        '''
+    }
+
+    void testConstructFromCoercedMap() {
+        assertScript '''
+            class A {
+                int x
+                int y
+            }
+            def a = [x:100, y:200] as A
+            assert a.x == 100
+            assert a.y == 200
+        '''
+        assertScript '''
+            class A {
+                int x
+                int y
+            }
+            def a = A[x:100, y:200]
             assert a.x == 100
             assert a.y == 200
         '''

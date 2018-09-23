@@ -1092,7 +1092,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     return ce;
                 }
                 else {
-                    // may be we have C[k1:v1, k2:v2] -> should become (C)([k1:v1, k2:v2])
+                    // maybe we have C[k1:v1, k2:v2] -> should become (C)([k1:v1, k2:v2])
                     boolean map = true;
                     for (Expression expression : list.getExpressions()) {
                         if(!(expression instanceof MapEntryExpression)) {
@@ -1108,6 +1108,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         }
                         me.setSourcePosition(list);
                         final CastExpression ce = new CastExpression(left.getType(), me);
+                        ce.setCoerce(true);
                         ce.setSourcePosition(be);
                         return ce;
                     }
@@ -1116,7 +1117,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // we have C[*:map] -> should become (C) map
                 SpreadMapExpression mapExpression = (SpreadMapExpression) be.getRightExpression();
                 Expression right = transform(mapExpression.getExpression());
-                Expression ce = new CastExpression(left.getType(), right);
+                CastExpression ce = new CastExpression(left.getType(), right);
+                ce.setCoerce(true);
                 ce.setSourcePosition(be);
                 return ce;
             }
