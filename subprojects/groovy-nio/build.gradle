@@ -20,7 +20,7 @@ dependencies {
     compile rootProject
     testCompile project(':groovy-test')
     testCompile ("org.spockframework:spock-core:$spockVersion") {
-        exclude module: 'groovy-all'
+        exclude group: 'org.codehaus.groovy'
     }
 }
 
