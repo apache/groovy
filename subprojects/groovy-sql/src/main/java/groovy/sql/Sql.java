@@ -240,7 +240,7 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * @author Daniel Henrique Alves Lima
  * @author David Sutherland
  */
-public class Sql {
+public class Sql implements AutoCloseable {
 
     /**
      * Hook to allow derived classes to access the log
@@ -3415,6 +3415,7 @@ public class Sql {
      * the connection. If this SQL object was created from a DataSource then
      * this method only frees any cached objects (statements in particular).
      */
+    @Override
     public void close() {
         namedParamSqlCache.clear();
         namedParamIndexPropCache.clear();
