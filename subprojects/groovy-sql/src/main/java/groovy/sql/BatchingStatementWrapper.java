@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * If the batch count reaches the predefined number, this Statement does an executeBatch()
  * automatically. If batchSize is zero, then no batching is performed.
  */
-public class BatchingStatementWrapper extends GroovyObjectSupport {
+public class BatchingStatementWrapper extends GroovyObjectSupport implements AutoCloseable {
     private final Statement delegate;
     protected int batchSize;
     protected int batchCount;
@@ -122,6 +122,7 @@ public class BatchingStatementWrapper extends GroovyObjectSupport {
         }
     }
 
+    @Override
     public void close() throws SQLException {
         delegate.close();
     }
