@@ -138,7 +138,7 @@ configurations {
 
 ext {
     antVersion = '1.9.13'
-    asmVersion = '6.2.1'
+    asmVersion = '7.0-beta'
     antlrVersion = '2.7.7'
     bridgerVersion = '1.5.Final'
     coberturaVersion = '1.9.4.1'

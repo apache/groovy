@@ -221,7 +221,7 @@ public class CompilerConfiguration {
 
     private BytecodeProcessor bytecodePostprocessor;
 
-    public static final int ASM_API_VERSION = Opcodes.ASM7_EXPERIMENTAL;
+    public static final int ASM_API_VERSION = Opcodes.ASM7;
 
     /**
      * Sets the Flags to defaults.
