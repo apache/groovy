@@ -20,6 +20,11 @@ package groovy.transform
 
 import groovy.transform.options.ImmutablePropertyHandler
 
+import java.lang.annotation.ElementType
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.Target
+
 /**
  * Meta annotation used when defining immutable classes.
  * <p>
@@ -182,4 +187,15 @@ import groovy.transform.options.ImmutablePropertyHandler
 @MapConstructor(noArg = true, includeSuperProperties = true, includeFields = true)
 @KnownImmutable
 @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
-@interface Immutable { }
+@Retention(RetentionPolicy.RUNTIME)
+@Target([ ElementType.TYPE ])
+@interface Immutable {
+    /** No longer used directly but exists for legacy handling only. See component annotations. */
+    Class[] knownImmutableClasses() default []
+
+    /** No longer used directly but exists for legacy handling only. See component annotations. */
+    String[] knownImmutables() default []
+
+    /** No longer used directly but exists for legacy handling only. See component annotations. */
+    boolean copyWith() default false
+}

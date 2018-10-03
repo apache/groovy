@@ -196,4 +196,13 @@ public @interface AnnotationCollector {
      * List of aliased annotations.
      */
     Class[] value() default {};
+
+    /**
+     * Used internally - the default value is a marker value indicating that the attribute hasn't been set.
+     * Normally set automatically during annotation processing to an automatically created
+     * nested helper class which holds serialization information used in pre-compiled scenarios.
+     * If set to the collector annotation, re-purposes the annotation itself to become the helper
+     * class (legacy approach used in Groovy 2.5 up to 2.5.2).
+     */
+    Class serializeClass() default Undefined.CLASS.class;
 }

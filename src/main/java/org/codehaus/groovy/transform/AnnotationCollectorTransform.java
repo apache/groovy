@@ -25,6 +25,8 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -49,6 +51,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import static org.codehaus.groovy.transform.trait.TraitComposer.COMPILESTATIC_CLASSNODE;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -96,7 +99,7 @@ public class AnnotationCollectorTransform {
          */
         public void transformClass(ClassNode cn) {
             AnnotationNode collector = null;
-            for (ListIterator<AnnotationNode> it = cn.getAnnotations().listIterator(); it.hasNext();) {
+            for (ListIterator<AnnotationNode> it = cn.getAnnotations().listIterator(); it.hasNext(); ) {
                 AnnotationNode an = it.next();
                 if (an.getClassNode().getName().equals(AnnotationCollector.class.getName())) {
                     collector = an;
@@ -106,15 +109,31 @@ public class AnnotationCollectorTransform {
             if (collector == null) {
                 return;
             }
-            // force final class, remove interface, annotation, enum and abstract modifiers
-            cn.setModifiers((ACC_FINAL+cn.getModifiers()) & ~(ACC_ENUM|ACC_INTERFACE|ACC_ANNOTATION|ACC_ABSTRACT));
-            // force Object super class
-            cn.setSuperClass(ClassHelper.OBJECT_TYPE);
-            // force no interfaces implemented
-            cn.setInterfaces(ClassNode.EMPTY_ARRAY);
+            boolean legacySerialization = false;
+            final Expression member = collector.getMember("serializeClass");
+            if (member instanceof ClassExpression) {
+                ClassExpression ce = (ClassExpression) member;
+                legacySerialization = ce.getType().getName().equals(cn.getName());
+            }
+            ClassNode helper = cn;
+            if (legacySerialization) {
+                // force final class, remove interface, annotation, enum and abstract modifiers
+                helper.setModifiers((ACC_FINAL + helper.getModifiers()) & ~(ACC_ENUM | ACC_INTERFACE | ACC_ANNOTATION | ACC_ABSTRACT));
+                // force Object super class
+                helper.setSuperClass(ClassHelper.OBJECT_TYPE);
+                // force no interfaces implemented
+                helper.setInterfaces(ClassNode.EMPTY_ARRAY);
+            } else {
+                helper = new InnerClassNode(cn.getPlainNodeReference(), cn.getName() + "$CollectorHelper",
+                        ACC_PUBLIC | ACC_STATIC | ACC_FINAL, ClassHelper.OBJECT_TYPE.getPlainNodeReference());
+                cn.getModule().addClass(helper);
+                helper.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
+                MethodNode serializeClass = collector.getClassNode().getMethod("serializeClass", Parameter.EMPTY_ARRAY);
+                collector.setMember("serializeClass", new ClassExpression(helper.getPlainNodeReference()));
+            }
 
             // add static value():Object[][] method
-            List<AnnotationNode> meta = getMeta(cn); 
+            List<AnnotationNode> meta = getMeta(cn);
             List<Expression> outer = new ArrayList<Expression>(meta.size());
             for (AnnotationNode an : meta) {
                 Expression serialized = serialize(an);
@@ -123,15 +142,14 @@ public class AnnotationCollectorTransform {
 
             ArrayExpression ae = new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), outer);
             Statement code = new ReturnStatement(ae);
-            cn.addMethod(   "value", ACC_PUBLIC+ACC_STATIC,
-                            ClassHelper.OBJECT_TYPE.makeArray().makeArray(), 
-                            Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY,
-                            code);
+            helper.addMethod("value", ACC_PUBLIC + ACC_STATIC,
+                    ClassHelper.OBJECT_TYPE.makeArray().makeArray(),
+                    Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
 
             // remove annotations
-            for (ListIterator<AnnotationNode> it = cn.getAnnotations().listIterator(); it.hasNext();) {
+            for (ListIterator<AnnotationNode> it = cn.getAnnotations().listIterator(); it.hasNext(); ) {
                 AnnotationNode an = it.next();
-                if (an == collector) {
+                if (an == collector || "java.lang.annotation".equals(an.getClassNode().getPackageName())) {
                     continue;
                 }
                 it.remove();
@@ -232,7 +250,7 @@ public class AnnotationCollectorTransform {
         List<AnnotationNode> ret = new ArrayList<AnnotationNode>(annotations.size());
         for (AnnotationNode an : annotations) {
             ClassNode type = an.getClassNode();
-            if (type.getName().equals(AnnotationCollector.class.getName())) continue;
+            if (type.getName().equals(AnnotationCollector.class.getName()) || "java.lang.annotation".equals(type.getPackageName())) continue;
             AnnotationNode toAdd = new AnnotationNode(type);
             copyMembers(an, toAdd);
             ret.add(toAdd);
@@ -252,6 +270,7 @@ public class AnnotationCollectorTransform {
     }
 
     private static List<AnnotationNode> getTargetListFromClass(ClassNode alias) {
+        alias = getSerializeClass(alias);
         Class<?> c = alias.getTypeClass();
         Object[][] data;
         try {
@@ -262,7 +281,23 @@ public class AnnotationCollectorTransform {
         }
         return makeListOfAnnotations(data);
     }
-    
+
+    // 2.5.3 and above gets from annotation attribute otherwise self
+    private static ClassNode getSerializeClass(ClassNode alias) {
+        List<AnnotationNode> annotations = alias.getAnnotations(ClassHelper.make(AnnotationCollector.class));
+        if (!annotations.isEmpty()) {
+            AnnotationNode annotationNode = annotations.get(0);
+            Expression member = annotationNode.getMember("serializeClass");
+            if (member instanceof ClassExpression) {
+                ClassExpression ce = (ClassExpression) member;
+                if (!ce.getType().getName().equals(AnnotationCollector.class.getName())) {
+                    alias = ce.getType();
+                }
+            }
+        }
+        return alias;
+    }
+
     private static List<AnnotationNode> makeListOfAnnotations(Object[][] data) {
         if (data.length == 0) {
             return Collections.emptyList();
@@ -349,7 +384,7 @@ public class AnnotationCollectorTransform {
     public List<AnnotationNode> visit(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, AnnotatedNode aliasAnnotated, SourceUnit source) {
         List<AnnotationNode> ret =  getTargetAnnotationList(collector, aliasAnnotationUsage, source);
         Set<String> unusedNames = new HashSet<String>(aliasAnnotationUsage.getMembers().keySet());
-        
+
         for (AnnotationNode an: ret) {
             for (String name : aliasAnnotationUsage.getMembers().keySet()) {
                 if (an.getClassNode().hasMethod(name, Parameter.EMPTY_ARRAY)) {
