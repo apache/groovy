@@ -807,7 +807,7 @@ public class GenericsUtils {
      * Get the actual type according to the placeholder name
      *
      * @param placeholderName the placeholder name, e.g. T, E
-     * @param genericsPlaceholderAndTypeMap the result of {@link #makeDeclaringAndActualGenericsTypeMap(ClassNode, ClassNode}
+     * @param genericsPlaceholderAndTypeMap the result of {@link #makeDeclaringAndActualGenericsTypeMap(ClassNode, ClassNode)}
      * @return the actual type
      */
     public static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
