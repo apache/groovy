@@ -42,7 +42,14 @@ import java.lang.annotation.Target
  * assert c1 == c2
  * </pre>
  * The {@code @Immutable} meta-annotation corresponds to adding the following annotations:
- * {@code @ToString}, {@code @EqualsAndHashCode}, {@code @ImmutableBase}, {@code @KnownImmutable}, {@code @MapConstructor} and {@code @TupleConstructor}.
+ * {@link ToString},
+ * {@link EqualsAndHashCode},
+ * {@link ImmutableBase},
+ * {@link ImmutableOptions},
+ * {@link PropertyOptions},
+ * {@link TupleConstructor},
+ * {@link MapConstructor} and
+ * {@link KnownImmutable}.
  * Together these annotations instruct the compiler to execute the necessary transformations to add
  * the necessary getters, constructors, equals, hashCode and other helper methods that are typically
  * written when creating immutable classes with the defined properties.
