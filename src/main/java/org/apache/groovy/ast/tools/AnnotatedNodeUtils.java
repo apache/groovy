@@ -37,7 +37,7 @@ public class AnnotatedNodeUtils {
 
     public static void markAsGenerated(ClassNode containingClass, AnnotatedNode nodeToMark) {
         boolean shouldAnnotate = containingClass.getModule() != null && containingClass.getModule().getContext() != null;
-        if (shouldAnnotate) {
+        if (shouldAnnotate && !hasAnnotation(nodeToMark, GENERATED_TYPE)) {
             nodeToMark.addAnnotation(new AnnotationNode(GENERATED_TYPE));
         }
     }
