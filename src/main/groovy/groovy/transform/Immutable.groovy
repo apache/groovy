@@ -172,9 +172,11 @@ import java.lang.annotation.Target
  * @see ToString
  * @see EqualsAndHashCode
  * @see ImmutableBase
- * @see KnownImmutable
- * @see MapConstructor
+ * @see ImmutableOptions
+ * @see PropertyOptions
  * @see TupleConstructor
+ * @see MapConstructor
+ * @see KnownImmutable
  * @see Canonical
  * @since 1.7
  */
@@ -186,16 +188,16 @@ import java.lang.annotation.Target
 @TupleConstructor(defaults = false)
 @MapConstructor(noArg = true, includeSuperProperties = true, includeFields = true)
 @KnownImmutable
-@AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
+@AnnotationCollector(mode = AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
 @Retention(RetentionPolicy.RUNTIME)
-@Target([ ElementType.TYPE ])
+@Target([ElementType.TYPE])
 @interface Immutable {
-    /** No longer used directly but exists for legacy handling only. See component annotations. */
+    /** No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only. */
     Class[] knownImmutableClasses() default []
 
-    /** No longer used directly but exists for legacy handling only. See component annotations. */
+    /** No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only. */
     String[] knownImmutables() default []
 
-    /** No longer used directly but exists for legacy handling only. See component annotations. */
+    /** No longer used directly but instead collected from {@link ImmutableBase}. Remains for legacy handling only. */
     boolean copyWith() default false
 }
