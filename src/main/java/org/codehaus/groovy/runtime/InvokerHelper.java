@@ -536,12 +536,13 @@ public class InvokerHelper {
             } else {
                 reader = (Reader) object;
             }
-            char[] chars = new char[8192];
-            int i;
-            while ((i = reader.read(chars)) != -1) {
-                out.write(chars, 0, i);
+
+            try (Reader r = reader) {
+                char[] chars = new char[8192];
+                for (int i; (i = r.read(chars)) != -1; ) {
+                    out.write(chars, 0, i);
+                }
             }
-            reader.close();
         } else {
             out.write(toString(object));
         }
