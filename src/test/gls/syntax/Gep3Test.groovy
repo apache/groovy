@@ -61,11 +61,7 @@ import static Temperature.*
  *  method calls (ie. send "hello" to "Guillaume" is two methods chained
  *  one after the other as send("hello").to("Guillaume"))
  * - extend command expressions to be allowed on the RHS of assignments.
- *  def txt = foo a1() not allowed rigth now
- *
- * @author Lidia Donajczyk-Lipinska
- * @author Jochen "blackdrag" Theodorou
- * @author Guillaume Laforge
+ *  def txt = foo a1() not allowed right now
  */
 class Gep3Test extends GroovyTestCase {
 
