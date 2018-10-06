@@ -284,17 +284,6 @@ subprojects {
 
 apply from: 'subprojects/parser-antlr4/build.gradle'
 
-compileJava {
-    doLast {
-        ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/classgen/Verifier.class")
-        }
-        ant.echo('Bridger (groovy): ' + ant.properties.stdout)
-    }
-}
-
 task ensureGrammars {
     outputs.cacheIf { true }
     description = 'Ensure all the Antlr2 generated files are up to date.'
@@ -324,6 +313,20 @@ task ensureGrammars {
     }
 }
 
+compileJava {
+    dependsOn ensureGrammars
+    options.fork(memoryMaximumSize: javacMain_mx)
+
+    doLast {
+        ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
+            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/classgen/Verifier.class")
+        }
+        ant.echo('Bridger (groovy): ' + ant.properties.stdout)
+    }
+}
+
 apply from: 'wrapper.gradle'
 
 task dgmConverter(dependsOn:compileJava) {
@@ -347,11 +350,6 @@ task dgmConverter(dependsOn:compileJava) {
     }
     inputs.files fileTree('src/main').include('**/*GroovyMethods.java')
     outputs.dir outputDir
-}
-
-compileJava {
-    dependsOn ensureGrammars
-    options.fork(memoryMaximumSize: javacMain_mx)
 }
 
     // Gradle classloading magic with Groovy will only work if it finds a *jar*
