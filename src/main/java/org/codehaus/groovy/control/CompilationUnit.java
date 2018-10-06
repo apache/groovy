@@ -175,12 +175,7 @@ public class CompilationUnit extends ProcessingUnit {
         this.staticImportVisitor = new StaticImportVisitor();
         this.optimizer = new OptimizerVisitor(this);
 
-        phaseOperations = new LinkedList[Phases.ALL + 1];
-        newPhaseOperations = new LinkedList[Phases.ALL + 1];
-        for (int i = 0; i < phaseOperations.length; i++) {
-            phaseOperations[i] = new LinkedList();
-            newPhaseOperations[i] = new LinkedList();
-        }
+        initPhaseOperations();
         addPhaseOperation(new SourceUnitOperation() {
             public void call(SourceUnit source) throws CompilationFailedException {
                 source.parse();
@@ -272,6 +267,16 @@ public class CompilationUnit extends ProcessingUnit {
 
         this.classgenCallback = null;
         this.classNodeResolver = new ClassNodeResolver();
+    }
+
+    private void initPhaseOperations() {
+        int cnt = Phases.ALL + 1;
+        phaseOperations = new LinkedList[cnt];
+        newPhaseOperations = new LinkedList[cnt];
+        for (int i = 0; i < phaseOperations.length; i++) {
+            phaseOperations[i] = new LinkedList();
+            newPhaseOperations[i] = new LinkedList();
+        }
     }
 
     private void applyCompilationCustomizers(CompilerConfiguration configuration) {
