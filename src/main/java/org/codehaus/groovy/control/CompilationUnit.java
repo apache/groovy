@@ -297,17 +297,21 @@ public class CompilationUnit extends ProcessingUnit {
 
 
     public void addPhaseOperation(SourceUnitOperation op, int phase) {
-        if (phase < 0 || phase > Phases.ALL) throw new IllegalArgumentException("phase " + phase + " is unknown");
+        validatePhase(phase);
         phaseOperations[phase].add(op);
     }
 
     public void addPhaseOperation(PrimaryClassNodeOperation op, int phase) {
-        if (phase < 0 || phase > Phases.ALL) throw new IllegalArgumentException("phase " + phase + " is unknown");
+        validatePhase(phase);
         phaseOperations[phase].add(op);
     }
 
-    public void addFirstPhaseOperation(PrimaryClassNodeOperation op, int phase) {
+    private static void validatePhase(int phase) {
         if (phase < 0 || phase > Phases.ALL) throw new IllegalArgumentException("phase " + phase + " is unknown");
+    }
+
+    public void addFirstPhaseOperation(PrimaryClassNodeOperation op, int phase) {
+        validatePhase(phase);
         phaseOperations[phase].add(0, op);
     }
 
@@ -316,7 +320,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     public void addNewPhaseOperation(SourceUnitOperation op, int phase) {
-        if (phase < 0 || phase > Phases.ALL) throw new IllegalArgumentException("phase " + phase + " is unknown");
+        validatePhase(phase);
         newPhaseOperations[phase].add(op);
     }
 
