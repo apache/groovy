@@ -20,6 +20,10 @@ import org.codehaus.groovy.gradle.ReleaseInfoGenerator
 
 buildscript {
     repositories {
+        if (rootProject.hasProperty('buildInChina')) {
+            // Try to use Aliyun maven repository when building in China
+            maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+        }
         jcenter()
         maven{
             name 'Bintray Javadoc Hotfix repo'
@@ -47,7 +51,7 @@ buildscript {
 plugins {
     id 'com.gradle.build-scan' version '1.15.1'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '1.6.3'
+    id 'com.github.spotbugs' version '1.6.4'
     id "com.github.ben-manes.versions" version '0.20.0'
 }
 
@@ -160,6 +164,7 @@ ext {
     spockVersion = '1.2-groovy-2.4-SNAPSHOT' // supports 3.0
     antlr4Version = '4.7.1'
     jsr305Version = '3.0.2'
+    spotbugsannotationsVersion = '3.1.7'
 }
 
 dependencies {
@@ -185,7 +190,7 @@ dependencies {
     }
     compile files("${buildDir}/generated-classes")
 
-    compileOnly 'com.github.spotbugs:spotbugs-annotations:3.1.3'
+    compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsannotationsVersion"
 
     runtime("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
