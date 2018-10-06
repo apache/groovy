@@ -128,7 +128,7 @@ allprojects {
     }
 
     spotbugs {
-        toolVersion = '3.1.1'
+        toolVersion = '3.1.7'
         // continue build despite findbug warnings
         ignoreFailures = true
         //defining source set is needless
