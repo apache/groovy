@@ -176,6 +176,25 @@ public class CompilationUnit extends ProcessingUnit {
         this.optimizer = new OptimizerVisitor(this);
 
         initPhaseOperations();
+        addPhaseOperations();
+
+        applyCompilationCustomizers(configuration);
+
+        this.classgenCallback = null;
+        this.classNodeResolver = new ClassNodeResolver();
+    }
+
+    private void initPhaseOperations() {
+        int cnt = Phases.ALL + 1;
+        phaseOperations = new LinkedList[cnt];
+        newPhaseOperations = new LinkedList[cnt];
+        for (int i = 0; i < phaseOperations.length; i++) {
+            phaseOperations[i] = new LinkedList();
+            newPhaseOperations[i] = new LinkedList();
+        }
+    }
+
+    private void addPhaseOperations() {
         addPhaseOperation(new SourceUnitOperation() {
             public void call(SourceUnit source) throws CompilationFailedException {
                 source.parse();
@@ -262,21 +281,6 @@ public class CompilationUnit extends ProcessingUnit {
                 }
             }
         }, Phases.INSTRUCTION_SELECTION);
-
-        applyCompilationCustomizers(configuration);
-
-        this.classgenCallback = null;
-        this.classNodeResolver = new ClassNodeResolver();
-    }
-
-    private void initPhaseOperations() {
-        int cnt = Phases.ALL + 1;
-        phaseOperations = new LinkedList[cnt];
-        newPhaseOperations = new LinkedList[cnt];
-        for (int i = 0; i < phaseOperations.length; i++) {
-            phaseOperations[i] = new LinkedList();
-            newPhaseOperations[i] = new LinkedList();
-        }
     }
 
     private void applyCompilationCustomizers(CompilerConfiguration configuration) {
