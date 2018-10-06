@@ -599,6 +599,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
         private void registerIfClosure(Object arg, boolean replace) {
             if (arg instanceof Closure) {
+                if (propertyName.equals(CONSTRUCTOR)) {
+                    propertyName = GROOVY_CONSTRUCTOR;
+                }
                 Closure callable = (Closure) arg;
                 final List<MetaMethod> list = ClosureMetaMethod.createMethodList(propertyName, theClass, callable);
                 if (list.isEmpty() && this.isStatic) {
@@ -906,6 +909,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     public void registerInstanceMethod(String name, Closure closure) {
+        if (name.equals(CONSTRUCTOR)) {
+            name = GROOVY_CONSTRUCTOR;
+        }
         final List<MetaMethod> list = ClosureMetaMethod.createMethodList(name, theClass, closure);
         for (MetaMethod method : list) {
             registerInstanceMethod(method);
