@@ -22,7 +22,7 @@ import groovy.json.JsonBuilder;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Writable;
-import groovy.yaml.util.YamlConverter;
+import org.apache.groovy.yaml.util.YamlConverter;
 
 import java.io.IOException;
 import java.io.StringReader;

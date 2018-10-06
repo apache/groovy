@@ -19,9 +19,8 @@
 package groovy.yaml;
 
 import groovy.json.JsonSlurper;
-import groovy.yaml.util.YamlConverter;
+import org.apache.groovy.yaml.util.YamlConverter;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
