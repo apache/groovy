@@ -268,6 +268,13 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.INSTRUCTION_SELECTION);
 
+        applyCompilationCustomizers(configuration);
+
+        this.classgenCallback = null;
+        this.classNodeResolver = new ClassNodeResolver();
+    }
+
+    private void applyCompilationCustomizers(CompilerConfiguration configuration) {
         // apply configuration customizers if any
         if (configuration != null) {
             final List<CompilationCustomizer> customizers = configuration.getCompilationCustomizers();
@@ -278,8 +285,6 @@ public class CompilationUnit extends ProcessingUnit {
                 addPhaseOperation(customizer, customizer.getPhase().getPhaseNumber());
             }
         }
-        this.classgenCallback = null;
-        this.classNodeResolver = new ClassNodeResolver();
     }
 
     /**
