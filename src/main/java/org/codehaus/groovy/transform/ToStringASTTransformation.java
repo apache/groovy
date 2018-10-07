@@ -61,6 +61,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getterThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.sameX;
@@ -176,7 +177,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
     private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, boolean includeSuperFields, List<String> excludes, final List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames) {
         // def _result = new StringBuilder()
-        final Expression result = varX("_result");
+        final Expression result = localVarX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
         List<ToStringElement> elements = new ArrayList<ToStringElement>();
 
