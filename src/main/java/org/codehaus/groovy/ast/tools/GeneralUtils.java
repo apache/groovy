@@ -638,6 +638,12 @@ public class GeneralUtils {
         return result;
     }
 
+    public static VariableExpression localVarX(String name) {
+        VariableExpression result = new VariableExpression(name);
+        result.setAccessedVariable(result);
+        return result;
+    }
+
     public static BinaryExpression ltX(Expression lhv, Expression rhv) {
         return new BinaryExpression(lhv, LT, rhv);
     }

@@ -70,6 +70,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isTrueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isZeroX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notIdenticalX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.orX;
@@ -162,7 +163,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
         final BlockStatement body = new BlockStatement();
         // def _result = HashCodeHelper.initHash()
-        final Expression result = varX("_result");
+        final Expression result = localVarX("_result");
         body.addStatement(declS(result, callX(HASHUTIL_TYPE, "initHash")));
 
         for (PropertyNode pNode : pList) {
