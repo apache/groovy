@@ -208,6 +208,17 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 }
                 return result;
             }
+        } else if (v instanceof FieldNode) {
+            if (inSpecialConstructorCall) { // GROOVY-8819
+                FieldNode fn = (FieldNode) v;
+                ClassNode declaringClass = fn.getDeclaringClass();
+                if (fn.isStatic() && currentClass.isDerivedFrom(declaringClass)) {
+                    Expression result = new PropertyExpression(new ClassExpression(declaringClass), v.getName());
+                    result.setSourcePosition(ve);
+
+                    return result;
+                }
+            }
         }
         return ve;
     }
