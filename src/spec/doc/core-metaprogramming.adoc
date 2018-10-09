@@ -1985,7 +1985,21 @@ _protectedCacheSize>0_ would create an unlimited cache with some results protect
 [[xform-TailRecursive]]
 ===== `@groovy.transform.TailRecursive`
 
-TBD
+The `@TailRecursive` annotation can be used to automatically transform a recursive call at the end of a method
+into an equivalent iterative version of the same code. This avoids stack overflow due to too many recursive calls.
+Below is an example of use when calculating factorial:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/ClassDesignASTTransformsTest.groovy[tags=tailrecursive,indent=0]
+----
+
+Currently, the annotation will only work for self-recursive method calls, i.e. a single recursive call to the exact same method again.
+Consider using Closures and `trampoline()` if you have a scenario involving simple mutual recursion.
+Also note that only non-void methods are currently handled (void calls will result in a compilation error).
+
+CAUTION: Currently, some forms of method overloading can trick the compiler,
+and some non-tail recursive calls are erroneously treated as tail recursive.
 
 [[xform-Singleton]]
 ===== `@groovy.lang.Singleton`
