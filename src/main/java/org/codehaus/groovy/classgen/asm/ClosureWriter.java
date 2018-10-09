@@ -253,10 +253,10 @@ public class ClosureWriter {
         BlockStatement block = new BlockStatement();
         // this block does not get a source position, because we don't
         // want this synthetic constructor to show up in corbertura reports
-        VariableExpression outer = new VariableExpression("_outerInstance");
+        VariableExpression outer = new VariableExpression("_outerInstance", outerClass);
         outer.setSourcePosition(expression);
         block.getVariableScope().putReferencedLocalVariable(outer);
-        VariableExpression thisObject = new VariableExpression("_thisObject");
+        VariableExpression thisObject = new VariableExpression("_thisObject", classNode);
         thisObject.setSourcePosition(expression);
         block.getVariableScope().putReferencedLocalVariable(thisObject);
         TupleExpression conArgs = new TupleExpression(outer, thisObject);
