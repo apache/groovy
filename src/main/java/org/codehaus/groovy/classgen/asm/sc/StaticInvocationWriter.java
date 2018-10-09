@@ -284,7 +284,27 @@ public class StaticInvocationWriter extends InvocationWriter {
                 // it's a static extension method
                 argumentList.add(0, ConstantExpression.NULL);
             } else {
-                argumentList.add(0, receiver);
+                ClassNode classNode = controller.getClassNode();
+                boolean isThisOrSuper = false;
+                if (receiver instanceof VariableExpression) {
+                    isThisOrSuper = ((VariableExpression) receiver).isThisExpression() || ((VariableExpression) receiver).isSuperExpression();
+                }
+                Expression fixedReceiver = null;
+                if (isThisOrSuper && classNode instanceof InnerClassNode && controller.isInClosure()) {
+                    ClassNode current = classNode.getOuterClass();
+                    fixedReceiver = new VariableExpression("thisObject", current);
+                    // adjust for multiple levels of nesting if needed
+                    while (current instanceof InnerClassNode && !classNode.equals(current)) {
+                        FieldNode thisField = current.getField("this$0");
+                        current = current.getOuterClass();
+                        if (thisField != null) {
+                            fixedReceiver = new PropertyExpression(fixedReceiver, "this$0");
+                            fixedReceiver.setType(current);
+                        }
+                    }
+                }
+
+                argumentList.add(0, fixedReceiver != null ? fixedReceiver : receiver);
             }
 
             Parameter[] parameters = node.getParameters();
