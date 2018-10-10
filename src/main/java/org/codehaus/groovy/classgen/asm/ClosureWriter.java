@@ -251,7 +251,7 @@ public class ClosureWriter {
         }
 
         // let's make the constructor
-        BlockStatement block = createBlockStatementForConstructor(expression);
+        BlockStatement block = createBlockStatementForConstructor(expression, outerClass, classNode);
 
         // let's assign all the parameter fields from the outer context
         addFieldsAndGettersForLocalVariables(answer, localVariableParams);
@@ -302,14 +302,14 @@ public class ClosureWriter {
         }
     }
 
-    protected BlockStatement createBlockStatementForConstructor(ClosureExpression expression) {
+    protected BlockStatement createBlockStatementForConstructor(ClosureExpression expression, ClassNode outerClass, ClassNode thisClassNode) {
         BlockStatement block = new BlockStatement();
         // this block does not get a source position, because we don't
         // want this synthetic constructor to show up in corbertura reports
-        VariableExpression outer = new VariableExpression(OUTER_INSTANCE);
+        VariableExpression outer = new VariableExpression(OUTER_INSTANCE, outerClass);
         outer.setSourcePosition(expression);
         block.getVariableScope().putReferencedLocalVariable(outer);
-        VariableExpression thisObject = new VariableExpression(THIS_OBJECT);
+        VariableExpression thisObject = new VariableExpression(THIS_OBJECT, thisClassNode);
         thisObject.setSourcePosition(expression);
         block.getVariableScope().putReferencedLocalVariable(thisObject);
         TupleExpression conArgs = new TupleExpression(outer, thisObject);

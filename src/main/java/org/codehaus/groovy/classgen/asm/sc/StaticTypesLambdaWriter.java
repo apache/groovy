@@ -309,7 +309,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         Parameter[] localVariableParameters = syntheticLambdaMethodNode.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
 
         addFieldsAndGettersForLocalVariables(answer, localVariableParameters);
-        ConstructorNode constructorNode = addConstructor(expression, localVariableParameters, answer, createBlockStatementForConstructor(expression));
+        ConstructorNode constructorNode = addConstructor(expression, localVariableParameters, answer, createBlockStatementForConstructor(expression, outerClass, classNode));
         constructorNode.putNodeMetaData(IS_GENERATED_CONSTRUCTOR, Boolean.TRUE);
 
         Parameter enclosingThisParameter = syntheticLambdaMethodNode.getParameters()[0];
