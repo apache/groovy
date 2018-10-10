@@ -43,6 +43,7 @@ class Groovy8764Bug extends GroovyTestCase {
     }
 
     void testDgmMethodInClosureInInnerClass() {
+        if (System.getProperty('java.specification.version') < '1.8') return
         assertScript '''
         import groovy.transform.*
         import java.util.function.Function
