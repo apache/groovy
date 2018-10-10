@@ -380,7 +380,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     ClassNode current = classNode.getOuterClass();
                     fixedReceiver = new VariableExpression("thisObject", current);
                     // adjust for multiple levels of nesting if needed
-                    while (current instanceof InnerClassNode && !classNode.equals(current)) {
+                    while (current instanceof InnerClassNode && !target.getDeclaringClass().equals(current)) {
                         FieldNode thisField = current.getField("this$0");
                         current = current.getOuterClass();
                         if (thisField != null) {
