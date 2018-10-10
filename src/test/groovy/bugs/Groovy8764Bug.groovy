@@ -19,7 +19,7 @@
 package groovy.bugs
 
 class Groovy8764Bug extends GroovyTestCase {
-    void testDgmMethodInClosureInInnerClass() {
+    void testDgmMethodInClosureInAnonymousInnerClass() {
         assertScript '''
             import groovy.transform.*
 
@@ -39,6 +39,30 @@ class Groovy8764Bug extends GroovyTestCase {
             def gt = new GroovyTest()
             gt.test()
             assert gt.hasMeta
+        '''
+    }
+
+    void testDgmMethodInClosureInInnerClass() {
+        assertScript '''
+        import groovy.transform.*
+        import java.util.function.Function
+
+            @CompileStatic
+            class Outer {
+                static class Inner {
+                    List<Optional<String>> pets = [Optional.of('goldfish'), Optional.of('cat')]
+                    Optional<Integer> test(int index) {
+                        pets[index].flatMap({ String s ->
+                            // sprintf is a DGM method on Object
+                            sprintf('%s', s).size() == 3 ? Optional.of(index) : Optional.empty()
+                        } as Function<String, Optional<Integer>>)
+                    }
+                }
+            }
+
+            def oi = new Outer.Inner()
+            assert !oi.test(0)
+            assert oi.test(1).value == 1
         '''
     }
 }
