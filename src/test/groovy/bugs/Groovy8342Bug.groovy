@@ -22,6 +22,7 @@ import gls.CompilableTestSupport
 
 class Groovy8342Bug extends CompilableTestSupport {
     void testCorrectHandlingForArrayOfGenericType() {
+        if (System.getProperty('java.specification.version') < '1.8') return
         shouldCompile '''
             @groovy.transform.CompileStatic
             class ArrayGenericsIssue {
