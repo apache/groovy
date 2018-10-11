@@ -448,4 +448,31 @@ assert GreetingService.instance.greeting('Bob') == 'Hello, Bob!'
 // end::singleton_example_lazy[]
 '''
     }
+
+    void testTailRecursive() {
+        assertScript '''
+// tag::tailrecursive[]
+import groovy.transform.CompileStatic
+import groovy.transform.TailRecursive
+
+@CompileStatic
+class Factorial {
+
+    @TailRecursive
+    static BigInteger factorial( BigInteger i, BigInteger product = 1) {
+        if( i == 1) {
+            return product
+        }
+        return factorial(i-1, product*i)
+    }
+}
+
+assert Factorial.factorial(1) == 1
+assert Factorial.factorial(3) == 6
+assert Factorial.factorial(5) == 120
+assert Factorial.factorial(50000) // Big number - but no Stack Overflow
+// end::tailrecursive[]
+'''
+    }
+
 }
