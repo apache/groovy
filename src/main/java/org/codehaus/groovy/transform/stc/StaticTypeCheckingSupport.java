@@ -1911,12 +1911,16 @@ public abstract class StaticTypeCheckingSupport {
             return newGT;
         }
         ClassNode type = gt.getType();
-        if (type.getGenericsTypes() == null) return gt;
-        ClassNode newType = type.getPlainNodeReference();
-        newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
-        newType.setGenericsTypes(applyGenericsContext(spec, type.getGenericsTypes()));
-        GenericsType newGT = new GenericsType(newType);
-        return newGT;
+        ClassNode newType;
+        if (type.isArray()) {
+            newType = applyGenericsContext(spec, type.getComponentType()).makeArray();
+        } else {
+            if (type.getGenericsTypes()==null) return gt;
+            newType = type.getPlainNodeReference();
+            newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
+            newType.setGenericsTypes(applyGenericsContext(spec, type.getGenericsTypes()));
+        }
+        return new GenericsType(newType);
     }
 
     private static boolean hasNonTrivialBounds(GenericsType gt) {
