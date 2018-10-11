@@ -97,6 +97,7 @@ import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.syntax.Types
 
 import java.lang.reflect.Modifier
 import java.security.CodeSource
@@ -734,11 +735,13 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     @Override
     void visitBinaryExpression(BinaryExpression expression) {
         expression?.leftExpression?.visit this
-        print " $expression.operation.text "
-        expression.rightExpression.visit this
+        if (!(expression.rightExpression instanceof EmptyExpression) || expression.operation.type != Types.ASSIGN) {
+            print " $expression.operation.text "
+            expression.rightExpression.visit this
 
-        if (expression?.operation?.text == '[') {
-            print ']'
+            if (expression?.operation?.text == '[') {
+                print ']'
+            }
         }
     }
 
