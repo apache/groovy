@@ -50,12 +50,12 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.13.4'
+    id 'com.gradle.build-scan' version '1.16'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
 }
 
 buildScan {
-    licenseAgreementUrl = 'https://gradle.com/terms-of-service'
+    termsOfServiceUrl = 'https://gradle.com/terms-of-service'
     apply from: 'gradle/build-scans.gradle'
 }
 
@@ -70,6 +70,7 @@ ext.modules = {
 }
 ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 
+apply from: 'gradle/bad-practices.gradle'
 //apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
 apply plugin: 'javadocHotfix'

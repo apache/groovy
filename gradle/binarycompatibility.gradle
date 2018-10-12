@@ -47,26 +47,26 @@ def compatibilityBaselineVersion = '2.4.15'
 
 allprojects {
     if (project in projectsToCheck) {
-        File baselineArtifact = null
         // Use a detached configuration, otherwise the current version's jar will take precedence over the baseline jar.
         // A necessary hack, the intuitive thing does NOT work:
         // https://discuss.gradle.org/t/is-the-default-configuration-leaking-into-independent-configurations/2088/6
         def saveGroup = project.group
+        def detachedConf
         try {
             project.group = 'virtual_group_for_japicmp'
             String depModule = "org.codehaus.groovy:${project.name}:${compatibilityBaselineVersion}@jar"
             String depJar = "${project.name}-${compatibilityBaselineVersion}.jar"
-            def configuration = configurations.detachedConfiguration(
+            detachedConf = configurations.detachedConfiguration(
                     dependencies.create(depModule)
             )
-            baselineArtifact = files(configuration.files).filter {
-                it.name.equals(depJar)
-            }.singleFile
         } finally {
             project.group = saveGroup
         }
         task japicmp(type: JapicmpTask, dependsOn: jarjar) {
-            oldClasspath = files(baselineArtifact)
+            oldClasspath = files({
+                files(detachedConf.files).filter {
+                it.name.equals(depJar)
+            }.singleFile})
             newArchives = files(jarjar.outputFile)
             newClasspath = configurations.runtimeClasspath
             accessModifier = 'protected'

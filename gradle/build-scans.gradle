@@ -25,7 +25,7 @@ boolean hasRefused = env.GRADLE_SCANS_ACCEPT=='no' || acceptFile.exists() && acc
 
 buildScan {
     if (hasAccepted) {
-        licenseAgree = 'yes'
+        termsOfServiceAgree = 'yes'
         publishAlways()
     } else if (!hasRefused) {
         gradle.buildFinished {

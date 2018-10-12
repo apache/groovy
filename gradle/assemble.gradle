@@ -267,12 +267,12 @@ allprojects {
             patterns = [
                     'com.googlecode.openbeans.**': 'groovyjarjaropenbeans.@1',
                     'org.apache.harmony.beans.**': 'groovyjarjarharmonybeans.@1',
-                    'java.beans.**'              : 'groovyjarjaropenbeans.@1'
+                    'java.beans.**': 'groovyjarjaropenbeans.@1'
             ]
             excludesPerLibrary = [
                     '*': ['META-INF/NOTICE']
             ]
-            excludes = ['META-INF/NOTICE','META-INF/INDEX.LIST']
+            excludes = ['META-INF/NOTICE', 'META-INF/INDEX.LIST']
             createManifest = false
             includedResources = [
                     ("$rootProject.projectDir/notices/${isRoot ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID'}".toString()): 'META-INF/NOTICE'
@@ -377,15 +377,9 @@ ext.distSpec = copySpec {
             }
         }
     }
-    project(':groovy-jaxb').configurations.jaxb.each { conf ->
-        into('lib/extras-jaxb') {
-            from conf
-        }
-    }
-    project(':groovy-jaxb').configurations.jaxbRuntime.each { conf ->
-        into('lib/extras-jaxb') {
-            from conf
-        }
+    into('lib/extras-jaxb') {
+        from project(':groovy-jaxb').configurations.jaxb
+        from project(':groovy-jaxb').configurations.jaxbRuntime
     }
     if (!rootProject.hasProperty('skipIndy')) {
         into('indy') {
@@ -553,13 +547,13 @@ task updateLicenses {
         def jsr223Files = fileTree(licensesDir).include('jsr223-BINZIP-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
-                (licenseBinZipFile)      : binzipFiles,
-                (licenseDocFile)         : docFiles,
-                (licenseJarJarFile)      : jarjarFiles,
-                (licenseSrcFile)         : srcFiles,
+                (licenseBinZipFile): binzipFiles,
+                (licenseDocFile): docFiles,
+                (licenseJarJarFile): jarjarFiles,
+                (licenseSrcFile): srcFiles,
                 (licenseDocGeneratorFile): docgeneratorFiles,
-                (licenseGroovyDocFile)   : groovydocFiles,
-                (licenseJsr223File)      : jsr223Files,
+                (licenseGroovyDocFile): groovydocFiles,
+                (licenseJsr223File): jsr223Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
                 writer << ([file(licenseBaseFile)] + inFiles).collect {
@@ -608,11 +602,11 @@ task updateNotices {
         }.sort { it.name }
         def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-BINZIP-SRC.txt')
         [
-                (noticeBinZipFile)       : binzipFiles,
-                (noticeGrooidFile)       : grooidFiles,
-                (noticeGrooidJarJarFile) : grooidJarjarFiles,
-                (noticeJarJarFile)       : jarjarFiles,
-                (noticeSrcFile)          : srcFiles,
+                (noticeBinZipFile): binzipFiles,
+                (noticeGrooidFile): grooidFiles,
+                (noticeGrooidJarJarFile): grooidJarjarFiles,
+                (noticeJarJarFile): jarjarFiles,
+                (noticeSrcFile): srcFiles,
                 (noticeGroovyConsoleFile): groovyconsoleFiles,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
