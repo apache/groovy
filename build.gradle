@@ -463,23 +463,3 @@ licenseReport {
 //licenseFormat.dependsOn licenseFormatCustom
 //licenseFormat.dependsOn licenseFormatGradle
 //
-
-task preemptiveDownload {
-   doLast {
-       configurations.all {
-          if (canBeResolved) {
-             // collect all component ids
-             def componentIds = incoming.resolutionResult.allDependencies.collect { it.selected.id }
-             
-             // only keep external components
-             def externalComponentIds = componentIds.findAll { it instanceof ModuleComponentIdentifier }
-             
-             // and now ask Gradle to download them
-             project.dependencies.createArtifactResolutionQuery()
-                         .forComponents(externalComponentIds)
-                         .withArtifacts(JvmLibrary, SourcesArtifact, JavadocArtifact)
-                         .execute()
-          }
-       }
-   }
-}
