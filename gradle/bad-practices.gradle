@@ -18,16 +18,51 @@
  */
 
 // Check if dependency resolution is happening at configuration time
+def resolvingAllowed = false
+int pcount = allprojects.size()
 allprojects { p ->
-    p.ext.resolvingAllowed  = false
-    afterEvaluate { pj ->
-        pj.ext.resolvingAllowed = true
+    p.afterEvaluate {
+        resolvingAllowed = --pcount == 0
     }
-    configurations.all { cnf ->
-        incoming.beforeResolve {
-            if (!p.ext.resolvingAllowed) {
-                throw new IllegalStateException("Configuration $cnf is being resolved at configuration time. This shouldn't be necessary and usually indicates an error in the build script.")
+    def checkResolution = { cnf ->
+        cnf.incoming.beforeResolve {
+            if (!resolvingAllowed) {
+                def e = new RuntimeException()
+                List<StackTraceElement> inGradleBuild = e.stackTrace.findAll { it.fileName?.endsWith('.gradle') && !it.fileName.endsWith('bad-practices.gradle') }
+                def stack = inGradleBuild.collect {
+                    "   at ${it.fileName}:${it.lineNumber}"
+                }.join("\n")
+                throw new IllegalStateException("Configuration $cnf in project $p is being resolved at configuration time.\nThis shouldn't be necessary and usually indicates an error in the build script.\nSee :\n${stack}")
             }
         }
+    }
+    p.configurations.all(checkResolution)
+    // This will make sure we also capture problems with detached configurations
+    // However it will only do so with build scripts that use dynamic Groovy
+    p.configurations.metaClass = new ContainerMetaclassClass(p.configurations.metaClass, checkResolution)
+}
+
+@groovy.transform.CompileStatic
+class ContainerMetaclassClass extends DelegatingMetaClass {
+    Closure configuration
+
+    ContainerMetaclassClass(MetaClass metaClass, Closure configuration) {
+        super(metaClass)
+        this.configuration = configuration
+    }
+
+    Object invokeMethod(Object object, String name, Object[] args) {
+        maybeConfigure(super.invokeMethod(object, name, args), name)
+    }
+
+    Object invokeMethod(Object object, String name, Object arg) {
+        maybeConfigure(super.invokeMethod(object, name, arg), name)
+    }
+    
+    private Object maybeConfigure(Object object, String name) {
+        if ('detachedConfiguration' == name) {
+            configuration(object)
+        }
+        object
     }
 }

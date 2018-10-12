@@ -49,14 +49,14 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.15.1'
+    id 'com.gradle.build-scan' version '1.16'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
     id 'com.github.spotbugs' version '1.6.4'
     id "com.github.ben-manes.versions" version '0.20.0'
 }
 
 buildScan {
-    licenseAgreementUrl = 'https://gradle.com/terms-of-service'
+    termsOfServiceUrl = 'https://gradle.com/terms-of-service'
     apply from: 'gradle/build-scans.gradle'
 }
 
@@ -463,3 +463,23 @@ licenseReport {
 //licenseFormat.dependsOn licenseFormatCustom
 //licenseFormat.dependsOn licenseFormatGradle
 //
+
+task preemptiveDownload {
+   doLast {
+       configurations.all {
+          if (canBeResolved) {
+             // collect all component ids
+             def componentIds = incoming.resolutionResult.allDependencies.collect { it.selected.id }
+             
+             // only keep external components
+             def externalComponentIds = componentIds.findAll { it instanceof ModuleComponentIdentifier }
+             
+             // and now ask Gradle to download them
+             project.dependencies.createArtifactResolutionQuery()
+                         .forComponents(externalComponentIds)
+                         .withArtifacts(JvmLibrary, SourcesArtifact, JavadocArtifact)
+                         .execute()
+          }
+       }
+   }
+}
