@@ -44,6 +44,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.ABSTRACT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.AS;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ASSERT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BREAK;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.BooleanLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BuiltInPrimitiveType;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CASE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CATCH;
@@ -254,12 +255,12 @@ public class SmartDocumentFilter extends DocumentFilter {
             StyleConstants.setForeground(style, Color.RED.darker());
         }
 
-        // reserved keywords and null literal
+        // reserved keywords, null literals, boolean literals
         for (int t : Arrays.asList(AS, DEF, IN, TRAIT, THREADSAFE,
                 VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
                 ELSE, ENUM, EXTENDS, FINAL, FINALLY, FOR, IF, GOTO, IMPLEMENTS, IMPORT, INSTANCEOF, INTERFACE,
                 NATIVE, NEW, PACKAGE, PRIVATE, PROTECTED, PUBLIC, RETURN, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED,
-                THIS, THROW, THROWS, TRANSIENT, TRY, VOID, VOLATILE, WHILE, NullLiteral)) {
+                THIS, THROW, THROWS, TRANSIENT, TRY, VOID, VOLATILE, WHILE, NullLiteral, BooleanLiteral)) {
             Style style = createDefaultStyleByTokenType(t);
             StyleConstants.setBold(style, true);
             StyleConstants.setForeground(style, Color.BLUE.darker().darker());
