@@ -49,6 +49,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.BuiltInPrimitiveType;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CASE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CATCH;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CLASS;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.COMMA;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CONST;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CONTINUE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.DEF;
@@ -82,6 +83,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.PRIVATE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.PROTECTED;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.PUBLIC;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.RETURN;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SEMI;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.STATIC;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.STRICTFP;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.SUPER;
@@ -264,6 +266,12 @@ public class SmartDocumentFilter extends DocumentFilter {
             Style style = createDefaultStyleByTokenType(t);
             StyleConstants.setBold(style, true);
             StyleConstants.setForeground(style, Color.BLUE.darker().darker());
+        }
+
+        // commas, semicolons
+        for (int t : Arrays.asList(COMMA, SEMI)) {
+            Style style = createDefaultStyleByTokenType(t);
+            StyleConstants.setForeground(style, Color.BLUE.darker());
         }
 
         // unexpected char, e.g. `
