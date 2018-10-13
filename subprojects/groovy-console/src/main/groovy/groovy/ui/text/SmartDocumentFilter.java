@@ -111,9 +111,9 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.WHILE;
  */
 public class SmartDocumentFilter extends DocumentFilter {
     private static final String MONOSPACED = "Monospaced";
-    private DefaultStyledDocument styledDocument;
-    private StyleContext styleContext;
-    private Style defaultStyle;
+    private final DefaultStyledDocument styledDocument;
+    private final StyleContext styleContext;
+    private final Style defaultStyle;
 
     public SmartDocumentFilter(DefaultStyledDocument styledDocument) {
         this.styledDocument = styledDocument;
