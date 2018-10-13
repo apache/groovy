@@ -26,7 +26,10 @@ import groovy.swing.SwingBuilder
 import groovy.transform.CompileStatic
 import groovy.transform.ThreadInterrupt
 import groovy.ui.text.FindReplaceUtility
+import groovy.ui.text.GroovyFilter
+import groovy.ui.text.SmartDocumentFilter
 import org.apache.groovy.io.StringBuilderWriter
+import org.apache.groovy.util.SystemUtil
 import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -41,7 +44,19 @@ import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
 
-import javax.swing.*
+import javax.swing.Action
+import javax.swing.Icon
+import javax.swing.JApplet
+import javax.swing.JFileChooser
+import javax.swing.JFrame
+import javax.swing.JLabel
+import javax.swing.JOptionPane
+import javax.swing.JScrollPane
+import javax.swing.JSplitPane
+import javax.swing.JTextPane
+import javax.swing.RootPaneContainer
+import javax.swing.SwingUtilities
+import javax.swing.UIManager
 import javax.swing.event.CaretEvent
 import javax.swing.event.CaretListener
 import javax.swing.event.DocumentListener
@@ -59,6 +74,7 @@ import java.awt.Component
 import java.awt.Dimension
 import java.awt.EventQueue
 import java.awt.Font
+import java.awt.Toolkit
 import java.awt.Window
 import java.awt.event.ActionEvent
 import java.awt.event.ComponentEvent
@@ -82,6 +98,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     static boolean captureStdOut = prefs.getBoolean('captureStdOut', true)
     static boolean captureStdErr = prefs.getBoolean('captureStdErr', true)
     static consoleControllers = []
+
+    static boolean smartHighlighter = prefs.getBoolean('smartHighlighter',
+            Boolean.valueOf(SystemUtil.getSystemPropertySafe('groovy.console.enable.smart.highlighter', 'false')))
 
     boolean fullStackTraces = prefs.getBoolean('fullStackTraces',
         Boolean.valueOf(System.getProperty('groovy.full.stacktrace', 'false')))
@@ -1449,6 +1468,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void smallerFont(EventObject evt = null){
         updateFontSize(inputArea.font.size - 2)
+    }
+
+    void smartHighlighter(EventObject evt = null) {
+        inputEditor.enableHighLighter(evt.source.selected ? SmartDocumentFilter : GroovyFilter)
+        inputEditor.textEditor.setText(inputEditor.textEditor.getText()) // enable the highlighter immediately
+        prefs.putBoolean('smartHighlighter', evt.source.selected)
     }
 
     void updateTitle() {
