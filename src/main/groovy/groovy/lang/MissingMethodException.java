@@ -54,16 +54,22 @@ public class MissingMethodException extends GroovyRuntimeException {
     }
 
     public String getMessage() {
-        return "No signature of method: "
-                + (isStatic ? "static " : "")
-                + type.getName()
-                + "."
-                + method
+         String s = "No signature of method: ";
+         if(isStatic) {
+             s += "static ";
+         }
+         if( type != null  ) {
+             s +=  type.getName() + ".";
+         }
+         s += method
                 + "() is applicable for argument types: ("
                 + InvokerHelper.toTypeString(arguments, 60)
                 + ") values: "
-                + InvokerHelper.toArrayString(arguments, 60, true)
-                + MethodRankHelper.getMethodSuggestionString(method, type, arguments);
+                + InvokerHelper.toArrayString(arguments, 60, true);
+         if( type != null  ) {
+             s += MethodRankHelper.getMethodSuggestionString(method, type, arguments) ;
+         }
+         return s;
     }
 
     /**
