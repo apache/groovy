@@ -30,6 +30,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -314,4 +315,13 @@ public class ConsoleTextEditor extends JScrollPane {
         return printAction;
     }
 
+    public void enableHighLighter(Class clazz) {
+        DefaultStyledDocument doc = (DefaultStyledDocument) textEditor.getDocument();
+
+        try {
+            doc.setDocumentFilter((DocumentFilter) clazz.getConstructor(doc.getClass()).newInstance(doc));
+        } catch (ReflectiveOperationException e) {
+            e.printStackTrace();
+        }
+    }
 }

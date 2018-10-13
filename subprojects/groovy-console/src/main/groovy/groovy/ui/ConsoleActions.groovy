@@ -356,6 +356,11 @@ smallerFontAction = action(
     accelerator: shortcut('shift S')
 )
 
+smartHighlighterAction = action(
+        name: 'Enable smart highlighter',
+        closure: controller.&smartHighlighter
+)
+
 aboutAction = action(
     name: 'About',
     closure: controller.&showAbout,

@@ -58,6 +58,7 @@ menuBar {
         separator()
         menuItem(largerFontAction)
         menuItem(smallerFontAction)
+        checkBoxMenuItem(smartHighlighterAction, selected: controller.smartHighlighter)
         separator()
         checkBoxMenuItem(captureStdOutAction, selected: controller.captureStdOut)
         checkBoxMenuItem(captureStdErrAction, selected: controller.captureStdErr)
