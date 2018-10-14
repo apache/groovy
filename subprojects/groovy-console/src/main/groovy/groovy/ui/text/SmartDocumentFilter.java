@@ -39,6 +39,8 @@ import java.awt.Color;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ABSTRACT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.AS;
@@ -165,6 +167,8 @@ public class SmartDocumentFilter extends DocumentFilter {
         return string;
     }
 
+    private List<Token> latestTokenList = Collections.emptyList();
+
     private void parseDocument() throws BadLocationException {
         GroovyLangLexer lexer;
         try {
@@ -174,10 +178,10 @@ public class SmartDocumentFilter extends DocumentFilter {
             return;
         }
 
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        CommonTokenStream tokenStream = new CommonTokenStream(lexer);
 
         try {
-            tokens.fill();
+            tokenStream.fill();
         } catch (LexerNoViableAltException | GroovySyntaxError e) {
             // ignore
             return;
@@ -186,7 +190,30 @@ public class SmartDocumentFilter extends DocumentFilter {
             return;
         }
 
-        for (Token token : tokens.getTokens()) {
+        List<Token> tokenList = tokenStream.getTokens();
+
+        boolean toCompareTokens = true;
+        int latestTokenListSize = latestTokenList.size();
+
+        for (int i = 0, n = tokenList.size(); i < n; i++) {
+            Token token = tokenList.get(i);
+
+            // rendering is very time consuming! try to avoid rendering
+            if (toCompareTokens) {
+                if (i < latestTokenListSize) {
+                    Token latestToken = latestTokenList.get(i);
+
+                    if (token.getStartIndex() == latestToken.getStartIndex()
+                            && token.getStopIndex() == latestToken.getStopIndex()
+                            && token.getType() == latestToken.getType()) {
+
+                        continue;
+                    }
+                }
+
+                toCompareTokens = false;
+            }
+
             if (token instanceof CommonToken) {
                 CommonToken commonToken = (CommonToken) token;
 //                System.out.println(commonToken.toString(lexer));
@@ -215,6 +242,8 @@ public class SmartDocumentFilter extends DocumentFilter {
                 System.out.println("Unexpected token: " + token.toString());
             }
         }
+
+        this.latestTokenList = tokenList;
     }
 
     private Style findStyleByTokenType(int tokenType) {
