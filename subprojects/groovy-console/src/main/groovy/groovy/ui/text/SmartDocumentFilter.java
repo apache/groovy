@@ -20,7 +20,6 @@ package groovy.ui.text;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.LexerNoViableAltException;
@@ -197,15 +196,27 @@ public class SmartDocumentFilter extends DocumentFilter {
 
         for (int i = 0, n = tokenList.size(); i < n; i++) {
             Token token = tokenList.get(i);
+            int tokenType = token.getType();
+
+//                if (token instanceof CommonToken) {
+//                    System.out.println(((CommonToken) token).toString(lexer));
+//                }
+
+            if (EOF == tokenType) {
+                continue;
+            }
+
+            int tokenStartIndex = token.getStartIndex();
+            int tokenStopIndex = token.getStopIndex();
 
             // rendering is very time consuming! try to avoid rendering
             if (toCompareTokens) {
                 if (i < latestTokenListSize) {
                     Token latestToken = latestTokenList.get(i);
 
-                    if (token.getStartIndex() == latestToken.getStartIndex()
-                            && token.getStopIndex() == latestToken.getStopIndex()
-                            && token.getType() == latestToken.getType()) {
+                    if (tokenStartIndex == latestToken.getStartIndex()
+                            && tokenStopIndex == latestToken.getStopIndex()
+                            && tokenType == latestToken.getType()) {
 
                         continue;
                     }
@@ -214,32 +225,19 @@ public class SmartDocumentFilter extends DocumentFilter {
                 toCompareTokens = false;
             }
 
-            if (token instanceof CommonToken) {
-                CommonToken commonToken = (CommonToken) token;
-//                System.out.println(commonToken.toString(lexer));
+            int tokenLength = tokenStopIndex - tokenStartIndex + 1;
 
-                int tokenType = commonToken.getType();
-                if (tokenType == EOF) {
-                    continue;
-                }
+            styledDocument.setCharacterAttributes(tokenStartIndex,
+                    tokenLength,
+                    findStyleByTokenType(tokenType),
+                    true);
 
-                int tokenStartIndex = commonToken.getStartIndex();
-                int tokenLength = commonToken.getStopIndex() - tokenStartIndex + 1;
-
-                styledDocument.setCharacterAttributes(tokenStartIndex,
-                        tokenLength,
-                        findStyleByTokenType(tokenType),
+            if (GStringBegin == tokenType || GStringPart == tokenType) {
+                styledDocument.setCharacterAttributes(
+                        tokenStartIndex + tokenLength - 1,
+                        1,
+                        defaultStyle,
                         true);
-
-                if (GStringBegin == tokenType || GStringPart == tokenType) {
-                    styledDocument.setCharacterAttributes(
-                            tokenStartIndex + tokenLength - 1,
-                            1,
-                            defaultStyle,
-                            true);
-                }
-            } else {
-                System.out.println("Unexpected token: " + token.toString());
             }
         }
 
