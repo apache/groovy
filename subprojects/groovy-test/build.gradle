@@ -21,8 +21,9 @@ dependencies {
     compile 'junit:junit:4.12'
     // groovy-ant needed for FileNameFinder used in AllTestSuite and JavadocAssertionTestSuite
     testRuntime(project(':groovy-ant')) {
-        transitive = false
+        transitive = false // bring in just what we need below
     }
+    testRuntime "org.apache.ant:ant-launcher:$antVersion"
 }
 
 apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"
