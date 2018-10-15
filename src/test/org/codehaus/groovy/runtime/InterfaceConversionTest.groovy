@@ -21,7 +21,7 @@ package org.codehaus.groovy.runtime
 class InterfaceConversionTest extends GroovyTestCase {
 
     void testClosureConversion() {
-        def c1 = {Object[] args -> args?.length}
+        def c1 = { Object[] args -> args?.length }
         def c2 = c1 as InterfaceConversionTestFoo
         assert !(c1 instanceof InterfaceConversionTestFoo)
         assert c2 instanceof InterfaceConversionTestFoo
@@ -30,7 +30,7 @@ class InterfaceConversionTest extends GroovyTestCase {
     }
 
     void testMapConversion() {
-        def m1 = [a: {1}, b: {2}]
+        def m1 = [a: { 1 }, b: { 2 }]
         def m2 = m1 as InterfaceConversionTestFoo
 
         assert !(m1 instanceof InterfaceConversionTestFoo)
@@ -43,14 +43,14 @@ class InterfaceConversionTest extends GroovyTestCase {
     void testDefaultInterfaceMethodCallOnProxy() {
         try {
             // checks for Java 8
-            Class.forName("java.util.function.Consumer", false, this.class.classLoader);
-        } catch (e) {
+            Class.forName("java.util.function.Consumer", false, this.class.classLoader)
+        } catch (ignore) {
             return
         }
-        Comparator c1 = {a,b -> a<=>b}
-        assert c1.compare("a","b") == -1
+        Comparator c1 = { a, b -> a <=> b }
+        assert c1.compare("a", "b") == -1
         def c2 = c1.reversed()
-        assert c2.compare("a","b") == 1
+        assert c2.compare("a", "b") == 1
     }
 }
 
