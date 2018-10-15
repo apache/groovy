@@ -29,40 +29,44 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 /**
- * Java 7 based functions. Currently just a stub but you can
- * add your own methods to your own version and place it on the classpath
- * ahead of this one.
+ * Java 7 based functions.
  *
- * @author Jochen Theodorou
+ * For crude customization, you can add your own methods to your own version and place it on the classpath ahead of this one.
  */
 public class Java7 extends Java6 {
-    private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
-    static {
-        Constructor<MethodHandles.Lookup> con = null;
-        try {
-            con = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
-        } catch (NoSuchMethodException e) {
-            throw new GroovyBugError(e);
-        }
-        try {
-            if (!con.isAccessible()) {
-                final Constructor tmp = con;
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    @Override
-                    public Object run() {
-                        tmp.setAccessible(true);
-                        return null;
-                    }
-                });
+    private static class LookupHolder {
+        private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
+        static {
+            Constructor<MethodHandles.Lookup> con = null;
+            try {
+                con = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+            } catch (NoSuchMethodException e) {
+                throw new GroovyBugError(e);
             }
-        } catch (SecurityException se) {
-            con = null;
-        } catch (RuntimeException re) {
-            // test for JDK9 JIGSAW
-            if (!"java.lang.reflect.InaccessibleObjectException".equals(re.getClass().getName())) throw re;
-            con = null;
+            try {
+                if (!con.isAccessible()) {
+                    final Constructor tmp = con;
+                    AccessController.doPrivileged(new PrivilegedAction() {
+                        @Override
+                        public Object run() {
+                            tmp.setAccessible(true);
+                            return null;
+                        }
+                    });
+                }
+            } catch (SecurityException se) {
+                con = null;
+            } catch (RuntimeException re) {
+                // test for JDK9 JIGSAW
+                if (!"java.lang.reflect.InaccessibleObjectException".equals(re.getClass().getName())) throw re;
+                con = null;
+            }
+            LOOKUP_Constructor = con;
         }
-        LOOKUP_Constructor = con;
+    }
+
+    private static Constructor<MethodHandles.Lookup> getLookupConstructor() {
+        return LookupHolder.LOOKUP_Constructor;
     }
 
     @Override
@@ -77,7 +81,7 @@ public class Java7 extends Java6 {
 
     @Override
     public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
-        if (LOOKUP_Constructor==null) {
+        if (getLookupConstructor() == null) {
             return super.getInvokeSpecialHandle(method, receiver);
         }
         if (!method.isAccessible()) {
@@ -91,8 +95,7 @@ public class Java7 extends Java6 {
         }
         Class declaringClass = method.getDeclaringClass();
         try {
-            return LOOKUP_Constructor.
-                    newInstance(declaringClass, -1).
+            return getLookupConstructor().newInstance(declaringClass, -1).
                     unreflectSpecial(method, declaringClass).
                     bindTo(receiver);
         } catch (ReflectiveOperationException e) {

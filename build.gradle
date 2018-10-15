@@ -414,11 +414,11 @@ task checkCompatibility {
     }
 }
 
-if (!JavaVersion.current().java8Compatible) {
+if (!JavaVersion.current().java9Compatible) {
     logger.lifecycle '''
     **************************************** WARNING ********************************************
-    ******   You are running the build with an older JDK. NEVER try to release with 1.7.   ******
-    ******   You must use a JDK 1.8+ in order to compile all features of the language.     ******
+    ******   You are running the build with an older JDK. NEVER try to release with 1.8.   ******
+    ******   You must use a JDK 1.9+ in order to compile all features of the language.     ******
     *********************************************************************************************
 '''
 }
