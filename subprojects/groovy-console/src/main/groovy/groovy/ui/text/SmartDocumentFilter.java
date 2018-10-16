@@ -18,7 +18,6 @@
  */
 package groovy.ui.text;
 
-import groovy.lang.Tuple2;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -190,10 +189,9 @@ public class SmartDocumentFilter extends DocumentFilter {
         }
 
         List<Token> tokenList = tokenStream.getTokens();
-        Tuple2<Integer, Integer> indexTuple = findTokensToRender(tokenList, latestTokenList);
+        List<Token> tokenListToRender = findTokensToRender(tokenList);
 
-        for (int i = indexTuple.getFirst(), n = indexTuple.getSecond(); i < n; i++) {
-            Token token = tokenList.get(i);
+        for (Token token : tokenListToRender) {
             int tokenType = token.getType();
 
 //                if (token instanceof CommonToken) {
@@ -225,12 +223,12 @@ public class SmartDocumentFilter extends DocumentFilter {
         this.latestTokenList = tokenList;
     }
 
-    private static Tuple2<Integer, Integer> findTokensToRender(List<Token> tokenList, List<Token> latestTokenList) {
+    private List<Token> findTokensToRender(List<Token> tokenList) {
         int tokenListSize = tokenList.size();
         int latestTokenListSize = latestTokenList.size();
 
         if (0 == tokenListSize || 0 == latestTokenListSize) {
-            return new Tuple2<>(0, tokenListSize);
+            return tokenList;
         }
 
         int startTokenIndex = 0;
@@ -274,7 +272,7 @@ public class SmartDocumentFilter extends DocumentFilter {
             break;
         }
 
-        return new Tuple2<>(startTokenIndex, stopTokenIndex);
+        return tokenList.subList(startTokenIndex, stopTokenIndex);
     }
 
     private Style findStyleByTokenType(int tokenType) {
