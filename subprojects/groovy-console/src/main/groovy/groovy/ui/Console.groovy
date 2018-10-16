@@ -100,7 +100,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     static consoleControllers = []
 
     static boolean smartHighlighter = prefs.getBoolean('smartHighlighter',
-            Boolean.valueOf(SystemUtil.getSystemPropertySafe('groovy.console.enable.smart.highlighter', 'false')))
+            Boolean.valueOf(SystemUtil.getSystemPropertySafe('groovy.console.enable.smart.highlighter', 'true')))
 
     boolean fullStackTraces = prefs.getBoolean('fullStackTraces',
         Boolean.valueOf(System.getProperty('groovy.full.stacktrace', 'false')))

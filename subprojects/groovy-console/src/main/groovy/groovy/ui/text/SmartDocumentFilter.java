@@ -18,6 +18,7 @@
  */
 package groovy.ui.text;
 
+import groovy.lang.Tuple2;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -37,6 +38,7 @@ import javax.swing.text.StyleContext;
 import java.awt.Color;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -166,8 +168,6 @@ public class SmartDocumentFilter extends DocumentFilter {
         return string;
     }
 
-    private List<Token> latestTokenList = Collections.emptyList();
-
     private void parseDocument() throws BadLocationException {
         GroovyLangLexer lexer;
         try {
@@ -190,11 +190,9 @@ public class SmartDocumentFilter extends DocumentFilter {
         }
 
         List<Token> tokenList = tokenStream.getTokens();
+        Tuple2<Integer, Integer> indexTuple = findTokensToRender(tokenList, latestTokenList);
 
-        boolean toCompareTokens = true;
-        int latestTokenListSize = latestTokenList.size();
-
-        for (int i = 0, n = tokenList.size(); i < n; i++) {
+        for (int i = indexTuple.getFirst(), n = indexTuple.getSecond(); i < n; i++) {
             Token token = tokenList.get(i);
             int tokenType = token.getType();
 
@@ -208,23 +206,6 @@ public class SmartDocumentFilter extends DocumentFilter {
 
             int tokenStartIndex = token.getStartIndex();
             int tokenStopIndex = token.getStopIndex();
-
-            // rendering is very time consuming! try to avoid rendering
-            if (toCompareTokens) {
-                if (i < latestTokenListSize) {
-                    Token latestToken = latestTokenList.get(i);
-
-                    if (tokenStartIndex == latestToken.getStartIndex()
-                            && tokenStopIndex == latestToken.getStopIndex()
-                            && tokenType == latestToken.getType()) {
-
-                        continue;
-                    }
-                }
-
-                toCompareTokens = false;
-            }
-
             int tokenLength = tokenStopIndex - tokenStartIndex + 1;
 
             styledDocument.setCharacterAttributes(tokenStartIndex,
@@ -242,6 +223,58 @@ public class SmartDocumentFilter extends DocumentFilter {
         }
 
         this.latestTokenList = tokenList;
+    }
+
+    private static Tuple2<Integer, Integer> findTokensToRender(List<Token> tokenList, List<Token> latestTokenList) {
+        int tokenListSize = tokenList.size();
+        int latestTokenListSize = latestTokenList.size();
+
+        if (0 == tokenListSize || 0 == latestTokenListSize) {
+            return new Tuple2<>(0, tokenListSize);
+        }
+
+        int startTokenIndex = 0;
+        int minSize = Math.min(tokenListSize, latestTokenListSize);
+        for (int i = 0; i < minSize; i++) {
+            Token token = tokenList.get(i);
+            Token latestToken = latestTokenList.get(i);
+
+            if (token.getType() == latestToken.getType()
+                    && token.getStartIndex() == latestToken.getStartIndex()
+                    && token.getStopIndex() == latestToken.getStopIndex()) {
+                continue;
+            }
+
+            startTokenIndex = i;
+            break;
+        }
+
+        List<Token> newTokenList = new ArrayList<>(tokenList);
+        List<Token> newLatestTokenList = new ArrayList<>(latestTokenList);
+
+        Collections.reverse(newTokenList);
+        Collections.reverse(newLatestTokenList);
+
+        int stopTokenIndex = tokenListSize;
+
+        Token lastToken = newTokenList.get(0);
+        Token lastLatestToken = newLatestTokenList.get(0);
+
+        for (int i = 0; i < minSize; i++) {
+            Token token = newTokenList.get(i);
+            Token latestToken = newLatestTokenList.get(i);
+
+            if ((token.getType() == latestToken.getType())
+                    && (token.getStartIndex() - lastToken.getStartIndex()) == (latestToken.getStartIndex() - lastLatestToken.getStartIndex())
+                    && ((token.getStopIndex() - lastToken.getStopIndex()) == (latestToken.getStopIndex() - lastLatestToken.getStopIndex()))) {
+                continue;
+            }
+
+            stopTokenIndex = tokenListSize - i;
+            break;
+        }
+
+        return new Tuple2<>(startTokenIndex, stopTokenIndex);
     }
 
     private Style findStyleByTokenType(int tokenType) {
@@ -306,5 +339,6 @@ public class SmartDocumentFilter extends DocumentFilter {
         StyleConstants.setForeground(unexpectedChar, Color.YELLOW.darker().darker());
     }
 
+    private List<Token> latestTokenList = Collections.emptyList();
     private static final String TAB_REPLACEMENT = "    ";
 }
