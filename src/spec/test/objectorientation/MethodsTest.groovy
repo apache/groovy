@@ -40,6 +40,34 @@ class MethodsTest extends GroovyTestCase {
         '''
     }
 
+    void testNamedArgumentsAlongWithOtherArguments() {
+        assertScript '''
+            // tag::named_arguments_with_additional_arguments[]
+            def foo(Map args, Integer number) { "${args.name}: ${args.age}, and the number is ${number}" }
+            foo(name: 'Marie', age: 1, 23)  //<1>
+            foo(23, name: 'Marie', age: 1)  //<2>
+            // end::named_arguments_with_additional_arguments[]
+        '''
+    }
+
+    void testFailedNamedArgumentsAlongWithOtherArguments() {
+        shouldFail '''
+            // tag::failed_named_arguments_with_additional_arguments[]
+            def foo(Integer number, Map args) { "${args.name}: ${args.age}, and the number is ${number}" }
+            foo(name: 'Marie', age: 1, 23)  //<1>
+            // end::failed_named_arguments_with_additional_arguments[]
+        '''
+    }
+
+    void testExplicitNamedArgumentsAlongWithOtherArguments() {
+        assertScript '''
+            // tag::explicit_named_arguments_with_additional_arguments[]
+            def foo(Integer number, Map args) { "${args.name}: ${args.age}, and the number is ${number}" }
+            foo(23, [name: 'Marie', age: 1])  //<1>
+            // end::explicit_named_arguments_with_additional_arguments[]
+        '''
+    }
+
     void testDefaultArguments() {
         assertScript '''
             // tag::default_arguments[]
