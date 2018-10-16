@@ -335,6 +335,42 @@ Like constructors, normal methods can also be called with named arguments. They 
 include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=named_arguments ,indent=0]
 ----
 
+===== Mixing named arguments with other argument(s)
+
+Named parameters can be mixed with a regular arguments of any type, however there is one important requirement - `Map` argument
+that represents named arguments has to be defined as a first argument in the method arguments list.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=named_arguments_with_additional_arguments ,indent=0]
+----
+<1> Method call with additional `number` argument of `Integer` type
+<2> Method call with changed order of arguments
+
+WARNING: Groovy allows floating named arguments around and pass them after regular argument(s) when invoking the method.
+However, it still expects that `Map` argument that represents named arguments is defined as the first argument of the method.
+
+If we break the rule mentioned earlier and we swap method arguments, so `Map` gets defined as the second (or later) argument, we will start
+seeing `groovy.lang.MissingMethodException`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=failed_named_arguments_with_additional_arguments ,indent=0]
+----
+<1> Method call throws `groovy.lang.MissingMethodException: No signature of method: foo() is applicable for argument types: (LinkedHashMap, Integer) values: [[name:Marie, age:1], 23]`, because named arguments represented as `Map` parameter are not defined as the first argument
+
+Above exception can be avoided if we replace named arguments with an explicit `Map` argument:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=explicit_named_arguments_with_additional_arguments ,indent=0]
+----
+<1> Explicit `Map` argument in place of named arguments makes invocation valid
+
+
+TIP: Although Groovy allows you mixing named arguments with arguments of any regular type, it may cause unnecessary confusion.
+Mix named arguments with additional arguments very carefully and only if it really solves a problem for you.
+
 ==== Default arguments
 
 Default arguments make parameters optional. If the argument is not supplied, the method assumes a default value.
