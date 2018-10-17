@@ -243,21 +243,23 @@ important features described in this manual.
 Constructors are special methods used to initialize an object with a specific state. As with normal methods,
 it is possible for a class to declare more than one constructor, so long as each constructor has a unique
 type signature. If an object doesn't require any parameters during construction, it may use a _no-arg_ constructor.
-If no constructors are supplied, an empty no-arg constructor will be provided by the Groovy compiler. For constructors
-with parameters, Groovy supports two invocation styles: using positional parameters or named parameters.
-The former style is similar to how you would use Java constructors, while the second way
-allows one to specify parameter names when invoking the constructor.
+If no constructors are supplied, an empty no-arg constructor will be provided by the Groovy compiler.
 
-==== Positional argument constructor
+Groovy supports two invocation styles:
 
-To create an object by using positional argument constructors, the respective class needs to declare one or more
+* _positional parameters_ are used in a similar to how you would use Java constructors
+* _named parameters_ allow you to specify parameter names when invoking the constructor.
+
+==== Positional parameters
+
+To create an object by using positional parameters, the respective class needs to declare one or more
 constructors. In the case of multiple constructors, each must have a unique type signature. The constructors can also
 added to the class using the gapi:groovy.transform.TupleConstructor[] annotation.
 
 Typically, once at least one constructor is declared, the class can only be instantiated by having one of its
 constructors called. It is worth noting that, in this case, you can't normally create the class with named parameters.
-Groovy does support named parameters so long as the class contains a no-arg constructor or a constructor which takes
-a single `Map` argument - see the next section for details.
+Groovy does support named parameters so long as the class contains a no-arg constructor or provides a constructor which
+takes a `Map` argument as the first (and potentially only) argument - see the next section for details.
 
 There are three forms of using a declared constructor. The first one is the normal Java way, with the `new` keyword.
 The others rely on coercion of lists into the desired types. In this case, it is possible to coerce with the `as`
@@ -272,14 +274,13 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=constructor_positional
 <3> Constructor usage, using coercion with `as` keyword
 <4> Constructor usage, using coercion in assignment
 
-
-==== Named argument constructor
+==== Named parameters
 
 If no (or a no-arg) constructor is declared, it is possible to create objects by passing parameters in the form of a
 map (property/value pairs). This can be in handy in cases where one wants to allow several combinations of parameters.
 Otherwise, by using traditional positional parameters it would be necessary to declare all possible constructors.
-Having a constructor taking a single `Map` argument is also supported - such a constructor may also be added using
-the gapi:groovy.transform.MapConstructor[] annotation.
+Having a constructor where the first (and perhaps only) argument is a `Map` argument is also supported - such a
+constructor may also be added using the gapi:groovy.transform.MapConstructor[] annotation.
 
 [source,groovy]
 ----
@@ -298,14 +299,16 @@ Thus, if greater control is desired, declaring constructors using positional par
 Notes:
 
 * While the example above supplied no constructor, you can also supply a no-arg constructor
-or a constructor with a single `Map` argument as previously mentioned.
+or a constructor where the first argument is a `Map`, most typically it's the only argument.
+* When no (or a no-arg) constructor is declared, Groovy replaces the named constructor call by a call
+to the no-arg constructor followed by calls to the setter for each supplied named property.
+* When the first argument is a Map, Groovy combines all named parameters into a Map (regardless of ordering)
+and supplies the map as the first parameter. This can be a good approach if your properties are declared as
+`final` (since they will be set in the constructor rather than after the fact with setters).
 * You can support both named and positional construction
 by supply both positional constructors as well as a no-arg or Map constructor.
-* When no (or a no-arg) constructor is declared, Groovy replaces the named constructor call by a call
-to the no-arg constructor followed by calls to the setter for each supplied named property. So, you
-might be better off using the Map constructor if your properties are declared as `final` (since they
-must be set in the constructor rather than after the fact with setters).
-
+* You can support hybrid construction by having a constructor where the first argument
+is a Map but there are also additional positional parameters. Use this style with caution.
 
 === Methods
 
@@ -326,19 +329,26 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=me
 <3> Method with a parameter with no type defined
 <4> Static method with a String parameter
 
-==== Named arguments
+==== Named parameters
 
-Like constructors, normal methods can also be called with named arguments. They need to receive the parameters as a map. In the method body, the values can be accessed as in normal maps (`map.key`).
+Like constructors, normal methods can also be called with named parameters.
+To support this notation, a convention is used where the first argument to the method is a `Map`.
+In the method body, the parameter values can be accessed as in normal maps (`map.key`).
+If the method has just a single Map argument, all supplied parameters must be named.
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=named_arguments ,indent=0]
 ----
 
-===== Mixing named arguments with other argument(s)
+===== Mixing named and positional parameters
 
-Named parameters can be mixed with a regular arguments of any type, however there is one important requirement - `Map` argument
-that represents named arguments has to be defined as a first argument in the method arguments list.
+Named parameters can be mixed with positional parameters.
+The same convention applies, in this case, in addition to the `Map` argument as the first argument,
+the method in question will have additional positional arguments as needed.
+Supplied positional parameters when calling the method must be in order.
+The named parameters can be in any position. They are grouped into the map and supplied as
+the first parameter automatically.
 
 [source,groovy]
 ----
@@ -347,17 +357,15 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=na
 <1> Method call with additional `number` argument of `Integer` type
 <2> Method call with changed order of arguments
 
-WARNING: Groovy allows floating named arguments around and pass them after regular argument(s) when invoking the method.
-However, it still expects that `Map` argument that represents named arguments is defined as the first argument of the method.
 
-If we break the rule mentioned earlier and we swap method arguments, so `Map` gets defined as the second (or later) argument, we will start
-seeing `groovy.lang.MissingMethodException`:
+If we don't have the Map as the first argument, then a Map must be supplied for that argument instead of named parameters.
+Failure to do so will lead to `groovy.lang.MissingMethodException`:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=failed_named_arguments_with_additional_arguments ,indent=0]
 ----
-<1> Method call throws `groovy.lang.MissingMethodException: No signature of method: foo() is applicable for argument types: (LinkedHashMap, Integer) values: [[name:Marie, age:1], 23]`, because named arguments represented as `Map` parameter are not defined as the first argument
+<1> Method call throws `groovy.lang.MissingMethodException: No signature of method: foo() is applicable for argument types: (LinkedHashMap, Integer) values: [[name:Marie, age:1], 23]`, because the named argument `Map` parameter is not defined as the first argument
 
 Above exception can be avoided if we replace named arguments with an explicit `Map` argument:
 
@@ -367,9 +375,8 @@ include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=ex
 ----
 <1> Explicit `Map` argument in place of named arguments makes invocation valid
 
-
-TIP: Although Groovy allows you mixing named arguments with arguments of any regular type, it may cause unnecessary confusion.
-Mix named arguments with additional arguments very carefully and only if it really solves a problem for you.
+TIP: Although Groovy allows you to mix named and positional parameters, it can lead to unnecessary confusion.
+Mix named and positional arguments with caution.
 
 ==== Default arguments
 
