@@ -26,6 +26,7 @@ The first allows altering the class model and the behavior of a program at runti
 at compile-time. Both have pros and cons that we will detail in this section.
 
 == Runtime metaprogramming
+
 With runtime metaprogramming we can postpone to runtime the decision to intercept, inject and even synthesize methods of classes and interfaces. For a deep understanding of Groovy's metaobject protocol (MOP) we need to understand Groovy objects and Groovy's method handling.
 In Groovy we work with three kinds of objects: POJO, POGO and Groovy Interceptors. Groovy allows metaprogramming for all types of objects but in a different manner.
 
@@ -357,15 +358,26 @@ Applying the `@Category` annotation has the advantage of being able to use insta
 first parameter. The target type class is given as an argument to the annotation instead.
 
 [NOTE]
-There is a distinct section on `@Category` in the <<core-metaprogramming.adoc#xform-Category,compile-time metaprogramming section>>.
+There is a distinct section on `@Category` in the
+<<core-metaprogramming.adoc#xform-Category,compile-time metaprogramming section>>.
 
 === Metaclasses
 
-As explained in other section, Metaclasses has a central role in the method resolution. For every method invocation from groovy code, Groovy will find the `MetaClass` for the given object and delegate the method resolution to the metaclass via gapid:groovy.lang.MetaClass#invokeMethod(java.lang.Class,java.lang.Object,java.lang.String,java.lang.Object,boolean,boolean)[MetaClass#invokeMethod] which should not be confused with gapid:groovy.lang.GroovyObject#invokeMethod(java.lang.String,java.lang.Object)[GroovyObject#invokeMethod].
+As explained earlier, Metaclasses play a central role in method resolution.
+For every method invocation from groovy code, Groovy will find the `MetaClass` for the given object
+and delegate the method resolution to the metaclass via
+gapid:groovy.lang.MetaClass#invokeMethod(java.lang.Class,java.lang.Object,java.lang.String,java.lang.Object,boolean,boolean)[MetaClass#invokeMethod]
+which should not be confused with
+gapid:groovy.lang.GroovyObject#invokeMethod(java.lang.String,java.lang.Object)[GroovyObject#invokeMethod]
+which happens to be a method that the metaclass may eventually call.
 
 
 ==== The default metaclass `MetaClassImpl`
-By default objects get an instance of `MetaClassImpl` that implements the default method lookup. This method lookup includes looking up of the method in the object class ("regular" method) but also if no method is found this way it will resort to calling `methodMissing` and ultimately gapid:groovy.lang.GroovyObject.html#invokeMethod(java.lang.String,java.lang.Object)[GroovyObject#invokeMethod]
+
+By default, objects get an instance of `MetaClassImpl` that implements the default method lookup.
+This method lookup includes looking up of the method in the object class ("regular" method) but also if no
+method is found this way it will resort to calling `methodMissing` and ultimately
+gapid:groovy.lang.GroovyObject#invokeMethod(java.lang.String,java.lang.Object)[GroovyObject#invokeMethod]
 
 
 [source,groovy]
@@ -376,7 +388,6 @@ def f = new Foo()
 
 assert f.metaClass =~ /MetaClassImpl/
 ----
-
 
 
 ==== Custom metaclasses
