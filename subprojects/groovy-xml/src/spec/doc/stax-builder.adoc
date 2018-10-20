@@ -30,7 +30,7 @@ Here is a simple example using the StAX implementation of Java to generate XML:
 include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/StaxBuilderTest.groovy[tags=stax_builder,indent=0]
 ----
 
-An external library such as http://jettison.codehaus.org/[Jettison] can be used as follows:
+An external library such as https://github.com/jettison-json/jettison[Jettison] can be used as follows:
 
 [source,groovy]
 ----
