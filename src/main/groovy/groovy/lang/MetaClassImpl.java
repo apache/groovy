@@ -3981,15 +3981,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
             method = delegateMetaClass.pickMethod(methodName, argClasses);
             if (method != null)
-                return new Tuple2<>(delegateMetaClass.invokeMethod(delegate, methodName, originalArguments), method);
+                return new Tuple2<Object,MetaMethod>(delegateMetaClass.invokeMethod(delegate, methodName, originalArguments), method);
         }
         if (method == null && owner != closure) {
             MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
             method = ownerMetaClass.pickMethod(methodName, argClasses);
-            if (method != null) return new Tuple2<>(ownerMetaClass.invokeMethod(owner, methodName, originalArguments), method);
+            if (method != null) return new Tuple2<Object,MetaMethod>(ownerMetaClass.invokeMethod(owner, methodName, originalArguments), method);
         }
 
-        return new Tuple2<>(InvokeMethodResult.NONE, method);
+        return new Tuple2<Object,MetaMethod>(InvokeMethodResult.NONE, method);
     }
 
     private enum InvokeMethodResult {
