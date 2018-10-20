@@ -1191,17 +1191,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                     break;
                 case Closure.DELEGATE_FIRST:
-                    if (method == null && delegate != closure && delegate != null) {
-                        MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
-                        method = delegateMetaClass.pickMethod(methodName, argClasses);
-                        if (method != null)
-                            return delegateMetaClass.invokeMethod(delegate, methodName, originalArguments);
+                    Object result = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
+                    if (InvokeMethodResult.NONE != result) {
+                        return result;
                     }
-                    if (method == null && owner != closure) {
-                        MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
-                        method = ownerMetaClass.pickMethod(methodName, argClasses);
-                        if (method != null) return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
-                    }
+
                     if (method == null && resolveStrategy != Closure.TO_SELF) {
                         // still no methods found, test if delegate or owner are GroovyObjects
                         // and invoke the method on them if so.
@@ -1225,17 +1219,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                     break;
                 default:
-                    if (method == null && delegate != closure && delegate != null) {
-                        MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
-                        method = delegateMetaClass.pickMethod(methodName, argClasses);
-                        if (method != null)
-                            return delegateMetaClass.invokeMethod(delegate, methodName, originalArguments);
+                    Object r = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
+                    if (InvokeMethodResult.NONE != r) {
+                        return r;
                     }
-                    if (method == null && owner != closure) {
-                        MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
-                        method = ownerMetaClass.pickMethod(methodName, argClasses);
-                        if (method != null) return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
-                    }
+
                     if (method == null && resolveStrategy != Closure.TO_SELF) {
                         // still no methods found, test if delegate or owner are GroovyObjects
                         // and invoke the method on them if so.
@@ -1905,7 +1893,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // special cases
         //----------------------------------------------------------------------
         if (method == null) {
-            /** todo these special cases should be special MetaClasses maybe */
+            /* todo these special cases should be special MetaClasses maybe */
             if (theClass != Class.class && object instanceof Class) {
                 MetaClass mc = registry.getMetaClass(Class.class);
                 return mc.getProperty(Class.class, object, name, useSuper, false);
@@ -2018,7 +2006,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // special cases
         //----------------------------------------------------------------------
-        /** todo these special cases should be special MetaClasses maybe */
+        /* todo these special cases should be special MetaClasses maybe */
         if (theClass != Class.class && object instanceof Class) {
             return new MetaProperty(name, Object.class) {
                 public Object getProperty(Object object) {
@@ -2315,7 +2303,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * This will build up the property map (Map of MetaProperty objects, keyed on
      * property name).
      *
-     * @param propertyDescriptors
+     * @param propertyDescriptors the property descriptors
      */
     @SuppressWarnings("unchecked")
     private void setupProperties(PropertyDescriptor[] propertyDescriptors) {
@@ -3007,7 +2995,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (url != null) {
                 try {
 
-                    /**
+                    /*
                      * todo there is no CompileUnit in scope so class name
                      * checking won't work but that mostly affects the bytecode
                      * generation rather than viewing the AST
@@ -3251,7 +3239,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * name.
      *
      * @param methodOrList   the possible methods to choose from
-     * @param arguments
+     * @param arguments the arguments
      */
     protected Object chooseMethod(String methodName, Object methodOrList, Class[] arguments) {
         Object method = chooseMethodInternal(methodName, methodOrList, arguments);
@@ -4037,5 +4025,31 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         public Object invoke(Object object, Object[] arguments) {
             return null;
         }
+    }
+
+    private Object invokeMethod(MetaMethod method,
+                                Object delegate,
+                                Closure closure,
+                                String methodName,
+                                Class[] argClasses,
+                                Object[] originalArguments,
+                                Object owner) {
+        if (method == null && delegate != closure && delegate != null) {
+            MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
+            method = delegateMetaClass.pickMethod(methodName, argClasses);
+            if (method != null)
+                return delegateMetaClass.invokeMethod(delegate, methodName, originalArguments);
+        }
+        if (method == null && owner != closure) {
+            MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
+            method = ownerMetaClass.pickMethod(methodName, argClasses);
+            if (method != null) return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
+        }
+
+        return InvokeMethodResult.NONE;
+    }
+
+    private enum InvokeMethodResult {
+        NONE
     }
 }
