@@ -21,19 +21,19 @@
 
 = IDE integration
 
-
 The Groovy language is supported by lots of IDEs and text editors.
 
-[cols="1,1,1,1,1",options="header,footer"]
-|=======================================================================
-|Editor|Support level|Syntax highlighting|Code completion|Refactoring
-|https://github.com/groovy/groovy-eclipse[Groovy Eclipse Plugin]|[icon-star]_{empty}_ [icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Yes|Yes
-|http://www.jetbrains.com/idea/features/groovy.html[IntelliJ IDEA]|[icon-star]_{empty}_ [icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Yes|Yes
-|https://netbeans.org/features/groovy/[Netbeans]|[icon-star]_{empty}_ [icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Yes|Yes
-|https://spring.io/tools/ggts[Groovy and Grails Toolsuite]|[icon-star]_{empty}_ [icon-star]_{empty}_ [icon-star]_{empty}_|Yes|Yes|Yes
-|https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes[Groovy Emacs Modes]|[icon-star]_{empty}_ [icon-star]_{empty}_|Yes|No|No
-|https://github.com/textmate/groovy.tmbundle[TextMate]|[icon-star]_{empty}_ [icon-star]_{empty}_|Yes|No|No
-|http://www.vim.org/[vim]|[icon-star]_{empty}_|Yes|No|No
-|http://www.ultraedit.com/[UltraEdit]|[icon-star]_{empty}_|Yes|No|No
-|=======================================================================
-
+[cols="1,1,1,1",options="header,footer"]
+|===============================================================
+|Editor|Syntax highlighting|Code completion|Refactoring
+|https://github.com/groovy/groovy-eclipse[Groovy Eclipse Plugin]|Yes|Yes|Yes
+|http://www.jetbrains.com/idea/features/groovy.html[IntelliJ IDEA]|Yes|Yes|Yes
+|https://netbeans.org/features/groovy/[Netbeans]|Yes|Yes|Yes
+|https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes[Groovy Emacs Modes]|Yes|No|No
+|https://github.com/textmate/groovy.tmbundle[TextMate]|Yes|No|No
+|http://www.vim.org/[vim]|Yes|No|No
+|http://www.ultraedit.com/[UltraEdit]|Yes|No|No
+|https://www.slickedit.com/products/slickedit/419-the-most-powerful-groovy-editor-in-the-world/[SlickEdit]|Yes|No|No
+|https://editrocket.com/features/groovy_editor.html[EditRocket]|Yes|No|No
+|https://code.visualstudio.com/[VSCode]|Yes|No|No
+|===============================================================
