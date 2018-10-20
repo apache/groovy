@@ -30,7 +30,7 @@ normally hidden away by the BSF APIs. You just treat Groovy like any of the othe
 API.
 
 NOTE: Since Groovy has its own native support for integration with Java, you only need to worry about BSF if you also
-want to also be able to call other languages, e.g. http://jruby.org/[JRuby] or if you want to remain very
+want to also be able to call other languages, e.g. https://www.jruby.org/[JRuby] or if you want to remain very
 loosely coupled from your scripting language.
 
 == Getting started
