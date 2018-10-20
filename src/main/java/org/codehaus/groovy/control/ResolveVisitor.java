@@ -500,6 +500,48 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    private boolean resolveFromDefaultImports(final ClassNode type, boolean testDefaultImports) {
+        // test default imports
+        testDefaultImports &= !type.hasPackageName();
+        // we do not resolve a vanilla name starting with a lower case letter
+        // try to resolve against a default import, because we know that the
+        // default packages do not contain classes like these
+        testDefaultImports &= !(type instanceof LowerCaseClass);
+
+        if (testDefaultImports) {
+            if (resolveFromDefaultImports(type)) return true;
+
+            final String typeName = type.getName();
+            if (BIGINTEGER_STR.equals(typeName)) {
+                type.setRedirect(ClassHelper.BigInteger_TYPE);
+                return true;
+            } else if (BIGDECIMAL_STR.equals(typeName)) {
+                type.setRedirect(ClassHelper.BigDecimal_TYPE);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean resolveFromDefaultImports(ClassNode type) {
+        final String typeName = type.getName();
+
+        Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
+        if (null != packagePrefixSet) {
+            // if the type name was resolved before, we can try the successfully resolved packages first, which are much less and very likely successful to resolve.
+            // As a result, we can avoid trying other default import packages and further resolving, which can improve the resolving performance to some extent.
+            if (resolveFromDefaultImports(type, packagePrefixSet.toArray(EMPTY_STRING_ARRAY))) {
+                return true;
+            }
+        }
+
+        if (resolveFromDefaultImports(type, DEFAULT_IMPORTS)) {
+            return true;
+        }
+        return false;
+    }
+
+
     private static final EvictableCache<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new ConcurrentCommonCache<>();
 
     private boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
@@ -530,40 +572,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
-        return false;
-    }
-
-    private boolean resolveFromDefaultImports(final ClassNode type, boolean testDefaultImports) {
-        // test default imports
-        testDefaultImports &= !type.hasPackageName();
-        // we do not resolve a vanilla name starting with a lower case letter
-        // try to resolve against a default import, because we know that the
-        // default packages do not contain classes like these
-        testDefaultImports &= !(type instanceof LowerCaseClass);
-        final String typeName = type.getName();
-
-        if (testDefaultImports) {
-            Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
-            if (null != packagePrefixSet) {
-                // if the type name was resolved before, we can try the successfully resolved packages first, which are much less and very likely successful to resolve.
-                // As a result, we can avoid trying other default import packages and further resolving, which can improve the resolving performance to some extent.
-                if (resolveFromDefaultImports(type, packagePrefixSet.toArray(EMPTY_STRING_ARRAY))) {
-                    return true;
-                }
-            }
-
-            if (resolveFromDefaultImports(type, DEFAULT_IMPORTS)) {
-                return true;
-            }
-
-            if (BIGINTEGER_STR.equals(typeName)) {
-                type.setRedirect(ClassHelper.BigInteger_TYPE);
-                return true;
-            } else if (BIGDECIMAL_STR.equals(typeName)) {
-                type.setRedirect(ClassHelper.BigDecimal_TYPE);
-                return true;
-            }
-        }
         return false;
     }
 
