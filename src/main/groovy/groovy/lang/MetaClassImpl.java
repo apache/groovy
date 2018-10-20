@@ -1130,7 +1130,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                     break;
                 case Closure.DELEGATE_FIRST:
-                    Object result = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
+                    Tuple2<Object, MetaMethod> tuple = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
+                    Object result = tuple.getFirst();
+                    method = tuple.getSecond();
                     if (InvokeMethodResult.NONE != result) {
                         return result;
                     }
@@ -1158,7 +1160,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                     break;
                 default:
-                    Object r = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
+                    Tuple2<Object, MetaMethod> t = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
+                    Object r = t.getFirst();
+                    method = t.getSecond();
                     if (InvokeMethodResult.NONE != r) {
                         return r;
                     }
@@ -3966,7 +3970,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private Object invokeMethod(MetaMethod method,
+    private Tuple2<Object, MetaMethod> invokeMethod(MetaMethod method,
                                 Object delegate,
                                 Closure closure,
                                 String methodName,
@@ -3977,15 +3981,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
             method = delegateMetaClass.pickMethod(methodName, argClasses);
             if (method != null)
-                return delegateMetaClass.invokeMethod(delegate, methodName, originalArguments);
+                return new Tuple2<>(delegateMetaClass.invokeMethod(delegate, methodName, originalArguments), method);
         }
         if (method == null && owner != closure) {
             MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
             method = ownerMetaClass.pickMethod(methodName, argClasses);
-            if (method != null) return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
+            if (method != null) return new Tuple2<>(ownerMetaClass.invokeMethod(owner, methodName, originalArguments), method);
         }
 
-        return InvokeMethodResult.NONE;
+        return new Tuple2<>(InvokeMethodResult.NONE, method);
     }
 
     private enum InvokeMethodResult {
