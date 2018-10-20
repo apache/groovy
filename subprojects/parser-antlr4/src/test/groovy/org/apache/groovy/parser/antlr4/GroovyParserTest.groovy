@@ -273,6 +273,7 @@ class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/SafeIndex_01x.groovy')
         doRunAndTestAntlr4('core/SafeIndex_02x.groovy')
         doRunAndTestAntlr4('core/SafeIndex_03x.groovy')
+        doRunAndTestAntlr4('core/SafeIndex_04x.groovy')
     }
 
     void "test groovy core - NegativeRelationalOperators"() {
