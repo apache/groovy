@@ -490,7 +490,7 @@ html {
 
     void testLocale() {
         // TODO shouldn't this (or a better) test pass in all environments??
-        if (!Charset.defaultCharset().displayName().contains("windows")) {
+        if (!System.getProperty("os.name").toLowerCase().contains("windows")) {
             config.locale = Locale.ENGLISH
             templateContents = '''
 // tag::locale_explicit_import[]
