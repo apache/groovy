@@ -1013,7 +1013,7 @@ indexPropertyArgs
     ;
 
 namedPropertyArgs
-    :   LBRACK (mapEntryList | COLON) RBRACK
+    :   QUESTION? LBRACK (mapEntryList | COLON) RBRACK
     ;
 
 primary
