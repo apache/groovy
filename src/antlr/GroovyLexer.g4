@@ -300,14 +300,14 @@ mode DEFAULT_MODE;
 // character in the double quotation string. e.g. "a"
 fragment
 DqStringCharacter
-    :   ~["\\$]
+    :   ~["\r\n\\$]
     |   EscapeSequence
     ;
 
 // character in the single quotation string. e.g. 'a'
 fragment
 SqStringCharacter
-    :   ~['\\]
+    :   ~['\r\n\\]
     |   EscapeSequence
     ;
 

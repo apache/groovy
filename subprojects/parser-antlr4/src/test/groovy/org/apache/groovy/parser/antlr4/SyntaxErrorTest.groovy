@@ -224,6 +224,8 @@ class SyntaxErrorTest extends GroovyTestCase {
     void "test groovy core - String"() {
         TestUtils.doRunAndShouldFail('fail/String_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/String_02x.groovy')
+        TestUtils.shouldFail('fail/String_03.groovy')
+        TestUtils.shouldFail('fail/String_04.groovy')
     }
 
     void "test groovy core - NonStaticClass"() {
