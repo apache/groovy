@@ -1079,17 +1079,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 //
 //        unwrap(arguments);
 
-        MetaMethod method = null;
-        if (CLOSURE_CALL_METHOD.equals(methodName) && object instanceof GeneratedClosure) {
-            method = getMethodWithCaching(sender, "doCall", arguments, isCallToSuper);
-        }
-        if (method==null) {
-            method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
-        }
-        MetaClassHelper.unwrap(arguments);
-
-        if (method == null)
-            method = tryListParamMetaMethod(sender, methodName, isCallToSuper, arguments);
+        MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
         final boolean isClosure = object instanceof Closure;
         if (isClosure) {
@@ -1174,16 +1164,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                     break;
                 default:
-                    if (method == null && owner != closure) {
-                        MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
-                        method = ownerMetaClass.pickMethod(methodName, argClasses);
-                        if (method != null) return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
-                    }
                     if (method == null && delegate != closure && delegate != null) {
                         MetaClass delegateMetaClass = lookupObjectMetaClass(delegate);
                         method = delegateMetaClass.pickMethod(methodName, argClasses);
                         if (method != null)
                             return delegateMetaClass.invokeMethod(delegate, methodName, originalArguments);
+                    }
+                    if (method == null && owner != closure) {
+                        MetaClass ownerMetaClass = lookupObjectMetaClass(owner);
+                        method = ownerMetaClass.pickMethod(methodName, argClasses);
+                        if (method != null) return ownerMetaClass.invokeMethod(owner, methodName, originalArguments);
                     }
                     if (method == null && resolveStrategy != Closure.TO_SELF) {
                         // still no methods found, test if delegate or owner are GroovyObjects
@@ -1236,6 +1226,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else {
             return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
         }
+    }
+
+    private MetaMethod getMetaMethod(Class sender, Object object, String methodName, boolean isCallToSuper, Object... arguments) {
+        MetaMethod method = null;
+        if (CLOSURE_CALL_METHOD.equals(methodName) && object instanceof GeneratedClosure) {
+            method = getMethodWithCaching(sender, "doCall", arguments, isCallToSuper);
+        }
+        if (method==null) {
+            method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
+        }
+        MetaClassHelper.unwrap(arguments);
+
+        if (method == null)
+            method = tryListParamMetaMethod(sender, methodName, isCallToSuper, arguments);
+        return method;
     }
 
     private MetaMethod tryListParamMetaMethod(Class sender, String methodName, boolean isCallToSuper, Object[] arguments) {
