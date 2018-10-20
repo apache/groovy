@@ -272,7 +272,11 @@ public class SmartDocumentFilter extends DocumentFilter {
             break;
         }
 
-        return tokenList.subList(startTokenIndex, stopTokenIndex);
+        if (startTokenIndex <= stopTokenIndex) {
+            return tokenList.subList(startTokenIndex, stopTokenIndex);
+        }
+
+        return Collections.emptyList();
     }
 
     private Style findStyleByTokenType(int tokenType) {
