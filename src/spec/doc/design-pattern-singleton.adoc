@@ -157,5 +157,5 @@ Client: 14800362, Calc: 10580099, Total Calculations: 2
 - http://www.javaworld.com/javaworld/jw-04-2003/jw-0425-designpatterns.html?page=1[Simply Singleton]
 - http://www.ibm.com/developerworks/webservices/library/co-single/index.html[Use your singletons wisely]
 - http://www.ibm.com/developerworks/java/library/j-dcl/index.html[Double-checked locking and the Singleton pattern]
-- http://crazybob.org/2007/01/lazy-loading-singletons.html[Lazy Loading Singletons]
+- https://web.archive.org/web/20160807234810/http://blog.crazybob.org/2007/01/lazy-loading-singletons.html[Lazy Loading Singletons]
 - http://www.yoda.arachsys.com/csharp/singleton.html[Implementing the Singleton Pattern in C#]
