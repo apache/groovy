@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Peter Gromov
+ * Utility methods for lazy class loading
  */
 class MemberSignatureParser {
     static MethodNode createMethodNode(final AsmReferenceResolver resolver, MethodStub method) {
@@ -153,7 +153,8 @@ class MemberSignatureParser {
                 }
             });
         }
-        return new FieldNode(field.fieldName, field.accessModifiers, type[0], owner, null);
+        ConstantExpression value = field.value == null ? null : new ConstantExpression(field.value);
+        return new FieldNode(field.fieldName, field.accessModifiers, type[0], owner, value);
     }
 }
 

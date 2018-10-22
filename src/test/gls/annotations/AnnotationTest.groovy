@@ -755,6 +755,22 @@ class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    void testAnnotationAttributeConstantFromPrecompiledGroovyClass() {
+        // GROOVY-3278
+        assertScript '''
+            @MyAnnotation(groups = 42)
+            class Child1 extends Base3278 {}
+
+            @MyAnnotation(groups = [-1, Base3278.CONST, Integer.MIN_VALUE])
+            class Child3 extends Base3278 {}
+
+            assert new Child1().run() == [42]
+            assert new Child2().run() == [2147483647]
+            assert new Child3().run() == [-1, 3278, -2147483648]
+        '''
+
+    }
+
     void testAnnotationWithRepeatableSupportedPrecompiledJava() {
         assertScript '''
             import java.lang.annotation.*

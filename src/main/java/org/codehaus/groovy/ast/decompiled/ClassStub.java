@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author Peter Gromov
+ * Data structures holding class info to enable lazy loading
  */
 public class ClassStub extends MemberStub {
     final String className;
@@ -81,12 +81,18 @@ class FieldStub extends MemberStub {
     final int accessModifiers;
     final String desc;
     final String signature;
+    final Object value;
 
     public FieldStub(String fieldName, int accessModifiers, String desc, String signature) {
+        this(fieldName, accessModifiers, desc, signature, null);
+    }
+
+    public FieldStub(String fieldName, int accessModifiers, String desc, String signature, Object value) {
         this.fieldName = fieldName;
         this.accessModifiers = accessModifiers;
         this.desc = desc;
         this.signature = signature;
+        this.value = value;
     }
 }
 
