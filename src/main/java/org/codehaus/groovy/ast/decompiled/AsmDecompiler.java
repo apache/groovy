@@ -43,8 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A utility class responsible for decompiling JVM class files and producing {@link ClassStub} objects reflecting their structure.
- *
- * @author Peter Gromov
  */
 public abstract class AsmDecompiler {
 
@@ -172,7 +170,7 @@ public abstract class AsmDecompiler {
 
         @Override
         public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
-            final FieldStub stub = new FieldStub(name, access, desc, signature);
+            final FieldStub stub = new FieldStub(name, access, desc, signature, value);
             if (result.fields == null) result.fields = new ArrayList<FieldStub>(1);
             result.fields.add(stub);
             return new FieldVisitor(api) {
