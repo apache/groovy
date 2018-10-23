@@ -52,12 +52,12 @@ class RegularExpressionsTest extends GroovyTestCase {
 
         assert m instanceof Matcher
 
-        while (m) { i = i + 1 }
+        while (m.find()) { i = i + 1 }
         assert i == 2
 
         i = 0
         m = "cheesecheese" =~ "e+"
-        while (m) { i = i + 1 }
+        while (m.find()) { i = i + 1 }
         assert i == 4
 
         m.reset()
