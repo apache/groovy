@@ -214,7 +214,7 @@ public class ClassNodeResolver {
             LookupResult lr = tryAsScript(name, compilationUnit, null);
             return lr;
         } catch (CompilationFailedException cfe) {
-            throw new GroovyBugError("The lookup for "+name+" caused a failed compilaton. There should not have been any compilation from this call.", cfe);
+            throw new GroovyBugError("The lookup for " + name + " caused a failed compilation. There should not have been any compilation from this call.", cfe);
         }
         //TODO: the case of a NoClassDefFoundError needs a bit more research
         // a simple recompilation is not possible it seems. The current class
