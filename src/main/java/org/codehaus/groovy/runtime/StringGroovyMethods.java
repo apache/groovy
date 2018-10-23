@@ -104,7 +104,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         RegexSupport.setLastMatcher(matcher);
-        return matcher.find();
+        return matcher.find(0);
     }
 
     /**

@@ -22,11 +22,14 @@ import groovy.util.GroovyTestCase;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author James Strachan
  * @author Marc Guillemot
  * @author Brad Long
+ * @author Szymon Stepniak
  */
 public class StringGroovyMethodsTest extends GroovyTestCase {
 
@@ -60,6 +63,20 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
         assertEquals(StringGroovyMethods.toBoolean("false"), Boolean.FALSE);
         assertEquals(StringGroovyMethods.toBoolean("n"), Boolean.FALSE);
         assertEquals(StringGroovyMethods.toBoolean("0"), Boolean.FALSE);
+    }
+
+    public void testMatcherAsBooleanMethod() {
+        Pattern pattern = Pattern.compile("[a-z]+");
+        String correctInput = "abcde";
+        String incorrectInput = "123";
+
+        Matcher correctMatcher = pattern.matcher(correctInput);
+        Matcher incorrectMatcher = pattern.matcher(incorrectInput);
+
+        assertEquals(StringGroovyMethods.asBoolean(correctMatcher), true);
+        assertEquals(StringGroovyMethods.asBoolean(correctMatcher), true);
+        assertEquals(StringGroovyMethods.asBoolean(incorrectMatcher), false);
+        assertEquals(StringGroovyMethods.asBoolean(incorrectMatcher), false);
     }
 
     public void testIsMethods() throws Exception {
