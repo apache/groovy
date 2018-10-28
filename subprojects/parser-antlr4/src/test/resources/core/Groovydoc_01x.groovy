@@ -16,35 +16,30 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-/**
- * @Groovydoc
+/**@
  * class AA
  */
 class AA {
-    /**
-     * @Groovydoc
+    /**@
      * field SOME_FIELD
      */
     public static final int SOME_FIELD = 1;
 
-    /**
-     * @Groovydoc
+    /**@
      * constructor AA
      */
     public AA() {
 
     }
 
-    /**
-     * @Groovydoc
+    /**@
      * method m
      */
     public void m() {
 
     }
 
-    /**
-     * @Groovydoc
+    /**@
      * class InnerClass
      */
     class InnerClass {
@@ -54,8 +49,7 @@ class AA {
 
 }
 
-/**
- * @Groovydoc
+/**@
  * annotation BB
  */
 @interface BB {

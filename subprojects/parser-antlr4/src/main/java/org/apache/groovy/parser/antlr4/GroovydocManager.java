@@ -52,7 +52,7 @@ public class GroovydocManager {
     private static final String ATTACH_RUNTIME_GROOVYDOC = "groovy.attach.runtime.groovydoc";
     private static final boolean ATTACHING_RUNTIME_GROOVYDOC_ENABLED;
     private static final String VALUE = "value";
-    private static final String RUNTIME_GROOVYDOC_PATTERN = "(?s)/[*][*]\\s+(\\s+[*]\\s*)*@Groovydoc\\b.+?[*]/";
+    private static final String RUNTIME_GROOVYDOC_PATTERN = "(?s)/[*][*]@\\s+.*?[*]/";
 
     private static final GroovydocManager INSTANCE = new GroovydocManager();
 
