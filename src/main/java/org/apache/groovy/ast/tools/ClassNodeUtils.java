@@ -22,6 +22,7 @@ import groovy.transform.Generated;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -35,9 +36,11 @@ import org.codehaus.groovy.transform.AbstractASTTransformation;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
@@ -373,4 +376,28 @@ public class ClassNodeUtils {
         return Objects.equals(first.getPackageName(), second.getPackageName());
     }
 
+    /**
+     * Return the (potentially inherited) field of the classnode.
+     *
+     * @param classNode the classnode
+     * @param fieldName the name of the field
+     * @return the field or null if not found
+     */
+    public static FieldNode getField(ClassNode classNode, String fieldName) {
+        ClassNode node = classNode;
+        Set<String> visited = new HashSet<String>();
+        while (node != null) {
+            FieldNode fn = node.getDeclaredField(fieldName);
+            if (fn != null) return fn;
+            ClassNode[] interfaces = node.getInterfaces();
+            for (ClassNode iNode : interfaces) {
+                if (visited.contains(iNode.getName())) continue;
+                FieldNode ifn = getField(iNode, fieldName);
+                visited.add(iNode.getName());
+                if (ifn != null) return ifn;
+            }
+            node = node.getSuperClass();
+        }
+        return null;
+    }
 }
