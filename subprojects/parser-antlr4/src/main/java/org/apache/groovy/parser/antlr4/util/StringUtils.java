@@ -30,14 +30,17 @@ import java.util.regex.Pattern;
  */
 public class StringUtils {
 	private static final String BACKSLASH = "\\";
+	private static final Pattern HEX_ESCAPES_PATTERN = Pattern.compile("(\\\\*)\\\\u([0-9abcdefABCDEF]{4})");
+	private static final Pattern OCTAL_ESCAPES_PATTERN = Pattern.compile("(\\\\*)\\\\([0-3]?[0-7]?[0-7])");
+	private static final Pattern STANDARD_ESCAPES_PATTERN = Pattern.compile("(\\\\*)\\\\([btnfr\"'])");
+	private static final Pattern LINE_ESCAPE_PATTERN = Pattern.compile("(\\\\*)\\\\\r?\n");
 
 	public static String replaceHexEscapes(String text) {
 		if (!text.contains(BACKSLASH)) {
 			return text;
 		}
 
-		Pattern p = Pattern.compile("(\\\\*)\\\\u([0-9abcdefABCDEF]{4})");
-		return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
+		return StringGroovyMethods.replaceAll((CharSequence) text, HEX_ESCAPES_PATTERN, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1, String _2) {
 				if (isLengthOdd(_1)) {
 					return _0;
@@ -53,8 +56,7 @@ public class StringUtils {
 			return text;
 		}
 
-		Pattern p = Pattern.compile("(\\\\*)\\\\([0-3]?[0-7]?[0-7])");
-		return StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
+		return StringGroovyMethods.replaceAll((CharSequence) text, OCTAL_ESCAPES_PATTERN, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1, String _2) {
 				if (isLengthOdd(_1)) {
 					return _0;
@@ -78,9 +80,7 @@ public class StringUtils {
 			return text;
 		}
 
-		Pattern p = Pattern.compile("(\\\\*)\\\\([btnfr\"'])");
-
-		String result = StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
+		String result = StringGroovyMethods.replaceAll((CharSequence) text, STANDARD_ESCAPES_PATTERN, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1, String _2) {
 				if (isLengthOdd(_1)) {
 					return _0;
@@ -138,8 +138,7 @@ public class StringUtils {
 			return text;
 		}
 
-		Pattern p = Pattern.compile("(\\\\*)\\\\\r?\n");
-		text = StringGroovyMethods.replaceAll((CharSequence) text, p, new Closure<Void>(null, null) {
+		text = StringGroovyMethods.replaceAll((CharSequence) text, LINE_ESCAPE_PATTERN, new Closure<Void>(null, null) {
 			Object doCall(String _0, String _1) {
 				if (isLengthOdd(_1)) {
 					return _0;
@@ -208,7 +207,7 @@ public class StringUtils {
 		increase = (increase < 0 ? 0 : increase) * 16;
 		final StringBuilder buf = new StringBuilder(text.length() + increase);
 		while (end != INDEX_NOT_FOUND) {
-			buf.append(text.substring(start, end)).append(replacement);
+			buf.append(text, start, end).append(replacement);
 			start = end + replLength;
 			end = text.indexOf(searchString, start);
 		}
