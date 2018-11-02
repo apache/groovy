@@ -429,6 +429,10 @@ public class GroovyShell extends GroovyObjectSupport {
         context.setVariable(name, value);
     }
 
+    public void removeVariable(String name) {
+        context.removeVariable(name);
+    }
+
     /**
      * Evaluates some script against the current Binding and returns the result
      *
