@@ -441,7 +441,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         Expression initialExpression = field.getInitialExpression();
         MethodNode selectedMethod = field.isStatic()?staticInitializer:initializer;
-        ClassNode target = fieldHelper;
+        ClassNode target = field.isStatic() && staticFieldHelper != null ? staticFieldHelper : fieldHelper;
         if (initialExpression != null) {
             VariableExpression thisObject = new VariableExpression(selectedMethod.getParameters()[0]);
             ExpressionStatement initCode = new ExpressionStatement(initialExpression);
