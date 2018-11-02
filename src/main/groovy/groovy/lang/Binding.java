@@ -77,6 +77,19 @@ public class Binding extends GroovyObjectSupport {
             variables = new LinkedHashMap();
         variables.put(name, value);
     }
+
+    /**
+     * remove the variable with the specified name
+     *
+     * @param name the name of the variable to remove
+     */
+    public void removeVariable(String name) {
+        if (null == variables) {
+            return;
+        }
+
+        variables.remove(name);
+    }
     
     /**
      * Simple check for whether the binding contains a particular variable or not.
