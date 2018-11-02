@@ -259,8 +259,7 @@ set CP=%CLASSPATH%;%CP%
 set STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
 set STARTER_CONF=%GROOVY_HOME%\conf\groovy-starter.conf
 
-set GROOVY_OPTS="-Xmx128m"
-set GROOVY_OPTS=%GROOVY_OPTS% -Dprogram.name="%PROGNAME%"
+set GROOVY_OPTS=-Dprogram.name="%PROGNAME%"
 set GROOVY_OPTS=%GROOVY_OPTS% -Dgroovy.home="%GROOVY_HOME%"
 if not "%TOOLS_JAR%" == "" set GROOVY_OPTS=%GROOVY_OPTS% -Dtools.jar="%TOOLS_JAR%"
 set GROOVY_OPTS=%GROOVY_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
