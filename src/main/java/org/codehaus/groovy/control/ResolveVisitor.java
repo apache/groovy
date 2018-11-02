@@ -231,7 +231,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
-        genericParameterNames = node.isStatic()
+        genericParameterNames = node.isStatic() && !Traits.isTrait(node.getDeclaringClass())
                 ? new HashMap<GenericsTypeName, GenericsType>()
                 : new HashMap<GenericsTypeName, GenericsType>(genericParameterNames);
 
@@ -268,7 +268,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     public void visitProperty(PropertyNode node) {
         Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
-        if (node.isStatic()) {
+        if (node.isStatic() && !Traits.isTrait(node.getDeclaringClass())) {
             genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
         }
 
