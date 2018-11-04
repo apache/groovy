@@ -213,4 +213,20 @@ class GPropertiesTest extends GroovyTestCase {
 
         assert 'Missing' == gp.getProperty('property.missing')
     }
+
+    void testConstructor5() {
+        def gp = new GProperties('''
+greeting.world=Hello,world!
+        ''')
+
+        assert 'Hello,world!' == gp.getProperty('greeting.world')
+    }
+
+    void testConstructor6() {
+        def gp = new GProperties(new Properties(['property.missing': 'Missing']), '''
+greeting.world=Hello,world!
+        ''')
+
+        assert 'Missing' == gp.getProperty('property.missing')
+    }
 }

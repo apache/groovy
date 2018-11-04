@@ -101,6 +101,11 @@ class GProperties extends Properties {
         load(reader)
     }
 
+    GProperties(CharSequence content) {
+        this()
+        load(new StringReader(content.toString()))
+    }
+
     GProperties(InputStream inStream) throws IOException {
         this()
         load(inStream)
@@ -113,6 +118,11 @@ class GProperties extends Properties {
     GProperties(Properties defaults, Reader reader) throws IOException {
         this(defaults)
         load(reader)
+    }
+
+    GProperties(Properties defaults, CharSequence content) {
+        this(defaults)
+        load(new StringReader(content.toString()))
     }
 
     GProperties(Properties defaults, InputStream inStream) throws IOException {
