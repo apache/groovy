@@ -189,4 +189,28 @@ class GPropertiesTest extends GroovyTestCase {
         assert new Boolean(true) == gp.getBoolean('property.boolean', false)
         assert new Boolean(false) == gp.getBoolean('property.boolean.missing', false)
     }
+
+    void testConstructor() {
+        def gp = new GProperties(new InputStreamReader(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties')))
+
+        assert 'Hello' == gp.getProperty('greeting.word')
+    }
+
+    void testConstructor2() {
+        def gp = new GProperties(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Hello' == gp.getProperty('greeting.word')
+    }
+
+    void testConstructor3() {
+        def gp = new GProperties(new Properties(['property.missing': 'Missing']), new InputStreamReader(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties')))
+
+        assert 'Missing' == gp.getProperty('property.missing')
+    }
+
+    void testConstructor4() {
+        def gp = new GProperties(new Properties(['property.missing': 'Missing']), GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Missing' == gp.getProperty('property.missing')
+    }
 }

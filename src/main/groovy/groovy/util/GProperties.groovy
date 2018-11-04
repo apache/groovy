@@ -93,11 +93,31 @@ class GProperties extends Properties {
     private final List<GProperties> importPropertiesList = new LinkedList<>()
 
     GProperties() {
-        this(null)
+        this((Properties) null)
+    }
+
+    GProperties(Reader reader) throws IOException {
+        this()
+        load(reader)
+    }
+
+    GProperties(InputStream inStream) throws IOException {
+        this()
+        load(inStream)
     }
 
     GProperties(Properties defaults) {
         super(defaults)
+    }
+
+    GProperties(Properties defaults, Reader reader) throws IOException {
+        this(defaults)
+        load(reader)
+    }
+
+    GProperties(Properties defaults, InputStream inStream) throws IOException {
+        this(defaults)
+        load(inStream)
     }
 
     @Override
