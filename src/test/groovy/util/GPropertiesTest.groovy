@@ -20,7 +20,7 @@ package groovy.util
 
 class GPropertiesTest extends GroovyTestCase {
     void testImportProperties() {
-        def gp = new GProperties(true)
+        def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
         assert '/groovy/util/gproperties_import.properties,/groovy/util/gproperties_import3.properties' == gp.getProperty('import.properties')
@@ -30,14 +30,14 @@ class GPropertiesTest extends GroovyTestCase {
     }
 
     void testInterpolate() {
-        def gp = new GProperties(true)
+        def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
         assert 'Hello,Daniel' == gp.getProperty('groovy.greeting')
     }
 
     void testInterpolate2() {
-        def gp = new GProperties(true)
+        def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
         assert 'Hello,Daniel :)' == gp.getProperty('groovy.greeting.with.smile')
@@ -51,7 +51,7 @@ class GPropertiesTest extends GroovyTestCase {
     }
 
     void testInterpolate4() {
-        def gp = new GProperties(true)
+        def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
         assert 'Hello,Daniel' == gp.getProperty('greeting.daniel')
@@ -61,7 +61,7 @@ class GPropertiesTest extends GroovyTestCase {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
-        assert '''H${'ell'}o,Daniel''' == gp.getProperty('greeting.daniel')
+        assert '''Hello,Daniel''' == gp.getProperty('greeting.daniel')
     }
 
     void testEscape() {
@@ -69,33 +69,5 @@ class GPropertiesTest extends GroovyTestCase {
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
         assert 'Hello,{some.name}' == gp.getProperty('groovy.greeting.with.escapes')
-    }
-
-    void testEscape2() {
-        def gp = new GProperties()
-        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
-
-        assert '''Hello,${properties.getProperty('some.name')}''' == gp.getProperty('groovy.greeting.with.escapes2')
-    }
-
-    void testInterpolateGroovyScript() {
-        def gp = new GProperties(true)
-        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
-
-        assert "Hello,Daniel :) in ${new java.text.SimpleDateFormat('yyyyMMdd').format(new Date())}" == gp.getProperty('groovy.greeting.with.time')
-    }
-
-    void testInterpolateGroovyScript2() {
-        def gp = new GProperties(true)
-        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
-
-        assert "Hello,Daniel" == gp.getProperty('groovy.greeting.with.script')
-    }
-
-    void testInterpolateGroovyScript3() {
-        def gp = new GProperties(true)
-        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
-
-        assert "Hello,groovy.greeting.with.key" == gp.getProperty('groovy.greeting.with.key')
     }
 }

@@ -57,26 +57,15 @@ import java.util.regex.Pattern
  *      assert 'Hello,Daniel' == gp.getProperty('greeting.daniel')
  * </pre>
  *
- * 3) Evaluating with ${...}, e.g.
+ * 3) Escaping with {{...}}, e.g.
  * <pre>
  *      # gproperties.properties
- *      greeting.daniel=Hello,Daniel in ${new java.text.SimpleDateFormat('yyyyMMdd').format(new Date())}
+ *      greeting.daniel={{groovy.greeting}},{{some.name}}
  *
  *      // groovy script
- *      def gp = new GProperties(true) // Note: we should enable evaluating script manually
+ *      def gp = new GProperties()
  *      gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
- *      assert 'Hello,Daniel in 2018' == gp.getProperty('greeting.daniel') // Given running the script in 2018
- * </pre>
- *
- * 4) Escaping with {{...}}, ${{...}}, e.g.
- * <pre>
- *      # gproperties.properties
- *      greeting.daniel={{groovy.greeting}},{{some.name}} in ${{new java.text.SimpleDateFormat('yyyyMMdd').format(new Date())}}
- *
- *      // groovy script
- *      def gp = new GProperties(true)
- *      gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
- *      assert '{groovy.greeting},{some.name} in ${new java.text.SimpleDateFormat('yyyyMMdd').format(new Date())}' == gp.getProperty('greeting.daniel')
+ *      assert '{groovy.greeting},{some.name}' == gp.getProperty('greeting.daniel')
  * </pre>
  *
  * @since 3.0.0
@@ -85,55 +74,37 @@ import java.util.regex.Pattern
 class GProperties extends Properties {
     private static final long serialVersionUID = 6112578636029876860L
     public static final String IMPORT_PROPERTIES_KEY = 'import.properties'
-    public static final String VAR_KEY = 'key'
-    public static final String VAR_PROPERTIES = 'properties'
-    private static final Pattern GROOVY_SCRIPT_PATTERN = Pattern.compile(/[$][{]\s*(.+?)\s*[}]/)
-    private static final Pattern INTERPOLATE_PATTERN = Pattern.compile(/[{]\s*(.+?)\s*[}]/)
+    private static final Pattern INTERPOLATE_PATTERN = Pattern.compile(/[{](.+?)[}]/)
     private static final Pattern ESCAPE_PATTERN = Pattern.compile(/[{]([{].+?[}])[}]/)
     private static final String LEFT_CURLY_BRACE = '{'
     private static final String RIGHT_CURLY_BRACE = '}'
     private static final String COMMA = ','
-    private final boolean evaluateScriptEnabled
-    private final GroovyShell groovyShell
-    private final List<GProperties> importPropertiesList = new ArrayList<>()
+    private final List<GProperties> importPropertiesList = new LinkedList<>()
 
-    GProperties(boolean evaluateScriptEnabled=false, GroovyShell groovyShell=new GroovyShell()) {
-        this(null, evaluateScriptEnabled, groovyShell)
+    GProperties() {
+        this(null)
     }
 
-    GProperties(Properties defaults, boolean evaluateScriptEnabled=false, GroovyShell groovyShell=new GroovyShell()) {
+    GProperties(Properties defaults) {
         super(defaults)
-        this.evaluateScriptEnabled = evaluateScriptEnabled
-        this.groovyShell = groovyShell
     }
 
     @Override
     String getProperty(String key) {
         String value = super.getProperty(key)
 
-        if (!value) {
+        if (null == value) {
             for (GProperties importProperties : importPropertiesList) {
                 value = importProperties.getProperty(key)
 
-                if (value) {
+                if (null != value) {
                     break
                 }
             }
         }
 
-        if (!value) {
+        if (null == value) {
             return value
-        }
-
-        if (evaluateScriptEnabled) {
-            value = value.replaceAll(GROOVY_SCRIPT_PATTERN) { String _0, String _1 ->
-                if (_1.startsWith(LEFT_CURLY_BRACE) && _1.endsWith(RIGHT_CURLY_BRACE)) {
-                    return _0
-                }
-                processImplicitVariables(key) {
-                    groovyShell.evaluate(_1)
-                }
-            }
         }
 
         value = value.replaceAll(INTERPOLATE_PATTERN) { String _0, String _1 ->
@@ -141,7 +112,8 @@ class GProperties extends Properties {
                 return _0
             }
 
-            this.getProperty(_1) ?: _0
+            def p = this.getProperty(_1.trim())
+            null == p ? _0 : p
         }
 
         value.replaceAll(ESCAPE_PATTERN) { String _0, String _1 ->
@@ -190,15 +162,5 @@ class GProperties extends Properties {
 
             importPropertiesList << importProperties
         }
-    }
-
-    private synchronized Object processImplicitVariables(String key, Closure c) {
-        groovyShell.setVariable(VAR_KEY, key)
-        groovyShell.setVariable(VAR_PROPERTIES, this)
-        def v = c()
-        groovyShell.removeVariable(VAR_PROPERTIES)
-        groovyShell.removeVariable(VAR_KEY)
-
-        return v
     }
 }
