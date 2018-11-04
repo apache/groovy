@@ -90,8 +90,24 @@ class GPropertiesTest extends GroovyTestCase {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
-        assert new Character('a' as char) == gp.getCharacter('property.character', 'b' as char)
-        assert new Character('b' as char) == gp.getCharacter('property.character.missing', 'b' as char)
+        assert new Character('a' as char) == gp.getCharacter('property.character', new Character('b' as char))
+        assert new Character('b' as char) == gp.getCharacter('property.character.missing', new Character('b' as char))
+    }
+
+    void testGetByte() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert new Byte(1 as byte) == gp.getByte('property.byte')
+        assert null == gp.getByte('property.byte.missing')
+    }
+
+    void testGetByteWithDefault() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert new Byte(1 as byte) == gp.getByte('property.byte', new Byte(2 as byte))
+        assert new Byte(2 as byte) == gp.getByte('property.byte.missing', new Byte(2 as byte))
     }
 
     void testGetShort() {
@@ -106,8 +122,8 @@ class GPropertiesTest extends GroovyTestCase {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
-        assert new Short(126 as short) == gp.getShort('property.short', 125 as short)
-        assert new Short(125 as short) == gp.getShort('property.short.missing', 125 as short)
+        assert new Short(126 as short) == gp.getShort('property.short', new Short(125 as short))
+        assert new Short(125 as short) == gp.getShort('property.short.missing', new Short(125 as short))
     }
 
     void testGetInteger() {
@@ -122,8 +138,8 @@ class GPropertiesTest extends GroovyTestCase {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
-        assert new Integer(1104) == gp.getInteger('property.integer', 1101)
-        assert new Integer(1101) == gp.getInteger('property.integer.missing', 1101)
+        assert new Integer(1104) == gp.getInteger('property.integer', new Integer(1101))
+        assert new Integer(1101) == gp.getInteger('property.integer.missing', new Integer(1101))
     }
 
     void testGetLong() {
@@ -138,8 +154,8 @@ class GPropertiesTest extends GroovyTestCase {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
-        assert new Long(181104) == gp.getLong('property.long', 181101)
-        assert new Long(181101) == gp.getLong('property.long.missing', 181101)
+        assert new Long(181104) == gp.getLong('property.long', new Long(181101))
+        assert new Long(181101) == gp.getLong('property.long.missing', new Long(181101))
     }
 
     void testGetFloat() {
@@ -154,8 +170,8 @@ class GPropertiesTest extends GroovyTestCase {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
-        assert new Float(18.1104f) == gp.getFloat('property.float', 18.1101f)
-        assert new Float(18.1101f) == gp.getFloat('property.float.missing', 18.1101f)
+        assert new Float(18.1104f) == gp.getFloat('property.float', new Float(18.1101f))
+        assert new Float(18.1101f) == gp.getFloat('property.float.missing', new Float(18.1101f))
     }
 
     void testGetDouble() {
@@ -170,8 +186,8 @@ class GPropertiesTest extends GroovyTestCase {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
-        assert new Double(18.1104d) == gp.getDouble('property.double', 18.1101d)
-        assert new Double(18.1101d) == gp.getDouble('property.double.missing', 18.1101d)
+        assert new Double(18.1104d) == gp.getDouble('property.double', new Double(18.1101d))
+        assert new Double(18.1101d) == gp.getDouble('property.double.missing', new Double(18.1101d))
     }
 
     void testGetBoolean() {
@@ -186,8 +202,40 @@ class GPropertiesTest extends GroovyTestCase {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
-        assert new Boolean(true) == gp.getBoolean('property.boolean', false)
-        assert new Boolean(false) == gp.getBoolean('property.boolean.missing', false)
+        assert new Boolean(true) == gp.getBoolean('property.boolean', new Boolean(false))
+        assert new Boolean(false) == gp.getBoolean('property.boolean.missing', new Boolean(false))
+    }
+
+    void testGetBigInteger() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert new BigInteger(20181104) == gp.getBigInteger('property.biginteger')
+        assert null == gp.getBigInteger('property.biginteger.missing')
+    }
+
+    void testGetBigIntegerWithDefault() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert new BigInteger(20181104) == gp.getBigInteger('property.biginteger', new BigInteger(20181101))
+        assert new BigInteger(20181101) == gp.getBigInteger('property.biginteger.missing', new BigInteger(20181101))
+    }
+
+    void testGetBigDecimal() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert new BigDecimal('2018.1104') == gp.getBigDecimal('property.bigdecimal')
+        assert null == gp.getBigDecimal('property.bigdecimal.missing')
+    }
+
+    void testGetBigDecimalWithDefault() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert new BigDecimal('2018.1104') == gp.getBigDecimal('property.bigdecimal', new BigDecimal('2018.1101'))
+        assert new BigDecimal('2018.1101') == gp.getBigDecimal('property.bigdecimal.missing', new BigDecimal('2018.1101'))
     }
 
     void testConstructor() {

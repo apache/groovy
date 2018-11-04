@@ -178,6 +178,18 @@ class GProperties extends Properties {
         }
     }
 
+    Byte getByte(String key) {
+        getPropertyWithType(key) { String p ->
+            Byte.valueOf(p)
+        }
+    }
+
+    Byte getByte(String key, Byte defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getByte(key)
+        }
+    }
+
     Short getShort(String key) {
         getPropertyWithType(key) { String p ->
             Short.valueOf(p)
@@ -250,14 +262,28 @@ class GProperties extends Properties {
         }
     }
 
-    private <V> V getPropertyWithType(String key, Closure<V> c) {
-        def p = getProperty(key)
-        null == p ? null : c(p)
+    BigInteger getBigInteger(String key) {
+        getPropertyWithType(key) { String p ->
+            new BigInteger(p)
+        }
     }
 
-    private <V> V getDefaultIfAbsent(String key, V defaultValue, Closure<V> c) {
-        def p = c(key)
-        null == p ? defaultValue : p
+    BigInteger getBigInteger(String key, BigInteger defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getBigInteger(key)
+        }
+    }
+
+    BigDecimal getBigDecimal(String key) {
+        getPropertyWithType(key) { String p ->
+            new BigDecimal(p)
+        }
+    }
+
+    BigDecimal getBigDecimal(String key, BigDecimal defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getBigDecimal(key)
+        }
     }
 
     @Override
@@ -301,5 +327,15 @@ class GProperties extends Properties {
 
             importPropertiesList << importProperties
         }
+    }
+
+    private <V> V getPropertyWithType(String key, Closure<V> c) {
+        def p = getProperty(key)
+        null == p ? null : c(p)
+    }
+
+    private <V> V getDefaultIfAbsent(String key, V defaultValue, Closure<V> c) {
+        def p = c(key)
+        null == p ? defaultValue : p
     }
 }
