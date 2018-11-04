@@ -68,6 +68,17 @@ import java.util.regex.Pattern
  *      assert '{groovy.greeting},{some.name}' == gp.getProperty('greeting.daniel')
  * </pre>
  *
+ * 4) Getting property with the specified type(integer, long, boolean, etc.), e.g.
+ * <pre>
+ *      # gproperties.properties
+ *      property.integer=1104
+ *
+ *      // groovy script
+ *      def gp = new GProperties()
+ *      gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+ *      assert new Integer(1104) == gp.getInteger('property.integer')
+ * </pre>
+ *
  * @since 3.0.0
  */
 @CompileStatic
@@ -119,6 +130,104 @@ class GProperties extends Properties {
         value.replaceAll(ESCAPE_PATTERN) { String _0, String _1 ->
             _1
         }
+    }
+
+    Character getCharacter(String key) {
+        getPropertyWithType(key) { String p ->
+            if (!p || p.length() > 1) {
+                throw new IllegalArgumentException("Invalid character: ${p}")
+            }
+
+            Character.valueOf(p as char)
+        }
+    }
+
+    Character getCharacter(String key, Character defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getCharacter(key)
+        }
+    }
+
+    Short getShort(String key) {
+        getPropertyWithType(key) { String p ->
+            Short.valueOf(p)
+        }
+    }
+
+    Short getShort(String key, Short defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getShort(key)
+        }
+    }
+
+    Integer getInteger(String key) {
+        getPropertyWithType(key) { String p ->
+            Integer.valueOf(p)
+        }
+    }
+
+    Integer getInteger(String key, Integer defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getInteger(key)
+        }
+    }
+
+    Long getLong(String key) {
+        getPropertyWithType(key) { String p ->
+            Long.valueOf(p)
+        }
+    }
+
+    Long getLong(String key, Long defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getLong(key)
+        }
+    }
+
+    Float getFloat(String key) {
+        getPropertyWithType(key) { String p ->
+            Float.valueOf(p)
+        }
+    }
+
+    Float getFloat(String key, Float defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getFloat(key)
+        }
+    }
+
+    Double getDouble(String key) {
+        getPropertyWithType(key) { String p ->
+            Double.valueOf(p)
+        }
+    }
+
+    Double getDouble(String key, Double defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getDouble(key)
+        }
+    }
+
+    Boolean getBoolean(String key) {
+        getPropertyWithType(key) { String p ->
+            Boolean.valueOf(p)
+        }
+    }
+
+    Boolean getBoolean(String key, Boolean defaultValue) {
+        getDefaultIfAbsent(key, defaultValue) {
+            getBoolean(key)
+        }
+    }
+
+    private <V> V getPropertyWithType(String key, Closure<V> c) {
+        def p = getProperty(key)
+        null == p ? null : c(p)
+    }
+
+    private <V> V getDefaultIfAbsent(String key, V defaultValue, Closure<V> c) {
+        def p = c(key)
+        null == p ? defaultValue : p
     }
 
     @Override
