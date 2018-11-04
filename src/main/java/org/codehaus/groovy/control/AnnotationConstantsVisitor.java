@@ -32,10 +32,10 @@ import org.codehaus.groovy.classgen.Verifier;
 
 import java.math.BigDecimal;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
+
 /**
  * Visitor to resolve constants in annotation definitions.
- *
- * @author Paul King
  */
 public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
@@ -89,7 +89,7 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
                 return castee;
             }
         }
-        return val;
+        return transformInlineConstants(val, returnType);
     }
 
     private static Expression revertType(Expression val, ClassNode returnWrapperType) {

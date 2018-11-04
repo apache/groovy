@@ -755,20 +755,96 @@ class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    void testVariableExpressionsReferencingConstantsSeenForAnnotationAttributes() {
+        shouldCompile '''
+            class C {
+                public static final String VALUE = 'rawtypes'
+                @SuppressWarnings(VALUE)
+                def method() { }
+            }
+        '''
+    }
+
+    void testSimpleBinaryExpressions() {
+        assertScript '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.FIELD)
+            @interface Pattern {
+                String regexp()
+            }
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.FIELD)
+            @interface LimitedDouble {
+                double max() default Double.MAX_VALUE
+                double min() default Double.MIN_VALUE
+                double zero() default (1.0 - 1.0d) * 1L
+            }
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.FIELD)
+            @interface IntegerConst {
+                int kilo() default 0b1 << 10
+                int two() default 64 >> 5
+                int nine() default 0b1100 ^ 0b101
+                int answer() default 42
+            }
+
+            class MyClass {
+                private static interface Constants {
+                    static final String CONST = 'foo' + 'bar'
+                }
+
+                @Pattern(regexp=Constants.CONST)
+                String myString
+
+                @LimitedDouble(min=0.0d, max=50.0d * 2)
+                double myDouble
+
+                @IntegerConst(answer=(5 ** 2) * (2 << 1))
+                int myInteger
+            }
+
+            assert MyClass.getDeclaredField('myString').annotations[0].regexp() == 'foobar'
+
+            MyClass.getDeclaredField('myDouble').annotations[0].with {
+                assert max() == 100.0d
+                assert min() == 0.0d
+                assert zero() == 0.0d
+            }
+
+            MyClass.getDeclaredField('myInteger').annotations[0].with {
+                assert kilo() == 1024
+                assert two() == 2
+                assert nine() == 9
+                assert answer() == 100
+            }
+        '''
+    }
+
     void testAnnotationAttributeConstantFromPrecompiledGroovyClass() {
         // GROOVY-3278
         assertScript '''
-            @MyAnnotation(groups = 42)
+            @ConstAnnotation(ints = 42)
             class Child1 extends Base3278 {}
+            
+            class OtherConstants {
+                static final Integer CONST3 = 3278
+            }
 
-            @MyAnnotation(groups = [-1, Base3278.CONST, Integer.MIN_VALUE])
+            @ConstAnnotation(ints = [-1, Base3278.CONST, Base3278.CONST1, Base3278.CONST2, OtherConstants.CONST3, Integer.MIN_VALUE],
+                          strings = ['foo', Base3278.CONST4, Base3278.CONST5, Base3278.CONST5 + 'bing'])
             class Child3 extends Base3278 {}
 
-            assert new Child1().run() == [42]
-            assert new Child2().run() == [2147483647]
-            assert new Child3().run() == [-1, 3278, -2147483648]
+            assert new Child1().ints() == [42]
+            assert new Child2().ints() == [2147483647]
+            new Child3().with {
+                assert ints() == [-1, 3278, 2048, 2070, 3278, -2147483648]
+                assert strings() == ['foo', 'foobar', 'foobarbaz', 'foobarbazbing']
+            }
         '''
-
     }
 
     void testAnnotationWithRepeatableSupportedPrecompiledJava() {

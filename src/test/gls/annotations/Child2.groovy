@@ -16,5 +16,5 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-@MyAnnotation(groups = Integer.MAX_VALUE)
+@ConstAnnotation(ints = Integer.MAX_VALUE)
 class Child2 extends Base3278 {}

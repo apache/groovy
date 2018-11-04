@@ -20,6 +20,7 @@ import java.lang.annotation.*
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@interface MyAnnotation {
-    int[] groups() default []
+@interface ConstAnnotation {
+    int[] ints() default []
+    String[] strings() default []
 }

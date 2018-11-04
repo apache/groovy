@@ -89,6 +89,7 @@ import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
@@ -1142,10 +1143,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 // GROOVY-3311: pre-defined constants added by groovy compiler for numbers/characters should be
                 // initialized first so that code dependent on it does not see their values as empty
                 Expression initialValueExpression = fieldNode.getInitialValueExpression();
-                if (initialValueExpression instanceof ConstantExpression) {
-                    ConstantExpression cexp = (ConstantExpression) initialValueExpression;
+                Expression transformed = transformInlineConstants(initialValueExpression, fieldNode.getType());
+                if (transformed instanceof ConstantExpression) {
+                    ConstantExpression cexp = (ConstantExpression) transformed;
                     cexp = transformToPrimitiveConstantIfPossible(cexp);
                     if (fieldNode.isFinal() && ClassHelper.isStaticConstantInitializerType(cexp.getType()) && cexp.getType().equals(fieldNode.getType())) {
+                        fieldNode.setInitialValueExpression(transformed);
                         return; // GROOVY-5150: primitive type constants will be initialized directly
                     }
                     staticList.add(0, statement);

@@ -18,5 +18,10 @@
  */
 class Base3278 {
     static final int CONST = 3278
-    def run() { getClass().annotations[0].groups() }
+    static final int CONST1 = 1024 * 2
+    static final int CONST2 = CONST1 + 22
+    static final String CONST4 = 'foobar'
+    static final String CONST5 = CONST4 + 'baz'
+    def ints() { getClass().annotations[0].ints() }
+    def strings() { getClass().annotations[0].strings() }
 }
