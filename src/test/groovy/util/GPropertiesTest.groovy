@@ -29,6 +29,14 @@ class GPropertiesTest extends GroovyTestCase {
         assert 'Hi' == gp.getProperty('greeting.word2')
     }
 
+    void testImportProperties2() {
+        def gp = new GProperties()
+        gp.importProperties(System.getProperties())
+
+        // JAVA 8'S CLASS VERSION IS 52.0
+        assert new BigDecimal('52.0').compareTo(gp.getBigDecimal('java.class.version')) <= 0
+    }
+
     void testInterpolate() {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))

@@ -90,7 +90,7 @@ class GProperties extends Properties {
     private static final String LEFT_CURLY_BRACE = '{'
     private static final String RIGHT_CURLY_BRACE = '}'
     private static final String COMMA = ','
-    private final List<GProperties> importPropertiesList = new LinkedList<>()
+    private final List<Properties> importPropertiesList = new LinkedList<>()
 
     GProperties() {
         this((Properties) null)
@@ -135,7 +135,7 @@ class GProperties extends Properties {
         String value = super.getProperty(key)
 
         if (null == value) {
-            for (GProperties importProperties : importPropertiesList) {
+            for (Properties importProperties : importPropertiesList) {
                 value = importProperties.getProperty(key)
 
                 if (null != value) {
@@ -290,7 +290,7 @@ class GProperties extends Properties {
     synchronized void load(Reader reader) throws IOException {
         reader.withReader {
             super.load(it)
-            importProperties()
+            _importProperties()
         }
     }
 
@@ -298,11 +298,19 @@ class GProperties extends Properties {
     synchronized void load(InputStream inStream) throws IOException {
         inStream.withStream {
             super.load(it)
-            importProperties()
+            _importProperties()
         }
     }
 
-    private void importProperties() {
+    synchronized void importProperties(Properties properties) {
+        if (importPropertiesList.contains(properties)) {
+            return
+        }
+
+        importPropertiesList << properties
+    }
+
+    private void _importProperties() {
         String importPropertiesPaths = super.getProperty(IMPORT_PROPERTIES_KEY)
 
         if (!importPropertiesPaths?.trim()) {
