@@ -262,7 +262,7 @@ class GProperties extends Properties {
 
     @Override
     synchronized void load(Reader reader) throws IOException {
-        reader.withReader { it ->
+        reader.withReader {
             super.load(it)
             importProperties()
         }
