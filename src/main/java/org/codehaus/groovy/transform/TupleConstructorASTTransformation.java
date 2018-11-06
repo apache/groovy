@@ -39,6 +39,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -263,6 +264,11 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         if (sourceUnit != null && !body.isEmpty()) {
             VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(sourceUnit);
             scopeVisitor.visitClass(cNode);
+        }
+
+        // GROOVY-8868 don't want an empty body to cause the constructor to be deleted later
+        if (body.isEmpty()) {
+            body.addStatement(new ExpressionStatement(ConstantExpression.EMPTY_EXPRESSION));
         }
 
         // If the first param is def or a Map, named args might not work as expected so we add a hard-coded map constructor in this case
