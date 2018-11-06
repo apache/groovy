@@ -79,6 +79,13 @@ class GPropertiesTest extends GroovyTestCase {
         assert 'Hello,{some.name}' == gp.getProperty('groovy.greeting.with.escapes')
     }
 
+    void testEscape2() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Hello, curly brace {}' == gp.getProperty('groovy.greeting.with.escapes2')
+    }
+
     void testGetCharacter() {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))

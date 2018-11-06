@@ -86,7 +86,7 @@ class GProperties extends Properties {
     private static final long serialVersionUID = 6112578636029876860L
     public static final String IMPORT_PROPERTIES_KEY = 'import.properties'
     private static final Pattern INTERPOLATE_PATTERN = Pattern.compile(/[{](.+?)[}]/)
-    private static final Pattern ESCAPE_PATTERN = Pattern.compile(/[{]([{].+?[}])[}]/)
+    private static final Pattern ESCAPE_PATTERN = Pattern.compile(/[{]([{][^{}]*?[}])[}]/)
     private static final String LEFT_CURLY_BRACE = '{'
     private static final String RIGHT_CURLY_BRACE = '}'
     private static final String COMMA = ','
@@ -290,7 +290,7 @@ class GProperties extends Properties {
     synchronized void load(Reader reader) throws IOException {
         reader.withReader {
             super.load(it)
-            _importProperties()
+            importPropertiesFromFiles()
         }
     }
 
@@ -298,7 +298,7 @@ class GProperties extends Properties {
     synchronized void load(InputStream inStream) throws IOException {
         inStream.withStream {
             super.load(it)
-            _importProperties()
+            importPropertiesFromFiles()
         }
     }
 
@@ -310,7 +310,7 @@ class GProperties extends Properties {
         importPropertiesList << properties
     }
 
-    private void _importProperties() {
+    private void importPropertiesFromFiles() {
         String importPropertiesPaths = super.getProperty(IMPORT_PROPERTIES_KEY)
 
         if (!importPropertiesPaths?.trim()) {
@@ -322,18 +322,13 @@ class GProperties extends Properties {
                 return
             }
 
-            GProperties importProperties = new GProperties()
             def inputstream = GProperties.getResourceAsStream(importPropertiesPath)
 
             if (!inputstream) {
                 throw new IOException("${importPropertiesPath} does not exist")
             }
 
-            inputstream.withStream {
-                importProperties.load(it)
-            }
-
-            importPropertiesList << importProperties
+            importProperties(new GProperties(inputstream))
         }
     }
 
