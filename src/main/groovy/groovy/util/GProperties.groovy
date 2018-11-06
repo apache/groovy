@@ -85,8 +85,7 @@ import java.util.regex.Pattern
 class GProperties extends Properties {
     private static final long serialVersionUID = 6112578636029876860L
     public static final String IMPORT_PROPERTIES_KEY = 'import.properties'
-    private static final Pattern INTERPOLATE_PATTERN = Pattern.compile(/[{](.+?)[}]/)
-    private static final Pattern ESCAPE_PATTERN = Pattern.compile(/[{]([{][^{}]*?[}])[}]/)
+    private static final Pattern INTERPOLATE_PATTERN = Pattern.compile(/([{]+)(.*?)([}]+)/)
     private static final String LEFT_CURLY_BRACE = '{'
     private static final String RIGHT_CURLY_BRACE = '}'
     private static final String COMMA = ','
@@ -148,17 +147,26 @@ class GProperties extends Properties {
             return value
         }
 
-        value = value.replaceAll(INTERPOLATE_PATTERN) { String _0, String _1 ->
-            if (_1.startsWith(LEFT_CURLY_BRACE) && _1.endsWith(RIGHT_CURLY_BRACE)) {
-                return _0
+        interpolate(value)
+    }
+
+    private String interpolate(String value) {
+        value.replaceAll(INTERPOLATE_PATTERN) { String _0, String _1, String _2, String _3 ->
+            int leftCnt = _1.count(LEFT_CURLY_BRACE)
+            int rightCnt = _3.count(RIGHT_CURLY_BRACE)
+            int minCnt = Math.min(leftCnt, rightCnt)
+            int escapeCnt = (minCnt / 2) as int
+
+            String left = LEFT_CURLY_BRACE * (escapeCnt + (leftCnt - minCnt))
+            String right = RIGHT_CURLY_BRACE * (escapeCnt + (rightCnt - minCnt))
+
+            if (minCnt % 2 == 0) {
+                return "${left}${_2}${right}"
             }
 
-            def p = this.getProperty(_1.trim())
-            null == p ? _0 : p
-        }
+            def p = this.getProperty(_2.trim())
 
-        value.replaceAll(ESCAPE_PATTERN) { String _0, String _1 ->
-            _1
+            "${left}${null == p ? _0 : p}${right}"
         }
     }
 

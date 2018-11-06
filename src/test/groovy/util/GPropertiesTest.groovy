@@ -72,6 +72,13 @@ class GPropertiesTest extends GroovyTestCase {
         assert '''Hello,Daniel''' == gp.getProperty('greeting.daniel')
     }
 
+    void testInterpolate6() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert '''Hello,{}''' == gp.getProperty('property.empty')
+    }
+
     void testEscape() {
         def gp = new GProperties()
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
@@ -84,6 +91,48 @@ class GPropertiesTest extends GroovyTestCase {
         gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
 
         assert 'Hello, curly brace {}' == gp.getProperty('groovy.greeting.with.escapes2')
+    }
+
+    void testEscape3() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Hello,{Daniel}' == gp.getProperty('groovy.greeting.with.escapes3')
+    }
+
+    void testEscape4() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Hello,{{some.name}' == gp.getProperty('groovy.greeting.with.escapes4')
+    }
+
+    void testEscape5() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Hello,{some.name}}' == gp.getProperty('groovy.greeting.with.escapes5')
+    }
+
+    void testEscape6() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Hello,{{some.name}}' == gp.getProperty('groovy.greeting.with.escapes6')
+    }
+
+    void testEscape7() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Hello,{Daniel' == gp.getProperty('groovy.greeting.with.escapes7')
+    }
+
+    void testEscape8() {
+        def gp = new GProperties()
+        gp.load(GPropertiesTest.getResourceAsStream('/groovy/util/gproperties.properties'))
+
+        assert 'Hello,Daniel}' == gp.getProperty('groovy.greeting.with.escapes8')
     }
 
     void testGetCharacter() {
