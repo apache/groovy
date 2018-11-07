@@ -356,6 +356,55 @@ assert composite*.id == [1,2]
 assert composite*.name == ['Foo','Bar']
 // end::spreaddot_iterable[]
 '''
+        assertScript '''
+import groovy.transform.Canonical
+
+// tag::spreaddot_multilevel[]
+class Make {
+    String name
+    List<Model> models
+}
+
+@Canonical
+class Model {
+    String name
+}
+
+def cars = [
+    new Make(name: 'Peugeot',
+             models: [new Model('408'), new Model('508')]),
+    new Make(name: 'Renault',
+             models: [new Model('Clio'), new Model('Captur')])
+]
+
+def makes = cars*.name
+assert makes == ['Peugeot', 'Renault']
+
+def models = cars*.models*.name
+assert models == [['408', '508'], ['Clio', 'Captur']]
+assert models.sum() == ['408', '508', 'Clio', 'Captur'] // flatten one level
+assert models.flatten() == ['408', '508', 'Clio', 'Captur'] // flatten all levels (one in this case)
+// end::spreaddot_multilevel[]
+'''
+        assertScript '''
+// tag::spreaddot_alternative[]
+class Car {
+    String make
+    String model
+}
+def cars = [
+   [
+       new Car(make: 'Peugeot', model: '408'),
+       new Car(make: 'Peugeot', model: '508')
+   ], [
+       new Car(make: 'Renault', model: 'Clio'),
+       new Car(make: 'Renault', model: 'Captur')
+   ]
+]
+def models = cars.collectNested{ it.model }
+assert models == [['408', '508'], ['Clio', 'Captur']]
+// end::spreaddot_alternative[]
+'''
     }
 
     void testSpreadMethodArguments() {
