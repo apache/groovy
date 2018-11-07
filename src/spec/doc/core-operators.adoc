@@ -422,8 +422,8 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_st
 
 === Spread operator
 
-The Spread Operator (`*.`) is used to invoke an action on all items of an aggregate object. It is equivalent to calling the action on each item
-and collecting the result into a list:
+The Spread-dot Operator (`*.`), often abbreviated to just Spread Operator, is used to invoke an action on all items
+of an aggregate object. It is equivalent to calling the action on each item and collecting the result into a list:
 
 [source,groovy]
 ----
@@ -433,7 +433,14 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreaddot,indent=0
 <2> call the spread operator on the list, accessing the `make` property of each item
 <3> returns a list of strings corresponding to the collection of `make` items
 
-The spread operator is null-safe, meaning that if an element of the collection is null, it will return null instead of throwing a `NullPointerException`:
+The expression `cars*.make` is equivalent to `cars.collect{ it.make }`.
+Groovy's GPath notation allows a short-cut when the referenced property
+isn't a property of the containing list, in that case it is automatically
+spread. In the previously mentioned case, the expression `cars.make` can
+be used, though retaining the explicit spread-dot operator is often recommended.
+
+The spread operator is null-safe, meaning that if an element of the collection is null,
+it will return null instead of throwing a `NullPointerException`:
 
 [source,groovy]
 ----
@@ -448,6 +455,21 @@ The spread operator can be used on any class which implements the `Iterable` int
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreaddot_iterable,indent=0]
+----
+
+Use multiple invocations of the spread-dot operator (here `cars*.models*.name`) when
+working with aggregates of data structures which themselves contain aggregates:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreaddot_multilevel,indent=0]
+----
+
+Consider using the `collectNested` DGM method instead of the spread-dot operator for collections of collections:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=spreaddot_alternative,indent=0]
 ----
 
 ==== Spreading method arguments
