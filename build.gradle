@@ -151,7 +151,7 @@ ext {
     gparsVersion = '1.2.1'
     ivyVersion = '2.4.0'
     jansiVersion = '1.17.1'
-    jarjarVersion = '1.6.6'
+    jarjarVersion = '1.7.2'
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
     logbackVersion = '1.1.7'
