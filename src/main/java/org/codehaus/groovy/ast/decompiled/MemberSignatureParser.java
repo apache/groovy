@@ -97,8 +97,16 @@ class MemberSignatureParser {
         }
 
         Parameter[] parameters = new Parameter[parameterTypes.length];
+        List<String> parameterNames = method.parameterNames;
         for (int i = 0; i < parameterTypes.length; i++) {
-            parameters[i] = new Parameter(parameterTypes[i], "param" + i);
+            String parameterName = "param" + i;
+            if (parameterNames != null && i < parameterNames.size()) {
+                String decompiledName = parameterNames.get(i);
+                if (decompiledName != null) {
+                    parameterName = decompiledName;
+                }
+            }
+            parameters[i] = new Parameter(parameterTypes[i], parameterName);
         }
 
         if (method.parameterAnnotations != null) {

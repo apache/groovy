@@ -158,6 +158,12 @@ public abstract class AsmDecompiler {
                             }
                         };
                     }
+
+                    @Override
+                    public void visitParameter(String name, int access) {
+                        if (stub.parameterNames == null) stub.parameterNames = new ArrayList<String>();
+                        stub.parameterNames.add(name);
+                    }
                 };
             }
             return null;
