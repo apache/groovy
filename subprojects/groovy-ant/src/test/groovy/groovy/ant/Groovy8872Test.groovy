@@ -28,6 +28,7 @@ class Groovy8872Test extends AntTestCase {
     '''
 
     void testParameterNamesSeenInAST() {
+        if (System.getProperty('java.specification.version') < '1.8') return
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()
 //        debugLogger.setMessageOutputLevel(4)
 //        debugLogger.setOutputPrintStream(System.out)
@@ -63,8 +64,6 @@ class Groovy8872Test extends AntTestCase {
                 ''')
                 'ExtractParamNamesTransformation.groovy'('''
                     import org.codehaus.groovy.ast.*
-                    import org.codehaus.groovy.ast.expr.*
-                    import org.codehaus.groovy.ast.stmt.*
                     import org.codehaus.groovy.transform.*
                     import org.codehaus.groovy.control.*
                     import static org.codehaus.groovy.ast.tools.GeneralUtils.*
