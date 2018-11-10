@@ -18,26 +18,19 @@
  */
 package groovy.ant
 
-class Groovy8669Test extends AntTestCase {
-    private scriptAllOnPath = '''
-    def anno = AnnotatedClass.annotations[0]
-    def type = anno.annotationType()
-    assert type.name == 'MyAnnotation'
-    assert type.getDeclaredMethod('value').invoke(anno).name == 'ValueClass'
+class Groovy8872Test extends AntTestCase {
+    private scriptParamNameCheck = '''
+        @ExtractParamNames
+        abstract class DummyClass implements JavaInterface, GroovyInterface {}
+
+        def paramNames = DummyClass.paramNames
+        assert paramNames == [
+            ['name', 'dob', 'vip'],
+            ['id', 'eventName', 'dateOfEvent']
+        ]
     '''
 
-    private scriptNoValueClass = '''
-    // using annotations will cause ValueClass not to be found
-    // but should still be able to use the class otherwise
-    assert AnnotatedClass.name.size() == 14
-    '''
-
-    private scriptNoAnnotationOnPath = '''
-    // class should be usable but won't have annotations
-    assert !AnnotatedClass.annotations
-    '''
-
-    void testCreateZip() {
+    void testParameterNamesSeenInAST() {
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()
 //        debugLogger.setMessageOutputLevel(4)
 //        debugLogger.setOutputPrintStream(System.out)
@@ -45,43 +38,64 @@ class Groovy8669Test extends AntTestCase {
 
         doInTmpDir { ant, baseDir ->
             baseDir.src {
-                'ValueClass.java'('''
-                    public class ValueClass{ }
-                ''')
-                'MyAnnotation.java'('''
-                    import java.lang.annotation.*;
+                'JavaInterface.java'('''
+                    import java.util.Date;
 
-                    @Target(ElementType.TYPE)
-                    @Retention(RetentionPolicy.RUNTIME)
-                    public @interface MyAnnotation {
-                        Class<ValueClass> value();
+                    public interface JavaInterface {
+                        void addPerson(String name, Date dob, boolean vip);
                     }
                 ''')
-                'AnnotatedClass.java'('''
-                    @MyAnnotation(ValueClass.class)
-                    class AnnotatedClass { }
+                'GroovyInterface.groovy'('''
+                    interface GroovyInterface {
+                        void addEvent(int id, String eventName, Date dateOfEvent)
+                    }
+                ''')
+                'ExtractParamNames.groovy'('''
+                    import org.codehaus.groovy.transform.GroovyASTTransformationClass
+                    import java.lang.annotation.*
+
+                    /**
+                     * Test transform adds a static method to a class that returns a map from the name
+                     * for each found method to its parameter names.
+                     */
+                    @java.lang.annotation.Documented
+                    @Retention(RetentionPolicy.SOURCE)
+                    @Target(ElementType.TYPE)
+                    @GroovyASTTransformationClass("ExtractParamNamesTransformation")
+                    @interface ExtractParamNames { }
+                ''')
+                'ExtractParamNamesTransformation.groovy'('''
+                    import org.codehaus.groovy.ast.*
+                    import org.codehaus.groovy.ast.expr.*
+                    import org.codehaus.groovy.ast.stmt.*
+                    import org.codehaus.groovy.transform.*
+                    import org.codehaus.groovy.control.*
+                    import static org.codehaus.groovy.ast.tools.GeneralUtils.*
+
+                    @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+                    class ExtractParamNamesTransformation extends AbstractASTTransformation {
+                        void visit(ASTNode[] nodes, SourceUnit source) {
+                            init(nodes, source)
+                            def classNode = nodes[1]
+                            assert classNode instanceof ClassNode
+                            def result = listX(classNode.abstractMethods.collect{ list2args(it.parameters.name) })
+                            classNode.addField(new FieldNode("paramNames", ACC_PUBLIC+ACC_STATIC+ACC_FINAL,
+                                               ClassHelper.LIST_TYPE.plainNodeReference, classNode, result))
+                        }
+                    }
                 ''')
             }
 //            ant.project.addBuildListener(debugLogger)
             ant.mkdir(dir: 'build')
             ant.javac(classpath: '.', destdir: 'build', srcdir: 'src',
-                    includes: '*.java', includeantruntime: 'false', fork: 'true')
-            ['ValueClass', 'MyAnnotation', 'AnnotatedClass'].each { name ->
-                ant.mkdir(dir: "build$name")
-                ant.copy(file: "build/${name}.class", todir: "build$name")
+                    includes: '*.java', includeantruntime: 'false', fork: 'true') {
+                compilerarg(value: '-parameters')
             }
+            ant.taskdef(name: 'groovyc', classname: 'org.codehaus.groovy.ant.Groovyc')
+            ant.groovyc(srcdir: 'src', destdir: 'build', parameters: 'true')
             ant.taskdef(name: 'groovy', classname: 'org.codehaus.groovy.ant.Groovy')
-            ant.groovy(scriptAllOnPath) {
-                classpath { pathelement(path: 'buildValueClass') }
-                classpath { pathelement(path: 'buildMyAnnotation') }
-                classpath { pathelement(path: 'buildAnnotatedClass') }
-            }
-            ant.groovy(scriptNoValueClass) {
-                classpath { pathelement(path: 'buildMyAnnotation') }
-                classpath { pathelement(path: 'buildAnnotatedClass') }
-            }
-            ant.groovy(scriptNoAnnotationOnPath) {
-                classpath { pathelement(path: 'buildAnnotatedClass') }
+            ant.groovy(scriptParamNameCheck) {
+                classpath { pathelement(path: 'build') }
             }
         }
     }
