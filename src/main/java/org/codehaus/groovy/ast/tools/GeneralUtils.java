@@ -619,6 +619,10 @@ public class GeneralUtils {
         return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(0)));
     }
 
+    public static ListExpression listX(List<Expression> args) {
+        return new ListExpression(args);
+    }
+
     public static ListExpression list2args(List args) {
         ListExpression result = new ListExpression();
         for (Object o : args) {
