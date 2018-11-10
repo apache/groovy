@@ -43,6 +43,8 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -647,6 +649,14 @@ public class GeneralUtils {
 
     public static BinaryExpression ltX(Expression lhv, Expression rhv) {
         return new BinaryExpression(lhv, LT, rhv);
+    }
+
+    public static MapExpression mapX(List<MapEntryExpression> expressions) {
+        return new MapExpression(expressions);
+    }
+
+    public static MapEntryExpression entryX(Expression key, Expression value) {
+        return new MapEntryExpression(key, value);
     }
 
     /**
