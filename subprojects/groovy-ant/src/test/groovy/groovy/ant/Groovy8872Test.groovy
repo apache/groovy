@@ -23,11 +23,8 @@ class Groovy8872Test extends AntTestCase {
         @ExtractParamNames
         abstract class DummyClass implements JavaInterface, GroovyInterface {}
 
-        def paramNames = DummyClass.paramNames
-        assert paramNames == [
-            ['name', 'dob', 'vip'],
-            ['id', 'eventName', 'dateOfEvent']
-        ]
+        assert DummyClass.paramNames.addPerson == ['name', 'dob', 'vip']
+        assert DummyClass.paramNames.addEvent == ['id', 'eventName', 'dateOfEvent']
     '''
 
     void testParameterNamesSeenInAST() {
@@ -55,8 +52,8 @@ class Groovy8872Test extends AntTestCase {
                     import java.lang.annotation.*
 
                     /**
-                     * Test transform adds a static method to a class that returns a map from the name
-                     * for each found method to its parameter names.
+                     * Test transform adds a static field to a class that returns a map
+                     * from the name for each found method to its parameter names.
                      */
                     @java.lang.annotation.Documented
                     @Retention(RetentionPolicy.SOURCE)
@@ -78,9 +75,11 @@ class Groovy8872Test extends AntTestCase {
                             init(nodes, source)
                             def classNode = nodes[1]
                             assert classNode instanceof ClassNode
-                            def result = listX(classNode.abstractMethods.collect{ list2args(it.parameters.name) })
-                            classNode.addField(new FieldNode("paramNames", ACC_PUBLIC+ACC_STATIC+ACC_FINAL,
-                                               ClassHelper.LIST_TYPE.plainNodeReference, classNode, result))
+                            def result = mapX(classNode.allDeclaredMethods.collect{
+                                entryX(constX(it.name), list2args(it.parameters.name))
+                            })
+                            classNode.addField(new FieldNode("paramNames", ACC_PUBLIC + ACC_STATIC + ACC_FINAL,
+                                               ClassHelper.MAP_TYPE.plainNodeReference, classNode, result))
                         }
                     }
                 ''')
