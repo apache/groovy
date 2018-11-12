@@ -18,9 +18,31 @@
  */
 package groovy.lang;
 
+import groovy.util.function.Consumer0;
+import groovy.util.function.Consumer1;
+import groovy.util.function.Consumer2;
 import junit.framework.TestCase;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
+import static groovy.lang.Tuple.collectors;
+import static groovy.lang.Tuple.tuple;
+import static java.util.stream.Collectors.averagingInt;
+import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
 
 /**
  * @author James Strachan
@@ -41,15 +63,13 @@ public class TupleTest extends TestCase {
         try {
             t.get(-1);
             fail("Should have thrown IndexOut");
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             // worked
         }
         try {
             t.get(10);
             fail("Should have thrown IndexOut");
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             // worked
         }
 
@@ -307,4 +327,280 @@ public class TupleTest extends TestCase {
 
         assertEquals(t, t.subTuple(0, t.size()));
     }
+
+    public void testEqualsHashCode() {
+        Set<Tuple2<Integer, String>> set = new HashSet<>();
+
+        set.add(tuple(1, "abc"));
+        assertEquals(1, set.size());
+        set.add(tuple(1, "abc"));
+        assertEquals(1, set.size());
+        set.add(tuple(null, null));
+        assertEquals(2, set.size());
+        set.add(tuple(null, null));
+        assertEquals(2, set.size());
+        set.add(tuple(1, null));
+        assertEquals(3, set.size());
+        set.add(tuple(1, null));
+        assertEquals(3, set.size());
+    }
+
+    public void testEqualsNull() {
+        assertFalse(tuple(1).equals(null));
+        assertFalse(tuple(1, 2).equals(null));
+        assertFalse(tuple(1, 2, 3).equals(null));
+    }
+
+    public void testToMap() {
+        Map<Integer, Object> m = new LinkedHashMap<>();
+        m.put(0, 1);
+        m.put(1, "a");
+        m.put(2, null);
+        assertEquals(m, tuple(1, "a", null).toMap(i -> i));
+    }
+
+    public void testSwap() {
+        assertEquals(tuple(1, "a"), tuple("a", 1).swap());
+        assertEquals(tuple(1, "a"), tuple(1, "a").swap().swap());
+    }
+
+    public void testConcat() {
+        assertEquals(tuple(1, "a"), tuple(1).concat("a"));
+        assertEquals(tuple(1, "a", 2), tuple(1).concat("a").concat(2));
+
+        assertEquals(tuple(1, "a"), tuple(1).concat(tuple("a")));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d"), tuple(1).concat(tuple("a", 2, "b").concat(tuple(3).concat(tuple("c", 4, "d")))));
+    }
+
+    public void testCompareTo() {
+        Set<Tuple2<Integer, String>> set = new TreeSet<>();
+
+        set.add(tuple(2, "a"));
+        set.add(tuple(1, "b"));
+        set.add(tuple(1, "a"));
+        set.add(tuple(2, "a"));
+
+        assertEquals(3, set.size());
+        assertEquals(Arrays.asList(tuple(1, "a"), tuple(1, "b"), tuple(2, "a")), new ArrayList<>(set));
+    }
+
+    public void testCompareToWithNulls() {
+        Set<Tuple2<Integer, String>> set = new TreeSet<>();
+
+        set.add(tuple(2, "a"));
+        set.add(tuple(1, "b"));
+        set.add(tuple(1, null));
+        set.add(tuple(null, "a"));
+        set.add(tuple(null, "b"));
+        set.add(tuple(null, null));
+
+        assertEquals(6, set.size());
+        assertEquals(Arrays.asList(tuple(1, "b"), tuple(1, null), tuple(2, "a"), tuple(null, "a"), tuple(null, "b"), tuple(null, null)), new ArrayList<>(set));
+    }
+
+    public void testIterable() {
+        LinkedList<Object> list = new LinkedList<>(tuple(1, "b", null));
+        for (Object o : tuple(1, "b", null)) {
+            assertEquals(list.poll(), o);
+        }
+    }
+
+    public void testFunctions() {
+        assertEquals("[1, b, null]", tuple(1, "b", null).map((v1, v2, v3) -> tuple(v1, v2, v3).toString()));
+        assertEquals("1-b", tuple(1, "b", null).map((v1, v2, v3) -> v1 + "-" + v2));
+    }
+
+    public void testMapN() {
+        assertEquals(tuple(1, "a", 2, "b"), tuple(1, null, 2, null).map2(v -> "a").map4(v -> "b"));
+    }
+
+    public void testOverlaps() {
+        assertTrue(Tuple2.overlaps(tuple(1, 3), tuple(1, 3)));
+        assertTrue(Tuple2.overlaps(tuple(1, 3), tuple(2, 3)));
+        assertTrue(Tuple2.overlaps(tuple(1, 3), tuple(2, 4)));
+        assertTrue(Tuple2.overlaps(tuple(1, 3), tuple(3, 4)));
+        assertFalse(Tuple2.overlaps(tuple(1, 3), tuple(4, 5)));
+        assertFalse(Tuple2.overlaps(tuple(1, 1), tuple(2, 2)));
+    }
+
+    public void testIntersect() {
+        assertEquals(Optional.of(tuple(2, 3)), Tuple2.intersect(tuple(1, 3), tuple(2, 4)));
+        assertEquals(Optional.of(tuple(3, 3)), Tuple2.intersect(tuple(1, 3), tuple(3, 5)));
+        assertEquals(Optional.empty(), Tuple2.intersect(tuple(1, 3), tuple(4, 5)));
+    }
+
+    public void testCollectors() {
+        assertEquals(
+                tuple(3L),
+                Stream.of(1, 2, 3)
+                        .collect(collectors(counting()))
+        );
+
+        assertEquals(
+                tuple(3L, "1, 2, 3"),
+                Stream.of(1, 2, 3)
+                        .collect(collectors(
+                                counting(),
+                                mapping(Object::toString, joining(", "))
+                        ))
+        );
+
+        assertEquals(
+                tuple(3L, "1, 2, 3", 2.0),
+                Stream.of(1, 2, 3)
+                        .collect(collectors(
+                                counting(),
+                                mapping(Object::toString, joining(", ")),
+                                averagingInt(Integer::intValue)
+                        ))
+        );
+    }
+
+    public void testLimit() {
+        assertEquals(
+                tuple(),
+                tuple(1, "A", 2, "B").limit0()
+        );
+        assertEquals(
+                tuple(1),
+                tuple(1, "A", 2, "B").limit1()
+        );
+        assertEquals(
+                tuple(1, "A"),
+                tuple(1, "A", 2, "B").limit2()
+        );
+        assertEquals(
+                tuple(1, "A", 2),
+                tuple(1, "A", 2, "B").limit3()
+        );
+        assertEquals(
+                tuple(1, "A", 2, "B"),
+                tuple(1, "A", 2, "B").limit4()
+        );
+    }
+
+    public void testSkip() {
+        assertEquals(
+                tuple(),
+                tuple(1, "A", 2, "B").skip4()
+        );
+        assertEquals(
+                tuple("B"),
+                tuple(1, "A", 2, "B").skip3()
+        );
+        assertEquals(
+                tuple(2, "B"),
+                tuple(1, "A", 2, "B").skip2()
+        );
+        assertEquals(
+                tuple("A", 2, "B"),
+                tuple(1, "A", 2, "B").skip1()
+        );
+        assertEquals(
+                tuple(1, "A", 2, "B"),
+                tuple(1, "A", 2, "B").skip0()
+        );
+    }
+
+    public void testSplit() {
+        assertEquals(
+                tuple(
+                        tuple(),
+                        tuple(1, "A", 2, "B")
+                ),
+                tuple(1, "A", 2, "B").split0()
+        );
+        assertEquals(
+                tuple(
+                        tuple(1),
+                        tuple("A", 2, "B")
+                ),
+                tuple(1, "A", 2, "B").split1()
+        );
+        assertEquals(
+                tuple(
+                        tuple(1, "A"),
+                        new Tuple2<>(2, "B")
+                ),
+                tuple(1, "A", 2, "B").split2()
+        );
+        assertEquals(
+                tuple(
+                        tuple(1, "A", 2),
+                        tuple("B")
+                ),
+                tuple(1, "A", 2, "B").split3()
+        );
+        assertEquals(
+                tuple(
+                        tuple(1, "A", 2, "B"),
+                        tuple()
+                ),
+                tuple(1, "A", 2, "B").split4()
+        );
+    }
+
+    int result;
+    public void testConsumers() {
+        Consumer0 c0 = () -> { result = 1; };
+        Runnable r = c0.toRunnable();
+        Consumer0 c0a = Consumer0.from(r);
+
+        result = 0;
+        c0.accept();
+        assertEquals(1, result);
+
+        result = 0;
+        c0.accept(Tuple.tuple());
+        assertEquals(1, result);
+
+        result = 0;
+        r.run();
+        assertEquals(1, result);
+
+        result = 0;
+        c0a.accept();
+        assertEquals(1, result);
+
+        Consumer1<Integer> c1 = i -> { result = i; };
+        Consumer<Integer> c1a = c1.toConsumer();
+        Consumer1<Integer> c1b = Consumer1.from(c1a);
+
+        result = 0;
+        c1.accept(1);
+        assertEquals(1, result);
+
+        result = 0;
+        c1.accept(Tuple.tuple(1));
+        assertEquals(1, result);
+
+        result = 0;
+        c1a.accept(1);
+        assertEquals(1, result);
+
+        result = 0;
+        c1b.accept(1);
+        assertEquals(1, result);
+
+        Consumer2<Integer, Integer> c2 = (i, j) -> { result = i + j; };
+        BiConsumer<Integer, Integer> c2a = c2.toBiConsumer();
+        Consumer2<Integer, Integer> c2b = Consumer2.from(c2a);
+
+        result = 0;
+        c2.accept(1, 2);
+        assertEquals(3, result);
+
+        result = 0;
+        c2.accept(Tuple.tuple(1, 2));
+        assertEquals(3, result);
+
+        result = 0;
+        c2a.accept(1, 2);
+        assertEquals(3, result);
+
+        result = 0;
+        c2b.accept(1, 2);
+        assertEquals(3, result);
+    }
+
 }
