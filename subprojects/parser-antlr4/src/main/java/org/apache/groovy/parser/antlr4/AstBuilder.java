@@ -2632,8 +2632,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         if (asBoolean(mapEntryExpressionList) && asBoolean(expressionList)) { // e.g. arguments like x: 1, 'a', y: 2, 'b', z: 3
             ArgumentListExpression argumentListExpression = new ArgumentListExpression(expressionList);
-            argumentListExpression.getExpressions().add(0, new MapExpression(mapEntryExpressionList)); // TODO: confirm BUG OR NOT? All map entries will be put at first, which is not friendly to Groovy developers
-
+            argumentListExpression.getExpressions().add(0, configureAST(new MapExpression(mapEntryExpressionList), ctx));
             return configureAST(argumentListExpression, ctx);
         }
 
