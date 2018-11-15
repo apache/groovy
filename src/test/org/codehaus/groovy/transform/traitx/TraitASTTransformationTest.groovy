@@ -2607,4 +2607,41 @@ assert c.b() == 2
         '''
     }
 
+    //GROOVY-8880
+    void testTraitWithInitBlock() {
+        assertScript '''
+            trait MyTrait {
+                final String first = 'FOO'
+                final String last = 'BAR'
+                String full
+
+                {
+                    full = "$first$last"
+                }
+            }
+
+            class MyClass implements MyTrait { }
+
+            def mc = new MyClass()
+            assert mc.full == 'FOOBAR'
+        '''
+    }
+
+    //GROOVY-8880
+    void testTraitWithStaticInitBlock() {
+        assertScript '''
+            trait MyTrait {
+                static final String first = 'FOO'
+                static final String last = 'BAR'
+                static String full
+                static {
+                    full = "$first$last"
+                }
+            }
+
+            class MyClass implements MyTrait { }
+
+            assert MyClass.full == 'FOOBAR'
+        '''
+    }
 }
