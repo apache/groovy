@@ -217,6 +217,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         // add methods
         List<MethodNode> methods = new ArrayList<MethodNode>(cNode.getMethods());
         List<MethodNode> nonPublicAPIMethods = new LinkedList<MethodNode>();
+        List<Statement> staticInitStatements = null;
         for (final MethodNode methodNode : methods) {
             boolean declared = methodNode.getDeclaringClass() == cNode;
             if (declared) {
@@ -226,8 +227,13 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                     return null;
                 }
                 if (!methodNode.isAbstract()) {
-                    // add non-abstract methods; abstract methods covered from trait interface
-                    helper.addMethod(processMethod(cNode, helper, methodNode, fieldHelper, fieldNames));
+                    MethodNode newMethod = processMethod(cNode, helper, methodNode, fieldHelper, fieldNames);
+                    if (methodNode.getName().equals("<clinit>")) {
+                        staticInitStatements = getStatements(newMethod.getCode());
+                    } else {
+                        // add non-abstract methods; abstract methods covered from trait interface
+                        helper.addMethod(newMethod);
+                    }
                 }
                 if (methodNode.isPrivate() || methodNode.isStatic()) {
                     nonPublicAPIMethods.add(methodNode);
@@ -244,6 +250,22 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         for (FieldNode field : fields) {
             processField(field, initializer, staticInitializer, fieldHelper, helper, staticFieldHelper, cNode, fieldNames);
         }
+
+        // copy statements from static and instance init blocks
+        if (staticInitStatements != null) {
+            BlockStatement toBlock = getBlockStatement(staticInitializer, staticInitializer.getCode());
+            for (Statement next : staticInitStatements) {
+                toBlock.addStatement(next);
+            }
+        }
+        List<Statement> initStatements = cNode.getObjectInitializerStatements();
+        Statement toCode = initializer.getCode();
+        BlockStatement toBlock = getBlockStatement(initializer, toCode);
+        for (Statement next : initStatements) {
+            Parameter selfParam = createSelfParameter(cNode, false);
+            toBlock.addStatement(processBody(new VariableExpression(selfParam), next, cNode, helper, fieldHelper, fieldNames));
+        }
+        initStatements.clear();
 
         // clear properties to avoid generation of methods
         cNode.getProperties().clear();
@@ -277,6 +299,27 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             }
         }
         return helper;
+    }
+
+    private BlockStatement getBlockStatement(MethodNode targetMethod, Statement code) {
+        BlockStatement toBlock;
+        if (code instanceof BlockStatement) {
+            toBlock = (BlockStatement) code;
+        } else {
+            toBlock = new BlockStatement();
+            toBlock.addStatement(code);
+            targetMethod.setCode(toBlock);
+        }
+        return toBlock;
+    }
+
+    private List<Statement> getStatements(Statement stmt) {
+        if (stmt instanceof BlockStatement) {
+            return ((BlockStatement) stmt).getStatements();
+        }
+        List<Statement> result = new ArrayList<Statement>();
+        result.add(stmt);
+        return result;
     }
 
     private static MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {

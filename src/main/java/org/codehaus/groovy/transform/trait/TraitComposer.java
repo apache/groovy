@@ -178,12 +178,6 @@ public abstract class TraitComposer {
                 createForwarderMethod(trait, cNode, methodNode, originalMethod, helperClassNode, methodGenericsSpec, helperMethodParams, origParams, params, argList, unit);
             }
         }
-        cNode.addObjectInitializerStatements(new ExpressionStatement(
-                new MethodCallExpression(
-                        new ClassExpression(helperClassNode),
-                        Traits.INIT_METHOD,
-                        new ArgumentListExpression(new VariableExpression("this")))
-        ));
         MethodCallExpression staticInitCall = new MethodCallExpression(
                 new ClassExpression(helperClassNode),
                 Traits.STATIC_INIT_METHOD,
@@ -276,12 +270,16 @@ public abstract class TraitComposer {
                             // so instead set within (static) initializer
                             if (fieldNode.isFinal()) {
                                 String baseName = fieldNode.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
-                                Expression mce = callX(helperClassNode, baseName + fieldNode.getName(), args(varX("this")));
-                                Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), mce));
-                                if (isStatic == 0) {
-                                    cNode.addObjectInitializerStatements(stmt);
-                                } else {
-                                    cNode.addStaticInitializerStatements(Collections.<Statement>singletonList(stmt), false);
+                                StaticMethodCallExpression mce = callX(helperClassNode, baseName + fieldNode.getName(), args(varX("this")));
+                                if (helperClassNode.hasPossibleStaticMethod(mce.getMethod(), mce.getArguments())) {
+                                    Statement stmt = stmt(assignX(varX(fieldNode.getName(), fieldNode.getType()), mce));
+                                    if (isStatic == 0) {
+                                        cNode.addObjectInitializerStatements(stmt);
+                                    } else {
+                                        List<Statement> staticStatements = new ArrayList<Statement>();
+                                        staticStatements.add(stmt);
+                                        cNode.addStaticInitializerStatements(staticStatements, true);
+                                    }
                                 }
                             }
                         }
@@ -322,6 +320,12 @@ public abstract class TraitComposer {
                     cNode.addMethod(impl);
                 }
             }
+            cNode.addObjectInitializerStatements(new ExpressionStatement(
+                    new MethodCallExpression(
+                            new ClassExpression(helperClassNode),
+                            Traits.INIT_METHOD,
+                            new ArgumentListExpression(new VariableExpression("this")))
+            ));
         }
     }
 
