@@ -1068,6 +1068,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 iterType = iterType.getOuterClass();
                 if (thisField == null) {
                     // closure within inner class
+                    while (iterType.isDerivedFrom(ClassHelper.CLOSURE_TYPE)) {
+                        // GROOVY-8881: cater for closures within closures - getThisObject is already outer class of all closures
+                        iterType = iterType.getOuterClass();
+                    }
                     mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(ClassHelper.CLOSURE_TYPE), "getThisObject", "()Ljava/lang/Object;", false);
                     mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(iterType));
                 } else {
