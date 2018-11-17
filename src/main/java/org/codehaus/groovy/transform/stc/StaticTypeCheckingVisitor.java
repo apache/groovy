@@ -1147,7 +1147,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     GenericsType[] genericsTypes = cn.getGenericsTypes();
                     for (int j = 0; j < i; j++) {
                         // the index of element in tuple starts with 1
-                        MethodCallExpression mce = new MethodCallExpression(expression, "v" + (j + 1), ArgumentListExpression.EMPTY_ARGUMENTS);
+                        MethodCallExpression mce = new MethodCallExpression(expression, "getV" + (j + 1), ArgumentListExpression.EMPTY_ARGUMENTS);
                         ClassNode elementType = null != genericsTypes ? genericsTypes[j].getType() : ClassHelper.OBJECT_TYPE;
                         mce.setType(elementType);
                         storeType(mce, elementType);

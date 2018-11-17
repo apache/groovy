@@ -39,7 +39,7 @@ public interface Function5<T1, T2, T3, T4, T5, R> {
      * @param args The arguments as a tuple.
      */
     default R apply(Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5> args) {
-        return apply(args.v1(), args.v2(), args.v3(), args.v4(), args.v5());
+        return apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5());
     }
 
     /**
@@ -86,35 +86,35 @@ public interface Function5<T1, T2, T3, T4, T5, R> {
      * Partially apply this function to the arguments.
      */
     default Function4<T2, T3, T4, T5, R> applyPartially(Tuple1<? extends T1> args) {
-        return (v2, v3, v4, v5) -> apply(args.v1(), v2, v3, v4, v5);
+        return (v2, v3, v4, v5) -> apply(args.getV1(), v2, v3, v4, v5);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function3<T3, T4, T5, R> applyPartially(Tuple2<? extends T1, ? extends T2> args) {
-        return (v3, v4, v5) -> apply(args.v1(), args.v2(), v3, v4, v5);
+        return (v3, v4, v5) -> apply(args.getV1(), args.getV2(), v3, v4, v5);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function2<T4, T5, R> applyPartially(Tuple3<? extends T1, ? extends T2, ? extends T3> args) {
-        return (v4, v5) -> apply(args.v1(), args.v2(), args.v3(), v4, v5);
+        return (v4, v5) -> apply(args.getV1(), args.getV2(), args.getV3(), v4, v5);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function1<T5, R> applyPartially(Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4> args) {
-        return (v5) -> apply(args.v1(), args.v2(), args.v3(), args.v4(), v5);
+        return (v5) -> apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), v5);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function0<R> applyPartially(Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5> args) {
-        return () -> apply(args.v1(), args.v2(), args.v3(), args.v4(), args.v5());
+        return () -> apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5());
     }
 
 }

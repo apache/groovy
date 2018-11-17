@@ -38,7 +38,7 @@ public interface Function4<T1, T2, T3, T4, R> {
      * @param args The arguments as a tuple.
      */
     default R apply(Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4> args) {
-        return apply(args.v1(), args.v2(), args.v3(), args.v4());
+        return apply(args.getV1(), args.getV2(), args.getV3(), args.getV4());
     }
 
     /**
@@ -78,28 +78,28 @@ public interface Function4<T1, T2, T3, T4, R> {
      * Partially apply this function to the arguments.
      */
     default Function3<T2, T3, T4, R> applyPartially(Tuple1<? extends T1> args) {
-        return (v2, v3, v4) -> apply(args.v1(), v2, v3, v4);
+        return (v2, v3, v4) -> apply(args.getV1(), v2, v3, v4);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function2<T3, T4, R> applyPartially(Tuple2<? extends T1, ? extends T2> args) {
-        return (v3, v4) -> apply(args.v1(), args.v2(), v3, v4);
+        return (v3, v4) -> apply(args.getV1(), args.getV2(), v3, v4);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function1<T4, R> applyPartially(Tuple3<? extends T1, ? extends T2, ? extends T3> args) {
-        return (v4) -> apply(args.v1(), args.v2(), args.v3(), v4);
+        return (v4) -> apply(args.getV1(), args.getV2(), args.getV3(), v4);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function0<R> applyPartially(Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4> args) {
-        return () -> apply(args.v1(), args.v2(), args.v3(), args.v4());
+        return () -> apply(args.getV1(), args.getV2(), args.getV3(), args.getV4());
     }
 
 }

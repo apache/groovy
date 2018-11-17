@@ -41,7 +41,7 @@ public interface Consumer7<T1, T2, T3, T4, T5, T6, T7> {
      * @param args The arguments as a tuple.
      */
     default void accept(Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7> args) {
-        accept(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), args.v6(), args.v7());
+        accept(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), args.getV6(), args.getV7());
     }
 
     /**
@@ -102,48 +102,48 @@ public interface Consumer7<T1, T2, T3, T4, T5, T6, T7> {
      * Let this consumer partially accept the arguments.
      */
     default Consumer6<T2, T3, T4, T5, T6, T7> acceptPartially(Tuple1<? extends T1> args) {
-        return (v2, v3, v4, v5, v6, v7) -> accept(args.v1(), v2, v3, v4, v5, v6, v7);
+        return (v2, v3, v4, v5, v6, v7) -> accept(args.getV1(), v2, v3, v4, v5, v6, v7);
     }
 
     /**
      * Let this consumer partially accept the arguments.
      */
     default Consumer5<T3, T4, T5, T6, T7> acceptPartially(Tuple2<? extends T1, ? extends T2> args) {
-        return (v3, v4, v5, v6, v7) -> accept(args.v1(), args.v2(), v3, v4, v5, v6, v7);
+        return (v3, v4, v5, v6, v7) -> accept(args.getV1(), args.getV2(), v3, v4, v5, v6, v7);
     }
 
     /**
      * Let this consumer partially accept the arguments.
      */
     default Consumer4<T4, T5, T6, T7> acceptPartially(Tuple3<? extends T1, ? extends T2, ? extends T3> args) {
-        return (v4, v5, v6, v7) -> accept(args.v1(), args.v2(), args.v3(), v4, v5, v6, v7);
+        return (v4, v5, v6, v7) -> accept(args.getV1(), args.getV2(), args.getV3(), v4, v5, v6, v7);
     }
 
     /**
      * Let this consumer partially accept the arguments.
      */
     default Consumer3<T5, T6, T7> acceptPartially(Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4> args) {
-        return (v5, v6, v7) -> accept(args.v1(), args.v2(), args.v3(), args.v4(), v5, v6, v7);
+        return (v5, v6, v7) -> accept(args.getV1(), args.getV2(), args.getV3(), args.getV4(), v5, v6, v7);
     }
 
     /**
      * Let this consumer partially accept the arguments.
      */
     default Consumer2<T6, T7> acceptPartially(Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5> args) {
-        return (v6, v7) -> accept(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), v6, v7);
+        return (v6, v7) -> accept(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), v6, v7);
     }
 
     /**
      * Let this consumer partially accept the arguments.
      */
     default Consumer1<T7> acceptPartially(Tuple6<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6> args) {
-        return (v7) -> accept(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), args.v6(), v7);
+        return (v7) -> accept(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), args.getV6(), v7);
     }
 
     /**
      * Let this consumer partially accept the arguments.
      */
     default Consumer0 acceptPartially(Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7> args) {
-        return () -> accept(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), args.v6(), args.v7());
+        return () -> accept(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), args.getV6(), args.getV7());
     }
 }

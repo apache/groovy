@@ -42,7 +42,7 @@ public interface Function8<T1, T2, T3, T4, T5, T6, T7, T8, R> {
      * @param args The arguments as a tuple.
      */
     default R apply(Tuple8<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7, ? extends T8> args) {
-        return apply(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), args.v6(), args.v7(), args.v8());
+        return apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), args.getV6(), args.getV7(), args.getV8());
     }
 
     /**
@@ -110,56 +110,56 @@ public interface Function8<T1, T2, T3, T4, T5, T6, T7, T8, R> {
      * Partially apply this function to the arguments.
      */
     default Function7<T2, T3, T4, T5, T6, T7, T8, R> applyPartially(Tuple1<? extends T1> args) {
-        return (v2, v3, v4, v5, v6, v7, v8) -> apply(args.v1(), v2, v3, v4, v5, v6, v7, v8);
+        return (v2, v3, v4, v5, v6, v7, v8) -> apply(args.getV1(), v2, v3, v4, v5, v6, v7, v8);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function6<T3, T4, T5, T6, T7, T8, R> applyPartially(Tuple2<? extends T1, ? extends T2> args) {
-        return (v3, v4, v5, v6, v7, v8) -> apply(args.v1(), args.v2(), v3, v4, v5, v6, v7, v8);
+        return (v3, v4, v5, v6, v7, v8) -> apply(args.getV1(), args.getV2(), v3, v4, v5, v6, v7, v8);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function5<T4, T5, T6, T7, T8, R> applyPartially(Tuple3<? extends T1, ? extends T2, ? extends T3> args) {
-        return (v4, v5, v6, v7, v8) -> apply(args.v1(), args.v2(), args.v3(), v4, v5, v6, v7, v8);
+        return (v4, v5, v6, v7, v8) -> apply(args.getV1(), args.getV2(), args.getV3(), v4, v5, v6, v7, v8);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function4<T5, T6, T7, T8, R> applyPartially(Tuple4<? extends T1, ? extends T2, ? extends T3, ? extends T4> args) {
-        return (v5, v6, v7, v8) -> apply(args.v1(), args.v2(), args.v3(), args.v4(), v5, v6, v7, v8);
+        return (v5, v6, v7, v8) -> apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), v5, v6, v7, v8);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function3<T6, T7, T8, R> applyPartially(Tuple5<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5> args) {
-        return (v6, v7, v8) -> apply(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), v6, v7, v8);
+        return (v6, v7, v8) -> apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), v6, v7, v8);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function2<T7, T8, R> applyPartially(Tuple6<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6> args) {
-        return (v7, v8) -> apply(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), args.v6(), v7, v8);
+        return (v7, v8) -> apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), args.getV6(), v7, v8);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function1<T8, R> applyPartially(Tuple7<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7> args) {
-        return (v8) -> apply(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), args.v6(), args.v7(), v8);
+        return (v8) -> apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), args.getV6(), args.getV7(), v8);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function0<R> applyPartially(Tuple8<? extends T1, ? extends T2, ? extends T3, ? extends T4, ? extends T5, ? extends T6, ? extends T7, ? extends T8> args) {
-        return () -> apply(args.v1(), args.v2(), args.v3(), args.v4(), args.v5(), args.v6(), args.v7(), args.v8());
+        return () -> apply(args.getV1(), args.getV2(), args.getV3(), args.getV4(), args.getV5(), args.getV6(), args.getV7(), args.getV8());
     }
 
 }

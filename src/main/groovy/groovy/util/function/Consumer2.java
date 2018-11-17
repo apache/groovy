@@ -37,7 +37,7 @@ public interface Consumer2<T1, T2> extends BiConsumer<T1, T2> {
      * @param args The arguments as a tuple.
      */
     default void accept(Tuple2<? extends T1, ? extends T2> args) {
-        accept(args.v1(), args.v2());
+        accept(args.getV1(), args.getV2());
     }
 
     /**
@@ -78,13 +78,13 @@ public interface Consumer2<T1, T2> extends BiConsumer<T1, T2> {
      * Let this consumer partially accept the arguments.
      */
     default Consumer1<T2> acceptPartially(Tuple1<? extends T1> args) {
-        return (v2) -> accept(args.v1(), v2);
+        return (v2) -> accept(args.getV1(), v2);
     }
 
     /**
      * Let this consumer partially accept the arguments.
      */
     default Consumer0 acceptPartially(Tuple2<? extends T1, ? extends T2> args) {
-        return () -> accept(args.v1(), args.v2());
+        return () -> accept(args.getV1(), args.getV2());
     }
 }

@@ -36,7 +36,7 @@ public interface Consumer1<T1> extends Consumer<T1> {
      * @param args The arguments as a tuple.
      */
     default void accept(Tuple1<? extends T1> args) {
-        accept(args.v1());
+        accept(args.getV1());
     }
 
     /**
@@ -70,6 +70,6 @@ public interface Consumer1<T1> extends Consumer<T1> {
      * Let this consumer partially accept the arguments.
      */
     default Consumer0 acceptPartially(Tuple1<? extends T1> args) {
-        return () -> accept(args.v1());
+        return () -> accept(args.getV1());
     }
 }

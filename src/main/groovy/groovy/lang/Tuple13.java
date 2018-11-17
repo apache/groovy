@@ -67,55 +67,55 @@ public class Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> ext
         this(tuple.v1, tuple.v2, tuple.v3, tuple.v4, tuple.v5, tuple.v6, tuple.v7, tuple.v8, tuple.v9, tuple.v10, tuple.v11, tuple.v12, tuple.v13);
     }
 
-    public T1 v1() {
+    public T1 getV1() {
         return v1;
     }
 
-    public T2 v2() {
+    public T2 getV2() {
         return v2;
     }
 
-    public T3 v3() {
+    public T3 getV3() {
         return v3;
     }
 
-    public T4 v4() {
+    public T4 getV4() {
         return v4;
     }
 
-    public T5 v5() {
+    public T5 getV5() {
         return v5;
     }
 
-    public T6 v6() {
+    public T6 getV6() {
         return v6;
     }
 
-    public T7 v7() {
+    public T7 getV7() {
         return v7;
     }
 
-    public T8 v8() {
+    public T8 getV8() {
         return v8;
     }
 
-    public T9 v9() {
+    public T9 getV9() {
         return v9;
     }
 
-    public T10 v10() {
+    public T10 getV10() {
         return v10;
     }
 
-    public T11 v11() {
+    public T11 getV11() {
         return v11;
     }
 
-    public T12 v12() {
+    public T12 getV12() {
         return v12;
     }
 
-    public T13 v13() {
+    public T13 getV13() {
         return v13;
     }
 
@@ -130,21 +130,21 @@ public class Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> ext
      * Concatenate a tuple to this tuple.
      */
     public final <T14> Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> concat(Tuple1<T14> tuple) {
-        return new Tuple14<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, tuple.v1());
+        return new Tuple14<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, tuple.getV1());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T14, T15> Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> concat(Tuple2<T14, T15> tuple) {
-        return new Tuple15<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, tuple.v1(), tuple.v2());
+        return new Tuple15<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, tuple.getV1(), tuple.getV2());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T14, T15, T16> Tuple16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> concat(Tuple3<T14, T15, T16> tuple) {
-        return new Tuple16<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, tuple.v1(), tuple.v2(), tuple.v3());
+        return new Tuple16<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, tuple.getV1(), tuple.getV2(), tuple.getV3());
     }
 
     /**

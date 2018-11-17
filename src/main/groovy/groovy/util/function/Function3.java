@@ -37,7 +37,7 @@ public interface Function3<T1, T2, T3, R> {
      * @param args The arguments as a tuple.
      */
     default R apply(Tuple3<? extends T1, ? extends T2, ? extends T3> args) {
-        return apply(args.v1(), args.v2(), args.v3());
+        return apply(args.getV1(), args.getV2(), args.getV3());
     }
 
     /**
@@ -70,21 +70,21 @@ public interface Function3<T1, T2, T3, R> {
      * Partially apply this function to the arguments.
      */
     default Function2<T2, T3, R> applyPartially(Tuple1<? extends T1> args) {
-        return (v2, v3) -> apply(args.v1(), v2, v3);
+        return (v2, v3) -> apply(args.getV1(), v2, v3);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function1<T3, R> applyPartially(Tuple2<? extends T1, ? extends T2> args) {
-        return (v3) -> apply(args.v1(), args.v2(), v3);
+        return (v3) -> apply(args.getV1(), args.getV2(), v3);
     }
 
     /**
      * Partially apply this function to the arguments.
      */
     default Function0<R> applyPartially(Tuple3<? extends T1, ? extends T2, ? extends T3> args) {
-        return () -> apply(args.v1(), args.v2(), args.v3());
+        return () -> apply(args.getV1(), args.getV2(), args.getV3());
     }
 
 }

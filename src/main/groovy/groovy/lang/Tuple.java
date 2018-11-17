@@ -311,112 +311,112 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
      * Construct a tuple function of degree 1.
      */
     public static <T1, R> Function1<Tuple1<T1>, R> function(Function1<T1, R> function) {
-        return t -> function.apply(t.v1());
+        return t -> function.apply(t.getV1());
     }
 
     /**
      * Construct a tuple function of degree 2.
      */
     public static <T1, T2, R> Function1<Tuple2<T1, T2>, R> function(Function2<T1, T2, R> function) {
-        return t -> function.apply(t.v1(), t.v2());
+        return t -> function.apply(t.getV1(), t.getV2());
     }
 
     /**
      * Construct a tuple function of degree 3.
      */
     public static <T1, T2, T3, R> Function1<Tuple3<T1, T2, T3>, R> function(Function3<T1, T2, T3, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3());
     }
 
     /**
      * Construct a tuple function of degree 4.
      */
     public static <T1, T2, T3, T4, R> Function1<Tuple4<T1, T2, T3, T4>, R> function(Function4<T1, T2, T3, T4, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4());
     }
 
     /**
      * Construct a tuple function of degree 5.
      */
     public static <T1, T2, T3, T4, T5, R> Function1<Tuple5<T1, T2, T3, T4, T5>, R> function(Function5<T1, T2, T3, T4, T5, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5());
     }
 
     /**
      * Construct a tuple function of degree 6.
      */
     public static <T1, T2, T3, T4, T5, T6, R> Function1<Tuple6<T1, T2, T3, T4, T5, T6>, R> function(Function6<T1, T2, T3, T4, T5, T6, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6());
     }
 
     /**
      * Construct a tuple function of degree 7.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, R> Function1<Tuple7<T1, T2, T3, T4, T5, T6, T7>, R> function(Function7<T1, T2, T3, T4, T5, T6, T7, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7());
     }
 
     /**
      * Construct a tuple function of degree 8.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, R> Function1<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>, R> function(Function8<T1, T2, T3, T4, T5, T6, T7, T8, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8());
     }
 
     /**
      * Construct a tuple function of degree 9.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, R> Function1<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>, R> function(Function9<T1, T2, T3, T4, T5, T6, T7, T8, T9, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9());
     }
 
     /**
      * Construct a tuple function of degree 10.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R> Function1<Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>, R> function(Function10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10());
     }
 
     /**
      * Construct a tuple function of degree 11.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R> Function1<Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>, R> function(Function11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11());
     }
 
     /**
      * Construct a tuple function of degree 12.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R> Function1<Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>, R> function(Function12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12());
     }
 
     /**
      * Construct a tuple function of degree 13.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R> Function1<Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>, R> function(Function13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12(), t.v13());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12(), t.getV13());
     }
 
     /**
      * Construct a tuple function of degree 14.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R> Function1<Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>, R> function(Function14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12(), t.v13(), t.v14());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12(), t.getV13(), t.getV14());
     }
 
     /**
      * Construct a tuple function of degree 15.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R> Function1<Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>, R> function(Function15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12(), t.v13(), t.v14(), t.v15());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12(), t.getV13(), t.getV14(), t.getV15());
     }
 
     /**
      * Construct a tuple function of degree 16.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R> Function1<Tuple16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>, R> function(Function16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, R> function) {
-        return t -> function.apply(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12(), t.v13(), t.v14(), t.v15(), t.v16());
+        return t -> function.apply(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12(), t.getV13(), t.getV14(), t.getV15(), t.getV16());
     }
 
 
@@ -431,112 +431,112 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
      * Construct a tuple consumer of degree 1.
      */
     public static <T1> Consumer1<Tuple1<T1>> consumer(Consumer1<T1> consumer) {
-        return t -> consumer.accept(t.v1());
+        return t -> consumer.accept(t.getV1());
     }
 
     /**
      * Construct a tuple consumer of degree 2.
      */
     public static <T1, T2> Consumer1<Tuple2<T1, T2>> consumer(Consumer2<T1, T2> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2());
+        return t -> consumer.accept(t.getV1(), t.getV2());
     }
 
     /**
      * Construct a tuple consumer of degree 3.
      */
     public static <T1, T2, T3> Consumer1<Tuple3<T1, T2, T3>> consumer(Consumer3<T1, T2, T3> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3());
     }
 
     /**
      * Construct a tuple consumer of degree 4.
      */
     public static <T1, T2, T3, T4> Consumer1<Tuple4<T1, T2, T3, T4>> consumer(Consumer4<T1, T2, T3, T4> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4());
     }
 
     /**
      * Construct a tuple consumer of degree 5.
      */
     public static <T1, T2, T3, T4, T5> Consumer1<Tuple5<T1, T2, T3, T4, T5>> consumer(Consumer5<T1, T2, T3, T4, T5> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5());
     }
 
     /**
      * Construct a tuple consumer of degree 6.
      */
     public static <T1, T2, T3, T4, T5, T6> Consumer1<Tuple6<T1, T2, T3, T4, T5, T6>> consumer(Consumer6<T1, T2, T3, T4, T5, T6> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6());
     }
 
     /**
      * Construct a tuple consumer of degree 7.
      */
     public static <T1, T2, T3, T4, T5, T6, T7> Consumer1<Tuple7<T1, T2, T3, T4, T5, T6, T7>> consumer(Consumer7<T1, T2, T3, T4, T5, T6, T7> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7());
     }
 
     /**
      * Construct a tuple consumer of degree 8.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8> Consumer1<Tuple8<T1, T2, T3, T4, T5, T6, T7, T8>> consumer(Consumer8<T1, T2, T3, T4, T5, T6, T7, T8> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8());
     }
 
     /**
      * Construct a tuple consumer of degree 9.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9> Consumer1<Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9>> consumer(Consumer9<T1, T2, T3, T4, T5, T6, T7, T8, T9> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9());
     }
 
     /**
      * Construct a tuple consumer of degree 10.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Consumer1<Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> consumer(Consumer10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10());
     }
 
     /**
      * Construct a tuple consumer of degree 11.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Consumer1<Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>> consumer(Consumer11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11());
     }
 
     /**
      * Construct a tuple consumer of degree 12.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Consumer1<Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>> consumer(Consumer12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12());
     }
 
     /**
      * Construct a tuple consumer of degree 13.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Consumer1<Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> consumer(Consumer13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12(), t.v13());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12(), t.getV13());
     }
 
     /**
      * Construct a tuple consumer of degree 14.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Consumer1<Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>> consumer(Consumer14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12(), t.v13(), t.v14());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12(), t.getV13(), t.getV14());
     }
 
     /**
      * Construct a tuple consumer of degree 15.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Consumer1<Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>> consumer(Consumer15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12(), t.v13(), t.v14(), t.v15());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12(), t.getV13(), t.getV14(), t.getV15());
     }
 
     /**
      * Construct a tuple consumer of degree 16.
      */
     public static <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> Consumer1<Tuple16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>> consumer(Consumer16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> consumer) {
-        return t -> consumer.accept(t.v1(), t.v2(), t.v3(), t.v4(), t.v5(), t.v6(), t.v7(), t.v8(), t.v9(), t.v10(), t.v11(), t.v12(), t.v13(), t.v14(), t.v15(), t.v16());
+        return t -> consumer.accept(t.getV1(), t.getV2(), t.getV3(), t.getV4(), t.getV5(), t.getV6(), t.getV7(), t.getV8(), t.getV9(), t.getV10(), t.getV11(), t.getV12(), t.getV13(), t.getV14(), t.getV15(), t.getV16());
     }
 
     /**
@@ -550,13 +550,13 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         collector1.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
+                        collector1.finisher().apply(a.getV1())
                 )
         );
     }
@@ -574,16 +574,16 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector2.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
                 )
         );
     }
@@ -603,19 +603,19 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector3.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
                 )
         );
     }
@@ -637,22 +637,22 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector4.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
                 )
         );
     }
@@ -676,25 +676,25 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector5.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
                 )
         );
     }
@@ -720,28 +720,28 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector6.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
                 )
         );
     }
@@ -769,31 +769,31 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector7.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
                 )
         );
     }
@@ -823,34 +823,34 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector8.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
                 )
         );
     }
@@ -882,37 +882,37 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector9.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
-                    collector9.accumulator().accept(a.v9(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
+                    collector9.accumulator().accept(a.getV9(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
-                        , collector9.combiner().apply(a1.v9(), a2.v9())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
+                        , collector9.combiner().apply(a1.getV9(), a2.getV9())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
-                        , collector9.finisher().apply(a.v9())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
+                        , collector9.finisher().apply(a.getV9())
                 )
         );
     }
@@ -946,40 +946,40 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector10.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
-                    collector9.accumulator().accept(a.v9(), t);
-                    collector10.accumulator().accept(a.v10(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
+                    collector9.accumulator().accept(a.getV9(), t);
+                    collector10.accumulator().accept(a.getV10(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
-                        , collector9.combiner().apply(a1.v9(), a2.v9())
-                        , collector10.combiner().apply(a1.v10(), a2.v10())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
+                        , collector9.combiner().apply(a1.getV9(), a2.getV9())
+                        , collector10.combiner().apply(a1.getV10(), a2.getV10())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
-                        , collector9.finisher().apply(a.v9())
-                        , collector10.finisher().apply(a.v10())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
+                        , collector9.finisher().apply(a.getV9())
+                        , collector10.finisher().apply(a.getV10())
                 )
         );
     }
@@ -1015,43 +1015,43 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector11.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
-                    collector9.accumulator().accept(a.v9(), t);
-                    collector10.accumulator().accept(a.v10(), t);
-                    collector11.accumulator().accept(a.v11(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
+                    collector9.accumulator().accept(a.getV9(), t);
+                    collector10.accumulator().accept(a.getV10(), t);
+                    collector11.accumulator().accept(a.getV11(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
-                        , collector9.combiner().apply(a1.v9(), a2.v9())
-                        , collector10.combiner().apply(a1.v10(), a2.v10())
-                        , collector11.combiner().apply(a1.v11(), a2.v11())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
+                        , collector9.combiner().apply(a1.getV9(), a2.getV9())
+                        , collector10.combiner().apply(a1.getV10(), a2.getV10())
+                        , collector11.combiner().apply(a1.getV11(), a2.getV11())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
-                        , collector9.finisher().apply(a.v9())
-                        , collector10.finisher().apply(a.v10())
-                        , collector11.finisher().apply(a.v11())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
+                        , collector9.finisher().apply(a.getV9())
+                        , collector10.finisher().apply(a.getV10())
+                        , collector11.finisher().apply(a.getV11())
                 )
         );
     }
@@ -1089,46 +1089,46 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector12.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
-                    collector9.accumulator().accept(a.v9(), t);
-                    collector10.accumulator().accept(a.v10(), t);
-                    collector11.accumulator().accept(a.v11(), t);
-                    collector12.accumulator().accept(a.v12(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
+                    collector9.accumulator().accept(a.getV9(), t);
+                    collector10.accumulator().accept(a.getV10(), t);
+                    collector11.accumulator().accept(a.getV11(), t);
+                    collector12.accumulator().accept(a.getV12(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
-                        , collector9.combiner().apply(a1.v9(), a2.v9())
-                        , collector10.combiner().apply(a1.v10(), a2.v10())
-                        , collector11.combiner().apply(a1.v11(), a2.v11())
-                        , collector12.combiner().apply(a1.v12(), a2.v12())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
+                        , collector9.combiner().apply(a1.getV9(), a2.getV9())
+                        , collector10.combiner().apply(a1.getV10(), a2.getV10())
+                        , collector11.combiner().apply(a1.getV11(), a2.getV11())
+                        , collector12.combiner().apply(a1.getV12(), a2.getV12())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
-                        , collector9.finisher().apply(a.v9())
-                        , collector10.finisher().apply(a.v10())
-                        , collector11.finisher().apply(a.v11())
-                        , collector12.finisher().apply(a.v12())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
+                        , collector9.finisher().apply(a.getV9())
+                        , collector10.finisher().apply(a.getV10())
+                        , collector11.finisher().apply(a.getV11())
+                        , collector12.finisher().apply(a.getV12())
                 )
         );
     }
@@ -1168,49 +1168,49 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector13.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
-                    collector9.accumulator().accept(a.v9(), t);
-                    collector10.accumulator().accept(a.v10(), t);
-                    collector11.accumulator().accept(a.v11(), t);
-                    collector12.accumulator().accept(a.v12(), t);
-                    collector13.accumulator().accept(a.v13(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
+                    collector9.accumulator().accept(a.getV9(), t);
+                    collector10.accumulator().accept(a.getV10(), t);
+                    collector11.accumulator().accept(a.getV11(), t);
+                    collector12.accumulator().accept(a.getV12(), t);
+                    collector13.accumulator().accept(a.getV13(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
-                        , collector9.combiner().apply(a1.v9(), a2.v9())
-                        , collector10.combiner().apply(a1.v10(), a2.v10())
-                        , collector11.combiner().apply(a1.v11(), a2.v11())
-                        , collector12.combiner().apply(a1.v12(), a2.v12())
-                        , collector13.combiner().apply(a1.v13(), a2.v13())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
+                        , collector9.combiner().apply(a1.getV9(), a2.getV9())
+                        , collector10.combiner().apply(a1.getV10(), a2.getV10())
+                        , collector11.combiner().apply(a1.getV11(), a2.getV11())
+                        , collector12.combiner().apply(a1.getV12(), a2.getV12())
+                        , collector13.combiner().apply(a1.getV13(), a2.getV13())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
-                        , collector9.finisher().apply(a.v9())
-                        , collector10.finisher().apply(a.v10())
-                        , collector11.finisher().apply(a.v11())
-                        , collector12.finisher().apply(a.v12())
-                        , collector13.finisher().apply(a.v13())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
+                        , collector9.finisher().apply(a.getV9())
+                        , collector10.finisher().apply(a.getV10())
+                        , collector11.finisher().apply(a.getV11())
+                        , collector12.finisher().apply(a.getV12())
+                        , collector13.finisher().apply(a.getV13())
                 )
         );
     }
@@ -1252,52 +1252,52 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector14.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
-                    collector9.accumulator().accept(a.v9(), t);
-                    collector10.accumulator().accept(a.v10(), t);
-                    collector11.accumulator().accept(a.v11(), t);
-                    collector12.accumulator().accept(a.v12(), t);
-                    collector13.accumulator().accept(a.v13(), t);
-                    collector14.accumulator().accept(a.v14(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
+                    collector9.accumulator().accept(a.getV9(), t);
+                    collector10.accumulator().accept(a.getV10(), t);
+                    collector11.accumulator().accept(a.getV11(), t);
+                    collector12.accumulator().accept(a.getV12(), t);
+                    collector13.accumulator().accept(a.getV13(), t);
+                    collector14.accumulator().accept(a.getV14(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
-                        , collector9.combiner().apply(a1.v9(), a2.v9())
-                        , collector10.combiner().apply(a1.v10(), a2.v10())
-                        , collector11.combiner().apply(a1.v11(), a2.v11())
-                        , collector12.combiner().apply(a1.v12(), a2.v12())
-                        , collector13.combiner().apply(a1.v13(), a2.v13())
-                        , collector14.combiner().apply(a1.v14(), a2.v14())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
+                        , collector9.combiner().apply(a1.getV9(), a2.getV9())
+                        , collector10.combiner().apply(a1.getV10(), a2.getV10())
+                        , collector11.combiner().apply(a1.getV11(), a2.getV11())
+                        , collector12.combiner().apply(a1.getV12(), a2.getV12())
+                        , collector13.combiner().apply(a1.getV13(), a2.getV13())
+                        , collector14.combiner().apply(a1.getV14(), a2.getV14())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
-                        , collector9.finisher().apply(a.v9())
-                        , collector10.finisher().apply(a.v10())
-                        , collector11.finisher().apply(a.v11())
-                        , collector12.finisher().apply(a.v12())
-                        , collector13.finisher().apply(a.v13())
-                        , collector14.finisher().apply(a.v14())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
+                        , collector9.finisher().apply(a.getV9())
+                        , collector10.finisher().apply(a.getV10())
+                        , collector11.finisher().apply(a.getV11())
+                        , collector12.finisher().apply(a.getV12())
+                        , collector13.finisher().apply(a.getV13())
+                        , collector14.finisher().apply(a.getV14())
                 )
         );
     }
@@ -1341,55 +1341,55 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector15.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
-                    collector9.accumulator().accept(a.v9(), t);
-                    collector10.accumulator().accept(a.v10(), t);
-                    collector11.accumulator().accept(a.v11(), t);
-                    collector12.accumulator().accept(a.v12(), t);
-                    collector13.accumulator().accept(a.v13(), t);
-                    collector14.accumulator().accept(a.v14(), t);
-                    collector15.accumulator().accept(a.v15(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
+                    collector9.accumulator().accept(a.getV9(), t);
+                    collector10.accumulator().accept(a.getV10(), t);
+                    collector11.accumulator().accept(a.getV11(), t);
+                    collector12.accumulator().accept(a.getV12(), t);
+                    collector13.accumulator().accept(a.getV13(), t);
+                    collector14.accumulator().accept(a.getV14(), t);
+                    collector15.accumulator().accept(a.getV15(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
-                        , collector9.combiner().apply(a1.v9(), a2.v9())
-                        , collector10.combiner().apply(a1.v10(), a2.v10())
-                        , collector11.combiner().apply(a1.v11(), a2.v11())
-                        , collector12.combiner().apply(a1.v12(), a2.v12())
-                        , collector13.combiner().apply(a1.v13(), a2.v13())
-                        , collector14.combiner().apply(a1.v14(), a2.v14())
-                        , collector15.combiner().apply(a1.v15(), a2.v15())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
+                        , collector9.combiner().apply(a1.getV9(), a2.getV9())
+                        , collector10.combiner().apply(a1.getV10(), a2.getV10())
+                        , collector11.combiner().apply(a1.getV11(), a2.getV11())
+                        , collector12.combiner().apply(a1.getV12(), a2.getV12())
+                        , collector13.combiner().apply(a1.getV13(), a2.getV13())
+                        , collector14.combiner().apply(a1.getV14(), a2.getV14())
+                        , collector15.combiner().apply(a1.getV15(), a2.getV15())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
-                        , collector9.finisher().apply(a.v9())
-                        , collector10.finisher().apply(a.v10())
-                        , collector11.finisher().apply(a.v11())
-                        , collector12.finisher().apply(a.v12())
-                        , collector13.finisher().apply(a.v13())
-                        , collector14.finisher().apply(a.v14())
-                        , collector15.finisher().apply(a.v15())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
+                        , collector9.finisher().apply(a.getV9())
+                        , collector10.finisher().apply(a.getV10())
+                        , collector11.finisher().apply(a.getV11())
+                        , collector12.finisher().apply(a.getV12())
+                        , collector13.finisher().apply(a.getV13())
+                        , collector14.finisher().apply(a.getV14())
+                        , collector15.finisher().apply(a.getV15())
                 )
         );
     }
@@ -1435,58 +1435,58 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
                         , collector16.supplier().get()
                 ),
                 (a, t) -> {
-                    collector1.accumulator().accept(a.v1(), t);
-                    collector2.accumulator().accept(a.v2(), t);
-                    collector3.accumulator().accept(a.v3(), t);
-                    collector4.accumulator().accept(a.v4(), t);
-                    collector5.accumulator().accept(a.v5(), t);
-                    collector6.accumulator().accept(a.v6(), t);
-                    collector7.accumulator().accept(a.v7(), t);
-                    collector8.accumulator().accept(a.v8(), t);
-                    collector9.accumulator().accept(a.v9(), t);
-                    collector10.accumulator().accept(a.v10(), t);
-                    collector11.accumulator().accept(a.v11(), t);
-                    collector12.accumulator().accept(a.v12(), t);
-                    collector13.accumulator().accept(a.v13(), t);
-                    collector14.accumulator().accept(a.v14(), t);
-                    collector15.accumulator().accept(a.v15(), t);
-                    collector16.accumulator().accept(a.v16(), t);
+                    collector1.accumulator().accept(a.getV1(), t);
+                    collector2.accumulator().accept(a.getV2(), t);
+                    collector3.accumulator().accept(a.getV3(), t);
+                    collector4.accumulator().accept(a.getV4(), t);
+                    collector5.accumulator().accept(a.getV5(), t);
+                    collector6.accumulator().accept(a.getV6(), t);
+                    collector7.accumulator().accept(a.getV7(), t);
+                    collector8.accumulator().accept(a.getV8(), t);
+                    collector9.accumulator().accept(a.getV9(), t);
+                    collector10.accumulator().accept(a.getV10(), t);
+                    collector11.accumulator().accept(a.getV11(), t);
+                    collector12.accumulator().accept(a.getV12(), t);
+                    collector13.accumulator().accept(a.getV13(), t);
+                    collector14.accumulator().accept(a.getV14(), t);
+                    collector15.accumulator().accept(a.getV15(), t);
+                    collector16.accumulator().accept(a.getV16(), t);
                 },
                 (a1, a2) -> tuple(
-                        collector1.combiner().apply(a1.v1(), a2.v1())
-                        , collector2.combiner().apply(a1.v2(), a2.v2())
-                        , collector3.combiner().apply(a1.v3(), a2.v3())
-                        , collector4.combiner().apply(a1.v4(), a2.v4())
-                        , collector5.combiner().apply(a1.v5(), a2.v5())
-                        , collector6.combiner().apply(a1.v6(), a2.v6())
-                        , collector7.combiner().apply(a1.v7(), a2.v7())
-                        , collector8.combiner().apply(a1.v8(), a2.v8())
-                        , collector9.combiner().apply(a1.v9(), a2.v9())
-                        , collector10.combiner().apply(a1.v10(), a2.v10())
-                        , collector11.combiner().apply(a1.v11(), a2.v11())
-                        , collector12.combiner().apply(a1.v12(), a2.v12())
-                        , collector13.combiner().apply(a1.v13(), a2.v13())
-                        , collector14.combiner().apply(a1.v14(), a2.v14())
-                        , collector15.combiner().apply(a1.v15(), a2.v15())
-                        , collector16.combiner().apply(a1.v16(), a2.v16())
+                        collector1.combiner().apply(a1.getV1(), a2.getV1())
+                        , collector2.combiner().apply(a1.getV2(), a2.getV2())
+                        , collector3.combiner().apply(a1.getV3(), a2.getV3())
+                        , collector4.combiner().apply(a1.getV4(), a2.getV4())
+                        , collector5.combiner().apply(a1.getV5(), a2.getV5())
+                        , collector6.combiner().apply(a1.getV6(), a2.getV6())
+                        , collector7.combiner().apply(a1.getV7(), a2.getV7())
+                        , collector8.combiner().apply(a1.getV8(), a2.getV8())
+                        , collector9.combiner().apply(a1.getV9(), a2.getV9())
+                        , collector10.combiner().apply(a1.getV10(), a2.getV10())
+                        , collector11.combiner().apply(a1.getV11(), a2.getV11())
+                        , collector12.combiner().apply(a1.getV12(), a2.getV12())
+                        , collector13.combiner().apply(a1.getV13(), a2.getV13())
+                        , collector14.combiner().apply(a1.getV14(), a2.getV14())
+                        , collector15.combiner().apply(a1.getV15(), a2.getV15())
+                        , collector16.combiner().apply(a1.getV16(), a2.getV16())
                 ),
                 a -> tuple(
-                        collector1.finisher().apply(a.v1())
-                        , collector2.finisher().apply(a.v2())
-                        , collector3.finisher().apply(a.v3())
-                        , collector4.finisher().apply(a.v4())
-                        , collector5.finisher().apply(a.v5())
-                        , collector6.finisher().apply(a.v6())
-                        , collector7.finisher().apply(a.v7())
-                        , collector8.finisher().apply(a.v8())
-                        , collector9.finisher().apply(a.v9())
-                        , collector10.finisher().apply(a.v10())
-                        , collector11.finisher().apply(a.v11())
-                        , collector12.finisher().apply(a.v12())
-                        , collector13.finisher().apply(a.v13())
-                        , collector14.finisher().apply(a.v14())
-                        , collector15.finisher().apply(a.v15())
-                        , collector16.finisher().apply(a.v16())
+                        collector1.finisher().apply(a.getV1())
+                        , collector2.finisher().apply(a.getV2())
+                        , collector3.finisher().apply(a.getV3())
+                        , collector4.finisher().apply(a.getV4())
+                        , collector5.finisher().apply(a.getV5())
+                        , collector6.finisher().apply(a.getV6())
+                        , collector7.finisher().apply(a.getV7())
+                        , collector8.finisher().apply(a.getV8())
+                        , collector9.finisher().apply(a.getV9())
+                        , collector10.finisher().apply(a.getV10())
+                        , collector11.finisher().apply(a.getV11())
+                        , collector12.finisher().apply(a.getV12())
+                        , collector13.finisher().apply(a.getV13())
+                        , collector14.finisher().apply(a.getV14())
+                        , collector15.finisher().apply(a.getV15())
+                        , collector16.finisher().apply(a.getV16())
                 )
         );
     }

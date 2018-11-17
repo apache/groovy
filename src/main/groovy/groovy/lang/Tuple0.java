@@ -45,112 +45,112 @@ public class Tuple0 extends Tuple {
      * Concatenate a tuple to this tuple.
      */
     public final <T1> Tuple1<T1> concat(Tuple1<T1> tuple) {
-        return new Tuple1<>(tuple.v1());
+        return new Tuple1<>(tuple.getV1());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2> Tuple2<T1, T2> concat(Tuple2<T1, T2> tuple) {
-        return new Tuple2<>(tuple.v1(), tuple.v2());
+        return new Tuple2<>(tuple.getV1(), tuple.getV2());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3> Tuple3<T1, T2, T3> concat(Tuple3<T1, T2, T3> tuple) {
-        return new Tuple3<>(tuple.v1(), tuple.v2(), tuple.v3());
+        return new Tuple3<>(tuple.getV1(), tuple.getV2(), tuple.getV3());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4> Tuple4<T1, T2, T3, T4> concat(Tuple4<T1, T2, T3, T4> tuple) {
-        return new Tuple4<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4());
+        return new Tuple4<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5> Tuple5<T1, T2, T3, T4, T5> concat(Tuple5<T1, T2, T3, T4, T5> tuple) {
-        return new Tuple5<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5());
+        return new Tuple5<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6> Tuple6<T1, T2, T3, T4, T5, T6> concat(Tuple6<T1, T2, T3, T4, T5, T6> tuple) {
-        return new Tuple6<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6());
+        return new Tuple6<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7> Tuple7<T1, T2, T3, T4, T5, T6, T7> concat(Tuple7<T1, T2, T3, T4, T5, T6, T7> tuple) {
-        return new Tuple7<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7());
+        return new Tuple7<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8> Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> concat(Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> tuple) {
-        return new Tuple8<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8());
+        return new Tuple8<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8, T9> Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9> concat(Tuple9<T1, T2, T3, T4, T5, T6, T7, T8, T9> tuple) {
-        return new Tuple9<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8(), tuple.v9());
+        return new Tuple9<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8(), tuple.getV9());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> concat(Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> tuple) {
-        return new Tuple10<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8(), tuple.v9(), tuple.v10());
+        return new Tuple10<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8(), tuple.getV9(), tuple.getV10());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> concat(Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> tuple) {
-        return new Tuple11<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8(), tuple.v9(), tuple.v10(), tuple.v11());
+        return new Tuple11<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8(), tuple.getV9(), tuple.getV10(), tuple.getV11());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> concat(Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> tuple) {
-        return new Tuple12<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8(), tuple.v9(), tuple.v10(), tuple.v11(), tuple.v12());
+        return new Tuple12<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8(), tuple.getV9(), tuple.getV10(), tuple.getV11(), tuple.getV12());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> concat(Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> tuple) {
-        return new Tuple13<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8(), tuple.v9(), tuple.v10(), tuple.v11(), tuple.v12(), tuple.v13());
+        return new Tuple13<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8(), tuple.getV9(), tuple.getV10(), tuple.getV11(), tuple.getV12(), tuple.getV13());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> concat(Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> tuple) {
-        return new Tuple14<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8(), tuple.v9(), tuple.v10(), tuple.v11(), tuple.v12(), tuple.v13(), tuple.v14());
+        return new Tuple14<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8(), tuple.getV9(), tuple.getV10(), tuple.getV11(), tuple.getV12(), tuple.getV13(), tuple.getV14());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> concat(Tuple15<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> tuple) {
-        return new Tuple15<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8(), tuple.v9(), tuple.v10(), tuple.v11(), tuple.v12(), tuple.v13(), tuple.v14(), tuple.v15());
+        return new Tuple15<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8(), tuple.getV9(), tuple.getV10(), tuple.getV11(), tuple.getV12(), tuple.getV13(), tuple.getV14(), tuple.getV15());
     }
 
     /**
      * Concatenate a tuple to this tuple.
      */
     public final <T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> Tuple16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> concat(Tuple16<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> tuple) {
-        return new Tuple16<>(tuple.v1(), tuple.v2(), tuple.v3(), tuple.v4(), tuple.v5(), tuple.v6(), tuple.v7(), tuple.v8(), tuple.v9(), tuple.v10(), tuple.v11(), tuple.v12(), tuple.v13(), tuple.v14(), tuple.v15(), tuple.v16());
+        return new Tuple16<>(tuple.getV1(), tuple.getV2(), tuple.getV3(), tuple.getV4(), tuple.getV5(), tuple.getV6(), tuple.getV7(), tuple.getV8(), tuple.getV9(), tuple.getV10(), tuple.getV11(), tuple.getV12(), tuple.getV13(), tuple.getV14(), tuple.getV15(), tuple.getV16());
     }
 
     /**

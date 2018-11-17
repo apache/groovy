@@ -18,10 +18,10 @@
  */
 package groovy.lang;
 
+import groovy.util.GroovyTestCase;
 import groovy.util.function.Consumer0;
 import groovy.util.function.Consumer1;
 import groovy.util.function.Consumer2;
-import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +47,7 @@ import static java.util.stream.Collectors.mapping;
 /**
  * @author James Strachan
  */
-public class TupleTest extends TestCase {
+public class TupleTest extends GroovyTestCase {
 
     final Object[] data = {"a", "b", "c"};
     final Tuple t = new Tuple(data);
@@ -617,4 +617,11 @@ public class TupleTest extends TestCase {
         assertEquals(3, result);
     }
 
+    public void testGroovyStyleAccessor() {
+        try {
+            assertScript("def t = new Tuple1<String>('Daniel'); assert 'Daniel' == t.v1");
+        } catch (Exception e) {
+            assert false: e.getMessage();
+        }
+    }
 }

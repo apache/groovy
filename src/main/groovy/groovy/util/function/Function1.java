@@ -36,7 +36,7 @@ public interface Function1<T1, R> extends Function<T1, R> {
      * @param args The arguments as a tuple.
      */
     default R apply(Tuple1<? extends T1> args) {
-        return apply(args.v1());
+        return apply(args.getV1());
     }
 
     /**
@@ -70,6 +70,6 @@ public interface Function1<T1, R> extends Function<T1, R> {
      * Partially apply this function to the arguments.
      */
     default Function0<R> applyPartially(Tuple1<? extends T1> args) {
-        return () -> apply(args.v1());
+        return () -> apply(args.getV1());
     }
 }
