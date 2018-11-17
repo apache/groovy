@@ -153,6 +153,7 @@ import static org.codehaus.groovy.ast.ClassHelper.PATTERN_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.RANGE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.TUPLE_CLASSES;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
@@ -1085,10 +1086,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // multiple assignment check
         if (!(leftExpression instanceof TupleExpression)) return true;
 
-        if (!(rightExpression instanceof ListExpression)) {
+        Expression transformedRightExpression = transformRightExpressionToSupportMultipleAssignment(rightExpression);
+        if (null == transformedRightExpression) {
             addStaticTypeError("Multiple assignments without list expressions on the right hand side are unsupported in static type checking mode", rightExpression);
             return false;
         }
+
+        rightExpression = transformedRightExpression;
 
         TupleExpression tuple = (TupleExpression) leftExpression;
         ListExpression list = (ListExpression) rightExpression;
@@ -1112,6 +1116,51 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return true;
+    }
+
+    private Expression transformRightExpressionToSupportMultipleAssignment(Expression rightExpression) {
+        if (rightExpression instanceof ListExpression) {
+            return rightExpression;
+        }
+
+        ClassNode cn = null;
+        if (rightExpression instanceof MethodCallExpression || rightExpression instanceof VariableExpression) {
+            cn = rightExpression.getType();
+        }
+
+        if (null == cn) {
+            return null;
+        }
+
+        Expression listExpression = transformToListExpression(rightExpression, cn);
+        if (listExpression != null) return listExpression;
+
+        return null;
+    }
+
+    private Expression transformToListExpression(Expression expression, ClassNode cn) {
+        if (null != cn && cn.isDerivedFrom(ClassHelper.TUPLE_TYPE)) { // just for performance to check
+            for (int i = 0, n = TUPLE_CLASSES.length; i < n; i++) {
+                Class tcn = TUPLE_CLASSES[i];
+                if (tcn.equals(cn.getTypeClass())) {
+                    ListExpression listExpression = new ListExpression();
+                    GenericsType[] genericsTypes = cn.getGenericsTypes();
+                    for (int j = 0; j < i; j++) {
+                        // the index of element in tuple starts with 1
+                        MethodCallExpression mce = new MethodCallExpression(expression, "v" + (j + 1), ArgumentListExpression.EMPTY_ARGUMENTS);
+                        ClassNode elementType = null != genericsTypes ? genericsTypes[j].getType() : ClassHelper.OBJECT_TYPE;
+                        mce.setType(elementType);
+                        storeType(mce, elementType);
+                        listExpression.addExpression(mce);
+                    }
+
+                    listExpression.setSourcePosition(expression);
+
+                    return listExpression;
+                }
+            }
+        }
+        return null;
     }
 
     private static ClassNode adjustTypeForSpreading(ClassNode inferredRightExpressionType, Expression leftExpression) {
