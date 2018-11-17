@@ -28,6 +28,24 @@ import groovy.lang.MetaClass;
 import groovy.lang.Range;
 import groovy.lang.Reference;
 import groovy.lang.Script;
+import groovy.lang.Tuple;
+import groovy.lang.Tuple0;
+import groovy.lang.Tuple1;
+import groovy.lang.Tuple10;
+import groovy.lang.Tuple11;
+import groovy.lang.Tuple12;
+import groovy.lang.Tuple13;
+import groovy.lang.Tuple14;
+import groovy.lang.Tuple15;
+import groovy.lang.Tuple16;
+import groovy.lang.Tuple2;
+import groovy.lang.Tuple3;
+import groovy.lang.Tuple4;
+import groovy.lang.Tuple5;
+import groovy.lang.Tuple6;
+import groovy.lang.Tuple7;
+import groovy.lang.Tuple8;
+import groovy.lang.Tuple9;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.runtime.GeneratedClosure;
@@ -69,6 +87,12 @@ public class ClassHelper {
             Iterator.class, GeneratedClosure.class, GeneratedLambda.class, GroovyObjectSupport.class
     };
 
+    public static final Class[] TUPLE_CLASSES = new Class[] {
+            Tuple0.class, Tuple1.class, Tuple2.class, Tuple3.class, Tuple4.class, Tuple5.class, Tuple6.class,
+            Tuple7.class, Tuple8.class, Tuple9.class, Tuple10.class, Tuple11.class, Tuple12.class, Tuple13.class,
+            Tuple14.class, Tuple15.class, Tuple16.class
+    };
+
     private static final String[] primitiveClassNames = new String[]{
             "", "boolean", "char", "byte", "short",
             "int", "long", "double", "float", "void"
@@ -79,6 +103,7 @@ public class ClassHelper {
             VOID_TYPE = makeCached(Void.TYPE),
             CLOSURE_TYPE = makeCached(Closure.class),
             GSTRING_TYPE = makeCached(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
+            TUPLE_TYPE = makeWithoutCaching(Tuple.class),
             MAP_TYPE = makeWithoutCaching(Map.class), RANGE_TYPE = makeCached(Range.class),
             PATTERN_TYPE = makeCached(Pattern.class), STRING_TYPE = makeCached(String.class),
             SCRIPT_TYPE = makeCached(Script.class), REFERENCE_TYPE = makeWithoutCaching(Reference.class),
