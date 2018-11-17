@@ -367,6 +367,20 @@ public class TupleTest extends TestCase {
     public void testConcat() {
         assertEquals(tuple(1, "a"), tuple(1).concat("a"));
         assertEquals(tuple(1, "a", 2), tuple(1).concat("a").concat(2));
+        assertEquals(tuple(1, "a", 2, "b"), tuple(1).concat("a").concat(2).concat("b"));
+        assertEquals(tuple(1, "a", 2, "b", 3), tuple(1).concat("a").concat(2).concat("b").concat(3));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c"), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c"));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d"), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d"));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e"), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e"));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e", 6), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e").concat(6));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e", 6, "f"), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e").concat(6).concat("f"));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e", 6, "f", 7), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e").concat(6).concat("f").concat(7));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e", 6, "f", 7, "g"), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e").concat(6).concat("f").concat(7).concat("g"));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e", 6, "f", 7, "g", 8), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e").concat(6).concat("f").concat(7).concat("g").concat(8));
+        assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e", 6, "f", 7, "g", 8, "h"), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e").concat(6).concat("f").concat(7).concat("g").concat(8).concat("h"));
+
 
         assertEquals(tuple(1, "a"), tuple(1).concat(tuple("a")));
         assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d"), tuple(1).concat(tuple("a", 2, "b").concat(tuple(3).concat(tuple("c", 4, "d")))));
