@@ -320,13 +320,13 @@ public abstract class TraitComposer {
                     cNode.addMethod(impl);
                 }
             }
-            cNode.addObjectInitializerStatements(new ExpressionStatement(
-                    new MethodCallExpression(
-                            new ClassExpression(helperClassNode),
-                            Traits.INIT_METHOD,
-                            new ArgumentListExpression(new VariableExpression("this")))
-            ));
         }
+        cNode.addObjectInitializerStatements(new ExpressionStatement(
+                new MethodCallExpression(
+                        new ClassExpression(helperClassNode),
+                        Traits.INIT_METHOD,
+                        new ArgumentListExpression(new VariableExpression("this")))
+        ));
     }
 
     private static void createForwarderMethod(
