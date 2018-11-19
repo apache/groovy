@@ -72,7 +72,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         stack = new Stack<GroovySourceAST>();
         className = file;
         classDocs = new LinkedHashMap<String, GroovyClassDoc>();
-        if (file != null) {
+        if (file != null && file.contains(".")) {
             // todo: replace this simple idea of default class name
             int idx = file.lastIndexOf(".");
             className = file.substring(0, idx);
