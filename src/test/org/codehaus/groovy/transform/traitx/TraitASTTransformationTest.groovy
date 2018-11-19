@@ -2644,4 +2644,28 @@ assert c.b() == 2
             assert MyClass.full == 'FOOBAR'
         '''
     }
+
+    //GROOVY-8892
+    void testTraitWithStaticInitBlockWithAndWithoutProps() {
+        assertScript '''
+            class Counter {
+                static int count = 0
+            }
+            trait TraitNoProps {
+                {
+                    Counter.count += 1
+                }
+            }
+            trait TraitWithProp {
+                Integer instanceCounter //immutable, non-shareable
+                {
+                    Counter.count += 10
+                    instanceCounter = 1
+                }
+            }
+            class ClassWithTraits implements TraitNoProps, TraitWithProp { }
+            assert new ClassWithTraits().instanceCounter == 1
+            assert Counter.count == 11
+        '''
+    }
 }
