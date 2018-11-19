@@ -29,11 +29,13 @@ import groovy.ui.text.FindReplaceUtility
 import groovy.ui.text.GroovyFilter
 import groovy.ui.text.SmartDocumentFilter
 import org.apache.groovy.io.StringBuilderWriter
+import org.apache.groovy.parser.antlr4.GroovyLangLexer
 import org.apache.groovy.util.SystemUtil
 import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.ParserVersion
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.messages.ExceptionMessage
 import org.codehaus.groovy.control.messages.SimpleMessage
@@ -963,7 +965,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void inspectTokens(EventObject evt = null) {
-        def lf = LexerFrame.groovyScriptFactory(inputArea.getText())
+        def content = inputArea.getText()
+        def lf =
+                ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion ?
+                        LexerFrame.groovyScriptFactory(content) :
+                        new LexerFrame(GroovyLangLexer, org.apache.groovy.parser.antlr4.GroovyLexer, new StringReader(content))
+
         lf.visible = true
     }
 
