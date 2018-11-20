@@ -1124,42 +1124,35 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         ClassNode cn = null;
-        if (rightExpression instanceof MethodCallExpression || rightExpression instanceof VariableExpression) {
-            cn = rightExpression.getType();
+        if (rightExpression instanceof MethodCallExpression || rightExpression instanceof ConstructorCallExpression || rightExpression instanceof VariableExpression) {
+            ClassNode inferredType = getType(rightExpression);
+            cn = null == inferredType ? rightExpression.getType() : inferredType;
         }
 
         if (null == cn) {
             return null;
         }
 
-        Expression listExpression = transformToListExpression(rightExpression, cn);
-        if (listExpression != null) return listExpression;
-
-        return null;
-    }
-
-    private Expression transformToListExpression(Expression expression, ClassNode cn) {
-        if (null != cn && cn.isDerivedFrom(ClassHelper.TUPLE_TYPE)) { // just for performance to check
-            for (int i = 0, n = TUPLE_CLASSES.length; i < n; i++) {
-                Class tcn = TUPLE_CLASSES[i];
-                if (tcn.equals(cn.getTypeClass())) {
-                    ListExpression listExpression = new ListExpression();
-                    GenericsType[] genericsTypes = cn.getGenericsTypes();
-                    for (int j = 0; j < i; j++) {
-                        // the index of element in tuple starts with 1
-                        MethodCallExpression mce = new MethodCallExpression(expression, "getV" + (j + 1), ArgumentListExpression.EMPTY_ARGUMENTS);
-                        ClassNode elementType = null != genericsTypes ? genericsTypes[j].getType() : ClassHelper.OBJECT_TYPE;
-                        mce.setType(elementType);
-                        storeType(mce, elementType);
-                        listExpression.addExpression(mce);
-                    }
-
-                    listExpression.setSourcePosition(expression);
-
-                    return listExpression;
+        for (int i = 0, n = TUPLE_CLASSES.length; i < n; i++) {
+            Class tcn = TUPLE_CLASSES[i];
+            if (tcn.equals(cn.getTypeClass())) {
+                ListExpression listExpression = new ListExpression();
+                GenericsType[] genericsTypes = cn.getGenericsTypes();
+                for (int j = 0; j < i; j++) {
+                    // the index of element in tuple starts with 1
+                    MethodCallExpression mce = new MethodCallExpression(rightExpression, "getV" + (j + 1), ArgumentListExpression.EMPTY_ARGUMENTS);
+                    ClassNode elementType = null != genericsTypes ? genericsTypes[j].getType() : ClassHelper.OBJECT_TYPE;
+                    mce.setType(elementType);
+                    storeType(mce, elementType);
+                    listExpression.addExpression(mce);
                 }
+
+                listExpression.setSourcePosition(rightExpression);
+
+                return listExpression;
             }
         }
+
         return null;
     }
 
