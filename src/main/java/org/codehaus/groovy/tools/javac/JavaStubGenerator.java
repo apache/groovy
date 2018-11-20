@@ -337,7 +337,7 @@ public class JavaStubGenerator {
                                 }
                             }
                         }
-                        if (method==null) {
+                        if (method==null && !traitMethod.isAbstract()) {
                             printMethod(out, classNode, traitMethod);
                         }
                     }
