@@ -1835,8 +1835,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else {
             collectionExpression.visit(this);
             final ClassNode collectionType = getType(collectionExpression);
-            ClassNode componentType = inferLoopElementType(collectionType);
             ClassNode forLoopVariableType = forLoop.getVariableType();
+            ClassNode componentType;
+            if (Character_TYPE.equals(ClassHelper.getWrapper(forLoopVariableType)) && STRING_TYPE.equals(collectionType)) {
+                // we allow auto-coercion here
+                componentType = forLoopVariableType;
+            } else {
+                componentType = inferLoopElementType(collectionType);
+            }
             if (ClassHelper.getUnwrapper(componentType) == forLoopVariableType) {
                 // prefer primitive type over boxed type
                 componentType = forLoopVariableType;
@@ -1880,7 +1886,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 componentType = MAP_ENTRY_TYPE.getPlainNodeReference();
                 componentType.setGenericsTypes(genericsTypes);
             } else if (STRING_TYPE.equals(collectionType)) {
-                componentType = ClassHelper.Character_TYPE;
+                componentType = ClassHelper.STRING_TYPE;
             } else if (ENUMERATION_TYPE.equals(collectionType)) {
                 // GROOVY-6123
                 ClassNode intf = GenericsUtils.parameterizeType(collectionType, ENUMERATION_TYPE);
