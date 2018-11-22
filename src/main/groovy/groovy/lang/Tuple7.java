@@ -27,7 +27,7 @@ import groovy.util.function.Function7;
  *
  * @since 2.5.0
  */
-public class Tuple7<T1, T2, T3, T4, T5, T6, T7> extends Tuple {
+public final class Tuple7<T1, T2, T3, T4, T5, T6, T7> extends Tuple {
     private static final long serialVersionUID = 4226144828786865766L;
     private final T1 v1;
     private final T2 v2;
