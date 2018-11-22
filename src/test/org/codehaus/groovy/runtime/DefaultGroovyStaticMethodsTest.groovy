@@ -16,20 +16,29 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime
 
-import groovy.util.GroovyTestCase;
+import java.util.stream.Collectors
+import java.util.stream.Stream
 
 /**
  * Tests for DefaultGroovyStaticMethods
  */
-public class DefaultGroovyStaticMethodsTest extends GroovyTestCase {
+class DefaultGroovyStaticMethodsTest extends GroovyTestCase {
 
-    public void testCurrentTimeSeconds() {
-	long timeMillis = System.currentTimeMillis();
-        long timeSeconds = DefaultGroovyStaticMethods.currentTimeSeconds(null);
-        long timeMillis2 = System.currentTimeMillis();
-        assertTrue(timeMillis/1000 <= timeSeconds);
-        assertTrue(timeMillis2/1000 >= timeSeconds);
+    void testCurrentTimeSeconds() {
+	    long timeMillis = System.currentTimeMillis()
+        long timeSeconds = System.currentTimeSeconds()
+        long timeMillis2 = System.currentTimeMillis()
+        assert timeMillis/1000 as int <= timeSeconds
+        assert timeMillis2/1000 as int >= timeSeconds
+    }
+
+    void testFirst() {
+        assert 2 == Stream.of(2, 3, 6, 5).collect(Collectors.first()).get()
+    }
+
+    void testLast() {
+        assert 5 == Stream.of(2, 3, 6, 5).collect(Collectors.last()).get()
     }
 }

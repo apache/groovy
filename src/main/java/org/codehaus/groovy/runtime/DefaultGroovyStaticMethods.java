@@ -28,9 +28,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * This class defines all the new static groovy methods which appear on normal
@@ -262,5 +265,25 @@ public class DefaultGroovyStaticMethods {
     public static long currentTimeSeconds(System self){
     return System.currentTimeMillis() / 1000;
   }
+
+    /**
+     * Returns a {@link Collector} that gets the first element.
+     *
+     * @return a {@link Collector} which implements the first operation
+     * @since 3.0.0
+     */
+    public static <T> Collector<T, ?, Optional<T>> first(Collectors self) {
+        return Collectors.reducing((v1, v2) -> v1);
+    }
+
+    /**
+     * Returns a {@link Collector} that gets the last element.
+     *
+     * @return a {@link Collector} which implements the last operation
+     * @since 3.0.0
+     */
+    public static <T> Collector<T, ?, Optional<T>> last(Collectors self) {
+        return Collectors.reducing((v1, v2) -> v2);
+    }
 
 }
