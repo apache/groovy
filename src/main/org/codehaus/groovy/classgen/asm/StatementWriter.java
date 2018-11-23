@@ -94,6 +94,13 @@ public class StatementWriter {
         }
         compileStack.pop();
 
+        // GROOVY-7647
+        if (block.getLastLineNumber() > 0) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            Label blockEnd = new Label(); mv.visitLabel(blockEnd);
+            mv.visitLineNumber(block.getLastLineNumber(), blockEnd);
+        }
+
         controller.getOperandStack().popDownTo(mark);
     }
 

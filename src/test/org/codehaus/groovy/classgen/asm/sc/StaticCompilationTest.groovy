@@ -19,8 +19,6 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 
 class StaticCompilationTest extends AbstractBytecodeTestCase {
     void testEmptyMethod() {
@@ -31,6 +29,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
         assert bytecode.hasStrictSequence(
                 ['public m()V',
                         'L0',
+                        'LINENUMBER 3 L0',
                         'RETURN']
         )
     }
