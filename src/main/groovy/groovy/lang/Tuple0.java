@@ -25,7 +25,7 @@ import groovy.util.function.Function0;
  *
  * @since 3.0.0
  */
-public class Tuple0 extends Tuple {
+public final class Tuple0 extends Tuple {
     private static final long serialVersionUID = -3791115121904072346L;
 
     public Tuple0() {

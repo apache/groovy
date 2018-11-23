@@ -26,7 +26,7 @@ import java.util.Optional;
 /**
  * Represents a list of 2 typed Objects.
  */
-public class Tuple2<T1, T2> extends Tuple {
+public final class Tuple2<T1, T2> extends Tuple {
     private static final long serialVersionUID = 9006144674906325597L;
     private final T1 v1;
     private final T2 v2;
