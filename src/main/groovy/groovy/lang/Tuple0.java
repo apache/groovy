@@ -178,6 +178,17 @@ public final class Tuple0 extends Tuple {
         return function.apply();
     }
 
+    /**
+     * Maps the attributes of this tuple using a mapper function.
+     */
+    public final <R> Tuple0 mapAll(Function0<? extends R> function) {
+        if (null != function) {
+            function.apply();
+        }
+
+        return INSTANCE;
+    }
+
     @Override
     public Tuple0 clone() {
         return INSTANCE;

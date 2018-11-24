@@ -624,4 +624,42 @@ public class TupleTest extends GroovyTestCase {
             assert false: e.getMessage();
         }
     }
+
+    public void testMapAll() {
+        assertEquals(tuple(), tuple().mapAll(() -> null));
+        assertEquals(tuple(2), tuple(1).mapAll((v1) -> tuple(v1 + 1)));
+
+        assertEquals(tuple(2, 3), tuple(1, 2).mapAll((v1, v2) -> tuple(v1 + 1, v2 + 1)));
+        assertEquals(tuple(2, 3, 4), tuple(1, 2, 3).mapAll((v1, v2, v3) -> tuple(v1 + 1, v2 + 1, v3 + 1)));
+        assertEquals(tuple(2, 3, 4, 5), tuple(1, 2, 3, 4).mapAll((v1, v2, v3, v4) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5).mapAll((v1, v2, v3, v4, v5) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6).mapAll((v1, v2, v3, v4, v5, v6) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7).mapAll((v1, v2, v3, v4, v5, v6, v7) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8).mapAll((v1, v2, v3, v4, v5, v6, v7, v8) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).mapAll((v1, v2, v3, v4, v5, v6, v7, v8, v9) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1, v9 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).mapAll((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1, v9 + 1, v10 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).mapAll((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1, v9 + 1, v10 + 1, v11 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).mapAll((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1, v9 + 1, v10 + 1, v11 + 1, v12 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).mapAll((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1, v9 + 1, v10 + 1, v11 + 1, v12 + 1, v13 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).mapAll((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1, v9 + 1, v10 + 1, v11 + 1, v12 + 1, v13 + 1, v14 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).mapAll((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1, v9 + 1, v10 + 1, v11 + 1, v12 + 1, v13 + 1, v14 + 1, v15 + 1)));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).mapAll((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> tuple(v1 + 1, v2 + 1, v3 + 1, v4 + 1, v5 + 1, v6 + 1, v7 + 1, v8 + 1, v9 + 1, v10 + 1, v11 + 1, v12 + 1, v13 + 1, v14 + 1, v15 + 1, v16 + 1)));
+
+        assertEquals(tuple(2,3), tuple(1,2).mapAll(v1 -> v1 + 1, v2 -> v2 + 1));
+        assertEquals(tuple(2,3,4), tuple(1,2,3).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1));
+        assertEquals(tuple(2,3,4,5), tuple(1,2,3,4).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1));
+        assertEquals(tuple(2,3,4,5,6), tuple(1,2,3,4,5).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1));
+        assertEquals(tuple(2,3,4,5,6,7), tuple(1,2,3,4,5,6).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8), tuple(1,2,3,4,5,6,7).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9), tuple(1,2,3,4,5,6,7,8).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9,10), tuple(1,2,3,4,5,6,7,8,9).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9,10,11), tuple(1,2,3,4,5,6,7,8,9,10).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1, v10 -> v10 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9,10,11,12), tuple(1,2,3,4,5,6,7,8,9,10,11).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1, v10 -> v10 + 1, v11 -> v11 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9,10,11,12,13), tuple(1,2,3,4,5,6,7,8,9,10,11,12).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1, v10 -> v10 + 1, v11 -> v11 + 1, v12 -> v12 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9,10,11,12,13,14), tuple(1,2,3,4,5,6,7,8,9,10,11,12,13).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1, v10 -> v10 + 1, v11 -> v11 + 1, v12 -> v12 + 1, v13 -> v13 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9,10,11,12,13,14,15), tuple(1,2,3,4,5,6,7,8,9,10,11,12,13,14).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1, v10 -> v10 + 1, v11 -> v11 + 1, v12 -> v12 + 1, v13 -> v13 + 1, v14 -> v14 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16), tuple(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1, v10 -> v10 + 1, v11 -> v11 + 1, v12 -> v12 + 1, v13 -> v13 + 1, v14 -> v14 + 1, v15 -> v15 + 1));
+        assertEquals(tuple(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17), tuple(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1, v10 -> v10 + 1, v11 -> v11 + 1, v12 -> v12 + 1, v13 -> v13 + 1, v14 -> v14 + 1, v15 -> v15 + 1, v16 -> v16 + 1));
+
+    }
 }

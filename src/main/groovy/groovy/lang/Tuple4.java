@@ -315,6 +315,20 @@ public final class Tuple4<T1, T2, T3, T4> extends Tuple {
         return new Tuple4<>(v1, v2, v3, function.apply(v4));
     }
 
+    /**
+     * Maps the attributes of this tuple using a mapper function.
+     */
+    public final <U1, U2, U3, U4> Tuple4<U1, U2, U3, U4> mapAll(Function4<? super T1, ? super T2, ? super T3, ? super T4, Tuple4<U1, U2, U3, U4>> function) {
+        return function.apply(v1, v2, v3, v4);
+    }
+
+    /**
+     * Maps the attributes of this tuple using mapper functions.
+     */
+    public final <U1, U2, U3, U4> Tuple4<U1, U2, U3, U4> mapAll(Function1<? super T1, ? extends U1> function1, Function1<? super T2, ? extends U2> function2, Function1<? super T3, ? extends U3> function3, Function1<? super T4, ? extends U4> function4) {
+        return new Tuple4<>(function1.apply(v1), function2.apply(v2), function3.apply(v3), function4.apply(v4));
+    }
+
     @Override
     public Tuple4<T1, T2, T3, T4> clone() {
         return new Tuple4<>(this);

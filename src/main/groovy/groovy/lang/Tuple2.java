@@ -278,6 +278,20 @@ public final class Tuple2<T1, T2> extends Tuple {
         return new Tuple2<>(v1, function.apply(v2));
     }
 
+    /**
+     * Maps the attributes of this tuple using a mapper function.
+     */
+    public final <U1, U2> Tuple2<U1, U2> mapAll(Function2<? super T1, ? super T2, Tuple2<U1, U2>> function) {
+        return function.apply(v1, v2);
+    }
+
+    /**
+     * Maps the attributes of this tuple using mapper functions.
+     */
+    public final <U1, U2> Tuple2<U1, U2> mapAll(Function1<? super T1, ? extends U1> function1, Function1<? super T2, ? extends U2> function2) {
+        return new Tuple2<>(function1.apply(v1), function2.apply(v2));
+    }
+
     @Override
     public Tuple2<T1, T2> clone() {
         return new Tuple2<>(this);
