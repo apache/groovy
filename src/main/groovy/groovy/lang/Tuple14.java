@@ -254,7 +254,7 @@ public final class Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T1
      * Limit this tuple to degree 0.
      */
     public final Tuple0 limit0() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**
@@ -457,7 +457,7 @@ public final class Tuple14<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T1
      * Skip 14 degrees from this tuple.
      */
     public final Tuple0 skip14() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**

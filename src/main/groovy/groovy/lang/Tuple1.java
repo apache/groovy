@@ -178,7 +178,7 @@ public final class Tuple1<T1> extends Tuple {
      * Limit this tuple to degree 0.
      */
     public final Tuple0 limit0() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**
@@ -199,7 +199,7 @@ public final class Tuple1<T1> extends Tuple {
      * Skip 1 degrees from this tuple.
      */
     public final Tuple0 skip1() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**

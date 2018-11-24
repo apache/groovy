@@ -236,7 +236,7 @@ public final class Tuple6<T1, T2, T3, T4, T5, T6> extends Tuple {
      * Limit this tuple to degree 0.
      */
     public final Tuple0 limit0() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**
@@ -327,7 +327,7 @@ public final class Tuple6<T1, T2, T3, T4, T5, T6> extends Tuple {
      * Skip 6 degrees from this tuple.
      */
     public final Tuple0 skip6() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**

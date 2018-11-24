@@ -27,12 +27,9 @@ import groovy.util.function.Function0;
  */
 public final class Tuple0 extends Tuple {
     private static final long serialVersionUID = -3791115121904072346L;
+    public static final Tuple0 INSTANCE = new Tuple0();
 
-    public Tuple0() {
-    }
-
-    public Tuple0(Tuple0 tuple) {
-    }
+    private Tuple0() {}
 
     /**
      * Concatenate a value to this tuple.
@@ -183,6 +180,6 @@ public final class Tuple0 extends Tuple {
 
     @Override
     public Tuple0 clone() {
-        return new Tuple0(this);
+        return INSTANCE;
     }
 }

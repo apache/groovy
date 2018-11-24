@@ -184,7 +184,7 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
      * Construct a tuple of degree 0.
      */
     public static Tuple0 tuple() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**

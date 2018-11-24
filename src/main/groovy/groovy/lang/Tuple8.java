@@ -258,7 +258,7 @@ public final class Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> extends Tuple {
      * Limit this tuple to degree 0.
      */
     public final Tuple0 limit0() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**
@@ -377,7 +377,7 @@ public final class Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> extends Tuple {
      * Skip 8 degrees from this tuple.
      */
     public final Tuple0 skip8() {
-        return new Tuple0();
+        return Tuple0.INSTANCE;
     }
 
     /**
