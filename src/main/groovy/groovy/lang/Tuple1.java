@@ -216,6 +216,13 @@ public final class Tuple1<T1> extends Tuple {
         return new Tuple1<>(function.apply(v1));
     }
 
+    /**
+     * Maps the attributes of this tuple using a mapper function.
+     */
+    public final <U1> Tuple1<U1> mapAll(Function1<? super T1, Tuple1<U1>> function) {
+        return function.apply(v1);
+    }
+
     @Override
     public Tuple1<T1> clone() {
         return new Tuple1<>(this);

@@ -458,6 +458,20 @@ public final class Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> extends Tupl
         return new Tuple10<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, function.apply(v10));
     }
 
+    /**
+     * Maps the attributes of this tuple using a mapper function.
+     */
+    public final <U1, U2, U3, U4, U5, U6, U7, U8, U9, U10> Tuple10<U1, U2, U3, U4, U5, U6, U7, U8, U9, U10> mapAll(Function10<? super T1, ? super T2, ? super T3, ? super T4, ? super T5, ? super T6, ? super T7, ? super T8, ? super T9, ? super T10, Tuple10<U1, U2, U3, U4, U5, U6, U7, U8, U9, U10>> function) {
+        return function.apply(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10);
+    }
+
+    /**
+     * Maps the attributes of this tuple using mapper functions.
+     */
+    public final <U1, U2, U3, U4, U5, U6, U7, U8, U9, U10> Tuple10<U1, U2, U3, U4, U5, U6, U7, U8, U9, U10> mapAll(Function1<? super T1, ? extends U1> function1, Function1<? super T2, ? extends U2> function2, Function1<? super T3, ? extends U3> function3, Function1<? super T4, ? extends U4> function4, Function1<? super T5, ? extends U5> function5, Function1<? super T6, ? extends U6> function6, Function1<? super T7, ? extends U7> function7, Function1<? super T8, ? extends U8> function8, Function1<? super T9, ? extends U9> function9, Function1<? super T10, ? extends U10> function10) {
+        return new Tuple10<>(function1.apply(v1), function2.apply(v2), function3.apply(v3), function4.apply(v4), function5.apply(v5), function6.apply(v6), function7.apply(v7), function8.apply(v8), function9.apply(v9), function10.apply(v10));
+    }
+
     @Override
     public Tuple10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> clone() {
         return new Tuple10<>(this);
