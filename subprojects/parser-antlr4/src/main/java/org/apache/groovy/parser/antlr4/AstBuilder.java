@@ -305,6 +305,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.SUB;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ShiftExprAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.StandardLambdaExpressionContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.StandardLambdaParametersContext;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.StatementContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.StatementsContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.StringLiteralAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.StringLiteralContext;
@@ -743,21 +744,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public WhileStatement visitWhileStmtAlt(WhileStmtAltContext ctx) {
-        Expression conditionExpression = this.visitExpressionInPar(ctx.expressionInPar());
-        BooleanExpression booleanExpression =
-                configureAST(
-                        new BooleanExpression(conditionExpression), conditionExpression);
-
-        Statement loopBlock = this.unpackStatement((Statement) this.visit(ctx.statement()));
+        Tuple2<BooleanExpression, Statement> conditionAndBlock = createLoopConditionExpressionAndBlock(ctx.expressionInPar(), ctx.statement());
 
         return configureAST(
-                new WhileStatement(booleanExpression, asBoolean(loopBlock) ? loopBlock : EmptyStatement.INSTANCE),
+                new WhileStatement(conditionAndBlock.getV1(), asBoolean(conditionAndBlock.getV2()) ? conditionAndBlock.getV2() : EmptyStatement.INSTANCE),
                 ctx);
     }
 
     @Override
     public DoWhileStatement visitDoWhileStmtAlt(DoWhileStmtAltContext ctx) {
-        Expression conditionExpression = this.visitExpressionInPar(ctx.expressionInPar());
+        Tuple2<BooleanExpression, Statement> conditionAndBlock = createLoopConditionExpressionAndBlock(ctx.expressionInPar(), ctx.statement());
+
+        return configureAST(
+                new DoWhileStatement(conditionAndBlock.getV1(), asBoolean(conditionAndBlock.getV2()) ? conditionAndBlock.getV2() : EmptyStatement.INSTANCE),
+                ctx);
+    }
+
+    private Tuple2<BooleanExpression, Statement> createLoopConditionExpressionAndBlock(ExpressionInParContext eipc, StatementContext sc) {
+        Expression conditionExpression = this.visitExpressionInPar(eipc);
 
         BooleanExpression booleanExpression =
                 configureAST(
@@ -765,11 +769,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         conditionExpression
                 );
 
-        Statement loopBlock = this.unpackStatement((Statement) this.visit(ctx.statement()));
+        Statement loopBlock = this.unpackStatement((Statement) this.visit(sc));
 
-        return configureAST(
-                new DoWhileStatement(booleanExpression, asBoolean(loopBlock) ? loopBlock : EmptyStatement.INSTANCE),
-                ctx);
+        return tuple(booleanExpression, loopBlock);
     }
 
     @Override
