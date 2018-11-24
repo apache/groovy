@@ -24,6 +24,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.parser.antlr4.GroovyParser;
 import org.codehaus.groovy.ast.ASTNode;
 
+import static groovy.lang.Tuple.tuple;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
@@ -60,9 +61,9 @@ public class PositionConfigureUtils {
         }
 
         if (0 == newLineCnt) {
-            return new Tuple2<>(token.getLine(), token.getCharPositionInLine() + 1 + token.getText().length());
+            return tuple(token.getLine(), token.getCharPositionInLine() + 1 + token.getText().length());
         } else { // e.g. GStringEnd contains newlines, we should fix the location info
-            return new Tuple2<>(token.getLine() + newLineCnt, stopTextLength - stopText.lastIndexOf('\n'));
+            return tuple(token.getLine() + newLineCnt, stopTextLength - stopText.lastIndexOf('\n'));
         }
     }
 
@@ -106,8 +107,8 @@ public class PositionConfigureUtils {
 
     public static <T extends ASTNode> void configureEndPosition(T astNode, Token token) {
         Tuple2<Integer, Integer> endPosition = endPosition(token);
-        astNode.setLastLineNumber(endPosition.getFirst());
-        astNode.setLastColumnNumber(endPosition.getSecond());
+        astNode.setLastLineNumber(endPosition.getV1());
+        astNode.setLastColumnNumber(endPosition.getV2());
     }
 
     public static <T extends ASTNode> T configureAST(T astNode, ASTNode start, ASTNode stop) {

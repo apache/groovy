@@ -30,8 +30,8 @@ import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
+import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
@@ -137,6 +137,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ADD;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.AS;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.AdditiveExprAltContext;
@@ -475,7 +476,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         this.configureScriptClassNode();
 
         if (null != this.numberFormatError) {
-            throw createParsingFailedException(this.numberFormatError.getSecond().getMessage(), this.numberFormatError.getFirst());
+            throw createParsingFailedException(this.numberFormatError.getV2().getMessage(), this.numberFormatError.getV1());
         }
 
         return moduleNode;
@@ -657,7 +658,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         Statement loopBlock = this.unpackStatement((Statement) this.visit(ctx.statement()));
 
         return configureAST(
-                new ForStatement(controlTuple.getFirst(), controlTuple.getSecond(), asBoolean(loopBlock) ? loopBlock : EmptyStatement.INSTANCE),
+                new ForStatement(controlTuple.getV1(), controlTuple.getV2(), asBoolean(loopBlock) ? loopBlock : EmptyStatement.INSTANCE),
                 ctx);
     }
 
@@ -726,7 +727,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         // FIXME Groovy will ignore variableModifier of parameter in the for control
         // In order to make the new parser behave same with the old one, we do not process variableModifier*
 
-        return new Tuple2<>(parameter, (Expression) this.visit(ctx.expression()));
+        return tuple(parameter, (Expression) this.visit(ctx.expression()));
     }
 
     @Override
@@ -737,7 +738,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         closureListExpression.addExpression(asBoolean(ctx.expression()) ? (Expression) this.visit(ctx.expression()) : EmptyExpression.INSTANCE);
         closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
 
-        return new Tuple2<>(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
+        return tuple(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
     }
 
     @Override
@@ -974,16 +975,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
                     boolean isLast = labelCnt - 1 == statementList.size();
 
-                    switch (tuple.getFirst().getType()) {
+                    switch (tuple.getV1().getType()) {
                         case CASE: {
                             if (!asBoolean(statementList)) {
-                                firstLabelHolder.add(tuple.getFirst());
+                                firstLabelHolder.add(tuple.getV1());
                             }
 
                             statementList.add(
                                     configureAST(
                                             new CaseStatement(
-                                                    tuple.getSecond(),
+                                                    tuple.getV2(),
 
                                                     // check whether processing the last label. if yes, block statement should be attached.
                                                     isLast ? this.visitBlockStatements(ctx.blockStatements())
@@ -1015,9 +1016,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     @Override
     public Tuple2<Token, Expression> visitSwitchLabel(SwitchLabelContext ctx) {
         if (asBoolean(ctx.CASE())) {
-            return new Tuple2<>(ctx.CASE().getSymbol(), (Expression) this.visit(ctx.expression()));
+            return tuple(ctx.CASE().getSymbol(), (Expression) this.visit(ctx.expression()));
         } else if (asBoolean(ctx.DEFAULT())) {
-            return new Tuple2<>(ctx.DEFAULT().getSymbol(), EmptyExpression.INSTANCE);
+            return tuple(ctx.DEFAULT().getSymbol(), EmptyExpression.INSTANCE);
         }
 
         throw createParsingFailedException("Unsupported switch label: " + ctx.getText(), ctx);
@@ -2330,7 +2331,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
             boolean isSafeChain = isTrue(baseExpr, PATH_EXPRESSION_BASE_EXPR_SAFE_CHAIN);
 
             return configureAST(
-                    new BinaryExpression(baseExpr, createGroovyToken(tuple.getFirst()), tuple.getSecond(), isSafeChain || asBoolean(ctx.indexPropertyArgs().QUESTION())),
+                    new BinaryExpression(baseExpr, createGroovyToken(tuple.getV1()), tuple.getV2(), isSafeChain || asBoolean(ctx.indexPropertyArgs().QUESTION())),
                     ctx);
         } else if (asBoolean(ctx.namedPropertyArgs())) { // this is a special way to signify a cast, e.g. Person[name: 'Daniel.Sun', location: 'Shanghai']
             List<MapEntryExpression> mapEntryExpressionList =
@@ -2737,14 +2738,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 indexExpr = expr;
             }
 
-            return new Tuple2<>(ctx.LBRACK().getSymbol(), indexExpr);
+            return tuple(ctx.LBRACK().getSymbol(), indexExpr);
         }
 
         // e.g. a[1, 2]
         ListExpression listExpression = new ListExpression(expressionList);
         listExpression.setWrapped(true);
 
-        return new Tuple2<>(ctx.LBRACK().getSymbol(), configureAST(listExpression, ctx));
+        return tuple(ctx.LBRACK().getSymbol(), configureAST(listExpression, ctx));
     }
 
     @Override
@@ -3505,7 +3506,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         try {
             num = Numbers.parseInteger(null, text);
         } catch (Exception e) {
-            this.numberFormatError = new Tuple2<>(ctx, e);
+            this.numberFormatError = tuple(ctx, e);
         }
 
         ConstantExpression constantExpression = new ConstantExpression(num, !text.startsWith(SUB_STR));
@@ -3523,7 +3524,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         try {
             num = Numbers.parseDecimal(text);
         } catch (Exception e) {
-            this.numberFormatError = new Tuple2<>(ctx, e);
+            this.numberFormatError = tuple(ctx, e);
         }
 
         ConstantExpression constantExpression = new ConstantExpression(num, !text.startsWith(SUB_STR));
@@ -4132,7 +4133,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         AnnotationNode annotationNode = new AnnotationNode(ClassHelper.make(annotationName));
         List<Tuple2<String, Expression>> annotationElementValues = this.visitElementValues(ctx.elementValues());
 
-        annotationElementValues.forEach(e -> annotationNode.addMember(e.getFirst(), e.getSecond()));
+        annotationElementValues.forEach(e -> annotationNode.addMember(e.getV1(), e.getV2()));
 
         return configureAST(annotationNode, ctx);
     }
@@ -4146,9 +4147,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         List<Tuple2<String, Expression>> annotationElementValues = new LinkedList<>();
 
         if (asBoolean(ctx.elementValuePairs())) {
-            this.visitElementValuePairs(ctx.elementValuePairs()).forEach((key, value) -> annotationElementValues.add(new Tuple2<>(key, value)));
+            this.visitElementValuePairs(ctx.elementValuePairs()).forEach((key, value) -> annotationElementValues.add(tuple(key, value)));
         } else if (asBoolean(ctx.elementValue())) {
-            annotationElementValues.add(new Tuple2<>(VALUE_STR, this.visitElementValue(ctx.elementValue())));
+            annotationElementValues.add(tuple(VALUE_STR, this.visitElementValue(ctx.elementValue())));
         }
 
         return annotationElementValues;
@@ -4165,8 +4166,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         return ctx.elementValuePair().stream()
                 .map(this::visitElementValuePair)
                 .collect(Collectors.toMap(
-                        Tuple2::getFirst,
-                        Tuple2::getSecond,
+                        Tuple2::getV1,
+                        Tuple2::getV2,
                         (k, v) -> {
                             throw new IllegalStateException(String.format("Duplicate key %s", k));
                         },
@@ -4176,7 +4177,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public Tuple2<String, Expression> visitElementValuePair(ElementValuePairContext ctx) {
-        return new Tuple2<>(ctx.elementValuePairName().getText(), this.visitElementValue(ctx.elementValue()));
+        return tuple(ctx.elementValuePairName().getText(), this.visitElementValue(ctx.elementValue()));
     }
 
     @Override
