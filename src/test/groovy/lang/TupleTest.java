@@ -662,4 +662,42 @@ public class TupleTest extends GroovyTestCase {
         assertEquals(tuple(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17), tuple(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16).mapAll(v1 -> v1 + 1, v2 -> v2 + 1, v3 -> v3 + 1, v4 -> v4 + 1, v5 -> v5 + 1, v6 -> v6 + 1, v7 -> v7 + 1, v8 -> v8 + 1, v9 -> v9 + 1, v10 -> v10 + 1, v11 -> v11 + 1, v12 -> v12 + 1, v13 -> v13 + 1, v14 -> v14 + 1, v15 -> v15 + 1, v16 -> v16 + 1));
 
     }
+
+    public void testMap() {
+        assertEquals(tuple(2), tuple(1).map1(e -> e + 1));
+        assertEquals(tuple(2, 3), tuple(1, 2).map1(e -> e + 1).map2(e -> e + 1));
+        assertEquals(tuple(2, 3, 4), tuple(1, 2, 3).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5), tuple(1, 2, 3, 4).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1).map9(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1).map9(e -> e + 1).map10(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1).map9(e -> e + 1).map10(e -> e + 1).map11(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1).map9(e -> e + 1).map10(e -> e + 1).map11(e -> e + 1).map12(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1).map9(e -> e + 1).map10(e -> e + 1).map11(e -> e + 1).map12(e -> e + 1).map13(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1).map9(e -> e + 1).map10(e -> e + 1).map11(e -> e + 1).map12(e -> e + 1).map13(e -> e + 1).map14(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1).map9(e -> e + 1).map10(e -> e + 1).map11(e -> e + 1).map12(e -> e + 1).map13(e -> e + 1).map14(e -> e + 1).map15(e -> e + 1));
+        assertEquals(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).map1(e -> e + 1).map2(e -> e + 1).map3(e -> e + 1).map4(e -> e + 1).map5(e -> e + 1).map6(e -> e + 1).map7(e -> e + 1).map8(e -> e + 1).map9(e -> e + 1).map10(e -> e + 1).map11(e -> e + 1).map12(e -> e + 1).map13(e -> e + 1).map14(e -> e + 1).map15(e -> e + 1).map16(e -> e + 1));
+
+        assertEquals(new Integer(0), tuple().map(() -> 0));
+        assertEquals(new Integer(1), tuple(1).map((v1) -> v1));
+        assertEquals(new Integer(3), tuple(1, 2).map((v1, v2) -> v1 + v2));
+        assertEquals(new Integer(6), tuple(1, 2, 3).map((v1, v2, v3) -> v1 + v2 + v3));
+        assertEquals(new Integer(10), tuple(1, 2, 3, 4).map((v1, v2, v3, v4) -> v1 + v2 + v3 + v4));
+        assertEquals(new Integer(15), tuple(1, 2, 3, 4, 5).map((v1, v2, v3, v4, v5) -> v1 + v2 + v3 + v4 + v5));
+        assertEquals(new Integer(21), tuple(1, 2, 3, 4, 5, 6).map((v1, v2, v3, v4, v5, v6) -> v1 + v2 + v3 + v4 + v5 + v6));
+        assertEquals(new Integer(28), tuple(1, 2, 3, 4, 5, 6, 7).map((v1, v2, v3, v4, v5, v6, v7) -> v1 + v2 + v3 + v4 + v5 + v6 + v7));
+        assertEquals(new Integer(36), tuple(1, 2, 3, 4, 5, 6, 7, 8).map((v1, v2, v3, v4, v5, v6, v7, v8) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8));
+        assertEquals(new Integer(45), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).map((v1, v2, v3, v4, v5, v6, v7, v8, v9) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9));
+        assertEquals(new Integer(55), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10));
+        assertEquals(new Integer(66), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11));
+        assertEquals(new Integer(78), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12));
+        assertEquals(new Integer(91), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13));
+        assertEquals(new Integer(105), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14));
+        assertEquals(new Integer(120), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+
+    }
 }
