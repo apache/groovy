@@ -595,6 +595,180 @@ public class TupleTest extends GroovyTestCase {
 
     }
 
+    public void testLimitAndSkip() {
+        assertEquals(tuple(), tuple().limit0().concat(tuple().skip0()));
+
+        assertEquals(tuple(1), tuple(1).limit0().concat(tuple(1).skip0()));
+        assertEquals(tuple(1), tuple(1).limit1().concat(tuple(1).skip1()));
+
+        assertEquals(tuple(1, 2), tuple(1, 2).limit0().concat(tuple(1, 2).skip0()));
+        assertEquals(tuple(1, 2), tuple(1, 2).limit1().concat(tuple(1, 2).skip1()));
+        assertEquals(tuple(1, 2), tuple(1, 2).limit2().concat(tuple(1, 2).skip2()));
+
+        assertEquals(tuple(1, 2, 3), tuple(1, 2, 3).limit0().concat(tuple(1, 2, 3).skip0()));
+        assertEquals(tuple(1, 2, 3), tuple(1, 2, 3).limit1().concat(tuple(1, 2, 3).skip1()));
+        assertEquals(tuple(1, 2, 3), tuple(1, 2, 3).limit2().concat(tuple(1, 2, 3).skip2()));
+        assertEquals(tuple(1, 2, 3), tuple(1, 2, 3).limit3().concat(tuple(1, 2, 3).skip3()));
+
+        assertEquals(tuple(1, 2, 3, 4), tuple(1, 2, 3, 4).limit0().concat(tuple(1, 2, 3, 4).skip0()));
+        assertEquals(tuple(1, 2, 3, 4), tuple(1, 2, 3, 4).limit1().concat(tuple(1, 2, 3, 4).skip1()));
+        assertEquals(tuple(1, 2, 3, 4), tuple(1, 2, 3, 4).limit2().concat(tuple(1, 2, 3, 4).skip2()));
+        assertEquals(tuple(1, 2, 3, 4), tuple(1, 2, 3, 4).limit3().concat(tuple(1, 2, 3, 4).skip3()));
+        assertEquals(tuple(1, 2, 3, 4), tuple(1, 2, 3, 4).limit4().concat(tuple(1, 2, 3, 4).skip4()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5), tuple(1, 2, 3, 4, 5).limit0().concat(tuple(1, 2, 3, 4, 5).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5), tuple(1, 2, 3, 4, 5).limit1().concat(tuple(1, 2, 3, 4, 5).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5), tuple(1, 2, 3, 4, 5).limit2().concat(tuple(1, 2, 3, 4, 5).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5), tuple(1, 2, 3, 4, 5).limit3().concat(tuple(1, 2, 3, 4, 5).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5), tuple(1, 2, 3, 4, 5).limit4().concat(tuple(1, 2, 3, 4, 5).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5), tuple(1, 2, 3, 4, 5).limit5().concat(tuple(1, 2, 3, 4, 5).skip5()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5, 6).limit0().concat(tuple(1, 2, 3, 4, 5, 6).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5, 6).limit1().concat(tuple(1, 2, 3, 4, 5, 6).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5, 6).limit2().concat(tuple(1, 2, 3, 4, 5, 6).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5, 6).limit3().concat(tuple(1, 2, 3, 4, 5, 6).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5, 6).limit4().concat(tuple(1, 2, 3, 4, 5, 6).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5, 6).limit5().concat(tuple(1, 2, 3, 4, 5, 6).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5, 6).limit6().concat(tuple(1, 2, 3, 4, 5, 6).skip6()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7).skip7()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8).skip8()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip8()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).limit9().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).skip9()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip8()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit9().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip9()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).limit10().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).skip10()));
+
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip8()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit9().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip9()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit10().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip10()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).limit11().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).skip11()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip8()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit9().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip9()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit10().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip10()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit11().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip11()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).limit12().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).skip12()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip8()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit9().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip9()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit10().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip10()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit11().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip11()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit12().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip12()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).limit13().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).skip13()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip8()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit9().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip9()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit10().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip10()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit11().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip11()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit12().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip12()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit13().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip13()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).limit14().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).skip14()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip8()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit9().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip9()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit10().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip10()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit11().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip11()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit12().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip12()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit13().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip13()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit14().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip14()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).limit15().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).skip15()));
+
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit0().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip0()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit1().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip1()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit2().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip2()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit3().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip3()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit4().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip4()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit5().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip5()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit6().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip6()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit7().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip7()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit8().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip8()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit9().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip9()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit10().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip10()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit11().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip11()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit12().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip12()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit13().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip13()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit14().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip14()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit15().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip15()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).limit16().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).skip16()));
+
+    }
+
     public void testCompareTo() {
         Set<Tuple2<Integer, String>> set = new TreeSet<>();
 
