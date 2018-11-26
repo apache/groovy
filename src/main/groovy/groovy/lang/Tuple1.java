@@ -58,6 +58,13 @@ public final class Tuple1<T1> extends Tuple {
     /**
      * Concatenate a tuple to this tuple.
      */
+    public final Tuple1<T1> concat(Tuple0 tuple) {
+        return new Tuple1<>(v1);
+    }
+
+    /**
+     * Concatenate a tuple to this tuple.
+     */
     public final <T2> Tuple2<T1, T2> concat(Tuple1<T2> tuple) {
         return new Tuple2<>(v1, tuple.getV1());
     }

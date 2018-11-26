@@ -94,6 +94,14 @@ public final class Tuple4<T1, T2, T3, T4> extends Tuple {
     /**
      * Concatenate a tuple to this tuple.
      */
+    public final Tuple4<T1, T2, T3, T4> concat(Tuple0 tuple) {
+        return new Tuple4<>(v1, v2, v3, v4);
+    }
+
+
+    /**
+     * Concatenate a tuple to this tuple.
+     */
     public final <T5> Tuple5<T1, T2, T3, T4, T5> concat(Tuple1<T5> tuple) {
         return new Tuple5<>(v1, v2, v3, v4, tuple.getV1());
     }

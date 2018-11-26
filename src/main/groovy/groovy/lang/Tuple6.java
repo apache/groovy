@@ -116,6 +116,14 @@ public final class Tuple6<T1, T2, T3, T4, T5, T6> extends Tuple {
     /**
      * Concatenate a tuple to this tuple.
      */
+    public final Tuple6<T1, T2, T3, T4, T5, T6> concat(Tuple0 tuple) {
+        return new Tuple6<>(v1, v2, v3, v4, v5, v6);
+    }
+
+
+    /**
+     * Concatenate a tuple to this tuple.
+     */
     public final <T7> Tuple7<T1, T2, T3, T4, T5, T6, T7> concat(Tuple1<T7> tuple) {
         return new Tuple7<>(v1, v2, v3, v4, v5, v6, tuple.getV1());
     }

@@ -124,6 +124,13 @@ public final class Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> ex
     /**
      * Concatenate a tuple to this tuple.
      */
+    public final Tuple12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> concat(Tuple0 tuple) {
+        return new Tuple12<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12);
+    }
+
+    /**
+     * Concatenate a tuple to this tuple.
+     */
     public final <T13> Tuple13<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> concat(Tuple1<T13> tuple) {
         return new Tuple13<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, tuple.getV1());
     }

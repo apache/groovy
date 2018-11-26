@@ -381,9 +381,45 @@ public class TupleTest extends GroovyTestCase {
         assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e", 6, "f", 7, "g", 8), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e").concat(6).concat("f").concat(7).concat("g").concat(8));
         assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d", 5, "e", 6, "f", 7, "g", 8, "h"), tuple(1).concat("a").concat(2).concat("b").concat(3).concat("c").concat(4).concat("d").concat(5).concat("e").concat(6).concat("f").concat(7).concat("g").concat(8).concat("h"));
 
-
         assertEquals(tuple(1, "a"), tuple(1).concat(tuple("a")));
         assertEquals(tuple(1, "a", 2, "b", 3, "c", 4, "d"), tuple(1).concat(tuple("a", 2, "b").concat(tuple(3).concat(tuple("c", 4, "d")))));
+
+        assertEquals(new Integer(136), tuple().concat(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1).concat(tuple(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2).concat(tuple(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3).concat(tuple(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4).concat(tuple(5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5).concat(tuple(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6).concat(tuple(7, 8, 9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7).concat(tuple(8, 9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8).concat(tuple(9, 10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).concat(tuple(10, 11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).concat(tuple(11, 12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).concat(tuple(12, 13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).concat(tuple(13, 14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).concat(tuple(14, 15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).concat(tuple(15, 16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).concat(tuple(16)).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+        assertEquals(new Integer(136), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).concat(tuple()).map((v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16) -> v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16));
+
+        assertEquals(tuple(), tuple().concat(tuple()));
+        assertEquals(tuple(1), tuple(1).concat(tuple()));
+        assertEquals(tuple(1, 2), tuple(1, 2).concat(tuple()));
+        assertEquals(tuple(1, 2, 3), tuple(1, 2, 3).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4), tuple(1, 2, 3, 4).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5), tuple(1, 2, 3, 4, 5).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6), tuple(1, 2, 3, 4, 5, 6).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7), tuple(1, 2, 3, 4, 5, 6, 7).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8), tuple(1, 2, 3, 4, 5, 6, 7, 8).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15).concat(tuple()));
+        assertEquals(tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16).concat(tuple()));
+
     }
 
     public void testCompareTo() {
