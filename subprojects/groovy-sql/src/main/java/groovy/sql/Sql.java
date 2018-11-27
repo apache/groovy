@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Tuple;
+import groovy.transform.NamedParam;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -562,7 +563,23 @@ public class Sql implements AutoCloseable {
      * @throws SQLException           if a database access error occurs
      * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
-    public static Sql newInstance(Map<String, Object> args) throws SQLException, ClassNotFoundException {
+    public static Sql newInstance(
+            @NamedParam(value = "url", type = String.class, required = true)
+            @NamedParam(value = "properties", type = Properties.class)
+            @NamedParam(value = "driverClassName", type = String.class)
+            @NamedParam(value = "driver", type = String.class)
+            @NamedParam(value = "user", type = String.class)
+            @NamedParam(value = "password", type = String.class)
+            @NamedParam(value = "cacheNamedQueries", type = Boolean.class)
+            @NamedParam(value = "cacheStatements", type = Boolean.class)
+            @NamedParam(value = "enableNamedQueries", type = Boolean.class)
+            @NamedParam(value = "resultSetConcurrency", type = Integer.class)
+            @NamedParam(value = "resultSetHoldability", type = Integer.class)
+            @NamedParam(value = "resultSetType", type = Integer.class)
+            // TODO below will be deleted once we fix type checker to understand
+            // readonly Map otherwise seen as Map<String, Serializable>
+            @NamedParam(value = "unused", type = Object.class)
+            Map<String, Object> args) throws SQLException, ClassNotFoundException {
         if (!args.containsKey("url"))
             throw new IllegalArgumentException("Argument 'url' is required");
 
@@ -575,6 +592,7 @@ public class Sql implements AutoCloseable {
         // Make a copy so destructive operations will not affect the caller
         Map<String, Object> sqlArgs = new HashMap<String, Object>(args);
 
+        sqlArgs.remove("unused"); // TODO remove
         Object driverClassName = sqlArgs.remove("driverClassName");
         if (driverClassName == null) driverClassName = sqlArgs.remove("driver");
         if (driverClassName != null) loadDriver(driverClassName.toString());
@@ -631,9 +649,27 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
-    public static void withInstance(Map<String, Object> args, Closure c) throws SQLException, ClassNotFoundException {
+    public static void withInstance(
+            @NamedParam(value = "url", type = String.class, required = true)
+            @NamedParam(value = "properties", type = Properties.class)
+            @NamedParam(value = "driverClassName", type = String.class)
+            @NamedParam(value = "driver", type = String.class)
+            @NamedParam(value = "user", type = String.class)
+            @NamedParam(value = "password", type = String.class)
+            @NamedParam(value = "cacheNamedQueries", type = Boolean.class)
+            @NamedParam(value = "cacheStatements", type = Boolean.class)
+            @NamedParam(value = "enableNamedQueries", type = Boolean.class)
+            @NamedParam(value = "resultSetConcurrency", type = Integer.class)
+            @NamedParam(value = "resultSetHoldability", type = Integer.class)
+            @NamedParam(value = "resultSetType", type = Integer.class)
+            // TODO below will be deleted once we fix type checker to understand
+            // readonly Map otherwise seen as Map<String, Serializable>
+            @NamedParam(value = "unused", type = Object.class)
+            Map<String, Object> args,
+            Closure c) throws SQLException, ClassNotFoundException {
         Sql sql = null;
         try {
+            args.remove("unused"); // TODO remove
             sql = newInstance(args);
             c.call(sql);
         } finally {
