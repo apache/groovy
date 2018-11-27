@@ -17,10 +17,6 @@
  *  under the License.
  */
 package org.codehaus.groovy.runtime
-
-import java.util.stream.Collectors
-import java.util.stream.Stream
-
 /**
  * Tests for DefaultGroovyStaticMethods
  */
@@ -32,21 +28,5 @@ class DefaultGroovyStaticMethodsTest extends GroovyTestCase {
         long timeMillis2 = System.currentTimeMillis()
         assert timeMillis/1000 as int <= timeSeconds
         assert timeMillis2/1000 as int >= timeSeconds
-    }
-
-    void testFirst() {
-        assert 2 == Stream.of(2, 3, 6, 5).collect(Collectors.first()).get()
-    }
-
-    void testLast() {
-        assert 5 == Stream.of(2, 3, 6, 5).collect(Collectors.last()).get()
-    }
-
-    void testFirstAndLast() {
-        Tuple2<Integer, Integer> firstAndLastTuple =
-                Stream.of(2, 3, 6, 5)
-                        .collect(Tuple.collectors(Collectors.first(), Collectors.last()))
-                        .map1(Optional::get).map2(Optional::get)
-        assert Tuple.tuple(2, 5) == firstAndLastTuple
     }
 }

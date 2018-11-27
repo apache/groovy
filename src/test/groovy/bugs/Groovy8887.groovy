@@ -38,32 +38,6 @@ class Groovy8887 extends GroovyTestCase {
                     assert 35 == age
                 }
                 
-                void multiAssignedByMap1() {
-                    Tuple2<String, Integer> personInfo = new Tuple2<String, Integer>('Daniel', 35)
-                    def (String name, Integer age) = personInfo.map1(e -> "${e}.Sun")
-                    assert 'Daniel.Sun' == name
-                    assert 35 == age
-                }
-                
-                void multiAssignedByMap2() {
-                    Tuple2<String, Integer> personInfo = new Tuple2<String, Integer>('Daniel', 35)
-                    def (String name, Integer age) = personInfo.map2(e -> e - 1)
-                    assert 'Daniel' == name
-                    assert 34 == age
-                }
-                
-                void multiAssignedByFluentMap1() {
-                    def (String name, Integer age) = findPersonInfo().map1(e -> "${e}.Sun")
-                    assert 'Daniel.Sun' == name
-                    assert 35 == age
-                }
-                
-                void multiAssignedByFluentMap2() {
-                    def (String name, Integer age) = findPersonInfo().map2(e -> e - 1)
-                    assert 'Daniel' == name
-                    assert 34 == age
-                }
-                
                 void multiAssignedByFactory() {
                     def (String name, Integer age) = Tuple.tuple('Daniel', 35)
                     assert 'Daniel' == name
@@ -86,10 +60,6 @@ class Groovy8887 extends GroovyTestCase {
             def st = new StcTuple()
             st.multiAssignedByMethodCall()
             st.multiAssignedByVariableAccess()
-            st.multiAssignedByMap1()
-            st.multiAssignedByMap2()
-            st.multiAssignedByFluentMap1()
-            st.multiAssignedByFluentMap2()
             st.multiAssignedByFactory()
             st.multiAssignedByConstructor()
         '''
