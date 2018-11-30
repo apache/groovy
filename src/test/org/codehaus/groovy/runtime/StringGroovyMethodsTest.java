@@ -212,9 +212,12 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
             @Override
             public String call(Object arguments) {
                 assertTrue(arguments instanceof List);
-                Object element = ((List)arguments).get(2);
-                assertTrue(element instanceof String);
-                return element.toString();
+                return ((List)arguments).get(2).toString();
+            }
+
+            @Override
+            public String call(Object... args) {
+                return call((Object) args);
             }
         };
     }

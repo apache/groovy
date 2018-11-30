@@ -925,7 +925,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #find(String, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.8.2
      */
-    public static String find(CharSequence self, CharSequence regex, @ClosureParams(value=FromString.class, options="java.util.List<java.lang.String>") Closure closure) {
+    public static String find(CharSequence self, CharSequence regex, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure closure) {
         return find(self, Pattern.compile(regex.toString()), closure);
     }
 
@@ -1020,7 +1020,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #find(String, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.8.2
      */
-    public static String find(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class, options="java.util.List<java.lang.String>") Closure closure) {
+    public static String find(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure closure) {
         Matcher matcher = pattern.matcher(self.toString());
         if (matcher.find()) {
             if (hasGroup(matcher)) {
@@ -1051,7 +1051,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #find(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
      */
     @Deprecated
-    public static String find(String self, Pattern pattern, @ClosureParams(value=FromString.class, options="java.util.List<java.lang.String>") Closure closure) {
+    public static String find(String self, Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure closure) {
         return find((CharSequence) self, pattern, closure);
     }
 
@@ -1069,7 +1069,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #find(CharSequence, CharSequence, groovy.lang.Closure)
      */
     @Deprecated
-    public static String find(String self, String regex, @ClosureParams(value=FromString.class, options="java.util.List<java.lang.String>") Closure closure) {
+    public static String find(String self, String regex, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure closure) {
         return find((CharSequence) self, (CharSequence) regex, closure);
     }
 
@@ -1125,7 +1125,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #findAll(CharSequence, Pattern, groovy.lang.Closure)
      * @since 1.8.2
      */
-    public static <T> List<T> findAll(CharSequence self, CharSequence regex, @ClosureParams(value=FromString.class, options="java.util.List<java.lang.String>") Closure<T> closure) {
+    public static <T> List<T> findAll(CharSequence self, CharSequence regex, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure<T> closure) {
         return findAll(self, Pattern.compile(regex.toString()), closure);
     }
 
@@ -1191,7 +1191,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #findAll(String, java.util.regex.Pattern, groovy.lang.Closure)
      * @since 1.8.2
      */
-    public static <T> List<T> findAll(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class, options="java.util.List<java.lang.String>") Closure<T> closure) {
+    public static <T> List<T> findAll(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure<T> closure) {
         Matcher matcher = pattern.matcher(self.toString());
         return DefaultGroovyMethods.collect(matcher, closure);
     }
@@ -1210,7 +1210,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #findAll(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
      */
     @Deprecated
-    public static <T> List<T> findAll(String self, Pattern pattern, @ClosureParams(value=FromString.class, options="java.util.List<java.lang.String>") Closure<T> closure) {
+    public static <T> List<T> findAll(String self, Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure<T> closure) {
         return findAll((CharSequence) self, pattern, closure);
     }
 
@@ -1228,7 +1228,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #findAll(CharSequence, CharSequence, groovy.lang.Closure)
      */
     @Deprecated
-    public static <T> List<T> findAll(String self, String regex, @ClosureParams(value=FromString.class, options="java.util.List<java.lang.String>") Closure<T> closure) {
+    public static <T> List<T> findAll(String self, String regex, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure<T> closure) {
         return findAll((CharSequence) self, (CharSequence) regex, closure);
     }
 
