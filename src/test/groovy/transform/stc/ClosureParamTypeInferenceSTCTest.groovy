@@ -428,6 +428,12 @@ import groovy.transform.stc.ClosureParams
 ''', 'Expected parameter of type java.lang.String but got java.util.Date'
     }
 
+    void testStringGroovyMethodsFindMethodWithList() {
+        assertScript '''
+            "75001 Paris".find(/(\\d{5}\\s(\\w+))/) { List<String> all -> println all*.toUpperCase() }
+'''
+    }
+
     void testInferenceForDGM_countIterableOrIterator() {
         assertScript '''
             assert ['Groovy','Java'].count { it.length() > 4 } == 1

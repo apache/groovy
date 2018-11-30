@@ -18,10 +18,14 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
 import groovy.util.GroovyTestCase;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public class StringGroovyMethodsTest extends GroovyTestCase {
 
@@ -40,7 +44,7 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
         assertEquals("`", answer);
         assertTrue(ScriptBytecodeAdapter.compareLessThan(answer, original));
     }
-    
+
     public void testToMethods() throws Exception {
         assertEquals(StringGroovyMethods.toInteger("1"), new Integer(1));
         assertEquals(StringGroovyMethods.toLong("1"), new Long(1));
@@ -120,4 +124,92 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
         assertFalse(StringGroovyMethods.isBlank("abc\t"));
         assertFalse(StringGroovyMethods.isBlank("\tabc\t"));
     }
+
+    public void testFindAllFromCharSequenceWithClosure() {
+        CharSequence charSequence = new StringBuilder().append("ABCD");
+        String regex = "(A)(B)(C)(D)";
+        Closure<String> closure = createClosureForFindOrFindAll();
+        List<String> result = StringGroovyMethods.findAll(charSequence, regex, closure);
+        List<String> expectedResult = Collections.singletonList("B");
+        assertEquals(expectedResult, result);
+    }
+
+    public void testFindAllFromCharSequenceWithPatternAndClosure() {
+        CharSequence charSequence = new StringBuilder().append("ABCD");
+        Pattern pattern = Pattern.compile("(A)(B)(C)(D)");
+        Closure<String> closure = createClosureForFindOrFindAll();
+        List<String> result = StringGroovyMethods.findAll(charSequence, pattern, closure);
+        List<String> expectedResult = Collections.singletonList("B");
+        assertEquals(expectedResult, result);
+    }
+
+    public void testFindAllFromStringWithClosure() {
+        String string = "ABCD";
+        String regex = "(A)(B)(C)(D)";
+        Closure<String> closure = createClosureForFindOrFindAll();
+        List<String> result = StringGroovyMethods.findAll(string, regex, closure);
+        List<String> expectedResult = Collections.singletonList("B");
+        assertEquals(expectedResult, result);
+    }
+
+    public void testFindAllFromStringWithPatternAndClosure() {
+        String string = "ABCD";
+        Pattern pattern = Pattern.compile("(A)(B)(C)(D)");
+        Closure<String> closure = createClosureForFindOrFindAll();
+        List<String> result = StringGroovyMethods.findAll(string, pattern, closure);
+        List<String> expectedResult = Collections.singletonList("B");
+        assertEquals(expectedResult, result);
+    }
+
+    public void testFindFromCharSequenceWithClosure() {
+        CharSequence charSequence = new StringBuilder().append("ABCD");
+        String regex = "(A)(B)(C)(D)";
+        Closure<String> closure = createClosureForFindOrFindAll();
+        String result = StringGroovyMethods.find(charSequence, regex, closure);
+        String expectedResult = "B";
+        assertEquals(expectedResult, result);
+    }
+
+    public void testFindFromCharSequenceWithPatternAndClosure() {
+        CharSequence charSequence = new StringBuilder().append("ABCD");
+        Pattern pattern = Pattern.compile("(A)(B)(C)(D)");
+        Closure<String> closure = createClosureForFindOrFindAll();
+        String result = StringGroovyMethods.find(charSequence, pattern, closure);
+        String expectedResult = "B";
+        assertEquals(expectedResult, result);
+    }
+
+    public void testFindFromStringWithClosure() {
+        String string = "ABCD";
+        String regex = "(A)(B)(C)(D)";
+        Closure<String> closure = createClosureForFindOrFindAll();
+        String result = StringGroovyMethods.find(string, regex, closure);
+        String expectedResult = "B";
+        assertEquals(expectedResult, result);
+    }
+
+    public void testFindFromStringWithPatternAndClosure() {
+        String string = "ABCD";
+        Pattern pattern = Pattern.compile("(A)(B)(C)(D)");
+        Closure<String> closure = createClosureForFindOrFindAll();
+        String result = StringGroovyMethods.find(string, pattern, closure);
+        String expectedResult = "B";
+        assertEquals(expectedResult, result);
+    }
+
+    private Closure<String> createClosureForFindOrFindAll() {
+        return new Closure<String>(this) {
+            @Override
+            public String call(Object arguments) {
+                assertTrue(arguments instanceof List);
+                return ((List) arguments).get(2).toString();
+            }
+
+            @Override
+            public String call(Object... args) {
+                return call((Object) args);
+            }
+        };
+    }
+
 }
