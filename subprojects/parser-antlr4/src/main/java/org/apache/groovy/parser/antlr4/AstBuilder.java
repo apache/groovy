@@ -361,14 +361,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         this.sourceUnit = sourceUnit;
         this.moduleNode = new ModuleNode(sourceUnit);
 
-        CharStream charStream = createCharStream(sourceUnit);
-
-        this.lexer = new GroovyLangLexer(charStream);
+        this.lexer = new GroovyLangLexer(createCharStream(sourceUnit));
         this.parser =
                 new GroovyLangParser(
                     new CommonTokenStream(this.lexer));
 
-        this.parser.setErrorHandler(new DescriptiveErrorStrategy(charStream));
+        this.parser.setErrorHandler(new DescriptiveErrorStrategy(this.lexer.getInputStream()));
 
         this.tryWithResourcesASTTransformation = new TryWithResourcesASTTransformation(this);
         this.groovydocManager = GroovydocManager.getInstance();
