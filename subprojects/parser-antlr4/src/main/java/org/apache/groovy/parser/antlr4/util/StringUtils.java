@@ -28,8 +28,6 @@ import java.util.regex.Pattern;
 /**
  * Utilities for handling strings
  *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/08/20
  */
 public class StringUtils {
 	private static final String BACKSLASH = "\\";
@@ -241,7 +239,6 @@ public class StringUtils {
 	 *
 	 * @param cs  the CharSequence to check, may be null
 	 * @return {@code true} if the CharSequence is empty or null
-	 * @since 3.0 Changed signature from isEmpty(String) to isEmpty(CharSequence)
 	 */
 	public static boolean isEmpty(final CharSequence cs) {
 		return cs == null || cs.length() == 0;
