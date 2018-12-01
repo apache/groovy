@@ -27,6 +27,9 @@ import java.util.regex.Pattern;
 
 /**
  * Utilities for handling strings
+ *
+ * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
+ * Created on    2016/08/20
  */
 public class StringUtils {
 	private static final String BACKSLASH = "\\";
@@ -169,6 +172,10 @@ public class StringUtils {
 		return length == quotationLength << 1 ? "" : text.substring(quotationLength, length - quotationLength);
 	}
 
+	public static boolean matches(String text, Pattern pattern) {
+		return pattern.matcher(text).matches();
+	}
+
 	/**
 	 * The modified implementation is based on StringUtils#replace(String text, String searchString, String replacement, int max), Apache commons-lang3-3.6
 	 *
@@ -234,6 +241,7 @@ public class StringUtils {
 	 *
 	 * @param cs  the CharSequence to check, may be null
 	 * @return {@code true} if the CharSequence is empty or null
+	 * @since 3.0 Changed signature from isEmpty(String) to isEmpty(CharSequence)
 	 */
 	public static boolean isEmpty(final CharSequence cs) {
 		return cs == null || cs.length() == 0;
