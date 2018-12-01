@@ -31,7 +31,7 @@ class Groovy5318Bug extends CompilableTestSupport {
         if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
             assert message.contains('Unexpected type arguments found prior to: ArrayList')
         } else {
-            assert message.contains('Unexpected input: \'new java.util<Integer>.\'')
+            assert message.contains('Unexpected input: \'.\'')
         }
     }
 }

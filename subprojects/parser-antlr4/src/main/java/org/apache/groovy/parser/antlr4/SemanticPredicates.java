@@ -21,12 +21,25 @@ package org.apache.groovy.parser.antlr4;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
-import static org.apache.groovy.parser.antlr4.GroovyParser.*;
-
+import static org.apache.groovy.parser.antlr4.GroovyParser.ASSIGN;
+import static org.apache.groovy.parser.antlr4.GroovyParser.BuiltInPrimitiveType;
+import static org.apache.groovy.parser.antlr4.GroovyParser.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyParser.DOT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.ExpressionContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.Identifier;
+import static org.apache.groovy.parser.antlr4.GroovyParser.LBRACK;
+import static org.apache.groovy.parser.antlr4.GroovyParser.LPAREN;
+import static org.apache.groovy.parser.antlr4.GroovyParser.LT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.PathExpressionContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExprAltContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExpressionContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
 /**
  * Some semantic predicates for altering the behaviour of the lexer and parser
  *
@@ -91,10 +104,34 @@ public class SemanticPredicates {
      * Check whether following a method name of command expression.
      * Method name should not end with "2: arguments" and "3: closure"
      *
-     * @param t the type of pathExpression
+     * @param context the preceding expression
+     * @return
      */
-    public static boolean isFollowingMethodName(int t) {
-        return !(2 == t || 3 == t);
+    public static boolean isFollowingArgumentsOrClosure(ExpressionContext context) {
+        if (context instanceof PostfixExprAltContext) {
+            List<ParseTree> peacChildren = ((PostfixExprAltContext) context).children;
+
+            if (1 == peacChildren.size()) {
+                ParseTree peacChild = peacChildren.get(0);
+
+                if (peacChild instanceof PostfixExpressionContext) {
+                    List<ParseTree>  pecChildren = ((PostfixExpressionContext) peacChild).children;
+
+                    if (1 == pecChildren.size()) {
+                        ParseTree pecChild = pecChildren.get(0);
+
+                        if (pecChild instanceof PathExpressionContext) {
+                            PathExpressionContext pec = (PathExpressionContext) pecChild;
+                            int t = pec.t;
+
+                            return (2 == t || 3 == t);
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

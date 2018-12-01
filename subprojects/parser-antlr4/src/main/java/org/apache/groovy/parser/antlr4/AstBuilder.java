@@ -277,7 +277,6 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.NamePartContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.NamedPropertyArgsContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.NewPrmrAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.NonWildcardTypeArgumentsContext;
-import static org.apache.groovy.parser.antlr4.GroovyLangParser.NormalExprAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.NullLiteralAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.PRIVATE;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.PackageDeclarationContext;
@@ -2092,12 +2091,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 ctx);
     }
 
-
-    @Override
-    public ExpressionStatement visitNormalExprAlt(NormalExprAltContext ctx) {
-        return configureAST(new ExpressionStatement((Expression) this.visit(ctx.expression())), ctx);
-    }
-
 /*
     @Override
     public Expression visitEnhancedExpression(EnhancedExpressionContext ctx) {
@@ -2117,60 +2110,79 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     @Override
     public ExpressionStatement visitCommandExprAlt(CommandExprAltContext ctx) {
-        if (visitingArrayInitializerCnt > 0) {
+        return configureAST(new ExpressionStatement(this.visitCommandExpression(ctx.commandExpression())), ctx);
+    }
+
+    @Override
+    public Expression visitCommandExpression(CommandExpressionContext ctx) {
+        boolean hasArgumentList = asBoolean(ctx.enhancedArgumentList());
+        boolean hasCommandArgument = asBoolean(ctx.commandArgument());
+
+        if (visitingArrayInitializerCnt > 0 && (hasArgumentList || hasCommandArgument)) {
             // To avoid ambiguities, command chain expression should not be used in array initializer
             // the old parser does not support either, so no breaking changes
             // SEE http://groovy.329449.n5.nabble.com/parrot-Command-expressions-in-array-initializer-tt5752273.html
             throw createParsingFailedException("Command chain expression can not be used in array initializer", ctx);
         }
 
-        return configureAST(new ExpressionStatement(this.visitCommandExpression(ctx.commandExpression())), ctx);
-    }
+        Expression baseExpr = (Expression) this.visit(ctx.expression());
 
-    @Override
-    public Expression visitCommandExpression(CommandExpressionContext ctx) {
-        Expression baseExpr = this.visitPathExpression(ctx.pathExpression());
-        Expression arguments = this.visitEnhancedArgumentList(ctx.enhancedArgumentList());
-
-        MethodCallExpression methodCallExpression;
-        if (baseExpr instanceof PropertyExpression) { // e.g. obj.a 1, 2
-            methodCallExpression =
-                    configureAST(
-                            this.createMethodCallExpression(
-                                    (PropertyExpression) baseExpr, arguments),
-                            arguments);
-
-        } else if (baseExpr instanceof MethodCallExpression && !isInsideParentheses(baseExpr)) { // e.g. m {} a, b  OR  m(...) a, b
-            if (asBoolean(arguments)) {
-                // The error should never be thrown.
-                throw new GroovyBugError("When baseExpr is a instance of MethodCallExpression, which should follow NO argumentList");
+        if (hasArgumentList || hasCommandArgument) {
+            if (baseExpr instanceof BinaryExpression) {
+                if (!"[".equals(((BinaryExpression) baseExpr).getOperation().getText()) && !isInsideParentheses(baseExpr)) {
+                    throw createParsingFailedException("Unexpected input: '" + ctx.expression().getText() + "'", ctx.expression());
+                }
             }
-
-            methodCallExpression = (MethodCallExpression) baseExpr;
-        } else if (
-                !isInsideParentheses(baseExpr)
-                        && (baseExpr instanceof VariableExpression /* e.g. m 1, 2 */
-                        || baseExpr instanceof GStringExpression /* e.g. "$m" 1, 2 */
-                        || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING)) /* e.g. "m" 1, 2 */)
-                ) {
-            methodCallExpression =
-                    configureAST(
-                            this.createMethodCallExpression(baseExpr, arguments),
-                            arguments);
-        } else { // e.g. a[x] b, new A() b, etc.
-            methodCallExpression = configureAST(this.createCallMethodCallExpression(baseExpr, arguments), arguments);
         }
 
-        methodCallExpression.putNodeMetaData(IS_COMMAND_EXPRESSION, true);
+        MethodCallExpression methodCallExpression = null;
 
-        if (!asBoolean(ctx.commandArgument())) {
-            return configureAST(methodCallExpression, ctx);
+        if (hasArgumentList) {
+            Expression arguments = this.visitEnhancedArgumentList(ctx.enhancedArgumentList());
+
+            if (baseExpr instanceof PropertyExpression) { // e.g. obj.a 1, 2
+                methodCallExpression =
+                        configureAST(
+                                this.createMethodCallExpression(
+                                        (PropertyExpression) baseExpr, arguments),
+                                arguments);
+
+            } else if (baseExpr instanceof MethodCallExpression && !isInsideParentheses(baseExpr)) { // e.g. m {} a, b  OR  m(...) a, b
+                if (asBoolean(arguments)) {
+                    // The error should never be thrown.
+                    throw new GroovyBugError("When baseExpr is a instance of MethodCallExpression, which should follow NO argumentList");
+                }
+
+                methodCallExpression = (MethodCallExpression) baseExpr;
+            } else if (
+                    !isInsideParentheses(baseExpr)
+                            && (baseExpr instanceof VariableExpression /* e.g. m 1, 2 */
+                            || baseExpr instanceof GStringExpression /* e.g. "$m" 1, 2 */
+                            || (baseExpr instanceof ConstantExpression && isTrue(baseExpr, IS_STRING)) /* e.g. "m" 1, 2 */)
+            ) {
+                methodCallExpression =
+                        configureAST(
+                                this.createMethodCallExpression(baseExpr, arguments),
+                                arguments);
+            } else { // e.g. a[x] b, new A() b, etc.
+                methodCallExpression = configureAST(this.createCallMethodCallExpression(baseExpr, arguments), arguments);
+            }
+
+            methodCallExpression.putNodeMetaData(IS_COMMAND_EXPRESSION, true);
+
+            if (!hasCommandArgument) {
+                return configureAST(methodCallExpression, ctx);
+            }
+        }
+
+        if (hasCommandArgument) {
+            baseExpr.putNodeMetaData(IS_COMMAND_EXPRESSION, true);
         }
 
         return configureAST(
                 (Expression) ctx.commandArgument().stream()
                         .map(e -> (Object) e)
-                        .reduce(methodCallExpression,
+                        .reduce(null == methodCallExpression ? baseExpr : methodCallExpression,
                                 (r, e) -> {
                                     CommandArgumentContext commandArgumentContext = (CommandArgumentContext) e;
                                     commandArgumentContext.putNodeMetaData(CMD_EXPRESSION_BASE_EXPR, r);
