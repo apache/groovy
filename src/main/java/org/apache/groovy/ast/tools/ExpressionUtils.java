@@ -293,7 +293,7 @@ public class ExpressionUtils {
     }
 
     /**
-     * The attribute values of annotations must be primitive or String constants.
+     * The attribute values of annotations must be primitive, String or Enum constants.
      * In various places, such constants can be seen during type resolution but won't be
      * readily accessible in later phases, e.g. they might be embedded into constructor code.
      * This method transforms constants that would appear in annotations early so they aren't lost.
@@ -309,8 +309,9 @@ public class ExpressionUtils {
             if (pe.getObjectExpression() instanceof ClassExpression) {
                 ClassExpression ce = (ClassExpression) pe.getObjectExpression();
                 ClassNode type = ce.getType();
-                if (type.isEnum()) return exp;
-                Expression constant = findConstant(ClassNodeUtils.getField(type, pe.getPropertyAsString()));
+                FieldNode field = ClassNodeUtils.getField(type, pe.getPropertyAsString());
+                if (type.isEnum() && field != null && field.isEnum()) return exp;
+                Expression constant = findConstant(field);
                 if (constant != null) return constant;
             }
         } else if (exp instanceof BinaryExpression) {

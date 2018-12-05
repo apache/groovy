@@ -847,6 +847,39 @@ class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    void testAnnotationAttributeConstantFromEnumConstantField() {
+        // GROOVY-8898
+        assertScript '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            @interface MyAnnotation {
+                String[] groups() default []
+                MyEnum alt() default MyEnum.ALT1
+            }
+
+            class Base {
+                static final String CONST = 'bar'
+                def groups() { getClass().annotations[0].groups() }
+                def alt() { getClass().annotations[0].alt() }
+            }
+
+            enum MyEnum {
+                ALT1, ALT2;
+                public static final String CONST = 'baz'
+            }
+
+            @MyAnnotation(groups = ['foo', Base.CONST, MyEnum.CONST], alt = MyEnum.ALT2)
+            class Child extends Base {}
+
+            new Child().with {
+                assert groups() == ['foo', 'bar', 'baz']
+                assert alt() == MyEnum.ALT2
+            }
+        '''
+    }
+
     void testAnnotationWithRepeatableSupportedPrecompiledJava() {
         assertScript '''
             import java.lang.annotation.*
