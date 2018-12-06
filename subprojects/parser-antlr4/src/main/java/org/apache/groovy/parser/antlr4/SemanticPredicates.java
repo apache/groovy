@@ -45,9 +45,6 @@ import static org.apache.groovy.parser.antlr4.util.StringUtils.matches;
 
 /**
  * Some semantic predicates for altering the behaviour of the lexer and parser
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/08/20
  */
 public class SemanticPredicates {
     private static final Pattern NONSPACES_PATTERN = Pattern.compile("\\S+?");
@@ -114,7 +111,6 @@ public class SemanticPredicates {
      * Method name should not end with "2: arguments" and "3: closure"
      *
      * @param context the preceding expression
-     * @return
      */
     public static boolean isFollowingArgumentsOrClosure(ExpressionContext context) {
         if (context instanceof PostfixExprAltContext) {
