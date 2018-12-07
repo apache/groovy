@@ -31,7 +31,9 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
+import static org.apache.groovy.parser.antlr4.util.StringUtils.matches;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
@@ -42,7 +44,8 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  */
 public class GroovydocManager {
     public static final String DOC_COMMENT = GroovydocHolder.DOC_COMMENT; // keys for meta data
-    private static final String DOC_COMMENT_PREFIX = "/**";
+    private static final String GROOVYDOC_PREFIX = "/**";
+    private static final String RUNTIME_GROOVYDOC_PREFIX = GROOVYDOC_PREFIX + "@";
     private static final String TRUE_STR = "true";
 
     @Deprecated
@@ -52,9 +55,8 @@ public class GroovydocManager {
     private static final String ATTACH_RUNTIME_GROOVYDOC = "groovy.attach.runtime.groovydoc";
     private static final boolean ATTACHING_RUNTIME_GROOVYDOC_ENABLED;
     private static final String VALUE = "value";
-    private static final String RUNTIME_GROOVYDOC_PATTERN = "(?s)/[*][*]@\\s+.*?[*]/";
-
     private static final GroovydocManager INSTANCE = new GroovydocManager();
+    private static final Pattern SPACES_PATTERN = Pattern.compile("\\s+");
 
     static {
         ATTACHING_GROOVYDOC_ENABLED = isFeatureEnabled(ATTACH_GROOVYDOC) || isFeatureEnabled(EXTRACT_DOC_COMMENT);
@@ -120,7 +122,7 @@ public class GroovydocManager {
             return;
         }
 
-        if (!(ATTACHING_RUNTIME_GROOVYDOC_ENABLED || docCommentNodeText.matches(RUNTIME_GROOVYDOC_PATTERN))) {
+        if (!(ATTACHING_RUNTIME_GROOVYDOC_ENABLED || docCommentNodeText.startsWith(RUNTIME_GROOVYDOC_PREFIX))) {
             return;
         }
 
@@ -183,11 +185,11 @@ public class GroovydocManager {
             for (int i = nlListSize - 1; i >= 0; i--) {
                 String text = nlList.get(i).getText();
 
-                if (text.matches("\\s+")) {
+                if (matches(text, SPACES_PATTERN)) {
                     continue;
                 }
 
-                if (text.startsWith(DOC_COMMENT_PREFIX)) {
+                if (text.startsWith(GROOVYDOC_PREFIX)) {
                     docCommentNodeText = text;
                 } else {
                     docCommentNodeText = null;
