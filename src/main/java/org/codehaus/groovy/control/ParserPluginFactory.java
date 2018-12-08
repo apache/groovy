@@ -18,43 +18,20 @@
  */
 package org.codehaus.groovy.control;
 
-import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.parser.antlr4.Antlr4PluginFactory;
 import org.codehaus.groovy.antlr.AntlrParserPluginFactory;
-
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 /**
  * A factory of parser plugin instances
  *
  */
 public abstract class ParserPluginFactory {
-    private static Class<?> ANTLR4_CLASS=null;
-
     /**
      * creates the ANTLR 4 parser
      * @return the factory for the parser
      */
-    public static ParserPluginFactory antlr4() {
-        if (ANTLR4_CLASS==null) {
-            String name = "org.apache.groovy.parser.antlr4.Antlr4PluginFactory";
-            try {
-                ANTLR4_CLASS =
-                        Class.forName(name, false, ParserPluginFactory.class.getClassLoader());
-            } catch (Exception e) {
-                throw new GroovyRuntimeException("Could not find or load parser plugin factory for antlr4", e);
-            }
-        }
-        try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<ParserPluginFactory>() {
-                public ParserPluginFactory run() throws Exception {
-                    return (ParserPluginFactory) ANTLR4_CLASS.newInstance();
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw new GroovyRuntimeException("Could not create instance of parser plugin factory for antlr4", e.getCause());
-        }
+    public static ParserPluginFactory antlr4(CompilerConfiguration compilerConfiguration) {
+        return new Antlr4PluginFactory(compilerConfiguration);
     }
 
     /**

@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.parser.antlr4
 
+import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
@@ -25,6 +26,7 @@ import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.PropertyNode
 import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.syntax.Token
 
 import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTest
@@ -73,7 +75,9 @@ class GroovyParserTest extends GroovyTestCase {
     }
 
     private static doTestAttachedComments() {
-        def (newAST, oldAST) = doTest('core/Comments_02.groovy')
+        CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
+        compilerConfiguration.setOptimizationOptions([(CompilerConfiguration.GROOVYDOC): true])
+        def (newAST, oldAST) = doTest('core/Comments_02.groovy', ASTComparatorCategory.DEFAULT_CONFIGURATION, compilerConfiguration)
         List<ClassNode> classes = new ArrayList<>(newAST.classes).sort { c1, c2 -> c1.name <=> c2.name }
         List<MethodNode> methods = new ArrayList<>(newAST.methods).sort { m1, m2 -> m1.name <=> m2.name }
 
@@ -385,7 +389,10 @@ class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - Groovydoc"() {
-        doRunAndTestAntlr4('core/Groovydoc_01x.groovy')
+        CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
+        compilerConfiguration.setOptimizationOptions([(CompilerConfiguration.RUNTIME_GROOVYDOC): true])
+
+        doRunAndTestAntlr4('core/Groovydoc_01x.groovy', compilerConfiguration)
     }
 
     void "test groovy core - Script"() {

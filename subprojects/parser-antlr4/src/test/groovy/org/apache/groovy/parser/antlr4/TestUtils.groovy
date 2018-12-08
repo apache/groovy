@@ -68,9 +68,13 @@ class TestUtils {
         return doTest(path, addIgnore(ignoreClazzList, ASTComparatorCategory.LOCATION_IGNORE_LIST))
     }
 
-    @CompileDynamic
     static doTest(String path, conf) {
-        AbstractParser antlr4Parser = new Antlr4Parser()
+        doTest(path, conf, new CompilerConfiguration(CompilerConfiguration.DEFAULT))
+    }
+
+    @CompileDynamic
+    static doTest(String path, conf, CompilerConfiguration compilerConfiguration) {
+        AbstractParser antlr4Parser = new Antlr4Parser(compilerConfiguration)
         AbstractParser antlr2Parser = new Antlr2Parser()
 
         File file = new File("$RESOURCES_PATH/$path");
@@ -250,16 +254,16 @@ class TestUtils {
         doRunAndTestAntlr4(path)
     }
 
-    static doRunAndTestAntlr4(String path) {
-        assert executeScript(path);
+    static doRunAndTestAntlr4(String path, CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)) {
+        assert executeScript(path, compilerConfiguration);
     }
 
     static doRunAndTestAntlr2(String path) {
         assert executeScript(createAntlr2Shell(), "$RESOURCES_PATH/$path")
     }
 
-    static executeScript(String path) {
-        executeScript(createAntlr4Shell(), "$RESOURCES_PATH/$path")
+    static executeScript(String path, CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)) {
+        executeScript(createAntlr4Shell(compilerConfiguration), "$RESOURCES_PATH/$path")
     }
 
     static executeScript(GroovyShell gsh, String path) {
@@ -276,11 +280,10 @@ class TestUtils {
         }
     }
 
-    static GroovyShell createAntlr4Shell() {
-        CompilerConfiguration configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
-        configuration.pluginFactory = new Antlr4PluginFactory()
+    static GroovyShell createAntlr4Shell(CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)) {
+        compilerConfiguration.pluginFactory = new Antlr4PluginFactory(compilerConfiguration)
 
-        return new GroovyShell(configuration);
+        return new GroovyShell(compilerConfiguration);
     }
 
     static GroovyShell createAntlr2Shell() {

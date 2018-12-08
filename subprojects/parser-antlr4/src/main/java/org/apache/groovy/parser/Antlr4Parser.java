@@ -28,12 +28,20 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  * Created on    2016/08/14
  */
 public class Antlr4Parser extends AbstractParser {
+    private final CompilerConfiguration compilerConfiguration;
+
+    public Antlr4Parser() {
+        this.compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+    }
+
+    public Antlr4Parser(CompilerConfiguration compilerConfiguration) {
+        this.compilerConfiguration = compilerConfiguration;
+    }
 
     @Override
     protected CompilerConfiguration getCompilerConfiguration() {
-        CompilerConfiguration configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
-        configuration.setPluginFactory(new Antlr4PluginFactory());
+        compilerConfiguration.setPluginFactory(new Antlr4PluginFactory(compilerConfiguration));
 
-        return configuration;
+        return compilerConfiguration;
     }
 }
