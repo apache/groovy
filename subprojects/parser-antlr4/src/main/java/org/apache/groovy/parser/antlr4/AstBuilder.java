@@ -112,6 +112,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -358,8 +359,9 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
  */
 public class AstBuilder extends GroovyParserBaseVisitor<Object> implements GroovyParserVisitor<Object> {
 
-    public AstBuilder(SourceUnit sourceUnit) {
+    public AstBuilder(SourceUnit sourceUnit, CompilerConfiguration compilerConfiguration) {
         this.sourceUnit = sourceUnit;
+        this.compilerConfiguration = compilerConfiguration;
         this.moduleNode = new ModuleNode(sourceUnit);
 
         this.lexer = new GroovyLangLexer(createCharStream(sourceUnit));
@@ -370,7 +372,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         this.parser.setErrorHandler(new DescriptiveErrorStrategy(this.lexer.getInputStream()));
 
         this.tryWithResourcesASTTransformation = new TryWithResourcesASTTransformation(this);
-        this.groovydocManager = GroovydocManager.getInstance();
+        this.groovydocManager = new GroovydocManager(compilerConfiguration);
     }
 
     private CharStream createCharStream(SourceUnit sourceUnit) {
@@ -4758,6 +4760,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
     private final ModuleNode moduleNode;
     private final SourceUnit sourceUnit;
+    private final CompilerConfiguration compilerConfiguration;
     private final GroovyLangLexer lexer;
     private final GroovyLangParser parser;
     private final TryWithResourcesASTTransformation tryWithResourcesASTTransformation;
