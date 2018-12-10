@@ -49,11 +49,11 @@ public class CompilerConfiguration {
     /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> compilation. */
     public static final String INVOKEDYNAMIC = "indy";
 
-    /** This (<code>"groovdoc"</code>) is the Optimization Option value for enabling attaching groovydoc as AST node metadata. */
-    public static final String GROOVYDOC = "groovdoc";
+    /** This (<code>"groovydoc"</code>) is the Optimization Option value for enabling attaching groovydoc as AST node metadata. */
+    public static final String GROOVYDOC = "groovydoc";
 
-    /** This (<code>"runtimeGroovdoc"</code>) is the Optimization Option value for enabling attaching {@link groovy.lang.Groovydoc} annotation*/
-    public static final String RUNTIME_GROOVYDOC = "runtimeGroovdoc";
+    /** This (<code>"runtimeGroovydoc"</code>) is the Optimization Option value for enabling attaching {@link groovy.lang.Groovydoc} annotation*/
+    public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
     public static final String JDK4 = "1.4";
