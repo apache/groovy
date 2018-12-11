@@ -179,6 +179,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.isGenericsPlaceHolder;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMap;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
 import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
@@ -2848,7 +2849,39 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     applyGenericsContext(SAMTypeConnections, typeOrNull(parameterTypesForSAM, i));
             blockParameterTypes[i] = resolvedParameter;
         }
+
+        tryToInferUnresolvedBlockParameterType(paramTypeWithReceiverInformation, methodForSAM, blockParameterTypes);
+
         openBlock.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, blockParameterTypes);
+    }
+
+    private void tryToInferUnresolvedBlockParameterType(ClassNode paramTypeWithReceiverInformation, MethodNode methodForSAM, ClassNode[] blockParameterTypes) {
+        List<Integer> indexList = new LinkedList<>();
+        for (int i = 0, n = blockParameterTypes.length; i < n; i++) {
+            ClassNode blockParameterType = blockParameterTypes[i];
+            if (isGenericsPlaceHolder(blockParameterType)) {
+                indexList.add(i);
+            }
+        }
+
+        if (!indexList.isEmpty()) {
+            // If the parameter type failed to resolve, try to find the parameter type through the class hierarchy
+            Map<GenericsType, GenericsType> genericsTypeMap = GenericsUtils.makeDeclaringAndActualGenericsTypeMapOfExactType(methodForSAM.getDeclaringClass(), paramTypeWithReceiverInformation);
+
+            for (Integer index : indexList) {
+                for (Map.Entry<GenericsType, GenericsType> entry : genericsTypeMap.entrySet()) {
+                    if (entry.getKey().getName().equals(blockParameterTypes[index].getUnresolvedName())) {
+                        ClassNode type = entry.getValue().getType();
+
+                        if (!isGenericsPlaceHolder(type)) {
+                            blockParameterTypes[index] = type;
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private ClassNode typeOrNull(ClassNode[] parameterTypesForSAM, int i) {
