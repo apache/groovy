@@ -20,8 +20,6 @@
 package groovy.transform.stc
 
 class LambdaTest extends GroovyTestCase {
-    private static final boolean SKIP_ERRORS = true;
-
     void testFunction() {
         assertScript '''
         import groovy.transform.CompileStatic
@@ -105,6 +103,26 @@ class LambdaTest extends GroovyTestCase {
             
             public static void p() {
                 assert 13 == [1, 2, 3].stream().reduce(7, (Integer r, Integer e) -> r + e);
+            }
+        }
+        '''
+    }
+
+    // GROOVY-8917: Failed to infer parameter type of some SAM, e.g. BinaryOperator
+    void testBinaryOperatorWithoutExplicitTypeDef() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                assert 13 == [1, 2, 3].stream().reduce(7, (r, e) -> r + e);
             }
         }
         '''

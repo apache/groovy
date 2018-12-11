@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -335,8 +336,12 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 continue;
             }
 
-            parameter.setType(inferredType);
-            parameter.setOriginType(inferredType);
+            // Java 11 does not allow primitive type, we should use the wrapper type
+            // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
+            ClassNode wrappedType = getWrapper(inferredType);
+
+            parameter.setType(wrappedType);
+            parameter.setOriginType(wrappedType);
         }
 
         return parameters;
