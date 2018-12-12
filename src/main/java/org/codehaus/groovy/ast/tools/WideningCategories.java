@@ -504,7 +504,7 @@ public class WideningCategories {
                 return;
             }
             if (interfaceNode.implementsInterface(node)) {
-                // the interface beeing added is more specific than the one in the list, replace it
+                // the interface being added is more specific than the one in the list, replace it
                 nodes.set(i, interfaceNode);
                 return;
             }
