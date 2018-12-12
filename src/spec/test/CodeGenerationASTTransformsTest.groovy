@@ -325,7 +325,7 @@ class Person extends Living {
 }
 
 def p1 = new Person(race:'Human', firstName: 'Jack', lastName: 'Nicholson')
-def p2 = new Person(race: 'Human beeing', firstName: 'Jack', lastName: 'Nicholson')
+def p2 = new Person(race: 'Human being', firstName: 'Jack', lastName: 'Nicholson')
 
 assert p1!=p2
 assert p1.hashCode() != p2.hashCode()
