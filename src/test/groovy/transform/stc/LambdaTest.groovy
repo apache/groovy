@@ -169,6 +169,39 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    void testPredicateWithoutExplicitTypeDef() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Function
+        import java.util.function.Predicate
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p()
+            }
+        
+            public static void p() {
+                List<String> myList = Arrays.asList("a1", "a2", "b2", "b1", "c2", "c1")
+                Predicate<String> predicate = s -> s.startsWith("b")
+                Function<String, String> mapper = s -> s.toUpperCase()
+                
+                List<String> result =
+                        myList
+                            .stream()
+                            .filter(predicate)
+                            .map(mapper)
+                            .sorted()
+                            .collect(Collectors.toList())
+                
+                assert ['B1', 'B2'] == result
+            }
+        }
+        '''
+    }
+
     void testUnaryOperator() {
         assertScript '''
         import groovy.transform.CompileStatic
@@ -429,7 +462,28 @@ class LambdaTest extends GroovyTestCase {
             }
         
             public static void p() {
-                Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1) // Casting is required...  [Static type checking] - Incompatible generic argument types. Cannot assign java.util.function.Function <java.lang.Integer, int> to: java.util.function.Function <Integer, Integer>
+                Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1)
+                assert 2 == f(1)
+            }
+        }
+        '''
+    }
+
+    void testFunctionCallWithoutExplicitTypeDef() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Function
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+        
+            public static void p() {
+                Function<Integer, Integer> f = e -> e + 1
                 assert 2 == f(1)
             }
         }
@@ -450,7 +504,7 @@ class LambdaTest extends GroovyTestCase {
             }
         
             public void p() {
-                Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1) // Casting is required...  [Static type checking] - Incompatible generic argument types. Cannot assign java.util.function.Function <java.lang.Integer, int> to: java.util.function.Function <Integer, Integer>
+                Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1)
                 assert 2 == f(1)
             }
         }
@@ -471,7 +525,7 @@ class LambdaTest extends GroovyTestCase {
             }
         
             public static void p() {
-                Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1) // Casting is required...  [Static type checking] - Incompatible generic argument types. Cannot assign java.util.function.Function <java.lang.Integer, int> to: java.util.function.Function <Integer, Integer>
+                Function<Integer, Integer> f = (Integer e) -> (Integer) (e + 1)
                 assert 2 == f.apply(1)
             }
         }
@@ -494,6 +548,29 @@ class LambdaTest extends GroovyTestCase {
             public static void p() {
                 int r = 1
                 Consumer<Integer> c = (Integer e) -> { r += e }
+                c(2)
+                assert 3 == r
+            }
+        }
+        '''
+    }
+
+    void testConsumerCallWithoutExplicitTypeDef() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Consumer
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+        
+            public static void p() {
+                int r = 1
+                Consumer<Integer> c = e -> { r += e }
                 c(2)
                 assert 3 == r
             }
@@ -561,6 +638,32 @@ class LambdaTest extends GroovyTestCase {
             
             public static void p() {
                 SamCallable c = (int e) -> e
+                assert 1 == c(1)
+            }
+        }
+        
+        @CompileStatic
+        interface SamCallable {
+            int call(int p);
+        }
+        '''
+    }
+
+
+    void testSamCallWithoutExplicitTypeDef() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                SamCallable c = e -> e
                 assert 1 == c(1)
             }
         }
@@ -653,7 +756,7 @@ class LambdaTest extends GroovyTestCase {
             }
         
             public static void p() {
-                Function<Integer, String> f = (Integer e) -> 'a' + e // STC can not infer the type of `e`, so we have to specify the type `Integer` by ourselves
+                Function<Integer, String> f = (Integer e) -> 'a' + e
                 assert ['a1', 'a2', 'a3'] == [1, 2, 3].stream().map(f).collect(Collectors.toList())
             }
         }
@@ -767,4 +870,6 @@ class LambdaTest extends GroovyTestCase {
         }
         '''
     }
+
+
 }

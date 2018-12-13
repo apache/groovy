@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import groovy.lang.IntRange;
 import groovy.lang.Range;
+import groovy.lang.Tuple2;
 import groovy.transform.NamedParam;
 import groovy.transform.NamedParams;
 import groovy.transform.TypeChecked;
@@ -179,7 +180,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.isGenericsPlaceHolder;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMap;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.toGenericTypesString;
 import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
@@ -793,15 +793,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             int op = expression.getOperation().getType();
             leftExpression.visit(this);
             SetterInfo setterInfo = removeSetterInfo(leftExpression);
+            ClassNode lType = null;
             if (setterInfo != null) {
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
 
             } else {
+                lType = getType(leftExpression);
+                inferParameterAndReturnTypesOfClosureOnRHS(lType, rightExpression, op);
+
                 rightExpression.visit(this);
             }
-            ClassNode lType = getType(leftExpression);
+
+            if (null == lType) lType = getType(leftExpression);
             ClassNode rType = getType(rightExpression);
             if (isNullConstant(rightExpression)) {
                 if (!isPrimitiveType(lType))
@@ -942,6 +947,31 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } finally {
             typeCheckingContext.popEnclosingBinaryExpression();
+        }
+    }
+
+    private void inferParameterAndReturnTypesOfClosureOnRHS(ClassNode lType, Expression rightExpression, int op) {
+        if (ASSIGN == op) {
+            if (rightExpression instanceof ClosureExpression && ClassHelper.isFunctionalInterface(lType)) {
+                Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lType);
+                ClassNode[] paramTypes = typeInfo.getV1();
+                ClosureExpression closureExpression = ((ClosureExpression) rightExpression);
+                Parameter[] closureParameters = closureExpression.getParameters();
+
+                if (paramTypes.length == closureParameters.length) {
+                    for (int i = 0, n = closureParameters.length; i < n; i++) {
+                        Parameter parameter = closureParameters[i];
+                        if (parameter.isDynamicTyped()) {
+                            parameter.setType(paramTypes[i]);
+                            parameter.setOriginType(paramTypes[i]);
+                        }
+                    }
+                } else {
+                    addStaticTypeError("Wrong number of parameters: ", closureExpression);
+                }
+
+                storeInferredReturnType(rightExpression, typeInfo.getV2());
+            }
         }
     }
 
@@ -2354,6 +2384,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
         if (!enclosingClosure.getReturnTypes().isEmpty()) {
             ClassNode returnType = lowestUpperBound(enclosingClosure.getReturnTypes());
+
+            ClassNode expectedReturnType = getInferredReturnType(expression);
+            // type argument can not be of primitive type, we should convert it to the wrapper type
+            if (null != expectedReturnType && ClassHelper.isPrimitiveType(returnType) && expectedReturnType.equals(ClassHelper.getWrapper(returnType))) {
+                returnType = expectedReturnType;
+            }
+
             storeInferredReturnType(expression, returnType);
             ClassNode inferredType = wrapClosureType(returnType);
             storeType(enclosingClosure.getClosureExpression(), inferredType);
@@ -2859,7 +2896,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         List<Integer> indexList = new LinkedList<>();
         for (int i = 0, n = blockParameterTypes.length; i < n; i++) {
             ClassNode blockParameterType = blockParameterTypes[i];
-            if (isGenericsPlaceHolder(blockParameterType)) {
+            if (null != blockParameterType && blockParameterType.isGenericsPlaceHolder()) {
                 indexList.add(i);
             }
         }
@@ -2873,7 +2910,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (entry.getKey().getName().equals(blockParameterTypes[index].getUnresolvedName())) {
                         ClassNode type = entry.getValue().getType();
 
-                        if (!isGenericsPlaceHolder(type)) {
+                        if (null != type && !type.isGenericsPlaceHolder()) {
                             blockParameterTypes[index] = type;
                         }
 
