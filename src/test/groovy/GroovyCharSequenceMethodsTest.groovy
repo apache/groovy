@@ -132,6 +132,18 @@ class GroovyCharSequenceMethodsTest extends GroovyTestCase {
         assert cs2.drop(3) == 'bar'
     }
 
+    void testDropTakeTC() {
+        assertScript '''
+            @groovy.transform.TypeChecked
+            def method() {
+                assert 'Foo Bar'.drop(4).toLowerCase() == 'bar'
+                assert 'Foo Bar'.take(3).toLowerCase() == 'foo'
+            }
+
+            method()
+        '''
+    }
+
     void testAsBoolean() {
         assert cs1 && cs2
         assert !csEmpty
