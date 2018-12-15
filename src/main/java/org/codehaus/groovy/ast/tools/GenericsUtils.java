@@ -959,9 +959,8 @@ public class GenericsUtils {
      *
      */
     public static Tuple2<ClassNode[], ClassNode> parameterizeSAM(ClassNode sam) {
-        final Map<GenericsType, GenericsType> map = makePlaceholderAndParameterizedTypeMap(sam);
-
         MethodNode methodNode = ClassHelper.findSAM(sam);
+        final Map<GenericsType, GenericsType> map = makeDeclaringAndActualGenericsTypeMapOfExactType(methodNode.getDeclaringClass(), sam);
 
         ClassNode[] parameterTypes =
                 Arrays.stream(methodNode.getParameters())

@@ -128,6 +128,27 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    void testBinaryOperatorWithoutExplicitTypeDef2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.BinaryOperator
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                p();
+            }
+            
+            public static void p() {
+                BinaryOperator<Integer> accumulator = (r, e) -> r + e
+                assert 13 == [1, 2, 3].stream().reduce(7, accumulator);
+            }
+        }
+        '''
+    }
+
     void testConsumer() {
         assertScript '''
         import groovy.transform.CompileStatic

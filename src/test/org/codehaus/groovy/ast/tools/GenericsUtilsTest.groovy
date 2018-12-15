@@ -301,4 +301,24 @@ class GenericsUtilsTest extends GroovyTestCase {
         assert ClassHelper.STRING_TYPE == typeInfo.getV1()[0]
         assert ClassHelper.Integer_TYPE == typeInfo.getV2()
     }
+
+    void testParameterizeSAM2() {
+        def code = '''
+        import java.util.function.*
+        interface T extends BinaryOperator<Integer> {}
+        '''
+        def ast = new CompilationUnit().tap {
+            addSource 'hello.groovy', code
+            compile Phases.SEMANTIC_ANALYSIS
+        }.ast
+
+        def classNodeList = ast.getModules()[0].getClasses()
+        ClassNode parameterizedClassNode = findClassNode('T', classNodeList).getAllInterfaces().find { it.name.equals('java.util.function.BinaryOperator') }
+
+        Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(parameterizedClassNode)
+        assert 2 == typeInfo.getV1().length
+        assert ClassHelper.Integer_TYPE == typeInfo.getV1()[0]
+        assert ClassHelper.Integer_TYPE == typeInfo.getV1()[1]
+        assert ClassHelper.Integer_TYPE == typeInfo.getV2()
+    }
 }
