@@ -514,11 +514,25 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param num the number of characters to drop from this GString
      * @return a String consisting of all characters except the first <code>num</code> ones,
      *         or else an empty String, if the toString() of this GString has less than <code>num</code> characters.
-     * @see #drop(CharSequence, int)
+     * @see #drop(String, int)
      * @since 2.3.7
      */
     public static String drop(GString self, int num) {
-        return drop(self.toString(), num).toString();
+        return drop(self.toString(), num);
+    }
+
+    /**
+     * A String variant of the equivalent CharSequence method.
+     *
+     * @param self the original String
+     * @param num the number of characters to drop from this String
+     * @return a String consisting of all characters except the first <code>num</code> ones,
+     *         or else an empty String, if the String has less than <code>num</code> characters.
+     * @see #drop(CharSequence, int)
+     * @since 2.5.5
+     */
+    public static String drop(String self, int num) {
+        return (String) drop((CharSequence) self, num);
     }
 
     /**
@@ -3323,7 +3337,20 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.3.7
      */
     public static String take(GString self, int num) {
-        return (String) take(self.toString(), num);
+        return take(self.toString(), num);
+    }
+
+    /**
+     * A String variant of the equivalent CharSequence method.
+     *
+     * @param self the original String
+     * @param num  the number of chars to take from this String
+     * @return a String consisting of the first <code>num</code> chars,
+     *         or else the whole String if it has less then <code>num</code> elements.
+     * @since 2.5.5
+     */
+    public static String take(String self, int num) {
+        return (String) take((CharSequence) self, num);
     }
 
     /**

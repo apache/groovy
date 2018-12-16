@@ -18,12 +18,8 @@
  */
 package groovy.transform.stc
 
-import groovy.transform.NotYetImplemented
-
 /**
  * Unit tests for static type checking : closure parameter type inference for {@link org.codehaus.groovy.runtime.StringGroovyMethods}.
- *
- * @author Cedric Champeau
  */
 class StringGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testCollectReplacements() {

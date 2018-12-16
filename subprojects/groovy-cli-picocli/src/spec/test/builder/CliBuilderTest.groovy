@@ -119,7 +119,7 @@ Description 2
 Options heading:
   -a               option a description
   -b               option b description
-  -c= [PARAM...]   option c description
+  -c=[PARAM...]    option c description
 
 Footer heading:
 Footer 1
@@ -161,7 +161,7 @@ Footer 2
         String expected = '''\
 Usage: ant [options] [targets]
 Options:
-  -D= <property=value>   use value for given property
+  -D=<property=value>    use value for given property
       -help              print this message
       -lib=<path>,<path>,<path>
                          comma-separated list of 3 paths to search for jars and

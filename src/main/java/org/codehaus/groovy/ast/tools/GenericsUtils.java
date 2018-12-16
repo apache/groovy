@@ -46,6 +46,7 @@ import org.codehaus.groovy.syntax.Reduction;
 import java.io.StringReader;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -805,6 +806,16 @@ public class GenericsUtils {
         return doMakeDeclaringAndActualGenericsTypeMap(declaringClass, actualReceiver, false).getV1();
     }
 
+    /**
+     * The method is similar with {@link GenericsUtils#makeDeclaringAndActualGenericsTypeMap(ClassNode, ClassNode)},
+     * The main difference is that the method will try to map all placeholders found to the relevant exact types,
+     * but the other will not try even if the parameterized type has placeholders
+     *
+     * @param declaringClass the generics class node declaring the generics types
+     * @param actualReceiver the sub-class class node
+     * @return the placeholder-to-actualtype mapping
+     * @since 3.0.0
+     */
     public static Map<GenericsType, GenericsType> makeDeclaringAndActualGenericsTypeMapOfExactType(ClassNode declaringClass, ClassNode actualReceiver) {
         List<ClassNode> parameterizedTypeList = new LinkedList<>();
 
@@ -887,10 +898,23 @@ public class GenericsUtils {
         return result;
     }
 
+    /**
+     * Check whether the ClassNode has non generics placeholders, aka not placeholder
+     *
+     * @param parameterizedType the class node
+     * @return the result
+     * @since 3.0.0
+     */
     public static boolean hasNonPlaceHolders(ClassNode parameterizedType) {
         return checkPlaceHolders(parameterizedType, genericsType -> !genericsType.isPlaceholder());
     }
 
+    /**
+     * Check whether the ClassNode has generics placeholders
+     * @param parameterizedType the class node
+     * @return the result
+     * @since 3.0.0
+     */
     public static boolean hasPlaceHolders(ClassNode parameterizedType) {
         return checkPlaceHolders(parameterizedType, genericsType -> genericsType.isPlaceholder());
     }
@@ -911,19 +935,50 @@ public class GenericsUtils {
         return false;
     }
 
-    public static boolean isGenericsPlaceHolder(ClassNode cn) {
-        if (null == cn) return false;
+    /**
+     * Get the parameter and return types of the abstract method of SAM
+     *
+     * If the abstract method is not parameterized, we will get generics placeholders, e.g. T, U
+     * For example, the abstract method of {@link java.util.function.Function} is
+     * <pre>
+     *      R apply(T t);
+     * </pre>
+     *
+     * We parameterize the above interface as {@code Function<String, Integer>}, then the abstract method will be
+     * <pre>
+     *      Integer apply(String t);
+     * </pre>
+     *
+     * When we call {@code parameterizeSAM} on the ClassNode {@code Function<String, Integer>},
+     * we can get parameter types and return type of the above abstract method,
+     * i.e. ClassNode {@code ClassHelper.STRING_TYPE} and {@code ClassHelper.Integer_TYPE}
+     *
+     * @param sam the class node which contains only one abstract method
+     * @return the parameter and return types
+     * @since 3.0.0
+     *
+     */
+    public static Tuple2<ClassNode[], ClassNode> parameterizeSAM(ClassNode sam) {
+        MethodNode methodNode = ClassHelper.findSAM(sam);
+        final Map<GenericsType, GenericsType> map = makeDeclaringAndActualGenericsTypeMapOfExactType(methodNode.getDeclaringClass(), sam);
 
-        GenericsType[] genericsTypes = cn.getGenericsTypes();
+        ClassNode[] parameterTypes =
+                Arrays.stream(methodNode.getParameters())
+                    .map(e -> {
+                        ClassNode originalParameterType = e.getType();
+                        return originalParameterType.isGenericsPlaceHolder()
+                                ? findActualTypeByGenericsPlaceholderName(originalParameterType.getUnresolvedName(), map)
+                                : originalParameterType;
+                    })
+                    .toArray(ClassNode[]::new);
 
-        if (null == genericsTypes) return false;
-        if (genericsTypes.length != 1) return false;
+        ClassNode originalReturnType = methodNode.getReturnType();
+        ClassNode returnType =
+                originalReturnType.isGenericsPlaceHolder()
+                        ? findActualTypeByGenericsPlaceholderName(originalReturnType.getUnresolvedName(), map)
+                        : originalReturnType;
 
-        GenericsType genericsType = genericsTypes[0];
-
-        if (!genericsType.isPlaceholder()) return false;
-
-        return genericsType.getName().equals(cn.getUnresolvedName());
+        return tuple(parameterTypes, returnType);
     }
 
     /**

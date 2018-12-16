@@ -72,7 +72,7 @@ You don't need the source code to use Apache Groovy but if you wish to explore i
 
 Apache Groovy uses Git. The official Git repository is at:
 
-    https://git-wip-us.apache.org/repos/asf/groovy.git
+    https://gitbox.apache.org/repos/asf/groovy.git
 
 And a mirror is hosted on Github:
 
