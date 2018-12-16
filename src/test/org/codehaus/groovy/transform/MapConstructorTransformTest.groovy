@@ -212,4 +212,47 @@ class MapConstructorTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-8776
+    void testNestedMapConstructorCS() {
+        assertScript '''
+            import groovy.transform.*
+            class GroovyMapConstructorCheck {
+                @CompileStatic
+                @MapConstructor
+                @ToString
+                static class Goo {
+                    int x0
+                }
+            }
+            assert new GroovyMapConstructorCheck.Goo(x0:123).toString() == 'GroovyMapConstructorCheck$Goo(123)'
+        '''
+    }
+
+    // GROOVY-8777
+    void testMapConstructorUsedInInnerCS() {
+        assertScript '''
+            import groovy.transform.*
+
+            @CompileStatic
+            class GroovyMapConstructorCheck {
+                @MapConstructor(noArg = true)
+                class Goo {
+                    final int x0
+
+                    @Override
+                    public String toString() {
+                        return "Goo(|$x0|)"
+                    }
+                }
+
+                def go() {
+                    new Goo(x0:123).toString().toUpperCase()
+                }
+            }
+
+            final check = new GroovyMapConstructorCheck()
+            assert check.go() == 'GOO(|123|)'
+        '''
+    }
+
 }
