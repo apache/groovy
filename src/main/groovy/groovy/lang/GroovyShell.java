@@ -303,9 +303,10 @@ public class GroovyShell extends GroovyObjectSupport {
         Constructor constructor = null;
         Runnable runnable = null;
         Throwable reason = null;
+
         try {
             // first, fetch the constructor taking String[] as parameter
-            constructor = scriptClass.getConstructor((new String[]{}).getClass());
+            constructor = scriptClass.getConstructor(String[].class);
             try {
                 // instantiate a runnable and run it
                 runnable = (Runnable) constructor.newInstance(new Object[]{args});
