@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
@@ -94,8 +95,11 @@ public class DefaultPropertyHandler extends PropertyHandler {
 
     private static Statement assignFieldS(boolean useSetters, Parameter map, String name) {
         ArgumentListExpression nameArg = args(constX(name));
-        Expression var = callX(varX(map), "get", nameArg);
-        return ifS(callX(varX(map), "containsKey", nameArg), useSetters ?
+        MethodCallExpression var = callX(varX(map), "get", nameArg);
+        var.setImplicitThis(false);
+        MethodCallExpression containsKey = callX(varX(map), "containsKey", nameArg);
+        containsKey.setImplicitThis(false);
+        return ifS(containsKey, useSetters ?
                 setViaSetterS(name, var) :
                 assignToFieldS(name, var));
     }
