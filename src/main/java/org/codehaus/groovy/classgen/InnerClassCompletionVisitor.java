@@ -348,12 +348,21 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
     private void addCompilationErrorOnCustomMethodNode(InnerClassNode node, String methodName, Parameter[] parameters) {
         MethodNode existingMethodNode = node.getMethod(methodName, parameters);
         // if there is a user-defined methodNode, add compiler error msg and continue
-        if (existingMethodNode != null && !existingMethodNode.isSynthetic())  {
+        if (existingMethodNode != null && !isSynthetic(existingMethodNode))  {
             addError("\"" +methodName + "\" implementations are not supported on static inner classes as " +
                     "a synthetic version of \"" + methodName + "\" is added during compilation for the purpose " +
                     "of outer class delegation.",
                     existingMethodNode);
         }
+    }
+
+    // GROOVY-8914: pre-compiled classes lose synthetic boolean - TODO fix earlier as per GROOVY-4346 then remove extra check here
+    private boolean isSynthetic(MethodNode existingMethodNode) {
+        return existingMethodNode.isSynthetic() || hasSyntheticModifier(existingMethodNode);
+    }
+
+    private boolean hasSyntheticModifier(MethodNode existingMethodNode) {
+        return (existingMethodNode.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
     }
 
     private void addThisReference(ConstructorNode node) {
