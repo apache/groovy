@@ -109,7 +109,7 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
                    int size() {}
                 }'''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
-        assert result.contains('public class MyList<E> implements java.util.List<E> extends java.util.AbstractList<E> {')
+        assert result.contains('public class MyList<E> extends java.util.AbstractList<E> implements java.util.List<E> {')
     }
 
     void testGenericBoundsOnClass() {
@@ -117,8 +117,8 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
                     abstract class MyClass<T extends String & Callable<String>, U extends Integer> extends AbstractList<String> implements Callable<? super Number> { }  '''
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains('MyClass<T extends java.lang.String & java.util.concurrent.Callable<String>, U extends java.lang.Integer> ' +
-                'implements java.util.concurrent.Callable<? super java.lang.Number> ' +
-                'extends java.util.AbstractList<String> {')
+                'extends java.util.AbstractList<String> ' +
+                'implements java.util.concurrent.Callable<? super java.lang.Number> {')
     }
 
     void testGenericsInVariables() {
@@ -156,7 +156,7 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
                                  void addBranch(Tree<? extends V> branch) { branches.add(branch); }
                              } '''
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
-        assert result.contains('public class Tree<V> implements groovy.lang.GroovyObject extends java.lang.Object')
+        assert result.contains('public class Tree<V> extends java.lang.Object implements groovy.lang.GroovyObject')
         assert result.contains('private java.lang.Object<V> value') // todo: is Object<V> correct? How do you know?
         assert result.contains('private java.util.List<Tree> branches') // should the <? extends V> be dropped?
         assert result.contains('branches = new java.util.ArrayList<Tree>()') // should the <? extends V> be dropped?
