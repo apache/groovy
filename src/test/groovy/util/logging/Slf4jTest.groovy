@@ -30,10 +30,7 @@ import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
 /**
- * @author Hamlet D'Arcy
- * @author Francesco Durbin
- * @author Tomasz Bujok
- * @author Paul King
+ * Tests for Slf4j AST transformation
  */
 
 class Slf4jTest extends GroovyTestCase {

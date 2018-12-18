@@ -33,7 +33,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
         inceptionYear '2003'
         organization {
             name 'Apache Software Foundation'
-            url 'http://groovy-lang.org'
+            url 'http://apache.org'
         }
         developers {
             developer {
@@ -41,7 +41,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Guillaume Laforge'
                 organization 'SpringSource'
                 roles {
-                    role 'Project Manager'
                     role 'Despot'
                     role 'Developer'
                 }
@@ -249,8 +248,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'paulk'
                 name 'Paul King'
                 email 'paulk@asert.com.au'
-                organization 'ASERT, Australia'
+                organization 'OCI, Australia'
                 roles {
+                    role 'Project Manager'
                     role 'Developer'
                     role 'Despot'
                 }
@@ -363,6 +363,20 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 roles {
                     role 'Developer'
                     role 'Despot'
+                }
+            }
+            developer {
+                id 'rpopma'
+                name 'Remko Popma'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'grocher'
+                name 'Graeme Rocher'
+                roles {
+                    role 'Developer'
                 }
             }
         }
@@ -568,6 +582,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Nikolay Chugunov'
             }
             contributor {
+                name 'Francesco Durbin'
+            }
+            contributor {
                 name 'Paolo Di Tommaso'
             }
             contributor {
@@ -575,6 +592,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Matias Bjarland'
+            }
+            contributor {
+                name 'Tomasz Bujok'
             }
             contributor {
                 name 'Richard Hightower'
@@ -610,13 +630,22 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Martin Kempf'
             }
             contributor {
+                name 'Martin Ghados'
+            }
+            contributor {
+                name 'Alberto Mijares'
+            }
+            contributor {
+                name 'Matthias Cullmann'
+            }
+            contributor {
+                name 'Tomek Bujok'
+            }
+            contributor {
                 name 'Stephane Landelle'
             }
             contributor {
                 name 'Vladimir Vivien'
-            }
-            contributor {
-                name 'Graeme Rocher'
             }
             contributor {
                 name 'Joe Wolf'
@@ -626,9 +655,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Tom Nichols'
-            }
-            contributor {
-                name 'Remko Popma'
             }
             contributor {
                 name 'mgroovy'

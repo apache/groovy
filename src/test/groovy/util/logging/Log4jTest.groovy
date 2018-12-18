@@ -19,17 +19,13 @@
 package groovy.util.logging
 
 import java.lang.reflect.*
-import org.codehaus.groovy.ast.*
-import org.codehaus.groovy.control.*
-import org.codehaus.groovy.tools.ast.*
-import org.codehaus.groovy.transform.*
 import org.apache.log4j.AppenderSkeleton
 import org.apache.log4j.spi.LoggingEvent
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
 /**
- * @author Tomasz Bujok
+ * Tests for Log4j AST transformation
  */
 class Log4jTest extends GroovyTestCase {
 
@@ -50,7 +46,7 @@ class Log4jTest extends GroovyTestCase {
         logger.removeAllAppenders()
     }
 
-    public void testPrivateFinalStaticLogFieldAppears() {
+    void testPrivateFinalStaticLogFieldAppears() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
               @groovy.util.logging.Log4j
@@ -66,7 +62,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
-    public void testClassAlreadyHasLogField() {
+    void testClassAlreadyHasLogField() {
 
         shouldFail {
 
@@ -80,7 +76,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
-    public void testClassAlreadyHasNamedLogField() {
+    void testClassAlreadyHasNamedLogField() {
 
         shouldFail {
 
@@ -94,7 +90,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
-    public void testLogInfo() {
+    void testLogInfo() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j
@@ -150,7 +146,7 @@ class Log4jTest extends GroovyTestCase {
         assert events[0].message == "(static) info called"
     }
 
-    public void testLogInfoForNamedLogger() {
+    void testLogInfoForNamedLogger() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j('logger')
@@ -187,7 +183,7 @@ class Log4jTest extends GroovyTestCase {
         assert events[ind].message == "trace called"
     }
 
-    public void testLogGuard() {
+    void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j
             class MyClass {
@@ -229,7 +225,7 @@ class Log4jTest extends GroovyTestCase {
         assert appender.getEvents().size() == 1
     }
 
-    public void testCustomCategory() {
+    void testCustomCategory() {
         Log4jInterceptingAppender appenderForCustomCategory = new Log4jInterceptingAppender()
 
         Logger loggerForCustomCategory = Logger.getLogger('customCategory')
@@ -251,15 +247,15 @@ class Log4jTest extends GroovyTestCase {
     }
 }
 
-public class Log4jInterceptingAppender extends AppenderSkeleton {
+class Log4jInterceptingAppender extends AppenderSkeleton {
     List<LoggingEvent> events
     boolean isLogGuarded = true
 
-    public Log4jInterceptingAppender() {
+    Log4jInterceptingAppender() {
         this.events = new ArrayList<LoggingEvent>()
     }
 
-    public List<LoggingEvent> getEvents() {
+    List<LoggingEvent> getEvents() {
         return events
     }
 
