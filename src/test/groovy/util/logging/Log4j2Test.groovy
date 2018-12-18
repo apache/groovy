@@ -38,7 +38,7 @@ class Log4j2Test extends GroovyTestCase {
         List<Map> events
         boolean isLogGuarded = true
 
-        Log4j2InterceptingAppender(String name, Filter filter, Layout<String> layout){
+        Log4j2InterceptingAppender(String name, Filter filter, Layout<String> layout) {
             super(name, filter, layout)
             this.events = new ArrayList<Map>()
         }
@@ -259,7 +259,7 @@ class Log4j2Test extends GroovyTestCase {
                       log.error("error called")
                     }
                 }""")
-        
+
         clazz.newInstance().loggingMethod()
 
         assert appenderForCustomCategory.getEvents().size() == 1

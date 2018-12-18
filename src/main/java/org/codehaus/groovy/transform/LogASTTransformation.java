@@ -48,16 +48,6 @@ import java.lang.reflect.Modifier;
 
 /**
  * This class provides an AST Transformation to add a log field to a class.
- *
- * @author Guillaume Laforge
- * @author Jochen Theodorou
- * @author Dinko Srkoc
- * @author Hamlet D'Arcy
- * @author Raffaele Cigni
- * @author Alberto Vilches Raton
- * @author Tomasz Bujok
- * @author Martin Ghados
- * @author Matthias Cullmann
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class LogASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
@@ -70,6 +60,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
 
     private CompilationUnit compilationUnit;
 
+    @Override
     public void visit(ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
         AnnotatedNode targetClass = (AnnotatedNode) nodes[1];
@@ -96,6 +87,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
                 return source;
             }
 
+            @Override
             public Expression transform(Expression exp) {
                 if (exp == null) return null;
                 if (exp instanceof MethodCallExpression) {
@@ -274,6 +266,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
             this(null);
         }
 
+        @Override
         public String getCategoryName(ClassNode classNode, String categoryName) {
             if (categoryName.equals(DEFAULT_CATEGORY_NAME)) {
                 return classNode.getName();
@@ -291,6 +284,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         }
     }
 
+    @Override
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;
     }

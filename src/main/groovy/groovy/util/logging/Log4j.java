@@ -57,8 +57,6 @@ import java.util.Locale;
  * If the expression exp is a constant or only a variable access the method call will
  * not be transformed. But this will still cause a call on the injected logger.
  *
- * @author Hamlet D'Arcy
- * @author Tomek Bujok
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -88,10 +86,12 @@ public @interface Log4j {
                             new ConstantExpression(getCategoryName(classNode, categoryName))));
         }
 
+        @Override
         public boolean isLoggingMethod(String methodName) {
             return methodName.matches("fatal|error|warn|info|debug|trace");
         }
 
+        @Override
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             final MethodCallExpression condition;
             if (!"trace".equals(methodName)) {

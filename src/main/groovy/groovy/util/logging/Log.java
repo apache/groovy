@@ -61,12 +61,6 @@ import java.util.Locale;
  * the method call will not be transformed. But this will still cause a call on the injected
  * logger.
  *
- * @author Guillaume Laforge
- * @author Jochen Theodorou
- * @author Dinko Srkoc
- * @author Hamlet D'Arcy
- * @author Raffaele Cigni
- * @author Alberto Vilches Raton
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -100,10 +94,12 @@ public @interface Log {
                                 new ConstantExpression(getCategoryName(classNode, categoryName))));
         }
 
+        @Override
         public boolean isLoggingMethod(String methodName) {
             return methodName.matches("severe|warning|info|fine|finer|finest");
         }
 
+        @Override
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             AttributeExpression logLevelExpression = new AttributeExpression(
                     new ClassExpression(LEVEL_CLASSNODE),
