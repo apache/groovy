@@ -120,41 +120,34 @@ class MacroTest extends GroovyTestCase {
 
     void testCompilePhase() {
         assertScript '''
-        import org.codehaus.groovy.ast.expr.*;
-        import org.codehaus.groovy.ast.stmt.*;
-        import org.codehaus.groovy.ast.ClassHelper;
-        import org.codehaus.groovy.ast.builder.AstAssert;
-        import org.codehaus.groovy.control.CompilePhase;
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.control.CompilePhase
 
-        import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+        import static org.codehaus.groovy.ast.tools.GeneralUtils.*
 
-
-        def result = macro(CompilePhase.FINALIZATION) {
+        def result = macro(CompilePhase.CLASS_GENERATION) {
             println "foo"
             println "bar"
         }
 
         def expected = block(
             stmt(callThisX("println", args(constX("foo")))),
-            // In FINALIZATION phase last println will be ReturnStatement
+            // by end of CLASS_GENERATION phase last println will be ReturnStatement
             returnS(callThisX("println", args(constX("bar")))),
         )
 
-        AstAssert.assertSyntaxTree([expected], [result]);
-'''
+        AstAssert.assertSyntaxTree([expected], [result])
+        '''
     }
 
     void testAsIsWithCompilePhase() {
         assertScript '''
-        import org.codehaus.groovy.ast.expr.*;
-        import org.codehaus.groovy.ast.stmt.*;
-        import org.codehaus.groovy.ast.ClassHelper;
-        import org.codehaus.groovy.ast.builder.AstAssert;
-        import org.codehaus.groovy.control.CompilePhase;
+        import org.codehaus.groovy.ast.builder.AstAssert
+        import org.codehaus.groovy.control.CompilePhase
 
-        import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
+        import static org.codehaus.groovy.ast.tools.GeneralUtils.*
 
-        def result = macro(CompilePhase.FINALIZATION, true) {
+        def result = macro(CompilePhase.CLASS_GENERATION, true) {
             println "foo"
         }
 
@@ -162,8 +155,8 @@ class MacroTest extends GroovyTestCase {
             returnS(callThisX("println", args(constX("foo"))))
         )
 
-        AstAssert.assertSyntaxTree([expected], [result]);
-'''
+        AstAssert.assertSyntaxTree([expected], [result])
+        '''
     }
 
     void testCompileStatic() {
