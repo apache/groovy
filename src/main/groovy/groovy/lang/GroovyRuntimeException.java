@@ -60,7 +60,12 @@ public class GroovyRuntimeException extends RuntimeException {
     }
 
     public String getMessage() {
-        return getMessageWithoutLocationText() + getLocationText();
+        String messageWithoutLocationText = getMessageWithoutLocationText();
+        String locationText = getLocationText();
+        if (messageWithoutLocationText == null && locationText.isEmpty()) {
+            return null; // not "null"
+        }
+        return messageWithoutLocationText + locationText;
     }
 
     public ASTNode getNode() {
