@@ -35,10 +35,6 @@ import java.lang.annotation.Target;
  * <p>
  * The idea for this AST transformation originated in {@link groovy.util.GroovyTestCase#notYetImplemented()}.
  *
- * @author Dierk König
- * @author Andre Steingress
- * @author Ilinca V. Hallberg
- * @author Björn Westlin
  * @since 2.0.0
  */
 @java.lang.annotation.Documented

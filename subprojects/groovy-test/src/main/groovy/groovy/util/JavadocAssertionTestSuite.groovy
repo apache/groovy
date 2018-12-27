@@ -43,8 +43,6 @@ import junit.textui.TestRunner
  * </code>
  *
  * <b>Note: this class requires the Ant module at runtime.</b>
- *
- * @author Merlyn Albery-Speyer
  */
 class JavadocAssertionTestSuite extends TestSuite {
     /** The System Property to set as base directory for collection of Classes.

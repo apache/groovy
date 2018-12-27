@@ -47,11 +47,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
  * Handles generation of code for the {@code @NotYetImplemented} annotation.
  * 
  * @see groovy.transform.NotYetImplemented
- *
- * @author Dierk König
- * @author Andre Steingress
- * @author Ilinca V. Hallberg
- * @author Björn Westlin
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class NotYetImplementedASTTransformation extends AbstractASTTransformation {

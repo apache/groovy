@@ -83,9 +83,6 @@ import java.util.regex.Pattern
  * </ul>
  *
  * See also: {@link StubFor}.
- *
- * @author Dierk Koenig
- * @author Paul King
  */
 class MockFor {
 

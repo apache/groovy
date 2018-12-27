@@ -45,10 +45,6 @@ import java.util.logging.Logger;
  * When setting the log level of this class to FINEST, all file loading will be logged.
  * <p>
  * See also groovy.util.AllTestSuiteTest.groovy
- *
- * @author Andrew Glover
- * @author Dierk Koenig
- * @author Paul King
  */
 public class AllTestSuite extends TestSuite {
 

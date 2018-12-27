@@ -27,7 +27,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods
  *  If a method is demanded multiple times, the ranges are filled by order of recording.
  * 
  *  @see StrictExpectation
- *  @author Dierk Koenig
  */
 class LooseExpectation {
     Demand fDemand  = null

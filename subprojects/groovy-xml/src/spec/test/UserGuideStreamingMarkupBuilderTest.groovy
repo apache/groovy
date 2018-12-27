@@ -22,8 +22,6 @@ import groovy.xml.StreamingMarkupBuilder
 
 /**
 * Tests for the Groovy Xml user guide related to StreamingMarkupBuilderTest.
-*
-* @author Groovy Documentation Community
 */
 class UserGuideStreamingMarkupBuilderTest  extends GroovyTestCase {
 

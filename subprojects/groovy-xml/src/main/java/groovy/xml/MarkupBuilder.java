@@ -54,10 +54,6 @@ import java.util.Map;
  * See the javadoc for {@link #getMkp()} for further details.</li>
  *     <li>Note that tab, newline and carriage return characters are escaped within attributes, i.e. will become &amp;#09;, &amp;#10; and &amp;#13; respectively</li>
  * </ul>
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Stefan Matthias Aust
- * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
- * @author Paul King
  */
 public class MarkupBuilder extends BuilderSupport {
     private IndentPrinter out;

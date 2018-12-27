@@ -30,8 +30,6 @@ import java.util.Map;
 
 /**
  * Lazy evaluated representation of a node attribute.
- *
- * @author John Wilson
  */
 public class Attribute extends GPathResult {
     private final String value;

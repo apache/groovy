@@ -20,9 +20,6 @@ package groovy.bugs
 
 import groovy.xml.MarkupBuilder
 
-/**
- * @author Ted Leung
- */
 class TedsClosureBug extends GroovyTestCase {
     def EXPECTED= '''<atom>
   <title>Ted Leung off the air</title>

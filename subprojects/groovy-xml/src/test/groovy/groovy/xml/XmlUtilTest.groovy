@@ -29,9 +29,6 @@ import static groovy.xml.XmlUtil.escapeControlCharacters
 import static groovy.xml.XmlUtil.escapeXml
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
 
-/**
- * @author Paul King
- */
 class XmlUtilTest extends GroovyTestCase {
     def xml = """\
     <?xml version="1.0" encoding="UTF-8"?>

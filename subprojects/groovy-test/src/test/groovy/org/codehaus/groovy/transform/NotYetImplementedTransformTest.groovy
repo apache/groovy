@@ -20,10 +20,6 @@ package org.codehaus.groovy.transform
 
 import junit.framework.AssertionFailedError
 
-/**
- * @author Dierk König
- * @author Andre Steingress
- */
 class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testNotYetImplemented() {

@@ -23,7 +23,6 @@ import junit.framework.AssertionFailedError
 /**
  *  The object that registers method calls on it for the use with Mocks and Stubs.
  *  For each call a CallSpec object is added to the recorded list.
- *  @author Dierk Koenig
  */
 
 class Demand {

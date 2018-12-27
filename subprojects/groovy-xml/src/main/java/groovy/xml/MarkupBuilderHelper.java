@@ -23,8 +23,6 @@ import java.util.Map;
 
 /**
  * A helper class for MarkupBuilder.
- *
- * @author Paul King
  */
 public class MarkupBuilderHelper {
     private final MarkupBuilder builder;

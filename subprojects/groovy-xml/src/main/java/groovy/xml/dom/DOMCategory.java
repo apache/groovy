@@ -45,9 +45,6 @@ import java.util.Map;
 
 /**
  * Category class which adds GPath style operations to Java's DOM classes.
- *
- * @author sam
- * @author paulk
  */
 public class DOMCategory {
     private static boolean trimWhitespace = false;

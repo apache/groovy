@@ -35,8 +35,6 @@ import java.util.Stack;
 
 /**
  * Represents a node.
- *
- * @author John Wilson
  */
 public class Node implements Writable {
     private final String name;

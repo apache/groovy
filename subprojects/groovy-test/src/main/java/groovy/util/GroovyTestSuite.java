@@ -45,8 +45,6 @@ import java.security.PrivilegedAction;
  * <code>
  * -Dtest=src/test/Foo.groovy
  * </code>
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class GroovyTestSuite extends TestSuite {
 

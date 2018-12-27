@@ -25,8 +25,6 @@ import java.util.regex.Pattern
  * the Javadoc comments of a source file. Assertions should be placed within an html tag with a <code>class="groovyTestCase"</code>
  * attribute assignment. Example:
  * <pre>&lt;pre class="groovyTestCase"&gt; assert "example".size() == 7 &lt;/pre&gt;</pre>
- *
- * @author Merlyn Albery-Speyer
  */
 class JavadocAssertionTestBuilder {
     // TODO write tests for this classes functionality

@@ -19,9 +19,7 @@
 package groovy.util
 
 /**
- * Groovy test case, which recreates internal GroovyShell in each setUp ()
- *
- * @author Alex Tkachman
+ * Groovy test case, which recreates internal GroovyShell in each setUp()
  */
 class GroovyShellTestCase extends GroovyTestCase {
 

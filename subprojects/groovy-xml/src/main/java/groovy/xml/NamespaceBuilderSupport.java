@@ -30,11 +30,6 @@ import java.util.Map;
 
 /**
  * A helper class for creating namespaced GroovyMarkup
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
- * @author Denver Dino
- * @author Marc Guillemot
  */
 public class NamespaceBuilderSupport extends BuilderSupport {
     private boolean autoPrefix;
