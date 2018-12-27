@@ -26,8 +26,6 @@ import static groovy.sql.SqlTestConstants.*
 
 /**
  * Test Sql batch features
- *
- * @author Paul King
  */
 class SqlBatchTest extends GroovyTestCase {
     Sql sql

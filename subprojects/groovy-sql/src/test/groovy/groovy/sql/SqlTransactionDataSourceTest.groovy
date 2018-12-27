@@ -24,8 +24,6 @@ import static groovy.sql.SqlTestConstants.*
 
 /**
  * Test Sql transaction features using a Sql built from a DataSource
- *
- * @author Paul King
  */
 class SqlTransactionDataSourceTest extends SqlTransactionTestCase {
     protected Sql setUpSql() {

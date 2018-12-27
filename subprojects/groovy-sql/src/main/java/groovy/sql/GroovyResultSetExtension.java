@@ -40,7 +40,6 @@ import java.util.Map;
  * <b>This class is not intended to be used directly. Should be used through
  * GroovyResultSetProxy only!</b>
  *
- * @author Jochen Theodorou
  * @see GroovyResultSet
  * @see GroovyResultSetProxy
  */

@@ -22,9 +22,6 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
-/**
- * @author Paul King
- */
 public class SqlOrderByVisitor extends CodeVisitorSupport {
 
     private final StringBuffer buffer = new StringBuffer();
@@ -40,6 +37,5 @@ public class SqlOrderByVisitor extends CodeVisitorSupport {
     public void visitPropertyExpression(PropertyExpression expression) {
         buffer.append(expression.getPropertyAsString());
     }
-
 
 }

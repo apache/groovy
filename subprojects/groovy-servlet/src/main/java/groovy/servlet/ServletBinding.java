@@ -92,18 +92,12 @@ import java.util.Map;
  * <li><tt>"include(String path)"</tt> : <code>request.getRequestDispatcher(path).include(request, response)</code></li>
  * <li><tt>"redirect(String location)"</tt> : <code>response.sendRedirect(location)</code></li>
  * </ul>
- *
- * @author Guillaume Laforge
- * @author Christian Stein
- * @author Jochen Theodorou
  */
 public class ServletBinding extends Binding {
     
     /**
      * A OutputStream dummy that will throw a GroovyBugError for any
      * write method call to it. 
-     * 
-     * @author Jochen Theodorou
      */
     private static class InvalidOutputStream extends OutputStream {
         /**
@@ -121,8 +115,6 @@ public class ServletBinding extends Binding {
      * using the stream will cause a IllegalStateException. 'used' means
      * any write method has been called. Simply requesting the objects will
      * not cause an exception. 
-     * 
-     * @author Jochen Theodorou
      */
     private static class ServletOutput {
         private final HttpServletResponse response;

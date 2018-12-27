@@ -67,12 +67,6 @@ import java.io.IOException;
  * <p>The URL pattern does not require the "*.groovy" mapping.  You can, for
  * example, make it more Struts-like but groovy by making your mapping "*.gdo".
  *
- * @author Sam Pullara
- * @author Mark Turansky (markturansky at hotmail.com)
- * @author Guillaume Laforge
- * @author Christian Stein
- * @author Marcel Overdijk
- *
  * @see groovy.servlet.ServletBinding
  */
 public class GroovyServlet extends AbstractHttpServlet {
