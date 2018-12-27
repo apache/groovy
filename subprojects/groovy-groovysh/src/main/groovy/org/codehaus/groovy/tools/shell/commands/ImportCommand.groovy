@@ -39,8 +39,6 @@ import java.util.regex.Pattern
 
 /**
  * The 'import' command.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ImportCommand
     extends CommandSupport

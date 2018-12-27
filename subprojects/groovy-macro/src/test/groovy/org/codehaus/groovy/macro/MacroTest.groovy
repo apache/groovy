@@ -21,10 +21,6 @@ package org.codehaus.groovy.macro
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.metaclass.MethodSelectionException
 
-/**
- *
- * @author Sergei Egorov <bsideup@gmail.com>
- */
 @CompileStatic
 class MacroTest extends GroovyTestCase {
 

@@ -22,9 +22,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
  * Tests for the {@link DocCommand} class.
- *
- * @author <a href="mailto:me@masatonagai.com">Masato Nagai</a>
- * @author Andre Steingress
  */
 class DocCommandTest extends CommandTestSupport
 {

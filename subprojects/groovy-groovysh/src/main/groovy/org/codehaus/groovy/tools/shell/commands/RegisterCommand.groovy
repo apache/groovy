@@ -26,8 +26,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
  * The 'register' command.
  * Registers a class as a new groovysh command.
  * Requires the command to have matching constructors (shell) or (shell, name, alias).
- *
- * @author <a href="mailto:chris@wensel.net">Chris K Wensel</a>
  */
 class RegisterCommand
     extends CommandSupport

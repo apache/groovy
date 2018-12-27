@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.shell.commands
 
 /**
  * Tests for the {@link HelpCommand} class.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HelpCommandTest
     extends CommandTestSupport

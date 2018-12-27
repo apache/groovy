@@ -425,7 +425,16 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Ivan Z. Ganza'
             }
             contributor {
+                name 'Larry Jacobson'
+            }
+            contributor {
+                name 'Jake Gage'
+            }
+            contributor {
                 name 'Arjun Nayyar'
+            }
+            contributor {
+                name 'Masato Nagai'
             }
             contributor {
                 name 'Mark Chu-Carroll'
@@ -540,6 +549,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Jan Weitz'
             }
             contributor {
+                name 'Chris K Wensel'
+            }
+            contributor {
                 name 'Joachim Baumann'
             }
             contributor {
@@ -622,6 +634,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Alan Green'
+            }
+            contributor {
+                name 'Marty Saxton'
             }
             contributor {
                 name 'Alex Popescu'

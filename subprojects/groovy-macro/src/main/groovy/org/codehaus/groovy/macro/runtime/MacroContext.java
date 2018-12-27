@@ -26,7 +26,6 @@ import org.codehaus.groovy.control.SourceUnit;
 /**
  * Macro method context. Every macro method must be an extension method of it.
  *
- * @author Sergei Egorov <bsideup@gmail.com>
  * @since 2.5.0
  */
 

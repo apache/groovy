@@ -20,12 +20,8 @@ package org.codehaus.groovy.tools.shell.util
 
 /**
  * Unit tests for the {@link MessageSource} class.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class MessageSourceTest
-    extends GroovyTestCase
-{
+class MessageSourceTest extends GroovyTestCase {
     private MessageSource messages
 
     @Override

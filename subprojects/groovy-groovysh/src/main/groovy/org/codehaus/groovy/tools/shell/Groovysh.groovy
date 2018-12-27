@@ -51,8 +51,6 @@ import java.util.regex.Pattern
  * <code>org/codehaus/groovy/tools/shell/commands.xml</code>
  *
  * See {@link XmlCommandRegistrar}
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Groovysh extends Shell {
 

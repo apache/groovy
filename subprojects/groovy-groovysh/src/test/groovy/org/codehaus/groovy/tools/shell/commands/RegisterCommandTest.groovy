@@ -23,8 +23,6 @@ import org.codehaus.groovy.tools.shell.Shell
 
 /**
  * Tests for the {@link RegisterCommand} class.
- *
- * @author <a href="mailto:chris@wensel.net">Chris K Wensel</a>
  */
 class RegisterCommandTest
     extends CommandTestSupport
