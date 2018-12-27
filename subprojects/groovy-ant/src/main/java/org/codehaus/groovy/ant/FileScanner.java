@@ -29,9 +29,6 @@ import java.util.List;
 /** 
  * <p><code>FileScanner</code> is a bean which allows the iteration
  * over a number of files from a collection of FileSet instances.
- *
- * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
- * @author Marc Guillemot
  */
 public class FileScanner extends Task {
 

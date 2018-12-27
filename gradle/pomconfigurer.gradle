@@ -449,7 +449,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Edwin Tellman'
             }
             contributor {
-                name 'Evan A Slatis'
+                name 'Evan "Hippy" Slatis'
             }
             contributor {
                 name 'Mike Dillon'
@@ -655,6 +655,12 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Tom Nichols'
+            }
+            contributor {
+                name 'Ingo Hoffmann'
+            }
+            contributor {
+                name 'Sergii Bondarenko'
             }
             contributor {
                 name 'mgroovy'

@@ -24,63 +24,70 @@ import groovy.swing.SwingBuilder
 import javax.swing.*
 import java.awt.*
 
-/**
-A little GUI to show some of the Inspector capabilities.
-Starting this script opens the ObjectBrowser on "some String".
-Use it in groovysh or groovyConsole to inspect your object of
-interest with
-<code>
-ObjectBrowser.inspect(myObject)
-</code>.
+import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
+import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
+import static groovy.inspect.Inspector.MEMBER_MODIFIER_IDX
+import static groovy.inspect.Inspector.MEMBER_NAME_IDX
+import static groovy.inspect.Inspector.MEMBER_ORIGIN_IDX
+import static groovy.inspect.Inspector.MEMBER_PARAMS_IDX
+import static groovy.inspect.Inspector.MEMBER_TYPE_IDX
+import static groovy.inspect.Inspector.MEMBER_VALUE_IDX
 
-@author Dierk Koenig
-**/
+/**
+ * A little GUI to show some of the Inspector capabilities.
+ * Starting this script opens the ObjectBrowser on "some String".
+ * Use it in groovysh or groovyConsole to inspect your object of interest with:
+ * <code>
+ * ObjectBrowser.inspect(myObject)
+ * </code>.
+ */
 class ObjectBrowser {
-    
+
     def inspector
     def swing, frame, fieldTable, methodTable, itemTable, mapTable
 
     static void main(args) {
         inspect('some String')
     }
-    static void inspect(objectUnderInspection){
+
+    static void inspect(objectUnderInspection) {
         def browser = new ObjectBrowser()
         browser.inspector = new Inspector(objectUnderInspection)
         browser.run()
     }
-    
+
     void run() {
         swing = new SwingBuilder()
-        
-        frame = swing.frame(title:'Groovy Object Browser', location:[200,200],
-                size:[800,600], pack: true, show:true,
+
+        frame = swing.frame(title: 'Groovy Object Browser', location: [200, 200],
+                size: [800, 600], pack: true, show: true,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
-                defaultCloseOperation:WindowConstants.DISPOSE_ON_CLOSE) {
-                
+                defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE) {
+
             menuBar {
-                menu(text:'Help') {
-                    menuItem {action(name:'About', closure: this.&showAbout)}
+                menu(text: 'Help') {
+                    menuItem { action(name: 'About', closure: this.&showAbout) }
                 }
             }
             panel {
                 borderLayout()
-                panel(  name:'Class Info',
-                        border: emptyBorder([5,10,5,10]),
-                        constraints:NORTH) {
-                    flowLayout(alignment:FlowLayout.LEFT)
+                panel(name: 'Class Info',
+                        border: emptyBorder([5, 10, 5, 10]),
+                        constraints: NORTH) {
+                    flowLayout(alignment: FlowLayout.LEFT)
                     def props = inspector.classProps
                     def classLabel = '<html>' + props.join('<br>')
                     label(classLabel)
                 }
-                tabbedPane(constraints:CENTER){
+                tabbedPane(constraints: CENTER) {
                     if (inspector.object instanceof Collection) {
                         scrollPane(name: ' Collection data ') {
                             itemTable = table {
                                 int i = 0
                                 def data = inspector.object.collect { val -> [i++, val] }
-                                tableModel(list:data) {
-                                    closureColumn(header:'Index', read:{it[0]})
-                                    closureColumn(header:'Value', read:{it[1]})
+                                tableModel(list: data) {
+                                    closureColumn(header: 'Index', read: { it[0] })
+                                    closureColumn(header: 'Value', read: { it[1] })
                                 }
                             }
                         }
@@ -90,10 +97,10 @@ class ObjectBrowser {
                             itemTable = table {
                                 int i = 0
                                 def data = inspector.object.collect { key, val -> [i++, key, val] }
-                                tableModel(list:data) {
-                                    closureColumn(header:'Index', read:{it[0]})
-                                    closureColumn(header:'Key',   read:{it[1]})
-                                    closureColumn(header:'Value', read:{it[2]})
+                                tableModel(list: data) {
+                                    closureColumn(header: 'Index', read: { it[0] })
+                                    closureColumn(header: 'Key', read: { it[1] })
+                                    closureColumn(header: 'Value', read: { it[2] })
                                 }
                             }
                         }
@@ -102,45 +109,45 @@ class ObjectBrowser {
                         fieldTable = table {
                             def data = Inspector.sort(inspector.publicFields.toList())
                             data.addAll(Inspector.sort(inspector.propertyInfo.toList()))
-                            tableModel(list:data) {
-                                closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
-                                closureColumn(header:'Value',       read:{it[Inspector.MEMBER_VALUE_IDX]})
-                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
-                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
-                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
-                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
+                            tableModel(list: data) {
+                                closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
+                                closureColumn(header: 'Value', read: { it[MEMBER_VALUE_IDX] })
+                                closureColumn(header: 'Type', read: { it[MEMBER_TYPE_IDX] })
+                                closureColumn(header: 'Origin', read: { it[MEMBER_ORIGIN_IDX] })
+                                closureColumn(header: 'Modifier', read: { it[MEMBER_MODIFIER_IDX] })
+                                closureColumn(header: 'Declarer', read: { it[MEMBER_DECLARER_IDX] })
                             }
                         }
                     }
-                    scrollPane(name:' (Meta) Methods ' ) {
+                    scrollPane(name: ' (Meta) Methods ') {
                         methodTable = table {
                             def data = Inspector.sort(inspector.methods.toList())
                             data.addAll(Inspector.sort(inspector.metaMethods.toList()))
 
-                            tableModel(list:data) {
-                                closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
-                                closureColumn(header:'Params',      read:{it[Inspector.MEMBER_PARAMS_IDX]})
-                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
-                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
-                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
-                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
-                                closureColumn(header:'Exceptions',  read:{it[Inspector.MEMBER_EXCEPTIONS_IDX]})
+                            tableModel(list: data) {
+                                closureColumn(header: 'Name', read: { it[MEMBER_NAME_IDX] })
+                                closureColumn(header: 'Params', read: { it[MEMBER_PARAMS_IDX] })
+                                closureColumn(header: 'Type', read: { it[MEMBER_TYPE_IDX] })
+                                closureColumn(header: 'Origin', read: { it[MEMBER_ORIGIN_IDX] })
+                                closureColumn(header: 'Modifier', read: { it[MEMBER_MODIFIER_IDX] })
+                                closureColumn(header: 'Declarer', read: { it[MEMBER_DECLARER_IDX] })
+                                closureColumn(header: 'Exceptions', read: { it[MEMBER_EXCEPTIONS_IDX] })
                             }
                         }
                     }
                 }
             }
         }
-        
+
         // Add a bit of formatting
         addSorter(itemTable)
         addSorter(mapTable)
         addSorter(fieldTable)
         addSorter(methodTable)
-        
+
         frame.toFront()
     }
-    
+
     void addSorter(table) {
         if (table != null) {
             def sorter = new TableSorter(table.model)
@@ -148,13 +155,13 @@ class ObjectBrowser {
             sorter.addMouseListenerToHeaderInTable(table)
         }
     }
-    
+
     void showAbout(EventObject evt) {
-         def pane = swing.optionPane()
-         // work around GROOVY-1048
-         def version = GroovySystem.version
-         pane.setMessage('An interactive GUI to explore object capabilities.\nVersion ' + version)
-         def dialog = pane.createDialog(frame, 'About Groovy Object Browser')
-         dialog.show()
+        def pane = swing.optionPane()
+        // work around GROOVY-1048
+        def version = GroovySystem.version
+        pane.setMessage('An interactive GUI to explore object capabilities.\nVersion ' + version)
+        def dialog = pane.createDialog(frame, 'About Groovy Object Browser')
+        dialog.show()
     }
 }

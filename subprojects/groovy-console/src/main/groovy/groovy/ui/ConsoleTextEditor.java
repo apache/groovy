@@ -44,11 +44,6 @@ import java.util.prefs.Preferences;
 
 /**
  * Component which provides a styled editor for the console.
- *
- * @author hippy
- * @author Danno Ferrin
- * @author Tim Yates
- * @author Guillaume Laforge
  */
 public class ConsoleTextEditor extends JScrollPane {
     public String getDefaultFamily() {

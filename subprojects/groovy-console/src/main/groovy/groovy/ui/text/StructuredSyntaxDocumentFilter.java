@@ -40,10 +40,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- *
- * @author Evan "Hippy" Slatis
- */
 public class StructuredSyntaxDocumentFilter extends DocumentFilter {
     
     public static final String TAB_REPLACEMENT = "    ";

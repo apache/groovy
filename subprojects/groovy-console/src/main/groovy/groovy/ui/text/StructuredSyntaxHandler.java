@@ -23,9 +23,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
-/**
- * @author Evan "Hippy" Slatis
- */
 public class StructuredSyntaxHandler extends DefaultHandler {
 
     //StyleConstants.

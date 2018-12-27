@@ -18,9 +18,6 @@
  */
 package groovy.ui.text
 
-/**
- * @author Andre Steingress
- */
 class GroovyFilterTests extends GroovyTestCase {
 
     void testDecimalIntegerLiteral() {

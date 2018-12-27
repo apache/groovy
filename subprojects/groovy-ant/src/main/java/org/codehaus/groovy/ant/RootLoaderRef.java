@@ -54,7 +54,6 @@ import org.codehaus.groovy.tools.RootLoader;
  * with different classloaders are different, so ant would not be able to find the method.
  *
  * @see org.codehaus.groovy.tools.RootLoader
- * @author Jochen Theodorou
  */
 public class RootLoaderRef extends MatchingTask {
     private String name;

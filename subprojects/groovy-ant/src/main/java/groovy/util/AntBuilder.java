@@ -61,11 +61,6 @@ import java.util.logging.Logger;
  * you will need to add one or more additional jars from the ant distribution to
  * your classpath - see the <a href="http://ant.apache.org/manual/install.html#librarydependencies">library
  * dependencies</a> for more details.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Dierk Koenig (dk)
- * @author Marc Guillemot
- * @author Paul King
  */
 public class AntBuilder extends BuilderSupport {
 

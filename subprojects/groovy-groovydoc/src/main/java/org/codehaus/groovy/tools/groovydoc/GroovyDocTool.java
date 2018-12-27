@@ -28,9 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-/**
- * @author Jeremy Rayner
- */
 public class GroovyDocTool {
     private final Logger log = Logger.create(GroovyDocTool.class);
     private final GroovyRootDocBuilder rootDocBuilder;

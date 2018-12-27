@@ -31,10 +31,7 @@ import java.util.regex.Pattern;
  * <p>
  * NB the *.groovy files in this directory should not get compiled with the rest of the test classes
  * since that would ruin the whole point of testing compilation by the Ant tasks.  In fact it doesn't
- * matter as the tests remove all class files that should not pre-exist from this directory at each
- * step
- *
- * @author Russel Winder
+ * matter as the tests remove all class files that should not pre-exist from this directory at each step.
  */
 public class GroovycTest extends GroovyTestCase {
     private final String classDirectory = "target/classes/groovy/test/org/codehaus/groovy/ant/";

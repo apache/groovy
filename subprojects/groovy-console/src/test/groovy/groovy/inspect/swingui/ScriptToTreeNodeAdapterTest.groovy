@@ -30,8 +30,6 @@ import junit.framework.AssertionFailedError
  * The assertions in this test case often assert against the toString() representation of
  * an object. Normally, this is bad form. However, the class under test is meant to display
  * toString() forms in a user interface. So in this case it is appropriate. 
- *
- * @author Hamlet D'Arcy
  */
 class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 

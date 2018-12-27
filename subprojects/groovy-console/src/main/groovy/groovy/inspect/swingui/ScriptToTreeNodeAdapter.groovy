@@ -264,7 +264,6 @@ class ScriptToTreeNodeAdapter {
 
 /**
  * This Node Operation builds up a root tree node for the viewer.
- * @author Hamlet D'Arcy
  */
 class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
@@ -455,8 +454,6 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
 /**
 * This AST visitor builds up a TreeNode.
- *
- * @author Hamlet D'Arcy
 */
 @PackageScope
 class TreeNodeBuildingVisitor extends CodeVisitorSupport {
