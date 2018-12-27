@@ -37,8 +37,6 @@ import java.util.Map;
 
 /**
  * A helper class for creating a W3C DOM tree
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class DOMBuilder extends BuilderSupport {
 

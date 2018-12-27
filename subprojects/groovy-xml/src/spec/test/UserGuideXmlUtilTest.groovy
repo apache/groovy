@@ -22,8 +22,6 @@ import groovy.util.GroovyTestCase
 
 /**
 * Tests for the Groovy Xml user guide related to XmlUtil.
-*
-* @author Groovy Documentation Community
 */
 class UserGuideXmlUtilTest  extends GroovyTestCase {
 

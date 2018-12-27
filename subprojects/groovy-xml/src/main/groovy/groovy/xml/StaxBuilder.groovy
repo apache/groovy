@@ -50,9 +50,6 @@ package groovy.xml
  * }
  * assert writer.toString() == '''{"root1":{"@a":"5","@b":"7","elem1":"hello1","elem2":"hello2","elem3":{"@x":"7"}}}'''
  * </pre>
- *
- * @author <a href="dejan@nighttale.net">Dejan Bosanac</a>
- * @author Paul King
  */
 public class StaxBuilder extends BuilderSupport {
 

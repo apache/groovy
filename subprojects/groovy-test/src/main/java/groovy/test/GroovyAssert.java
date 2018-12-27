@@ -51,10 +51,6 @@ import java.util.logging.Logger;
  * </p>
  *
  * @see groovy.util.GroovyTestCase
- *
- * @author Paul King
- * @author Andre Steingress
- *
  * @since 2.3
  */
 public class GroovyAssert extends org.junit.Assert {

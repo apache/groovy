@@ -27,9 +27,6 @@ import org.custommonkey.xmlunit.Diff
 
 /**
  * Tests Stax builder with XML
- * 
- * @author <a href="dejan@nighttale.net">Dejan Bosanac</a>
- * @author Paul King
  */
 class StaxBuilderTest extends GroovyTestCase {
 

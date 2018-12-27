@@ -101,9 +101,6 @@ import java.lang.reflect.Modifier
 /**
  * Generate the groovy source according to the AST.
  * It is useful to verify the equality of new and old parser.
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/08/16
  */
 @CompileStatic
 class AstDumper {
@@ -146,10 +143,7 @@ class AstDumper {
  * we have to copy the source code(instead of invoking it): subprojects/groovy-console/src/main/groovy/groovy/inspect/swingui/AstNodeToScriptAdapter.groovy
  * *****************************************************
  *
- *
  * An adapter from ASTNode tree to source code.
- *
- * @author Hamlet D'Arcy
  */
 @CompileStatic
 class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation implements GroovyCodeVisitor, GroovyClassVisitor {

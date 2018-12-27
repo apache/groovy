@@ -27,9 +27,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.IOException;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public abstract class TestXmlSupport extends TestSupport {
 
     protected void dump(Node node) throws IOException {

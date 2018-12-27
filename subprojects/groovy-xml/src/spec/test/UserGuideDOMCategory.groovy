@@ -23,8 +23,6 @@ import groovy.xml.dom.DOMCategory
 
 /**
 * Tests for the Groovy Xml user guide related to DOMCategory.
-*
-* @author Groovy Documentation Community
 */
 class UserGuideDOMCategoryTest  extends GroovyTestCase {
 

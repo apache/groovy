@@ -23,9 +23,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
  * The Antlr4 parser for creating a module node.
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/08/14
  */
 public class Antlr4Parser extends AbstractParser {
     private final CompilerConfiguration compilerConfiguration;

@@ -35,9 +35,6 @@ import java.io.Reader;
 
 /**
  * A parser plugin for the new parser
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/08/14
  */
 public class Antlr4ParserPlugin implements ParserPlugin {
     private ReaderSource readerSource;

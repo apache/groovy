@@ -25,9 +25,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Manage ATN to avoid memory leak
- *
- * @author <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on 2016/08/14
  */
 public abstract class AtnManager {
     private static final ReentrantReadWriteLock RRWL = new ReentrantReadWriteLock(true);

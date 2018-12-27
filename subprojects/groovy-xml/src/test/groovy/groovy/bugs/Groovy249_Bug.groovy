@@ -20,9 +20,6 @@ package groovy.bugs
 
 import groovy.xml.MarkupBuilder
 
-/**
- * @author Merrick Schincariol 
- */
 class Groovy249_Bug extends GroovyTestCase {
 
     void testBug() {

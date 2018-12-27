@@ -22,10 +22,6 @@ package groovy.xml
  * Tests for MarkupBuilder. The tests directly in this file are specific
  * to MarkupBuilder. Functionality in common with StreamingMarkupBuilder
  * is tested in the BuilderTestSupport parent class.
- *
- *   @author Scott Stirling
- *   @author Pilho Kim
- *   @author Paul King
  */
 class MarkupBuilderTest extends BuilderTestSupport {
     private StringWriter writer

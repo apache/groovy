@@ -33,9 +33,6 @@ import java.util.logging.Logger;
 /**
  * The base parser for creating a module node.
  * The concrete compiler configuration can be specified by the sub-classes of the base parser(e.g. Antlr2Parser, Antlr4Parser)
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/08/14
  */
 public abstract class AbstractParser {
     private static final Logger LOGGER = Logger.getLogger(AbstractParser.class.getName());

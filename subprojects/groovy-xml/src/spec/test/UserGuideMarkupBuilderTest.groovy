@@ -23,8 +23,6 @@ import org.codehaus.groovy.tools.xml.DomToGroovy
 
 /**
 * Tests for the Groovy Xml user guide related to MarkupBuilderTest.
-*
-* @author Groovy Documentation Community
 */
 class UserGuideMarkupBuilderTest  extends GroovyTestCase {
 

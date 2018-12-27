@@ -483,7 +483,28 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Ted Naleid'
             }
             contributor {
+                name 'Ted Leung'
+            }
+            contributor {
+                name 'Merrick Schincariol'
+            }
+            contributor {
                 name 'Chanwit Kaewkasi'
+            }
+            contributor {
+                name 'Stefan Matthias Aust'
+            }
+            contributor {
+                name 'Jochen Eddel+'
+            }
+            contributor {
+                name 'Ilinca V. Hallberg'
+            }
+            contributor {
+                name 'Björn Westlin'
+            }
+            contributor {
+                name 'Andrew Glover'
             }
             contributor {
                 name 'Brad Long'

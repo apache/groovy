@@ -26,7 +26,6 @@ import java.util.logging.Level
  * add found files to the log,
  * produce a proper TestSuite,
  * and wrap Scripts into TestCases.
- * @author Dierk Koenig
  */
 class AllTestSuiteTest extends GroovyLogTestCase {
 

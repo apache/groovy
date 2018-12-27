@@ -76,7 +76,6 @@ import java.util.Stack;
  * rootNode.a.each { assert it.text() in ['one!','two!'] }
  * </pre>
  *
- * @author John Wilson
  * @see GPathResult
  */
 public class XmlSlurper extends DefaultHandler {

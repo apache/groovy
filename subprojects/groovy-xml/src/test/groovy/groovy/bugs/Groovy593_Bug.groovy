@@ -22,9 +22,6 @@ import groovy.xml.MarkupBuilder
 
 /**
  * Tests that special XML chars are made into entities by MarkupBuilder.
- *
- * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
- * @author Pilho Kim
  */
 class Groovy593_Bug extends GroovyTestCase {
 

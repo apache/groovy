@@ -22,8 +22,6 @@ import groovy.util.GroovyTestCase
 
 /**
 * Tests for the Groovy Xml user guide related to XmlSlurper.
-*
-* @author Groovy Documentation Community
 */
 class UserGuideXmlSlurperTest  extends GroovyTestCase {
 

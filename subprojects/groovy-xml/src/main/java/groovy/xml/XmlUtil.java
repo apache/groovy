@@ -55,8 +55,6 @@ import java.net.URL;
 
 /**
  * Used for pretty printing XML content and other XML related utilities.
- *
- * @author Paul King
  */
 public class XmlUtil {
     /**
