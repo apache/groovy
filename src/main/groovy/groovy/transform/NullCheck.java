@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * import groovy.transform.NullCheck
  * import static groovy.test.GroovyAssert.shouldFail
  *
- * {@code @NullCheck)
+ * {@code @NullCheck}
  * class Greeter {
  *     private String audience
  *
