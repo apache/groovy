@@ -28,9 +28,6 @@ import org.apache.ivy.core.event.resolve.StartResolveEvent
  * Groovy Swing console.
  *
  * Adds Groovy Grape feedback (via an Ivy listener).
- *
- * @author Guillaume Laforge
- * @author Paul King
  */
 class ConsoleIvyPlugin {
     Console savedConsole

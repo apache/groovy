@@ -26,9 +26,6 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @author Guillaume Laforge
- */
 public class AntProjectPropertiesDelegate extends Hashtable {
 
     private final Project project;

@@ -37,8 +37,6 @@ import java.util.regex.Pattern;
  * Caution: the *.groovy files used by this test should not get compiled with the rest of the
  * test classes compilation process otherwise they would be available in the classpath
  * and the tests here would be meaningless (tested by testClasspath_missing).
- *
- * @author Marc Guillemot
  */
 public class GroovyTest extends GroovyTestCase {
     public static String FLAG = null;

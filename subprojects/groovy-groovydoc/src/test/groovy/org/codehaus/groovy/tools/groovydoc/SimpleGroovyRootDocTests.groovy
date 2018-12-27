@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
-/**
- * @author Andre Steingress
- */
 class SimpleGroovyRootDocTests extends GroovyTestCase {
 
     // GROOVY-6017

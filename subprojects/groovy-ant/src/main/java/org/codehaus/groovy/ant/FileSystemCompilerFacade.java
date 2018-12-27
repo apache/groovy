@@ -27,8 +27,6 @@ import java.util.List;
 /**
  * This is a helper class, to provide a controlled entry point for the groovyc
  * ant task forked mode.
- *
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class FileSystemCompilerFacade {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];

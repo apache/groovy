@@ -33,16 +33,11 @@ import java.io.IOException;
  * Compiles Java and Groovy source files.
  *
  * This works by invoking the {@link GenerateStubsTask} task, then the
- * {@link Javac} task and then the {@link GroovycTask}.  Each task can
- * be configured by creating a nested element.  Common configuration
- * such as the source dir and classpath is picked up from this tasks
- * configuration.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
+ * {@link Javac} task and then the {@link GroovycTask}.  Each task can be
+ * configured by creating a nested element.  Common configuration such as
+ * the source dir and classpath is picked up from this tasks configuration.
  */
-public class UberCompileTask
-    extends Task
-{
+public class UberCompileTask extends Task {
     private Path src;
 
     private File destdir;
@@ -215,9 +210,7 @@ public class UberCompileTask
     // Nested task adapters
     //
     
-    private class GenStubsAdapter
-        extends GenerateStubsTask
-    {
+    private class GenStubsAdapter extends GenerateStubsTask {
         public FileSet getFileSet() {
             return super.getImplicitFileSet();
         }
@@ -227,9 +220,7 @@ public class UberCompileTask
         }
     }
 
-    private class JavacAdapter
-        extends Javac
-    {
+    private class JavacAdapter extends Javac {
         public FileSet getFileSet() {
             return super.getImplicitFileSet();
         }
@@ -239,9 +230,7 @@ public class UberCompileTask
         }
     }
 
-    private class GroovycAdapter
-        extends GroovycTask
-    {
+    private class GroovycAdapter extends GroovycTask {
         public FileSet getFileSet() {
             return super.getImplicitFileSet();
         }
