@@ -31,9 +31,6 @@ import java.util.logging.Logger;
  * a batch count size. If the batch count reaches the predefined number,
  * this Statement does an executeBatch() automatically. If batchSize is
  * zero, then no batching is performed.
- *
- * @author Daniel Henrique Alves Lima
- * @author Paul King
  */
 public class BatchingPreparedStatementWrapper extends BatchingStatementWrapper {
 

@@ -78,9 +78,6 @@ import java.util.regex.Pattern;
  * <pre>
  * reflection = false(default) | true
  * </pre>
- *
- * @author Christian Stein
- * @author Roshan Dawrani (roshandawrani)
  */
 public abstract class AbstractHttpServlet extends HttpServlet implements ResourceConnector {
 

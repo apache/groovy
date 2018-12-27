@@ -229,16 +229,6 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * the interaction with the underlying database.
  * <p>
  * This class is <b>not</b> thread-safe.
- *
- * @author Chris Stevenson
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
- * @author Marc DeXeT
- * @author John Bito
- * @author John Hurst
- * @author David Durham
- * @author Daniel Henrique Alves Lima
- * @author David Sutherland
  */
 public class Sql implements AutoCloseable {
 

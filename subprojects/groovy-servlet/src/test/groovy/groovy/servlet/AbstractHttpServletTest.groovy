@@ -26,8 +26,6 @@ import javax.servlet.ServletConfig
  * This test case tests the AbstractHttpServlet class. It uses a test
  * specific subclass called ConcreteHttpServlet to test the abstract
  * class in isolation from any implementations.
- *
- * @author Hamlet D'Arcy
  */
 class AbstractHttpServletTest extends GroovyTestCase {
 

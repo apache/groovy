@@ -27,8 +27,6 @@ import groovy.xml.MarkupBuilder
 
 /**
  * This test case tests the ServletBinding class.
- *
- * @author Hamlet D'Arcy
  */
 class ServletBindingTest extends GroovyTestCase {
 

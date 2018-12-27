@@ -26,8 +26,6 @@ import static groovy.sql.SqlTestConstants.*
 /**
  * Test Sql transaction features using a Sql built from a connection
  * along with testing Stored Procedure calls
- *
- * @author Paul King
  */
 class SqlCallTest extends GroovyTestCase {
 

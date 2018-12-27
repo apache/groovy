@@ -24,8 +24,6 @@ import java.sql.SQLException;
 
 /**
  * Represents a ResultSet retrieved as a callable statement out parameter.
- *
- * @author rfuller
  */
 class CallResultSet extends GroovyResultSetExtension {
     int indx;

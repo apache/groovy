@@ -639,6 +639,18 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Marty Saxton'
             }
             contributor {
+                name 'Marcel Overdijk'
+            }
+            contributor {
+                name 'Jonathan Carlson'
+            }
+            contributor {
+                name 'Thomas Heller'
+            }
+            contributor {
+                name 'Ivan Ganza'
+            }
+            contributor {
                 name 'Alex Popescu'
             }
             contributor {

@@ -18,9 +18,6 @@
  */
 package groovy.sql
 
-/**
- * @author Brian McCallister
- */
 class SqlWithBuilderTest extends SqlHelperTestCase {
     void testSqlQuery() {
          def sql = createSql()

@@ -20,8 +20,6 @@ package groovy.sql;
 
 /**
  * A typed parameter to pass to a query
- *
- * @author rfuller
  */
 public interface InParameter {
 

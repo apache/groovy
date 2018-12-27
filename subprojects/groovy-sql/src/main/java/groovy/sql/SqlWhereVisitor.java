@@ -33,9 +33,6 @@ import org.codehaus.groovy.syntax.Types;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author James Strachan
- */
 public class SqlWhereVisitor extends CodeVisitorSupport {
 
     private final StringBuffer buffer = new StringBuffer();

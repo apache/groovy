@@ -30,8 +30,6 @@ import java.util.Set;
  * Represents an extent of objects.
  * It's primarily used by methods of Groovy's {@link groovy.sql.Sql} class to return {@code ResultSet} data in map
  * form; allowing access to the result of a SQL query by the name of the column, or by the column number.
- *
- * @author Jean-Louis Berliet
  */
 public class GroovyRowResult extends GroovyObjectSupport implements Map {
 
