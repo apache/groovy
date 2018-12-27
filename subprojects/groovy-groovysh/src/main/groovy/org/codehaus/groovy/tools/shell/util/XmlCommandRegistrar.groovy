@@ -50,11 +50,8 @@ import org.codehaus.groovy.tools.shell.Shell
  </commands>
  * }
  * <pre>
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
-class XmlCommandRegistrar
-{
+class XmlCommandRegistrar {
     private final Logger log = Logger.create(this.class)
 
     private final Shell shell

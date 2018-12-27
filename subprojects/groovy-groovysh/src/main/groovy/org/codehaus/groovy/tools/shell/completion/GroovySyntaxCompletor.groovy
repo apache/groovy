@@ -62,8 +62,6 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SPREAD_DOT
 /**
  * Implements the Completor interface to provide competions for
  * GroovyShell by tokenizing the buffer and invoking other classes depending on the tokens found.
- *
- * @author <a href="mailto:probabilitytrees@gmail.com">Marty Saxton</a>
  */
 class GroovySyntaxCompletor implements Completer {
 

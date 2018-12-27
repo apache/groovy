@@ -24,8 +24,6 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * The 'purge' command.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class PurgeCommand
     extends ComplexCommandSupport

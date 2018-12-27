@@ -22,8 +22,6 @@ import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
  * Manages the shells buffers.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class BufferManager
 {

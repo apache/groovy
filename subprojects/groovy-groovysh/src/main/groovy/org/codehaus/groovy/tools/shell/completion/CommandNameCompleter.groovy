@@ -24,8 +24,6 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * Completor for the command.names
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class CommandNameCompleter extends SimpleCompletor {
     private final CommandRegistry registry

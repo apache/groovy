@@ -47,7 +47,6 @@ import java.util.List;
  * {@code MacroStub.INSTANCE.macroMethod(123)}
  * (where {@code myMacroMethod} returns constant expression {@code 123})
  *
- * @author Sergei Egorov <bsideup@gmail.com>
  * @since 2.5.0
  */
 class MacroCallTransformingVisitor extends ClassCodeVisitorSupport {

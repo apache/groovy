@@ -24,8 +24,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
  * The 'exit' command.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ExitCommand
     extends CommandSupport
