@@ -69,10 +69,6 @@ import java.util.Map;
  *    }
  * </pre>
  *
- * @author Tim Yates
- * @author Andrey Bloschetsov
- * @author Graeme Rocher
- *
  * @since 1.8.1
  */
 public class StreamingJsonBuilder extends GroovyObjectSupport {

@@ -43,10 +43,6 @@ import java.util.Map;
  * an underlying JMX MBean.
  * Properties and normal method invocations
  * delegate to the MBeanServer to the actual MBean.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Steve Button
- * @author Paul King
  */
 public class GroovyMBean extends GroovyObjectSupport {
     private final MBeanServerConnection server;

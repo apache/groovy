@@ -22,7 +22,6 @@ package groovy.jmx.builder;
  * This is the management interface for JmxEventEmitter.  This MBean is used internally by
  * JmxBuilder to broadcast events to registered listeners of the underlying MBeanServer.
  *
- * @author Vladimir Vivien
  * @see groovy.jmx.builder.JmxEventEmitter
  */
 public interface JmxEventEmitterMBean {

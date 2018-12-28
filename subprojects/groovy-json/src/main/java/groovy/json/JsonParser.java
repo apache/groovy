@@ -25,7 +25,7 @@ import java.io.Reader;
 /**
  * This is the parser interface that backs the new JsonSlurper.
  * It was derived from the Boon JSON parser.
- * @author Rick Hightower
+ *
  * @since 2.3.0
  */
 public interface JsonParser {

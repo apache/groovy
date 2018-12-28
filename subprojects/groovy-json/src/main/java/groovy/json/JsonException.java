@@ -22,7 +22,6 @@ package groovy.json;
  * <code>JsonException</code> is the exception thrown by the JSON builder and slurper classes,
  * whenever a problem occurs when creating or parsing JSON data structures.
  *
- * @author Guillaume Laforge
  * @since 1.8.0
  */
 public class JsonException extends RuntimeException {

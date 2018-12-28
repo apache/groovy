@@ -85,11 +85,7 @@ import java.security.PrivilegedAction;
 /**
  * JSR-223 Engine implementation.
  *
- * @author Adapted from original by Mike Grogan
- * @author Adapted from original by A. Sundararajan
- * @author Jim White
- * @author Guillaume Laforge
- * @author Jochen Theodorou
+ * Adapted from original by Mike Grogan and A. Sundararajan
  */
 public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Compilable, Invocable {
 

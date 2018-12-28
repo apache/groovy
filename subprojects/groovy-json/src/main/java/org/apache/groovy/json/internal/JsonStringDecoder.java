@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.json.internal;
 
-/**
- * @author Richard Hightower
- */
 public class JsonStringDecoder {
 
     public static String decode(char[] chars, int start, int to) {

@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.json.internal;
 
-/**
- * @author Richard Hightower
- */
 public enum Type {
 
     INTEGER, STRING, DOUBLE, TRUE, FALSE, NULL, MAP, LIST

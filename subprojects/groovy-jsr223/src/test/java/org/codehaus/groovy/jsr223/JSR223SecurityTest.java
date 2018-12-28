@@ -42,8 +42,6 @@ import java.util.Set;
 
 /**
  * Test for GROOVY-3946 and GROOVY-5255.
- *
- * @author Tiago Fernandez
  */
 public class JSR223SecurityTest {
 

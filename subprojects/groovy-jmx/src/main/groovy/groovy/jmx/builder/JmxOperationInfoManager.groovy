@@ -29,10 +29,7 @@ import javax.management.modelmbean.ModelMBeanOperationInfo
  * It cycles through the provided meta map from the bean() node and generate JMX Info objects used to
  * expose information in the MBeanServer.
  *
- * @author Vladimir Vivien
- *
  * @see groovy.jmx.builder.JmxMetaMapBuilder
- *
  */
 class JmxOperationInfoManager {
     /** *
@@ -40,7 +37,7 @@ class JmxOperationInfoManager {
      * @param list of meta maps
      * @return array of ModelMBeanConstructorInfo
      */
-    public static List<ModelMBeanConstructorInfo> getConstructorInfosFromMap(Map metaMap) {
+    static List<ModelMBeanConstructorInfo> getConstructorInfosFromMap(Map metaMap) {
         if (!metaMap) return null
         def ctors = []
         metaMap.each {ctorName, map ->
@@ -56,7 +53,7 @@ class JmxOperationInfoManager {
      * @param meta map containing descriptor information
      * @return the fully realized ModelMBeanConstructorInfo for the provided constructor reference.
      */
-    public static ModelMBeanConstructorInfo getConstructorInfoFromMap(Map map) {
+    static ModelMBeanConstructorInfo getConstructorInfoFromMap(Map map) {
         if (!map) return null
 
         def ctor = map.remove("constructor")
@@ -92,7 +89,7 @@ class JmxOperationInfoManager {
      * @param list of meta maps
      * @return array of ModelMBeanOperationInfo
      */
-    public static List<ModelMBeanOperationInfo> getOperationInfosFromMap(Map metaMap) {
+    static List<ModelMBeanOperationInfo> getOperationInfosFromMap(Map metaMap) {
         if (!metaMap) return null
         def ops = []
         metaMap.each {opNames, map ->
@@ -107,7 +104,7 @@ class JmxOperationInfoManager {
      * @param the meta map for the method
      * @return the generated ModelMBeanOperationInfo
      */
-    public static ModelMBeanOperationInfo getOperationInfoFromMap(Map map) {
+    static ModelMBeanOperationInfo getOperationInfoFromMap(Map map) {
         if (!map) return null
 
         MetaMethod method = map.remove("method")
@@ -141,7 +138,7 @@ class JmxOperationInfoManager {
      * @param the meta map containing the param info
      * @return an array of JMX MBeanParameterInfo
      */
-    public static List<MBeanParameterInfo> buildParamInfosFromMaps(Map metaMap) {
+    static List<MBeanParameterInfo> buildParamInfosFromMaps(Map metaMap) {
         if (!metaMap || metaMap.size() == 0) return null
         List<MBeanParameterInfo> result = new ArrayList<MBeanParameterInfo>(metaMap.size())
 
@@ -160,7 +157,7 @@ class JmxOperationInfoManager {
      * @param prop - the property object on the POGO/POJO that represents a getter
      * @return a ModelMBeanOperation info built 
      */
-    public static ModelMBeanOperationInfo createGetterOperationInfoFromProperty(MetaProperty prop) {
+    static ModelMBeanOperationInfo createGetterOperationInfoFromProperty(MetaProperty prop) {
         if (prop == null) return null
 
         Descriptor desc = new DescriptorSupport()
@@ -190,7 +187,7 @@ class JmxOperationInfoManager {
      * @param prop - the property object on the POGO/POJO that represents a setter
      * @return a ModelMBeanOperation info built
      */
-    public static ModelMBeanOperationInfo createSetterOperationInfoFromProperty(MetaProperty prop) {
+    static ModelMBeanOperationInfo createSetterOperationInfoFromProperty(MetaProperty prop) {
 
         Descriptor desc = new DescriptorSupport()
         String name = "set" + JmxBuilderTools.capitalize(prop.name)

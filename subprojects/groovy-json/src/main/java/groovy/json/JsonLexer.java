@@ -33,7 +33,6 @@ import static groovy.json.JsonTokenType.startingWith;
 /**
  * The lexer reads JSON tokens in a streaming fashion from the underlying reader.
  *
- * @author Guillaume Laforge
  * @since 1.8.0
  */
 public class JsonLexer implements Iterator<JsonToken> {

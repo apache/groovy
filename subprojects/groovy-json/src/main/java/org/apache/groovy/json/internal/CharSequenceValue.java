@@ -30,9 +30,6 @@ import static org.apache.groovy.json.internal.CharScanner.parseIntFromTo;
 import static org.apache.groovy.json.internal.CharScanner.parseLongFromTo;
 import static org.apache.groovy.json.internal.Exceptions.die;
 
-/**
- * @author Rick Hightower
- */
 public class CharSequenceValue implements Value, CharSequence {
 
     private final Type type;

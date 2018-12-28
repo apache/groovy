@@ -59,10 +59,7 @@ import java.util.List;
  * Groovy <code>ScriptEngines</code> and also exposes metadata describing
  * Groovy's engine class.
  *
- * @author Adapted from original by Mike Grogan
- * @author Adapted from original by A. Sundararajan
- * @author Jim White
- * @author Guillaume Laforge
+ * Adapted from original by Mike Grogan and A. Sundararajan
  */
 public class GroovyScriptEngineFactory implements ScriptEngineFactory {
 

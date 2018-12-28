@@ -83,9 +83,6 @@ import java.util.Map;
  * </pre></code>
  *
  * @see groovy.json.JsonParserType
- *
- * @author Guillaume Laforge
- * @author Rick Hightower
  * @since 1.8.0
  */
 public class JsonSlurper {

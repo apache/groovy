@@ -22,9 +22,6 @@ import org.apache.groovy.json.internal.CharBuf
 
 /**
  * Test the internal CharBuf class
- *
- * @author Rick Hightower
- * @author Guillaume Laforge
  */
 class CharBufTest extends GroovyTestCase {
 

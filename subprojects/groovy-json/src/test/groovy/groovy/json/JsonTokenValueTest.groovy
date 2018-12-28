@@ -20,9 +20,6 @@ package groovy.json
 
 import static JsonTokenType.*
 
-/**
- * @author Guillaume Laforge
- */
 class JsonTokenValueTest extends GroovyTestCase {
 
     void testValues() {

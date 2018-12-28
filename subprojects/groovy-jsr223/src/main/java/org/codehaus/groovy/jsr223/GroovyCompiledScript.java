@@ -55,8 +55,7 @@ import javax.script.ScriptException;
  * Used to represent compiled Groovy scripts.  Such scripts may be executed repeatedly
  * by Groovy's <code>ScriptEngine</code> using the <code>eval</code> method without reparsing overheads.
  *
- * @author Adapted from original by Mike Grogan
- * @author Adapted from original by A. Sundararajan
+ * Adapted from original by Mike Grogan and A. Sundararajan
  */
 public class GroovyCompiledScript extends CompiledScript {
 

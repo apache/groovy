@@ -501,6 +501,12 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Philip Milne'
             }
             contributor {
+                name 'Tiago Fernandez'
+            }
+            contributor {
+                name 'Steve Button'
+            }
+            contributor {
                 name 'Joachim Baumann'
             }
             contributor {
@@ -688,6 +694,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Martin Ghados'
+            }
+            contributor {
+                name 'Martin Stockhammer'
             }
             contributor {
                 name 'Alberto Mijares'

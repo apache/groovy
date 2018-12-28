@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.json.internal;
 
-/**
- * @author Richard Hightower
- */
 public class ArrayUtils {
 
     public static char[] copyRange(char[] source, int startIndex, int endIndex) {

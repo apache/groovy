@@ -21,9 +21,6 @@ package org.apache.groovy.json.internal;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Richard Hightower
- */
 public class JsonParserLax extends JsonParserCharArray {
 
     private final boolean useValues;

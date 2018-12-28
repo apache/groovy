@@ -22,9 +22,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
 
-/**
- * @author Rick Hightower
- */
 public interface Value {
 
     byte byteValue();
