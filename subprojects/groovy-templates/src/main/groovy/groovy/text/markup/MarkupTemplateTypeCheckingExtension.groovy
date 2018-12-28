@@ -59,8 +59,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssi
  * calls into direct calls to {@link BaseTemplate#methodMissing(java.lang.String, java.lang.Object)}
  * for faster rendering.</p>
  * <p>This extension also supports optional type checking of the model</p>
- *
- * @author Cedric Champeau
  */
 class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 

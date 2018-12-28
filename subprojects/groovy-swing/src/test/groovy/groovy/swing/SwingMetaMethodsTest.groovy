@@ -22,10 +22,6 @@ import javax.swing.*
 import javax.swing.table.*
 import javax.swing.tree.*
 
-/**
- *
- * @author Andres.Almiray
- */
 class SwingMetaMethodsTest extends GroovySwingTestCase {
     void testContainer() {
         testInEDT {

@@ -43,16 +43,15 @@ import org.codehaus.groovy.binding.TriggerBinding
 import java.util.Map.Entry
 
 /**
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @since Groovy 1.1
  */
-public class BindFactory extends AbstractFactory {
+class BindFactory extends AbstractFactory {
 
     public static final String CONTEXT_DATA_KEY = "BindFactoryData";
 
     final Map<String, TriggerBinding> syntheticBindings
 
-    public BindFactory() {
+    BindFactory() {
         syntheticBindings = new HashMap()
 
         // covers JTextField.text
@@ -88,7 +87,7 @@ public class BindFactory extends AbstractFactory {
         // JTable.elements
         // JTable.selectedElement
         // JTable.selectedElements
-        syntheticBindings.putAll(JTableProperties.syntheticProperties);
+        syntheticBindings.putAll(JTableProperties.syntheticProperties)
 
         // JTree.root
         // JTree.selectedElement
@@ -121,7 +120,7 @@ public class BindFactory extends AbstractFactory {
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         Object source = attributes.remove("source")
         Object target = attributes.remove("target")
         Object update = attributes.get("update")
@@ -133,9 +132,9 @@ public class BindFactory extends AbstractFactory {
         TargetBinding tb = null
         if (target != null) {
             Object targetProperty = attributes.remove("targetProperty") ?: value
-            if (! (targetProperty instanceof CharSequence)) {
+            if (!(targetProperty instanceof CharSequence)) {
                 throw new IllegalArgumentException("Invalid value for targetProperty: (or node value)." +
-                " Value for this attribute must be a String but it is "+ (targetProperty != null? targetProperty.getClass().getName() : null))
+                        " Value for this attribute must be a String but it is " + (targetProperty != null ? targetProperty.getClass().getName() : null))
             }
             tb = new PropertyBinding(target, targetProperty.toString(), update)
             if (source == null) {
@@ -169,15 +168,15 @@ public class BindFactory extends AbstractFactory {
         } else if (spa && !(sea && sva)) {
             // partially property driven binding
             Object property = attributes.remove("sourceProperty") ?: value
-            if (! (property instanceof CharSequence)) {
+            if (!(property instanceof CharSequence)) {
                 throw new IllegalArgumentException("Invalid value for sourceProperty: (or node value). " +
-                    "Value for this attribute must be a String but it is "+ (property != null? property.getClass().getName() : null))
+                        "Value for this attribute must be a String but it is " + (property != null ? property.getClass().getName() : null))
             }
 
             if (source == null) {
                 // if we have a sourceProperty but no source then we're in trouble
-                throw new IllegalArgumentException("Missing value for source: even though sourceProperty: (or node value) "+
-                    "was specified. Please check you didn't write bind(model.someProperty) instead of bind{ model.someProperty }")
+                throw new IllegalArgumentException("Missing value for source: even though sourceProperty: (or node value) " +
+                        "was specified. Please check you didn't write bind(model.someProperty) instead of bind{ model.someProperty }")
             }
 
             PropertyBinding pb = new PropertyBinding(source, property.toString(), update)
@@ -241,7 +240,7 @@ public class BindFactory extends AbstractFactory {
         return fb
     }
 
-    public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         super.onNodeCompleted(builder, parent, node);
 
         if (node instanceof FullBinding && node.sourceBinding && node.targetBinding) {
@@ -258,38 +257,38 @@ public class BindFactory extends AbstractFactory {
         }
     }
 
-    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
+    boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
         attributes.remove('update')
         true
     }
 
-    public boolean isLeaf() {
-        return false;
+    boolean isLeaf() {
+        return false
     }
 
-    public boolean isHandlesNodeChildren() {
-        return true;
+    boolean isHandlesNodeChildren() {
+        return true
     }
 
-    public boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
+    boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
         if ((node instanceof FullBinding) && (node.converter == null)) {
             node.converter = childContent
             return false
         } else if (node instanceof ClosureTriggerBinding) {
             node.closure = childContent
-            return false;
+            return false
         } else if (node instanceof TriggerBinding) {
             def bindAttrs = builder.context.get(CONTEXT_DATA_KEY)[node] ?: [:]
             if (!bindAttrs.containsKey("converter")) {
                 bindAttrs["converter"] = childContent
-                return false;
+                return false
             }
         }
 
         throw new RuntimeException("Binding nodes do not accept child content when a converter is already specified")
     }
 
-    public TriggerBinding getTriggerBinding(PropertyBinding psb) {
+    TriggerBinding getTriggerBinding(PropertyBinding psb) {
         String property = psb.propertyName
         Class currentClass = psb.bean.getClass()
         while (currentClass != null) {
@@ -304,7 +303,7 @@ public class BindFactory extends AbstractFactory {
         return psb
     }
 
-    public bindingAttributeDelegate(FactoryBuilderSupport builder, def node, def attributes) {
+    bindingAttributeDelegate(FactoryBuilderSupport builder, def node, def attributes) {
         Iterator iter = attributes.entrySet().iterator()
         Map bindContext = builder.context.get(CONTEXT_DATA_KEY) ?: [:]
 
@@ -364,7 +363,7 @@ public class BindFactory extends AbstractFactory {
         bindAttrs.remove('update')
         Object bindValue = bindAttrs.remove("bind")
         List propertiesToBeSkipped = ['group']
-        bindAttrs.each {k, v -> if (!(k in propertiesToBeSkipped)) fb."$k" = v}
+        bindAttrs.each { k, v -> if (!(k in propertiesToBeSkipped)) fb."$k" = v }
 
         if ((bindAttrs.group instanceof AggregateBinding) && (fb instanceof BindingUpdatable)) {
             bindAttrs.group.addBinding(fb)

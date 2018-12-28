@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @since Groovy 1.1
  */
 public class JComboBoxProperties {

@@ -31,8 +31,6 @@ import java.net.URL;
 
 /**
  * Represents an API to any template engine which is basically a factory of Template instances from a given text input.
- * 
- * @author sam
  */
 public abstract class TemplateEngine {
     public abstract Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException;

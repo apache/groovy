@@ -31,8 +31,6 @@ import javax.swing.table.TableModel;
  * TableModelListener by routing all events to its listeners. Inserting
  * a TableMap which has not been subclassed into a chain of table filters
  * should have no effect.
- *
- * @author Philip Milne
  */
 public class TableMap extends AbstractTableModel implements TableModelListener {
     protected TableModel model;

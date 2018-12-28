@@ -28,9 +28,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Danno.Ferrin
- */
 public class ClosureRenderer implements ListCellRenderer, TableCellRenderer, TreeCellRenderer {
 
     Closure update;

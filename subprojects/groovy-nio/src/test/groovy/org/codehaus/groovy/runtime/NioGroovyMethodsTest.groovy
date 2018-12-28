@@ -26,9 +26,6 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
-/**
- * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
- */
 class NioGroovyMethodsTest extends Specification {
 
     @Rule

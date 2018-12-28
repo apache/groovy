@@ -50,8 +50,6 @@ import java.util.List;
  *     <li>Calls the {@link groovy.text.markup.MarkupBuilderCodeTransformer} on the "run" method</li>
  *     <li>Creates the appropriate constructor</li>
  * </ul>
- *
- * @author Cedric Champeau
  */
 class TemplateASTTransformer extends CompilationCustomizer {
 

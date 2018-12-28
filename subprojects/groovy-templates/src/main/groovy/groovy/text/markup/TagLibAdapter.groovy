@@ -46,8 +46,6 @@ package groovy.text.markup
  *
  * Performance-wise, it would be better to reimplement the taglib, but this makes it easier to reuse
  * existing code.
- *
- * @author Cédric Champeau
  */
 class TagLibAdapter {
     private final BaseTemplate template

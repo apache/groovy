@@ -22,8 +22,6 @@ import java.util.Locale;
 
 /**
  * Configuration options for the {@link groovy.text.markup.MarkupTemplateEngine markup template engine}.
- *
- * @author Cedric Champeau
  */
 public class TemplateConfiguration {
 

@@ -41,9 +41,6 @@ import java.util.Vector;
  * with the rows in a different order. The sorting algorithm used is stable
  * which means that it does not move around rows when its comparison
  * function returns 0 to denote that they are equivalent.
- *
- * @author Philip Milne
- * @author Minimal adjustments by Dierk Koenig, June 2005
  */
 public class TableSorter extends TableMap {
     private static final int[] EMPTY_INT_ARRAY = new int[0];

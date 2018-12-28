@@ -18,9 +18,6 @@
  */
 package groovy.beans
 
-/**
- * @author Danno Ferrin (shemnon)
- */
 class BindableSwingTest extends GroovySwingTestCase {
     public void testExtendsComponent() {
         testInEDT {

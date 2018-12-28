@@ -21,7 +21,6 @@ package org.codehaus.groovy.binding;
 import groovy.lang.Closure;
 
 /**
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @since Groovy 1.1
  */
 public class ClosureSourceBinding implements SourceBinding {

@@ -22,23 +22,20 @@ import groovy.swing.impl.ClosureCellEditor
 
 import java.awt.*
 
-/**
-* @author Alexander Klein
-*/
 class CellEditorFactory extends AbstractFactory {
 
-   public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+   Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
        FactoryBuilderSupport.checkValueIsNull value, name
        return new ClosureCellEditor(null, attributes)
    }
 
-   public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
+   void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
        if (child instanceof Component) {
            parent.children += child
        }
    }
 
-   public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
+   void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
        node.editorValue = builder.context.editorValueClosure
        node.prepareEditor = builder.context.prepareEditorClosure
        parent.cellEditor = node
@@ -47,15 +44,15 @@ class CellEditorFactory extends AbstractFactory {
 
 class CellEditorGetValueFactory extends AbstractFactory {
 
-   public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+   Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
        return Collections.emptyMap()
    }
 
-   public boolean isHandlesNodeChildren() {
-       return true;
+   boolean isHandlesNodeChildren() {
+       return true
    }
 
-   public boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
+   boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
        builder.parentContext.editorValueClosure = childContent
        return false
    }
@@ -63,15 +60,15 @@ class CellEditorGetValueFactory extends AbstractFactory {
 
 class CellEditorPrepareFactory extends AbstractFactory {
 
-   public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+   Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
        return Collections.emptyMap()
    }
 
-   public boolean isHandlesNodeChildren() {
-       return true;
+   boolean isHandlesNodeChildren() {
+       return true
    }
 
-   public boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
+   boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
        builder.parentContext.prepareEditorClosure = childContent
        return false
    }

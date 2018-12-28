@@ -26,8 +26,6 @@ import java.util.ListIterator;
 
 /**
  * A {@code ListModel} implementation that's backed by a live {@code List}.
- *
- * @author Andres Almiray
  */
 public class ListWrapperListModel<E> extends AbstractListModel {
     private final List<E> delegate;

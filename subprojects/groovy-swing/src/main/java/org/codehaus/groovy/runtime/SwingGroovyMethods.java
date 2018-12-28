@@ -38,8 +38,6 @@ import java.util.Iterator;
  * This class defines all the new Swing-related groovy methods which enhance
  * the normal JDK Swing classes when inside the Groovy environment.
  * Static methods are used with the first parameter the destination class.
- *
- * @author Andres Almiray
  */
 public class SwingGroovyMethods {
 

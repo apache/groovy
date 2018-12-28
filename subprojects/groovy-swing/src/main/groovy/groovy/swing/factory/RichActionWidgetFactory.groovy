@@ -24,53 +24,49 @@ import java.lang.reflect.InvocationTargetException
 import java.util.logging.Level
 import java.util.logging.Logger
 
-/**
- *
- * @author shemnon
- */
-public class RichActionWidgetFactory extends AbstractFactory {
-    static final Class[] ACTION_ARGS = [Action];
-    static final Class[] ICON_ARGS = [Icon];
-    static final Class[] STRING_ARGS = [String];
+class RichActionWidgetFactory extends AbstractFactory {
+    static final Class[] ACTION_ARGS = [Action]
+    static final Class[] ICON_ARGS = [Icon]
+    static final Class[] STRING_ARGS = [String]
 
-    final Constructor actionCtor;
-    final Constructor iconCtor;
-    final Constructor stringCtor;
-    final Class klass;
+    final Constructor actionCtor
+    final Constructor iconCtor
+    final Constructor stringCtor
+    final Class klass
 
-    public RichActionWidgetFactory(Class klass) {
+    RichActionWidgetFactory(Class klass) {
         try {
-            actionCtor = klass.getConstructor(ACTION_ARGS);
-            iconCtor = klass.getConstructor(ICON_ARGS);
-            stringCtor = klass.getConstructor(STRING_ARGS);
-            this.klass = klass;
+            actionCtor = klass.getConstructor(ACTION_ARGS)
+            iconCtor = klass.getConstructor(ICON_ARGS)
+            stringCtor = klass.getConstructor(STRING_ARGS)
+            this.klass = klass
         } catch (NoSuchMethodException ex) {
-            Logger.getLogger("global").log(Level.INFO, null, ex);
+            Logger.getLogger("global").log(Level.INFO, null, ex)
         } catch (SecurityException ex) {
-            Logger.getLogger("global").log(Level.SEVERE, null, ex);
+            Logger.getLogger("global").log(Level.SEVERE, null, ex)
         }
     }
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         try {
             if (value instanceof GString) value = value as String
             if (value == null) {
-                return klass.newInstance();
+                return klass.newInstance()
             } else if (value instanceof Action) {
-                return actionCtor.newInstance(value);
+                return actionCtor.newInstance(value)
             } else if (value instanceof Icon) {
-                return iconCtor.newInstance(value);
+                return iconCtor.newInstance(value)
             } else if (value instanceof String) {
-                return stringCtor.newInstance(value);
+                return stringCtor.newInstance(value)
             } else if (klass.isAssignableFrom(value.getClass())) {
-                return value;
+                return value
             } else {
-                throw new RuntimeException("$name can only have a value argument of type javax.swing.Action, javax.swing.Icon, java.lang.String, or $klass.name");
+                throw new RuntimeException("$name can only have a value argument of type javax.swing.Action, javax.swing.Icon, java.lang.String, or $klass.name")
             }
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Failed to create component for '$name' reason: $e", e);
+            throw new RuntimeException("Failed to create component for '$name' reason: $e", e)
         } catch (InvocationTargetException e) {
-            throw new RuntimeException("Failed to create component for '$name' reason: $e", e);
+            throw new RuntimeException("Failed to create component for '$name' reason: $e", e)
         }
     }
 
