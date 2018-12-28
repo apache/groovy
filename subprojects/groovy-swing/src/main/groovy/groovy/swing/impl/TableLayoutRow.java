@@ -25,8 +25,6 @@ import java.util.List;
 
 /** 
  * Represents a row in a table layout
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class TableLayoutRow {
 

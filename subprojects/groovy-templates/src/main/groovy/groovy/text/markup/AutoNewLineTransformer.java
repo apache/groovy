@@ -38,8 +38,6 @@ import java.util.List;
 /**
  * This transformer is responsible for adding calls to the <i>newLine</i> method
  * depending on the layout of the source code, inside builder like blocks.
- *
- * @author Cedric Champeau
  */
 class AutoNewLineTransformer extends ClassCodeVisitorSupport {
     private final SourceUnit unit;

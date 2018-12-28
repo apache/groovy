@@ -495,6 +495,15 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Stefan Matthias Aust'
             }
             contributor {
+                name 'Andy Dwelly'
+            }
+            contributor {
+                name 'Philip Milne'
+            }
+            contributor {
+                name 'Joachim Baumann'
+            }
+            contributor {
                 name 'Jochen Eddel+'
             }
             contributor {

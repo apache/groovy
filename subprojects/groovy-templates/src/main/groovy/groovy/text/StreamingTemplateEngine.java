@@ -142,9 +142,6 @@ import java.util.Map;
  * </pre>
  * In the above example.
  * </p>
- *
- * @author mbjarland@gmail.com
- * @author Matias Bjarland
  */
 public class StreamingTemplateEngine extends TemplateEngine {
     private static final String TEMPLATE_SCRIPT_PREFIX = "StreamingTemplateScript";

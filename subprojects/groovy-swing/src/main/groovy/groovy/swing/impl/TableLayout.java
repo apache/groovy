@@ -23,8 +23,6 @@ import java.awt.*;
 
 /** 
  * Represents a HTML style table layout
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class TableLayout extends JPanel {
 

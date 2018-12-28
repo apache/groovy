@@ -25,9 +25,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author sam
- */
 public class TemplateTest extends TestCase {
 
     public void testMixedTemplateText() throws CompilationFailedException, ClassNotFoundException, IOException {

@@ -20,32 +20,28 @@ package groovy.swing.factory
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
-/**
- *
- * @author Danno Ferrin
- */
-public class TextArgWidgetFactory extends AbstractFactory {
+class TextArgWidgetFactory extends AbstractFactory {
 
-    final Class klass;
+    final Class klass
 
-    public TextArgWidgetFactory(Class klass) {
-        this.klass = klass;
+    TextArgWidgetFactory(Class klass) {
+        this.klass = klass
     }
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value instanceof GString) value = value as String
         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, klass)) {
-            return value;
+            return value
         }
 
-        Object widget = klass.newInstance();
+        Object widget = klass.newInstance()
 
         if (value instanceof String) {
             // this does not create property setting order issues, since the value arg precedes all attributes in the builder element
-            InvokerHelper.setProperty(widget, "text", value);
+            InvokerHelper.setProperty(widget, "text", value)
         }
 
-        return widget;
+        return widget
     }
 
 }

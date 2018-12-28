@@ -58,8 +58,6 @@ import java.util.Map;
  * <i>getModel().get(...)</i> calls into <i>tryEscape</i> calls for automatic escaping</li> <li>replace <i>include
  * XXX:'...'</i> calls with the appropriate <i>includeXXXX</i> method calls</li> <li>replace <i>':tagName'()</i> calls
  * into <i>methodMissing('tagName', ...)</i> calls</li> </ul>
- *
- * @author Cedric Champeau
  */
 class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
 

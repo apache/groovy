@@ -24,15 +24,11 @@ import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableColumn
 import javax.swing.table.TableColumnModel
 
-/**
- * @author Alexander Klein
- * @author Hamlet D'Arcy
- */
 @Log
 class ColumnFactory extends AbstractFactory {
 
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
-        if(value instanceof TableColumn) {
+        if (value instanceof TableColumn) {
             return value
         }
 
@@ -43,39 +39,39 @@ class ColumnFactory extends AbstractFactory {
         } catch (ClassNotFoundException ex) {
         }
 
-        if(jxTableClass != null && builder.current instanceof TableColumnModel) {
+        if (jxTableClass != null && builder.current instanceof TableColumnModel) {
             node = Class.forName("org.jdesktop.swingx.table.TableColumnExt").newInstance()
         } else {
             node = new javax.swing.table.TableColumn()
         }
 
-        if(value != null) {
+        if (value != null) {
             node.identifier = value.toString()
             attributes.remove('identifier')
         }
 
-        if(attributes.width) {
-            if(attributes.width instanceof Collection) {
+        if (attributes.width) {
+            if (attributes.width instanceof Collection) {
                 // 3 values: min, pref, max
                 // 2 values: min, pref
                 // 1 value:  pref
                 def (min, pref, max) = attributes.width
-                if(!pref && !max) {
+                if (!pref && !max) {
                     node.minWidth = 0
                     node.preferredWidth = min as Integer
                     node.maxWidth = Integer.MAX_VALUE
                 } else {
-                  if(min) {
-                      node.minWidth = min as Integer
-                  }
-                  if(pref) {
-                      node.preferredWidth = pref as Integer
-                  }
-                  if(max) {
-                      node.maxWidth = max as Integer
-                  }
+                    if (min) {
+                        node.minWidth = min as Integer
+                    }
+                    if (pref) {
+                        node.preferredWidth = pref as Integer
+                    }
+                    if (max) {
+                        node.maxWidth = max as Integer
+                    }
                 }
-            } else if(attributes.width instanceof Number) {
+            } else if (attributes.width instanceof Number) {
                 node.minWidth = attributes.width.intValue()
                 node.preferredWidth = attributes.width.intValue()
                 node.maxWidth = attributes.width.intValue()

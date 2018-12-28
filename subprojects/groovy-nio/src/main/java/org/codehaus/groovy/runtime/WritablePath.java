@@ -38,9 +38,6 @@ import java.util.Iterator;
 
 /**
  * A Writable Path.
- *
- * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
- * @author John Wilson
  */
 
 public class WritablePath implements Path, Writable {

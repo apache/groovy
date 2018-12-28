@@ -49,8 +49,6 @@ import static groovy.xml.XmlUtil.escapeXml;
  * <p>For the application needs, it is possible to provide more helper methods by extending this class and
  * configuring the base template class using the {@link groovy.text.markup.TemplateConfiguration#setBaseTemplateClass(Class)}
  * method.</p>
- *
- * @author Cedric Champeau
  */
 public abstract class BaseTemplate implements Writable {
     private static final Map EMPTY_MODEL = Collections.emptyMap();

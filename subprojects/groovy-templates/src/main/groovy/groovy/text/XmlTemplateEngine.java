@@ -101,9 +101,6 @@ import java.util.Map;
  *   &lt;/init-param&gt;
  * &lt;/servlet&gt;
  * </pre>
- *
- * @author Christian Stein
- * @author Paul King
  */
 public class XmlTemplateEngine extends TemplateEngine {
 

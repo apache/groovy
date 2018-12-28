@@ -25,8 +25,6 @@ import java.awt.event.ActionEvent;
 
 /** 
  * A default action implementation
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class DefaultAction extends AbstractAction {
 
