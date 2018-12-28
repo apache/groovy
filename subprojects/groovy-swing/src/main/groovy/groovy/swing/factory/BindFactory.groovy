@@ -111,7 +111,6 @@ class BindFactory extends AbstractFactory {
      * source ((sourceProperty) | (sourceEvent sourceValue))
      * (target targetProperty)? (? use default javabeans property if targetProperty is not present?)
      *
-     *
      * @param builder
      * @param name
      * @param value
@@ -192,7 +191,7 @@ class BindFactory extends AbstractFactory {
                 trigger = getTriggerBinding(pb)
             }
 
-            SourceBinding sb;
+            SourceBinding sb
             if (sva) {
                 // source value comes from a value closure
                 Closure queryValue = (Closure) attributes.remove("sourceValue")
@@ -303,7 +302,7 @@ class BindFactory extends AbstractFactory {
         return psb
     }
 
-    bindingAttributeDelegate(FactoryBuilderSupport builder, def node, def attributes) {
+    def bindingAttributeDelegate(FactoryBuilderSupport builder, def node, def attributes) {
         Iterator iter = attributes.entrySet().iterator()
         Map bindContext = builder.context.get(CONTEXT_DATA_KEY) ?: [:]
 
@@ -339,7 +338,7 @@ class BindFactory extends AbstractFactory {
                 finishContextualBinding(fb, builder, bindAttrs, id)
             } else if (value instanceof ClosureTriggerBinding) {
                 PropertyBinding psb = new PropertyBinding(node, property, update)
-                fb = value.createBinding(value, psb);
+                fb = value.createBinding(value, psb)
                 finishContextualBinding(fb, builder, bindAttrs, id)
             } else {
                 continue
@@ -359,7 +358,7 @@ class BindFactory extends AbstractFactory {
         }
     }
 
-    private def finishContextualBinding(FullBinding fb, FactoryBuilderSupport builder, bindAttrs, id) {
+    private finishContextualBinding(FullBinding fb, FactoryBuilderSupport builder, bindAttrs, id) {
         bindAttrs.remove('update')
         Object bindValue = bindAttrs.remove("bind")
         List propertiesToBeSkipped = ['group']
