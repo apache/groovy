@@ -66,8 +66,6 @@ import java.util.Map;
  *       assert builder.toString() == '{"people":{"person":{"firstName":"Guillame","lastName":"Laforge","address":{"city":"Paris","country":"France","zip":12345},"married":true,"conferences":["JavaOne","Gr8conf"]}}}'
  * </code></pre>
  *
- * @author Guillaume Laforge
- * @author Andrey Bloshetsov
  * @since 1.8.0
  */
 public class JsonBuilder extends GroovyObjectSupport implements Writable {

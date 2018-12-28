@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.json.internal;
 
-/**
- * @author Rick Hightower
- */
 public enum CacheType {
 
     LRU,

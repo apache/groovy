@@ -47,14 +47,13 @@ import javax.rmi.ssl.SslRMIServerSocketFactory
  *     )
  * </pre>
  *
- * @author Vladimir Vivien
  * @see <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/management/remote/JMXConnector.html">JMXConnector</a>
  */
 class JmxServerConnectorFactory extends AbstractFactory {
 
     private static final List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "iiop", "jmxmp"]
 
-    public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
+    Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
         if (nodeArgs) {
             throw new JmxBuilderException("Node '${nodeName}' only supports named attributes.")
         }
@@ -79,7 +78,7 @@ class JmxServerConnectorFactory extends AbstractFactory {
 
         MBeanServer server = (MBeanServer) fsb.getMBeanServer()
         JMXServiceURL serviceUrl = (url) ? new JMXServiceURL(url) : generateServiceUrl(protocol, host, port)
-        JMXConnectorServer connector = JMXConnectorServerFactory.newJMXConnectorServer(serviceUrl, env, server);
+        JMXConnectorServer connector = JMXConnectorServerFactory.newJMXConnectorServer(serviceUrl, env, server)
 
 
 
@@ -87,15 +86,15 @@ class JmxServerConnectorFactory extends AbstractFactory {
     }
 
 
-    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
-        return true;
+    boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
+        return true
     }
 
-    public boolean isLeaf() {
+    boolean isLeaf() {
         return false
     }
 
-    public void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
         //
     }
 
@@ -120,12 +119,12 @@ class JmxServerConnectorFactory extends AbstractFactory {
             if (ssl) {
                 def csf = props.remove(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE) ?: new SslRMIClientSocketFactory()
                 def ssf = props.remove(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE) ?: new SslRMIServerSocketFactory()
-                env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE, csf);
-                env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE, ssf);
+                env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE, csf)
+                env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE, ssf)
             }
         }
 
-        props.each {key, value ->
+        props.each { key, value ->
             env.put(key, value)
         }
 

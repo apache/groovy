@@ -22,9 +22,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-/**
- * @author Rick Hightower
- */
 public class Dates {
 
     private static TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");

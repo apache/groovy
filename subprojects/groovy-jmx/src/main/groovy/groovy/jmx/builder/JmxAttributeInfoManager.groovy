@@ -26,8 +26,6 @@ import javax.management.modelmbean.ModelMBeanAttributeInfo
  * It cycles through the meta map from the Node and generate JMX Info objects used to
  * expose information in the MBeanServer.
  *
- * @author Vladimir Vivien 
- *
  * @see groovy.jmx.builder.JmxMetaMapBuilder
  */
 class JmxAttributeInfoManager {
@@ -36,11 +34,11 @@ class JmxAttributeInfoManager {
      * @param metaMap list of meta data maps
      * @return ModelMBeanAttributeInfo
      */
-    public static List<ModelMBeanAttributeInfo> getAttributeInfosFromMap(Map metaMap) {
+    static List<ModelMBeanAttributeInfo> getAttributeInfosFromMap(Map metaMap) {
         if (!metaMap) return null
 
         def attribs = []
-        metaMap.each {attribName, map ->
+        metaMap.each { attribName, map ->
             map.name = attribName
             ModelMBeanAttributeInfo info = getAttributeInfoFromMap(map)
             attribs << info
@@ -54,7 +52,7 @@ class JmxAttributeInfoManager {
      * @param map the map object containing the meta data
      * @return the generated ModelMBeanAttribute Info object.
      */
-    public static ModelMBeanAttributeInfo getAttributeInfoFromMap(Map map) {
+    static ModelMBeanAttributeInfo getAttributeInfoFromMap(Map map) {
         if (!map) return null
 
         MetaProperty prop = map.remove("property")

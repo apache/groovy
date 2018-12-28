@@ -18,10 +18,6 @@
  */
 package groovy.jmx.builder
 
-/**
- *
- * @author vladimir
- */
 class JmxBeansFactoryTest extends GroovyTestCase {
     def builder
 

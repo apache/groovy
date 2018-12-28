@@ -29,7 +29,6 @@ import java.util.Map;
  * The JmxEventListener class is used by the builder to listen to events on the event bus.  It is used internally
  * by JmxBuilder to handle attribute-change and operation-invoke events on the bean() node.
  *
- * @author Vladimir Vivien
  * @see groovy.jmx.builder.JmxBeanFactory
  */
 public class JmxEventListener implements NotificationListener {

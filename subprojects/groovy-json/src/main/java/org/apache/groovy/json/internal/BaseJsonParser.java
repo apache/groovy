@@ -36,8 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Base JSON parser.
  * Scaled down version of Boon JsonParser with features
  * removed that are JDK 1.7 dependent or Groovy duplicated functionality.
- *
- * @author Rick Hightower
  */
 public abstract class BaseJsonParser implements JsonParser {
 

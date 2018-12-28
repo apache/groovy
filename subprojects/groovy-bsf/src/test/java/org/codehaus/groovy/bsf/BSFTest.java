@@ -29,10 +29,7 @@ import java.util.List;
 import java.util.Vector;
 
 /**
- * Tests the BSF integration
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
+ * Tests the BSF integration.
  */
 public class BSFTest extends TestCase {
     private static final Class ENGINE = GroovyEngine.class;

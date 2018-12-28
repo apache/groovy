@@ -20,10 +20,6 @@ package groovy.json
 
 import groovy.transform.CompileStatic
 
-/**
- * @author Tim Yates
- * @author Guillaume Laforge
- */
 class StreamingJsonBuilderTest extends GroovyTestCase {
 
     @CompileStatic

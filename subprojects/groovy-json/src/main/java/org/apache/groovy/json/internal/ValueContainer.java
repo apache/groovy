@@ -27,9 +27,6 @@ import java.util.Map;
 import static org.apache.groovy.json.internal.Exceptions.die;
 import static org.apache.groovy.json.internal.Exceptions.sputs;
 
-/**
- * @author Rick Hightower
- */
 public class ValueContainer implements CharSequence, Value {
 
     public static final Value TRUE = new ValueContainer(Type.TRUE);

@@ -20,9 +20,6 @@ package org.apache.groovy.json.internal;
 
 import static org.apache.groovy.json.internal.Exceptions.die;
 
-/**
- * @author Richard Hightower
- */
 public class ByteScanner {
 
     /**

@@ -23,8 +23,6 @@ import javax.management.MBeanServerConnection
 /** *
  * This is JmxBuilder's factory builder class.  It is the parent node to all other children nodes supported
  * by JmxBuilder.
- *
- * @author Vladimir Vivien
  */
 class JmxBuilder extends FactoryBuilderSupport {
     private MBeanServerConnection server
@@ -32,11 +30,11 @@ class JmxBuilder extends FactoryBuilderSupport {
     private String defaultNameType = JmxBuilderTools.DEFAULT_NAME_TYPE
     private String mode = "markup"
 
-    public JmxBuilder() {
+    JmxBuilder() {
         registerFactories()
     }
 
-    public JmxBuilder(MBeanServerConnection svrConnection) {
+    JmxBuilder(MBeanServerConnection svrConnection) {
         this()
         server = svrConnection
     }
@@ -54,45 +52,45 @@ class JmxBuilder extends FactoryBuilderSupport {
         registerFactory "connectorServer", svrFactory
         registerFactory "serverConnector", svrFactory
 
-        def newClientFactory = {new JmxClientConnectorFactory()}
+        def newClientFactory = { new JmxClientConnectorFactory() }
         registerFactory "client", newClientFactory()
         registerFactory "connector", newClientFactory()
         registerFactory "clientConnector", newClientFactory()
         registerFactory "connectorClient", newClientFactory()
     }
 
-    public MBeanServerConnection getMBeanServer() {
+    MBeanServerConnection getMBeanServer() {
         if (!server) {
             server = JmxBuilderTools.getMBeanServer()
         }
         return server
     }
 
-    public void setDefaultJmxNameDomain(String domain) {
+    void setDefaultJmxNameDomain(String domain) {
         this.defaultNameDomain = domain
     }
 
-    public String getDefaultJmxNameDomain() {
+    String getDefaultJmxNameDomain() {
         return this.defaultNameDomain
     }
 
-    public void setDefaultJmxNameType(String type) {
+    void setDefaultJmxNameType(String type) {
         this.defaultNameType = type
     }
 
-    public String getDefaultJmxNameType() {
+    String getDefaultJmxNameType() {
         return this.defaultNameType
     }
 
-    public void setMBeanServer(MBeanServerConnection svr) {
+    void setMBeanServer(MBeanServerConnection svr) {
         server = svr
     }
 
-    public void setMode(String mode) {
+    void setMode(String mode) {
         this.mode = mode
     }
 
-    public String getMode() {
+    String getMode() {
         return mode
     }
 

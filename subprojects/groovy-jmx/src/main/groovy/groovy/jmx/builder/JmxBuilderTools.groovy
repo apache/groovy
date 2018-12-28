@@ -26,8 +26,6 @@ import java.lang.management.ManagementFactory
 
 /**
  * This is a utility class used as a helper for JmxBuilder.
- *
- * @author Vladimir Vivien
  */
 class JmxBuilderTools {
     static String DEFAULT_DOMAIN = "jmx.builder"
@@ -93,72 +91,71 @@ class JmxBuilderTools {
     static String EVENT_KEY_TARGETS = "eventListeners"
 
 
-
     static Map PRIMITIVE_TYPES = [
-            "char": java.lang.Integer.TYPE,
-            "byte": java.lang.Byte.TYPE,
-            "short": java.lang.Short.TYPE,
-            "int": java.lang.Integer.TYPE,
-            "long": java.lang.Long.TYPE,
-            "float": java.lang.Float.TYPE,
-            "double": java.lang.Double.TYPE,
+            "char"   : java.lang.Integer.TYPE,
+            "byte"   : java.lang.Byte.TYPE,
+            "short"  : java.lang.Short.TYPE,
+            "int"    : java.lang.Integer.TYPE,
+            "long"   : java.lang.Long.TYPE,
+            "float"  : java.lang.Float.TYPE,
+            "double" : java.lang.Double.TYPE,
             "boolean": java.lang.Boolean.TYPE
     ]
     static Map TYPE_MAP = [
-            "object": java.lang.Object.class,
-            "Object": java.lang.Object.class,
-            "java.lang.Object": java.lang.Object.class,
+            "object"              : java.lang.Object.class,
+            "Object"              : java.lang.Object.class,
+            "java.lang.Object"    : java.lang.Object.class,
 
-            "string": java.lang.String.class,
-            "String": java.lang.String.class,
-            "java.lang.String": java.lang.String.class,
+            "string"              : java.lang.String.class,
+            "String"              : java.lang.String.class,
+            "java.lang.String"    : java.lang.String.class,
 
-            "char": char.class,
-            "character": java.lang.Character.class,
-            "Character": java.lang.Character.class,
-            "java.lang.Character": java.lang.Character.class,
+            "char"                : char.class,
+            "character"           : java.lang.Character.class,
+            "Character"           : java.lang.Character.class,
+            "java.lang.Character" : java.lang.Character.class,
 
-            "byte": byte.class,
-            "Byte": java.lang.Byte.class,
-            "java.lang.Byte": java.lang.Byte.class,
+            "byte"                : byte.class,
+            "Byte"                : java.lang.Byte.class,
+            "java.lang.Byte"      : java.lang.Byte.class,
 
-            "short": short.class,
-            "Short": java.lang.Short.class,
-            "java.lang.Short": java.lang.Short.class,
+            "short"               : short.class,
+            "Short"               : java.lang.Short.class,
+            "java.lang.Short"     : java.lang.Short.class,
 
-            "int": int.class,
-            "integer": java.lang.Integer.class,
-            "Integer": java.lang.Integer.class,
-            "java.lang.Integer": java.lang.Integer.class,
+            "int"                 : int.class,
+            "integer"             : java.lang.Integer.class,
+            "Integer"             : java.lang.Integer.class,
+            "java.lang.Integer"   : java.lang.Integer.class,
 
-            "long": long.class,
-            "Long": java.lang.Long.class,
-            "java.lang.Long": java.lang.Long.class,
+            "long"                : long.class,
+            "Long"                : java.lang.Long.class,
+            "java.lang.Long"      : java.lang.Long.class,
 
-            "float": float.class,
-            "Float": java.lang.Float.class,
-            "java.lang.Float": java.lang.Float.class,
+            "float"               : float.class,
+            "Float"               : java.lang.Float.class,
+            "java.lang.Float"     : java.lang.Float.class,
 
-            "double": double.class,
-            "Double": java.lang.Double.class,
-            "java.lang.Double": java.lang.Double.class,
+            "double"              : double.class,
+            "Double"              : java.lang.Double.class,
+            "java.lang.Double"    : java.lang.Double.class,
 
-            "boolean": boolean.class,
-            "Boolean": java.lang.Boolean.class,
-            "java.lang.Boolean": java.lang.Boolean.class,
+            "boolean"             : boolean.class,
+            "Boolean"             : java.lang.Boolean.class,
+            "java.lang.Boolean"   : java.lang.Boolean.class,
 
-            "bigDec": java.math.BigDecimal.class,
-            "bigDecimal": java.math.BigDecimal.class,
-            "BigDecimal": java.math.BigDecimal.class,
+            "bigDec"              : java.math.BigDecimal.class,
+            "bigDecimal"          : java.math.BigDecimal.class,
+            "BigDecimal"          : java.math.BigDecimal.class,
             "java.math.BigDecimal": java.math.BigDecimal.class,
 
-            "bigInt": java.math.BigInteger.class,
-            "bigInteger": java.math.BigInteger.class,
-            "BigInteger": java.math.BigInteger.class,
+            "bigInt"              : java.math.BigInteger.class,
+            "bigInteger"          : java.math.BigInteger.class,
+            "BigInteger"          : java.math.BigInteger.class,
             "java.math.BigInteger": java.math.BigInteger.class,
 
-            "date": java.util.Date.class,
-            "java.util.Date": java.util.Date.class
+            "date"                : java.util.Date.class,
+            "java.util.Date"      : java.util.Date.class
     ]
 
     /**
@@ -166,7 +163,7 @@ class JmxBuilderTools {
      * @param value - string to capitalize.
      * @return - a capitalized string.
      */
-    public static String capitalize(String value) {
+    static String capitalize(String value) {
         if (!value) return null
         if (value.length() == 1) return value.toUpperCase()
         return (value.length() > 1) ? value[0].toUpperCase() + value[1..-1] : value.toUpperCase()
@@ -177,7 +174,7 @@ class JmxBuilderTools {
      * @param value - string to uncap.
      * @return uncap'ed string.
      */
-    public static String uncapitalize(String value) {
+    static String uncapitalize(String value) {
         if (!value) return null
         if (value.length() == 1) return value.toLowerCase()
         return (value.length() > 1) ? value[0].toLowerCase() + value[1..-1] : value.toLowerCase()
@@ -188,7 +185,7 @@ class JmxBuilderTools {
      * @param obj - the backing pojo/pogo
      * @return the generated ObjectName() instance.
      */
-    public static ObjectName getDefaultObjectName(def obj) {
+    static ObjectName getDefaultObjectName(def obj) {
         String name = DEFAULT_DOMAIN + ":name=${obj.getClass().getName()},hashCode=${obj.hashCode()}"
         try {
             return new ObjectName(name)
@@ -201,7 +198,7 @@ class JmxBuilderTools {
      * Returns an MBeanServerConnection instance.  It searches for declared MBeanServers
      * from the MBeanServerFactory.  If none is found, the default Platform MBeanServer is returned.
      */
-    public static MBeanServerConnection getMBeanServer() {
+    static MBeanServerConnection getMBeanServer() {
         def servers = MBeanServerFactory.findMBeanServer(null);
         def server = servers.size() > 0 ? servers[0] : ManagementFactory.getPlatformMBeanServer()
         return server
@@ -212,10 +209,10 @@ class JmxBuilderTools {
      * @param params - the map with parameter info.
      * @return Class[] that represent the method signature.
      */
-    public static Class[] getSignatureFromParamInfo(def params) {
+    static Class[] getSignatureFromParamInfo(def params) {
         if (params == null || params.size() == 0) return null
         Object[] result = new Object[params.size()]
-        params.eachWithIndex {param, i ->
+        params.eachWithIndex { param, i ->
             def type = TYPE_MAP.get(param.getType()) ?: Class.forName(param.getType()) ?: null
             result.putAt i, type
         }
@@ -228,7 +225,7 @@ class JmxBuilderTools {
      * @param type - the type name to normalize
      * @return the normalized type name.
      */
-    public static String getNormalizedType(String type) {
+    static String getNormalizedType(String type) {
         if (typeIsPrimitive(type))
             return PRIMITIVE_TYPES[type].name
         return TYPE_MAP[type]?.name ?: Class.forName(type)?.name ?: null
@@ -257,7 +254,7 @@ class JmxBuilderTools {
      * @param cls - class to test
      * @return true = if class implements DynamicMBean or interface name that ends in MBean or MXBean.
      */
-    public static boolean isClassMBean(Class cls) {
+    static boolean isClassMBean(Class cls) {
         boolean result = false
         if (cls == null) result = false
         if (DynamicMBean.class.isAssignableFrom(cls)) {
@@ -275,7 +272,7 @@ class JmxBuilderTools {
         return result
     }
 
-    public static GroovyMBean registerMBeanFromMap(String regPolicy, Map metaMap) {
+    static GroovyMBean registerMBeanFromMap(String regPolicy, Map metaMap) {
         // get modelmbean info from meta map
         def info = JmxBeanInfoManager.getModelMBeanInfoFromMap(metaMap)
 

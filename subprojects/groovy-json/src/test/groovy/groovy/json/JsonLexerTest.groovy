@@ -22,9 +22,6 @@ import static groovy.json.JsonTokenType.*
 
 import groovy.io.LineColumnReader
 
-/**
- * @author Guillaume Laforge
- */
 class JsonLexerTest extends GroovyTestCase {
 
     void testSkipWhitespace() {

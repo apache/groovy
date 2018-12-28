@@ -29,9 +29,6 @@ import java.util.List;
  * Converts an input JSON String into Java objects works with String or char array
  * as input. Produces an Object which can be any of the basic JSON types mapped
  * to Java.
- * <p/>
- *
- * @author Rick Hightower
  */
 public class JsonParserUsingCharacterSource extends BaseJsonParser {
 

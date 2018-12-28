@@ -23,9 +23,6 @@ import java.math.BigDecimal;
 import static org.apache.groovy.json.internal.Exceptions.die;
 import static org.apache.groovy.json.internal.Exceptions.handle;
 
-/**
- * @author Richard Hightower
- */
 public class CharScanner {
 
     protected static final int COMMA = ',';

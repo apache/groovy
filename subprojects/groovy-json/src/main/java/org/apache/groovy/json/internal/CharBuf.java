@@ -26,9 +26,6 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-/**
- * @author Rick Hightower
- */
 public class CharBuf extends Writer implements CharSequence {
 
     protected int capacity = 16;

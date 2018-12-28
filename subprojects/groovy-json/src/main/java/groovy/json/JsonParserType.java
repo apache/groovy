@@ -52,7 +52,6 @@ package groovy.json;
  *     Use CHARACTER_SOURCE if you are dealing with large JSON files over 2MB.
  *     INDEX_OVERLAY is highly tuned for object deserialization from JSON.
  * </p>
- * @author Rick Hightower
  * @since 2.3.0
  */
 public enum JsonParserType {

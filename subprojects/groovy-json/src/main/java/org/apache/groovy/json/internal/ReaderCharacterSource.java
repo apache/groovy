@@ -22,9 +22,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
-/**
- * @author Richard Hightower
- */
 public class ReaderCharacterSource implements CharacterSource {
 
     private static final int MAX_TOKEN_SIZE = 5;

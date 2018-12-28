@@ -75,7 +75,7 @@ import javax.management.MBeanServer
  *         "opName3":[
  *             onCall:{event->
  *                 // onCall event callback code here.
- *             }]
+ *}]
  *         ],
  *
  *     listeners:[
@@ -83,15 +83,13 @@ import javax.management.MBeanServer
  *             event: "eventType", from:"object name"|ObjectName(),
  *             call:{event->
  *                 // handler code for event
- *             }],
+ *}],
  *     ]
  * )
  * </code></pre>
- *
- * @author Vladimir Vivien
  */
 class JmxBeanFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttributes) {
+    Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttributes) {
 
         JmxBuilder fsb = (JmxBuilder) builder
         MBeanServer server = (MBeanServer) fsb.getMBeanServer()
@@ -118,11 +116,11 @@ class JmxBeanFactory extends AbstractFactory {
         return metaMap
     }
 
-    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
-        return false;
+    boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
+        return false
     }
 
-    public void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
         JmxBuilder fsb = (JmxBuilder) builder
         MBeanServer server = (MBeanServer) fsb.getMBeanServer()
         def metaMap = thisNode
@@ -147,7 +145,7 @@ class JmxBeanFactory extends AbstractFactory {
         }
     }
 
-    public boolean isLeaf() {
+    boolean isLeaf() {
         return false
     }
 

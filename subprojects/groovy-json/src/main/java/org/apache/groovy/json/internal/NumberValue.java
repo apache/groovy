@@ -34,9 +34,6 @@ import static org.apache.groovy.json.internal.CharScanner.parseLongFromTo;
 import static org.apache.groovy.json.internal.Exceptions.die;
 import static org.apache.groovy.json.internal.Exceptions.sputs;
 
-/**
- * @author Rick Hightower
- */
 public class NumberValue extends java.lang.Number implements Value {
 
     private char[] buffer;

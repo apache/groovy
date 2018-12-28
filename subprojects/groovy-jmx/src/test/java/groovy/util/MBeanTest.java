@@ -28,8 +28,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.sort;
 /**
  * Tests using the GroovyObject API from Java to access MBeans via
  * the normal properties API (to simulate normal Groovy property access)
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MBeanTest extends GroovyTestCase {
 

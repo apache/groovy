@@ -58,7 +58,6 @@ import static groovy.json.JsonTokenType.STRING;
  * assert result.person.pets[1] == "cat"
  * </pre></code>
  *
- * @author Guillaume Laforge
  * @since 1.8.0
  */
 public class JsonSlurperClassic {

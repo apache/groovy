@@ -39,8 +39,6 @@ import java.util.logging.Logger;
 
 /**
  * A Caching implementation of the GroovyEngine
- *
- * @author James Birchfield
  */
 public class CachingGroovyEngine extends GroovyEngine {
     private static final Logger LOG = Logger.getLogger(CachingGroovyEngine.class.getName());

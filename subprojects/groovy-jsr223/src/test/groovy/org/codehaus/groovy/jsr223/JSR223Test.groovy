@@ -29,9 +29,6 @@ import javax.script.SimpleScriptContext
 
 /**
  * Tests JSR-223 Groovy engine implementation.
- *
- * @author Jim White
- * @author Guillaume Laforge
  */
 class JSR223Test extends GroovyTestCase {
     protected ScriptEngineManager manager

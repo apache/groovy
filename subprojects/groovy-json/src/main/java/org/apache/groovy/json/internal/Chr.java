@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.json.internal;
 
-/**
- * @author Rick Hightower
- */
 public class Chr {
 
     public static char[] array(final char... array) {
