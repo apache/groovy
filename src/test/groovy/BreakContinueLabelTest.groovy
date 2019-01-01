@@ -22,8 +22,6 @@ import gls.CompilableTestSupport
 
 /**
  * todo: add BreakContinueLabelWithClosureTest (when break is used to return from a Closure)
-
- * @author Dierk Koenig
  */
 class BreakContinueLabelTest extends CompilableTestSupport {
 

@@ -22,10 +22,8 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 import static groovy.lang.Closure.IDENTITY
 
-/** 
+/**
  * Tests Closures in Groovy
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 class ClosureTest extends GroovyTestCase {
 
@@ -34,18 +32,18 @@ class ClosureTest extends GroovyTestCase {
     void testSimpleBlockCall() {
         count = 0
 
-        def block = {owner-> owner.incrementCallCount() }
+        def block = { owner -> owner.incrementCallCount() }
 
         assertClosure(block)
         assert count == 1
 
-        assertClosure({owner-> owner.incrementCallCount() })
+        assertClosure({ owner -> owner.incrementCallCount() })
         assert count == 2
     }
 
     void testVariableLengthParameterList() {
 
-        def c1 = {Object[] args -> args.each{count += it}}
+        def c1 = { Object[] args -> args.each { count += it } }
 
         count = 0
         c1(1, 2, 3)
@@ -59,7 +57,7 @@ class ClosureTest extends GroovyTestCase {
         c1([1, 2, 3] as Object[])
         assert count == 6
 
-        def c2 = {a, Object[] args -> count += a; args.each{count += it}}
+        def c2 = { a, Object[] args -> count += a; args.each { count += it } }
 
         count = 0
         c2(1, 2, 3)
@@ -77,13 +75,13 @@ class ClosureTest extends GroovyTestCase {
     void testBlockAsParameter() {
         count = 0
 
-        callBlock(5, {owner-> owner.incrementCallCount() })
+        callBlock(5, { owner -> owner.incrementCallCount() })
         assert count == 6
 
-        callBlock2(5, {owner-> owner.incrementCallCount() })
+        callBlock2(5, { owner -> owner.incrementCallCount() })
         assert count == 12
     }
-  
+
     void testMethodClosure() {
         def block = this.&incrementCallCount
 
@@ -97,7 +95,7 @@ class ClosureTest extends GroovyTestCase {
 
         assert block.call(3, 7) == 3
     }
-  
+
     def incrementCallCount() {
         //System.out.println("invoked increment method!")
         count = count + 1
@@ -109,13 +107,13 @@ class ClosureTest extends GroovyTestCase {
     }
 
     protected void callBlock(Integer num, Closure block) {
-        for ( i in 0..num ) {
+        for (i in 0..num) {
             block.call(this)
         }
     }
 
     protected void callBlock2(num, block) {
-        for ( i in 0..num ) {
+        for (i in 0..num) {
             block.call(this)
         }
     }
@@ -138,7 +136,7 @@ class ClosureTest extends GroovyTestCase {
     void testWithIndex() {
         def str = ''
         def sum = 0
-        ['a','b','c','d'].eachWithIndex { item, index -> str += item; sum += index }
+        ['a', 'b', 'c', 'd'].eachWithIndex { item, index -> str += item; sum += index }
         assert str == 'abcd' && sum == 6
     }
 
@@ -146,7 +144,7 @@ class ClosureTest extends GroovyTestCase {
         def keyStr = ''
         def valStr = ''
         def sum = 0
-        ['a':'z','b':'y','c':'x','d':'w'].eachWithIndex { entry, index ->
+        ['a': 'z', 'b': 'y', 'c': 'x', 'd': 'w'].eachWithIndex { entry, index ->
             keyStr += entry.key
             valStr += entry.value
             sum += index
@@ -158,7 +156,7 @@ class ClosureTest extends GroovyTestCase {
         def keyStr = ''
         def valStr = ''
         def sum = 0
-        ['a':'z','b':'y','c':'x','d':'w'].eachWithIndex { k, v, index ->
+        ['a': 'z', 'b': 'y', 'c': 'x', 'd': 'w'].eachWithIndex { k, v, index ->
             keyStr += k
             valStr += v
             sum += index
@@ -167,9 +165,9 @@ class ClosureTest extends GroovyTestCase {
     }
 
     /**
-    * Test access to Closure's properties
-    * cf GROOVY-2089
-    */
+     * Test access to Closure's properties
+     * cf GROOVY-2089
+     */
     void testGetProperties() {
         def c = { println it }
 
@@ -211,14 +209,14 @@ class ClosureTest extends GroovyTestCase {
 
         // like in testGetProperties(), don't know how to test metaClass property
     }
-    
+
     /**
      * GROOVY-2150 ensure list call is available on closure
      */
     void testCallClosureWithlist() {
-      def list = [1,2]
-      def cl = {a,b->a+b }
-      assert cl(list)==3
+        def list = [1, 2]
+        def cl = { a, b -> a + b }
+        assert cl(list) == 3
     }
 
     /**
@@ -245,7 +243,7 @@ class ClosureTest extends GroovyTestCase {
         def items = [0, 1, 2, '', 'foo', [], ['bar'], true, false]
         assert items.grep(IDENTITY) == [1, 2, 'foo', ['bar'], true]
         assert items.findAll(IDENTITY) == [1, 2, 'foo', ['bar'], true]
-        assert items.grep(IDENTITY).groupBy(IDENTITY) == [1:[1], 2:[2], 'foo':['foo'], ['bar']:[['bar']], (true):[true]]
+        assert items.grep(IDENTITY).groupBy(IDENTITY) == [1: [1], 2: [2], 'foo': ['foo'], ['bar']: [['bar']], (true): [true]]
         assert items.collect(IDENTITY) == items
 
         def twice = { it + it }
@@ -259,21 +257,21 @@ class ClosureTest extends GroovyTestCase {
         def foo = IDENTITY.rcurry('foo')
         assert foo() == 'foo'
 
-        def map = [a:1, b:2]
+        def map = [a: 1, b: 2]
         assert map.collectEntries(IDENTITY) == map
     }
-    
+
     void testEachWithArray() {
         def l = []
         l << ([1, 2] as Object[])
         l.each {
-                assert it == [1,2] as Object[]
+            assert it == [1, 2] as Object[]
         }
     }
 
     void testClosureDehydrateAndRehydrate() {
         def closure = { 'Hello' }
-        assert closure.delegate !=null
+        assert closure.delegate != null
         assert closure.owner != null
         assert closure.thisObject != null
         assert closure() == 'Hello'

@@ -20,10 +20,6 @@ package gls.syntax
 
 import gls.CompilableTestSupport
 
-/**
- * 
- * @author Guillaume Laforge
- */
 class BinaryLiteralTest extends CompilableTestSupport {
 
     void testSomeBinaryLiteralNumbers() {

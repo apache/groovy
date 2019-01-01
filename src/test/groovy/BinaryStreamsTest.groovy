@@ -18,8 +18,6 @@
  */
 /**
  * Test case for DefaultGroovyMethods involving Object streams and data streams.
- *
- * @author Martin C. Martin
  */
 class BinaryStreamsTest extends GroovyTestCase {
 

@@ -18,9 +18,6 @@
  */
 package groovy
 
-/** 
- * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
- */
 class ClosureCloneTest extends GroovyTestCase {
 
     void testCloneOfClosure() {
