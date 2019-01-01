@@ -89,7 +89,6 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  *
- * @author Hamlet D'Arcy
  * @since 1.8.0
  */
 @java.lang.annotation.Documented

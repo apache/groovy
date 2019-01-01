@@ -40,9 +40,6 @@ import java.lang.annotation.Target;
  * a class can be annotated with CompileStatic, and a method within can be marked
  * to skip static checking to use dynamic language features.
  *
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- * @author Cedric Champeau
- *
  * @see CompileDynamic
  */
 @Documented

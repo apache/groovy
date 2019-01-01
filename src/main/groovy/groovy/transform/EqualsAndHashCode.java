@@ -220,7 +220,6 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * @see org.codehaus.groovy.util.HashCodeHelper
- * @author Paul King
  * @since 1.8.0
  */
 @java.lang.annotation.Documented

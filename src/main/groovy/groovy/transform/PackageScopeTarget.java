@@ -21,7 +21,6 @@ package groovy.transform;
 /**
  * Intended target when {@code @}PackageScope is placed at the class level.
  *
- * @author Paul King
  * @since 1.8.0
  */
 public enum PackageScopeTarget {

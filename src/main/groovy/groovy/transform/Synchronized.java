@@ -155,7 +155,6 @@ import java.lang.annotation.Target;
  * tc2.join()
  * </pre>
  *
- * @author Paul King
  * @since 1.7.3
  */
 @java.lang.annotation.Documented

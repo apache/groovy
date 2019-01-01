@@ -230,7 +230,6 @@ import java.lang.annotation.Target;
  * <li><a href="http://www.agiledeveloper.com/articles/cloning072002.htm">http://www.agiledeveloper.com/articles/cloning072002.htm</a>
  * </ul>
  *
- * @author Paul King
  * @see AutoCloneStyle
  * @see ExternalizeMethods
  * @since 1.8.0

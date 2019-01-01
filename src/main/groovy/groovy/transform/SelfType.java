@@ -71,7 +71,6 @@ import java.lang.annotation.Target;
  * to, which is often the case where a trait needs to be applied on a class provided by a third-party
  * library.
  *
- * @author Cédric Champeau
  * @since 2.4.0
  */
 @Documented
