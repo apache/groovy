@@ -20,8 +20,6 @@ package groovy
 
 /**
  * Expose how to deal with multi-dimensional Arrays until this is supported at the language level.
- * @author Dierk Koenig
- * @author Jochen Theodorou
  */
 class MultiDimArraysTest extends GroovyTestCase {
 
@@ -44,13 +42,13 @@ class MultiDimArraysTest extends GroovyTestCase {
         def someArrayOfStringArrays = new SomeClass().anArrayOfStringArraysWorkaround()
         assert 1 == someArrayOfStringArrays.size()
         assert "whatever" == someArrayOfStringArrays[0][0]
-        someArrayOfStringArrays.each() { assert it}
+        someArrayOfStringArrays.each() { assert it }
     }
 
     void testInsideGroovyMultiDimReplacement() {
         Object[] someArrayOfStringArrays = [["a", "a", "a"], ["b", "b", "b", null]]
         assert "a" == someArrayOfStringArrays[0][0]
-        someArrayOfStringArrays.each() { assert it}
+        someArrayOfStringArrays.each() { assert it }
     }
 
     void testMultiDimCreationWithSizes() {

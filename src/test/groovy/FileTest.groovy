@@ -23,9 +23,6 @@ import static groovy.io.FileVisitResult.*
 
 /**
  * Unit test for File GDK methods
- *
- * @author Marc Guillemot
- * @author Paul King
  */
 class FileTest extends GroovyTestCase {
 

@@ -18,16 +18,11 @@
  */
 package groovy
 
-/**
- * @author Michael Baehr
- * @author Paul King
- * @author Tim Yates
- */
 class UniqueOnCollectionWithClosureTest extends GroovyTestCase {
 
     void testUniqueOnIterator() {
         def list = [-1, 0, 1, 1, 0, -1]
-        def closure = {a, b -> Math.abs(a) <=> Math.abs(b)}
+        def closure = { a, b -> Math.abs(a) <=> Math.abs(b) }
         def it = list.iterator().unique(closure)
         assert it instanceof Iterator
         def result = it.toList()
@@ -37,21 +32,21 @@ class UniqueOnCollectionWithClosureTest extends GroovyTestCase {
     /** GROOVY-3213  */
     void testUniqueWithTwoParameterClosureOnSet() {
         def set = [-1, 0, 1] as Set
-        def closure = {a, b -> Math.abs(a) <=> Math.abs(b)}
+        def closure = { a, b -> Math.abs(a) <=> Math.abs(b) }
         assert set.unique(closure).size() == 2
     }
 
     /** GROOVY-1236  */
     void testUniqueWithTwoParameterClosure() {
         def list = [-1, 0, 1, 1, 0, -1]
-        def closure = {a, b -> Math.abs(a) <=> Math.abs(b)}
+        def closure = { a, b -> Math.abs(a) <=> Math.abs(b) }
         assert list.unique(closure) == [-1, 0]
     }
 
     /** GROOVY-1236  */
     void testUniqueWithOneParameterClosure() {
         def list = [-1, 0, 1, 1, 0, -1]
-        def closure = {a -> Math.abs(a)}
+        def closure = { a -> Math.abs(a) }
         assert list.unique(closure) == [-1, 0]
     }
 
@@ -66,7 +61,7 @@ class UniqueOnCollectionWithClosureTest extends GroovyTestCase {
     /** GROOVY-4742 */
     void testImmutableCollectionWithTwoParamClosure() {
         def orig = [2, 3, 3, 4]
-        def uniq = orig.unique( false ) { a, b -> a <=> b }
+        def uniq = orig.unique(false) { a, b -> a <=> b }
         assert orig == [2, 3, 3, 4]
         assert uniq == [2, 3, 4]
     }

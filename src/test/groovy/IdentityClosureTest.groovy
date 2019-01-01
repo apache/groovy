@@ -20,9 +20,6 @@ package groovy
 
 /**
  * Check that Object.identity(Closure) method works as expected
- *
- * @author Jeremy Rayner
- * @author Guillaume Laforge
  */
 class IdentityClosureTest extends GroovyTestCase {
     
