@@ -25,9 +25,6 @@ import java.beans.PropertyChangeListener
 import static java.lang.reflect.Modifier.isPublic
 import static java.lang.reflect.Modifier.isSynthetic
 
-/**
- * @author Danno Ferrin (shemnon)
- */
 class BindableTest extends GroovyTestCase {
 
     void testSimpleBindableProperty() {
@@ -90,17 +87,17 @@ class BindableTest extends GroovyTestCase {
             boolean field = i & 2
             boolean setter = i & 4
             boolean getter = i & 8
-            int expectedCount = (bindClass && !field)?2:1
+            int expectedCount = (bindClass && !field) ? 2 : 1
             String script = """
                     import groovy.beans.Bindable
 
-                    ${bindClass?'@Bindable ':''}class BindableTestSettersAndGetters$i {
+                    ${bindClass ? '@Bindable ' : ''}class BindableTestSettersAndGetters$i {
 
                         @Bindable String alwaysBound
-                        ${field?'protected ':''} String name
+                        ${field ? 'protected ' : ''} String name
 
-                        ${setter?'':'//'}void setName(String newName) { this.@name = "x\$newName" }
-                        ${getter?'':'//'}String getName() { return this.@name }
+                        ${setter ? '' : '//'}void setName(String newName) { this.@name = "x\$newName" }
+                        ${getter ? '' : '//'}String getName() { return this.@name }
                     }
                     sb = new BindableTestSettersAndGetters$i(name:"foo", alwaysBound:"bar")
                     changed = 0
@@ -146,25 +143,25 @@ class BindableTest extends GroovyTestCase {
 
     void testClassMarkers() {
         for (int i = 0; i < 7; i++) {
-            boolean bindField  = i & 1
-            boolean bindClass  = i & 2
-            boolean staticField  = i & 4
-            int bindCount = bindClass?(staticField?2:3):(bindField?1:0);
+            boolean bindField = i & 1
+            boolean bindClass = i & 2
+            boolean staticField = i & 4
+            int bindCount = bindClass ? (staticField ? 2 : 3) : (bindField ? 1 : 0);
 
             String script = """
                     import groovy.beans.Bindable
 
-                    ${bindClass?'@Bindable ':''}class ClassMarkerBindable$i {
+                    ${bindClass ? '@Bindable ' : ''}class ClassMarkerBindable$i {
                         String neither
 
-                        ${bindField?'@Bindable ':''}String bind
+                        ${bindField ? '@Bindable ' : ''}String bind
 
-                        ${staticField?'static ':''}String staticString
+                        ${staticField ? 'static ' : ''}String staticString
                     }
 
                     cb = new ClassMarkerBindable$i(neither:'a', bind:'b', staticString:'c')
                     bindCount = 0
-                    ${bindClass|bindField?'cb.propertyChange = { bindCount++ }':''}
+                    ${bindClass | bindField ? 'cb.propertyChange = { bindCount++ }' : ''}
                     cb.neither = 'd'
                     cb.bind = 'e'
                     cb.staticString = 'f'

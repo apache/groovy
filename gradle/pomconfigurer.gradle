@@ -588,9 +588,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Chris K Wensel'
             }
             contributor {
-                name 'Joachim Baumann'
-            }
-            contributor {
                 name 'David Sutherland'
             }
             contributor {
@@ -682,6 +679,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Thomas Heller'
+            }
+            contributor {
+                name 'John Stump'
             }
             contributor {
                 name 'Ivan Ganza'

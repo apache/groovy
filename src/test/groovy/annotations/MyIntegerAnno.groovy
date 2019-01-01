@@ -25,12 +25,9 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
 
 /**
  * Test annotation
- *
- * @author Paul King
  */
-
 @Retention(RUNTIME)
 @GroovyASTTransformationClass("groovy.annotations.MyIntegerAnnoTraceASTTransformation")
-public @interface MyIntegerAnno {
+@interface MyIntegerAnno {
     int value()
 }
