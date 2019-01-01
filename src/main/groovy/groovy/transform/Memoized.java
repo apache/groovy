@@ -124,8 +124,6 @@ import java.lang.annotation.Target;
  * // increment is invoked so incrementChange is true.
  * assert incrementChange
  * </pre>
- * 
- * @author Andrey Bloschetsov
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)

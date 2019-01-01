@@ -720,6 +720,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Vladimir Vivien'
             }
             contributor {
+                name 'Vladimir Orany'
+            }
+            contributor {
                 name 'Joe Wolf'
             }
             contributor {

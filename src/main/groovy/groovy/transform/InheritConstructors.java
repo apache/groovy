@@ -143,7 +143,6 @@ import java.lang.annotation.Target;
  * assert 'Liam' == child.name
  * </pre>
  *
- * @author Paul King
  * @since 1.7.3
  */
 @java.lang.annotation.Documented

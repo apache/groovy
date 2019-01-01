@@ -170,7 +170,6 @@ import java.lang.annotation.Target;
  * assert user.toString() == 'User(mrhaki)'
  * </pre>
  * 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  * @see org.codehaus.groovy.transform.AnnotationCollectorTransform
  */
 @java.lang.annotation.Documented

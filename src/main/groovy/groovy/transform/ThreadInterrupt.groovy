@@ -37,16 +37,26 @@ import java.lang.annotation.Target
  * isInterruptedCheck and throw a InterruptedException if the check yields true. The annotation by default
  * will apply to any classes defined in the script as well. Annotated a class will cause (by default) all classes
  * in the entire file ('Compilation Unit') to be enhanced. You can fine tune what is enhanced using the annotation
- * parameters. 
+ * parameters.
  * <p>
  * The following is sample usage of the annotation:
  *
  * <pre>
  * <code>@groovy.transform.ThreadInterrupt</code>
- * def scriptMethod() {*   4.times {*     println 'executing script method...'
- *}*}*
- * class MyClass {*   def myMethod() {*     for (i in (1..10)) {*       println 'executing method...'
- *}*}*}*
+ * def scriptMethod() {
+ *   4.times {
+ *     println 'executing script method...'
+ *   }
+ * }
+ *
+ * class MyClass {
+ *   def myMethod() {
+ *     for (i in (1..10)) {
+ *       println 'executing method...'
+ *     }
+ *   }
+ * }
+ *
  * scriptMethod()
  * new MyClass().myMethod()
  * </pre>
@@ -54,22 +64,43 @@ import java.lang.annotation.Target
  * Which results in the following code being generated. Notice the checks and exceptions:
  *
  * <pre>
- * public class script1290627909406 extends groovy.lang.Script {*
- *     public java.lang.Object scriptMethod() {*         if (java.lang.Thread.currentThread().isInterrupted()) {*             throw new java.lang.InterruptedException('Execution Interrupted')
- *}*         4.times({*             if (java.lang.Thread.currentThread().isInterrupted()) {*                 throw new java.lang.InterruptedException('Execution Interrupted')
- *}*             this.println('executing script method...')
- *})
- *}*}* public class MyClass extends java.lang.Object {*
- *   public java.lang.Object myMethod() {*     if (java.lang.Thread.currentThread().isInterrupted()) {*       throw new java.lang.InterruptedException('Execution Interrupted')
- *}*     for (java.lang.Object i : (1..10)) {*       if (java.lang.Thread.currentThread().isInterrupted()) {*         throw new java.lang.InterruptedException('Execution Interrupted')
- *}*       this.println('executing method...')
- *}*}*}*
+ * public class script1290627909406 extends groovy.lang.Script {
+ *
+ *     public java.lang.Object scriptMethod() {
+ *         if (java.lang.Thread.currentThread().isInterrupted()) {
+ *             throw new java.lang.InterruptedException('Execution Interrupted')
+ *         }
+ *         4.times({
+ *             if (java.lang.Thread.currentThread().isInterrupted()) {
+ *                 throw new java.lang.InterruptedException('Execution Interrupted')
+ *             }
+ *             this.println('executing script method...')
+ *         })
+ *     }
+ * }
+ * public class MyClass extends java.lang.Object {
+ *
+ *   public java.lang.Object myMethod() {
+ *     if (java.lang.Thread.currentThread().isInterrupted()) {
+ *       throw new java.lang.InterruptedException('Execution Interrupted')
+ *     }
+ *     for (java.lang.Object i : (1..10)) {
+ *       if (java.lang.Thread.currentThread().isInterrupted()) {
+ *         throw new java.lang.InterruptedException('Execution Interrupted')
+ *       }
+ *       this.println('executing method...')
+ *     }
+ *   }
+ * }
+ *
  * this.scriptMethod()
  * new MyClass().myMethod()
  * </pre>
  * Additional usage examples can be found in the unit test for this class.
  *
- * @see TimedInterrupt* @see ConditionalInterrupt* @since 1.8.0
+ * @see TimedInterrupt
+ * @see ConditionalInterrupt
+ * @since 1.8.0
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)
@@ -96,7 +127,8 @@ import java.lang.annotation.Target
      * Set to true (the default) for blanket coverage of isInterrupted checks on all methods, loops
      * and closures within the class/script.
      *
-     * @since 2.2.0* @see #applyToAllClasses()
+     * @since 2.2.0
+     * @see #applyToAllClasses()
      */
     boolean applyToAllMembers() default true
 

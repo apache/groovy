@@ -249,8 +249,6 @@ import java.lang.annotation.Target;
  * assert course.title == 'Grails with REST'
  * </pre> 
  *
- * @author Paul King
- * @author Andre Steingress
  * @see groovy.transform.Immutable
  * @see groovy.transform.Canonical
  * @since 1.8.0

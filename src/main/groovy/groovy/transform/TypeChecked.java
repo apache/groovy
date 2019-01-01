@@ -27,7 +27,6 @@ import java.lang.annotation.Target;
 
 /**
  * This will let the Groovy compiler use compile time checks in the style of Java.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)

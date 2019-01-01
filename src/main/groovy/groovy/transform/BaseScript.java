@@ -139,10 +139,6 @@ import java.lang.annotation.Target;
  * assert car.distance == 20
  * assert car.state == 'stopped'
  * </pre>
- * 
- * @author Paul King
- * @author Vladimir Orany
- * @author Jim White
  * @since 2.2.0
  */
 @java.lang.annotation.Documented
