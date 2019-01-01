@@ -25,10 +25,9 @@ import java.lang.annotation.Documented
  * This can be used for example if you statically compile a full class but you want to skip
  * some methods without having to use the full annotation.
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 @Documented
 @AnnotationCollector(processor = "org.codehaus.groovy.transform.CompileDynamicProcessor")
-public @interface CompileDynamic {
+@interface CompileDynamic {
 }

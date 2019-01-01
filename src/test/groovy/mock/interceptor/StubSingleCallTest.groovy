@@ -19,10 +19,8 @@
 package groovy.mock.interceptor
 
 /**
-    Testing Groovy Stub support for single calls to the Collaborator
-    @author Dierk Koenig
-*/
-
+ * Testing Groovy Stub support for single calls to the Collaborator
+ */
 class StubSingleCallTest extends GroovyTestCase {
 
     StubFor stub

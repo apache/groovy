@@ -77,11 +77,10 @@ import java.lang.annotation.Target
  * assert sizeOfList(1..10000) == 10000
  * </pre>
  *
- * @author Johannes Link
  * @since 2.3
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target([ElementType.METHOD])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.tailrec.TailRecursiveASTTransformation"])
-public @interface TailRecursive {
+@interface TailRecursive {
 }

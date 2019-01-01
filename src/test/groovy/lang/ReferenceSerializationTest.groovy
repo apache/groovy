@@ -20,8 +20,6 @@ package groovy.lang
 
 /**
  * GROOVY-4305: Make groovy.lang.Reference implement Serializable
- *
- * @author Guillaume Laforge
  */
 class ReferenceSerializationTest extends GroovyTestCase implements Serializable {
 

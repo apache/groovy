@@ -18,11 +18,9 @@
  */
 package groovy.operator
 
-/** 
+/**
  * Test to negate lists in Classic Groovy.
  * Test to check whether a given function is even/odd on a given domain.
- * 
- * @author Pilho Kim
  */
 class NegateListsTest extends GroovyTestCase {
 
@@ -64,7 +62,7 @@ class NegateListsTest extends GroovyTestCase {
         def n = 1000    // the number of partitions for the interval 0..2/PI
         def x = []
         for (i in 0..n) {
-            x << i*PI/n
+            x << i * PI / n
         }
 
         def cos = { Math.cos(it) }

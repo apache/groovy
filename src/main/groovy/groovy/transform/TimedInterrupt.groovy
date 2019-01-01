@@ -79,16 +79,13 @@ import java.util.concurrent.TimeoutException
  * </pre>
  * See the unit test for this class for additional examples.
  *
- * @author Hamlet D'Arcy
- * @author Cedric Champeau
- * @author Paul King
  * @see ThreadInterrupt
  * @see ConditionalInterrupt
  * @since 1.8.0
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target([ ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
+@Target([ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.TimedInterruptibleASTTransformation"])
 @interface TimedInterrupt {
     /**
@@ -113,8 +110,7 @@ import java.util.concurrent.TimeoutException
      * Set to true (the default) for blanket coverage of timeout checks on all methods, loops
      * and closures within the class/script.
      *
-     * @since 2.2.0
-     * @see #applyToAllClasses()
+     * @since 2.2.0* @see #applyToAllClasses()
      */
     boolean applyToAllMembers() default true
 

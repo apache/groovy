@@ -25,9 +25,7 @@ import org.codehaus.groovy.runtime.StringBufferWriter
  * TracingInterceptor. Makes also use of the ProxyMetaClass and
  * shows the collaboration.
  * As a side Effect, the ProxyMetaClass is also partly tested.
- *
- * @author Dierk Koenig
- * */
+ */
 class InterceptorTest extends GroovyTestCase {
 
     def Interceptor logInterceptor
