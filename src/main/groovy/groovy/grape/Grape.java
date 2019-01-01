@@ -19,6 +19,8 @@
 package groovy.grape;
 
 import java.net.URI;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -152,18 +154,27 @@ public class Grape {
         }
     }
 
-    public static void grab(Map<String, Object> args, Map... dependencies) {
+    public static void grab(final Map<String, Object> args, final Map... dependencies) {
         if (enableGrapes) {
-            GrapeEngine instance = getInstance();
-            if (instance != null) {
-                if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
-                    args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    GrapeEngine instance = getInstance();
+                    if (instance != null) {
+                        if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
+                            args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
+                        }
+                        if (!args.containsKey(DISABLE_CHECKSUMS_SETTING)) {
+                            args.put(DISABLE_CHECKSUMS_SETTING, disableChecksums);
+                        }
+                        if (!args.containsKey(GrapeEngine.CALLEE_DEPTH)) {
+                            args.put(GrapeEngine.CALLEE_DEPTH, GrapeEngine.DEFAULT_CALLEE_DEPTH + 2);
+                        }
+                        instance.grab(args, dependencies);
+                    }
+                    return null;
                 }
-                if (!args.containsKey(DISABLE_CHECKSUMS_SETTING)) {
-                    args.put(DISABLE_CHECKSUMS_SETTING, disableChecksums);
-                }
-                instance.grab(args, dependencies);
-            }
+            });
         }
     }
 
@@ -185,7 +196,7 @@ public class Grape {
     public static URI[] resolve(Map<String, Object> args, Map... dependencies) {
         return resolve(args, null, dependencies);
     }
-    
+
     public static URI[] resolve(Map<String, Object> args, List depsInfo, Map... dependencies) {
         URI[] uris = null;
         if (enableGrapes) {
@@ -222,7 +233,7 @@ public class Grape {
         }
 
     }
-    
+
     public static void addResolver(Map<String, Object> args) {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();

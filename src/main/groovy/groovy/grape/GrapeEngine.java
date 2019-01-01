@@ -27,6 +27,10 @@ import java.util.Map;
  */
 public interface GrapeEngine {
 
+    String CALLEE_DEPTH = "calleeDepth";
+
+    int DEFAULT_CALLEE_DEPTH = 3 ;
+
     Object grab(String endorsedModule);
 
     Object grab(Map args);
