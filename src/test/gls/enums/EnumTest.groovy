@@ -22,9 +22,6 @@ import gls.CompilableTestSupport
 
 /**
  * Tests various properties of enums.
- *
- * @author Paul King
- * @author Roshan Dawrani
  */
 class EnumTest extends CompilableTestSupport {
 

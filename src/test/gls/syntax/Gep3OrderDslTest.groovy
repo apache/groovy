@@ -20,9 +20,6 @@ package gls.syntax
 
 import org.codehaus.groovy.control.CompilerConfiguration
 
-/**
- * @author Guillaume Laforge
- */
 class Gep3OrderDslTest extends GroovyTestCase {
     @Override
     protected void setUp() {

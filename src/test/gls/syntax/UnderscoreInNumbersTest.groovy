@@ -23,8 +23,6 @@ import gls.CompilableTestSupport
 /**
  * Most of the below examples were taken from the Project Coin proposal here:
  * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
- * 
- * @author Guillaume Laforge
  */
 class UnderscoreInNumbersTest extends CompilableTestSupport {
 
