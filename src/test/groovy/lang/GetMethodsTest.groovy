@@ -20,17 +20,16 @@ package groovy.lang
 
 /**
  * Tests the behaviour of the runtime evaluating methods of Groovy's MetaClass system
-
- * @author Graeme Rocher
+ *
  * @since 1.5
  */
 class GetMethodsTest extends GroovyTestCase {
 
     void testGetMethods() {
-        GMTest2.metaClass.doStuff = {-> "foo" }
-        GMTest2.metaClass.getFoo = {-> "foo" }
+        GMTest2.metaClass.doStuff = { -> "foo" }
+        GMTest2.metaClass.getFoo = { -> "foo" }
         GMTest2.metaClass.bar = "bar"
-        GMTest2.metaClass.'static'.doMoreStuff = {-> "more" }
+        GMTest2.metaClass.'static'.doMoreStuff = { -> "more" }
         def t = new GMTest2()
 
         assert t.metaClass.methods.find { it.name == 'one' }
@@ -50,7 +49,7 @@ class GetMethodsTest extends GroovyTestCase {
     }
 
     void testGetProperties() {
-        GMTest2.metaClass.getFoo = {-> "foo" }
+        GMTest2.metaClass.getFoo = { -> "foo" }
         GMTest2.metaClass.bar = "bar"
 
         def t = new GMTest2()
@@ -68,7 +67,7 @@ class GMTest1 {
     String five
     def two = { "three" }
 
-    def one() { "two"}
+    def one() { "two" }
 
     def one(String one) { "two: $one" }
 

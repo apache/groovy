@@ -24,11 +24,7 @@ package groovy.operator
  * For an example, <pre>
  *        assert [1, *[2, 3], 4] == [1, 2, 3, 4]
  * </pre>
- *
- * @author Pilho Kim
- * @author Jochen Theodorou
  */
-
 class SpreadListOperatorTest extends GroovyTestCase {
 
     void testSpreadingInList() {
@@ -36,7 +32,7 @@ class SpreadListOperatorTest extends GroovyTestCase {
 
         assert [1, *[222, 333], 456] == [1, 222, 333, 456]
 
-        def y = [1,2,3]
+        def y = [1, 2, 3]
 
         assert [*y] == y
     }
@@ -112,7 +108,7 @@ class SpreadListOperatorTest extends GroovyTestCase {
     }
 
     void testSpreadingInClosureParameters() {
-        def twice = {it*2}
+        def twice = { it * 2 }
         assert twice(3) == 6
         assert twice("abcd") == 'abcdabcd'
 

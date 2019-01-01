@@ -21,9 +21,6 @@ package groovy.lang
 /**
  * GROOVY-2875: MetaClassRegistryImpl constantMetaClasses map is leaking resources
  * GROOVY-4481: the listener and iterator mechanism over the MetaClassRegistry wasn't working.
- *
- * @author Jochen Theodorou
- * @author Guillaume Laforge
  */
 class MetaClassRegistryTest extends GroovyTestCase {
 
@@ -32,7 +29,7 @@ class MetaClassRegistryTest extends GroovyTestCase {
     static {
         try {
             Class.forName("org.codehaus.groovy.vmplugin.v7.IndyInterface", true, MetaClassRegistryTest.classLoader)
-        } catch(e){
+        } catch (e) {
         }
         initSize = GroovySystem.metaClassRegistry.metaClassRegistryChangeEventListeners.size()
     }
@@ -42,7 +39,7 @@ class MetaClassRegistryTest extends GroovyTestCase {
         def listener = { event -> called = event } as MetaClassRegistryChangeEventListener
         registry.addMetaClassRegistryChangeEventListener listener
 
-        Integer.metaClass.foo = {->}
+        Integer.metaClass.foo = { -> }
         assert 1.foo() == null
         assert called != null
 
@@ -94,7 +91,7 @@ class MetaClassRegistryTest extends GroovyTestCase {
     }
 
     void testIteratorRemove() {
-        Integer.metaClass.foo {-> 1 }
+        Integer.metaClass.foo { -> 1 }
         assert 1.foo() == 1
         for (def it = registry.iterator(); it.hasNext();) {
             it.remove()

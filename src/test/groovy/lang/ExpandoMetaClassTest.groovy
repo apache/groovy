@@ -18,9 +18,6 @@
  */
 package groovy.lang
 
-/**
- * @author Graeme Rocher
- */
 class ExpandoMetaClassTest extends GroovyTestCase {
 
     @Override
@@ -42,7 +39,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
     void testClosureCallDoCall() {
         ExpandoMetaClass.enableGlobally()
-        def cl = {assert it.class == Object[]}
+        def cl = { assert it.class == Object[] }
         Object[] item = [1]
         try {
             cl(item)
@@ -50,7 +47,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
             ExpandoMetaClass.disableGlobally()
             def reg = GroovySystem.metaClassRegistry
             reg.removeMetaClass(cl.class)
-        }   
+        }
     }
 
     void testFindAll() {
@@ -69,33 +66,33 @@ class ExpandoMetaClassTest extends GroovyTestCase {
             """
         } finally {
             ExpandoMetaClass.disableGlobally()
-        }   
+        }
     }
 
     void testMethodsAfterAddingNewMethod() {
-        EMCT_Class.metaClass.newMethod = {-> "foo" }
+        EMCT_Class.metaClass.newMethod = { -> "foo" }
 
-        def methods = EMCT_Class.metaClass.methods.findAll {it.name == "newMethod"}
+        def methods = EMCT_Class.metaClass.methods.findAll { it.name == "newMethod" }
         assert methods
         assertEquals 1, methods.size()
 
-        EMCT_Class.metaClass.newMethod = {-> "foo" }
+        EMCT_Class.metaClass.newMethod = { -> "foo" }
 
-        methods = EMCT_Class.metaClass.methods.findAll {it.name == "newMethod"}
+        methods = EMCT_Class.metaClass.methods.findAll { it.name == "newMethod" }
         assert methods
         assertEquals 1, methods.size()
     }
 
     void testPropertiesAfterAddingProperty() {
-        EMCT_Class.metaClass.getNewProp = {-> "foo" }
+        EMCT_Class.metaClass.getNewProp = { -> "foo" }
 
-        def props = EMCT_Class.metaClass.properties.findAll {it.name == "newProp"}
+        def props = EMCT_Class.metaClass.properties.findAll { it.name == "newProp" }
         assert props
         assertEquals 1, props.size()
 
-        EMCT_Class.metaClass.setNewProp = {String txt -> }
+        EMCT_Class.metaClass.setNewProp = { String txt -> }
 
-        props = EMCT_Class.metaClass.properties.findAll {it.name == "newProp"}
+        props = EMCT_Class.metaClass.properties.findAll { it.name == "newProp" }
         assert props
         assertEquals 1, props.size()
     }
@@ -123,7 +120,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         mc.initialize()
         GroovySystem.metaClassRegistry.setMetaClass(EMCT_InvokeMethod.class, mc)
 
-        mc.'static'.getHello = {-> "bar!"}
+        mc.'static'.getHello = { -> "bar!" }
 
         assertEquals "bar!", EMCT_InvokeMethod.hello
     }
@@ -133,7 +130,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         mc.initialize()
         GroovySystem.metaClassRegistry.setMetaClass(EMCT_InvokeMethod.class, mc)
 
-        mc.'static'.invokeMethod = {String methodName, args ->
+        mc.'static'.invokeMethod = { String methodName, args ->
             def metaMethod = mc.getStaticMetaMethod(methodName, args)
             def result = null
             if (metaMethod) result = metaMethod.invoke(delegate, args)
@@ -153,7 +150,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
         assert mc.hasMetaMethod("invokeMe", [String] as Class[])
 
-        mc.invokeMethod = {String name, args ->
+        mc.invokeMethod = { String name, args ->
             def mm = delegate.metaClass.getMetaMethod(name, args)
             mm ? mm.invoke(delegate, args) : "bar!!"
         }
@@ -172,10 +169,14 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         assert mc.hasMetaProperty("name")
 
         def testValue = null
-        mc.setProperty = {String name, value ->
+        mc.setProperty = { String name, value ->
             def mp = delegate.metaClass.getMetaProperty(name)
 
-            if (mp) {mp.setProperty(delegate, value)} else {testValue = value}
+            if (mp) {
+                mp.setProperty(delegate, value)
+            } else {
+                testValue = value
+            }
         }
 
         def t = new EMCT_GetProperty()
@@ -194,7 +195,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
         assert mc.hasMetaProperty("name")
 
-        mc.getProperty = {String name ->
+        mc.getProperty = { String name ->
             def mp = delegate.metaClass.getMetaProperty(name)
 
             mp ? mp.getProperty(delegate) : "foo $name"
@@ -212,7 +213,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testBooleanGetterWithClosure() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, false, true)
         metaClass.initialize()
-        metaClass.isValid = {-> true}
+        metaClass.isValid = { -> true }
 
         def t = new EMCT_Class()
         t.metaClass = metaClass
@@ -224,12 +225,12 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testAllowAdditionOfProperties() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, false, true)
 
-        metaClass.getOne << {->
+        metaClass.getOne << { ->
             "testme"
         }
         metaClass.initialize()
         try {
-            metaClass.getTwo << {->
+            metaClass.getTwo << { ->
                 "testagain"
             }
         }
@@ -247,12 +248,12 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testAllowAdditionOfMethods() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, false, true)
 
-        metaClass.myMethod << {->
+        metaClass.myMethod << { ->
             "testme"
         }
         metaClass.initialize()
         try {
-            metaClass.mySecondMethod << {->
+            metaClass.mySecondMethod << { ->
                 "testagain"
             }
         }
@@ -291,7 +292,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testPropertyGetterWithClosure() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
-        metaClass.getSomething = {-> "testme"}
+        metaClass.getSomething = { -> "testme" }
 
         metaClass.initialize()
 
@@ -306,7 +307,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
         def testSet = null
-        metaClass.setSomething = {String txt -> testSet = txt}
+        metaClass.setSomething = { String txt -> testSet = txt }
 
         metaClass.initialize()
 
@@ -323,7 +324,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testNewMethodOverloading() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
-        metaClass.overloadMe << {String txt -> txt} << {Integer i -> i}
+        metaClass.overloadMe << { String txt -> txt } << { Integer i -> i }
 
         metaClass.initialize()
 
@@ -342,7 +343,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, false, true)
         metaClass.initialize()
 
-        metaClass.doSomething = {Integer i -> i + 1}
+        metaClass.doSomething = { Integer i -> i + 1 }
 
         t.metaClass = metaClass
 
@@ -358,7 +359,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, false, true)
 
 
-        metaClass.doSomething = {Integer i -> i + 1}
+        metaClass.doSomething = { Integer i -> i + 1 }
 
         metaClass.initialize()
 
@@ -399,7 +400,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testCheckFailOnExisting() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
         try {
-            metaClass.existing << {->
+            metaClass.existing << { ->
                 "should fail. already exists!"
             }
             fail("Should have thrown exception when method already exists")
@@ -412,7 +413,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testCheckFailOnExistingConstructor() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
         try {
-            metaClass.constructor << {->
+            metaClass.constructor << { ->
                 "should fail. already exists!"
             }
             fail("Should have thrown exception when method already exists")
@@ -425,7 +426,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testCheckFailOnExistingStaticMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
         try {
-            metaClass.'static'.existingStatic << {->
+            metaClass.'static'.existingStatic << { ->
                 "should fail. already exists!"
             }
             fail("Should have thrown exception when method already exists")
@@ -438,7 +439,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testNewStaticMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
-        metaClass.'static'.myStaticMethod << {String txt ->
+        metaClass.'static'.myStaticMethod << { String txt ->
             "testme"
         }
         metaClass.initialize()
@@ -449,7 +450,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testReplaceStaticMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
-        metaClass.'static'.existingStatic = {->
+        metaClass.'static'.existingStatic = { ->
             "testme"
         }
         metaClass.initialize()
@@ -461,7 +462,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testNewZeroArgumentStaticMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
-        metaClass.'static'.myStaticMethod = {->
+        metaClass.'static'.myStaticMethod = { ->
             "testme"
         }
         metaClass.initialize()
@@ -487,7 +488,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testNewConstructor() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
-        metaClass.constructor << {String txt ->
+        metaClass.constructor << { String txt ->
             def t = EMCT_Class.class.newInstance()
             t.name = txt
             return t
@@ -505,7 +506,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testReplaceConstructor() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
-        metaClass.constructor = {->
+        metaClass.constructor = { ->
             "testme"
         }
 
@@ -521,7 +522,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testReplaceInstanceMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
-        metaClass.existing2 = {Object i ->
+        metaClass.existing2 = { Object i ->
             "testme"
         }
         metaClass.initialize()
@@ -555,7 +556,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
         metaClass.withOptional {
             String first, String second = "no param" ->
-            "$first + $second"
+                "$first + $second"
         }
 
         def t = new EMCT_Class()
@@ -699,11 +700,11 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     def doMethods(clazz) {
         def metaClass = clazz.metaClass
 
-        metaClass.setErrors = {errors ->
+        metaClass.setErrors = { errors ->
             thingo = errors
         }
 
-        metaClass.getErrors = {->
+        metaClass.getErrors = { ->
             return thingo
         }
     }
@@ -711,19 +712,17 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     void testGetProperty() {
         def x = new EMCT_SuperClass()
         def mc = x.metaClass
-        mc.getProperty = {String name ->
+        mc.getProperty = { String name ->
             MetaProperty mp = mc.getMetaProperty(name)
             if (mp)
                 mp.getProperty(delegate)
             else {
                 if (thingo) {
                     thingo."$name"
-                }
-                else {
+                } else {
                     if (application) {
                         "non-null application"
-                    }
-                    else {
+                    } else {
                         String methodName = "get${name[0].toUpperCase()}${name.substring(1)}"
                         mc."$methodName" = {
                             -> "$name"
@@ -762,7 +761,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
             }
         }
 
-        mc.render = {String txt ->
+        mc.render = { String txt ->
             txt
         }
 
@@ -771,7 +770,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testInterfaceWithGetProperty() {
-        EMCT_Implemented.metaClass.getProperty = {String name ->
+        EMCT_Implemented.metaClass.getProperty = { String name ->
             return "META " + delegate.class.metaClass.getMetaProperty(name).getProperty(delegate)
         }
         EMCT_InterfaceWithFormat.metaClass.getFormat = {
@@ -782,15 +781,15 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     void testPickMethodForVarg() {
-       // as of 1.6 a metaClass is often the HandleMetaclass, which delegates
-       // methods to an underlaying meta class. hasMethod is a Method on EMC
-       // that takes a Class[] vargs argument as last part. If that part is not
-       // given, then hasMetaMethod will still work, but the code actually
-       // invoking the method in EMC.invokeMehod(String,Object) has to correct the
-       // arguments.
-       assert "".metaClass.pickMethod("trim")
+        // as of 1.6 a metaClass is often the HandleMetaclass, which delegates
+        // methods to an underlaying meta class. hasMethod is a Method on EMC
+        // that takes a Class[] vargs argument as last part. If that part is not
+        // given, then hasMetaMethod will still work, but the code actually
+        // invoking the method in EMC.invokeMehod(String,Object) has to correct the
+        // arguments.
+        assert "".metaClass.pickMethod("trim")
     }
-    
+
     void testEMCMetaClassProperty() {
         // GROOVY-2516
         try {
@@ -799,7 +798,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
             GroovySystem.metaClassRegistry.removeMetaClass(ExpandoMetaClass.class)
         }
     }
-    
+
     void testDynamicAddedMethodWithGStringCall() {
         // GROOVY-4691
         assertScript """
@@ -822,7 +821,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     static class X {
-        def foo() {2}
+        def foo() { 2 }
     }
 
     void testPOJOMetaClassInterception() {
@@ -837,6 +836,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
             invoking.metaClass = null
         }
     }
+
     void testPOGOMetaClassInterception() {
         X entity = new X()
         try {
@@ -868,9 +868,9 @@ class EMCT_ChildClass extends EMCT_SuperClass {
 }
 
 class EMCT_InvokeMethod {
-    def invokeMe(String boo) {"Foo!! $boo"}
+    def invokeMe(String boo) { "Foo!! $boo" }
 
-    static myStaticMethod() {"bar!"}
+    static myStaticMethod() { "bar!" }
 }
 
 class EMCT_GetProperty {
@@ -888,7 +888,7 @@ class EMCT_Class {
         "hello!"
     }
 
-    def doSomething(Object txt) {txt}
+    def doSomething(Object txt) { txt }
 
     static existingStatic() {
         "I exist"

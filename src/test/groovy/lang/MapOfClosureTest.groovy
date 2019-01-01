@@ -20,9 +20,6 @@ package groovy.lang
 
 /**
  * Tests maps of closures coerced to classes by asType()
- *
- * @author Jochen Theodorou
- * @author Guillaume Laforge
  */
 class MapOfClosureTest extends GroovyTestCase {
 
@@ -36,17 +33,17 @@ class MapOfClosureTest extends GroovyTestCase {
     }
 
     void testInterfaceProxyWithoutAllMethods() {
-        def proxy = [ methodOne: { 'some string' } ] as MultiMethodInterface
-        
+        def proxy = [methodOne: { 'some string' }] as MultiMethodInterface
+
         assert proxy instanceof MultiMethodInterface
-        
+
         assertEquals 'some string', proxy.methodOne()
-        
+
         shouldFail(UnsupportedOperationException) {
             proxy.methodTwo()
         }
     }
-    
+
     void testObject() {
         def m = [bar: { "foo" }]
         def x = m as Object
@@ -96,12 +93,15 @@ class MapOfClosureTest extends GroovyTestCase {
 
 abstract class A {
     protected prot() { "prot" }
+
     def pub() { "pub" }
+
     abstract abstractMethod()
 }
 
 class B extends A {
     protected child() { "child" }
+
     def abstractMethod() { "abstract" }
 }
 
@@ -111,5 +111,6 @@ class C {
 
 interface MultiMethodInterface {
     String methodOne()
+
     String methodTwo()
 }

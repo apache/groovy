@@ -23,12 +23,10 @@ import java.lang.reflect.Modifier
 
 /**
  * Unit tests for the Lazy annotation
- *
- * @author Tim Yates
  */
 class LazyTest extends GroovyTestCase {
-    public void testLazyPrimitiveWrapping() {
-        def tester = new GroovyClassLoader().parseClass( 
+    void testLazyPrimitiveWrapping() {
+        def tester = new GroovyClassLoader().parseClass(
           '''class MyClass {
             |    @Lazy int index = { ->
             |        1
@@ -42,8 +40,8 @@ class LazyTest extends GroovyTestCase {
         assert field.type == Integer
     }
 
-    public void testLazyVolatilePrimitiveWrapping() {
-        def tester = new GroovyClassLoader().parseClass( 
+    void testLazyVolatilePrimitiveWrapping() {
+        def tester = new GroovyClassLoader().parseClass(
           '''class MyClass {
             |    @Lazy volatile int index = { ->
             |        1
@@ -57,8 +55,8 @@ class LazyTest extends GroovyTestCase {
         assert field.type == Integer
     }
 
-    public void testLazySoftPrimitiveWrapping() {
-        def tester = new GroovyClassLoader().parseClass( 
+    void testLazySoftPrimitiveWrapping() {
+        def tester = new GroovyClassLoader().parseClass(
           '''class MyClass {
             |    @Lazy(soft=true) int index = { ->
             |        1
@@ -72,8 +70,8 @@ class LazyTest extends GroovyTestCase {
         assert field.type == SoftReference
     }
 
-    public void testLazyVolatileSoftPrimitiveWrapping() {
-        def tester = new GroovyClassLoader().parseClass( 
+    void testLazyVolatileSoftPrimitiveWrapping() {
+        def tester = new GroovyClassLoader().parseClass(
           '''class MyClass {
             |    @Lazy(soft=true) volatile int index = { ->
             |        1

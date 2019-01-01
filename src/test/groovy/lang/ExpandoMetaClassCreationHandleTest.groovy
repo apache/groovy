@@ -18,9 +18,6 @@
  */
 package groovy.lang;
 
-/**
- * @author Graeme Rocher
- */
 class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
     def registry = GroovySystem.metaClassRegistry
     MetaClass savedStringMeta
@@ -45,7 +42,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         String foo = "hello"
         assertEquals "HELLO", foo.toUpperCase()
 
-        Object.metaClass.doStuff = {-> delegate.toString().toUpperCase() }
+        Object.metaClass.doStuff = { -> delegate.toString().toUpperCase() }
 
         assertEquals "HELLO", foo.doStuff()
     }
@@ -58,7 +55,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         def metaClass = registry.getMetaClass(IBar)
         assertTrue(metaClass instanceof ExpandoMetaClass)
 
-        metaClass.helloWorld = {-> "goodbye!" }
+        metaClass.helloWorld = { -> "goodbye!" }
 
         def t = new Test1()
         assertEquals "goodbye!", t.helloWorld()
@@ -72,8 +69,8 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         assertTrue(metaClass instanceof ExpandoMetaClass)
 
         def map = [:]
-        metaClass.getAt = {Integer i -> map[i] }
-        metaClass.putAt = {Integer i, val -> map[i] = val }
+        metaClass.getAt = { Integer i -> map[i] }
+        metaClass.putAt = { Integer i, val -> map[i] = val }
 
         def t = new Test1()
         //assertEquals 2, t.metaClass.getExpandoMethods().size()
@@ -93,9 +90,13 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         def metaClass = registry.getMetaClass(Foo)
 
         def testValue = null
-        metaClass.setProperty = {String name, value ->
+        metaClass.setProperty = { String name, value ->
             def mp = delegate.metaClass.getMetaProperty(name)
-            if (mp) { mp.setProperty(delegate, value) } else { testValue = value }
+            if (mp) {
+                mp.setProperty(delegate, value)
+            } else {
+                testValue = value
+            }
         }
 
         def t = new Test1()
@@ -113,7 +114,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
         def metaClass = registry.getMetaClass(Foo)
 
-        metaClass.getProperty = {String name ->
+        metaClass.getProperty = { String name ->
             def mp = delegate.metaClass.getMetaProperty(name)
             mp ? mp.getProperty(delegate) : "foo $name"
         }
@@ -134,7 +135,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
 
         def metaClass = registry.getMetaClass(Foo)
 
-        metaClass.invokeMethod = {String name, args ->
+        metaClass.invokeMethod = { String name, args ->
             def mm = delegate.metaClass.getMetaMethod(name, args)
             mm ? mm.invoke(delegate, args) : "bar!!"
         }
@@ -152,8 +153,8 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         def metaClass = registry.getMetaClass(List)
         assertTrue(metaClass instanceof ExpandoMetaClass)
 
-        metaClass.sizeDoubled = {-> delegate.size() * 2 }
-        metaClass.isFull = {-> false }
+        metaClass.sizeDoubled = { -> delegate.size() * 2 }
+        metaClass.isFull = { -> false }
 
         def list = new ArrayList()
 
@@ -178,7 +179,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         metaClass = registry.getMetaClass(url.getClass())
         assertTrue(metaClass instanceof ExpandoMetaClass)
 
-        metaClass.toUpperString = {->
+        metaClass.toUpperString = { ->
             delegate.toString().toUpperCase()
         }
 
@@ -195,7 +196,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
             metaClass = registry.getMetaClass(Object)
         }
 
-        metaClass.toFoo = {-> "foo" }
+        metaClass.toFoo = { -> "foo" }
 
         def uri = new URI("http://bar.com")
         def s = "bar"
@@ -203,7 +204,7 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         assertEquals "foo", uri.toFoo()
         assertEquals "foo", s.toFoo()
 
-        metaClass.toBar = {-> "bar" }
+        metaClass.toBar = { -> "bar" }
 
         assertEquals "bar", uri.toBar()
         assertEquals "bar", s.toBar()
@@ -213,13 +214,13 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         registry.removeMetaClass(Test1)
         registry.removeMetaClass(EMCInheritTest)
 
-        EMCInheritTest.metaClass.foo = {-> "hello!" }
+        EMCInheritTest.metaClass.foo = { -> "hello!" }
 
         def emc = new EMCInheritTest()
 
         assertEquals "hello!", emc.foo()
 
-        Test1.metaClass.foo = {-> "uck" }
+        Test1.metaClass.foo = { -> "uck" }
         emc = new EMCInheritTest()
         // make sure original foo wasn't overridden
         assertEquals "hello!", emc.foo()
@@ -232,13 +233,13 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
         registry.removeMetaClass(IBar)
         registry.removeMetaClass(Object)
 
-        EMCInheritTest.metaClass.methodMissing = {String name, args -> "hello!" }
+        EMCInheritTest.metaClass.methodMissing = { String name, args -> "hello!" }
 
         def emc = new EMCInheritTest()
 
         assertEquals "hello!", emc.foo()
 
-        Test1.metaClass.methodMissing = {String name, args -> "uck" }
+        Test1.metaClass.methodMissing = { String name, args -> "uck" }
         emc = new EMCInheritTest()
         // make sure original foo wasn't overridden
         assertEquals "hello!", emc.bar()

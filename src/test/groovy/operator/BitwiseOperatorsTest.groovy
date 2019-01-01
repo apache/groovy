@@ -18,10 +18,8 @@
  */
 package groovy.operator
 
-/** 
+/**
  * Test Bitwise Operations
- * 
- * @author Pilho Kim
  */
 class BitwiseOperatorsTest extends GroovyTestCase {
 
@@ -166,38 +164,38 @@ class BitwiseOperatorsTest extends GroovyTestCase {
     }
 
     void testBitwiseOrInClosure() {
-        def c1 = {x, y -> return x | y}
+        def c1 = { x, y -> return x | y }
         assert c1(14, 5) == 15 // 0x0000000E | 0x00000005 = 0x0000000F
         assert c1(0x0D, 0xFE) == 255 // 0x0000000D | 0x000000FE = 0x000000FF
 
-        def c2 = {x, y -> return x | y}
+        def c2 = { x, y -> return x | y }
         assert c2(14, 5) == 15 // 0x0000000E | 0x00000005 = 0x0000000F
         assert c2(0x0D, 0xFE) == 255 // 0x0000000D | 0x000000FE = 0x000000FF
     }
 
     void testAmbiguityOfBitwiseOr() {
-        def c1 = {x, y -> return x | y}
+        def c1 = { x, y -> return x | y }
         assert c1(14, 5) == 15 // 0x0000000E | 0x00000005 = 0x0000000F
         assert c1(0x0D, 0xFE) == 255 // 0x0000000D | 0x000000FE = 0x000000FF
 
-        def c2 = {x, y -> return x | y}
+        def c2 = { x, y -> return x | y }
         assert c2(14, 5) == 15 // 0x0000000E | 0x00000005 = 0x0000000F
         assert c2(0x0D, 0xFE) == 255 // 0x0000000D | 0x000000FE = 0x000000FF
 
         def x = 3
         def y = 5
-        c1 = {xx -> return y} // -> is a closure delimiter
-        c2 = {return x & y} // & is a bitAnd
-        def c3 = {return x ^ y} // & is a bitXor
+        c1 = { xx -> return y } // -> is a closure delimiter
+        c2 = { return x & y } // & is a bitAnd
+        def c3 = { return x ^ y } // & is a bitXor
         def c11 = {
             xx -> return y // -> is a closure delimiter
         }
         def c12 = {
             return (x | y) // | is a bitOr
         }
-        def c13 = {xx -> return y // -> is a closure delimiter
+        def c13 = { xx -> return y // -> is a closure delimiter
         }
-        def c14 = {-> return x | y // last | is a bitOr
+        def c14 = { -> return x | y // last | is a bitOr
         }
 
         assert c1(null) == 5
@@ -210,18 +208,18 @@ class BitwiseOperatorsTest extends GroovyTestCase {
 
         x = 0x03
 
-        def d1 = {xx -> return xx} // -> is a closure delimiter
-        def d2 = {return x & x} // & is a bitAnd
-        def d3 = {return x ^ x} // & is a bitXor
+        def d1 = { xx -> return xx } // -> is a closure delimiter
+        def d2 = { return x & x } // & is a bitAnd
+        def d3 = { return x ^ x } // & is a bitXor
         def d11 = {
             xx -> return xx // -> is a closure delimiter
         }
         def d12 = {
             return (x | x) // | is a bitOr
         }
-        def d13 = {xx -> return xx // -> is a closure delimiter
+        def d13 = { xx -> return xx // -> is a closure delimiter
         }
-        def d14 = {-> return x | x // last | is a bitOr
+        def d14 = { -> return x | x // last | is a bitOr
         }
         assert d1(0xF0) == 0xF0
         assert d2(0xF0) == 0x03
