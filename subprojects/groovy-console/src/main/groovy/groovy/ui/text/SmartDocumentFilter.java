@@ -173,6 +173,7 @@ public class SmartDocumentFilter extends DocumentFilter {
             lexer = createLexer(styledDocument.getText(0, styledDocument.getLength()));
         } catch (IOException e) {
             e.printStackTrace();
+            this.latest = false;
             return;
         }
 
@@ -182,9 +183,11 @@ public class SmartDocumentFilter extends DocumentFilter {
             tokenStream.fill();
         } catch (LexerNoViableAltException | GroovySyntaxError e) {
             // ignore
+            this.latest = false;
             return;
         } catch (Exception e) {
             e.printStackTrace();
+            this.latest = false;
             return;
         }
 
@@ -221,6 +224,7 @@ public class SmartDocumentFilter extends DocumentFilter {
         }
 
         this.latestTokenList = tokenList;
+        this.latest = true;
     }
 
     private List<Token> findTokensToRender(List<Token> tokenList) {
@@ -338,9 +342,19 @@ public class SmartDocumentFilter extends DocumentFilter {
 
         // unexpected char, e.g. `
         Style unexpectedChar = createDefaultStyleByTokenType(UNEXPECTED_CHAR);
-        StyleConstants.setForeground(unexpectedChar, Color.YELLOW.darker().darker());
+        StyleConstants.setForeground(unexpectedChar, Color.CYAN.darker());
     }
 
-    private List<Token> latestTokenList = Collections.emptyList();
+    private volatile boolean latest = false;
+    private volatile List<Token> latestTokenList = Collections.emptyList();
     private static final String TAB_REPLACEMENT = "    ";
+
+    public boolean isLatest() {
+        return latest;
+    }
+
+    public List<Token> getLatestTokenList() {
+        return latestTokenList;
+    }
+
 }

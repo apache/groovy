@@ -19,19 +19,33 @@
 package groovy.ui;
 
 import groovy.ui.text.GroovyFilter;
+import groovy.ui.text.MatchingHighlighter;
+import groovy.ui.text.SmartDocumentFilter;
 import groovy.ui.text.StructuredSyntaxResources;
 import groovy.ui.text.TextEditor;
 import groovy.ui.text.TextUndoManager;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
+import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
 import javax.swing.text.DocumentFilter;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
@@ -314,7 +328,19 @@ public class ConsoleTextEditor extends JScrollPane {
         DefaultStyledDocument doc = (DefaultStyledDocument) textEditor.getDocument();
 
         try {
-            doc.setDocumentFilter((DocumentFilter) clazz.getConstructor(doc.getClass()).newInstance(doc));
+            DocumentFilter documentFilter = (DocumentFilter) clazz.getConstructor(doc.getClass()).newInstance(doc);
+            doc.setDocumentFilter(documentFilter);
+
+            if (documentFilter instanceof SmartDocumentFilter) {
+                final SmartDocumentFilter smartDocumentFilter = (SmartDocumentFilter) documentFilter;
+
+                for (CaretListener cl : textEditor.getCaretListeners()) {
+                    if (cl instanceof MatchingHighlighter) {
+                        textEditor.removeCaretListener(cl);
+                    }
+                }
+                textEditor.addCaretListener(new MatchingHighlighter(smartDocumentFilter, textEditor));
+            }
         } catch (ReflectiveOperationException e) {
             e.printStackTrace();
         }
