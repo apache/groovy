@@ -786,6 +786,13 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert result2['cc']['cd']['ce'] == [cc: 33]
     }
 
+    void testCountBy() {
+        def list = ['a', 'b', 'c', 'a']
+        def result = list.countBy { it }
+
+        assert [a: 2, b: 1, c: 1] == result
+    }
+
     def leftCol = ["2"]
     def rightCol = ["1", "2", "3"]
 

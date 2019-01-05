@@ -5883,20 +5883,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     protected static <K, T> void groupAnswer(final Map<K, List<T>> answer, T element, K value) {
-        if (answer.containsKey(value)) {
-            answer.get(value).add(element);
-        } else {
-            List<T> groupedElements = new ArrayList<T>();
-            groupedElements.add(element);
+        List<T> groupedElements = answer.get(value);
+
+        if (null == groupedElements) {
+            groupedElements = new ArrayList<T>();
             answer.put(value, groupedElements);
         }
+
+        groupedElements.add(element);
     }
 
     private static <T> void countAnswer(final Map<T, Integer> answer, T mappedKey) {
-        if (!answer.containsKey(mappedKey)) {
-            answer.put(mappedKey, 0);
+        Integer current = answer.get(mappedKey);
+
+        if (null == current) {
+            current = 0;
         }
-        int current = answer.get(mappedKey);
+
         answer.put(mappedKey, current + 1);
     }
 
