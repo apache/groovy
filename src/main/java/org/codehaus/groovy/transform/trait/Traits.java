@@ -44,6 +44,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -360,6 +361,24 @@ public abstract class Traits {
 
     static String getSuperTraitMethodName(ClassNode trait, String method) {
         return trait.getName().replace("_","__").replace('.','_')+SUPER_TRAIT_METHOD_PREFIX+method;
+    }
+
+    /**
+     * Find all traits associated with the given classnode
+     *
+     * @param cNode the given classnode
+     * @return the list of ordered trait classnodes
+     */
+    public static List<ClassNode> findTraits(ClassNode cNode) {
+        LinkedHashSet<ClassNode> interfaces = new LinkedHashSet<ClassNode>();
+        collectAllInterfacesReverseOrder(cNode, interfaces);
+        List<ClassNode> traits = new LinkedList<ClassNode>();
+        for (ClassNode candidate : interfaces) {
+            if (isAnnotatedWithTrait(candidate)) {
+                traits.add(candidate);
+            }
+        }
+        return traits;
     }
 
     /**

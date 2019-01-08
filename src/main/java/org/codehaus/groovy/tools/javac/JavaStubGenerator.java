@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -150,12 +151,9 @@ public class JavaStubGenerator {
                     List<Statement> savedStatements = new ArrayList<Statement>(node.getObjectInitializerStatements());
                     super.visitClass(node);
                     node.getObjectInitializerStatements().addAll(savedStatements);
-                    for (ClassNode inode : node.getAllInterfaces()) {
-                        if (Traits.isTrait(inode)) {
-                            List<PropertyNode> traitProps = inode.getProperties();
-                            for (PropertyNode pn : traitProps) {
-                                super.visitProperty(pn);
-                            }
+                    for (ClassNode trait : Traits.findTraits(node)) {
+                        for (PropertyNode traitProperty : trait.getProperties()) {
+                            super.visitProperty(traitProperty);
                         }
                     }
                 }
@@ -322,38 +320,53 @@ public class JavaStubGenerator {
             printMethod(out, classNode, method);
         }
 
-        for (ClassNode node : classNode.getAllInterfaces()) {
-            if (Traits.isTrait(node)) {
-                List<MethodNode> traitMethods = node.getMethods();
-                for (MethodNode traitMethod : traitMethods) {
-                    MethodNode method = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
-                    if (method == null) {
-                        for (MethodNode methodNode : propertyMethods) {
-                            if (methodNode.getName().equals(traitMethod.getName())) {
-                                boolean sameParams = sameParameterTypes(methodNode);
-                                if (sameParams) {
-                                    method = methodNode;
-                                    break;
-                                }
-                            }
-                        }
-                        if (method==null && !traitMethod.isAbstract()) {
-                            printMethod(out, classNode, traitMethod);
+        // print the methods from traits
+        for (ClassNode trait : Traits.findTraits(classNode)) {
+            List<MethodNode> traitMethods = trait.getMethods();
+            for (MethodNode traitMethod : traitMethods) {
+                MethodNode existingMethod = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
+                if (existingMethod != null) continue;
+                for (MethodNode propertyMethod : propertyMethods) {
+                    if (propertyMethod.getName().equals(traitMethod.getName())) {
+                        boolean sameParams = sameParameterTypes(propertyMethod, traitMethod);
+                        if (sameParams) {
+                            existingMethod = propertyMethod;
+                            break;
                         }
                     }
                 }
+                if (existingMethod != null) continue;
+                boolean isCandidate = isCandidateTraitMethod(trait, traitMethod);
+                if (!isCandidate) continue;
+                printMethod(out, classNode, traitMethod);
             }
         }
-
     }
 
-    private static boolean sameParameterTypes(final MethodNode methodNode) {
-        Parameter[] a = methodNode.getParameters();
-        Parameter[] b = methodNode.getParameters();
-        boolean sameParams = a.length == b.length;
+    private boolean isCandidateTraitMethod(ClassNode trait, MethodNode traitMethod) {
+        boolean precompiled = trait.redirect() instanceof DecompiledClassNode;
+        if (!precompiled) return !traitMethod.isAbstract();
+        List<MethodNode> helperMethods = Traits.findHelper(trait).getMethods();
+        for (MethodNode helperMethod : helperMethods) {
+            boolean isSynthetic = (traitMethod.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+            if (helperMethod.getName().equals(traitMethod.getName()) && !isSynthetic && !traitMethod.getName().contains("$")) {
+                Parameter[] origParams = helperMethod.getParameters();
+                Parameter[] newParams = Arrays.copyOfRange(origParams, 1, origParams.length);
+                if (sameParameterTypes(newParams, traitMethod.getParameters())) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sameParameterTypes(final MethodNode firstMethod, final MethodNode secondMethod) {
+        return sameParameterTypes(firstMethod.getParameters(), secondMethod.getParameters());
+    }
+
+    private static boolean sameParameterTypes(final Parameter[] firstParams, final Parameter[] secondParams) {
+        boolean sameParams = firstParams.length == secondParams.length;
         if (sameParams) {
-            for (int i = 0; i < a.length; i++) {
-                if (!a[i].getType().equals(b[i].getType())) {
+            for (int i = 0; i < firstParams.length; i++) {
+                if (!firstParams[i].getType().equals(secondParams[i].getType())) {
                     sameParams = false;
                     break;
                 }

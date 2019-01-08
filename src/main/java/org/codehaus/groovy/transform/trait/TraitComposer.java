@@ -106,7 +106,7 @@ public abstract class TraitComposer {
             return;
         }
         if (!cNode.getNameWithoutPackage().endsWith(Traits.TRAIT_HELPER)) {
-            List<ClassNode> traits = findTraits(cNode);
+            List<ClassNode> traits = Traits.findTraits(cNode);
             for (ClassNode trait : traits) {
                 TraitHelpersTuple helpers = Traits.findHelpers(trait);
                 applyTrait(trait, cNode, helpers, unit);
@@ -117,18 +117,6 @@ public abstract class TraitComposer {
                 }
             }
         }
-    }
-
-    private static List<ClassNode> findTraits(ClassNode cNode) {
-        LinkedHashSet<ClassNode> interfaces = new LinkedHashSet<ClassNode>();
-        Traits.collectAllInterfacesReverseOrder(cNode, interfaces);
-        List<ClassNode> traits = new LinkedList<ClassNode>();
-        for (ClassNode candidate : interfaces) {
-            if (Traits.isAnnotatedWithTrait(candidate)) {
-                traits.add(candidate);
-            }
-        }
-        return traits;
     }
 
     private static void checkTraitAllowed(final ClassNode bottomTrait, final SourceUnit unit) {
