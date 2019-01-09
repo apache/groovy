@@ -22,8 +22,6 @@ import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
- *
- * @author Cedric Champeau
  */
 class GetAnnotationStaticCompileTest extends AbstractBytecodeTestCase {
 

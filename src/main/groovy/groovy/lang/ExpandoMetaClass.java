@@ -251,7 +251,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * modification is completed.
  * <p>
  *
- * @author Graeme Rocher
  * @since 1.5
  */
 public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
@@ -567,8 +566,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * metaClass.myMethod << { String args -> }
      * <p>
      * This allows callbacks to the ExpandoMetaClass for registering appending methods
-     *
-     * @author Graeme Rocher
      */
     protected class ExpandoMetaProperty extends GroovyObjectSupport {
 
@@ -686,8 +683,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     /**
      * Handles the ability to use the left shift operator to append new constructors
-     *
-     * @author Graeme Rocher
      */
     protected class ExpandoMetaConstructor extends GroovyObjectSupport {
         public Object leftShift(Closure c) {

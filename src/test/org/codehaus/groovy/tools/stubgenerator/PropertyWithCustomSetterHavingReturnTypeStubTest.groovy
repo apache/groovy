@@ -21,8 +21,6 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Test that a custom setter for a property with non-void return type takes
  * precedence over default void fallback.
- *
- * @author Paul King
  */
 class PropertyWithCustomSetterHavingReturnTypeStubTest extends StringSourcesStubTestCase {
 

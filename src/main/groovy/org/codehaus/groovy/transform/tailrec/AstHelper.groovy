@@ -36,8 +36,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
 /**
  * Helping to create a few standard AST constructs
- *
- * @author Johannes Link
  */
 @CompileStatic
 class AstHelper {

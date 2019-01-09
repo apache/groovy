@@ -24,9 +24,7 @@ import gls.ch06.s05.testClasses.Tt1gi;
 import gls.ch06.s05.testClasses.Tt1go;
 import groovy.lang.Closure;
 import junit.framework.TestCase;
-/**
- * @author John Wilson
- */
+
 public class JName1Test extends TestCase {
     public void testObjectSupportNameHandling() {
         final Tt1go obj = new Tt1go();  // Test subclass of GroovyObjectSupport

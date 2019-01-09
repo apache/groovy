@@ -106,7 +106,6 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * @see BindableASTTransformation
- * @author Danno Ferrin (shemnon)
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)

@@ -23,7 +23,6 @@ package groovy.lang;
  * generated proxies that implement traits will implement this interface in order to give access to the proxied
  * instance.
  *
- * @author Cedric Champeau
  * @since 2.3.0
  */
 public interface GeneratedGroovyProxy {

@@ -18,9 +18,6 @@
  */
 package groovy.bugs;
 
-/**
- * @author
- */
 public class SimpleModel {
     public String s;
 

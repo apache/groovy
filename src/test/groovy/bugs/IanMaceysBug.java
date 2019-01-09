@@ -20,9 +20,6 @@ package groovy.bugs;
 
 import org.codehaus.groovy.classgen.TestSupport;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class IanMaceysBug extends TestSupport {
 
     public void testBug() throws Exception {

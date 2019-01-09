@@ -22,8 +22,6 @@ import groovy.transform.stc.UnaryOperatorSTCTest
 
 /**
  * Unit tests for static type checking : unary operator.
- *
- * @author Cedric Champeau
  */
 class UnaryOperatorStaticCompileTest extends UnaryOperatorSTCTest implements StaticCompilationTestSupport {
 

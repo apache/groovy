@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime
 
 /**
  * Test File append and leftShift DGM methods
- *
- * @author <a href="mailto:joachim.baumann@xinaris.de">Joachim Baumann</a>
  */
 class FileAppendTest extends GroovyTestCase {
     /**

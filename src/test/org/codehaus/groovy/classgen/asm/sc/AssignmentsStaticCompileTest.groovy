@@ -22,8 +22,6 @@ import groovy.transform.stc.STCAssignmentTest
 
 /**
  * Unit tests for static type checking : assignments.
- *
- * @author Cedric Champeau
  */
 class AssignmentsStaticCompileTest extends STCAssignmentTest implements StaticCompilationTestSupport {}
 

@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that multi-dimensional arrays are compiled successfully.
- *
- * @author Paul King
  */
 class Groovy6302Bug extends StringSourcesStubTestCase {
 

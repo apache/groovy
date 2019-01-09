@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test for GROOVY-6085
- *
- * @author Guillaume Laforge
  */
 class InnerAnnotationStubTest extends StringSourcesStubTestCase {
 

@@ -23,8 +23,6 @@ import com.thoughtworks.qdox.model.JavaMethod
 
 /**
  * Category methods for the QDox library to simplify the writing assertions to check the generated stubs.
- *
- * @author Guillaume Laforge
  */
 class QDoxCategory {
 

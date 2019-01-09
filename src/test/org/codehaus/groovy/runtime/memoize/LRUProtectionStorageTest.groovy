@@ -18,11 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
-/**
- * @author Vaclav Pech
- */
-public class LRUProtectionStorageTest extends GroovyTestCase {
-    public void testLRUStrategyWithOneElement() {
+class LRUProtectionStorageTest extends GroovyTestCase {
+    void testLRUStrategyWithOneElement() {
         def storage = new LRUProtectionStorage(1)
         assert storage.size() == 0
         storage['key1'] = 1
@@ -37,7 +34,7 @@ public class LRUProtectionStorageTest extends GroovyTestCase {
 
     }
 
-    public void testLRUStrategy() {
+    void testLRUStrategy() {
         def storage = new LRUProtectionStorage(3)
         assert storage.size() == 0
         storage['key1'] = 1
@@ -64,7 +61,7 @@ public class LRUProtectionStorageTest extends GroovyTestCase {
         assertEquals 5, storage['key5']
     }
 
-    public void testTouch() {
+    void testTouch() {
         def storage = new LRUProtectionStorage(3)
         storage['key1'] = 1
         storage['key2'] = 2

@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test stub generation for constructors having optional args 
- *
- * @author Roshan Dawrani
  */
 class StubGenerationForConstructorWithOptionalArgsStubsTest extends StringSourcesStubTestCase {
 

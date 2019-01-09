@@ -27,27 +27,26 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 
 /**
- *
  * Test if a method call is recursive if called within a given method node.
  * Handles static calls as well.
  * 
  * Currently known simplifications:
- * - Does not check for method overloading or overridden methods.
- * - Does not check for matching return types; even void and any object type are considered to be compatible.
- * - Argument type matching could be more specific in case of static compilation.
- * - Method names via a GString are never considered to be recursive
- * 
- * @author Johannes Link
+ * <ul>
+ * <li>Does not check for method overloading or overridden methods</li>
+ * <li>Does not check for matching return types; even void and any object type are considered to be compatible</li>
+ * <li>Argument type matching could be more specific in case of static compilation</li>
+ * <li>Method names via a GString are never considered to be recursive</li>
+ * </ul>
  */
 class RecursivenessTester {
-	public boolean isRecursive(params) {
+	boolean isRecursive(params) {
 		assert params.method.class == MethodNode
 		assert params.call.class == MethodCallExpression || StaticMethodCallExpression
 
 		isRecursive(params.method, params.call)
 	}
 
-	public boolean isRecursive(MethodNode method, MethodCallExpression call) {
+	boolean isRecursive(MethodNode method, MethodCallExpression call) {
 		if (!isCallToThis(call))
 			return false
         // Could be a GStringExpression
@@ -58,7 +57,7 @@ class RecursivenessTester {
 		methodParamsMatchCallArgs(method, call)
 	}
 
-    public boolean isRecursive(MethodNode method, StaticMethodCallExpression call) {
+    boolean isRecursive(MethodNode method, StaticMethodCallExpression call) {
         if (!method.isStatic())
             return false
         if (method.declaringClass != call.ownerType)

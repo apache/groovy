@@ -25,17 +25,14 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 
 /**
- *
  * Check if there are any recursive calls in a method
- *
- * @author Johannes Link
  */
 @CompileStatic
 class HasRecursiveCalls extends CodeVisitorSupport {
     MethodNode method
     boolean hasRecursiveCalls = false
 
-    public void visitMethodCallExpression(MethodCallExpression call) {
+    void visitMethodCallExpression(MethodCallExpression call) {
         if (isRecursive(call)) {
             hasRecursiveCalls = true
         } else {
@@ -43,7 +40,7 @@ class HasRecursiveCalls extends CodeVisitorSupport {
         }
     }
 
-    public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+    void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
         if (isRecursive(call)) {
             hasRecursiveCalls = true
         } else {

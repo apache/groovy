@@ -18,10 +18,7 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
-/**
- * @author Vaclav Pech
- */
-public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
+abstract class AbstractMemoizeTestCase extends GroovyTestCase {
 
     volatile int counter = 0
 
@@ -29,7 +26,7 @@ public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
         super()
     }
 
-    public void testCorrectness() {
+    void testCorrectness() {
         Closure cl = { it * 2 }
         Closure mem = buildMemoizeClosure(cl)
         assert 10 == mem(5)
@@ -38,7 +35,7 @@ public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
 
     abstract Closure buildMemoizeClosure(Closure cl)
 
-    public void testNullParams() {
+    void testNullParams() {
         Closure cl = { 2 }
         Closure mem = cl.memoize()
         assert 2 == mem(5)
@@ -46,8 +43,8 @@ public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
         assert 2 == mem(null)
     }
 
-    public void testNullResult() {
-        Closure cl = {counter++; if (it == 5) return null else return 2}
+    void testNullResult() {
+        Closure cl = { counter++; if (it == 5) return null else return 2 }
         Closure mem = cl.memoize()
         assert counter == 0
         assert null == mem(5)
@@ -59,14 +56,14 @@ public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
         assert counter == 2
     }
 
-    public void testNoParams() {
-        Closure cl = {-> 2 }
+    void testNoParams() {
+        Closure cl = { -> 2 }
         Closure mem = cl.memoize()
         assert 2 == mem()
         assert 2 == mem()
     }
 
-    public void testCaching() {
+    void testCaching() {
         def flag = false
         Closure cl = {
             flag = true
@@ -92,7 +89,7 @@ public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
         assert !flag
     }
 
-    public void testComplexParameter() {
+    void testComplexParameter() {
         def callFlag = []
 
         Closure cl = { a, b, c ->
@@ -112,10 +109,10 @@ public abstract class AbstractMemoizeTestCase extends GroovyTestCase {
     }
 
     def checkParams(Closure mem, callFlag, args, desiredResult) {
-        assertEquals desiredResult, mem(* args)
+        assertEquals desiredResult, mem( * args )
         assert !callFlag.empty
         callFlag.clear()
-        assert desiredResult == mem(* args)
+        assert desiredResult == mem(*args)
         assert callFlag.empty
     }
 }

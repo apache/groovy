@@ -24,7 +24,6 @@ import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as confi
 
 /**
  * Tests for combined static compilation and indy code
- * @author Jochen Theodorou
  */
 class CombinedIndyAndStaticCompilationTest extends AbstractBytecodeTestCase {
     void testArrayAccess() {

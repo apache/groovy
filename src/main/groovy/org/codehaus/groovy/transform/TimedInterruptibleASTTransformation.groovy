@@ -60,9 +60,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  * checks on loops (for, while, do) and first statement of closures. By default,
  * also adds an interrupt check statement on the beginning of method calls.
  *
- * @author Cedric Champeau
- * @author Hamlet D'Arcy
- * @author Paul King
  * @see groovy.transform.ThreadInterrupt
  * @since 1.8.0
  */

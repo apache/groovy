@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * GROOVY-4504: Groovy compilation results in warnings in generated code
- *
- * @author Guillaume Laforge
  */
 class RedundantCastInStubTest extends StringSourcesStubTestCase {
 

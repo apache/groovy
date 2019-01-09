@@ -20,9 +20,6 @@ package org.codehaus.groovy.transform
 
 import java.lang.reflect.Modifier
 
-/**
- * @author Paul King
- */
 class PackageScopeTransformTest extends GroovyShellTestCase {
 
     void testImmutable() {

@@ -20,9 +20,6 @@ package groovy.beans;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-/**
- * @author Andres Almiray
- */
 public class DefaultPropertyReader implements PropertyReader {
     public static final PropertyReader INSTANCE = new DefaultPropertyReader();
 

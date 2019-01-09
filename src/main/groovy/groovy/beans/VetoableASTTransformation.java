@@ -71,9 +71,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * <p>
  * If a {@link Bindable} annotation is detected it also adds support similar
  * to what {@link BindableASTTransformation} would do.
- *
- * @author Danno Ferrin (shemnon)
- * @author Chris Reeves
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class VetoableASTTransformation extends BindableASTTransformation {

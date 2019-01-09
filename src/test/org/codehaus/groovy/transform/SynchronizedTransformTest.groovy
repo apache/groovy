@@ -26,10 +26,6 @@ import java.util.concurrent.CountDownLatch
 
 import static java.util.concurrent.TimeUnit.SECONDS
 
-/**
- * @author Paul King
- * @author Hamlet D'Arcy
- */
 class SynchronizedTransformTest extends GroovyTestCase {
 
     def countReadyLatch = new CountDownLatch(1)

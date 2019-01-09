@@ -29,8 +29,6 @@ import java.io.Writer;
  * characters but when creating files that must be used
  * by other platform-aware tools, you sometimes want the
  * newlines to match what the platform expects.
- *
- * @author Paul King
  */
 public class PlatformLineWriter extends Writer {
     private final BufferedWriter writer;

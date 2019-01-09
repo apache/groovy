@@ -22,8 +22,6 @@ package groovy.lang;
  * The interface implemented by all Groovy objects.
  * <p>
  * Especially handy for using Groovy objects when in the Java world.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public interface GroovyObject {
 

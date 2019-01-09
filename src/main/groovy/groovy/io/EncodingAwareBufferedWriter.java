@@ -25,10 +25,7 @@ import java.nio.charset.Charset;
 /**
  * A buffered writer only for OutputStreamWriter that is aware of
  * the encoding of the OutputStreamWriter.
- *
- * @author Paul King
  */
-
 public class EncodingAwareBufferedWriter extends BufferedWriter {
     private final OutputStreamWriter out;
     public EncodingAwareBufferedWriter(OutputStreamWriter out) {

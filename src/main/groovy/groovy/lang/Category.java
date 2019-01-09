@@ -93,8 +93,6 @@ import java.lang.annotation.Target;
  * println new Sentence(words).shuffle()
  * // => [quick, fox, The, brown]       (order will vary)
  * </pre>
- *
- * @author Alex Tkachman
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)

@@ -22,8 +22,6 @@ import groovy.transform.stc.ConstructorsSTCTest
 
 /**
  * Unit tests for static compilation: constructors.
- *
- * @author Cedric Champeau
  */
 class StaticCompileConstructorsTest extends ConstructorsSTCTest implements StaticCompilationTestSupport {
 

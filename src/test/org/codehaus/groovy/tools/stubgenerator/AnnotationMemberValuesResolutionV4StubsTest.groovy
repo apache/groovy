@@ -21,8 +21,6 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Test that FQN appears in generated stub when an annotation node
  *  is used as an annotation member value.
- *
- * @author Paul King
  */
 class AnnotationMemberValuesResolutionV4StubsTest extends StringSourcesStubTestCase {
 

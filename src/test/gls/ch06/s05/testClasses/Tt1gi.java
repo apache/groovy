@@ -18,15 +18,10 @@
  */
 package gls.ch06.s05.testClasses;
 
-
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
-
-/**
- * @author John Wilson
- */
 
 public class Tt1gi extends Tt1 implements GroovyObject, GroovyInterceptable {
 

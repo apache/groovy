@@ -27,7 +27,6 @@ import java.nio.CharBuffer;
  * The <code>LineColumnReader</code> is an extension to <code>BufferedReader</code>
  * that keeps track of the line and column information of where the cursor is.
  *
- * @author Guillaume Laforge
  * @since 1.8.0
  */
 public class LineColumnReader extends BufferedReader {

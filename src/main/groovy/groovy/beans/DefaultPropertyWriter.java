@@ -20,9 +20,6 @@ package groovy.beans;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-/**
- * @author Andres Almiray
- */
 public class DefaultPropertyWriter implements PropertyWriter {
     public static final PropertyWriter INSTANCE = new DefaultPropertyWriter();
 

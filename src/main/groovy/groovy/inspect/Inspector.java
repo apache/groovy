@@ -40,8 +40,6 @@ import java.util.List;
 /**
  * The Inspector provides a unified access to an object's
  * information that can be determined by introspection.
- *
- * @author Dierk Koenig
  */
 public class Inspector {
     protected Object objectUnderInspection;

@@ -23,8 +23,6 @@ import static java.lang.Math.min
 
 /**
  * Tests rendering of whole assertions.
- *
- * @author Peter Niederwieser
  */
 
 class AssertionRenderingTest extends GroovyTestCase {

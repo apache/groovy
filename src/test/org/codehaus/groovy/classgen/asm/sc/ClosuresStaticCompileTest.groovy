@@ -22,8 +22,6 @@ import groovy.transform.stc.ClosuresSTCTest
 
 /**
  * Unit tests for static compilation: closures.
- *
- * @author Cedric Champeau
  */
 class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompilationTestSupport {
 

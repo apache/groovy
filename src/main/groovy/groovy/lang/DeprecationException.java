@@ -28,8 +28,6 @@ package groovy.lang;
  *
  * This exception is supposed to be used in the SNAPSHOT releases only. Before release, all
  * references to this exception should be resolved and the according methods removed.
- *
- * @author Dierk Koenig
  */
 public class DeprecationException extends RuntimeException {
 

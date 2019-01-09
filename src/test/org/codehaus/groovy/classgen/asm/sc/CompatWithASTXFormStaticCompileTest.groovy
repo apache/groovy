@@ -23,8 +23,6 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
 /**
  * Unit tests which checks compatibility of various AST xforms with the
  * {@link groovy.transform.CompileStatic} annotation.
- *
- * @author Cedric Champeau
  */
 class CompatWithASTXFormStaticCompileTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 

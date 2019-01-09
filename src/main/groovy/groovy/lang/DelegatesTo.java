@@ -39,8 +39,6 @@ import java.lang.annotation.Target;
  * ExecResult exec(@DelegatesTo(ExecSpec) Closure closure) { ... }
  * </pre>
  *
- * @author Cedric Champeau
- * @author Peter Niderwieser
  * @since 2.1.0
  */
 @Documented

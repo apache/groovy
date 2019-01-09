@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Checks that default values from annotation definitions appear within stubs.
- *
- * @author Paul King
  */
 class AnnotationDefaultValuesStubTest extends StringSourcesStubTestCase {
 

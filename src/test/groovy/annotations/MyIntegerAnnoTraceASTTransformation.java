@@ -35,8 +35,6 @@ import java.util.List;
 
 /**
  * Traces @MyIntegerAnno annotation
- *
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class MyIntegerAnnoTraceASTTransformation implements ASTTransformation {
