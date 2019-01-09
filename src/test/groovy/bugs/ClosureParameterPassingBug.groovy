@@ -20,9 +20,6 @@ package groovy.bugs
 
 import org.codehaus.groovy.classgen.TestSupport
 
-/**
- * @author John Wilson
- */
 class ClosureParameterPassingBug extends TestSupport {
     
     void testBugInMethod() {

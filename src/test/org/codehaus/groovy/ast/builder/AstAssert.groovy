@@ -18,26 +18,10 @@
  */
 package org.codehaus.groovy.ast.builder
 
-import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.ClassNode
 import org.junit.Assert
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.ExpressionStatement
-import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.expr.DeclarationExpression
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.ast.stmt.ReturnStatement
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.AnnotationConstantExpression
-import org.codehaus.groovy.ast.AnnotationNode
-import org.codehaus.groovy.ast.expr.AttributeExpression
-
 
 /**
- *
  * Some useful AST assertion methods.
- * @author Hamlet D'Arcy
  */
 class AstAssert {
 

@@ -20,8 +20,6 @@
 package groovy.transform.stc
 /**
  * Unit tests for static type checking : closure parameter type inference for {@link org.codehaus.groovy.runtime.ResourceGroovyMethods}.
- *
- * @author Cedric Champeau
  */
 class ResourceGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testEachByte() {

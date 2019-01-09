@@ -36,8 +36,6 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * Settings can either be bound into nested maps or onto a specified JavaBean instance.
  * In the latter case, an error will be thrown if a property cannot be bound.
  *
- * @author Graeme Rocher
- * @author Andres Almiray
  * @since 1.5
  */
 class ConfigSlurper {

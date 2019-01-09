@@ -22,8 +22,6 @@ import org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests
 
 /**
  * Unit tests for static type checking : extension methods.
- *
- * @author Cedric Champeau
  */
 class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
 

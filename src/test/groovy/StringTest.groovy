@@ -20,8 +20,6 @@ package groovy
 
 /**
  * Various tests for Strings.
- *
- * @author Michael Baehr
  */
 class StringTest extends GroovyTestCase {
 

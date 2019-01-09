@@ -31,12 +31,11 @@ import java.security.PrivilegedAction
 
 /**
  * This class handles converting Strings to ASTNode lists.
- *
- * @author Hamlet D'Arcy
  */
 @CompileStatic
-@PackageScope class AstStringCompiler {
-    
+@PackageScope
+class AstStringCompiler {
+
     /**
      * Performs the String source to {@link List} of {@link ASTNode}.
      *
@@ -49,7 +48,9 @@ import java.security.PrivilegedAction
     List<ASTNode> compile(String script, CompilePhase compilePhase, boolean statementsOnly) {
         final scriptClassName = makeScriptClassName()
         GroovyCodeSource codeSource = new GroovyCodeSource(script, "${scriptClassName}.groovy", "/groovy/script")
-        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, AccessController.doPrivileged({ new GroovyClassLoader() } as PrivilegedAction<GroovyClassLoader>))
+        CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, AccessController.doPrivileged({
+            new GroovyClassLoader()
+        } as PrivilegedAction<GroovyClassLoader>))
         cu.addSource(codeSource.getName(), script)
         cu.compile(compilePhase.getPhaseNumber())
         // collect all the ASTNodes into the result, possibly ignoring the script body if desired

@@ -23,8 +23,6 @@ import org.codehaus.groovy.util.IteratorBufferedIterator;
 
 /**
  * Test class for BufferedIterators.
- *
- * @author Andrew Taylor
  */
 class BufferedIteratorTest extends GroovyTestCase {
 

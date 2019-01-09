@@ -20,8 +20,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : ternary operator tests.
- *
- * @author Cedric Champeau
  */
 class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 

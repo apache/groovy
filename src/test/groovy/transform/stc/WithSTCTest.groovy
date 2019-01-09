@@ -21,8 +21,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : with method.
- *
- * @author Andre Steingress
  */
 class WithSTCTest extends StaticTypeCheckingTestCase {
 

@@ -20,9 +20,6 @@ package groovy.beans
 
 /**
  * Unit test for ListenerList.
- *
- * @author Alexander Klein
- * @author Hamlet D'Arcy
  */
 
 class ListenerListASTTest extends GroovyTestCase {

@@ -22,8 +22,6 @@ package groovy.bugs
  * Test to fix the Jira issues GROOVY-1018 and GROOVY-732.
  * Access to a static field member by a class name:
  *      ClassName.fieldName or ClassName.@fieldName.
- *
- * @author Pilho Kim
  */
 
 class Groovy1018_Bug extends GroovyTestCase { 

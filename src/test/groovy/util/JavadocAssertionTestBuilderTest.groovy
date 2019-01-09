@@ -21,9 +21,6 @@ package groovy.util
 import junit.framework.TestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
-/**
- * @author Merlyn Albery-Speyer
- */
 class JavadocAssertionTestBuilderTest extends GroovyTestCase {
     def builder
     

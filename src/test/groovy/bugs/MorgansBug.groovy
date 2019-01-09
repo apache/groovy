@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @author Morgan Hankins
- */
 class MorgansBug extends GroovyTestCase {
 
     void testBug() {

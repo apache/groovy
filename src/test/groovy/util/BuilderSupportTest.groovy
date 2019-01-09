@@ -19,15 +19,10 @@
 package groovy.util
 
 /**
-     Testing BuilderSupport and reveal how calling
-    methods on it result in implementation callbacks.
-    Using the SpoofBuilder (see below) to call it in various ways
-    and analyze the "spoofed" logs.
-    This is especially useful when designing subclasses of BuilderSupport.
-     @author Dierk Koenig
-**/
-
-
+ * Testing BuilderSupport and reveal how calling methods on it result in implementation callbacks.
+ * Using the SpoofBuilder (see below) to call it in various ways and analyze the "spoofed" logs.
+ * This is especially useful when designing subclasses of BuilderSupport.
+ */
 class BuilderSupportTest extends GroovyTestCase{
     void testSimpleNode() {
         def b = new SpoofBuilder()

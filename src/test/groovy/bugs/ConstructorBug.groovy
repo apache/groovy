@@ -20,9 +20,6 @@ package groovy.bugs
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
-/**
- * @author Jason Thomas
- */
 class ConstructorBug extends GroovyTestCase {
     
     void testBug() {

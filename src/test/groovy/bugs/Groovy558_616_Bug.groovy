@@ -21,9 +21,6 @@ package groovy.bugs
 /**
   * Fixes GROOVY-558 and GROOVY-616.
   * A fully qualified class name ending with .class or not were not recognized properly.
-  *
-  * @author Jochen Theodorou
-  * @author Guillaume Laforge
   */
 class Groovy558_616_Bug extends GroovyTestCase {
 

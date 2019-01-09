@@ -24,8 +24,6 @@ import org.codehaus.groovy.control.CompilerConfiguration
 /**
  * GROOVY-3463:
  * Spring/CGLIB proxies throw exception "object is not an instance of declaring class"
- *
- * @author Guillaume Laforge
  */
 class Groovy3464Bug extends GroovyTestCase {
 

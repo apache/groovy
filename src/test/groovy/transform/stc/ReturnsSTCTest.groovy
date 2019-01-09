@@ -20,8 +20,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : implicit and explicit returns.
- *
- * @author Cedric Champeau
  */
 class ReturnsSTCTest extends StaticTypeCheckingTestCase {
 

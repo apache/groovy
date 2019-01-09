@@ -20,8 +20,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : type checking mode.
- *
- * @author Cedric Champeau
  */
 class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
     void testShouldThrowErrorBecauseTypeCheckingIsOn() {

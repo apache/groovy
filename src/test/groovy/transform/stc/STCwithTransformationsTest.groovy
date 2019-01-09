@@ -31,8 +31,6 @@ import java.lang.reflect.Modifier
 
 /**
  * Unit tests for static type checking and AST.
- *
- * @author Stephane Maldini
  */
 class STCwithTransformationsTest extends StaticTypeCheckingTestCase {
 

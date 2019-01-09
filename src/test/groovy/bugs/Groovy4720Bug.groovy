@@ -20,9 +20,6 @@ package groovy.bugs
 
 /**
  * Groovy-4720: Method overriding with ExpandoMetaClass is partially broken
- *
- * @author Graeme Rocher
- * @author Guillaume Laforge
  */
 class Groovy4720Bug extends GroovyTestCase {
 

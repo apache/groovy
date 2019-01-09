@@ -23,8 +23,6 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
  * Unit tests for static type checking : method calls.
- *
- * @author Cedric Champeau
  */
 class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     @Override

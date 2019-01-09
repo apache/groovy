@@ -23,8 +23,6 @@ import org.codehaus.groovy.control.ParserVersion
 
 /**
  * Unit tests for static type checking : generics.
- *
- * @author Cedric Champeau
  */
 class GenericsSTCTest extends StaticTypeCheckingTestCase {
 

@@ -717,6 +717,15 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Stephane Landelle'
             }
             contributor {
+                name 'Stephane Maldini'
+            }
+            contributor {
+                name 'Mark Volkmann'
+            }
+            contributor {
+                name 'Andrew Taylor'
+            }
+            contributor {
                 name 'Vladimir Vivien'
             }
             contributor {
@@ -742,6 +751,15 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Dominik Przybysz'
+            }
+            contributor {
+                name 'Jason Thomas'
+            }
+            contributor {
+                name 'Trygve Amundsens'
+            }
+            contributor {
+                name 'Morgan Hankins'
             }
             contributor {
                 name 'Shruti Gupta'
@@ -815,7 +833,7 @@ project.ext.pomConfigureClosure = {
         // add 'packaging' node
         pom.withXml { xmlProvider ->
             def xml = xmlProvider.asString()
-            def pomXml = new XmlParser().parse(new ByteArrayInputStream(xml.toString().bytes))
+            def pomXml = new XmlParser().parse(new ByteArrayInputStream(xml.toString().getBytes("UTF-8")))
 
             pomXml.version[0] + { packaging('jar') }
 

@@ -34,8 +34,6 @@ import static org.junit.Assume.assumeTrue
  * path is partway reasonable so we can access sh and echo.
  * <p>
  * These test are a bit trivial but at least they are here :-)
- *
- * @author Russel Winder
  */
 @RunWith(JUnit4)
 class ExecuteTest_LinuxSolaris extends GroovyTestCase {

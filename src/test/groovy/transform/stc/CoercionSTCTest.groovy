@@ -20,8 +20,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : coercions.
- *
- * @author Cedric Champeau
  */
 class CoercionSTCTest extends StaticTypeCheckingTestCase {
     void testCoerceToArray() {
