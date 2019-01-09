@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @author Sergey Udovenko
- */
 class BadScriptNameBug extends GroovyTestCase {
 
     void testBug() {

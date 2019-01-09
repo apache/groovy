@@ -20,7 +20,6 @@ package groovy.util
 
 /**
  * Unit test for IndentPrinter.
- * @author Hamlet D'Arcy
  */
 class IndentPrinterTest extends GroovyTestCase {
 

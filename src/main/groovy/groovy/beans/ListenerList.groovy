@@ -109,8 +109,6 @@ import java.lang.annotation.Target
  * </ul>
  *
  * @see ListenerListASTTransformation
- * @author Alexander Klein
- * @author Hamlet D'Arcy
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)

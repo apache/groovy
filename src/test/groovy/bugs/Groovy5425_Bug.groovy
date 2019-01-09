@@ -21,8 +21,6 @@ package groovy.bugs
 /**
  * Check Range.size finishes in a timely fashion. If we get a regression on this bug,
  * the build will take 10 - 20 minutes longer than normal
- *
- * @author Tim Yates
  */
 class Groovy5425_Bug extends GroovyTestCase {
 

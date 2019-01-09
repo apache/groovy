@@ -26,10 +26,8 @@ import static GroovyCollections.sum
 
 /**
 * Tests GroovyCollections
-*
-* @author Paul King
 */
-public class GroovyCollectionsTest extends GroovyTestCase {
+class GroovyCollectionsTest extends GroovyTestCase {
 
     void testCombinations() {
         // use Sets because we don't care about order

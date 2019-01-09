@@ -31,8 +31,6 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
 
 /**
  * Unit tests for static type checking : custom error collector.
- *
- * @author Cedric Champeau
  */
 class CustomErrorCollectorSTCTest extends StaticTypeCheckingTestCase {
 

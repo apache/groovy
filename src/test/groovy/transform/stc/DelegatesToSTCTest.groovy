@@ -21,9 +21,6 @@ package groovy.transform.stc
 /**
  * Units tests aimed at testing the behavior of {@link DelegatesTo} in combination
  * with static type checking.
- *
- * @author Cedric Champeau
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     void testShouldChooseMethodFromOwner() {

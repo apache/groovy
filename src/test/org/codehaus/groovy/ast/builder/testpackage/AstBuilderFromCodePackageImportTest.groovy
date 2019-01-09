@@ -18,19 +18,19 @@
  */
 package org.codehaus.groovy.ast.builder.testpackage
 
-import org.codehaus.groovy.ast.builder.*
+import org.codehaus.groovy.ast.builder.AstAssert
+import org.codehaus.groovy.ast.builder.AstBuilder
+import org.codehaus.groovy.ast.builder.WithAstBuilder
 
 /**
  * Test package imports in AstBuilder.
- * 
- * It is important that this class contains an import of builder.* and not 
- * the AstBuilder class individually. 
  *
- * @author Hamlet D'Arcy
+ * It is important that this class contains an import of builder.* and not
+ * the AstBuilder class individually.
  */
 @WithAstBuilder
-public class AstBuilderFromCodePackageImportTest extends GroovyTestCase {
-    public void testPackageImport() {
+class AstBuilderFromCodePackageImportTest extends GroovyTestCase {
+    void testPackageImport() {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 
         def result = new AstBuilder().buildFromCode {

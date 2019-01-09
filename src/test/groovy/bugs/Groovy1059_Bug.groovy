@@ -30,9 +30,6 @@ package groovy.bugs
  *            (object.@closure)()
  *
  *    have the same meaning.
- *
- * @author  John Wilson
- * @author  Pilho Kim
  */
 
 class Groovy1059_Bug extends GroovyTestCase {

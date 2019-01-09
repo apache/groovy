@@ -20,8 +20,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : constructors.
- *
- * @author Cedric Champeau
  */
 class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
 

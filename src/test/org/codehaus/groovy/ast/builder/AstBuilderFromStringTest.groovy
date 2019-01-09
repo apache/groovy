@@ -19,39 +19,37 @@
 package org.codehaus.groovy.ast.builder
 
 import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.VariableScope
-import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.expr.DeclarationExpression
-import org.codehaus.groovy.ast.expr.VariableExpression
-import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.ExpressionStatement
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.syntax.Token
-import org.codehaus.groovy.syntax.Types
-import org.codehaus.groovy.ast.stmt.ReturnStatement
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.stmt.IfStatement
-import org.codehaus.groovy.ast.expr.BooleanExpression
-import org.codehaus.groovy.ast.expr.BinaryExpression
-import org.codehaus.groovy.ast.stmt.BreakStatement
-import org.codehaus.groovy.ast.stmt.SwitchStatement
-import org.codehaus.groovy.ast.stmt.CaseStatement
-import org.codehaus.groovy.ast.stmt.EmptyStatement
-import org.objectweb.asm.Opcodes
+import org.codehaus.groovy.ast.ConstructorNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.ConstructorNode
-import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.VariableScope
+import org.codehaus.groovy.ast.expr.ArgumentListExpression
+import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.BreakStatement
+import org.codehaus.groovy.ast.stmt.CaseStatement
+import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.stmt.SwitchStatement
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.syntax.Token
+import org.codehaus.groovy.syntax.Types
+import org.objectweb.asm.Opcodes
 
 /**
  * Unit test for the AstBuilder class. Shows the usage of how to create AST from string input.  
- * @author Hamlet D'Arcy
  */
-
-public class AstBuilderFromStringTest extends GroovyTestCase {
+class AstBuilderFromStringTest extends GroovyTestCase {
 
     private AstBuilder factory
 
@@ -65,7 +63,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
      * This shows how to compile a simple script that returns a constant,
      * discarding the generated Script subclass. 
      */
-    public void testSimpleConstant() {
+    void testSimpleConstant() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CONVERSION, " \"Some String\" ")
 
         def expected = new BlockStatement(
@@ -82,7 +80,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
      * This shows how to compile a script that includes declarations,
      * discarding the generated Script subclass.
      */
-    public void testAssignment() {
+    void testAssignment() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CONVERSION, " def x = 2; def y = 4 ")
 
         def expected = new BlockStatement(
@@ -93,13 +91,13 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
                                 new ConstantExpression(2)
                         )
                 ),
-                        new ExpressionStatement(
-                                new DeclarationExpression(
-                                        new VariableExpression("y"),
-                                        Token.newSymbol(Types.EQUAL, 0, 0),
-                                        new ConstantExpression(4)
-                                )
-                        )],
+                 new ExpressionStatement(
+                         new DeclarationExpression(
+                                 new VariableExpression("y"),
+                                 Token.newSymbol(Types.EQUAL, 0, 0),
+                                 new ConstantExpression(4)
+                         )
+                 )],
                 new VariableScope()
         )
 
@@ -110,7 +108,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
      * This shows how to compile a script that includes method calls,
      * discarding the generated Script subclass.
      */
-    public void testMethodCall() {
+    void testMethodCall() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CONVERSION, """ println "Hello World" """)
 
         def expected = new BlockStatement(
@@ -132,7 +130,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
      * This shows how to get the Script subclass off of the compiled result, compiling
      * all the way to CLASS_GENERATION.
      */
-    public void testWithScriptClassAndClassGeneration() {
+    void testWithScriptClassAndClassGeneration() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CLASS_GENERATION, false, " \"Some String\" ")
 
         def expectedScriptBody = new BlockStatement(
@@ -150,7 +148,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
     /**
      * Proves default value is CLASS_GENERATION and statementsOnly = true. 
      */
-    public void testDefaultValues() {
+    void testDefaultValues() {
         List<ASTNode> result = factory.buildFromString(" \"Some String\" ")
 
         def expectedScriptBody = new BlockStatement(
@@ -167,7 +165,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
      * This tests the contract of the build method, trying to pass null
      * arguments when those arguments are required.
      */
-    public void testContract() {
+    void testContract() {
 
         // source is required
         shouldFail(IllegalArgumentException) {
@@ -181,7 +179,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
     }
 
 
-    public void testIfStatement() {
+    void testIfStatement() {
 
         def result = factory.buildFromString(
                 CompilePhase.SEMANTIC_ANALYSIS,
@@ -219,7 +217,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
     }
 
 
-    public void testSwitchAndCaseAndBreakStatements() {
+    void testSwitchAndCaseAndBreakStatements() {
 
         def result = new AstBuilder().buildFromString(CompilePhase.SEMANTIC_ANALYSIS, """
             switch (foo) {
@@ -282,7 +280,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    public void testCreatingClassAndMethods() {
+    void testCreatingClassAndMethods() {
         def result = factory.buildFromString(CompilePhase.SEMANTIC_ANALYSIS, """
             class MyClass {
                 private String myField = "a field value"
@@ -303,7 +301,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
         AstAssert.assertSyntaxTree(expected, result)
 
         def classNode = result[1]
-        def field = classNode?.fields?.find {FieldNode f -> f.name == 'myField' }
+        def field = classNode?.fields?.find { FieldNode f -> f.name == 'myField' }
         def expectedField = new FieldNode(
                 'myField',
                 Opcodes.ACC_PRIVATE,
@@ -313,7 +311,7 @@ public class AstBuilderFromStringTest extends GroovyTestCase {
         )
         AstAssert.assertSyntaxTree([expectedField], [field])
 
-        def method = classNode?.methods?.find {MethodNode m -> m.name == 'myMethod' }
+        def method = classNode?.methods?.find { MethodNode m -> m.name == 'myMethod' }
         def expectedMethod = new MethodNode(
                 'myMethod',
                 Opcodes.ACC_PUBLIC,

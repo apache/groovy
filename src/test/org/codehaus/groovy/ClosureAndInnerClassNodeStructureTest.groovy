@@ -31,8 +31,6 @@ import org.codehaus.groovy.ast.ClassNode
  *
  * This test checks that closure inner classes are direct child of their enclosing class,
  * instead of being child of the outermost class.
- *
- * @author Guillaume Laforge
  */
 class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
 

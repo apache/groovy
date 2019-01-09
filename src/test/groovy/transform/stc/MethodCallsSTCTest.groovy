@@ -23,8 +23,6 @@ import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as confi
 
 /**
  * Unit tests for static type checking : method calls.
- *
- * @author Cedric Champeau
  */
 class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     private static final boolean IS_PRE_8

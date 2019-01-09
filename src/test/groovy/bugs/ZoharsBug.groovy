@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @author Zohar Melamed
- */
 class ZoharsBug extends GroovyTestCase {
     
     void testBug() {

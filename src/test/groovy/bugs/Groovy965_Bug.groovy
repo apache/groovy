@@ -21,8 +21,6 @@ package groovy.bugs
 /**
  * A test case to ensure that Groovy can compile class names and variable names with non-ASCII
  * characters and that non-ASCII characters in Strings do the right thing.
- *
- * @author Russel Winder
  */
 class Groovy965_Bug extends GroovyTestCase {
 

@@ -30,8 +30,6 @@ import org.codehaus.groovy.ast.tools.WideningCategories
 
 /**
  * Unit tests for static type checking : type inference.
- *
- * @author Cedric Champeau
  */
 class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 

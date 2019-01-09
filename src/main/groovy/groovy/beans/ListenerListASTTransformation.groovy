@@ -62,9 +62,6 @@ import org.objectweb.asm.Opcodes
  * <p>
  * Additionally it adds corresponding fire&lt;Event&gt; methods.
  * <p>
- *
- * @author Alexander Klein
- * @author Hamlet D'Arcy
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class ListenerListASTTransformation implements ASTTransformation, Opcodes {

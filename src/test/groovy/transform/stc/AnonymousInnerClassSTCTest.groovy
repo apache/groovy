@@ -18,13 +18,9 @@
  */
 package groovy.transform.stc
 
-import groovy.transform.NotYetImplemented
-
 /**
  * Test cases specifically aimed at testing the behaviour of the type checker
  * with regards to anonymous inner classes.
- *
- * @author Cedric Champeau
  */
 class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
 

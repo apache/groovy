@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/** 
- * @author Robert Kuzelj
- */
 class StaticClosurePropertyBug extends GroovyTestCase {
 
     static def out = {System.out.println(it)}

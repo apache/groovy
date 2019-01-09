@@ -26,8 +26,6 @@ import static org.codehaus.groovy.control.CompilePhase.CONVERSION
 
 /**
  * Test for AntlrParserPlugin.
- *
- * @author Hamlet D'Arcy
  */
 class AntlrParserPluginTest extends GroovyTestCase {
 

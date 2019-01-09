@@ -21,9 +21,7 @@ package org.codehaus.groovy.ast.builder
 import org.junit.Assert
 
 /**
- *
  * Some useful AST assertion methods.
- * @author Hamlet D'Arcy
  */
 class AstAssert {
 

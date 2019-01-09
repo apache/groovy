@@ -29,8 +29,6 @@ import static org.junit.Assume.assumeTrue
  * Test to ensure that the execute mechanism works fine on Windows systems.
  * <p>
  * These test are a bit trivial but at least they are here :-)
- *
- * @author Paul King
  */
 @RunWith(JUnit4)
 class ExecuteTest_Windows extends GroovyTestCase {

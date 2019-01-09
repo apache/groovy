@@ -18,10 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @author Tim Yates
- * @author Trygve Amundsens
- */
 class Groovy4857Bug extends GroovyTestCase {
     void testMissingMethodNotUnsupportedOperation() {
         try {

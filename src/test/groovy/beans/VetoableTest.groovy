@@ -20,9 +20,6 @@ package groovy.beans
 
 import org.codehaus.groovy.control.CompilationFailedException
 
-/**
- * @author Danno Ferrin (shemnon)
- */
 class VetoableTest extends GroovyTestCase {
 
     void testSimpleConstrainedProperty() {

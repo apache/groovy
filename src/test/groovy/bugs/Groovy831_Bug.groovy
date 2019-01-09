@@ -20,8 +20,6 @@ package groovy.bugs
 
 /**
  * Test for fixing the Jira issue GROOVY-831
- *
- * @author Pilho Kim
  */
 class Groovy831_Bug extends GroovyTestCase {
     

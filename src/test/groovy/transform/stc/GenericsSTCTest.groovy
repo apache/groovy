@@ -22,8 +22,6 @@ import groovy.transform.NotYetImplemented
 
 /**
  * Unit tests for static type checking : generics.
- *
- * @author Cedric Champeau
  */
 class GenericsSTCTest extends StaticTypeCheckingTestCase {
 

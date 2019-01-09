@@ -19,17 +19,9 @@
 package groovy.util
 /**
  * Tests for the ConfigSlurper class
-
- * @author Graeme Rocher
- * @author Guillaume Laforge
- * @author Andres Almiray
+ *
  * @since 0.6
- *
- * Created: Jun 19, 2007
- * Time: 6:29:33 PM
- *
  */
-
 class ConfigSlurperTest extends GroovyTestCase {
     void testConsecutiveSlurperValues() {
         def config = new ConfigSlurper().parse('''
