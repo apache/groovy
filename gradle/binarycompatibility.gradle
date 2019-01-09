@@ -43,7 +43,7 @@ def excludeModules = [
 
 Set projectsToCheck = allprojects.findAll{ !(it.name in excludeModules) }
 
-def compatibilityBaselineVersion = '2.4.15'
+def compatibilityBaselineVersion = '2.4.16'
 
 allprojects {
     if (project in projectsToCheck) {
