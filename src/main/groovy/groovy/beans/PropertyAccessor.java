@@ -18,8 +18,5 @@
  */
 package groovy.beans;
 
-/**
- * @author Andres Almiray
- */
 public interface PropertyAccessor extends PropertyReader, PropertyWriter {
 }

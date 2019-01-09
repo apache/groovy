@@ -22,11 +22,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 
 import gls.CompilableTestSupport
 
-/**
- * @author Vladimir Orany
- * @author Paul King
- * @author Cedric Champeau
- */
 class BaseScriptTransformTest extends CompilableTestSupport {
 
     void testInheritsFromCustomScript() {

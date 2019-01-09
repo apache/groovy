@@ -41,10 +41,6 @@ import java.util.Objects;
 /**
  * CodeSource wrapper class that allows specific security policies to be associated with a class
  * compiled from groovy source.
- *
- * @author Steve Goetze
- * @author Guillaume Laforge
- * @author Merlyn Albery-Speyer
  */
 public class GroovyCodeSource {
 

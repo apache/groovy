@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that default Closure annotation values compile correctly within stubs.
- *
- * @author Paul King
  */
 class Groovy6855Bug extends StringSourcesStubTestCase {
 

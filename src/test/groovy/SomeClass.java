@@ -20,10 +20,7 @@ package groovy;
 
 /**
  * Arbitrary holder for Java Methods to be called by Groovy TestCases.
- *
- * @author Dierk Koenig
  */
-
 public class SomeClass {
 
     public String[][] anArrayOfStringArrays() {

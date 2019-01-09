@@ -26,8 +26,6 @@ import java.util.Map;
  * from outside the script object or created outside of a script and passed
  * into it.
  * <p> Binding instances are not supposed to be used in a multi-threaded context.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class Binding extends GroovyObjectSupport {
     private Map variables;

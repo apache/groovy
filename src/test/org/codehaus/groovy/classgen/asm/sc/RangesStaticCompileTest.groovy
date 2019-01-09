@@ -22,8 +22,6 @@ import groovy.transform.stc.RangesSTCTest
 
 /**
  * Unit tests for static compilation : ranges.
- *
- * @author Cedric Champeau
  */
 class RangesStaticCompileTest extends RangesSTCTest implements StaticCompilationTestSupport {
 

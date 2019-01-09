@@ -23,8 +23,6 @@ import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as confi
 
 /**
  * Unit tests for static compilation: null test optimizations.
- * 
- * @author Cedric Champeau
  */
 class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase {
     void testShouldUseIfNonNull() {

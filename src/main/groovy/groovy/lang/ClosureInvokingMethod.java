@@ -22,8 +22,6 @@ package groovy.lang;
  * An interface for MetaMethods that invoke closures to implements. Used by ExpandoMetaClass
  *
  * @see groovy.lang.ExpandoMetaClass
- * 
- * @author Graeme Rocher
  * @since 1.5
  */
 public interface ClosureInvokingMethod {

@@ -84,8 +84,6 @@ class TransformTestHelper {
 
 /**
 * ClassLoader exists so that TestHarnessOperation can be wired into the compile. 
-*
-* @author Hamlet D'Arcy
 */
 @groovy.transform.PackageScope class TestHarnessClassLoader extends GroovyClassLoader {
 
@@ -106,8 +104,6 @@ class TransformTestHelper {
 
 /**
 * Operation exists so that an AstTransformation can be run against the SourceUnit.
-*
-* @author Hamlet D'Arcy
 */
 @groovy.transform.PackageScope class TestHarnessOperation extends PrimaryClassNodeOperation {
 

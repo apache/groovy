@@ -22,8 +22,6 @@ import static AssertionTestUtil.*
 
 /**
  * Tests rendering of individual values.
- *
- * @author Peter Niederwieser
  */
 
 class ValueRenderingTest extends GroovyTestCase {

@@ -23,10 +23,6 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-/**
- * @author John Wilson
- */
-
 public class Tt1cgi extends Tt1c implements GroovyObject {
 
     private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());

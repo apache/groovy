@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that FQN appears fine in generated stub when a ClassExpression is used as an annotation member value
- *
- * @author Roshan Dawrani
  */
 class AnnotationMemberValuesResolutionV2StubsTest extends StringSourcesStubTestCase {
 

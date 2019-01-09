@@ -28,7 +28,6 @@ import java.util.ListIterator;
  * A wrapper for {@link List} which automatically grows the list when either {@link #get(int)} or
  * {@link #getAt(int)} is called with an index greater than or equal to {@code size()}.
  *
- * @author Andre Steingress
  * @since 1.8.7
  */
 public final class ListWithDefault<T> implements List<T> {

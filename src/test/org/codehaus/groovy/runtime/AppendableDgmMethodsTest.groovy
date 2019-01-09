@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime
 
 /**
  * Test Appendable withFormatter and leftShift DGM methods
- *
- * @author Paul King
  */
 class AppendableDgmMethodsTest extends GroovyTestCase {
     List<String> store = []

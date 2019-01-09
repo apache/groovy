@@ -23,8 +23,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Tests the use of the structured Attribute type
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class GStringTest extends GroovyTestCase {
 

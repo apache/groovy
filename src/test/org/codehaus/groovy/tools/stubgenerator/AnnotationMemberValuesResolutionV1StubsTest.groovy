@@ -21,8 +21,6 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * Test that FQN appears fine in generated stub when a enum ClassExpression.<EnumConstant> 
  *  is used as an annotation member value
- *
- * @author Roshan Dawrani
  */
 class AnnotationMemberValuesResolutionV1StubsTest extends StringSourcesStubTestCase {
 

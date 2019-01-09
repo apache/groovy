@@ -18,20 +18,19 @@
  */
 package org.codehaus.groovy.tools.ast
 
-import java.util.concurrent.atomic.AtomicBoolean
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.ASTTransformation
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 /**
  * Unit test that exercises the TransformTestHelper.
- * 
- * @author Hamlet D'Arcy
  */
 class TransformTestHelperTest extends GroovyTestCase {
 
-    public void testParseFile() {
+    void testParseFile() {
 
         def file = File.createTempFile('TransformTestHelperTest', '.groovy')
         file.deleteOnExit()
@@ -44,7 +43,7 @@ class TransformTestHelperTest extends GroovyTestCase {
         assert 6 == clazz.newInstance().run()
     }
 
-    public void testParseString() {
+    void testParseString() {
 
         def observer = new ObservingTransformation()
         def helper = new TransformTestHelper(observer, CompilePhase.CANONICALIZATION)

@@ -22,8 +22,6 @@ import groovy.transform.stc.TypeCheckingModeTest
 
 /**
  * Unit tests for static type checking : type checking mode.
- *
- * @author Cedric Champeau
  */
 class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest implements StaticCompilationTestSupport {
 

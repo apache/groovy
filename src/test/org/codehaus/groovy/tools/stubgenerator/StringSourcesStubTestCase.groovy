@@ -23,8 +23,6 @@ package org.codehaus.groovy.tools.stubgenerator
  * when you don't want to create a directory with full blown samples,
  * you can use it by overriding <code>provideSources()</code>
  * to provide code sources as strings. 
- *
- * @author Guillaume Laforge
  */
 abstract class StringSourcesStubTestCase extends StubTestCase {
 

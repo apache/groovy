@@ -24,13 +24,12 @@ import static AssertionTestUtil.*
 
 /**
  * Checks that:
- * - assertion transformation succeeds w/o compilation error (checked implicitely)
- * - assertion execution succeeds w/o runtime error (checked explicitely)
- * - assertion execution has the expected result (checked explicitely)
- *
- * @author Peter Niederwieser
+ * <ul>
+ * <li>assertion transformation succeeds w/o compilation error (checked implicitly)</li>
+ * <li>assertion execution succeeds w/o runtime error (checked explicitly)</li>
+ * <li>assertion execution has the expected result (checked explicitly)</li>
+ * </ul>
  */
-
 class EvaluationTest extends GroovyTestCase {
     void testPassingAndFailingAsserts() {
         assert true

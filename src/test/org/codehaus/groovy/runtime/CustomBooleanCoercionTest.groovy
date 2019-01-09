@@ -25,8 +25,6 @@ package org.codehaus.groovy.runtime
  * <code>boolean asBoolean()</code>
  * <p>
  * The test also checks it's possible to override the behaviour of pre-existing boolean coercion.
- *
- * @author Guillaume Laforge
  */
 class CustomBooleanCoercionTest extends GroovyTestCase {
 

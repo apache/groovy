@@ -21,8 +21,6 @@ package groovy;
 /**
  * Methods with specific parameters (e.g.&#160;primitives)
  * for use with groovy tests.
- *
- * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  */
 public class DummyMethodsJava {
     public String foo(String a, float b, float c) {

@@ -22,8 +22,6 @@ import groovy.transform.stc.STCnAryExpressionTest
 
 /**
  * Unit tests for static type checking : n-ary ops.
- *
- * @author Cedric Champeau
  */
 class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest implements StaticCompilationTestSupport {
 

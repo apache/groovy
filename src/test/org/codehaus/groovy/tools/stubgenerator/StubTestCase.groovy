@@ -53,8 +53,6 @@ import org.codehaus.groovy.control.CompilationFailedException
  * which provides various useful shortcuts for quickly checking the structure of your stubs.
  * <p>
  * Please have a look at the existing samples to see what kind of asserts can be done.
- *
- * @author Guillaume Laforge
  */
 abstract class StubTestCase extends GroovyTestCase {
 

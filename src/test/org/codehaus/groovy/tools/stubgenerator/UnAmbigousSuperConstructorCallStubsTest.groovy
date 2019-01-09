@@ -21,8 +21,6 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * GROOVY-4400 - call to super class Exception constructor should be rendered as 
  * "super ((java.lang.Throwable)null);" and not as "super (null);"
- *
- * @author Roshan Dawrani
  */
 class UnAmbigousSuperConstructorCallStubsTest extends StringSourcesStubTestCase {
 

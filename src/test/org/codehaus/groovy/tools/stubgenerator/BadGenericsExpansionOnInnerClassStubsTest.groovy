@@ -25,9 +25,6 @@ package org.codehaus.groovy.tools.stubgenerator
  * GROOVY-6048
  * Stub compiler expends generics for outer class while using static inner class 
  * like a non-static inner class
- * 
- * @author Guillaume Laforge
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 class BadGenericsExpansionOnInnerClassStubsTest extends StringSourcesStubTestCase  {
 

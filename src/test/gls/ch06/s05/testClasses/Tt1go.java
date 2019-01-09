@@ -18,12 +18,7 @@
  */
 package gls.ch06.s05.testClasses;
 
-
 import groovy.lang.GroovyObjectSupport;
-
-/**
- * @author John Wilson
- */
 
 public class Tt1go extends GroovyObjectSupport {
     public String x = "field";

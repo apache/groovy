@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Checks that nested generic types correctly appear within stubs.
- *
- * @author Paul King
  */
 class NestedGenericsTypesStubTest extends StringSourcesStubTestCase {
 

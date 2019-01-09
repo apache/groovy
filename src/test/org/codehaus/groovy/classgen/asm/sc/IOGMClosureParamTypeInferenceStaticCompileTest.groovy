@@ -23,8 +23,6 @@ import groovy.transform.stc.IOGMClosureParamTypeInferenceSTCTest
 
 /**
  * Unit tests for static compilation: closure parameter type inference: IOGroovyMethods.
- *
- * @author Cedric Champeau
  */
 class IOGMClosureParamTypeInferenceStaticCompileTest extends IOGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 

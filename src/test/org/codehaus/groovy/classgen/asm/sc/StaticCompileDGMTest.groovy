@@ -22,8 +22,6 @@ import groovy.transform.stc.DefaultGroovyMethodsSTCTest
 
 /**
  * Unit tests for static compilation: DGM method calls.
- *
- * @author Cedric Champeau
  */
 class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements StaticCompilationTestSupport {
 

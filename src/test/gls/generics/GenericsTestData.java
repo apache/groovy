@@ -18,9 +18,6 @@
  */
 package gls.generics;
 
-/**
- * @author Peter Gromov
- */
 @SuppressWarnings("unused")
 public class GenericsTestData {
     public interface TestInterface {

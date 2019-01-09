@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that Groovy treatment of array types as varargs is reflected in stub parameter types.
- *
- * @author Paul King
  */
 class VarargsMethodParamsStubTest extends StringSourcesStubTestCase {
 

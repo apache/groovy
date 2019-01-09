@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Tests Groovy properties and how they can be used from Java.
- *
- * @author Guillaume Laforge
  */
 class PropertyUsageFromJavaTest extends StubTestCase {
 

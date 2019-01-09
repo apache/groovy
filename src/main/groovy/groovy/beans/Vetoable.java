@@ -103,7 +103,6 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * @see VetoableASTTransformation
- * @author Danno Ferrin (shemnon)
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)

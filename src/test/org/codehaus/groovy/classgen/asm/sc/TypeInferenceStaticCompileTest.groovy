@@ -22,8 +22,6 @@ import groovy.transform.stc.TypeInferenceSTCTest
 
 /**
  * Unit tests for static type checking : type inference.
- *
- * @author Cedric Champeau
  */
 class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest implements StaticCompilationTestSupport {
 

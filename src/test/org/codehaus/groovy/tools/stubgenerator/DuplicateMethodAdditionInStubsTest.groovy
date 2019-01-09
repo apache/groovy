@@ -19,10 +19,8 @@
 package org.codehaus.groovy.tools.stubgenerator
 
 /**
- *  GROOVY-4453: property methods and methods added indirectly due parameters-with-default-values 
- *  were resulting in duplicate methods in generated stubs.
- *
- * @author Roshan Dawrani
+ * GROOVY-4453: property methods and methods added indirectly due parameters-with-default-values
+ * were resulting in duplicate methods in generated stubs.
  */
 class DuplicateMethodAdditionInStubsTest extends StringSourcesStubTestCase {
 

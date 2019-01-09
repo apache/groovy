@@ -25,15 +25,12 @@ import org.junit.Test
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
-/**
- * @author Johannes Link
- */
 class InWhileLoopWrapperTest {
 
 	InWhileLoopWrapper wrapper = new InWhileLoopWrapper()
 
 	@Test
-	public void wrapWholeMethodBody() throws Exception {
+	void wrapWholeMethodBody() throws Exception {
 		MethodNode methodToWrap = new AstBuilder().buildFromSpec {
 			method('myMethod', ACC_PUBLIC, int.class) {
 				parameters {}

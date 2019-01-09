@@ -25,8 +25,6 @@ import static java.lang.annotation.ElementType.*;
 
 /**
  * This class mimics JPA's @OneToMany annotation
- *
- * @author Guillaume Laforge
  */
 
 @Retention(RUNTIME)

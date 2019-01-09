@@ -22,9 +22,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Danno Ferrin
- */
 public interface GrapeEngine {
 
     String CALLEE_DEPTH = "calleeDepth";

@@ -23,8 +23,6 @@ package org.codehaus.groovy.tools.stubgenerator
  * Java stub generator generates wrong cast for return value of generic method
  *
  * (also covers GROOVY-5439)
- *
- * @author Guillaume Laforge
  */
 class WrongCastForGenericReturnValueOfMethodStubsTest extends StringSourcesStubTestCase  {
 

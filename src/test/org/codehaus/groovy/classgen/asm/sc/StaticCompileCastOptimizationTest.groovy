@@ -22,8 +22,6 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
 
 /**
  * Unit tests for static compilation: DGM method calls.
- *
- * @author Cedric Champeau
  */
 class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 

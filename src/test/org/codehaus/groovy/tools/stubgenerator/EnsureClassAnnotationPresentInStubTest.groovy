@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-/**
- * @author Guillaume Laforge
- */
 class EnsureClassAnnotationPresentInStubTest extends StringSourcesStubTestCase {
     @Override
     Map<String, String> provideSources() {

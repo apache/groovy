@@ -22,8 +22,6 @@ import groovy.transform.stc.WithSTCTest
 
 /**
  * Unit tests for static compilation : with method.
- *
- * @author Andre Steingress
  */
 class WithStaticCompileTest extends WithSTCTest implements StaticCompilationTestSupport {
 

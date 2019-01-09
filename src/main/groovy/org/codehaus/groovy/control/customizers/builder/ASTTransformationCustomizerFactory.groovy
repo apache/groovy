@@ -30,7 +30,6 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
  * With AST transformation options:
  * <pre>builder.ast(includeNames:true, ToString)</pre>
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 class ASTTransformationCustomizerFactory extends AbstractFactory {

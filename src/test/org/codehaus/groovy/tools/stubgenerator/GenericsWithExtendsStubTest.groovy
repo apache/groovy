@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that Generics information appears correctly in stub return types.
- *
- * @author Paul King
  */
 class GenericsWithExtendsStubTest extends StringSourcesStubTestCase {
 

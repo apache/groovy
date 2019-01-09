@@ -44,10 +44,6 @@ import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
  * Represents a groovy shell capable of running arbitrary groovy scripts
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Guillaume Laforge
- * @author Paul King
  */
 public class GroovyShell extends GroovyObjectSupport {
 

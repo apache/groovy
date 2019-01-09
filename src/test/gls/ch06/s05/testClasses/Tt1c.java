@@ -20,10 +20,6 @@ package gls.ch06.s05.testClasses;
 
 import groovy.lang.Closure;
 
-/**
- * @author John Wilson
- */
-
 public class Tt1c {
     public Closure x = new Closure(null) {
         public Object doCall(final Object params) {

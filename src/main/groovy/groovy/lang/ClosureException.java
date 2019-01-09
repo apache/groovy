@@ -20,8 +20,6 @@ package groovy.lang;
 
 /**
  * An exception thrown by a closure invocation
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ClosureException extends RuntimeException {
 

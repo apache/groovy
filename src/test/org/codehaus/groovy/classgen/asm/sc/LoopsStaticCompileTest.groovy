@@ -22,8 +22,6 @@ import groovy.transform.stc.LoopsSTCTest
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
- *
- * @author Cedric Champeau
  */
 class LoopsStaticCompileTest extends LoopsSTCTest implements StaticCompilationTestSupport {
 }

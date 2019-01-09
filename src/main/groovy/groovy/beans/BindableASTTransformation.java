@@ -71,9 +71,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * <p>
  * If a {@link Vetoable} annotation is detected it does nothing and
  * lets the {@link VetoableASTTransformation} handle all the changes.
- *
- * @author Danno Ferrin (shemnon)
- * @author Chris Reeves
  */
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class BindableASTTransformation implements ASTTransformation, Opcodes {

@@ -27,8 +27,6 @@ import java.util.Iterator;
 
 /**
  * Provides a few unit tests for {@link ObjectRange}s of {@link Character}s.  More tests are needed.
- *
- * @author Edwin Tellman
  */
 public class CharacterRangeTest extends TestCase {
     /**

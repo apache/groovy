@@ -58,12 +58,6 @@ import java.io.Writer;
  * def c = {a}
  * assert c.call() == 1
  * </pre>
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="mailto:tug@wilson.co.uk">John Wilson</a>
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @author Graeme Rocher
- * @author Paul King
  */
 public abstract class Closure<V> extends GroovyObjectSupport implements Cloneable, Runnable, GroovyCallable<V>, Serializable {
 
