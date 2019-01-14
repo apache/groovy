@@ -20,5 +20,17 @@ package groovy.bugs.groovy7812
 
 class Outer {
     static class Inner {
+        static class Innest {
+            def name = "1.Innest"
+        }
+    }
+    static class Inner2 {
+        def innerName = "2"
+    }
+    static class Inner3 {
+        def innerName = "3"
+        static class Innest {
+            def name = "3.Innest"
+        }
     }
 }
