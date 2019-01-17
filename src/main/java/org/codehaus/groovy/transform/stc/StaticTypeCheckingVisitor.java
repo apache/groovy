@@ -1725,6 +1725,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (visitor != null) visitor.visitProperty(propertyNode);
         storeWithResolve(propertyNode.getOriginType(), receiver, propertyNode.getDeclaringClass(), propertyNode.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
+            delegationData = adjustData(delegationData, receiver, typeCheckingContext.delegationMetadata);
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
         return true;
@@ -3403,6 +3404,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                             String data = chosenReceiver.getData();
                             if (data != null) {
+                                data = adjustData(data, chosenReceiver.getType(), typeCheckingContext.delegationMetadata);
                                 // the method which has been chosen is supposed to be a call on delegate or owner
                                 // so we store the information so that the static compiler may reuse it
                                 call.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, data);
@@ -3459,6 +3461,39 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
         }
+    }
+
+    // adjust data to handle cases like nested .with since we didn't have enough information earlier
+    // TODO see if we can make the earlier detection smarter and then remove this adjustment
+    private static String adjustData(String data, ClassNode type, DelegationMetadata dmd) {
+        StringBuilder path = new StringBuilder();
+        int i = 0;
+        String[] propertyPath = data.split("\\.");
+        while (dmd != null) {
+            int strategy = dmd.getStrategy();
+            ClassNode delegate = dmd.getType();
+            dmd = dmd.getParent();
+            switch (strategy) {
+                case Closure.DELEGATE_FIRST:
+                    if (!delegate.isDerivedFrom(CLOSURE_TYPE) && !delegate.isDerivedFrom(type)) {
+                        path.append("owner"); // must be non-delegate case
+                    } else {
+                        path.append("delegate");
+                    }
+                    break;
+                default:
+                    if (i >= propertyPath.length) return data;
+                    path.append(propertyPath[i]);
+            }
+            if (type.equals(delegate)) break;
+            i++;
+            if (dmd != null) path.append('.');
+        }
+        String result = path.toString();
+        if (!result.isEmpty()) {
+            return result;
+        }
+        return data;
     }
 
     /**
