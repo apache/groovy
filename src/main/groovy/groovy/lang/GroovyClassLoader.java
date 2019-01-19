@@ -25,7 +25,6 @@
  */
 package groovy.lang;
 
-import groovy.util.CharsetToolkit;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -172,8 +171,7 @@ public class GroovyClassLoader extends URLClassLoader {
         sourceEncoding = config.getSourceEncoding();
         if (null ==  sourceEncoding) {
             // Keep the same default source encoding with the one used by #parseClass(InputStream, String)
-            // TODO should we use org.codehaus.groovy.control.CompilerConfiguration.DEFAULT_SOURCE_ENCODING instead?
-            sourceEncoding = CharsetToolkit.getDefaultSystemCharset().name();
+            sourceEncoding = CompilerConfiguration.DEFAULT_SOURCE_ENCODING;
         }
     }
 
