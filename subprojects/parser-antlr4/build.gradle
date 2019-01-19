@@ -53,8 +53,6 @@ generateGrammarSource {
     }
 }
 
-compileJava.dependsOn generateGrammarSource
-
 configurations {
     compile {
         extendsFrom = extendsFrom.findAll { it != configurations.antlr2 }
