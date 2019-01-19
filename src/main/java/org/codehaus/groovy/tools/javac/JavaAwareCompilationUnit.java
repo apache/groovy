@@ -48,6 +48,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
     private final File generationGoal;
     private final boolean keepStubs;
+    private final CompilerConfiguration configuration;
+    private final boolean memStubEnabled;
 
     public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
         this(configuration, null, null);
@@ -60,13 +62,16 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader,
                                     GroovyClassLoader transformClassLoader) {
         super(configuration, null, groovyClassLoader, transformClassLoader);
-        javaSources = new LinkedList<String>();
+        this.configuration = configuration;
+        this.memStubEnabled = configuration.isMemStubEnabled();
+        this.javaSources = new LinkedList<String>();
         Map options = configuration.getJointCompilationOptions();
-        generationGoal = (File) options.get("stubDir");
+        this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
         boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
 		String encoding = configuration.getSourceEncoding();
-        stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5, encoding);
-        keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
+
+        this.stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5, encoding);
+        this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
@@ -106,6 +111,10 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 module.setImportsResolved(false);
             }
             try {
+                if (memStubEnabled) {
+                    this.addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
+                }
+
                 JavaCompiler compiler = compilerFactory.createCompiler(getConfiguration());
                 compiler.compile(javaSources, this);
             } finally {
