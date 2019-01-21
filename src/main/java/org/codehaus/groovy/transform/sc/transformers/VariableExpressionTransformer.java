@@ -52,15 +52,16 @@ public class VariableExpressionTransformer {
         // handle it
         Object val = expr.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         if (val == null) return null;
-        VariableExpression implicitThis = new VariableExpression("this");
-        PropertyExpression pexp = new PropertyExpression(implicitThis, expr.getName());
+        // TODO handle the owner and delegate cases better for nested scenarios and potentially remove the need for the implicit this case
+        VariableExpression receiver = new VariableExpression("owner".equals(val) ? (String) val : "delegate".equals(val) ? (String) val : "this");
+        PropertyExpression pexp = new PropertyExpression(receiver, expr.getName());
         pexp.copyNodeMetaData(expr);
         pexp.setImplicitThis(true);
         pexp.getProperty().setSourcePosition(expr);
         ClassNode owner = expr.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
         if (owner != null) {
-            implicitThis.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, owner);
-            implicitThis.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, val);
+            receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, owner);
+            receiver.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, val);
         }
         return pexp;
     }

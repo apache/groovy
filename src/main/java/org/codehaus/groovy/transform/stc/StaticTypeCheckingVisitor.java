@@ -495,9 +495,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Given a field node, checks if we are accessing or setting a private field from an inner class.
      */
     private void checkOrMarkPrivateAccess(Expression source, FieldNode fn, boolean lhsOfAssignment) {
+        if (fn == null) return;
         ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
         ClassNode declaringClass = fn.getDeclaringClass();
-        if (fn != null && Modifier.isPrivate(fn.getModifiers()) &&
+        if (fn.isPrivate() &&
                 (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) &&
                 declaringClass.getModule() == enclosingClassNode.getModule()) {
             if (!lhsOfAssignment && enclosingClassNode.isDerivedFrom(declaringClass)) {
@@ -517,6 +518,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             StaticTypesMarker marker = lhsOfAssignment ? StaticTypesMarker.PV_FIELDS_MUTATION : StaticTypesMarker.PV_FIELDS_ACCESS;
             addPrivateFieldOrMethodAccess(source, declaringClass, marker, fn);
         }
+    }
+
+    /**
+     * Given a field node, checks if we are accessing or setting a public or protected field from an inner class.
+     */
+    private String checkOrMarkInnerFieldAccess(Expression source, FieldNode fn, boolean lhsOfAssignment, String delegationData) {
+        if (fn == null || fn.isStatic()) return delegationData;
+        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
+        ClassNode declaringClass = fn.getDeclaringClass();
+        // private handled elsewhere
+        if ((fn.isPublic() || fn.isProtected()) &&
+                (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) &&
+                declaringClass.getModule() == enclosingClassNode.getModule() && !lhsOfAssignment && enclosingClassNode.isDerivedFrom(declaringClass)) {
+            if (source instanceof PropertyExpression) {
+                PropertyExpression pe = (PropertyExpression) source;
+                // this and attributes handled elsewhere
+                if ("this".equals(pe.getPropertyAsString()) || source instanceof AttributeExpression) return delegationData;
+                pe.getObjectExpression().putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, "owner");
+            }
+            return "owner";
+        }
+        return delegationData;
     }
 
     private MethodNode findValidGetter(ClassNode classNode, String name) {
@@ -1796,6 +1819,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (visitor != null) visitor.visitField(field);
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
+        delegationData = checkOrMarkInnerFieldAccess(expressionToStoreOn, field, lhsOfAssignment, delegationData);
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
