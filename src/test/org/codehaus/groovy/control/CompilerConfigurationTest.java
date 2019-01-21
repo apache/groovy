@@ -65,7 +65,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         }
         assertNull(config.getTargetDirectory());
         assertEquals(".groovy", config.getDefaultScriptExtension());
-        assertNull(config.getJointCompilationOptions());
+        assertTrue(0 == config.getJointCompilationOptions().size());
         assertNotNull(config.getPluginFactory());
     }
 
@@ -102,7 +102,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         }
         assertNull(config.getTargetDirectory());
         assertEquals(".groovy", config.getDefaultScriptExtension());
-        assertNull(config.getJointCompilationOptions());
+        assertTrue(0 == config.getJointCompilationOptions().size());
         assertNotNull(config.getPluginFactory());
     }
 

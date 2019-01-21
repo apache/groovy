@@ -27,6 +27,9 @@ import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -34,47 +37,107 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class JavacJavaCompiler implements JavaCompiler {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private final CompilerConfiguration config;
+    private final boolean memStubEnabled;
+    private final Charset charset;
 
     public JavacJavaCompiler(CompilerConfiguration config) {
         this.config = config;
+        this.memStubEnabled = config.isMemStubEnabled();
+        this.charset = Charset.forName(config.getSourceEncoding());
+    }
+
+    private int doCompileWithJavac(CompilationUnit cu, String[] javacParameters, StringBuilderWriter javacOutput) throws ClassNotFoundException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        int javacReturnValue = 0;
+
+        Class javac = findJavac(cu);
+        Method method = null;
+        try {
+            method = javac.getMethod("compile", String[].class, PrintWriter.class);
+            PrintWriter writer = new PrintWriter(javacOutput);
+            Object ret = method.invoke(null, javacParameters, writer);
+            javacReturnValue = (Integer) ret;
+        } catch (NoSuchMethodException e) { }
+        if (method == null) {
+            method = javac.getMethod("compile", String[].class);
+            Object ret = method.invoke(null, new Object[]{javacParameters});
+            javacReturnValue = (Integer) ret;
+        }
+
+        return javacReturnValue;
+    }
+
+    private boolean doCompileWithSystemJavaCompiler(CompilationUnit cu, List<String> files, String[] javacParameters, StringBuilderWriter javacOutput) {
+        javax.tools.JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, charset);
+
+        final Set<JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
+
+        // add java source files to compile
+        fileManager.getJavaFileObjectsFromFiles(
+                files.stream()
+                        .map(File::new)
+                        .collect(Collectors.toList())
+        ).forEach(compilationUnitSet::add);
+
+        javax.tools.JavaCompiler.CompilationTask compilationTask = compiler.getTask(
+                javacOutput,
+                fileManager,
+                null,
+                Arrays.asList(javacParameters),
+                Collections.emptyList(),
+                compilationUnitSet
+        );
+
+        return compilationTask.call();
     }
 
     public void compile(List<String> files, CompilationUnit cu) {
-        String[] javacParameters = makeParameters(files, cu.getClassLoader());
-        StringBuilderWriter javacOutput = null;
+        compile(files, cu, memStubEnabled);
+    }
+
+    private void compile(List<String> files, CompilationUnit cu, boolean toCompileStubInMem) {
+        String[] javacParameters = makeParameters(files, cu.getClassLoader(), toCompileStubInMem);
+        StringBuilderWriter javacOutput = new StringBuilderWriter();;
         int javacReturnValue = 0;
         try {
-            Class javac = findJavac(cu);
-            Method method = null;
-            try {
-                method = javac.getMethod("compile", String[].class, PrintWriter.class);
-                javacOutput = new StringBuilderWriter();
-                PrintWriter writer = new PrintWriter(javacOutput);
-                Object ret = method.invoke(null, javacParameters, writer);
-                javacReturnValue = (Integer) ret;
-            } catch (NoSuchMethodException e) { }
-            if (method == null) {
-                method = javac.getMethod("compile", String[].class);
-                Object ret = method.invoke(null, new Object[]{javacParameters});
-                javacReturnValue = (Integer) ret;
+            if (toCompileStubInMem) {
+                try {
+                    boolean successful = doCompileWithSystemJavaCompiler(cu, files, javacParameters, javacOutput);
+                    if (!successful) {
+                        javacReturnValue = 1;
+                    }
+                } catch (IllegalArgumentException e) {
+                    javacReturnValue = 2; // any of the options are invalid
+                    cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
+                }
+            } else {
+                try {
+                    javacReturnValue = doCompileWithJavac(cu, javacParameters, javacOutput);
+                } catch (InvocationTargetException ite) {
+                    cu.getErrorCollector().addFatalError(new ExceptionMessage((Exception) ite.getCause(), true, cu));
+                }
             }
-        } catch (InvocationTargetException ite) {
-            cu.getErrorCollector().addFatalError(new ExceptionMessage((Exception) ite.getCause(), true, cu));
         } catch (Exception e) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         }
+
         if (javacReturnValue != 0) {
             switch (javacReturnValue) {
                 case 1: addJavacError("Compile error during compilation with javac.", cu, javacOutput); break;
@@ -101,7 +164,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         cu.getErrorCollector().addFatalError(new SimpleMessage(header, cu));
     }
 
-    private String[] makeParameters(List<String> files, GroovyClassLoader parentClassLoader) {
+    private String[] makeParameters(List<String> files, GroovyClassLoader parentClassLoader, boolean toCompileStubInMem) {
         Map options = config.getJointCompilationOptions();
         LinkedList<String> paras = new LinkedList<String>();
 
@@ -111,8 +174,11 @@ public class JavacJavaCompiler implements JavaCompiler {
         // defaults
         paras.add("-d");
         paras.add(target.getAbsolutePath());
-        paras.add("-sourcepath");
-        paras.add(((File) options.get("stubDir")).getAbsolutePath());
+
+        if (!toCompileStubInMem) {
+            paras.add("-sourcepath");
+            paras.add(((File) options.get("stubDir")).getAbsolutePath());
+        }
 
         // add flags
         String[] flags = (String[]) options.get("flags");
@@ -170,8 +236,10 @@ public class JavacJavaCompiler implements JavaCompiler {
             paras.add(DefaultGroovyMethods.join((Iterable) paths, File.pathSeparator));
         }
 
-        // files to compile
-        paras.addAll(files);
+        if (!toCompileStubInMem) {
+            // files to compile
+            paras.addAll(files);
+        }
 
         return paras.toArray(EMPTY_STRING_ARRAY);
     }

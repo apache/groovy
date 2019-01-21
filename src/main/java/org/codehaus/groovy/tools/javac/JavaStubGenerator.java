@@ -53,6 +53,7 @@ import org.codehaus.groovy.tools.Utilities;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import javax.tools.JavaFileObject;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -64,9 +65,11 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -84,7 +87,7 @@ public class JavaStubGenerator {
         this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
         this.encoding = encoding;
-        outputPath.mkdirs();
+        if (null != outputPath) outputPath.mkdirs(); // when outputPath is null, we generate stubs in memory
     }
 
     public JavaStubGenerator(final File outputPath) {
@@ -97,6 +100,7 @@ public class JavaStubGenerator {
         File dir = new File(parent, relativeFile.substring(0, index));
         dir.mkdirs();
     }
+
 
     private static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8K
     public void generateClass(ClassNode classNode) throws FileNotFoundException {
@@ -112,22 +116,40 @@ public class JavaStubGenerator {
         // don't generate stubs for private classes, as they are only visible in the same file
         if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
 
+
+        if (null == outputPath) {
+            generateMemStub(classNode);
+        } else {
+            generateFileStub(classNode);
+        }
+    }
+
+    private void generateMemStub(ClassNode classNode) {
+        Writer writer = new StringBuilderWriter();
+        generateStubContent(classNode, writer);
+
+        javaStubCompilationUnitSet.add(new MemJavaFileObject(classNode, writer.toString()));
+    }
+
+    private void generateFileStub(ClassNode classNode) throws FileNotFoundException {
         String fileName = classNode.getName().replace('.', '/');
         mkdirs(outputPath, fileName);
         toCompile.add(fileName);
 
         File file = new File(outputPath, fileName + ".java");
-        Charset charset = Charset.forName(encoding);
 
-        try (PrintWriter out = new PrintWriter(
-                new OutputStreamWriter(
-                        new BufferedOutputStream(
-                                new FileOutputStream(file),
-                                DEFAULT_BUFFER_SIZE
-                        ),
-                        charset
-                )
-        )) {
+        Writer writer = new OutputStreamWriter(
+                new BufferedOutputStream(
+                        new FileOutputStream(file),
+                        DEFAULT_BUFFER_SIZE
+                ),
+                Charset.forName(encoding)
+        );
+        generateStubContent(classNode, writer);
+    }
+
+    private void generateStubContent(ClassNode classNode, Writer writer) {
+        try (PrintWriter out = new PrintWriter(writer)) {
             String packageName = classNode.getPackageName();
             if (packageName != null) {
                 out.println("package " + packageName + ";\n");
@@ -135,11 +157,10 @@ public class JavaStubGenerator {
 
             printImports(out, classNode);
             printClassContents(out, classNode);
-
         }
     }
 
-    private void printClassContents(PrintWriter out, ClassNode classNode) throws FileNotFoundException {
+    private void printClassContents(PrintWriter out, ClassNode classNode) {
         if (classNode instanceof InnerClassNode && ((InnerClassNode) classNode).isAnonymous()) {
             // if it is an anonymous inner class, don't generate the stub code for it.
             return;
@@ -988,6 +1009,8 @@ public class JavaStubGenerator {
         for (String path : toCompile) {
             new File(outputPath, path + ".java").delete();
         }
+
+        javaStubCompilationUnitSet.clear();
     }
 
     private static String escapeSpecialChars(String value) {
@@ -997,5 +1020,12 @@ public class JavaStubGenerator {
 
     private static boolean isInterfaceOrTrait(ClassNode cn) {
         return cn.isInterface() || Traits.isTrait(cn);
+    }
+
+
+    private final Set<JavaFileObject> javaStubCompilationUnitSet = new HashSet<>();
+
+    public Set<JavaFileObject> getJavaStubCompilationUnitSet() {
+        return javaStubCompilationUnitSet;
     }
 }

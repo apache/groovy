@@ -55,6 +55,9 @@ public class CompilerConfiguration {
     /** This (<code>"runtimeGroovydoc"</code>) is the Optimization Option value for enabling attaching {@link groovy.lang.Groovydoc} annotation*/
     public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
+    /** This (<code>"memStub"</code>) is the Optimization Option value for enabling generating stubs in memory*/
+    public static final String MEM_STUB = "memStub";
+
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
     public static final String JDK4 = "1.4";
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. **/
@@ -276,8 +279,11 @@ public class CompilerConfiguration {
         handleOptimizationOption(options, INVOKEDYNAMIC, "groovy.target.indy");
         handleOptimizationOption(options, GROOVYDOC, "groovy.attach.groovydoc");
         handleOptimizationOption(options, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
-
         setOptimizationOptions(options);
+
+        Map<String, Object> jointCompilerOptions = new HashMap<>(4);
+        handleJointCompilationOption(jointCompilerOptions, MEM_STUB, "groovy.generate.stub.in.memory");
+        setJointCompilationOptions(jointCompilerOptions);
 
         try {
             String groovyAntlr4Opt = getSystemPropertySafe(GROOVY_ANTLR4_OPT);
@@ -294,6 +300,16 @@ public class CompilerConfiguration {
     private void handleOptimizationOption(Map<String, Boolean> options, String optionName, String sysOptionName) {
         boolean optionEnabled = getBooleanSafe(sysOptionName);
         if (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName))) {
+            optionEnabled = true;
+        }
+        if (optionEnabled) {
+            options.put(optionName, Boolean.TRUE);
+        }
+    }
+
+    private void handleJointCompilationOption(Map<String, Object> options, String optionName, String sysOptionName) {
+        boolean optionEnabled = getBooleanSafe(sysOptionName);
+        if (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getJointCompilationOptions().get(optionName))) {
             optionEnabled = true;
         }
         if (optionEnabled) {
@@ -971,6 +987,21 @@ public class CompilerConfiguration {
 
         return runtimeGroovydocEnabled;
     }
+
+    /**
+     * Check whether mem stub enabled
+     * @return the result
+     */
+    public boolean isMemStubEnabled() {
+        Object memStubEnabled = this.getJointCompilationOptions().get(MEM_STUB);
+
+        if (null == memStubEnabled) {
+            return false;
+        }
+
+        return "true".equals(memStubEnabled.toString());
+    }
+
 
 //       See http://groovy.329449.n5.nabble.com/What-the-static-compile-by-default-tt5750118.html
 //           https://issues.apache.org/jira/browse/GROOVY-8543
