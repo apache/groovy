@@ -46,4 +46,43 @@ class Groovy7996Bug extends GroovyTestCase {
             assert new Bar7996().doStuff()
         '''
     }
+
+    // GROOVY-7687
+    void testCompileStaticWithNestedClosuresBug() {
+        assertScript '''
+        @groovy.transform.CompileStatic
+        class BugTest {
+            static class Foo {
+                public List<String> messages = Arrays.asList("hello", "world")
+            }
+
+            void interactions(Foo foo, @DelegatesTo(Foo) Closure closure) {
+                closure.delegate = foo
+                closure()
+            }
+
+            void execute() {
+                interactions(new Foo()) {
+                    messages.each{ it.contains('o') }
+                }
+            }
+        }
+        new BugTest().execute()
+        '''
+    }
+
+    // GROOVY-8073
+    void testCompileStaticMapInsideWithBug() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Main {
+                static void main(String[] args) {
+                    def map = [a: 1, b: 2]
+                    map.with {
+                        assert a == 1
+                    }
+                }
+            }
+        '''
+    }
 }
