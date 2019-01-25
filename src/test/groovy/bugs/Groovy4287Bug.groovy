@@ -32,6 +32,6 @@ class Groovy4287Bug extends GroovyTestCase {
     }
 
     static void runScript(String path) {
-        GroovyStarter.main(new String[] { "--main", "groovy.ui.GroovyMain", path })
+        GroovyStarter.main(["--main", "groovy.ui.GroovyMain", path] as String[])
     }
 }
