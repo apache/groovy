@@ -231,13 +231,13 @@ public class Numbers
                 if (radix==10 && (value.compareTo(MAX_INTEGER) > 0 || value.compareTo(MIN_INTEGER) < 0) ) {
                     throw new ASTRuntimeException(reportNode, "Number of value "+value+" does not fit in the range of int, but int was enforced.");
                 } else {
-                    return Integer.valueOf(value.intValue());
+                    return value.intValue();
                 }
             case 'l':
                 if (radix==10 && (value.compareTo(MAX_LONG) > 0 || value.compareTo(MIN_LONG) < 0) ) {
                     throw new ASTRuntimeException(reportNode, "Number of value "+value+" does not fit in the range of long, but long was enforced.");
                 } else {
-                    return Long.valueOf(value.longValue());
+                    return value.longValue();
                 }
             case 'g':
                 return value ;
@@ -246,11 +246,11 @@ public class Numbers
                 // of Integer, Long, and BigInteger.
                 if( value.compareTo(MAX_INTEGER) <= 0 && value.compareTo(MIN_INTEGER) >= 0 )
                 {
-                    return Integer.valueOf(value.intValue());
+                    return value.intValue();
                 }
                 else if( value.compareTo(MAX_LONG) <= 0 && value.compareTo(MIN_LONG) >= 0 )
                 {
-                    return Long.valueOf(value.longValue());
+                    return value.longValue();
                 }
                 return value;
         }
