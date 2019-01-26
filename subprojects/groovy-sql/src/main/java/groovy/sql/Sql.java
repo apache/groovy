@@ -265,9 +265,9 @@ public class Sql implements AutoCloseable {
 
     private boolean withinBatch;
 
-    private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
-    private final Map<String, String> namedParamSqlCache = new HashMap<String, String>();
-    private final Map<String, List<Tuple>> namedParamIndexPropCache = new HashMap<String, List<Tuple>>();
+    private final Map<String, Statement> statementCache = new HashMap<>();
+    private final Map<String, String> namedParamSqlCache = new HashMap<>();
+    private final Map<String, List<Tuple>> namedParamIndexPropCache = new HashMap<>();
     private List<String> keyColumnNames;
 
     /**
@@ -563,7 +563,7 @@ public class Sql implements AutoCloseable {
             throw new IllegalArgumentException("Only one of 'driverClassName' and 'driver' should be provided");
 
         // Make a copy so destructive operations will not affect the caller
-        Map<String, Object> sqlArgs = new HashMap<String, Object>(args);
+        Map<String, Object> sqlArgs = new HashMap<>(args);
 
         Object driverClassName = sqlArgs.remove("driverClassName");
         if (driverClassName == null) driverClassName = sqlArgs.remove("driver");
@@ -1048,7 +1048,7 @@ public class Sql implements AutoCloseable {
     }
 
     private static ArrayList<Object> singletonList(Object item) {
-        ArrayList<Object> params = new ArrayList<Object>();
+        ArrayList<Object> params = new ArrayList<>();
         params.add(item);
         return params;
     }
@@ -3343,11 +3343,11 @@ public class Sql implements AutoCloseable {
     protected List<List<GroovyRowResult>> callWithRows(String sql, List<Object> params, int processResultsSets, Closure closure) throws SQLException {
         Connection connection = createConnection();
         CallableStatement statement = null;
-        List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
+        List<GroovyResultSet> resultSetResources = new ArrayList<>();
         try {
             statement = getCallableStatement(connection, sql, params);
             boolean hasResultSet = statement.execute();
-            List<Object> results = new ArrayList<Object>();
+            List<Object> results = new ArrayList<>();
             int indx = 0;
             int inouts = 0;
             for (Object value : params) {
@@ -3371,9 +3371,9 @@ public class Sql implements AutoCloseable {
                 indx++;
             }
             closure.call(results.toArray(new Object[inouts]));
-            List<List<GroovyRowResult>> resultSets = new ArrayList<List<GroovyRowResult>>();
+            List<List<GroovyRowResult>> resultSets = new ArrayList<>();
             if (processResultsSets == NO_RESULT_SETS) {
-                resultSets.add(new ArrayList<GroovyRowResult>());
+                resultSets.add(new ArrayList<>());
                 return resultSets;
             }
             //Check both hasResultSet and getMoreResults() because of differences in vendor behavior
@@ -3837,7 +3837,7 @@ public class Sql implements AutoCloseable {
         boolean savedWithinBatch = withinBatch;
         BatchingPreparedStatementWrapper psWrapper = null;
         if (preCheck != null) {
-            indexPropList = new ArrayList<Tuple>();
+            indexPropList = new ArrayList<>();
             for (Object next : preCheck.getParams()) {
                 indexPropList.add((Tuple) next);
             }
@@ -3966,7 +3966,7 @@ public class Sql implements AutoCloseable {
 
     protected List<GroovyRowResult> asList(String sql, ResultSet rs, int offset, int maxRows,
                                            @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
-        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
+        List<GroovyRowResult> results = new ArrayList<>();
 
         try {
             if (metaClosure != null) {
@@ -4126,7 +4126,7 @@ public class Sql implements AutoCloseable {
      * @see #expand(Object)
      */
     protected List<Object> getParameters(GString gstring) {
-        return new ArrayList<Object>(Arrays.asList(gstring.getValues()));
+        return new ArrayList<>(Arrays.asList(gstring.getValues()));
     }
 
     /**
@@ -4339,12 +4339,12 @@ public class Sql implements AutoCloseable {
     private static List<List<Object>> calculateKeys(ResultSet keys) throws SQLException {
         // Prepare a list to contain the auto-generated column
         // values, and then fetch them from the statement.
-        List<List<Object>> autoKeys = new ArrayList<List<Object>>();
+        List<List<Object>> autoKeys = new ArrayList<>();
         int count = keys.getMetaData().getColumnCount();
 
         // Copy the column values into a list of a list.
         while (keys.next()) {
-            List<Object> rowKeys = new ArrayList<Object>(count);
+            List<Object> rowKeys = new ArrayList<>(count);
             for (int i = 1; i <= count; i++) {
                 rowKeys.add(keys.getObject(i));
             }
@@ -4439,7 +4439,7 @@ public class Sql implements AutoCloseable {
             return new SqlWithParams(sql, params);
         }
 
-        List<Tuple> indexPropList = new ArrayList<Tuple>();
+        List<Tuple> indexPropList = new ArrayList<>();
         for (Object next : preCheck.getParams()) {
             indexPropList.add((Tuple) next);
         }
@@ -4487,12 +4487,12 @@ public class Sql implements AutoCloseable {
             return null;
         }
 
-        List<Object> indexPropList = new ArrayList<Object>(propList);
+        List<Object> indexPropList = new ArrayList<>(propList);
         return new SqlWithParams(newSql, indexPropList);
     }
 
     public List<Object> getUpdatedParams(List<Object> params, List<Tuple> indexPropList) {
-        List<Object> updatedParams = new ArrayList<Object>();
+        List<Object> updatedParams = new ArrayList<>();
         for (Tuple tuple : indexPropList) {
             int index = (Integer) tuple.get(0);
             String prop = (String) tuple.get(1);

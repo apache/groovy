@@ -594,7 +594,7 @@ public class Node implements Serializable, Cloneable {
      * @since 2.5.0
      */
     public void depthFirst(Closure c) {
-        Map<String, Object> options = new ListHashMap<String, Object>();
+        Map<String, Object> options = new ListHashMap<>();
         options.put("preorder", true);
         depthFirst(options, c);
     }
@@ -696,7 +696,7 @@ public class Node implements Serializable, Cloneable {
      * @since 2.5.0
      */
     public void breadthFirst(Closure c) {
-        Map<String, Object> options = new ListHashMap<String, Object>();
+        Map<String, Object> options = new ListHashMap<>();
         options.put("preorder", true);
         breadthFirst(options, c);
     }
@@ -719,7 +719,7 @@ public class Node implements Serializable, Cloneable {
     }
 
     private void breadthFirstRest(boolean preorder, int level, Closure c) {
-        Stack<Tuple2<Object, Integer>> stack = new Stack<Tuple2<Object, Integer>>();
+        Stack<Tuple2<Object, Integer>> stack = new Stack<>();
         List nextLevelChildren = preorder ? getDirectChildren() : DefaultGroovyMethods.reverse(getDirectChildren());
         while (!nextLevelChildren.isEmpty()) {
             List working = new NodeList(nextLevelChildren);
@@ -728,7 +728,7 @@ public class Node implements Serializable, Cloneable {
                 if (preorder) {
                     callClosureForNode(c, child, level);
                 } else {
-                    stack.push(new Tuple2<Object, Integer>(child, level));
+                    stack.push(new Tuple2<>(child, level));
                 }
                 if (child instanceof Node) {
                     Node childNode = (Node) child;
@@ -751,7 +751,7 @@ public class Node implements Serializable, Cloneable {
      * @since 2.3.0
      */
     public List<String> localText() {
-        List<String> answer = new ArrayList<String>();
+        List<String> answer = new ArrayList<>();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (!(child instanceof Node)) {

@@ -278,7 +278,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
             MethodVisitor mv = controller.getMethodVisitor();
             int argumentsToRemove = 0;
-            List<Expression> argumentList = new LinkedList<Expression>(args.getExpressions());
+            List<Expression> argumentList = new LinkedList<>(args.getExpressions());
 
             if (emn.isStaticExtension()) {
                 // it's a static extension method
@@ -468,7 +468,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
             }
             // last parameters wrapped in an array
-            List<Expression> lastParams = new LinkedList<Expression>();
+            List<Expression> lastParams = new LinkedList<>();
             for (int i = para.length - 1; i < argumentListSize; i++) {
                 lastParams.add(argumentList.get(i));
             }

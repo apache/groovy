@@ -69,7 +69,7 @@ public class NotYetImplementedASTTransformation extends AbstractASTTransformatio
 
         MethodNode methodNode = (MethodNode) node;
 
-        ArrayList<Statement> statements = new ArrayList<Statement>();
+        ArrayList<Statement> statements = new ArrayList<>();
         Statement statement = methodNode.getCode();
         if (statement instanceof BlockStatement)  {
             statements.addAll(((BlockStatement) statement).getStatements());

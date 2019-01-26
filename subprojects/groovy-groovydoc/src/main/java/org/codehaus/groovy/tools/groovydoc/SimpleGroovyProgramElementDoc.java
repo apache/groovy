@@ -39,7 +39,7 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
 
     public SimpleGroovyProgramElementDoc(String name) {
         super(name);
-        annotationRefs = new ArrayList<GroovyAnnotationRef>();
+        annotationRefs = new ArrayList<>();
     }
 
     public GroovyPackageDoc containingPackage() {

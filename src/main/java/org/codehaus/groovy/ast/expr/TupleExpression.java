@@ -57,7 +57,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
     }
     
     public TupleExpression(int length) {
-        this.expressions = new ArrayList<Expression>(length);
+        this.expressions = new ArrayList<>(length);
     }
     
     public TupleExpression(List<Expression> expressions) {

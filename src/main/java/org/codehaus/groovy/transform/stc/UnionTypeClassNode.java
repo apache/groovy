@@ -165,7 +165,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<MethodNode> getAbstractMethods() {
-        List<MethodNode> allMethods = new LinkedList<MethodNode>();
+        List<MethodNode> allMethods = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             allMethods.addAll(delegate.getAbstractMethods());
         }
@@ -174,7 +174,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<MethodNode> getAllDeclaredMethods() {
-        List<MethodNode> allMethods = new LinkedList<MethodNode>();
+        List<MethodNode> allMethods = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             allMethods.addAll(delegate.getAllDeclaredMethods());
         }
@@ -183,7 +183,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public Set<ClassNode> getAllInterfaces() {
-        Set<ClassNode> allMethods = new HashSet<ClassNode>();
+        Set<ClassNode> allMethods = new HashSet<>();
         for (ClassNode delegate : delegates) {
             allMethods.addAll(delegate.getAllInterfaces());
         }
@@ -192,7 +192,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<AnnotationNode> getAnnotations() {
-        List<AnnotationNode> nodes = new LinkedList<AnnotationNode>();
+        List<AnnotationNode> nodes = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             List<AnnotationNode> annotations = delegate.getAnnotations();
             if (annotations != null) nodes.addAll(annotations);
@@ -202,7 +202,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<AnnotationNode> getAnnotations(final ClassNode type) {
-        List<AnnotationNode> nodes = new LinkedList<AnnotationNode>();
+        List<AnnotationNode> nodes = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             List<AnnotationNode> annotations = delegate.getAnnotations(type);
             if (annotations != null) nodes.addAll(annotations);
@@ -217,7 +217,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<ConstructorNode> getDeclaredConstructors() {
-        List<ConstructorNode> nodes = new LinkedList<ConstructorNode>();
+        List<ConstructorNode> nodes = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             nodes.addAll(delegate.getDeclaredConstructors());
         }
@@ -244,7 +244,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<MethodNode> getDeclaredMethods(final String name) {
-        List<MethodNode> nodes = new LinkedList<MethodNode>();
+        List<MethodNode> nodes = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             List<MethodNode> methods = delegate.getDeclaredMethods(name);
             if (methods != null) nodes.addAll(methods);
@@ -273,7 +273,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<FieldNode> getFields() {
-        List<FieldNode> nodes = new LinkedList<FieldNode>();
+        List<FieldNode> nodes = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             List<FieldNode> fields = delegate.getFields();
             if (fields != null) nodes.addAll(fields);
@@ -288,7 +288,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public ClassNode[] getInterfaces() {
-        Set<ClassNode> nodes = new LinkedHashSet<ClassNode>();
+        Set<ClassNode> nodes = new LinkedHashSet<>();
         for (ClassNode delegate : delegates) {
             ClassNode[] interfaces = delegate.getInterfaces();
             if (interfaces != null) Collections.addAll(nodes, interfaces);
@@ -298,7 +298,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<MethodNode> getMethods() {
-        List<MethodNode> nodes = new LinkedList<MethodNode>();
+        List<MethodNode> nodes = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             List<MethodNode> methods = delegate.getMethods();
             if (methods != null) nodes.addAll(methods);
@@ -308,7 +308,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public List<PropertyNode> getProperties() {
-        List<PropertyNode> nodes = new LinkedList<PropertyNode>();
+        List<PropertyNode> nodes = new LinkedList<>();
         for (ClassNode delegate : delegates) {
             List<PropertyNode> properties = delegate.getProperties();
             if (properties != null) nodes.addAll(properties);
@@ -323,7 +323,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public ClassNode[] getUnresolvedInterfaces() {
-        Set<ClassNode> nodes = new LinkedHashSet<ClassNode>();
+        Set<ClassNode> nodes = new LinkedHashSet<>();
         for (ClassNode delegate : delegates) {
             ClassNode[] interfaces = delegate.getUnresolvedInterfaces();
             if (interfaces != null) Collections.addAll(nodes, interfaces);
@@ -333,7 +333,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public ClassNode[] getUnresolvedInterfaces(final boolean useRedirect) {
-        Set<ClassNode> nodes = new LinkedHashSet<ClassNode>();
+        Set<ClassNode> nodes = new LinkedHashSet<>();
         for (ClassNode delegate : delegates) {
             ClassNode[] interfaces = delegate.getUnresolvedInterfaces(useRedirect);
             if (interfaces != null) Collections.addAll(nodes, interfaces);

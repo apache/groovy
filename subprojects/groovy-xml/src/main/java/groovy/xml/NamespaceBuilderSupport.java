@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class NamespaceBuilderSupport extends BuilderSupport {
     private boolean autoPrefix;
-    private Map<String, String> nsMap = new HashMap<String, String>();
+    private Map<String, String> nsMap = new HashMap<>();
     private BuilderSupport builder;
 
     public NamespaceBuilderSupport(BuilderSupport builder) {

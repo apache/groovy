@@ -49,7 +49,7 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
 
     protected void reset() {
         batchCount = 0;
-        results = new ArrayList<Integer>();
+        results = new ArrayList<>();
     }
 
     @Override

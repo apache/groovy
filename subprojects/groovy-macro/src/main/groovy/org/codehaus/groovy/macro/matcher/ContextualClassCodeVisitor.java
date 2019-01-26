@@ -96,7 +96,7 @@ import java.util.List;
  * @since 2.5.0
  */
 public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport {
-    private final Deque<TreeContext> treeContextStack = new ArrayDeque<TreeContext>();
+    private final Deque<TreeContext> treeContextStack = new ArrayDeque<>();
     private TreeContext lastContext;
 
     public ContextualClassCodeVisitor() {
@@ -552,14 +552,14 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
     }
 
     public List<TreeContext> getTreePath() {
-        List<TreeContext> path = new LinkedList<TreeContext>();
+        List<TreeContext> path = new LinkedList<>();
         path.add(lastContext);
         path.addAll(treeContextStack);
         return path;
     }
 
     public List<TreeContext> pathMatches(List<ASTNodePredicate> predicates) {
-        List<TreeContext> path = new LinkedList<TreeContext>();
+        List<TreeContext> path = new LinkedList<>();
         TreeContext current = lastContext.parent;
         for (ASTNodePredicate predicate : predicates) {
             path.add(current);
@@ -583,7 +583,7 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
     }
 
     public List<TreeContext> pathUpTo(Class<ASTNode> node, ASTNodePredicate predicate) {
-        List<TreeContext> path = new LinkedList<TreeContext>();
+        List<TreeContext> path = new LinkedList<>();
         TreeContext current = lastContext;
         boolean found = false;
         while (current!=null && !found) {
@@ -614,7 +614,7 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
     // ----------------------------- inner classes --------------------------------------
 
     public static List<ASTNodePredicate> matchByClass(Class<ASTNode>... classes) {
-        ArrayList<ASTNodePredicate> result = new ArrayList<ASTNodePredicate>(classes.length);
+        ArrayList<ASTNodePredicate> result = new ArrayList<>(classes.length);
         for (final Class<ASTNode> astNodeClass : classes) {
             result.add(new MatchByClass(astNodeClass));
         }

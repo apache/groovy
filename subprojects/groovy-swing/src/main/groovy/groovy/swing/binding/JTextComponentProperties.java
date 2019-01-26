@@ -40,7 +40,7 @@ import java.util.Map;
 public class JTextComponentProperties {
 
     public static Map<String, TriggerBinding> getSyntheticProperties() {
-        Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
+        Map<String, TriggerBinding> result = new HashMap<>();
         result.put(JTextComponent.class.getName() + "#text",
             new TriggerBinding() {
                 public FullBinding createBinding(SourceBinding source, TargetBinding target) {

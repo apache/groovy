@@ -69,7 +69,7 @@ import java.util.Map;
 public class XmlParser implements ContentHandler {
 
     private StringBuilder bodyText = new StringBuilder();
-    private final List<Node> stack = new ArrayList<Node>();
+    private final List<Node> stack = new ArrayList<>();
     private Locator locator;
     private final XMLReader reader;
     private Node parent;
@@ -386,7 +386,7 @@ public class XmlParser implements ContentHandler {
         Object nodeName = getElementName(namespaceURI, localName, qName);
 
         int size = list.getLength();
-        Map<Object, String> attributes = new LinkedHashMap<Object, String>(size);
+        Map<Object, String> attributes = new LinkedHashMap<>(size);
         for (int i = 0; i < size; i++) {
             Object attributeName = getElementName(list.getURI(i), list.getLocalName(i), list.getQName(i));
             String value = list.getValue(i);

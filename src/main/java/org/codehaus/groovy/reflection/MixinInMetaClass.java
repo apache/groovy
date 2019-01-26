@@ -111,7 +111,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
 
         ExpandoMetaClass mc = (ExpandoMetaClass) self;
 
-        List<MetaMethod> arr = new ArrayList<MetaMethod>();
+        List<MetaMethod> arr = new ArrayList<>();
         for (Class categoryClass : categoryClasses) {
 
             final CachedClass cachedCategoryClass = ReflectionCache.getCachedClass(categoryClass);

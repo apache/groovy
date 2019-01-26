@@ -48,7 +48,7 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 
 public class ExpressionUtils {
-    private static ArrayList<Integer> handledTypes = new ArrayList<Integer>();
+    private static ArrayList<Integer> handledTypes = new ArrayList<>();
 
     private ExpressionUtils() {
 

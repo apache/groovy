@@ -81,7 +81,7 @@ import static org.objectweb.asm.Opcodes.SWAP;
 public class OperandStack {
 
     private final WriterController controller;
-    private final List<ClassNode> stack = new ArrayList<ClassNode>();
+    private final List<ClassNode> stack = new ArrayList<>();
 
     public OperandStack(WriterController wc) {
         this.controller = wc;        

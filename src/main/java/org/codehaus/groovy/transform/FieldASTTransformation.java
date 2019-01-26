@@ -207,7 +207,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     }
 
     private Expression adjustedArgList(Expression skip, List<Expression> origArgs) {
-        List<Expression> newArgs = new ArrayList<Expression>(origArgs.size() - 1);
+        List<Expression> newArgs = new ArrayList<>(origArgs.size() - 1);
         for (Expression origArg : origArgs) {
             if (skip != origArg) {
                 newArgs.add(origArg);

@@ -370,9 +370,9 @@ public abstract class Traits {
      * @return the list of ordered trait classnodes
      */
     public static List<ClassNode> findTraits(ClassNode cNode) {
-        LinkedHashSet<ClassNode> interfaces = new LinkedHashSet<ClassNode>();
+        LinkedHashSet<ClassNode> interfaces = new LinkedHashSet<>();
         collectAllInterfacesReverseOrder(cNode, interfaces);
-        List<ClassNode> traits = new LinkedList<ClassNode>();
+        List<ClassNode> traits = new LinkedList<>();
         for (ClassNode candidate : interfaces) {
             if (isAnnotatedWithTrait(candidate)) {
                 traits.add(candidate);

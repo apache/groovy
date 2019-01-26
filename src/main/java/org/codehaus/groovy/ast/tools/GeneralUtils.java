@@ -98,7 +98,7 @@ public class GeneralUtils {
     }
 
     public static ArgumentListExpression args(Expression... expressions) {
-        List<Expression> args = new ArrayList<Expression>();
+        List<Expression> args = new ArrayList<>();
         Collections.addAll(args, expressions);
         return new ArgumentListExpression(args);
     }
@@ -112,7 +112,7 @@ public class GeneralUtils {
     }
 
     public static ArgumentListExpression args(String... names) {
-        List<Expression> vars = new ArrayList<Expression>();
+        List<Expression> vars = new ArrayList<>();
         for (String name : names) {
             vars.add(varX(name));
         }
@@ -359,7 +359,7 @@ public class GeneralUtils {
 
     public static List<MethodNode> getAllMethods(ClassNode type) {
         ClassNode node = type;
-        List<MethodNode> result = new ArrayList<MethodNode>();
+        List<MethodNode> result = new ArrayList<>();
         while (node != null) {
             result.addAll(node.getMethods());
             node = node.getSuperClass();
@@ -369,7 +369,7 @@ public class GeneralUtils {
 
     public static List<PropertyNode> getAllProperties(ClassNode type) {
         ClassNode node = type;
-        List<PropertyNode> result = new ArrayList<PropertyNode>();
+        List<PropertyNode> result = new ArrayList<>();
         while (node != null) {
             result.addAll(node.getProperties());
             node = node.getSuperClass();
@@ -382,7 +382,7 @@ public class GeneralUtils {
     }
 
     public static List<FieldNode> getInstanceNonPropertyFields(ClassNode cNode) {
-        final List<FieldNode> result = new ArrayList<FieldNode>();
+        final List<FieldNode> result = new ArrayList<>();
         for (FieldNode fNode : cNode.getFields()) {
             if (!fNode.isStatic() && cNode.getProperty(fNode.getName()) == null) {
                 result.add(fNode);
@@ -393,7 +393,7 @@ public class GeneralUtils {
 
     public static List<String> getInstanceNonPropertyFieldNames(ClassNode cNode) {
         List<FieldNode> fList = getInstanceNonPropertyFields(cNode);
-        List<String> result = new ArrayList<String>(fList.size());
+        List<String> result = new ArrayList<>(fList.size());
         for (FieldNode fNode : fList) {
             result.add(fNode.getName());
         }
@@ -401,7 +401,7 @@ public class GeneralUtils {
     }
 
     public static List<PropertyNode> getInstanceProperties(ClassNode cNode) {
-        final List<PropertyNode> result = new ArrayList<PropertyNode>();
+        final List<PropertyNode> result = new ArrayList<>();
         for (PropertyNode pNode : cNode.getProperties()) {
             if (!pNode.isStatic()) {
                 result.add(pNode);
@@ -412,7 +412,7 @@ public class GeneralUtils {
 
     public static List<String> getInstancePropertyNames(ClassNode cNode) {
         List<PropertyNode> pList = BeanUtils.getAllProperties(cNode, false, false, true);
-        List<String> result = new ArrayList<String>(pList.size());
+        List<String> result = new ArrayList<>(pList.size());
         for (PropertyNode pNode : pList) {
             result.add(pNode.getName());
         }
@@ -420,7 +420,7 @@ public class GeneralUtils {
     }
 
     public static List<FieldNode> getInstancePropertyFields(ClassNode cNode) {
-        final List<FieldNode> result = new ArrayList<FieldNode>();
+        final List<FieldNode> result = new ArrayList<>();
         for (PropertyNode pNode : cNode.getProperties()) {
             if (!pNode.isStatic()) {
                 result.add(pNode.getField());
@@ -430,7 +430,7 @@ public class GeneralUtils {
     }
 
     public static Set<ClassNode> getInterfacesAndSuperInterfaces(ClassNode type) {
-        Set<ClassNode> res = new LinkedHashSet<ClassNode>();
+        Set<ClassNode> res = new LinkedHashSet<>();
         if (type.isInterface()) {
             res.add(type);
             return res;
@@ -446,7 +446,7 @@ public class GeneralUtils {
     public static List<FieldNode> getSuperNonPropertyFields(ClassNode cNode) {
         final List<FieldNode> result;
         if (cNode == ClassHelper.OBJECT_TYPE) {
-            result = new ArrayList<FieldNode>();
+            result = new ArrayList<>();
         } else {
             result = getSuperNonPropertyFields(cNode.getSuperClass());
         }
@@ -461,7 +461,7 @@ public class GeneralUtils {
     public static List<FieldNode> getSuperPropertyFields(ClassNode cNode) {
         final List<FieldNode> result;
         if (cNode == ClassHelper.OBJECT_TYPE) {
-            result = new ArrayList<FieldNode>();
+            result = new ArrayList<>();
         } else {
             result = getSuperPropertyFields(cNode.getSuperClass());
         }
@@ -484,7 +484,7 @@ public class GeneralUtils {
     public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties,
                                                       boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters,
                                                       boolean traverseSuperClasses, boolean skipReadonly, boolean reverse, boolean allNames, boolean includeStatic) {
-        final List<PropertyNode> result = new ArrayList<PropertyNode>();
+        final List<PropertyNode> result = new ArrayList<>();
         if (cNode != ClassHelper.OBJECT_TYPE && traverseSuperClasses && !reverse) {
             result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }

@@ -29,7 +29,7 @@ import java.util.List;
 public class TableLayoutRow {
 
     private final TableLayout parent;
-    private final List<groovy.swing.impl.TableLayoutCell> cells = new ArrayList<groovy.swing.impl.TableLayoutCell>();
+    private final List<groovy.swing.impl.TableLayoutCell> cells = new ArrayList<>();
     private int rowIndex;
     
     public TableLayoutRow(TableLayout tableLayoutTag) {

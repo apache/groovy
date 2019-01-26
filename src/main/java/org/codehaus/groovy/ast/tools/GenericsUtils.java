@@ -146,7 +146,7 @@ public class GenericsUtils {
     }
 
     public static Map<GenericsTypeName, GenericsType> extractPlaceholders(ClassNode cn) {
-        Map<GenericsTypeName, GenericsType> ret = new HashMap<GenericsTypeName, GenericsType>();
+        Map<GenericsTypeName, GenericsType> ret = new HashMap<>();
         extractPlaceholders(cn, ret);
         return ret;
     }
@@ -336,7 +336,7 @@ public class GenericsUtils {
     }
 
     public static ClassNode correctToGenericsSpecRecurse(Map<String, ClassNode> genericsSpec, ClassNode type) {
-        return correctToGenericsSpecRecurse(genericsSpec, type, new ArrayList<String>());
+        return correctToGenericsSpecRecurse(genericsSpec, type, new ArrayList<>());
     }
 
     /**
@@ -347,7 +347,7 @@ public class GenericsUtils {
         ClassNode[] newTypes = new ClassNode[types.length];
         boolean modified = false;
         for (int i = 0; i < types.length; i++) {
-            newTypes[i] = correctToGenericsSpecRecurse(genericsSpec, types[i], new ArrayList<String>());
+            newTypes[i] = correctToGenericsSpecRecurse(genericsSpec, types[i], new ArrayList<>());
             modified = modified || (types[i] != newTypes[i]);
         }
         if (!modified) return types;
@@ -431,7 +431,7 @@ public class GenericsUtils {
     }
 
     public static Map<String, ClassNode> createGenericsSpec(ClassNode current, Map<String, ClassNode> oldSpec) {
-        Map<String, ClassNode> ret = new HashMap<String, ClassNode>(oldSpec);
+        Map<String, ClassNode> ret = new HashMap<>(oldSpec);
         // ret contains the type specs, what we now need is the type spec for the
         // current class. To get that we first apply the type parameters to the
         // current class and then use the type names of the current class to reset
@@ -459,7 +459,7 @@ public class GenericsUtils {
     }
 
     public static Map<String, ClassNode> addMethodGenerics(MethodNode current, Map<String, ClassNode> oldSpec) {
-        Map<String, ClassNode> ret = new HashMap<String, ClassNode>(oldSpec);
+        Map<String, ClassNode> ret = new HashMap<>(oldSpec);
         // ret starts with the original type specs, now add gts for the current method if any
         GenericsType[] sgts = current.getGenericsTypes();
         if (sgts != null) {
@@ -582,7 +582,7 @@ public class GenericsUtils {
         final GroovyRecognizer rn = GroovyRecognizer.make(lexer);
         try {
             rn.classOrInterfaceType(true);
-            final AtomicReference<ClassNode> ref = new AtomicReference<ClassNode>();
+            final AtomicReference<ClassNode> ref = new AtomicReference<>();
             AntlrParserPlugin plugin = new AntlrParserPlugin() {
                 @Override
                 public ModuleNode buildAST(final SourceUnit sourceUnit, final ClassLoader classLoader, final Reduction cst) throws ParserException {

@@ -118,9 +118,9 @@ public class LazyMap extends AbstractMap<String, Object> {
         if (map == null) {
             // added to avoid hash collision attack
             if (Sys.is1_8OrLater() || (Sys.is1_7() && JDK_MAP_ALTHASHING_SYSPROP != null)) {
-                map = new LinkedHashMap<String, Object>(size, 0.01f);
+                map = new LinkedHashMap<>(size, 0.01f);
             } else {
-                map = new TreeMap<String, Object>();
+                map = new TreeMap<>();
             }
 
             for (int index = 0; index < size; index++) {

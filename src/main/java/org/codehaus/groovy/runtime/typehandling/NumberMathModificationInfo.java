@@ -30,7 +30,7 @@ public class NumberMathModificationInfo {
 
     public static final NumberMathModificationInfo instance = new NumberMathModificationInfo();
 
-    private static final HashSet<String> NAMES = new HashSet<String>();
+    private static final HashSet<String> NAMES = new HashSet<>();
 
     static {
         Collections.addAll(NAMES, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");

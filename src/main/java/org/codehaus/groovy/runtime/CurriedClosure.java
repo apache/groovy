@@ -146,7 +146,7 @@ public final class CurriedClosure<V> extends Closure<V> {
     @SuppressWarnings("unchecked")
     public Object clone() {
         Closure<V> uncurriedClosure = (Closure<V>) ((Closure) getOwner()).clone();
-        return new CurriedClosure<V>(index, uncurriedClosure, curriedParams);
+        return new CurriedClosure<>(index, uncurriedClosure, curriedParams);
     }
 
     public Class[] getParameterTypes() {

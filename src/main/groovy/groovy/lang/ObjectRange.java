@@ -494,7 +494,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
 
     @Override
     public List<Comparable> step(int step) {
-        final IteratorClosureAdapter<Comparable> adapter = new IteratorClosureAdapter<Comparable>(this);
+        final IteratorClosureAdapter<Comparable> adapter = new IteratorClosureAdapter<>(this);
         step(step, adapter);
         return adapter.asList();
     }

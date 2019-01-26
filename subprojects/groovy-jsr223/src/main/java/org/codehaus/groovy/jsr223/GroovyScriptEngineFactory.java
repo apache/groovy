@@ -187,16 +187,16 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     private static final List<String> MIME_TYPES;
 
     static {
-        List<String> n = new ArrayList<String>(2);
+        List<String> n = new ArrayList<>(2);
         n.add(SHORT_NAME);
         n.add(LANGUAGE_NAME);
         NAMES = Collections.unmodifiableList(n);
 
-        n = new ArrayList<String>(1);
+        n = new ArrayList<>(1);
         n.add("groovy");
         EXTENSIONS = Collections.unmodifiableList(n);
 
-        n = new ArrayList<String>(1);
+        n = new ArrayList<>(1);
         n.add("application/x-groovy");
         MIME_TYPES = Collections.unmodifiableList(n);
     }

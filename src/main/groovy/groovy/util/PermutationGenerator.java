@@ -49,7 +49,7 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
      * @param items the items to permute
      */
     public PermutationGenerator(Collection<E> items) {
-        this.items = new ArrayList<E>(items);
+        this.items = new ArrayList<>(items);
         int n = items.size();
         if (n < 1) {
             throw new IllegalArgumentException("At least one item required");
@@ -136,7 +136,7 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
         }
 
         numLeft = numLeft.subtract(BigInteger.ONE);
-        List<E> ans = new ArrayList<E>(a.length);
+        List<E> ans = new ArrayList<>(a.length);
         for (int index : a) {
             ans.add(items.get(index));
         }

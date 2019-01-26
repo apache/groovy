@@ -71,7 +71,7 @@ public class Groovy extends Java {
     /**
      * files to load
      */
-    private final Vector<FileSet> filesets = new Vector<FileSet>();
+    private final Vector<FileSet> filesets = new Vector<>();
 
     /**
      * input file

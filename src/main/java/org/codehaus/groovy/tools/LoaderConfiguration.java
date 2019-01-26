@@ -80,15 +80,15 @@ import java.util.regex.Pattern;
 public class LoaderConfiguration {
 
     private static final String MAIN_PREFIX = "main is", LOAD_PREFIX = "load", GRAB_PREFIX = "grab", PROP_PREFIX = "property", CONFIGSCRIPT_PREFIX = "configscript";
-    private final List<URL> classPath = new ArrayList<URL>();
+    private final List<URL> classPath = new ArrayList<>();
     private String main;
     private boolean requireMain;
     private static final char WILDCARD = '*';
     private static final String ALL_WILDCARD = "" + WILDCARD + WILDCARD;
     private static final String MATCH_FILE_NAME = "\\\\E[^/]+?\\\\Q";
     private static final String MATCH_ALL = "\\\\E.+?\\\\Q";
-    private final List<String> grabList = new ArrayList<String>();
-    private final List<String> configScripts = new ArrayList<String>();
+    private final List<String> grabList = new ArrayList<>();
+    private final List<String> configScripts = new ArrayList<>();
 
     /**
      * creates a new loader configuration

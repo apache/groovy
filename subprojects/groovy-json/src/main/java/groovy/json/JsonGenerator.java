@@ -128,9 +128,9 @@ public interface JsonGenerator {
         protected String dateFormat = JSON_DATE_FORMAT;
         protected Locale dateLocale = JSON_DATE_FORMAT_LOCALE;
         protected TimeZone timezone = TimeZone.getTimeZone(DEFAULT_TIMEZONE);
-        protected final Set<Converter> converters = new LinkedHashSet<Converter>();
-        protected final Set<String> excludedFieldNames = new HashSet<String>();
-        protected final Set<Class<?>> excludedFieldTypes = new HashSet<Class<?>>();
+        protected final Set<Converter> converters = new LinkedHashSet<>();
+        protected final Set<String> excludedFieldNames = new HashSet<>();
+        protected final Set<Class<?>> excludedFieldTypes = new HashSet<>();
 
         public Options() {}
 

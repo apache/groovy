@@ -40,16 +40,16 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     private final Map<String, GroovyClassDoc> classDocs;
     private final Map<String, String> equivalentPackageImports;
     private List<GroovyClassDoc> classDocValues = null;
-    private final Map<String, GroovyClassDoc> cachedResolvedClasses = new HashMap<String, GroovyClassDoc>();
+    private final Map<String, GroovyClassDoc> cachedResolvedClasses = new HashMap<>();
     private final ClassNamedCache classNamedCache;
 
     private String description = "";
 
     public SimpleGroovyRootDoc(String name) {
         super(name);
-        packageDocs = new LinkedHashMap<String, GroovyPackageDoc>();
-        classDocs = new LinkedHashMap<String, GroovyClassDoc>();
-        equivalentPackageImports = new HashMap<String, String>();
+        packageDocs = new LinkedHashMap<>();
+        classDocs = new LinkedHashMap<>();
+        equivalentPackageImports = new HashMap<>();
         classNamedCache = new ClassNamedCache(classDocs);
     }
 
@@ -79,7 +79,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 
     public GroovyClassDoc[] classes() {
         if (classDocValues == null) {
-            classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
+            classDocValues = new ArrayList<>(classDocs.values());
             Collections.sort(classDocValues);
         }
         return classDocValues.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
@@ -109,14 +109,14 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 
     public GroovyPackageDoc[] specifiedPackages() {
         if (packageDocValues == null) {
-            packageDocValues = new ArrayList<GroovyPackageDoc>(packageDocs.values());
+            packageDocValues = new ArrayList<>(packageDocs.values());
             Collections.sort(packageDocValues);
         }
         return packageDocValues.toArray(EMPTY_GROOVYPACKAGEDOC_ARRAY);
     }
 
     public Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages) {
-        Map<String, GroovyClassDoc> visibleClasses = new LinkedHashMap<String, GroovyClassDoc>();
+        Map<String, GroovyClassDoc> visibleClasses = new LinkedHashMap<>();
         for (Map.Entry<String, GroovyClassDoc> entry : classDocs.entrySet()) {
             String fullClassName = entry.getKey();
             String equivalentPackageImport = findEquivalentPackageImport(fullClassName);

@@ -69,8 +69,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         this.properties = properties;
         this.isGroovy = isGroovy;
 
-        stack = new Stack<GroovySourceAST>();
-        classDocs = new LinkedHashMap<String, GroovyClassDoc>();
+        stack = new Stack<>();
+        classDocs = new LinkedHashMap<>();
         if (file != null && file.contains(".")) {
             // todo: replace this simple idea of default class name
             int idx = file.lastIndexOf(".");
@@ -80,8 +80,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
 
         deferSetup = packagePath.equals("DefaultPackage");
-        importedClassesAndPackages = new ArrayList<String>();
-        aliases = new LinkedHashMap<String, String>();
+        importedClassesAndPackages = new ArrayList<>();
+        aliases = new LinkedHashMap<>();
         if (!deferSetup) setUpImports(packagePath, links, isGroovy, className);
         lastLineCol = new LineColumn(1, 1);
     }
@@ -139,7 +139,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             if (parent != null && isNested() && !insideAnonymousInnerClass()) {
                 className = parent.name() + "." + className;
             } else {
-                foundClasses = new LinkedHashMap<String, SimpleGroovyClassDoc>();
+                foundClasses = new LinkedHashMap<>();
             }
             SimpleGroovyClassDoc current = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
             if (current == null) {
@@ -223,7 +223,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private static List<GroovySourceAST> findTypeNames(GroovySourceAST t) {
-        List<GroovySourceAST> types = new ArrayList<GroovySourceAST>();
+        List<GroovySourceAST> types = new ArrayList<>();
         for (AST child = t.getFirstChild(); child != null; child = child.getNextSibling()) {
             GroovySourceAST groovySourceAST = (GroovySourceAST) child;
             if (groovySourceAST.getType() == TYPE) {
@@ -284,7 +284,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             }
             classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
             if (foundClasses == null) {
-                foundClasses = new LinkedHashMap<String, SimpleGroovyClassDoc>();
+                foundClasses = new LinkedHashMap<>();
             }
             foundClasses.put(className, currentClassDoc);
         }
@@ -700,7 +700,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private List<String> getAnnotationNames(GroovySourceAST modifiers) {
-        List<String> annotationNames = new ArrayList<String>();
+        List<String> annotationNames = new ArrayList<>();
         List<GroovySourceAST> annotations = modifiers.childrenOfType(ANNOTATION);
         for (GroovySourceAST annotation : annotations) {
             annotationNames.add(buildName((GroovySourceAST) annotation.getFirstChild()));
@@ -883,7 +883,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (child != null && child.getType() == TYPE_ARGUMENTS && child.getNumberOfChildren() > 0) {
             result.append("<");
             GroovySourceAST typeArgumentsNext = (GroovySourceAST) child.getFirstChild();
-            List<String> typeArgumentParts = new ArrayList<String>();
+            List<String> typeArgumentParts = new ArrayList<>();
             while (typeArgumentsNext != null) {
                 if (typeArgumentsNext.getType() == TYPE_ARGUMENT && typeArgumentsNext.getNumberOfChildren() > 0) {
                     typeArgumentParts.add(getTypeNodeAsText((GroovySourceAST) typeArgumentsNext.getFirstChild(), defaultText));
@@ -899,7 +899,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (child != null && child.getType() == TYPE_PARAMETERS && child.getNumberOfChildren() > 0) {
             result.append("<");
             GroovySourceAST typeParametersNext = (GroovySourceAST) child.getFirstChild();
-            List<String> typeParameterParts = new ArrayList<String>();
+            List<String> typeParameterParts = new ArrayList<>();
             while (typeParametersNext != null) {
                 if (typeParametersNext.getType() == TYPE_PARAMETER && typeParametersNext.getNumberOfChildren() > 0) {
                     typeParameterParts.add(getTypeNodeAsText((GroovySourceAST) typeParametersNext.getFirstChild(), defaultText));

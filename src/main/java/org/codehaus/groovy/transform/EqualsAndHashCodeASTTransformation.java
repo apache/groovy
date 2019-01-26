@@ -155,9 +155,9 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     }
 
     private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
-        final Set<String> names = new HashSet<String>();
+        final Set<String> names = new HashSet<>();
         final List<PropertyNode> pList = getAllProperties(names, cNode, true, false, allProperties, false, false, false);
-        final List<FieldNode> fList = new ArrayList<FieldNode>();
+        final List<FieldNode> fList = new ArrayList<>();
         if (includeFields) {
             fList.addAll(getInstanceNonPropertyFields(cNode));
         }
@@ -251,7 +251,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(ifS(notX(callX(otherTyped, "canEqual", varX("this"))), returnS(constX(Boolean.FALSE,true))));
         }
 
-        final Set<String> names = new HashSet<String>();
+        final Set<String> names = new HashSet<>();
         final List<PropertyNode> pList = getAllProperties(names, cNode, true, includeFields, allProperties, false, false, false);
         for (PropertyNode pNode : pList) {
             if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
@@ -272,7 +272,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 );
             }
         }
-        List<FieldNode> fList = new ArrayList<FieldNode>();
+        List<FieldNode> fList = new ArrayList<>();
         if (includeFields) {
             fList.addAll(getInstanceNonPropertyFields(cNode));
         }

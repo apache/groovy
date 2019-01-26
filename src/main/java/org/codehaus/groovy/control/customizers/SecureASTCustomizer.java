@@ -211,12 +211,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     // statements
     private List<Class<? extends Statement>> statementsWhitelist;
     private List<Class<? extends Statement>> statementsBlacklist;
-    private final List<StatementChecker> statementCheckers = new LinkedList<StatementChecker>();
+    private final List<StatementChecker> statementCheckers = new LinkedList<>();
 
     // expressions
     private List<Class<? extends Expression>> expressionsWhitelist;
     private List<Class<? extends Expression>> expressionsBlacklist;
-    private final List<ExpressionChecker> expressionCheckers = new LinkedList<ExpressionChecker>();
+    private final List<ExpressionChecker> expressionCheckers = new LinkedList<>();
 
     // tokens from Types
     private List<Integer> tokensWhitelist;
@@ -308,7 +308,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * Ensures that every star import ends with .* as this is the expected syntax in import checks.
      */
     private static List<String> normalizeStarImports(List<String> starImports) {
-        List<String> result = new ArrayList<String>(starImports.size());
+        List<String> result = new ArrayList<>(starImports.size());
         for (String starImport : starImports) {
             if (starImport.endsWith(".*")) {
                 result.add(starImport);
@@ -494,7 +494,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * @param constantTypesWhiteList a list of classes.
      */
     public void setConstantTypesClassesWhiteList(final List<Class> constantTypesWhiteList) {
-        List<String> values = new LinkedList<String>();
+        List<String> values = new LinkedList<>();
         for (Class aClass : constantTypesWhiteList) {
             values.add(aClass.getName());
         }
@@ -507,7 +507,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * @param constantTypesBlackList a list of classes.
      */
     public void setConstantTypesClassesBlackList(final List<Class> constantTypesBlackList) {
-        List<String> values = new LinkedList<String>();
+        List<String> values = new LinkedList<>();
         for (Class aClass : constantTypesBlackList) {
             values.add(aClass.getName());
         }
@@ -544,7 +544,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * @param receiversBlacklist a list of classes.
      */
     public void setReceiversClassesBlackList(final List<Class> receiversBlacklist) {
-        List<String> values = new LinkedList<String>();
+        List<String> values = new LinkedList<>();
         for (Class aClass : receiversBlacklist) {
             values.add(aClass.getName());
         }
@@ -573,7 +573,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * @param receiversWhitelist a list of classes.
      */
     public void setReceiversClassesWhiteList(final List<Class> receiversWhitelist) {
-        List<String> values = new LinkedList<String>();
+        List<String> values = new LinkedList<>();
         for (Class aClass : receiversWhitelist) {
             values.add(aClass.getName());
         }
@@ -640,7 +640,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
     
     private static List<MethodNode> filterMethods(ClassNode owner) {
-        List<MethodNode> result = new LinkedList<MethodNode>();
+        List<MethodNode> result = new LinkedList<>();
         List<MethodNode> methods = owner.getMethods();
         for (MethodNode method : methods) {
             if (method.getDeclaringClass() == owner && !method.isSynthetic()) {

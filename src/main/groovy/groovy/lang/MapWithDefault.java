@@ -39,7 +39,7 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
     }
 
     public static <K, V> Map<K, V> newInstance(Map<K, V> m, Closure initClosure) {
-        return new MapWithDefault<K, V>(m, initClosure);
+        return new MapWithDefault<>(m, initClosure);
     }
 
     public int size() {

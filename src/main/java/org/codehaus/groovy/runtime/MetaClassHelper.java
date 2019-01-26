@@ -650,7 +650,7 @@ public class MetaClassHelper {
             for (int i = offset; i < arguments.length; i++) {
                 if (arguments[i] != null) {
                     Class tmpClass;
-                    Set<Class> intfs = new HashSet<Class>();
+                    Set<Class> intfs = new HashSet<>();
                     tmpClass = arguments[i].getClass();
                     for (; tmpClass != Object.class; tmpClass = tmpClass.getSuperclass()) {
                         intfs.addAll(Arrays.asList(tmpClass.getInterfaces()));

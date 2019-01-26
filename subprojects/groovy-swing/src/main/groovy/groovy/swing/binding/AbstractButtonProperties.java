@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class AbstractButtonProperties {
     public static Map<String, TriggerBinding> getSyntheticProperties() {
-        Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
+        Map<String, TriggerBinding> result = new HashMap<>();
         result.put(AbstractButton.class.getName() + "#selected",
             new TriggerBinding() {
                 public FullBinding createBinding(SourceBinding source, TargetBinding target) {

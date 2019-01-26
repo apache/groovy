@@ -51,7 +51,7 @@ import java.util.logging.Logger;
 public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBinding {
     private static final ExecutorService DEFAULT_EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private static final Logger LOG = Logger.getLogger(PropertyBinding.class.getName());
-    private static final Map<Class, Class<? extends PropertyAccessor>> ACCESSORS = new LinkedHashMap<Class, Class<? extends PropertyAccessor>>();
+    private static final Map<Class, Class<? extends PropertyAccessor>> ACCESSORS = new LinkedHashMap<>();
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     static {

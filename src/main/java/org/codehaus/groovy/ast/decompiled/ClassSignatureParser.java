@@ -48,7 +48,7 @@ class ClassSignatureParser {
     }
 
     private static void parseClassSignature(final ClassNode classNode, String signature, final AsmReferenceResolver resolver) {
-        final List<ClassNode> interfaces = new ArrayList<ClassNode>();
+        final List<ClassNode> interfaces = new ArrayList<>();
         FormalParameterParser v = new FormalParameterParser(resolver) {
 
             @Override

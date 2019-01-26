@@ -91,7 +91,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         if (trimmed.equals(rawCommentText)) return;
         String cleaned = TRIMMED_COMMENT_PATTERN.matcher(trimmed).replaceAll("$1").trim();
         String[] split = cleaned.split("(?m)^@");
-        List<GroovyTag> result = new ArrayList<GroovyTag>();
+        List<GroovyTag> result = new ArrayList<>();
         for (String s : split) {
             String tagname = null;
             if (s.startsWith("param") || s.startsWith("throws")) {

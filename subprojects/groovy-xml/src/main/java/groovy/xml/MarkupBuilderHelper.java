@@ -117,7 +117,7 @@ public class MarkupBuilderHelper {
      * @param args the attributes for the declaration
      */
     public void xmlDeclaration(Map<String, Object> args) {
-        Map<String, Map<String, Object>> map = new HashMap<String, Map<String, Object>>();
+        Map<String, Map<String, Object>> map = new HashMap<>();
         map.put("xml", args);
         pi(map);
     }

@@ -68,7 +68,7 @@ public class StackTraceUtils {
                             "gjdk.groovy.,"
             ).split("(\\s|,)+");
 
-    private static final List<Closure> tests = new ArrayList<Closure>();
+    private static final List<Closure> tests = new ArrayList<>();
 
     /**
      * Adds a groovy.lang.Closure to test whether the stack trace
@@ -103,7 +103,7 @@ public class StackTraceUtils {
         // Note that this getBoolean access may well be synced...
         if (!SystemUtil.getBooleanSafe("groovy.full.stacktrace")) {
             StackTraceElement[] trace = t.getStackTrace();
-            List<StackTraceElement> newTrace = new ArrayList<StackTraceElement>();
+            List<StackTraceElement> newTrace = new ArrayList<>();
             for (StackTraceElement stackTraceElement : trace) {
                 if (isApplicationClass(stackTraceElement.getClassName())) {
                     newTrace.add(stackTraceElement);

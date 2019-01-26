@@ -121,7 +121,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     };
 
     static {
-        nameToGlobalClassesNodesMap = new ConcurrentHashMap<String, ClassNode>(16, 0.9f, 1);
+        nameToGlobalClassesNodesMap = new ConcurrentHashMap<>(16, 0.9f, 1);
         for (Class globalClass : globalClasses) {
             nameToGlobalClassesNodesMap.put(globalClass.getSimpleName(), ClassHelper.makeCached(globalClass));
         }
@@ -344,7 +344,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
 
 
     private void checkDuplicateNameClashes(ListExpression list) {
-        final Set<String> seen = new HashSet<String>();
+        final Set<String> seen = new HashSet<>();
         @SuppressWarnings("unchecked") final List<ClassExpression> classes = (List) list.getExpressions();
         for (ClassExpression ce : classes) {
             final String name = ce.getType().getNameWithoutPackage();
@@ -406,7 +406,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
                 final List<Expression> argExpList = argsListExp.getExpressions();
                 final VariableExpression thisVarExp = new VariableExpression("this");
 
-                final List<Expression> expressionsWithThis = new ArrayList<Expression>(argExpList.size() + 1);
+                final List<Expression> expressionsWithThis = new ArrayList<>(argExpList.size() + 1);
                 expressionsWithThis.add(thisVarExp);
                 expressionsWithThis.addAll(argExpList);
 

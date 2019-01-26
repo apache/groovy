@@ -91,9 +91,9 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
 
-        Map<Integer, List<AnnotationNode>> existing = new TreeMap<Integer, List<AnnotationNode>>();
-        Map<Integer, List<AnnotationNode>> replacements = new LinkedHashMap<Integer, List<AnnotationNode>>();
-        Map<Integer, AnnotationCollectorMode> modes = new LinkedHashMap<Integer, AnnotationCollectorMode>();
+        Map<Integer, List<AnnotationNode>> existing = new TreeMap<>();
+        Map<Integer, List<AnnotationNode>> replacements = new LinkedHashMap<>();
+        Map<Integer, AnnotationCollectorMode> modes = new LinkedHashMap<>();
         int index = 0;
         for (AnnotationNode annotation : node.getAnnotations()) {
             findCollectedAnnotations(annotation, node, index, modes, existing, replacements);
@@ -105,7 +105,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             mergeCollectedAnnotations(modes.get(replacementIndex), existing, annotationNodeList);
             existing.put(replacementIndex, annotationNodeList);
         }
-        List<AnnotationNode> mergedList = new ArrayList<AnnotationNode>();
+        List<AnnotationNode> mergedList = new ArrayList<>();
         for (List<AnnotationNode> next : existing.values()) {
             mergedList.addAll(next);
         }
@@ -146,7 +146,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         for (AnnotationNode replacement : replacements) {
             for (Map.Entry<Integer, List<AnnotationNode>> entry : existingMap.entrySet()) {
                 Integer key = entry.getKey();
-                List<AnnotationNode> annotationNodes = new ArrayList<AnnotationNode>(entry.getValue());
+                List<AnnotationNode> annotationNodes = new ArrayList<>(entry.getValue());
                 Iterator<AnnotationNode> iterator = annotationNodes.iterator();
                 while (iterator.hasNext()) {
                     AnnotationNode existing = iterator.next();
@@ -340,7 +340,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     }
 
     private List<String> getTransformClassNames(AnnotationNode annotation, Annotation transformClassAnnotation) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
 
         try {
             Method valueMethod = transformClassAnnotation.getClass().getMethod("value");

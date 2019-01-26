@@ -47,10 +47,10 @@ import java.util.List;
 
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     protected static void setPropertyGetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
-        List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
+        List<ConstantExpression> gStringStrings = new ArrayList<>();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
-        List<Expression> gStringValues = new ArrayList<Expression>();
+        List<Expression> gStringValues = new ArrayList<>();
         gStringValues.add(new VariableExpression(parameters[0]));
         block.addStatement(
                 new ReturnStatement(
@@ -63,10 +63,10 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     }
 
     protected static void setPropertySetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
-        List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
+        List<ConstantExpression> gStringStrings = new ArrayList<>();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
-        List<Expression> gStringValues = new ArrayList<Expression>();
+        List<Expression> gStringValues = new ArrayList<>();
         gStringValues.add(new VariableExpression(parameters[0]));
         block.addStatement(
                 new ExpressionStatement(
@@ -83,10 +83,10 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     }
 
     protected static void setMethodDispatcherCode(BlockStatement block, Expression thiz, Parameter[] parameters) {
-        List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
+        List<ConstantExpression> gStringStrings = new ArrayList<>();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
-        List<Expression> gStringValues = new ArrayList<Expression>();
+        List<Expression> gStringValues = new ArrayList<>();
         gStringValues.add(new VariableExpression(parameters[0]));
         block.addStatement(
                 new ReturnStatement(

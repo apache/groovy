@@ -67,9 +67,9 @@ public class GroovyDocTemplateEngine {
         this.docTemplatePaths = Arrays.asList(docTemplates);
         this.packageTemplatePaths = Arrays.asList(packageTemplates);
         this.classTemplatePaths = Arrays.asList(classTemplates);
-        this.docTemplates = new LinkedHashMap<String, Template>();
-        this.packageTemplates = new LinkedHashMap<String, Template>();
-        this.classTemplates = new LinkedHashMap<String, Template>();
+        this.docTemplates = new LinkedHashMap<>();
+        this.packageTemplates = new LinkedHashMap<>();
+        this.classTemplates = new LinkedHashMap<>();
         engine = new GStringTemplateEngine();
 
     }
@@ -83,7 +83,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(templatePath));
                 classTemplates.put(templatePath, t);
             }
-            Map<String, Object> binding = new LinkedHashMap<String, Object>();
+            Map<String, Object> binding = new LinkedHashMap<>();
             binding.put("classDoc", classDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).writeTo(reasonableSizeWriter()).toString();
@@ -106,7 +106,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(template));
                 packageTemplates.put(template, t);
             }
-            Map<String, Object> binding = new LinkedHashMap<String, Object>();
+            Map<String, Object> binding = new LinkedHashMap<>();
             binding.put("packageDoc", packageDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
@@ -125,7 +125,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(template));
                 docTemplates.put(template, t);
             }
-            Map<String, Object> binding = new LinkedHashMap<String, Object>();
+            Map<String, Object> binding = new LinkedHashMap<>();
             binding.put("rootDoc", rootDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();

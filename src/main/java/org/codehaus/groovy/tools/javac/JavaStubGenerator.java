@@ -76,10 +76,10 @@ public class JavaStubGenerator {
     private final String encoding;
     private final boolean requireSuperResolved;
     private final File outputPath;
-    private final List<String> toCompile = new ArrayList<String>();
-    private final ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
-    private final Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
-    private final ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
+    private final List<String> toCompile = new ArrayList<>();
+    private final ArrayList<MethodNode> propertyMethods = new ArrayList<>();
+    private final Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<>();
+    private final ArrayList<ConstructorNode> constructors = new ArrayList<>();
     private ModuleNode currentModule;
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5, String encoding) {
@@ -169,7 +169,7 @@ public class JavaStubGenerator {
             Verifier verifier = new Verifier() {
                 @Override
                 public void visitClass(final ClassNode node) {
-                    List<Statement> savedStatements = new ArrayList<Statement>(node.getObjectInitializerStatements());
+                    List<Statement> savedStatements = new ArrayList<>(node.getObjectInitializerStatements());
                     super.visitClass(node);
                     node.getObjectInitializerStatements().addAll(savedStatements);
                     for (ClassNode trait : Traits.findTraits(node)) {
@@ -411,8 +411,8 @@ public class JavaStubGenerator {
         boolean isInterface = isInterfaceOrTrait(classNode);
         List<FieldNode> fields = classNode.getFields();
         if (fields == null) return;
-        List<FieldNode> enumFields = new ArrayList<FieldNode>(fields.size());
-        List<FieldNode> normalFields = new ArrayList<FieldNode>(fields.size());
+        List<FieldNode> enumFields = new ArrayList<>(fields.size());
+        List<FieldNode> normalFields = new ArrayList<>(fields.size());
         for (FieldNode field : fields) {
             boolean isSynthetic = (field.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
             if (field.isEnum()) {
@@ -972,7 +972,7 @@ public class JavaStubGenerator {
     }
 
     private static void printImports(PrintWriter out, ClassNode classNode) {
-        List<String> imports = new ArrayList<String>();
+        List<String> imports = new ArrayList<>();
 
         ModuleNode moduleNode = classNode.getModule();
         for (ImportNode importNode : moduleNode.getStarImports()) {

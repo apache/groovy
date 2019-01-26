@@ -185,7 +185,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      * Create new TemplateServlet.
      */
     public TemplateServlet() {
-        this.cache = new WeakHashMap<String, TemplateCacheEntry>();
+        this.cache = new WeakHashMap<>();
         this.engine = null; // assigned later by init()
         this.generateBy = true; // may be changed by init()
         this.fileEncodingParamVal = null; // may be changed by init()

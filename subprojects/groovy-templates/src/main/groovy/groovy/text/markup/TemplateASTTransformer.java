@@ -86,7 +86,7 @@ class TemplateASTTransformer extends CompilationCustomizer {
                 new Parameter(ClassHelper.MAP_TYPE.getPlainNodeReference(), "modelTypes"),
                 new Parameter(TEMPLATECONFIG_CLASSNODE, "tplConfig")
         };
-        List<Expression> vars = new LinkedList<Expression>();
+        List<Expression> vars = new LinkedList<>();
         for (Parameter param : params) {
             vars.add(new VariableExpression(param));
         }

@@ -36,7 +36,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     public SimpleGroovyPackageDoc(String name) {
         super(name);
-        classDocs = new TreeMap<String, GroovyClassDoc>();
+        classDocs = new TreeMap<>();
     }
 
     public GroovyClassDoc[] allClasses() {
@@ -68,12 +68,12 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] allClasses(boolean arg0) {
-        List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
+        List<GroovyClassDoc> classDocValues = new ArrayList<>(classDocs.values());
         return classDocValues.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
     public GroovyClassDoc[] enums() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isEnum()) {
                 result.add(doc);
@@ -83,7 +83,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] errors() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isError()) {
                 result.add(doc);
@@ -93,7 +93,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] exceptions() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isException()) {
                 result.add(doc);
@@ -107,7 +107,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] interfaces() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isInterface()) {
                 result.add(doc);
@@ -117,7 +117,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] ordinaryClasses() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<>(classDocs.values().size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isOrdinaryClass()) {
                 result.add(doc);

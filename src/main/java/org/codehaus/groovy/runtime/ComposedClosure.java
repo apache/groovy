@@ -87,7 +87,7 @@ public final class ComposedClosure<V> extends Closure<V> {
     }
 
     public Object clone() {
-        return new ComposedClosure<V>(first, second);
+        return new ComposedClosure<>(first, second);
     }
 
     public Class[] getParameterTypes() {

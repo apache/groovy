@@ -133,8 +133,8 @@ public class CachedClass {
                        }
                    }
                });
-            List<CachedMethod> methods = new ArrayList<CachedMethod>(declaredMethods.length);
-            List<CachedMethod> mopMethods = new ArrayList<CachedMethod>(declaredMethods.length);
+            List<CachedMethod> methods = new ArrayList<>(declaredMethods.length);
+            List<CachedMethod> mopMethods = new ArrayList<>(declaredMethods.length);
             for (int i = 0; i != declaredMethods.length; ++i) {
                 final CachedMethod cachedMethod = new CachedMethod(CachedClass.this, declaredMethods[i]);
                 final String name = cachedMethod.getName();
@@ -198,7 +198,7 @@ public class CachedClass {
         private static final long serialVersionUID = 7166687623678851596L;
 
         public LinkedList<ClassInfo> initValue() {
-            Set<ClassInfo> res = new LinkedHashSet<ClassInfo> ();
+            Set<ClassInfo> res = new LinkedHashSet<>();
 
             res.add(classInfo);
 
@@ -212,7 +212,7 @@ public class CachedClass {
             if (isInterface)
               res.add(ReflectionCache.OBJECT_CLASS.classInfo);
 
-            return new LinkedList<ClassInfo> (res);
+            return new LinkedList<>(res);
         }
     };
 
@@ -227,7 +227,7 @@ public class CachedClass {
         private static final long serialVersionUID = 2139190436931329873L;
 
         public Set<CachedClass> initValue() {
-            Set<CachedClass> res = new HashSet<CachedClass> (0);
+            Set<CachedClass> res = new HashSet<>(0);
 
             Class[] classes = getTheClass().getInterfaces();
             for (Class cls : classes) {
@@ -241,7 +241,7 @@ public class CachedClass {
         private static final long serialVersionUID = 4060471819464086940L;
 
         public Set<CachedClass> initValue() {
-            Set<CachedClass> res = new HashSet<CachedClass> (0);
+            Set<CachedClass> res = new HashSet<>(0);
 
             if (getTheClass().isInterface())
               res.add(CachedClass.this);
@@ -377,7 +377,7 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        List<MetaMethod> arr = new ArrayList<MetaMethod>(Arrays.asList(classInfo.newMetaMethods));
+        List<MetaMethod> arr = new ArrayList<>(Arrays.asList(classInfo.newMetaMethods));
 
         final MetaClass metaClass = classInfo.getStrongMetaClass();
         if (metaClass instanceof ExpandoMetaClass) {
@@ -465,7 +465,7 @@ public class CachedClass {
         if (metaClass != null) {
           if (metaClass.getClass() == MetaClassImpl.class) {
               classInfo.setStrongMetaClass(null);
-              List<MetaMethod> res = new ArrayList<MetaMethod>();
+              List<MetaMethod> res = new ArrayList<>();
               Collections.addAll(res, classInfo.newMetaMethods);
               res.addAll(arr);
               updateSetNewMopMethods(res);
@@ -497,7 +497,7 @@ public class CachedClass {
     }
 
     private void updateAddNewMopMethods(List<MetaMethod> arr) {
-        List<MetaMethod> res = new ArrayList<MetaMethod>();
+        List<MetaMethod> res = new ArrayList<>();
         res.addAll(Arrays.asList(classInfo.newMetaMethods));
         res.addAll(arr);
         classInfo.newMetaMethods = res.toArray(MetaMethod.EMPTY_ARRAY);

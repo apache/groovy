@@ -66,7 +66,7 @@ public class Groovydoc extends Task {
     private Boolean noVersionStamp;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
-    private final List<LinkArgument> links = new ArrayList<LinkArgument>();
+    private final List<LinkArgument> links = new ArrayList<>();
     private File overviewFile;
     private File styleSheetFile;
     // dev note: update javadoc comment for #setExtensions(String) if updating below
@@ -76,10 +76,10 @@ public class Groovydoc extends Task {
     private String fileEncoding;
 
     public Groovydoc() {
-        packageNames = new ArrayList<String>();
-        excludePackageNames = new ArrayList<String>();
-        packageSets = new ArrayList<DirSet>();
-        sourceFilesToDoc = new ArrayList<String>();
+        packageNames = new ArrayList<>();
+        excludePackageNames = new ArrayList<>();
+        packageSets = new ArrayList<>();
+        sourceFilesToDoc = new ArrayList<>();
         privateScope = false;
         protectedScope = false;
         publicScope = false;
@@ -335,8 +335,8 @@ public class Groovydoc extends Task {
      * @since 1.5
      */
     private void parsePackages(List<String> resultantPackages, Path sourcePath) {
-        List<String> addedPackages = new ArrayList<String>();
-        List<DirSet> dirSets = new ArrayList<DirSet>(packageSets);
+        List<String> addedPackages = new ArrayList<>();
+        List<DirSet> dirSets = new ArrayList<>(packageSets);
 
         // for each sourcePath entry, add a directoryset with includes
         // taken from packagenames attribute and nested package
@@ -431,7 +431,7 @@ public class Groovydoc extends Task {
     }
 
     public void execute() throws BuildException {
-        List<String> packagesToDoc = new ArrayList<String>();
+        List<String> packagesToDoc = new ArrayList<>();
         Path sourceDirs = new Path(getProject());
         Properties properties = new Properties();
         properties.setProperty("windowTitle", windowTitle);

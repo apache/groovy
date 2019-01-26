@@ -29,7 +29,7 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
     protected Segment<K,V> createSegment(Object segmentInfo, int cap) {
         ReferenceBundle bundle = (ReferenceBundle) segmentInfo;
         if (bundle==null) throw new IllegalArgumentException("bundle must not be null");
-        return new ManagedConcurrentMap.Segment<K,V>(bundle, cap);
+        return new ManagedConcurrentMap.Segment<>(bundle, cap);
     }
 
     public static class Segment<K,V> extends AbstractConcurrentMap.Segment<K,V>{
@@ -44,7 +44,7 @@ public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
 
         protected AbstractConcurrentMap.Entry<K,V> createEntry(K key, int hash, V value) {
             if (bundle==null) throw new IllegalArgumentException("bundle must not be null");
-            return new EntryWithValue<K,V>(bundle, this, key, hash, value);
+            return new EntryWithValue<>(bundle, this, key, hash, value);
         }
     }
 

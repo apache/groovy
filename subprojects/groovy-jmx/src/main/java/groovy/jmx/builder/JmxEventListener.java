@@ -69,7 +69,7 @@ public class JmxEventListener implements NotificationListener {
     }
 
     private static Map buildOperationNotificationPacket(Notification note) {
-        Map<String, Object> result = new HashMap<String, Object>();
+        Map<String, Object> result = new HashMap<>();
         result.put("event", note.getType());
         result.put("source", note.getSource());
         result.put("sequenceNumber", note.getSequenceNumber());

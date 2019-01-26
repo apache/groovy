@@ -47,10 +47,10 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private SourceUnit source;
 
     // TODO make @CS lookup smarter so that we don't need both these maps
-    private final Map<Object, FieldNode> const2Objects = new HashMap<Object, FieldNode>();
-    private final Map<Object, FieldNode> const2Prims = new HashMap<Object, FieldNode>();
+    private final Map<Object, FieldNode> const2Objects = new HashMap<>();
+    private final Map<Object, FieldNode> const2Prims = new HashMap<>();
     private int index;
-    private final List<FieldNode> missingFields = new LinkedList<FieldNode>();
+    private final List<FieldNode> missingFields = new LinkedList<>();
 
     public OptimizerVisitor(CompilationUnit cu) {
     }
@@ -80,7 +80,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
                 }
             }
             if (needsFix) {
-                List<ClassNode> newInterfaces = new ArrayList<ClassNode>(interfaces.length);
+                List<ClassNode> newInterfaces = new ArrayList<>(interfaces.length);
                 for (ClassNode classNode : interfaces) {
                     if (!classNode.equals(ClassHelper.GROOVY_OBJECT_TYPE)) {
                         newInterfaces.add(classNode);

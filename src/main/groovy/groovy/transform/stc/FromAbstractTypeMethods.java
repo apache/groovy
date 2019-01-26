@@ -47,7 +47,7 @@ public class FromAbstractTypeMethods extends ClosureSignatureHint {
 
     private static List<ClassNode[]> extractSignaturesFromMethods(final ClassNode cn) {
         List<MethodNode> methods = cn.getAllDeclaredMethods();
-        List<ClassNode[]> signatures = new LinkedList<ClassNode[]>();
+        List<ClassNode[]> signatures = new LinkedList<>();
         for (MethodNode method : methods) {
             if (!method.isSynthetic() && method.isAbstract()) {
                 extractParametersFromMethod(signatures, method);

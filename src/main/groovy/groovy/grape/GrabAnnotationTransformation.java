@@ -170,11 +170,11 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         allowShortGrabConfig = true;
         allowShortGrapes = true;
         allowShortGrabResolver = true;
-        grabAliases = new HashSet<String>();
-        grabExcludeAliases = new HashSet<String>();
-        grabConfigAliases = new HashSet<String>();
-        grapesAliases = new HashSet<String>();
-        grabResolverAliases = new HashSet<String>();
+        grabAliases = new HashSet<>();
+        grabExcludeAliases = new HashSet<>();
+        grabConfigAliases = new HashSet<>();
+        grapesAliases = new HashSet<>();
+        grabResolverAliases = new HashSet<>();
         for (ImportNode im : mn.getImports()) {
             String alias = im.getAlias();
             String className = im.getClassName();
@@ -201,22 +201,22 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             }
         }
 
-        List<Map<String,Object>> grabMaps = new ArrayList<Map<String,Object>>();
-        List<Map<String,Object>> grabMapsInit = new ArrayList<Map<String,Object>>();
-        List<Map<String,Object>> grabExcludeMaps = new ArrayList<Map<String,Object>>();
+        List<Map<String,Object>> grabMaps = new ArrayList<>();
+        List<Map<String,Object>> grabMapsInit = new ArrayList<>();
+        List<Map<String,Object>> grabExcludeMaps = new ArrayList<>();
 
         for (ClassNode classNode : sourceUnit.getAST().getClasses()) {
-            grabAnnotations = new ArrayList<AnnotationNode>();
-            grabExcludeAnnotations = new ArrayList<AnnotationNode>();
-            grabConfigAnnotations = new ArrayList<AnnotationNode>();
-            grapesAnnotations = new ArrayList<AnnotationNode>();
-            grabResolverAnnotations = new ArrayList<AnnotationNode>();
+            grabAnnotations = new ArrayList<>();
+            grabExcludeAnnotations = new ArrayList<>();
+            grabConfigAnnotations = new ArrayList<>();
+            grapesAnnotations = new ArrayList<>();
+            grabResolverAnnotations = new ArrayList<>();
 
             visitClass(classNode);
 
             ClassNode grapeClassNode = ClassHelper.make(Grape.class);
 
-            List<Statement> grabResolverInitializers = new ArrayList<Statement>();
+            List<Statement> grabResolverInitializers = new ArrayList<>();
 
             if (!grapesAnnotations.isEmpty()) {
                 for (AnnotationNode node : grapesAnnotations) {
@@ -240,7 +240,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (!grabResolverAnnotations.isEmpty()) {
                 grabResolverAnnotationLoop:
                 for (AnnotationNode node : grabResolverAnnotations) {
-                    Map<String, Object> grabResolverMap = new HashMap<String, Object>();
+                    Map<String, Object> grabResolverMap = new HashMap<>();
                     String sval = getMemberStringValue(node, "value");
                     if (sval != null && sval.length() > 0) {
                         for (String s : GRABRESOLVER_REQUIRED) {
@@ -314,7 +314,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (!grabExcludeAnnotations.isEmpty()) {
                 grabExcludeAnnotationLoop:
                 for (AnnotationNode node : grabExcludeAnnotations) {
-                    Map<String, Object> grabExcludeMap = new HashMap<String, Object>();
+                    Map<String, Object> grabExcludeMap = new HashMap<>();
                     checkForConvenienceForm(node, true);
                     for (String s : GRABEXCLUDE_REQUIRED) {
                         Expression member = node.getMember(s);
@@ -334,7 +334,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (!grabAnnotations.isEmpty()) {
                 grabAnnotationLoop:
                 for (AnnotationNode node : grabAnnotations) {
-                    Map<String, Object> grabMap = new HashMap<String, Object>();
+                    Map<String, Object> grabMap = new HashMap<>();
                     checkForConvenienceForm(node, false);
                     for (String s : GRAB_ALL) {
                         Expression member = node.getMember(s);
@@ -365,7 +365,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
 
         if (!grabMaps.isEmpty()) {
-            Map<String, Object> basicArgs = new HashMap<String, Object>();
+            Map<String, Object> basicArgs = new HashMap<>();
             basicArgs.put("classLoader", loader != null ? loader : sourceUnit.getClassLoader());
             if (!grabExcludeMaps.isEmpty()) basicArgs.put("excludes", grabExcludeMaps);
             if (autoDownload != null) basicArgs.put(AUTO_DOWNLOAD_SETTING, autoDownload);
@@ -388,7 +388,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     }
 
     private void callGrabAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, List<Map<String,Object>> grabMapsInit, List<Map<String, Object>> grabExcludeMaps) {
-        List<Statement> grabInitializers = new ArrayList<Statement>();
+        List<Statement> grabInitializers = new ArrayList<>();
         MapExpression basicArgs = new MapExpression();
         if (autoDownload != null)  {
             basicArgs.addMapEntryExpression(constX(AUTO_DOWNLOAD_SETTING), constX(autoDownload));
@@ -420,7 +420,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             basicArgs.addMapEntryExpression(constX("excludes"), list);
         }
 
-        List<Expression> argList = new ArrayList<Expression>();
+        List<Expression> argList = new ArrayList<>();
         argList.add(basicArgs);
         if (grabMapsInit.isEmpty()) return;
         for (Map<String, Object> grabMap : grabMapsInit) {
@@ -501,7 +501,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     }
 
     private void checkForSystemProperties(AnnotationNode node) {
-        systemProperties = new HashMap<String, String>();
+        systemProperties = new HashMap<>();
         List<String> nameValueList = AbstractASTTransformation.getMemberStringList(node, SYSTEM_PROPERTIES_SETTING);
         if (nameValueList != null) {
             for (String nameValue : nameValueList) {

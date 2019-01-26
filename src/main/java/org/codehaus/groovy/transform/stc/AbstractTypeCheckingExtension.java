@@ -60,8 +60,8 @@ import java.util.logging.Logger;
 public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
     private static final Logger LOG = Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
     protected final TypeCheckingContext context;
-    private final Set<MethodNode> generatedMethods = new LinkedHashSet<MethodNode>();
-    private final LinkedList<TypeCheckingScope> scopeData = new LinkedList<TypeCheckingScope>();
+    private final Set<MethodNode> generatedMethods = new LinkedHashSet<>();
+    private final LinkedList<TypeCheckingScope> scopeData = new LinkedList<>();
     // this boolean is used through setHandled(boolean)
     protected boolean handled = false;
     protected boolean debug = false;

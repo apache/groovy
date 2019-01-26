@@ -598,7 +598,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
 
     @Override
     public List<Comparable> step(int numSteps) {
-        final IteratorClosureAdapter<Comparable> adapter = new IteratorClosureAdapter<Comparable>(this);
+        final IteratorClosureAdapter<Comparable> adapter = new IteratorClosureAdapter<>(this);
         step(numSteps, adapter);
         return adapter.asList();
     }

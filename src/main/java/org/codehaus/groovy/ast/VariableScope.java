@@ -99,15 +99,15 @@ public class VariableScope  {
         VariableScope copy = new VariableScope();
         copy.clazzScope = clazzScope;
         if (!declaredVariables.isEmpty()) {
-          copy.declaredVariables = new LinkedHashMap<String, Variable>(declaredVariables);
+          copy.declaredVariables = new LinkedHashMap<>(declaredVariables);
         }
         copy.inStaticContext = inStaticContext;
         copy.parent = parent;
         if (!referencedClassVariables.isEmpty()) {
-            copy.referencedClassVariables = new LinkedHashMap<String, Variable>(referencedClassVariables);
+            copy.referencedClassVariables = new LinkedHashMap<>(referencedClassVariables);
         }
         if (!referencedLocalVariables.isEmpty()) {
-            copy.referencedLocalVariables = new LinkedHashMap<String, Variable>(referencedLocalVariables);
+            copy.referencedLocalVariables = new LinkedHashMap<>(referencedLocalVariables);
         }
         copy.resolvesDynamic = resolvesDynamic;
         return copy;
@@ -115,7 +115,7 @@ public class VariableScope  {
 
     public void putDeclaredVariable(Variable var) {
         if (declaredVariables == Collections.EMPTY_MAP)
-          declaredVariables = new LinkedHashMap<String, Variable>();
+          declaredVariables = new LinkedHashMap<>();
         declaredVariables.put(var.getName(), var);
     }
 
@@ -133,13 +133,13 @@ public class VariableScope  {
 
     public void putReferencedLocalVariable(Variable var) {
         if (referencedLocalVariables == Collections.EMPTY_MAP)
-          referencedLocalVariables = new LinkedHashMap<String, Variable>();
+          referencedLocalVariables = new LinkedHashMap<>();
         referencedLocalVariables.put(var.getName(), var);
     }
 
     public void putReferencedClassVariable(Variable var) {
         if (referencedClassVariables == Collections.EMPTY_MAP)
-          referencedClassVariables = new LinkedHashMap<String, Variable>();
+          referencedClassVariables = new LinkedHashMap<>();
         referencedClassVariables.put(var.getName(), var);
     }
 

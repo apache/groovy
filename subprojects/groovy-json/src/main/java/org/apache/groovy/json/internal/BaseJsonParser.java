@@ -80,7 +80,7 @@ public abstract class BaseJsonParser implements JsonParser {
 
     static {
         if (internKeys) {
-            internedKeysCache = new ConcurrentHashMap<String, String>();
+            internedKeysCache = new ConcurrentHashMap<>();
         } else {
             internedKeysCache = null;
         }

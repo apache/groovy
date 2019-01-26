@@ -53,7 +53,7 @@ public abstract class AsmDecompiler {
          * It's synchronized "just in case". Occasional misses are expected if several threads attempt to load the same class,
          * but this shouldn't result in serious memory issues.
          */
-        static final Map<URI, SoftReference<ClassStub>> map = new ConcurrentHashMap<URI, SoftReference<ClassStub>>();         // According to http://michaelscharf.blogspot.jp/2006/11/javaneturlequals-and-hashcode-make.html, use java.net.URI instead.
+        static final Map<URI, SoftReference<ClassStub>> map = new ConcurrentHashMap<>();         // According to http://michaelscharf.blogspot.jp/2006/11/javaneturlequals-and-hashcode-make.html, use java.net.URI instead.
     }
 
     /**
@@ -81,7 +81,7 @@ public abstract class AsmDecompiler {
                 new ClassReader(stream).accept(visitor, ClassReader.SKIP_FRAMES);
             }
             stub = visitor.result;
-            StubCache.map.put(uri, new SoftReference<ClassStub>(stub));
+            StubCache.map.put(uri, new SoftReference<>(stub));
         }
         return stub;
     }
@@ -129,7 +129,7 @@ public abstract class AsmDecompiler {
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             if (!"<clinit>".equals(name)) {
                 final MethodStub stub = new MethodStub(name, access, desc, signature, exceptions != null ? exceptions : EMPTY_STRING_ARRAY);
-                if (result.methods == null) result.methods = new ArrayList<MethodStub>(1);
+                if (result.methods == null) result.methods = new ArrayList<>(1);
                 result.methods.add(stub);
                 return new MethodVisitor(api) {
                     @Override
@@ -139,10 +139,10 @@ public abstract class AsmDecompiler {
 
                     @Override
                     public AnnotationVisitor visitParameterAnnotation(int parameter, String desc, boolean visible) {
-                        if (stub.parameterAnnotations == null) stub.parameterAnnotations = new HashMap<Integer, List<AnnotationStub>>(1);
+                        if (stub.parameterAnnotations == null) stub.parameterAnnotations = new HashMap<>(1);
                         List<AnnotationStub> list = stub.parameterAnnotations.get(parameter);
                         if (list == null) {
-                            stub.parameterAnnotations.put(parameter, list = new ArrayList<AnnotationStub>());
+                            stub.parameterAnnotations.put(parameter, list = new ArrayList<>());
                         }
                         AnnotationStub annotationStub = new AnnotationStub(desc);
                         list.add(annotationStub);
@@ -161,7 +161,7 @@ public abstract class AsmDecompiler {
 
                     @Override
                     public void visitParameter(String name, int access) {
-                        if (stub.parameterNames == null) stub.parameterNames = new ArrayList<String>();
+                        if (stub.parameterNames == null) stub.parameterNames = new ArrayList<>();
                         stub.parameterNames.add(name);
                     }
                 };
@@ -177,7 +177,7 @@ public abstract class AsmDecompiler {
         @Override
         public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
             final FieldStub stub = new FieldStub(name, access, desc, signature, value);
-            if (result.fields == null) result.fields = new ArrayList<FieldStub>(1);
+            if (result.fields == null) result.fields = new ArrayList<>(1);
             result.fields.add(stub);
             return new FieldVisitor(api) {
                 @Override
@@ -227,7 +227,7 @@ public abstract class AsmDecompiler {
 
         @Override
         public AnnotationVisitor visitArray(String name) {
-            final List<Object> list = new ArrayList<Object>();
+            final List<Object> list = new ArrayList<>();
             visitAttribute(name, list);
             return new AnnotationReader() {
                 @Override

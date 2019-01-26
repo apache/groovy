@@ -58,7 +58,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     public static final Pattern NAME_ARGS_REGEX = Pattern.compile("([^(]+)\\(([^)]*)\\)");
     public static final Pattern SPLIT_ARGS_REGEX = Pattern.compile(",\\s*");
     private static final List<String> PRIMITIVES = Arrays.asList("void", "boolean", "byte", "short", "char", "int", "long", "float", "double");
-    private static final Map<String, String> TAG_TEXT = new LinkedHashMap<String, String>();
+    private static final Map<String, String> TAG_TEXT = new LinkedHashMap<>();
     private static final GroovyConstructorDoc[] EMPTY_GROOVYCONSTRUCTORDOC_ARRAY = new GroovyConstructorDoc[0];
     private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
     private static final GroovyFieldDoc[] EMPTY_GROOVYFIELDDOC_ARRAY = new GroovyFieldDoc[0];
@@ -100,23 +100,23 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         this.importedClassesAndPackages = importedClassesAndPackages;
         this.aliases = aliases;
         this.links = links;
-        constructors = new ArrayList<GroovyConstructorDoc>();
-        fields = new ArrayList<GroovyFieldDoc>();
-        properties = new ArrayList<GroovyFieldDoc>();
-        enumConstants = new ArrayList<GroovyFieldDoc>();
-        methods = new ArrayList<GroovyMethodDoc>();
-        interfaceNames = new ArrayList<String>();
-        interfaceClasses = new ArrayList<GroovyClassDoc>();
-        nested = new ArrayList<GroovyClassDoc>();
-        resolvedExternalClassesCache = new HashMap<String, Class<?>>();
+        constructors = new ArrayList<>();
+        fields = new ArrayList<>();
+        properties = new ArrayList<>();
+        enumConstants = new ArrayList<>();
+        methods = new ArrayList<>();
+        interfaceNames = new ArrayList<>();
+        interfaceClasses = new ArrayList<>();
+        nested = new ArrayList<>();
+        resolvedExternalClassesCache = new HashMap<>();
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, Map<String, String> aliases, String name) {
-        this(importedClassesAndPackages, aliases, name, new ArrayList<LinkArgument>());
+        this(importedClassesAndPackages, aliases, name, new ArrayList<>());
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name) {
-        this(importedClassesAndPackages, new LinkedHashMap<String, String>(), name, new ArrayList<LinkArgument>());
+        this(importedClassesAndPackages, new LinkedHashMap<>(), name, new ArrayList<>());
     }
 
     /**
@@ -247,7 +247,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     // TODO move logic here into resolve
     public List<GroovyClassDoc> getParentClasses() {
-        List<GroovyClassDoc> result = new LinkedList<GroovyClassDoc>();
+        List<GroovyClassDoc> result = new LinkedList<>();
         if (isInterface()) return result;
         result.add(0, this);
         GroovyClassDoc next = this;
@@ -274,12 +274,12 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     public Set<GroovyClassDoc> getParentInterfaces() {
-        Set<GroovyClassDoc> result = new LinkedHashSet<GroovyClassDoc>();
+        Set<GroovyClassDoc> result = new LinkedHashSet<>();
         result.add(this);
-        Set<GroovyClassDoc> next = new LinkedHashSet<GroovyClassDoc>(Arrays.asList(this.interfaces()));
+        Set<GroovyClassDoc> next = new LinkedHashSet<>(Arrays.asList(this.interfaces()));
         while (!next.isEmpty()) {
             Set<GroovyClassDoc> temp = next;
-            next = new LinkedHashSet<GroovyClassDoc>();
+            next = new LinkedHashSet<>();
             for (GroovyClassDoc t : temp) {
                 if (t instanceof SimpleGroovyClassDoc) {
                     next.addAll(((SimpleGroovyClassDoc)t).getParentInterfaces());
@@ -295,7 +295,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     private Set<GroovyClassDoc> getJavaInterfaces(ExternalGroovyClassDoc d) {
-        Set<GroovyClassDoc> result = new LinkedHashSet<GroovyClassDoc>();
+        Set<GroovyClassDoc> result = new LinkedHashSet<>();
         Class[] interfaces = d.externalClass().getInterfaces();
         if (interfaces != null) {
             for (Class i : interfaces) {
@@ -461,7 +461,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             if (gt != -1) {
                 if (gt > lt) {
                     String allTypeArgs = type.substring(lt + 1, gt);
-                    List<String> typeArgs = new ArrayList<String>();
+                    List<String> typeArgs = new ArrayList<>();
                     int nested = 0;
                     StringBuilder sb = new StringBuilder();
                     for (char ch : allTypeArgs.toCharArray()) {
@@ -477,7 +477,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     if (sb.length() > 0) {
                         typeArgs.add(sb.toString().trim());
                     }
-                    List<String> typeUrls = new ArrayList<String>();
+                    List<String> typeUrls = new ArrayList<>();
                     for (String typeArg : typeArgs) {
                         typeUrls.add(getDocUrl(typeArg, full, links, relativePath, rootDoc, classDoc));
                     }
@@ -899,7 +899,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         Matcher matcher = regex.matcher(self + "@endMarker");
         if (matcher.find()) {
             matcher.reset();
-            Map<String, List<String>> savedTags = new LinkedHashMap<String, List<String>>();
+            Map<String, List<String>> savedTags = new LinkedHashMap<>();
             StringBuffer sb = new StringBuffer();
             while (matcher.find()) {
                 String tagname = matcher.group(1);
@@ -917,7 +917,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                         String text = TAG_TEXT.get(tagname);
                         List<String> contents = savedTags.get(text);
                         if (contents == null) {
-                            contents = new ArrayList<String>();
+                            contents = new ArrayList<>();
                             savedTags.put(text, contents);
                         }
                         contents.add(content);

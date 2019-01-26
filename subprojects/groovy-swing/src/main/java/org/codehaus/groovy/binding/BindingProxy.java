@@ -42,8 +42,8 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
     Object model;
     boolean bound;
 
-    final Map<String, PropertyBinding> propertyBindings = new HashMap<String, PropertyBinding>();
-    final List<FullBinding> generatedBindings = new ArrayList<FullBinding>();
+    final Map<String, PropertyBinding> propertyBindings = new HashMap<>();
+    final List<FullBinding> generatedBindings = new ArrayList<>();
 
     public BindingProxy(Object model) {
         this.model = model;

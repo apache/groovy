@@ -68,9 +68,9 @@ public class DefaultJsonGenerator implements JsonGenerator {
     protected final String dateFormat;
     protected final Locale dateLocale;
     protected final TimeZone timezone;
-    protected final Set<Converter> converters = new LinkedHashSet<Converter>();
-    protected final Set<String> excludedFieldNames = new HashSet<String>();
-    protected final Set<Class<?>> excludedFieldTypes = new HashSet<Class<?>>();
+    protected final Set<Converter> converters = new LinkedHashSet<>();
+    protected final Set<String> excludedFieldNames = new HashSet<>();
+    protected final Set<Class<?>> excludedFieldTypes = new HashSet<>();
 
     protected DefaultJsonGenerator(Options options) {
         excludeNulls = options.excludeNulls;

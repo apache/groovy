@@ -67,7 +67,7 @@ public abstract class BaseTemplate implements Writable {
         this.engine = templateEngine;
         this.configuration = configuration;
         this.modelTypes = modelTypes;
-        this.cachedFragments = new LinkedHashMap<String, Template>();
+        this.cachedFragments = new LinkedHashMap<>();
     }
 
     public Map getModel() {

@@ -50,7 +50,7 @@ public class ManagedConcurrentLinkedQueue<T> implements Iterable<T> {
      */
     public ManagedConcurrentLinkedQueue(ReferenceBundle bundle) {
         this.bundle = bundle;
-        this.queue = new ConcurrentLinkedQueue<Element<T>>();
+        this.queue = new ConcurrentLinkedQueue<>();
     }
 
     /**
@@ -59,7 +59,7 @@ public class ManagedConcurrentLinkedQueue<T> implements Iterable<T> {
      * @param value the value to add
      */
     public void add(T value) {
-        Element<T> e = new Element<T>(value);
+        Element<T> e = new Element<>(value);
         queue.offer(e);
     }
 
@@ -90,7 +90,7 @@ public class ManagedConcurrentLinkedQueue<T> implements Iterable<T> {
      * sequence they were added.
      */
     public List<T> values() {
-        List<T> result = new ArrayList<T>();
+        List<T> result = new ArrayList<>();
         for (Iterator<T> itr = iterator(); itr.hasNext(); ) {
             result.add(itr.next());
         }

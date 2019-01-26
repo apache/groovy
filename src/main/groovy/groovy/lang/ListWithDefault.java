@@ -44,7 +44,7 @@ public final class ListWithDefault<T> implements List<T> {
     }
 
     public List<T> getDelegate() {
-        return delegate != null ? new ArrayList<T>(delegate) : null;
+        return delegate != null ? new ArrayList<>(delegate) : null;
     }
 
     public boolean isLazyDefaultValues() {
@@ -61,7 +61,7 @@ public final class ListWithDefault<T> implements List<T> {
         if (initClosure == null)
             throw new IllegalArgumentException("Parameter \"initClosure\" must not be null");
 
-        return new ListWithDefault<T>(new ArrayList<T>(items), lazyDefaultValues, (Closure) initClosure.clone());
+        return new ListWithDefault<>(new ArrayList<>(items), lazyDefaultValues, (Closure) initClosure.clone());
     }
 
     public int size() {
@@ -251,6 +251,6 @@ public final class ListWithDefault<T> implements List<T> {
      * @return a view of a specified range within this list, keeping all lazy list settings
      */
     public ListWithDefault<T> subList(int fromIndex, int toIndex) {
-        return new ListWithDefault<T>(delegate.subList(fromIndex, toIndex), lazyDefaultValues, (Closure) initClosure.clone());
+        return new ListWithDefault<>(delegate.subList(fromIndex, toIndex), lazyDefaultValues, (Closure) initClosure.clone());
     }
 }

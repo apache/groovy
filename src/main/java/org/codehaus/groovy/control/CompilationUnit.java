@@ -166,15 +166,15 @@ public class CompilationUnit extends ProcessingUnit {
         super(configuration, loader, null);
 
         this.astTransformationsContext = new ASTTransformationsContext(this, transformLoader);
-        this.names = new ArrayList<String>();
-        this.queuedSources = new LinkedList<SourceUnit>();
-        this.sources = new HashMap<String, SourceUnit>();
+        this.names = new ArrayList<>();
+        this.queuedSources = new LinkedList<>();
+        this.sources = new HashMap<>();
         this.summariesBySourceName = new HashMap();
         this.summariesByPublicClassName = new HashMap();
         this.classSourcesByPublicClassName = new HashMap();
 
         this.ast = new CompileUnit(this.classLoader, security, this.configuration);
-        this.generatedClasses = new ArrayList<GroovyClass>();
+        this.generatedClasses = new ArrayList<>();
 
         this.verifier = new Verifier();
         this.resolveVisitor = new ResolveVisitor(this);
@@ -1035,7 +1035,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     private List<ClassNode> getPrimaryClassNodes(boolean sort) {
-        List<ClassNode> unsorted = new ArrayList<ClassNode>();
+        List<ClassNode> unsorted = new ArrayList<>();
         for (ModuleNode module : this.ast.getModules()) {
             unsorted.addAll(module.getClasses());
         }
@@ -1066,7 +1066,7 @@ public class CompilationUnit extends ProcessingUnit {
 
     private static List<ClassNode> getSorted(int[] index, List<ClassNode> unsorted) {
         int unsortedSize = unsorted.size();
-        List<ClassNode> sorted = new ArrayList<ClassNode>(unsortedSize);
+        List<ClassNode> sorted = new ArrayList<>(unsortedSize);
         for (int i = 0; i < unsortedSize; i++) {
             int min = -1;
             for (int j = 0; j < unsortedSize; j++) {

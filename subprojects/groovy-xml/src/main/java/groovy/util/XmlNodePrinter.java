@@ -417,7 +417,7 @@ public class XmlNodePrinter {
         private final Map<String, String> namespaceMap;
 
         public NamespaceContext() {
-            namespaceMap = new HashMap<String, String>();
+            namespaceMap = new HashMap<>();
         }
 
         public NamespaceContext(NamespaceContext context) {

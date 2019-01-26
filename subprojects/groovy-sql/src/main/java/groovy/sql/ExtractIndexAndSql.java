@@ -80,7 +80,7 @@ class ExtractIndexAndSql {
     }
 
     private ExtractIndexAndSql invoke() {
-        indexPropList = new ArrayList<Tuple>();
+        indexPropList = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         StringBuilder currentChunk = new StringBuilder();
         while (index < sql.length()) {

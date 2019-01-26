@@ -120,7 +120,7 @@ public class DOMCategory {
     }
 
     private static Object xgetAt(NodeList nodeList, String elementName) {
-        List<NodeList> results = new ArrayList<NodeList>();
+        List<NodeList> results = new ArrayList<>();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
             if (node instanceof Element) {
@@ -243,7 +243,7 @@ public class DOMCategory {
         }
 
         // Copy the required nodes into a new list.
-        List<Node> nodes = new ArrayList<Node>(to - from + 1);
+        List<Node> nodes = new ArrayList<>(to - from + 1);
         if (r.isReverse()) {
             for (int i = to; i >= from; i--) nodes.add(nodeList.item(i));
         }
@@ -280,7 +280,7 @@ public class DOMCategory {
     }
 
     public static List<Node> list(NodeList self) {
-        List<Node> answer = new ArrayList<Node>();
+        List<Node> answer = new ArrayList<>();
         Iterator<Node> it = XmlGroovyMethods.iterator(self);
         while (it.hasNext()) {
             answer.add(it.next());
@@ -289,7 +289,7 @@ public class DOMCategory {
     }
 
     public static NodeList depthFirst(Element self) {
-        List<NodeList> result = new ArrayList<NodeList>();
+        List<NodeList> result = new ArrayList<>();
         result.add(createNodeList(self));
         result.add(self.getElementsByTagName("*"));
         return new NodeListsHolder(result);
@@ -394,7 +394,7 @@ public class DOMCategory {
      * @since 2.3.0
      */
     public static List<String> localText(Element self) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         if (self.getNodeType() == Node.TEXT_NODE || self.getNodeType() == Node.CDATA_SECTION_NODE) {
             result.add(self.getNodeValue());
         } else if (self.hasChildNodes()) {
@@ -416,13 +416,13 @@ public class DOMCategory {
     }
 
     private static NodeList createNodeList(Element self) {
-        List<Node> first = new ArrayList<Node>();
+        List<Node> first = new ArrayList<>();
         first.add(self);
         return new NodesHolder(first);
     }
 
     public static NodeList breadthFirst(Element self) {
-        List<NodeList> result = new ArrayList<NodeList>();
+        List<NodeList> result = new ArrayList<>();
         NodeList thisLevel = createNodeList(self);
         while (thisLevel.getLength() > 0) {
             result.add(thisLevel);
@@ -432,7 +432,7 @@ public class DOMCategory {
     }
 
     private static NodeList getNextLevel(NodeList thisLevel) {
-        List<NodeList> result = new ArrayList<NodeList>();
+        List<NodeList> result = new ArrayList<>();
         for (int i = 0; i < thisLevel.getLength(); i++) {
             Node n = thisLevel.item(i);
             if (n instanceof Element) {
@@ -451,7 +451,7 @@ public class DOMCategory {
     }
 
     private static NodeList getChildElements(Element self, String elementName) {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         NodeList nodeList = self.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);

@@ -31,7 +31,7 @@ import java.util.Set;
  */
 public class SharedVariableCollector extends ClassCodeVisitorSupport {
     private final SourceUnit unit;
-    private final Set<VariableExpression> closureSharedExpressions = new LinkedHashSet<VariableExpression>();
+    private final Set<VariableExpression> closureSharedExpressions = new LinkedHashSet<>();
     private boolean visited = false;
 
     public SharedVariableCollector(final SourceUnit unit) {

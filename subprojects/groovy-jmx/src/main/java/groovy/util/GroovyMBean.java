@@ -49,7 +49,7 @@ public class GroovyMBean extends GroovyObjectSupport {
     private final ObjectName name;
     private MBeanInfo beanInfo;
     private final boolean ignoreErrors;
-    private final Map<String, String[]> operations = new HashMap<String, String[]>();
+    private final Map<String, String[]> operations = new HashMap<>();
 
     public GroovyMBean(MBeanServerConnection server, String objectName) throws JMException, IOException {
         this(server, objectName, false);
@@ -172,7 +172,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return list of attribute names
      */
     public Collection<String> listAttributeNames() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             MBeanAttributeInfo[] attrs = beanInfo.getAttributes();
             for (MBeanAttributeInfo attr : attrs) {
@@ -190,7 +190,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return list of values of each attribute
      */
     public List<String> listAttributeValues() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         Collection<String> names = listAttributeNames();
         for (String name : names) {
             try {
@@ -211,7 +211,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return list of descriptions of each attribute on the mbean
      */
     public Collection<String> listAttributeDescriptions() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             MBeanAttributeInfo[] attrs = beanInfo.getAttributes();
             for (MBeanAttributeInfo attr : attrs) {
@@ -272,7 +272,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return all the operations on the MBean
      */
     public Collection<String> listOperationNames() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             MBeanOperationInfo[] operations = beanInfo.getOperations();
             for (MBeanOperationInfo operation : operations) {
@@ -290,7 +290,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return full description of each operation on the MBean
      */
     public Collection<String> listOperationDescriptions() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             MBeanOperationInfo[] operations = beanInfo.getOperations();
             for (MBeanOperationInfo operation : operations) {
@@ -310,7 +310,7 @@ public class GroovyMBean extends GroovyObjectSupport {
      * @return Collection of operation description
      */
     public List<String> describeOperation(String operationName) {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         try {
             MBeanOperationInfo[] operations = beanInfo.getOperations();
             for (MBeanOperationInfo operation : operations) {

@@ -48,7 +48,7 @@ import java.util.List;
  * @since 2.1.0
  */
 public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
-    protected final List<TypeCheckingExtension> handlers = new LinkedList<TypeCheckingExtension>();
+    protected final List<TypeCheckingExtension> handlers = new LinkedList<>();
 
     public DefaultTypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         super(typeCheckingVisitor);
@@ -110,7 +110,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
     }
 
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
-        List<MethodNode> result = new LinkedList<MethodNode>();
+        List<MethodNode> result = new LinkedList<>();
         for (TypeCheckingExtension handler : handlers) {
             List<MethodNode> handlerResult = handler.handleMissingMethod(receiver, name, argumentList, argumentTypes, call);
             for (MethodNode mn : handlerResult) {
@@ -178,7 +178,7 @@ public class DefaultTypeCheckingExtension extends TypeCheckingExtension {
 
     @Override
     public void setup() {
-        ArrayList<TypeCheckingExtension> copy = new ArrayList<TypeCheckingExtension>(handlers);
+        ArrayList<TypeCheckingExtension> copy = new ArrayList<>(handlers);
         // we're using a copy here because new extensions can be added during the "setup" phase
         for (TypeCheckingExtension handler : copy) {
             handler.setup();

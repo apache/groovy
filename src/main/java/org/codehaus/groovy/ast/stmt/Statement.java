@@ -48,12 +48,12 @@ public class Statement extends ASTNode {
 
     // TODO @Deprecated
     public void setStatementLabel(String label) {
-        if (statementLabels == null) statementLabels = new LinkedList<String>();
+        if (statementLabels == null) statementLabels = new LinkedList<>();
         statementLabels.add(label);
     }
 
     public void addStatementLabel(String label) {
-        if (statementLabels == null) statementLabels = new LinkedList<String>();
+        if (statementLabels == null) statementLabels = new LinkedList<>();
         statementLabels.add(label);
     }
 

@@ -100,8 +100,8 @@ public class CachingGroovyEngine extends GroovyEngine {
         if (parent == null)
             parent = GroovyShell.class.getClassLoader();
         setLoader(mgr, parent);
-        execScripts = new HashMap<Object, Class>();
-        evalScripts = new HashMap<Object, Class>();
+        execScripts = new HashMap<>();
+        evalScripts = new HashMap<>();
         context = shell.getContext();
         // create a shell
         // register the mgr with object name "bsf"

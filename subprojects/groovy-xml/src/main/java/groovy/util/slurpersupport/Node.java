@@ -166,7 +166,7 @@ public class Node implements Writable {
      * @since 2.3.0
      */
     public List<String> localText() {
-        final List<String> result = new ArrayList<String>();
+        final List<String> result = new ArrayList<>();
         for (Object child : this.children) {
             if (!(child instanceof Node)) {
                 result.add(child.toString());

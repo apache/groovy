@@ -32,11 +32,11 @@ import java.util.List;
  */
 public class BlockStatement extends Statement {
 
-    private List<Statement> statements = new ArrayList<Statement>();
+    private List<Statement> statements = new ArrayList<>();
     private VariableScope scope;
     
     public BlockStatement() {
-        this(new ArrayList<Statement>(), new VariableScope());
+        this(new ArrayList<>(), new VariableScope());
     }
 
     /**

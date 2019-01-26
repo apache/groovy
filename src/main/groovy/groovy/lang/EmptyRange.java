@@ -209,6 +209,6 @@ public class EmptyRange<T extends Comparable> extends AbstractList<T> implements
      */
     @Override
     public List<T> step(int step) {
-        return new ArrayList<T>();
+        return new ArrayList<>();
     }
 }

@@ -794,7 +794,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static List<String> readLines(Reader reader) throws IOException {
-        IteratorClosureAdapter<String> closure = new IteratorClosureAdapter<String>(reader);
+        IteratorClosureAdapter<String> closure = new IteratorClosureAdapter<>(reader);
         eachLine(reader, closure);
         return closure.asList();
     }

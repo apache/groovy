@@ -1106,7 +1106,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             final Iterator<Path> itr = stream.iterator();
-            List<Path> files = new LinkedList<Path>();
+            List<Path> files = new LinkedList<>();
             while (itr.hasNext()) {
                 files.add(itr.next());
             }

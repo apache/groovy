@@ -37,15 +37,15 @@ public class TreeContext {
     }
     final TreeContext parent;
     final ASTNode node;
-    final List<TreeContext> siblings = new LinkedList<TreeContext>();
-    final List<TreeContextAction> onPopHandlers = new LinkedList<TreeContextAction>();
+    final List<TreeContext> siblings = new LinkedList<>();
+    final List<TreeContextAction> onPopHandlers = new LinkedList<>();
     final Map<Object, List<?>> userdata = MapWithDefault.newInstance(
-            new HashMap<Object, List<?>>(),
+            new HashMap<>(),
             new Closure(this) {
                 private static final long serialVersionUID = -4694773031569936343L;
 
                 public Object doCall(Object key) {
-                    return new LinkedList<Object>();
+                    return new LinkedList<>();
                 }
             }
     );

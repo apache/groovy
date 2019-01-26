@@ -37,7 +37,7 @@ public class MapItemValue implements Map.Entry<String, Value> {
 
     static {
         if (internKeys) {
-            internedKeysCache = new ConcurrentHashMap<String, String>();
+            internedKeysCache = new ConcurrentHashMap<>();
         } else {
             internedKeysCache = null;
         }

@@ -166,7 +166,7 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
     // exception blocks list
-    private final Map<String,ClassNode> referencedClasses = new HashMap<String,ClassNode>();
+    private final Map<String,ClassNode> referencedClasses = new HashMap<>();
     private boolean passingParams;
 
     public static final boolean CREATE_DEBUG_INFO = true;
@@ -2087,10 +2087,10 @@ public class AsmClassGenerator extends ClassGenerator {
      * @param av the visitor to use
      */
     private void visitAnnotationAttributes(AnnotationNode an, AnnotationVisitor av) {
-        Map<String, Object> constantAttrs = new HashMap<String, Object>();
-        Map<String, PropertyExpression> enumAttrs = new HashMap<String, PropertyExpression>();
-        Map<String, Object> atAttrs = new HashMap<String, Object>();
-        Map<String, ListExpression> arrayAttrs = new HashMap<String, ListExpression>();
+        Map<String, Object> constantAttrs = new HashMap<>();
+        Map<String, PropertyExpression> enumAttrs = new HashMap<>();
+        Map<String, Object> atAttrs = new HashMap<>();
+        Map<String, ListExpression> arrayAttrs = new HashMap<>();
 
         for (String name : an.getMembers().keySet()) {
             Expression expr = an.getMember(name);

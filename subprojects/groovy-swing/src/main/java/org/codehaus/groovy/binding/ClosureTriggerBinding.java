@@ -51,7 +51,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         BindPath bp = new BindPath();
         bp.propertyName = propertyName;
         bp.updateLocalSyntheticProperties(syntheticBindings);
-        List<BindPath> childPaths = new ArrayList<BindPath>();
+        List<BindPath> childPaths = new ArrayList<>();
         for (Map.Entry<String, BindPathSnooper> entry : snooper.fields.entrySet()) {
             childPaths.add(createBindPath(entry.getKey(), entry.getValue()));
         }
@@ -114,7 +114,7 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
             e.printStackTrace(System.out);
             throw new RuntimeException("A closure expression binding could not be created because of " + e.getClass().getName() + ":\n\t" + e.getMessage());
         }
-        List<BindPath> rootPaths = new ArrayList<BindPath>();
+        List<BindPath> rootPaths = new ArrayList<>();
         for (Map.Entry<String, BindPathSnooper> entry : delegate.fields.entrySet()) {
             BindPath bp =createBindPath(entry.getKey(), entry.getValue());
             bp.currentObject = closure;
@@ -148,7 +148,7 @@ class DeadEndObject {
 class BindPathSnooper extends GroovyObjectSupport {
     static final DeadEndObject DEAD_END = new DeadEndObject();
 
-    Map<String, BindPathSnooper> fields = new LinkedHashMap<String, BindPathSnooper>();
+    Map<String, BindPathSnooper> fields = new LinkedHashMap<>();
 
     public Object getProperty(String property) {
         if (fields.containsKey(property)) {

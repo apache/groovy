@@ -205,7 +205,7 @@ public class DataSet extends Sql {
      */
     @Override
     public int[] withBatch(int batchSize, Closure closure) throws SQLException {
-        batchData = new ArrayList<Object>();
+        batchData = new ArrayList<>();
         withinDataSetBatch = true;
         closure.call(this);
         withinDataSetBatch = false;
@@ -240,7 +240,7 @@ public class DataSet extends Sql {
             batchData.add(map);
             return;
         }
-        int answer = executeUpdate(buildListQuery(map), new ArrayList<Object>(map.values()));
+        int answer = executeUpdate(buildListQuery(map), new ArrayList<>(map.values()));
         if (answer != 1) {
             LOG.warning("Should have updated 1 row not " + answer + " when trying to add: " + map);
         }
@@ -397,7 +397,7 @@ public class DataSet extends Sql {
 
     public List<Object> getParameters() {
         if (params == null) {
-            params = new ArrayList<Object>();
+            params = new ArrayList<>();
             if (parent != null) {
                 params.addAll(parent.getParameters());
             }

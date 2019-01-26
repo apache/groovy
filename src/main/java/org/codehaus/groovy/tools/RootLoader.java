@@ -75,7 +75,7 @@ import java.util.Map;
  */
 public class RootLoader extends URLClassLoader {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
-    private final Map<String, Class> customClasses = new HashMap<String, Class>();
+    private final Map<String, Class> customClasses = new HashMap<>();
     private static final String ORG_W3C_DOM_NODE = "org.w3c.dom.Node";
 
     /**

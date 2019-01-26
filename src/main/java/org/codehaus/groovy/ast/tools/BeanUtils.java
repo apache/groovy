@@ -64,15 +64,15 @@ public class BeanUtils {
      * @return the list of found property nodes
      */
     public static List<PropertyNode> getAllProperties(ClassNode type, boolean includeSuperProperties, boolean includeStatic, boolean includePseudoGetters, boolean includePseudoSetters, boolean superFirst) {
-        return getAllProperties(type, type, new HashSet<String>(), includeSuperProperties, includeStatic, includePseudoGetters, includePseudoSetters, superFirst);
+        return getAllProperties(type, type, new HashSet<>(), includeSuperProperties, includeStatic, includePseudoGetters, includePseudoSetters, superFirst);
     }
 
     private static List<PropertyNode> getAllProperties(ClassNode origType, ClassNode type, Set<String> names, boolean includeSuperProperties, boolean includeStatic, boolean includePseudoGetters, boolean includePseudoSetters, boolean superFirst) {
         // TODO add generics support so this can be used for @EAHC
         if (type == null) {
-            return new ArrayList<PropertyNode>();
+            return new ArrayList<>();
         }
-        List<PropertyNode> result = new ArrayList<PropertyNode>();
+        List<PropertyNode> result = new ArrayList<>();
         if (superFirst && includeSuperProperties) {
             result.addAll(getAllProperties(origType, type.getSuperClass(), names, includeSuperProperties, includeStatic, includePseudoGetters, includePseudoSetters, superFirst));
         }

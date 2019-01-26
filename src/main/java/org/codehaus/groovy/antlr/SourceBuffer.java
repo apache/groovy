@@ -32,7 +32,7 @@ public class SourceBuffer {
     private StringBuilder current;
 
     public SourceBuffer() {
-        lines = new ArrayList<StringBuilder>();
+        lines = new ArrayList<>();
         //lines.add(new StringBuilder()); // dummy row for position [0] in the List
 
         current = new StringBuilder();

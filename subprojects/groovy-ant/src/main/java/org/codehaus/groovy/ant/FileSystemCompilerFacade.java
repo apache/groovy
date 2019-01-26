@@ -32,7 +32,7 @@ public class FileSystemCompilerFacade {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     public static void main(String[] args) {
-        List<String> argList = new ArrayList<String>(Arrays.asList(args));
+        List<String> argList = new ArrayList<>(Arrays.asList(args));
         boolean forceLookupUnnamedFiles = argList.contains("--forceLookupUnnamedFiles");
         if (forceLookupUnnamedFiles) {
             argList.remove("--forceLookupUnnamedFiles");

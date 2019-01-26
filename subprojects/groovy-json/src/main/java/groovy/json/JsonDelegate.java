@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class JsonDelegate extends GroovyObjectSupport {
 
-    private final Map<String, Object> content = new LinkedHashMap<String, Object>();
+    private final Map<String, Object> content = new LinkedHashMap<>();
 
     /**
      * Intercepts calls for setting a key and value for a JSON object
@@ -54,7 +54,7 @@ public class JsonDelegate extends GroovyObjectSupport {
                 Closure<?> closure = (Closure<?>) arr[1];
                 Iterator<?> iterator = (arr[0] instanceof Iterable) ?
                         ((Iterable) arr[0]).iterator() : Arrays.asList((Object[])arr[0]).iterator();
-                List<Object> list = new ArrayList<Object>();
+                List<Object> list = new ArrayList<>();
                 while (iterator.hasNext()) {
                     list.add(curryDelegateAndGetContent(closure, iterator.next()));
                 }

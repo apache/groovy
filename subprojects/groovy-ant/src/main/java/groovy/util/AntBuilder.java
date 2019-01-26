@@ -109,7 +109,7 @@ public class AntBuilder extends BuilderSupport {
         collectorTarget.setProject(project);
         antXmlContext.setCurrentTarget(collectorTarget);
         antXmlContext.setLocator(new AntBuilderLocator());
-        antXmlContext.setCurrentTargets(new HashMap<String, Target>());
+        antXmlContext.setCurrentTargets(new HashMap<>());
 
         implicitTarget = new Target();
         implicitTarget.setProject(project);
@@ -457,7 +457,7 @@ public class AntBuilder extends BuilderSupport {
             final Target newTarget = getProject().getTargets().get(attrs.getValue("name"));
 
             // execute dependencies (if any)
-            final Vector<Target> targets = new Vector<Target>();
+            final Vector<Target> targets = new Vector<>();
             for (final Enumeration<String> deps = newTarget.getDependencies(); deps.hasMoreElements();) {
                 final String targetName = deps.nextElement();
                 targets.add(project.getTargets().get(targetName));

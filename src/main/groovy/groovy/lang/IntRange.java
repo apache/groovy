@@ -353,7 +353,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         }
 
         if (fromIndex == toIndex) {
-            return new EmptyRange<Integer>(getFrom());
+            return new EmptyRange<>(getFrom());
         }
 
         return new IntRange(fromIndex + getFrom(), toIndex + getFrom() - 1, isReverse());
@@ -426,7 +426,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
 
     @Override
     public List<Integer> step(int step) {
-        final IteratorClosureAdapter<Integer> adapter = new IteratorClosureAdapter<Integer>(this);
+        final IteratorClosureAdapter<Integer> adapter = new IteratorClosureAdapter<>(this);
         step(step, adapter);
         return adapter.asList();
     }

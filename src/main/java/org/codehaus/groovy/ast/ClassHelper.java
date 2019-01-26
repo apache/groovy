@@ -166,7 +166,7 @@ public class ClassHelper {
         ClassNode classNode;
         if (classNodeSoftReference == null || (classNode = classNodeSoftReference.get()) == null) {
             classNode = new ClassNode(c);
-            ClassHelperCache.classCache.put(c, new SoftReference<ClassNode>(classNode));
+            ClassHelperCache.classCache.put(c, new SoftReference<>(classNode));
 
             VMPluginFactory.getPlugin().setAdditionalClassInformation(classNode);
         }
@@ -397,7 +397,7 @@ public class ClassHelper {
     }
 
     static class ClassHelperCache {
-        static ManagedConcurrentMap<Class, SoftReference<ClassNode>> classCache = new ManagedConcurrentMap<Class, SoftReference<ClassNode>>(ReferenceBundle.getWeakBundle());
+        static ManagedConcurrentMap<Class, SoftReference<ClassNode>> classCache = new ManagedConcurrentMap<>(ReferenceBundle.getWeakBundle());
     }
 
     public static boolean isSAMType(ClassNode type) {

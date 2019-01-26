@@ -437,7 +437,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
          */
         StreamingTemplate(final Reader source, final ClassLoader parentLoader) throws CompilationFailedException, ClassNotFoundException, IOException {
             final StringBuilder target = new StringBuilder();
-            List<StringSection> sections = new ArrayList<StringSection>();
+            List<StringSection> sections = new ArrayList<>();
             Position sourcePosition = new Position(1, 1);
             Position targetPosition = new Position(1, 1);
             Position lastSourcePosition = new Position(1, 1);

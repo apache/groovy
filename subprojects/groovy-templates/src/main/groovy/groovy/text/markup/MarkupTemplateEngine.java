@@ -70,7 +70,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
     private final TemplateGroovyClassLoader groovyClassLoader;
     private final CompilerConfiguration compilerConfiguration;
     private final TemplateConfiguration templateConfiguration;
-    private final Map<String, GroovyCodeSource> codeSourceCache = new LinkedHashMap<String, GroovyCodeSource>();
+    private final Map<String, GroovyCodeSource> codeSourceCache = new LinkedHashMap<>();
     private final TemplateResolver templateResolver;
 
     public MarkupTemplateEngine() {
@@ -246,7 +246,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
      * thread local.
      */
     static class TemplateGroovyClassLoader extends GroovyClassLoader {
-        static final ThreadLocal<Map<String, String>> modelTypes = new ThreadLocal<Map<String, String>>();
+        static final ThreadLocal<Map<String, String>> modelTypes = new ThreadLocal<>();
 
         public TemplateGroovyClassLoader(final ClassLoader parentLoader, final CompilerConfiguration compilerConfiguration) {
             super(parentLoader, compilerConfiguration);
@@ -350,7 +350,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
          * Creates a new caching template resolver using a concurrent hash map as the backing cache.
          */
         public CachingTemplateResolver() {
-            this(new ConcurrentHashMap<String, URL>());
+            this(new ConcurrentHashMap<>());
         }
 
 

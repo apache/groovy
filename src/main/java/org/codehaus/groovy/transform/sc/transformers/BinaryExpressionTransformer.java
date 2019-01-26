@@ -225,8 +225,8 @@ public class BinaryExpressionTransformer {
                 // next = tmp1
                 // result = tmp2
                 int size = rightExpressions.size();
-                List<Expression> tmpAssignments = new ArrayList<Expression>(size);
-                List<Expression> finalAssignments = new ArrayList<Expression>(size);
+                List<Expression> tmpAssignments = new ArrayList<>(size);
+                List<Expression> finalAssignments = new ArrayList<>(size);
                 for (int i = 0; i < Math.min(size, leftExpressions.size()); i++) {
                     Expression left = leftIt.next();
                     Expression right = rightIt.next();

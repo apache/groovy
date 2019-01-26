@@ -243,8 +243,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             return;
         }
         int acc = -1;
-        privateFieldAccessors = accessedFields != null ? new HashMap<String, MethodNode>() : null;
-        privateFieldMutators = mutatedFields != null ? new HashMap<String, MethodNode>() : null;
+        privateFieldAccessors = accessedFields != null ? new HashMap<>() : null;
+        privateFieldMutators = mutatedFields != null ? new HashMap<>() : null;
         final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (FieldNode fieldNode : node.getFields()) {
             boolean generateAccessor = accessedFields != null && accessedFields.contains(fieldNode);
@@ -290,14 +290,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     private static void addPrivateBridgeMethods(final ClassNode node) {
         Set<ASTNode> accessedMethods = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS);
         if (accessedMethods==null) return;
-        List<MethodNode> methods = new ArrayList<MethodNode>(node.getAllDeclaredMethods());
+        List<MethodNode> methods = new ArrayList<>(node.getAllDeclaredMethods());
         methods.addAll(node.getDeclaredConstructors());
         Map<MethodNode, MethodNode> privateBridgeMethods = (Map<MethodNode, MethodNode>) node.getNodeMetaData(PRIVATE_BRIDGE_METHODS);
         if (privateBridgeMethods!=null) {
             // private bridge methods already added
             return;
         }
-        privateBridgeMethods = new HashMap<MethodNode, MethodNode>();
+        privateBridgeMethods = new HashMap<>();
         int i=-1;
         final int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
         for (MethodNode method : methods) {
@@ -321,7 +321,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 if (method.getParameters()==null || method.getParameters().length==0) {
                     arguments = ArgumentListExpression.EMPTY_ARGUMENTS;
                 } else {
-                    List<Expression> args = new LinkedList<Expression>();
+                    List<Expression> args = new LinkedList<>();
                     for (Parameter parameter : methodParameters) {
                         args.add(new VariableExpression(parameter));
                     }
@@ -371,7 +371,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     private static List<String> methodSpecificGenerics(final MethodNode method) {
-        List<String> genericTypeTokens = new ArrayList<String>();
+        List<String> genericTypeTokens = new ArrayList<>();
         GenericsType[] candidateGenericsTypes = method.getGenericsTypes();
         if (candidateGenericsTypes != null) {
             for (GenericsType gt : candidateGenericsTypes) {
@@ -468,7 +468,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
         Expression objectExpression = pexp.getObjectExpression();
         ClassNode objectExpressionType = getType(objectExpression);
-        final Reference<ClassNode> rType = new Reference<ClassNode>(objectExpressionType);
+        final Reference<ClassNode> rType = new Reference<>(objectExpressionType);
         ClassCodeVisitorSupport receiverMemoizer = new ClassCodeVisitorSupport() {
             @Override
             protected SourceUnit getSourceUnit() {

@@ -33,8 +33,8 @@ import java.util.List;
 abstract class FormalParameterParser extends SignatureVisitor {
     private final AsmReferenceResolver resolver;
     private String currentTypeParameter;
-    private final List<ClassNode> parameterBounds = new ArrayList<ClassNode>();
-    private final List<GenericsType> typeParameters = new ArrayList<GenericsType>();
+    private final List<ClassNode> parameterBounds = new ArrayList<>();
+    private final List<GenericsType> typeParameters = new ArrayList<>();
 
     public FormalParameterParser(AsmReferenceResolver resolver) {
         super(CompilerConfiguration.ASM_API_VERSION);

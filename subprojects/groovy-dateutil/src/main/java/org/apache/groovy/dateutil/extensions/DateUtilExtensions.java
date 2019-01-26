@@ -284,7 +284,7 @@ public class DateUtilExtensions {
         return cal.getTime();
     }
 
-    private static final Map<String, Integer> CAL_MAP = new HashMap<String, Integer>();
+    private static final Map<String, Integer> CAL_MAP = new HashMap<>();
 
     static {
         CAL_MAP.put("year", Calendar.YEAR);

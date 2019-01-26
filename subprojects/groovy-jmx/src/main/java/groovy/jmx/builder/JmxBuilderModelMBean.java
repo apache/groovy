@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * MBeanServer.
  */
 public class JmxBuilderModelMBean extends RequiredModelMBean implements NotificationListener {
-    private final List<String> methodListeners = new ArrayList<String>(0);
+    private final List<String> methodListeners = new ArrayList<>(0);
     private Object managedObject;
 
     public JmxBuilderModelMBean(Object objectRef) throws MBeanException, RuntimeOperationsException, InstanceNotFoundException, InvalidTargetObjectTypeException {
@@ -208,7 +208,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         }
 
         private static Map buildAttributeNotificationPacket(AttributeChangeNotification note) {
-            Map<String, Object> result = new HashMap<String, Object>();
+            Map<String, Object> result = new HashMap<>();
             result.put("oldValue", note.getOldValue());
             result.put("newValue", note.getNewValue());
             result.put("attribute", note.getAttributeName());

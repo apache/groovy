@@ -49,7 +49,7 @@ public class SqlExtensions {
      */
     public static GroovyRowResult toRowResult(ResultSet rs) throws SQLException {
         ResultSetMetaData metadata = rs.getMetaData();
-        Map<String, Object> lhm = new LinkedHashMap<String, Object>(metadata.getColumnCount(), 1);
+        Map<String, Object> lhm = new LinkedHashMap<>(metadata.getColumnCount(), 1);
         for (int i = 1; i <= metadata.getColumnCount(); i++) {
             lhm.put(metadata.getColumnLabel(i), rs.getObject(i));
         }

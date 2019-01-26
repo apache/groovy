@@ -106,7 +106,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         };
     }
 
-    public static final Map<ClassNode,Integer> typeMap = new HashMap<ClassNode,Integer>(14);
+    public static final Map<ClassNode,Integer> typeMap = new HashMap<>(14);
     static {
         typeMap.put(int_TYPE,       1); typeMap.put(long_TYPE,          2);
         typeMap.put(double_TYPE,    3); typeMap.put(char_TYPE,          4);

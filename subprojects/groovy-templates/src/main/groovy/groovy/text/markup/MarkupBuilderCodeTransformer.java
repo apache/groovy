@@ -171,7 +171,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
     }
 
     private Map<String, ClassNode> extractModelTypesFromClosureExpression(final ClosureExpression expression) {
-        Map<String, ClassNode> model = new HashMap<String, ClassNode>();
+        Map<String, ClassNode> model = new HashMap<>();
         extractModelTypesFromStatement(expression.getCode(), model);
         return model;
     }

@@ -233,7 +233,7 @@ public class ServletBinding extends Binding {
         /*
          * Bind request header key-value hash map.
          */
-        Map<String, String> headers = new LinkedHashMap<String, String>();
+        Map<String, String> headers = new LinkedHashMap<>();
         for (Enumeration names = request.getHeaderNames(); names.hasMoreElements();) {
             String headerName = (String) names.nextElement();
             String headerValue = request.getHeader(headerName);

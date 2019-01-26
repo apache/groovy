@@ -522,7 +522,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return the new closure with its arguments bound
      */
     public Closure<V> curry(final Object... arguments) {
-        return new CurriedClosure<V>(this, arguments);
+        return new CurriedClosure<>(this, arguments);
     }
 
     /**
@@ -555,7 +555,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @see #curry(Object...)
      */
     public Closure<V> rcurry(final Object... arguments) {
-        return new CurriedClosure<V>(-arguments.length, this, arguments);
+        return new CurriedClosure<>(-arguments.length, this, arguments);
     }
 
     /**
@@ -604,7 +604,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @see #curry(Object...)
      */
     public Closure<V> ncurry(int n, final Object... arguments) {
-        return new CurriedClosure<V>(n, this, arguments);
+        return new CurriedClosure<>(n, this, arguments);
     }
 
     /**
@@ -634,7 +634,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return the new composed Closure
      */
     public <W> Closure<W> rightShift(final Closure<W> other) {
-        return new ComposedClosure<W>(this, other);
+        return new ComposedClosure<>(this, other);
     }
 
     /**
@@ -653,7 +653,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return the new composed Closure
      */
     public Closure<V> leftShift(final Closure other) {
-        return new ComposedClosure<V>(other, this);
+        return new ComposedClosure<>(other, this);
     }
 
     /* *
@@ -737,7 +737,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Closure<V> memoizeAtLeast(final int protectedCacheSize) {
         if (protectedCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the protectedCacheSize parameter for memoizeAtLeast.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentSoftCache<Object, Object>(), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentSoftCache<>(), this);
     }
 
     /**
@@ -769,7 +769,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         if (maxCacheSize < 0) throw new IllegalArgumentException("A non-negative number is required as the maxCacheSize parameter for memoizeBetween.");
         if (protectedCacheSize > maxCacheSize) throw new IllegalArgumentException("The maxCacheSize parameter to memoizeBetween is required to be greater or equal to the protectedCacheSize parameter.");
 
-        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentSoftCache<Object, Object>(maxCacheSize), this);
+        return Memoize.buildSoftReferenceMemoizeFunction(protectedCacheSize, new ConcurrentSoftCache<>(maxCacheSize), this);
     }
 
     /**
@@ -793,7 +793,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @return A closure, which will execute the original closure on a trampoline.
      */
     public Closure<V> trampoline(final Object... args) {
-        return new TrampolineClosure<V>(this.curry(args));
+        return new TrampolineClosure<>(this.curry(args));
     }
 
     /**
@@ -807,7 +807,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * @see #trampoline(Object...)
      */
     public Closure<V> trampoline() {
-        return new TrampolineClosure<V>(this);
+        return new TrampolineClosure<>(this);
     }
 
     /* (non-Javadoc)

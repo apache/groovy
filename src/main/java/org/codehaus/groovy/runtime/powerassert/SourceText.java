@@ -37,8 +37,8 @@ public class SourceText {
     private final int firstLine;
     private String normalizedText;
 
-    private final List<Integer> lineOffsets = new ArrayList<Integer>();
-    private final List<Integer> textOffsets = new ArrayList<Integer>();
+    private final List<Integer> lineOffsets = new ArrayList<>();
+    private final List<Integer> textOffsets = new ArrayList<>();
 
     /**
      * Constructs a <tt>SourceText</tt> by reading the given assertion's source

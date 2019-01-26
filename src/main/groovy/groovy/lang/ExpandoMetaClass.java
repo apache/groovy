@@ -282,19 +282,19 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private final boolean allowChangesAfterInit;
     public boolean inRegistry;
     
-    private final Set<MetaMethod> inheritedMetaMethods = new HashSet<MetaMethod>();
-    private final Map<String, MetaProperty> beanPropertyCache = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
-    private final Map<String, MetaProperty> staticBeanPropertyCache = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
-    private final Map<MethodKey, MetaMethod> expandoMethods = new ConcurrentHashMap<MethodKey, MetaMethod>(16, 0.75f, 1);
+    private final Set<MetaMethod> inheritedMetaMethods = new HashSet<>();
+    private final Map<String, MetaProperty> beanPropertyCache = new ConcurrentHashMap<>(16, 0.75f, 1);
+    private final Map<String, MetaProperty> staticBeanPropertyCache = new ConcurrentHashMap<>(16, 0.75f, 1);
+    private final Map<MethodKey, MetaMethod> expandoMethods = new ConcurrentHashMap<>(16, 0.75f, 1);
 
     public Collection getExpandoSubclassMethods() {
         return expandoSubclassMethods.values();
     }
 
     private final ConcurrentHashMap expandoSubclassMethods = new ConcurrentHashMap(16, 0.75f, 1);
-    private final Map<String, MetaProperty> expandoProperties = new ConcurrentHashMap<String, MetaProperty>(16, 0.75f, 1);
+    private final Map<String, MetaProperty> expandoProperties = new ConcurrentHashMap<>(16, 0.75f, 1);
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
-    private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
+    private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<>();
 
     public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
         this(GroovySystem.getMetaClassRegistry(), theClass, register, allowChangesAfterInit, add);
@@ -920,14 +920,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @see MetaObjectProtocol#getMethods()
      */
     public List<MetaMethod> getMethods() {
-        List<MetaMethod> methodList = new ArrayList<MetaMethod>();
+        List<MetaMethod> methodList = new ArrayList<>();
         methodList.addAll(this.expandoMethods.values());
         methodList.addAll(super.getMethods());
         return methodList;
     }
 
     public List<MetaProperty> getProperties() {
-        List<MetaProperty> propertyList = new ArrayList<MetaProperty>(super.getProperties());
+        List<MetaProperty> propertyList = new ArrayList<>(super.getProperties());
         return propertyList;
     }
 

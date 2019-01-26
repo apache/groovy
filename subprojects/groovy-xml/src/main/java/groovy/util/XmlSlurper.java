@@ -81,9 +81,9 @@ import java.util.Stack;
 public class XmlSlurper extends DefaultHandler {
     private final XMLReader reader;
     private Node currentNode = null;
-    private final Stack<Node> stack = new Stack<Node>();
+    private final Stack<Node> stack = new Stack<>();
     private final StringBuilder charBuffer = new StringBuilder();
-    private final Map<String, String> namespaceTagHints = new HashMap<String, String>();
+    private final Map<String, String> namespaceTagHints = new HashMap<>();
     private boolean keepIgnorableWhitespace = false;
     private boolean namespaceAware = false;
 
@@ -391,7 +391,7 @@ public class XmlSlurper extends DefaultHandler {
         addCdata();
 
         final Map<String, String> attributes = new NamespaceAwareHashMap();
-        final Map<String, String> attributeNamespaces = new HashMap<String, String>();
+        final Map<String, String> attributeNamespaces = new HashMap<>();
 
         for (int i = atts.getLength() - 1; i != -1; i--) {
             if (atts.getURI(i).length() == 0) {

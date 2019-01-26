@@ -31,7 +31,7 @@ public class AggregateBinding implements BindingUpdatable {
     protected  boolean bound;
 
     // use linked hash set so order is preserved
-    protected Set<BindingUpdatable> bindings = new LinkedHashSet<BindingUpdatable>();
+    protected Set<BindingUpdatable> bindings = new LinkedHashSet<>();
 
     public void addBinding(BindingUpdatable binding) {
         if (binding == null || bindings.contains(binding)) return;

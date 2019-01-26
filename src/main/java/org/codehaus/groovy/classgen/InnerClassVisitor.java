@@ -160,9 +160,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         BlockStatement block = new BlockStatement();
         // parameters = parameters of the constructor
         final int additionalParamCount = 1 + scope.getReferencedLocalVariablesCount();
-        List<Parameter> parameters = new ArrayList<Parameter>(expressions.size() + additionalParamCount);
+        List<Parameter> parameters = new ArrayList<>(expressions.size() + additionalParamCount);
         // superCallArguments = arguments for the super call == the constructor call arguments
-        List<Expression> superCallArguments = new ArrayList<Expression>(expressions.size());
+        List<Expression> superCallArguments = new ArrayList<>(expressions.size());
 
         // first we add a super() call for all expressions given in the 
         // constructor call expression

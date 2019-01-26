@@ -183,8 +183,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         generatePropertyMethods(cNode);
 
         // prepare fields
-        List<FieldNode> fields = new ArrayList<FieldNode>();
-        Set<String> fieldNames = new HashSet<String>();
+        List<FieldNode> fields = new ArrayList<>();
+        Set<String> fieldNames = new HashSet<>();
         boolean hasStatic = false;
         for (FieldNode field : cNode.getFields()) {
             if (!"metaClass".equals(field.getName()) && (!field.isSynthetic() || field.getName().indexOf('$') < 0)) {
@@ -215,8 +215,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
 
         // add methods
-        List<MethodNode> methods = new ArrayList<MethodNode>(cNode.getMethods());
-        List<MethodNode> nonPublicAPIMethods = new LinkedList<MethodNode>();
+        List<MethodNode> methods = new ArrayList<>(cNode.getMethods());
+        List<MethodNode> nonPublicAPIMethods = new LinkedList<>();
         List<Statement> staticInitStatements = null;
         for (final MethodNode methodNode : methods) {
             boolean declared = methodNode.getDeclaringClass() == cNode;
@@ -274,7 +274,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         copyClassAnnotations(cNode, helper);
         markAsGenerated(cNode, helper);
 
-        fields = new ArrayList<FieldNode>(cNode.getFields()); // reuse the full list of fields
+        fields = new ArrayList<>(cNode.getFields()); // reuse the full list of fields
         for (FieldNode field : fields) {
             cNode.removeField(field.getName());
         }
@@ -317,7 +317,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if (stmt instanceof BlockStatement) {
             return ((BlockStatement) stmt).getStatements();
         }
-        List<Statement> result = new ArrayList<Statement>();
+        List<Statement> result = new ArrayList<>();
         result.add(stmt);
         return result;
     }
@@ -558,8 +558,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 null
         );
         // copy annotations from field to dummy field
-        List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
-        List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+        List<AnnotationNode> copied = new LinkedList<>();
+        List<AnnotationNode> notCopied = new LinkedList<>();
         GeneralUtils.copyAnnotatedNodeAnnotations(field, copied, notCopied);
         dummyField.addAnnotations(copied);
         fieldHelper.addField(dummyField);
@@ -576,8 +576,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 null
         );
         // copy annotations from field to legacy dummy field
-        copied = new LinkedList<AnnotationNode>();
-        notCopied = new LinkedList<AnnotationNode>();
+        copied = new LinkedList<>();
+        notCopied = new LinkedList<>();
         GeneralUtils.copyAnnotatedNodeAnnotations(field, copied, notCopied);
         dummyField.addAnnotations(copied);
         fieldHelper.addField(dummyField);
@@ -614,7 +614,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private static List<AnnotationNode> filterAnnotations(List<AnnotationNode> annotations) {
-        List<AnnotationNode> result = new ArrayList<AnnotationNode>(annotations.size());
+        List<AnnotationNode> result = new ArrayList<>(annotations.size());
         for (AnnotationNode annotation : annotations) {
             if (!OVERRIDE_CLASSNODE.equals(annotation.getClassNode())) {
                 result.add(annotation);

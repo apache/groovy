@@ -147,8 +147,8 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     }
 
     private void createBuilderForAnnotatedClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno, boolean useSetters, boolean allNames, boolean force) {
-        List<String> excludes = new ArrayList<String>();
-        List<String> includes = new ArrayList<String>();
+        List<String> excludes = new ArrayList<>();
+        List<String> includes = new ArrayList<>();
         includes.add(Undefined.STRING);
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
@@ -221,7 +221,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     }
 
     private static List<FieldNode> convertParamsToFields(ClassNode builder, Parameter[] parameters) {
-        List<FieldNode> fieldNodes = new ArrayList<FieldNode>();
+        List<FieldNode> fieldNodes = new ArrayList<>();
         for(Parameter parameter: parameters) {
             Map<String,ClassNode> genericsSpec = createGenericsSpec(builder);
             ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, parameter.getType());
@@ -288,7 +288,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static void createBuildeeMethods(ClassNode buildee, MethodNode mNode, ClassNode builder, List<FieldNode> fields) {
         ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
-        List<Expression> argsList = new ArrayList<Expression>();
+        List<Expression> argsList = new ArrayList<>();
         Parameter initParam = param(paramType, "initializer");
         for (FieldNode fieldNode : fields) {
             argsList.add(propX(varX(initParam), fieldNode.getName()));
@@ -319,7 +319,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static ConstructorNode createInitializerConstructor(ClassNode buildee, ClassNode builder, List<FieldNode> fields) {
         ClassNode paramType = makeClassSafeWithGenerics(builder, setGenTypes(fields.size()));
-        List<Expression> argsList = new ArrayList<Expression>();
+        List<Expression> argsList = new ArrayList<>();
         Parameter initParam = param(paramType, "initializer");
         for (FieldNode fieldNode : fields) {
             argsList.add(propX(varX(initParam), fieldNode.getName()));
@@ -336,7 +336,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         String fieldName = fields.get(fieldPos).getName();
         String setterName = getSetterName(prefix, fieldName);
         GenericsType[] gtypes = new GenericsType[fields.size()];
-        List<Expression> argList = new ArrayList<Expression>();
+        List<Expression> argList = new ArrayList<>();
         for (int i = 0; i < fields.size(); i++) {
             gtypes[i] = i == fieldPos ? new GenericsType(ClassHelper.make(SET.class)) : makePlaceholder(i);
             argList.add(i == fieldPos ? propX(varX("this"), constX(fieldName)) : varX(fields.get(i).getName()));
@@ -367,7 +367,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     }
 
     private static List<FieldNode> filterFields(List<FieldNode> fieldNodes, List<String> includes, List<String> excludes, boolean allNames) {
-        List<FieldNode> fields = new ArrayList<FieldNode>();
+        List<FieldNode> fields = new ArrayList<>();
         for (FieldNode fNode : fieldNodes) {
             if (AbstractASTTransformation.shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
             fields.add(fNode);

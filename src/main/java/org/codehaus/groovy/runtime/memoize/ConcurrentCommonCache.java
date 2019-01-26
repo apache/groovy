@@ -45,7 +45,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * Constructs a cache with unlimited size
      */
     public ConcurrentCommonCache() {
-        commonCache = new CommonCache<K, V>();
+        commonCache = new CommonCache<>();
     }
 
     /**
@@ -56,7 +56,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * @param evictionStrategy LRU or FIFO, see {@link org.codehaus.groovy.runtime.memoize.EvictableCache.EvictionStrategy}
      */
     public ConcurrentCommonCache(int initialCapacity, int maxSize, EvictionStrategy evictionStrategy) {
-        commonCache = new CommonCache<K, V>(initialCapacity, maxSize, evictionStrategy);
+        commonCache = new CommonCache<>(initialCapacity, maxSize, evictionStrategy);
     }
 
     /**
@@ -67,7 +67,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * @param maxSize         max size of the LRU cache
      */
     public ConcurrentCommonCache(int initialCapacity, int maxSize) {
-        commonCache = new CommonCache<K, V>(initialCapacity, maxSize);
+        commonCache = new CommonCache<>(initialCapacity, maxSize);
     }
 
     /**
@@ -77,7 +77,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * @see #ConcurrentCommonCache(int, int)
      */
     public ConcurrentCommonCache(int maxSize) {
-        commonCache = new CommonCache<K, V>(maxSize);
+        commonCache = new CommonCache<>(maxSize);
     }
 
     /**
@@ -86,7 +86,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      * @param map the {@link java.util.Map} instance
      */
     public ConcurrentCommonCache(Map<K, V> map) {
-        commonCache = new CommonCache<K, V>(map);
+        commonCache = new CommonCache<>(map);
     }
 
     /**

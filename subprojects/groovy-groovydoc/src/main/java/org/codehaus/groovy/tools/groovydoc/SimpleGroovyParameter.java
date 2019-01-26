@@ -36,7 +36,7 @@ public class SimpleGroovyParameter implements GroovyParameter {
 
     public SimpleGroovyParameter(String name) {
         this.name = name;
-        annotationRefs = new ArrayList<GroovyAnnotationRef>();
+        annotationRefs = new ArrayList<>();
     }
 
     public String defaultValue() {

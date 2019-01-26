@@ -85,7 +85,7 @@ import java.util.List;
 class ASTFinder extends ContextualClassCodeVisitor {
 
     private final ASTNode initial;
-    private final List<TreeContext> matches = new LinkedList<TreeContext>();
+    private final List<TreeContext> matches = new LinkedList<>();
 
     ASTFinder(final ASTNode initial) {
         this.initial = initial;

@@ -174,7 +174,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * @return a list of values
      */
     public Object call(Object... args) {
-        List<Object> listContent = new ArrayList<Object>();
+        List<Object> listContent = new ArrayList<>();
         Collections.addAll(listContent, args);
         content = listContent;
 
@@ -204,7 +204,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
      * @return a list of values
      */
     public Object call(Iterable coll, Closure c) {
-        List<Object> listContent = new ArrayList<Object>();
+        List<Object> listContent = new ArrayList<>();
         if (coll != null) {
             for (Object it : coll) {
                 listContent.add(JsonDelegate.curryDelegateAndGetContent(c, it));
@@ -344,7 +344,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
     }
 
     private static List<Map<String, Object>> collectContentForEachEntry(Iterable coll, Closure closure) {
-        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> list = new ArrayList<>();
         for (Object it : coll) {
             list.add(JsonDelegate.curryDelegateAndGetContent(closure, it));
         }
@@ -352,7 +352,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
     }
 
     private Object setAndGetContent(String name, Object value) {
-        Map<String, Object> contentMap = new LinkedHashMap<String, Object>();
+        Map<String, Object> contentMap = new LinkedHashMap<>();
         contentMap.put(name, value);
         content = contentMap;
 

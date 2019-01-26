@@ -166,7 +166,7 @@ public class JsonOutput {
 
         JsonLexer lexer = new JsonLexer(new StringReader(jsonPayload));
         // Will store already created indents.
-        Map<Integer, char[]> indentCache = new HashMap<Integer, char[]>();
+        Map<Integer, char[]> indentCache = new HashMap<>();
         while (lexer.hasNext()) {
             JsonToken token = lexer.next();
             switch (token.getType()) {

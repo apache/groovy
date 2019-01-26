@@ -262,7 +262,7 @@ public class InvocationWriter {
                 operandStack.doGroovyCast(para[i].getType());
             }
             // last parameters wrapped in an array
-            List<Expression> lastParams = new LinkedList<Expression>();
+            List<Expression> lastParams = new LinkedList<>();
             for (int i=para.length-1; i<argumentList.size();i++) {
                 lastParams.add(argumentList.get(i));
             }
@@ -717,7 +717,7 @@ public class InvocationWriter {
 
     private static List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
         // sort in a new list to prevent side effects
-        List<ConstructorNode> constructors = new ArrayList<ConstructorNode>(callNode.getDeclaredConstructors());
+        List<ConstructorNode> constructors = new ArrayList<>(callNode.getDeclaredConstructors());
         Comparator comp = new Comparator() {
             public int compare(Object arg0, Object arg1) {
                 ConstructorNode c0 = (ConstructorNode) arg0;
@@ -789,7 +789,7 @@ public class InvocationWriter {
             mv.visitTypeInsn(NEW, BytecodeHelper.getClassInternalName(callNode));
         }
         mv.visitInsn(SWAP);
-        TreeMap<Integer,ConstructorNode> sortedConstructors = new TreeMap<Integer, ConstructorNode>();
+        TreeMap<Integer,ConstructorNode> sortedConstructors = new TreeMap<>();
         for (ConstructorNode constructor : constructors) {
             String typeDescriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, constructor.getParameters());
             int hash = BytecodeHelper.hashCode(typeDescriptor);

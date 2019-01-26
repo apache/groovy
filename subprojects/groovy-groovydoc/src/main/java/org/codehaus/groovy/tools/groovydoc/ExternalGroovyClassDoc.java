@@ -45,7 +45,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
 
     public ExternalGroovyClassDoc(Class externalClass) {
         this.externalClass = externalClass;
-        annotationRefs = new ArrayList<GroovyAnnotationRef>();
+        annotationRefs = new ArrayList<>();
     }
 
     public boolean isPrimitive() {

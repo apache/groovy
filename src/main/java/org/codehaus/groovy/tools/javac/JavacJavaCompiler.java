@@ -166,7 +166,7 @@ public class JavacJavaCompiler implements JavaCompiler {
 
     private String[] makeParameters(List<String> files, GroovyClassLoader parentClassLoader, boolean toCompileStubInMem) {
         Map options = config.getJointCompilationOptions();
-        LinkedList<String> paras = new LinkedList<String>();
+        LinkedList<String> paras = new LinkedList<>();
 
         File target = config.getTargetDirectory();
         if (target == null) target = new File(".");
@@ -203,7 +203,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         // append classpath if not already defined
         if (!hadClasspath) {
             // add all classpaths that compilation unit sees
-            List<String> paths = new ArrayList<String>(config.getClasspath());
+            List<String> paths = new ArrayList<>(config.getClasspath());
             ClassLoader cl = parentClassLoader;
             while (cl != null) {
                 if (cl instanceof URLClassLoader) {

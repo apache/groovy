@@ -86,7 +86,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         currentMethod = node;
         super.visitConstructorOrMethod(node, isConstructor);
         if (isConstructor) {
-            final Set<String> exceptions = new HashSet<String>();
+            final Set<String> exceptions = new HashSet<>();
             for (final Parameter param : node.getParameters()) {
                 exceptions.add(param.getName());
                 if (param.hasInitialExpression()) {
@@ -189,7 +189,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);
             if (fn != null) return fn;
-            List<ClassNode> interfacesToCheck = new ArrayList<ClassNode>(Arrays.asList(node.getInterfaces()));
+            List<ClassNode> interfacesToCheck = new ArrayList<>(Arrays.asList(node.getInterfaces()));
             while (!interfacesToCheck.isEmpty()) {
                 ClassNode nextInterface = interfacesToCheck.remove(0);
                 fn = nextInterface.getDeclaredField(fieldName);

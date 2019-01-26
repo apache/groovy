@@ -26,9 +26,9 @@ public class SimpleCache<K, V> implements Cache<K, V> {
 
     public SimpleCache(final int limit, CacheType type) {
         if (type.equals(CacheType.LRU)) {
-            cache = new CommonCache<K, V>(limit);
+            cache = new CommonCache<>(limit);
         } else {
-            cache = new CommonCache<K, V>(CommonCache.DEFAULT_INITIAL_CAPACITY, limit, EvictableCache.EvictionStrategy.FIFO);
+            cache = new CommonCache<>(CommonCache.DEFAULT_INITIAL_CAPACITY, limit, EvictableCache.EvictionStrategy.FIFO);
         }
     }
 

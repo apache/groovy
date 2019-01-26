@@ -39,7 +39,7 @@ import java.util.Map;
  */
 public class JComboBoxProperties {
     public static Map<String, TriggerBinding> getSyntheticProperties() {
-        Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
+        Map<String, TriggerBinding> result = new HashMap<>();
 
         // to match property name
         result.put(JComboBox.class.getName() + "#selectedItem", new TriggerBinding() {

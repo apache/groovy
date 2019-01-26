@@ -68,9 +68,9 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
             throw new GroovyRuntimeException("Module file hasn't set the module version using key [" + PropertiesModuleFactory.MODULE_VERSION_KEY + "]");
         String[] extensionClasses = properties.getProperty(MODULE_INSTANCE_CLASSES_KEY, "").trim().split("[,; ]");
         String[] staticExtensionClasses = properties.getProperty(MODULE_STATIC_CLASSES_KEY, "").trim().split("[,; ]");
-        List<Class> instanceClasses = new ArrayList<Class>(extensionClasses.length);
-        List<Class> staticClasses = new ArrayList<Class>(staticExtensionClasses.length);
-        List<String> errors = new LinkedList<String>();
+        List<Class> instanceClasses = new ArrayList<>(extensionClasses.length);
+        List<Class> staticClasses = new ArrayList<>(staticExtensionClasses.length);
+        List<String> errors = new LinkedList<>();
         loadExtensionClass(loader, extensionClasses, instanceClasses, errors);
         loadExtensionClass(loader, staticExtensionClasses, staticClasses, errors);
         if (!errors.isEmpty()) {

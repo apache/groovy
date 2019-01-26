@@ -36,7 +36,7 @@ import java.util.List;
 public class SqlWhereVisitor extends CodeVisitorSupport {
 
     private final StringBuffer buffer = new StringBuffer();
-    private final List<Object> parameters = new ArrayList<Object>();
+    private final List<Object> parameters = new ArrayList<>();
 
     public String getWhere() {
         return buffer.toString();

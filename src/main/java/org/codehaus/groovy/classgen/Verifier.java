@@ -219,11 +219,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         ClassNode[] classNodes = classNode.getInterfaces();
-        List<String> interfaces = new ArrayList<String>();
+        List<String> interfaces = new ArrayList<>();
         for (ClassNode classNode : classNodes) {
             interfaces.add(classNode.getName());
         }
-        Set<String> interfaceSet = new HashSet<String>(interfaces);
+        Set<String> interfaceSet = new HashSet<>(interfaces);
         if (interfaceSet.size() != interfaces.size()) {
             throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaces, classNode);
         }
@@ -284,7 +284,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private static void checkForDuplicateMethods(ClassNode cn) {
-        Set<String> descriptors = new HashSet<String>();
+        Set<String> descriptors = new HashSet<>();
         for (MethodNode mn : cn.getMethods()) {
             if (mn.isSynthetic()) continue;
             String mySig = methodDescriptorWithoutReturnType(mn);
@@ -991,7 +991,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         }
                     });
 
-            List<Statement> swapCall = new ArrayList<Statement>(1);
+            List<Statement> swapCall = new ArrayList<>(1);
             swapCall.add(seq);
             node.addStaticInitializerStatements(swapCall, true);
         }
@@ -1008,11 +1008,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         // in case of this(...) let the other constructor do the init
         if (first != null && (first.isThisCall())) return;
 
-        List<Statement> statements = new ArrayList<Statement>();
-        List<Statement> staticStatements = new ArrayList<Statement>();
+        List<Statement> statements = new ArrayList<>();
+        List<Statement> staticStatements = new ArrayList<>();
         final boolean isEnum = node.isEnum();
-        List<Statement> initStmtsAfterEnumValuesInit = new ArrayList<Statement>();
-        Set<String> explicitStaticPropsInEnum = new HashSet<String>();
+        List<Statement> initStmtsAfterEnumValuesInit = new ArrayList<>();
+        Set<String> explicitStaticPropsInEnum = new HashSet<>();
         if (isEnum) {
             for (PropertyNode propNode : node.getProperties()) {
                 if (!propNode.isSynthetic() && propNode.getField().isStatic()) {
@@ -1246,10 +1246,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         // unimplemented abstract methods from interfaces
         Map<String, MethodNode> abstractMethods = ClassNodeUtils.getDeclaredMethodsFromInterfaces(classNode);
-        Map<String, MethodNode> allInterfaceMethods = new HashMap<String, MethodNode>(abstractMethods);
+        Map<String, MethodNode> allInterfaceMethods = new HashMap<>(abstractMethods);
         ClassNodeUtils.addDeclaredMethodsFromAllInterfaces(classNode, allInterfaceMethods);
 
-        List<MethodNode> declaredMethods = new ArrayList<MethodNode>(classNode.getMethods());
+        List<MethodNode> declaredMethods = new ArrayList<>(classNode.getMethods());
         // remove all static, private and package private methods
         for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext(); ) {
             MethodNode m = (MethodNode) methodsIterator.next();
@@ -1269,7 +1269,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         addCovariantMethods(classNode, declaredMethods, abstractMethods, methodsToAdd, genericsSpec);
 
-        Map<String, MethodNode> declaredMethodsMap = new HashMap<String, MethodNode>();
+        Map<String, MethodNode> declaredMethodsMap = new HashMap<>();
         if (!methodsToAdd.isEmpty()) {
             for (MethodNode mn : declaredMethods) {
                 declaredMethodsMap.put(mn.getTypeDescriptor(), mn);

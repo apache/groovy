@@ -144,7 +144,7 @@ public abstract class TraitComposer {
                 Parameter[] origParams = new Parameter[helperMethodParams.length - 1];
                 Parameter[] params = new Parameter[helperMethodParams.length - 1];
                 System.arraycopy(methodNode.getParameters(), 1, params, 0, params.length);
-                Map<String,ClassNode> methodGenericsSpec = new LinkedHashMap<String, ClassNode>(genericsSpec);
+                Map<String,ClassNode> methodGenericsSpec = new LinkedHashMap<>(genericsSpec);
                 MethodNode originalMethod = trait.getMethod(name, params);
                 // Original method may be null for the case of private or static methods
                 if (originalMethod!=null) {
@@ -155,8 +155,8 @@ public abstract class TraitComposer {
                     ClassNode originType = parameter.getOriginType();
                     ClassNode fixedType = correctToGenericsSpecRecurse(methodGenericsSpec, originType);
                     Parameter newParam = new Parameter(fixedType, "arg" + i);
-                    List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
-                    List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+                    List<AnnotationNode> copied = new LinkedList<>();
+                    List<AnnotationNode> notCopied = new LinkedList<>();
                     GeneralUtils.copyAnnotatedNodeAnnotations(parameter, copied, notCopied);
                     newParam.addAnnotations(copied);
                     params[i - 1] = newParam;
@@ -182,7 +182,7 @@ public abstract class TraitComposer {
             // we should implement the field helper interface too
             cNode.addInterface(fieldHelperClassNode);
             // implementation of methods
-            List<MethodNode> declaredMethods = new LinkedList<MethodNode>();
+            List<MethodNode> declaredMethods = new LinkedList<>();
             for (MethodNode declaredMethod : fieldHelperClassNode.getAllDeclaredMethods()) {
                 if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
                     declaredMethods.add(0, declaredMethod);
@@ -249,8 +249,8 @@ public abstract class TraitComposer {
                     if (getter) {
                         // add field
                         if (helperField!=null) {
-                            List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
-                            List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
+                            List<AnnotationNode> copied = new LinkedList<>();
+                            List<AnnotationNode> notCopied = new LinkedList<>();
                             GeneralUtils.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
                             FieldNode fieldNode = cNode.addField(fieldName, fieldMods, returnType, null);
                             fieldNode.addAnnotations(copied);
@@ -264,7 +264,7 @@ public abstract class TraitComposer {
                                     if (isStatic == 0) {
                                         cNode.addObjectInitializerStatements(stmt);
                                     } else {
-                                        List<Statement> staticStatements = new ArrayList<Statement>();
+                                        List<Statement> staticStatements = new ArrayList<>();
                                         staticStatements.add(stmt);
                                         cNode.addStaticInitializerStatements(staticStatements, true);
                                     }
@@ -361,7 +361,7 @@ public abstract class TraitComposer {
                 exceptionNodes,
                 new ExpressionStatement(forwardExpression)
         );
-        List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
+        List<AnnotationNode> copied = new LinkedList<>();
         List<AnnotationNode> notCopied = Collections.emptyList(); // at this point, should *always* stay empty
         GeneralUtils.copyAnnotatedNodeAnnotations(helperMethod, copied, notCopied);
         if (!copied.isEmpty()) {
@@ -375,7 +375,7 @@ public abstract class TraitComposer {
             // null indicates a static method which may still need generics correction
             GenericsType[] genericsTypes = helperMethod.getGenericsTypes();
             if (genericsTypes != null) {
-                Map<String, ClassNode> methodSpec = new HashMap<String, ClassNode>();
+                Map<String, ClassNode> methodSpec = new HashMap<>();
                 methodSpec = GenericsUtils.addMethodGenerics(helperMethod, methodSpec);
                 GenericsType[] newGt = GenericsUtils.applyGenericsContextToPlaceHolders(methodSpec, helperMethod.getGenericsTypes());
                 forwarder.setGenericsTypes(newGt);
@@ -436,7 +436,7 @@ public abstract class TraitComposer {
 
     private static GenericsType[] removeNonPlaceHolders(GenericsType[] oldTypes) {
         if (oldTypes==null || oldTypes.length==0) return oldTypes;
-        ArrayList<GenericsType> l = new ArrayList<GenericsType>(Arrays.asList(oldTypes));
+        ArrayList<GenericsType> l = new ArrayList<>(Arrays.asList(oldTypes));
         Iterator<GenericsType> it = l.iterator();
         boolean modified = false;
         while (it.hasNext()) {
@@ -457,11 +457,11 @@ public abstract class TraitComposer {
      * @param genericsSpec
      */
     private static void createSuperForwarder(ClassNode targetNode, MethodNode forwarder, final Map<String,ClassNode> genericsSpec) {
-        List<ClassNode> interfaces = new ArrayList<ClassNode>(Traits.collectAllInterfacesReverseOrder(targetNode, new LinkedHashSet<ClassNode>()));
+        List<ClassNode> interfaces = new ArrayList<>(Traits.collectAllInterfacesReverseOrder(targetNode, new LinkedHashSet<>()));
         String name = forwarder.getName();
         Parameter[] forwarderParameters = forwarder.getParameters();
-        LinkedHashSet<ClassNode> traits = new LinkedHashSet<ClassNode>();
-        List<MethodNode> superForwarders = new LinkedList<MethodNode>();
+        LinkedHashSet<ClassNode> traits = new LinkedHashSet<>();
+        List<MethodNode> superForwarders = new LinkedList<>();
         for (ClassNode node : interfaces) {
             if (Traits.isTrait(node)) {
                 MethodNode method = node.getDeclaredMethod(name, forwarderParameters);

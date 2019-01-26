@@ -39,8 +39,8 @@ public class GStringExpression extends Expression {
     public GStringExpression(String verbatimText) {
         this.verbatimText = verbatimText;
         super.setType(ClassHelper.GSTRING_TYPE);
-        this.strings = new ArrayList<ConstantExpression>();
-        this.values = new ArrayList<Expression>();
+        this.strings = new ArrayList<>();
+        this.values = new ArrayList<>();
     }
 
     public GStringExpression(String verbatimText, List<ConstantExpression> strings, List<Expression> values) {

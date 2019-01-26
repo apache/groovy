@@ -69,7 +69,7 @@ public class ImmutablePropertyUtils {
               This list can by extended by providing "known immutable" classes
               via Immutable.knownImmutableClasses
              */
-    private static Set<String> builtinImmutables = new HashSet<String>(Arrays.asList(
+    private static Set<String> builtinImmutables = new HashSet<>(Arrays.asList(
             "java.lang.Class",
             "java.lang.Boolean",
             "java.lang.Byte",
@@ -214,7 +214,7 @@ public class ImmutablePropertyUtils {
     public static List<String> getKnownImmutables(AbstractASTTransformation xform, ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
         AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
-        final List<String> immutables = new ArrayList<String>();
+        final List<String> immutables = new ArrayList<>();
         if (anno == null) return immutables;
 
         final Expression expression = anno.getMember(MEMBER_KNOWN_IMMUTABLES);
@@ -239,7 +239,7 @@ public class ImmutablePropertyUtils {
     public static List<String> getKnownImmutableClasses(AbstractASTTransformation xform, ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
         AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
-        final List<String> immutableClasses = new ArrayList<String>();
+        final List<String> immutableClasses = new ArrayList<>();
 
         if (anno == null) return immutableClasses;
         final Expression expression = anno.getMember(MEMBER_KNOWN_IMMUTABLE_CLASSES);

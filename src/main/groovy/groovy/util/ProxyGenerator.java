@@ -126,7 +126,7 @@ public class ProxyGenerator {
     }
 
     public GroovyObject instantiateAggregateFromBaseClass(Closure cl, Class clazz) {
-        Map<String, Closure> m = new HashMap<String, Closure>();
+        Map<String, Closure> m = new HashMap<>();
         m.put("*", cl);
         return instantiateAggregateFromBaseClass(m, clazz, null);
     }
@@ -144,7 +144,7 @@ public class ProxyGenerator {
     }
 
     public GroovyObject instantiateAggregateFromInterface(Map map, Class clazz) {
-        List<Class> interfaces = new ArrayList<Class>();
+        List<Class> interfaces = new ArrayList<>();
         interfaces.add(clazz);
         return instantiateAggregate(map, interfaces);
     }
@@ -222,7 +222,7 @@ public class ProxyGenerator {
                 base = Object.class;
             }
         }
-        Set<String> keys = closureMap == EMPTY_CLOSURE_MAP ? EMPTY_KEYSET : new HashSet<String>();
+        Set<String> keys = closureMap == EMPTY_CLOSURE_MAP ? EMPTY_KEYSET : new HashSet<>();
         for (Object o : closureMap.keySet()) {
             keys.add(o.toString());
         }

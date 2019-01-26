@@ -94,7 +94,7 @@ public class CompileUnit implements NodeMetaDataHandler {
      * @return a list of all the classes in each module in the compilation unit
      */
     public List<ClassNode> getClasses() {
-        List<ClassNode> answer = new ArrayList<ClassNode>();
+        List<ClassNode> answer = new ArrayList<>();
         for (ModuleNode module : modules) {
             answer.addAll(module.getClasses());
         }

@@ -133,7 +133,7 @@ public class ClassNodeUtils {
     public static Map<String, MethodNode> getDeclaredMethodsFromSuper(ClassNode cNode) {
         ClassNode parent = cNode.getSuperClass();
         if (parent == null) {
-            return new HashMap<String, MethodNode>();
+            return new HashMap<>();
         }
         return parent.getDeclaredMethodsMap();
     }
@@ -166,7 +166,7 @@ public class ClassNodeUtils {
      * @return A map of methods
      */
     public static Map<String, MethodNode> getDeclaredMethodsFromInterfaces(ClassNode cNode) {
-        Map<String, MethodNode> result = new HashMap<String, MethodNode>();
+        Map<String, MethodNode> result = new HashMap<>();
         ClassNode[] interfaces = cNode.getInterfaces();
         for (ClassNode iface : interfaces) {
             result.putAll(iface.getDeclaredMethodsMap());
@@ -385,7 +385,7 @@ public class ClassNodeUtils {
      */
     public static FieldNode getField(ClassNode classNode, String fieldName) {
         ClassNode node = classNode;
-        Set<String> visited = new HashSet<String>();
+        Set<String> visited = new HashSet<>();
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);
             if (fn != null) return fn;

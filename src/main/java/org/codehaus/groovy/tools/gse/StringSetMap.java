@@ -41,14 +41,14 @@ public class StringSetMap extends LinkedHashMap<String,Set<String>> {
         String name = (String) o;
         Set<String> set = super.get(name);
         if (set==null) {
-            set = new LinkedHashSet<String>();
+            set = new LinkedHashSet<>();
             put(name,set);
         }
         return set;
     }
 
     public void makeTransitiveHull() {
-        Set<String> nameSet = new TreeSet<String>(keySet());
+        Set<String> nameSet = new TreeSet<>(keySet());
         
         for (String k: nameSet) {
             StringSetMap delta = new StringSetMap();

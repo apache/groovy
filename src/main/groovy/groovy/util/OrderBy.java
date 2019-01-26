@@ -38,14 +38,14 @@ public class OrderBy<T> implements Comparator<T>, Serializable {
     private static final long serialVersionUID = 8385130064804116654L;
     private final List<Closure> closures;
     private boolean equalityCheck;
-    private final NumberAwareComparator<Object> numberAwareComparator = new NumberAwareComparator<Object>();
+    private final NumberAwareComparator<Object> numberAwareComparator = new NumberAwareComparator<>();
 
     public OrderBy() {
-        this(new ArrayList<Closure>(), false);
+        this(new ArrayList<>(), false);
     }
 
     public OrderBy(boolean equalityCheck) {
-        this(new ArrayList<Closure>(), equalityCheck);
+        this(new ArrayList<>(), equalityCheck);
     }
 
     public OrderBy(Closure closure) {
@@ -53,7 +53,7 @@ public class OrderBy<T> implements Comparator<T>, Serializable {
     }
 
     public OrderBy(Closure closure, boolean equalityCheck) {
-        this(new ArrayList<Closure>(), equalityCheck);
+        this(new ArrayList<>(), equalityCheck);
         closures.add(closure);
     }
 

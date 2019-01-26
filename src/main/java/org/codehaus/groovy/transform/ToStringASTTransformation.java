@@ -178,7 +178,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         // def _result = new StringBuilder()
         final Expression result = localVarX("_result");
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
-        List<ToStringElement> elements = new ArrayList<ToStringElement>();
+        List<ToStringElement> elements = new ArrayList<>();
 
         // def $toStringFirst = true
         final VariableExpression first = varX("$toStringFirst");
@@ -188,12 +188,12 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         String className = (includePackage) ? cNode.getName() : cNode.getNameWithoutPackage();
         body.addStatement(appendS(result, constX(className + "(")));
 
-        Set<String> names = new HashSet<String>();
+        Set<String> names = new HashSet<>();
         List<PropertyNode> superList;
         if (includeSuperProperties || includeSuperFields) {
             superList = getAllProperties(names, cNode, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, allProperties, false, true, true, true, allNames, false);
         } else {
-            superList = new ArrayList<PropertyNode>();
+            superList = new ArrayList<>();
         }
         List<PropertyNode> list = getAllProperties(names, cNode, cNode,true, includeFields, allProperties, false, false, true, false, allNames, false);
         list.addAll(superList);

@@ -106,7 +106,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
      * by a concrete declared/inherited method.
      */
     private static Map<String, MethodNode> getAllCorrectedMethodsMap(ClassNode cNode) {
-        Map<String, MethodNode> result = new HashMap<String, MethodNode>();
+        Map<String, MethodNode> result = new HashMap<>();
         for (MethodNode mn : cNode.getMethods()) {
             result.put(methodDescriptorWithoutReturnType(mn), mn);
         }
@@ -127,8 +127,8 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
                     }
                 }
             }
-            List<ClassNode> interfaces = new ArrayList<ClassNode>(Arrays.asList(next.getInterfaces()));
-            Map<String, ClassNode> updatedGenericsSpec = new HashMap<String, ClassNode>(genericsSpec);
+            List<ClassNode> interfaces = new ArrayList<>(Arrays.asList(next.getInterfaces()));
+            Map<String, ClassNode> updatedGenericsSpec = new HashMap<>(genericsSpec);
             while (!interfaces.isEmpty()) {
                 ClassNode origInterface = interfaces.remove(0);
                 if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {

@@ -187,7 +187,7 @@ public class CompilerConfiguration {
     /**
      * extensions used to find a groovy files
      */
-    private Set<String> scriptExtensions = new LinkedHashSet<String>();
+    private Set<String> scriptExtensions = new LinkedHashSet<>();
 
     /**
      * if set to true recompilation is enabled
@@ -214,7 +214,7 @@ public class CompilerConfiguration {
      */
     private Map<String, Boolean> optimizationOptions;
 
-    private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<CompilationCustomizer>();
+    private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<>();
 
     /**
      * Global AST transformations which should not be loaded even if they are
@@ -337,7 +337,7 @@ public class CompilerConfiguration {
         setWarningLevel(configuration.getWarningLevel());
         setOutput(configuration.getOutput());
         setTargetDirectory(configuration.getTargetDirectory());
-        setClasspathList(new LinkedList<String>(configuration.getClasspath()));
+        setClasspathList(new LinkedList<>(configuration.getClasspath()));
         setVerbose(configuration.getVerbose());
         setDebug(configuration.getDebug());
         setParameters(configuration.getParameters());
@@ -351,12 +351,12 @@ public class CompilerConfiguration {
         setTargetDirectory(configuration.getTargetDirectory());
         Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
         if (jointCompilationOptions != null) {
-            jointCompilationOptions = new HashMap<String, Object>(jointCompilationOptions);
+            jointCompilationOptions = new HashMap<>(jointCompilationOptions);
         }
         setJointCompilationOptions(jointCompilationOptions);
         setPluginFactory(configuration.getPluginFactory());
         setScriptExtensions(configuration.getScriptExtensions());
-        setOptimizationOptions(new HashMap<String, Boolean>(configuration.getOptimizationOptions()));
+        setOptimizationOptions(new HashMap<>(configuration.getOptimizationOptions()));
     }
 
     /**
@@ -575,7 +575,7 @@ public class CompilerConfiguration {
         text = configuration.getProperty("groovy.disabled.global.ast.transformations");
         if (text!=null) {
             String[] classNames = text.split(",\\s*}");
-            Set<String> blacklist = new HashSet<String>(Arrays.asList(classNames));
+            Set<String> blacklist = new HashSet<>(Arrays.asList(classNames));
             setDisabledGlobalASTTransformations(blacklist);
         }
     }
@@ -674,7 +674,7 @@ public class CompilerConfiguration {
      * Sets the classpath.
      */
     public void setClasspath(String classpath) {
-        this.classpath = new LinkedList<String>();
+        this.classpath = new LinkedList<>();
         StringTokenizer tokenizer = new StringTokenizer(classpath, File.pathSeparator);
         while (tokenizer.hasMoreTokens()) {
             this.classpath.add(tokenizer.nextToken());
@@ -686,7 +686,7 @@ public class CompilerConfiguration {
      * @param parts list of strings containing the classpath parts
      */
     public void setClasspathList(List<String> parts) {
-        this.classpath = new LinkedList<String>(parts);
+        this.classpath = new LinkedList<>(parts);
     }
 
     /**
@@ -777,7 +777,7 @@ public class CompilerConfiguration {
     }
 
     public void setScriptExtensions(Set<String> scriptExtensions) {
-        if(scriptExtensions == null) scriptExtensions = new LinkedHashSet<String>();
+        if(scriptExtensions == null) scriptExtensions = new LinkedHashSet<>();
         this.scriptExtensions = scriptExtensions;
     }
 

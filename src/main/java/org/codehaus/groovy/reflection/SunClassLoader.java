@@ -34,7 +34,7 @@ import java.util.Map;
  * Special class loader, which when running on Sun VM allows to generate accessor classes for any method
  */
 public class SunClassLoader extends ClassLoader implements Opcodes {
-    protected final Map<String,Class> knownClasses = new HashMap<String,Class>();
+    protected final Map<String,Class> knownClasses = new HashMap<>();
 
     protected static final SunClassLoader sunVM;
 

@@ -64,7 +64,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         super(configuration, null, groovyClassLoader, transformClassLoader);
         this.configuration = configuration;
         this.memStubEnabled = configuration.isMemStubEnabled();
-        this.javaSources = new LinkedList<String>();
+        this.javaSources = new LinkedList<>();
         Map options = configuration.getJointCompilationOptions();
         this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
         boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());

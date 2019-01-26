@@ -159,7 +159,7 @@ public class GroovyRootDocBuilder {
     public void buildTree(List<String> filenames) throws IOException {
         setOverview();
 
-        List<File> sourcepathFiles = new ArrayList<File>();
+        List<File> sourcepathFiles = new ArrayList<>();
         if (sourcepaths != null) {
             for (String sourcepath : sourcepaths) {
                 sourcepathFiles.add(new File(sourcepath).getAbsoluteFile());
