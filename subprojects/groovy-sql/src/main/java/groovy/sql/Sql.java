@@ -294,12 +294,8 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     public static void withInstance(String url, Closure c) throws SQLException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url);
+        try (Sql sql = newInstance(url)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -334,12 +330,8 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     public static void withInstance(String url, Properties properties, Closure c) throws SQLException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, properties);
+        try (Sql sql = newInstance(url, properties)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -380,12 +372,8 @@ public class Sql implements AutoCloseable {
      */
     public static void withInstance(String url, Properties properties, String driverClassName, Closure c)
             throws SQLException, ClassNotFoundException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, properties, driverClassName);
+        try (Sql sql = newInstance(url, properties, driverClassName)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -420,12 +408,8 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     public static void withInstance(String url, String user, String password, Closure c) throws SQLException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, user, password);
+        try (Sql sql = newInstance(url, user, password)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -466,12 +450,8 @@ public class Sql implements AutoCloseable {
      */
     public static void withInstance(String url, String user, String password, String driverClassName, Closure c)
             throws SQLException, ClassNotFoundException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, user, password, driverClassName);
+        try (Sql sql = newInstance(url, user, password, driverClassName)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -505,12 +485,8 @@ public class Sql implements AutoCloseable {
      */
     public static void withInstance(String url, String driverClassName, Closure c)
             throws SQLException, ClassNotFoundException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, driverClassName);
+        try (Sql sql = newInstance(url, driverClassName)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -622,12 +598,8 @@ public class Sql implements AutoCloseable {
      * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static void withInstance(Map<String, Object> args, Closure c) throws SQLException, ClassNotFoundException {
-        Sql sql = null;
-        try {
-            sql = newInstance(args);
+        try (Sql sql = newInstance(args)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
