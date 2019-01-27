@@ -19,9 +19,13 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.vmplugin.v7.Java7;
 
 import java.lang.annotation.ElementType;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,5 +66,21 @@ public class Java8 extends Java7 {
                 return AnnotationNode.TYPE_USE_TARGET;
         }
         return super.getElementCode(value);
+    }
+
+    @Override
+    protected Parameter[] processParameters(CompileUnit compileUnit, Method m) {
+        java.lang.reflect.Parameter[] parameters = m.getParameters();
+        Type[] types = m.getGenericParameterTypes();
+        Parameter[] params = Parameter.EMPTY_ARRAY;
+        if (types.length > 0) {
+            params = new Parameter[types.length];
+            for (int i = 0; i < params.length; i++) {
+                java.lang.reflect.Parameter p = parameters[i];
+                String name = p.isNamePresent() ? p.getName() : "param" + i;
+                params[i] = makeParameter(compileUnit, types[i], m.getParameterTypes()[i], m.getParameterAnnotations()[i], name);
+            }
+        }
+        return params;
     }
 }
