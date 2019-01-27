@@ -31,6 +31,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -83,29 +84,29 @@ public class JavacJavaCompiler implements JavaCompiler {
         return javacReturnValue;
     }
 
-    private boolean doCompileWithSystemJavaCompiler(CompilationUnit cu, List<String> files, String[] javacParameters, StringBuilderWriter javacOutput) {
+    private boolean doCompileWithSystemJavaCompiler(CompilationUnit cu, List<String> files, String[] javacParameters, StringBuilderWriter javacOutput) throws IOException {
         javax.tools.JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, charset);
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, charset)) {
+            final Set<JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
 
-        final Set<JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
+            // add java source files to compile
+            fileManager.getJavaFileObjectsFromFiles(
+                    files.stream()
+                            .map(File::new)
+                            .collect(Collectors.toList())
+            ).forEach(compilationUnitSet::add);
 
-        // add java source files to compile
-        fileManager.getJavaFileObjectsFromFiles(
-                files.stream()
-                        .map(File::new)
-                        .collect(Collectors.toList())
-        ).forEach(compilationUnitSet::add);
+            javax.tools.JavaCompiler.CompilationTask compilationTask = compiler.getTask(
+                    javacOutput,
+                    fileManager,
+                    null,
+                    Arrays.asList(javacParameters),
+                    Collections.emptyList(),
+                    compilationUnitSet
+            );
 
-        javax.tools.JavaCompiler.CompilationTask compilationTask = compiler.getTask(
-                javacOutput,
-                fileManager,
-                null,
-                Arrays.asList(javacParameters),
-                Collections.emptyList(),
-                compilationUnitSet
-        );
-
-        return compilationTask.call();
+            return compilationTask.call();
+        }
     }
 
     public void compile(List<String> files, CompilationUnit cu) {
@@ -114,7 +115,7 @@ public class JavacJavaCompiler implements JavaCompiler {
 
     private void compile(List<String> files, CompilationUnit cu, boolean toCompileStubInMem) {
         String[] javacParameters = makeParameters(files, cu.getClassLoader(), toCompileStubInMem);
-        StringBuilderWriter javacOutput = new StringBuilderWriter();;
+        StringBuilderWriter javacOutput = new StringBuilderWriter();
         int javacReturnValue = 0;
         try {
             if (toCompileStubInMem) {
@@ -125,6 +126,9 @@ public class JavacJavaCompiler implements JavaCompiler {
                     }
                 } catch (IllegalArgumentException e) {
                     javacReturnValue = 2; // any of the options are invalid
+                    cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
+                } catch (IOException e) {
+                    javacReturnValue = 1;
                     cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
                 }
             } else {
