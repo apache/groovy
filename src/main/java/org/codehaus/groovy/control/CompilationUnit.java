@@ -893,15 +893,8 @@ public class CompilationUnit extends ProcessingUnit {
                 // try inner classes
                 cn = cu.getGeneratedInnerClass(name);
                 if (cn!=null) return cn;
-                // try class loader classes
-                try {
-                    cn = ClassHelper.make(
-                            cu.getClassLoader().loadClass(name,false,true),
-                            false);
-                } catch (Exception e) {
-                    throw new GroovyBugError(e);
-                }
-                return cn;
+                ClassNodeResolver.LookupResult lookupResult = getClassNodeResolver().resolveName(name, CompilationUnit.this);
+                return lookupResult == null ? null : lookupResult.getClassNode();
             }
             private ClassNode getCommonSuperClassNode(ClassNode c, ClassNode d) {
                 // adapted from ClassWriter code
