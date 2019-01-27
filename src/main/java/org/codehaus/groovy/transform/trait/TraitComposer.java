@@ -154,7 +154,7 @@ public abstract class TraitComposer {
                     Parameter parameter = helperMethodParams[i];
                     ClassNode originType = parameter.getOriginType();
                     ClassNode fixedType = correctToGenericsSpecRecurse(methodGenericsSpec, originType);
-                    Parameter newParam = new Parameter(fixedType, "arg" + i);
+                    Parameter newParam = new Parameter(fixedType, parameter.getName());
                     List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                     List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
                     GeneralUtils.copyAnnotatedNodeAnnotations(parameter, copied, notCopied);
