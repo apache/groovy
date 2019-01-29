@@ -2688,4 +2688,29 @@ assert c.b() == 2
             assert new CustomProp() {}
         '''
     }
+
+    //GROOVY-8272
+    void testTraitAccessToInheritedStaticMethods() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            trait Foo {
+                static String go() {
+                    'Go!'
+                }
+            }
+
+            @CompileStatic
+            trait Bar extends Foo {
+                String doIt() {
+                    go().toUpperCase()
+                }
+            }
+
+            class Main implements Bar {}
+
+            assert new Main().doIt() == 'GO!'
+        '''
+    }
 }
