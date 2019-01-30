@@ -1290,7 +1290,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         ClassNode node = this;
         do {
             for (MethodNode method : getMethods(name)) {
-                if (method.getParameters().length == count && !method.isStatic()) {
+                if (hasCompatibleNumberOfArgs(method, count) && !method.isStatic()) {
                     return true;
                 }
             }
@@ -1315,10 +1315,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         TupleExpression args = (TupleExpression) arguments;
         do {
             for (MethodNode method : node.getMethods(name)) {
-                if (method.getParameters().length == count) {
+                if (hasCompatibleNumberOfArgs(method, count)) {
                     boolean match = true;
                     for (int i = 0; i != count; ++i)
-                        if (!args.getType().isDerivedFrom(method.getParameters()[i].getType())) {
+                        if (!hasCompatibleType(args, method, i)) {
                             match = false;
                             break;
                         }
@@ -1334,7 +1334,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
                             match = true;
                             for (int i = 0; i != count; ++i)
-                                if (!res.getParameters()[i].getType().equals(method.getParameters()[i].getType())) {
+                                // prefer super method if it matches better
+                                if (!hasExactMatchingCompatibleType(res, method, i)) {
                                     match = false;
                                     break;
                                 }
@@ -1349,6 +1350,27 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         while (node != null);
 
         return res;
+    }
+
+    private boolean hasExactMatchingCompatibleType(MethodNode current, MethodNode newCandidate, int i) {
+        int lastParamIndex = newCandidate.getParameters().length - 1;
+        return current.getParameters()[i].getType().equals(newCandidate.getParameters()[i].getType())
+                || (isPotentialVarArg(newCandidate, lastParamIndex) && i >= lastParamIndex && current.getParameters()[i].getType().equals(newCandidate.getParameters()[lastParamIndex].getType().componentType));
+    }
+
+    private boolean hasCompatibleType(TupleExpression args, MethodNode method, int i) {
+        int lastParamIndex = method.getParameters().length - 1;
+        return (i <= lastParamIndex && args.getExpression(i).getType().isDerivedFrom(method.getParameters()[i].getType()))
+                || (isPotentialVarArg(method, lastParamIndex) && i >= lastParamIndex  && args.getExpression(i).getType().isDerivedFrom(method.getParameters()[lastParamIndex].getType().componentType));
+    }
+
+    private boolean hasCompatibleNumberOfArgs(MethodNode method, int count) {
+        int lastParamIndex = method.getParameters().length - 1;
+        return method.getParameters().length == count || (isPotentialVarArg(method, lastParamIndex) && count >= lastParamIndex);
+    }
+
+    private boolean isPotentialVarArg(MethodNode newCandidate, int lastParamIndex) {
+        return lastParamIndex >= 0 && newCandidate.getParameters()[lastParamIndex].getType().isArray();
     }
 
     /**
