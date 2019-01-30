@@ -32,7 +32,7 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
                 <books>
                     <book available="20" id="1">
                         <title>Don Xijote</title>
-                        <author id="1">Manuel De Cervantes</author>
+                        <author id="1">Miguel De Cervantes</author>
                     </book>
                     <book available="14" id="2">
                         <title>Catcher in the Rye</title>
@@ -44,7 +44,7 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
                    </book>
                    <book available="5" id="4">
                        <title>Don Xijote</title>
-                       <author id="4">Manuel De Cervantes</author>
+                       <author id="4">Miguel De Cervantes</author>
                    </book>
                </books>
            </value>
@@ -74,7 +74,7 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         def response = new XmlSlurper().parseText(books)
         def authorResult = response.value.books.book[0].author
 
-        assert authorResult.text() == 'Manuel De Cervantes'
+        assert authorResult.text() == 'Miguel De Cervantes'
         // end::testGettingANodeText[]
     }
 
