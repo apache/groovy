@@ -18,12 +18,10 @@
  */
 package groovy.xml
 
-import groovy.util.GroovyTestCase
-
 /**
-* Tests for the Groovy Xml user guide related to XmlUtil.
-*/
-class UserGuideXmlUtilTest  extends GroovyTestCase {
+ * Tests for the Groovy Xml user guide related to XmlUtil.
+ */
+class UserGuideXmlUtilTest extends GroovyTestCase {
 
     // tag::responseBookXml[]
     def xml = """
@@ -32,7 +30,7 @@ class UserGuideXmlUtilTest  extends GroovyTestCase {
             <books>
                 <book id="2">
                     <title>Don Xijote</title>
-                    <author id="1">Manuel De Cervantes</author>
+                    <author id="1">Miguel De Cervantes</author>
                 </book>
             </books>
         </value>
@@ -43,11 +41,11 @@ class UserGuideXmlUtilTest  extends GroovyTestCase {
     void testGettingANode() {
         // tag::testGettingANode[]
         def response = new XmlParser().parseText(xml)
-        def nodeToSerialize = response.'**'.find {it.name() == 'author'}
+        def nodeToSerialize = response.'**'.find { it.name() == 'author' }
         def nodeAsText = XmlUtil.serialize(nodeToSerialize)
 
         assert nodeAsText ==
-            XmlUtil.serialize('<?xml version="1.0" encoding="UTF-8"?><author id="1">Manuel De Cervantes</author>')
+                XmlUtil.serialize('<?xml version="1.0" encoding="UTF-8"?><author id="1">Miguel De Cervantes</author>')
         // end::testGettingANode[]
     }
 
