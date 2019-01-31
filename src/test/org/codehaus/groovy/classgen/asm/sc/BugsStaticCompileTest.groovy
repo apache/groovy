@@ -1464,5 +1464,21 @@ println someInt
             assert Groovy7784.multiVarArgs() == 'foo-bar-baz1-baz2'
         '''
     }
-}
 
+    // GROOVY-7160
+    void testGenericsArrayPlaceholder() {
+        assertScript '''
+            import static java.nio.file.AccessMode.*
+
+            @groovy.transform.CompileStatic
+            class Dummy {
+                static main() {
+                    // more than 5 to match `of(E first, E[] rest)` variant
+                    EnumSet.of(READ, WRITE, EXECUTE, READ, WRITE, EXECUTE)
+                }
+            }
+
+            assert Dummy.main() == [READ, WRITE, EXECUTE].toSet()
+        '''
+    }
+}

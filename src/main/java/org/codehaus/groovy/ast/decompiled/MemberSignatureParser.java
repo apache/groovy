@@ -145,7 +145,10 @@ class MemberSignatureParser {
     }
 
     private static ClassNode applyErasure(ClassNode genericType, ClassNode erasure) {
-        if (genericType.isGenericsPlaceHolder()) {
+        if (genericType.isArray() && erasure.isArray() && genericType.getComponentType().isGenericsPlaceHolder()) {
+            genericType.setRedirect(erasure);
+            genericType.getComponentType().setRedirect(erasure.getComponentType());
+        } else if (genericType.isGenericsPlaceHolder()) {
             genericType.setRedirect(erasure);
         }
         return genericType;
