@@ -18,13 +18,12 @@
  */
 package groovy.xml
 
-import groovy.xml.DOMBuilder
 import groovy.xml.dom.DOMCategory
 
 /**
-* Tests for the Groovy Xml user guide related to DOMCategory.
-*/
-class UserGuideDOMCategoryTest  extends GroovyTestCase {
+ * Tests for the Groovy Xml user guide related to DOMCategory.
+ */
+class UserGuideDOMCategoryTest extends GroovyTestCase {
 
     // tag::testXML[]
     static def CAR_RECORDS = '''
@@ -42,19 +41,19 @@ class UserGuideDOMCategoryTest  extends GroovyTestCase {
         <record type='price'>Most Valuable Car at $15 million</record>
       </car>
     </records>
-  '''
-  // end::testXML[]
+    '''
+    // end::testXML[]
 
-  void testExample1() {
-      // tag::testExample1[]
-      def reader = new StringReader(CAR_RECORDS)
-      def doc = DOMBuilder.parse(reader) //<1>
-      def records = doc.documentElement
+    void testExample1() {
+        // tag::testExample1[]
+        def reader = new StringReader(CAR_RECORDS)
+        def doc = DOMBuilder.parse(reader) //<1>
+        def records = doc.documentElement
 
-      use(DOMCategory) { // <2>
-          assert records.car.size() == 3
-      }
-      // end::testExample1[]
-  }
+        use(DOMCategory) { // <2>
+            assert records.car.size() == 3
+        }
+        // end::testExample1[]
+    }
 
 }

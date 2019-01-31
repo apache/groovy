@@ -29,8 +29,8 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
             <value>
                 <books>
                     <book available="20" id="1">
-                        <title>Don Xijote</title>
-                        <author id="1">Miguel De Cervantes</author>
+                        <title>Don Quixote</title>
+                        <author id="1">Miguel de Cervantes</author>
                     </book>
                     <book available="14" id="2">
                         <title>Catcher in the Rye</title>
@@ -41,8 +41,8 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
                        <author id="3">Lewis Carroll</author>
                    </book>
                    <book available="5" id="4">
-                       <title>Don Xijote</title>
-                       <author id="4">Miguel De Cervantes</author>
+                       <title>Don Quixote</title>
+                       <author id="4">Miguel de Cervantes</author>
                    </book>
                </books>
            </value>
@@ -72,7 +72,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         def response = new XmlSlurper().parseText(books)
         def authorResult = response.value.books.book[0].author
 
-        assert authorResult.text() == 'Miguel De Cervantes'
+        assert authorResult.text() == 'Miguel de Cervantes'
         // end::testGettingANodeText[]
     }
 
@@ -165,7 +165,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
             }
         }
 
-        assert response.value.books.book[0].title.text() == "Don Xijote"
+        assert response.value.books.book[0].title.text() == "Don Quixote"
 
         /* That mkp is a special namespace used to escape away from the normal building mode
            of the builder and get access to helper markup methods

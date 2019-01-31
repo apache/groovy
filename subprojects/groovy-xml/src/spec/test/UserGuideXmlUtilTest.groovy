@@ -29,8 +29,8 @@ class UserGuideXmlUtilTest extends GroovyTestCase {
         <value>
             <books>
                 <book id="2">
-                    <title>Don Xijote</title>
-                    <author id="1">Miguel De Cervantes</author>
+                    <title>Don Quixote</title>
+                    <author id="1">Miguel de Cervantes</author>
                 </book>
             </books>
         </value>
@@ -45,7 +45,7 @@ class UserGuideXmlUtilTest extends GroovyTestCase {
         def nodeAsText = XmlUtil.serialize(nodeToSerialize)
 
         assert nodeAsText ==
-                XmlUtil.serialize('<?xml version="1.0" encoding="UTF-8"?><author id="1">Miguel De Cervantes</author>')
+                XmlUtil.serialize('<?xml version="1.0" encoding="UTF-8"?><author id="1">Miguel de Cervantes</author>')
         // end::testGettingANode[]
     }
 
