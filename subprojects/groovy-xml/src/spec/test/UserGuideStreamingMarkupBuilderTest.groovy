@@ -18,28 +18,26 @@
  */
 package groovy.xml
 
-import groovy.xml.StreamingMarkupBuilder
-
 /**
-* Tests for the Groovy Xml user guide related to StreamingMarkupBuilderTest.
-*/
-class UserGuideStreamingMarkupBuilderTest  extends GroovyTestCase {
+ * Tests for the Groovy Xml user guide related to StreamingMarkupBuilderTest.
+ */
+class UserGuideStreamingMarkupBuilderTest extends GroovyTestCase {
 
     void testSimpleExample() {
         // tag::testSimpleExample[]
         def xml = new StreamingMarkupBuilder().bind { // <1>
             records {
-                car(name:'HSV Maloo', make:'Holden', year:2006) { // <2>
+                car(name: 'HSV Maloo', make: 'Holden', year: 2006) { // <2>
                     country('Australia')
-                    record(type:'speed', 'Production Pickup Truck with speed of 271kph')
+                    record(type: 'speed', 'Production Pickup Truck with speed of 271kph')
                 }
-                car(name:'P50', make:'Peel', year:1962) {
+                car(name: 'P50', make: 'Peel', year: 1962) {
                     country('Isle of Man')
-                    record(type:'size', 'Smallest Street-Legal Car at 99cm wide and 59 kg in weight')
+                    record(type: 'size', 'Smallest Street-Legal Car at 99cm wide and 59 kg in weight')
                 }
-                car(name:'Royale', make:'Bugatti', year:1931) {
+                car(name: 'Royale', make: 'Bugatti', year: 1931) {
                     country('France')
-                    record(type:'price', 'Most Valuable Car at $15 million')
+                    record(type: 'price', 'Most Valuable Car at $15 million')
                 }
             }
         }
