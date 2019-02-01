@@ -21,9 +21,7 @@ package org.codehaus.groovy.control;
 /**
 * The phases of the GroovyCompiler. This is an enum facade on top of the 
 * Phases object. In general, prefer using this object over Phases. 
-*
-* @author Hamlet D'Arcy
-*/ 
+*/
 public enum CompilePhase {
 
     /**

@@ -44,7 +44,6 @@ import java.util.Map;
  * alias 'AL', 'java.util.concurrent.atomic.AtomicLong'
  *}</code></pre>
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 public class ImportCustomizerFactory extends AbstractFactory {

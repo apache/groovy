@@ -23,8 +23,6 @@ import java.io.StringReader;
 
 /**
  * Parser tests for Enum definitions.
- *
- * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class EnumSourceParsingTest extends SourceParserTest {
     public void testParseEnumConstants() {

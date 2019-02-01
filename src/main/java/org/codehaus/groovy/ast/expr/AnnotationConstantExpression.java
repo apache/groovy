@@ -26,8 +26,6 @@ import java.util.Map;
 /**
  * Represents an annotation "constant" that may appear in annotation attributes
  * (mainly used as a marker).
- *
- * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class AnnotationConstantExpression extends ConstantExpression {
     public AnnotationConstantExpression(AnnotationNode node) {

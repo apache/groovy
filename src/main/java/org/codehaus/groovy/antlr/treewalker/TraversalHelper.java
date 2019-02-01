@@ -28,8 +28,6 @@ import java.util.List;
 
 /**
  * Helper Class for Antlr AST traversal and visitation.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 public abstract class TraversalHelper implements AntlrASTProcessor {
     protected List<GroovySourceAST> unvisitedNodes;

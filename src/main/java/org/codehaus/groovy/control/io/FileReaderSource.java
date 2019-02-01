@@ -32,8 +32,6 @@ import java.nio.charset.Charset;
 
 /**
  *  A ReaderSource for source files.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
 public class FileReaderSource extends AbstractReaderSource {
     private final File file;  // The File from which we produce Readers.

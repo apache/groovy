@@ -25,8 +25,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression
 
 /**
  * An expression transformer used in the process of replacing the access to variables
- *
- * @author Johannes Link
  */
 @CompileStatic
 class VariableExpressionTransformer implements ExpressionTransformer {

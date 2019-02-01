@@ -29,7 +29,6 @@ import java.util.List;
  * In previous Groovy versions, such methods could only be defined in a single class called {@link org.codehaus.groovy.runtime.DefaultGroovyMethods}
  * for instance methods, and {@link org.codehaus.groovy.runtime.DefaultGroovyStaticMethods} for static methods.
  *
- * @author Cedric Champeau
  * @since 2.0.0
  */
 public class ExtensionModuleRegistry {

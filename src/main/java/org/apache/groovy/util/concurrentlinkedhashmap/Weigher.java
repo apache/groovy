@@ -21,7 +21,6 @@ import javax.annotation.concurrent.ThreadSafe;
  * A class that can determine the weight of a value. The total weight threshold
  * is used to determine when an eviction is required.
  *
- * @author ben.manes@gmail.com (Ben Manes)
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
  */

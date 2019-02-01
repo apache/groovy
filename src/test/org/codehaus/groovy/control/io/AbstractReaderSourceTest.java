@@ -31,8 +31,6 @@ import java.net.URI;
 
 /**
  * Unit test for AbstractReaderSource.
- *
- * @author Hamlet D'Arcy
  */
 public class AbstractReaderSourceTest {
 

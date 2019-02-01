@@ -23,9 +23,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-/**
- * @author Alex.Tkachman
- */
 public class BigDecimalCachedClass extends DoubleCachedClass {
     public BigDecimalCachedClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo, true);

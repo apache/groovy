@@ -32,8 +32,6 @@ import java.util.*;
 
 /**
  * Tests method invocation
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class InvokeMethodTest extends GroovyTestCase {
 

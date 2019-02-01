@@ -21,9 +21,6 @@ package org.codehaus.groovy.runtime.wrappers;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
-/**
- * @author John Wilson
- */
 public abstract class Wrapper implements GroovyObject {
     protected final Class constrainedType;
 
@@ -32,8 +29,8 @@ public abstract class Wrapper implements GroovyObject {
     }
 
     /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#getMetaClass()
-    */
+     * @see groovy.lang.GroovyObject#getMetaClass()
+     */
     public MetaClass getMetaClass() {
         return getDelegatedMetaClass();
     }

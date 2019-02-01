@@ -27,10 +27,7 @@ import org.codehaus.groovy.control.CompilePhase;
  * call the {@link org.codehaus.groovy.control.CompilerConfiguration#addCompilationCustomizers(CompilationCustomizer...)}
  * method.
  *
- * @author Cedric Champeau
- *
  * @since 1.8.0
- *
  */
 public abstract class CompilationCustomizer extends CompilationUnit.PrimaryClassNodeOperation {
     private final CompilePhase phase;

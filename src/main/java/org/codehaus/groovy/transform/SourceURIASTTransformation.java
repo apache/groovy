@@ -40,11 +40,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 
 /**
  * Handles transformation for the @SourceURI annotation.
- *
- * @author Paul King
- * @author Cedric Champeau
- * @author Vladimir Orany
- * @author Jim White
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class SourceURIASTTransformation extends AbstractASTTransformation {

@@ -41,8 +41,6 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STA
 
 /**
  * Handles the implementation of the {@link groovy.transform.CompileStatic} transformation.
- *
- * @author Cedric Champeau
  */
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class StaticCompileTransformation extends StaticTypesTransformation {

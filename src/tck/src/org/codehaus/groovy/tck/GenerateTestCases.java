@@ -16,9 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-/**
- * @author Jeremy Rayner
- */
 package org.codehaus.groovy.tck;
 
 import java.io.*;
@@ -43,8 +40,6 @@ import org.apache.tools.ant.util.*;
  * generation decision based on timestamp.
  *
  * Based heavily on the Javac implementation in Ant
- *
- * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  */
 public class GenerateTestCases extends MatchingTask {
 

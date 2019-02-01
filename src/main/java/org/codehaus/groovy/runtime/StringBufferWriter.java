@@ -25,8 +25,6 @@ import java.io.Writer;
  * This class codes around a silly limitation of StringWriter which doesn't allow a StringBuffer
  * to be passed in as a constructor for some bizarre reason.
  * So we replicate the behaviour of StringWriter here but allow a StringBuffer to be passed in.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class StringBufferWriter extends Writer {
 

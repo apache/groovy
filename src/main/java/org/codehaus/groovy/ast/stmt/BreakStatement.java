@@ -20,11 +20,8 @@ package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
-
 /**
  * Represents a break statement in a switch or loop statement
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class BreakStatement extends Statement {
 

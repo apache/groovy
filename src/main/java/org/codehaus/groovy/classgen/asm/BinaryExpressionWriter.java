@@ -44,7 +44,6 @@ import static org.objectweb.asm.Opcodes.IFNE;
 
 /**
  * Base class for writing primitive typed operations
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public abstract class BinaryExpressionWriter {
     

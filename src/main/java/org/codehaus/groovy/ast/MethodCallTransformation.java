@@ -23,12 +23,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformation;
 
-/**
- *
- * @author Hamlet D'Arcy
- * @author Sergei Egorov <bsideup@gmail.com>
- */
-
 public abstract class MethodCallTransformation implements ASTTransformation {
 
     public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
@@ -111,6 +105,6 @@ public abstract class MethodCallTransformation implements ASTTransformation {
             }
         }
     }
-    
+
     protected abstract GroovyCodeVisitor getTransformer(ASTNode[] nodes, SourceUnit sourceUnit);
 }

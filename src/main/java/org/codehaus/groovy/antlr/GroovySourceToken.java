@@ -22,8 +22,6 @@ import antlr.Token;
 
 /**
  * This is a Token sub class to track line information 
- * 
- * @author Jochen Theodorou
  */
 public class GroovySourceToken extends Token implements SourceInfo{
     protected int line;

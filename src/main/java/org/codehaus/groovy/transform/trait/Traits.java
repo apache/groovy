@@ -50,7 +50,6 @@ import java.util.List;
 /**
  * A collection of utility methods used to deal with traits.
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 public abstract class Traits {

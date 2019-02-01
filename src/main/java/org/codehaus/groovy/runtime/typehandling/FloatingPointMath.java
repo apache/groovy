@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime.typehandling;
 
 /**
  * FloatingPoint (Double and Float) NumberMath operations
- * 
- * @author Steve Goetze
  */
 public final class FloatingPointMath extends NumberMath {
 

@@ -28,8 +28,6 @@ import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Provides a very, very basic logging API.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public final class Logger {
     public static IO io;

@@ -26,8 +26,6 @@ import java.util.prefs.PreferenceChangeListener;
 
 /**
  * Container for shell preferences.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class Preferences
 {

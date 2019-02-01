@@ -22,9 +22,6 @@ import groovy.lang.GroovyShell;
 
 import java.io.File;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class MainTest extends TestSupport {
 
     public void testMainMethod() throws Exception {

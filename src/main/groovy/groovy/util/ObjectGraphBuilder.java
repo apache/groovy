@@ -37,9 +37,6 @@ import java.util.regex.Pattern;
  * A builder for creating object graphs.<br>
  * Each node defines the class to be created and the property on its parent (if
  * any) at the same time.
- *
- * @author Scott Vlaminck (http://refactr.com)
- * @author <a href="mailto:aalmiray@users.sourceforge.com">Andres Almiray</a>
  */
 public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String NODE_CLASS = "_NODE_CLASS_";

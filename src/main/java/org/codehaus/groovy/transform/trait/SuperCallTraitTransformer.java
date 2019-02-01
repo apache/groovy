@@ -46,7 +46,6 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 /**
  * This transformer is used to transform calls to <code>SomeTrait.super.foo()</code> into the appropriate trait call.
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {

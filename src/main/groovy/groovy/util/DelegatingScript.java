@@ -82,8 +82,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * binding.setProperty("a",1);
  * ((Closure)binding.getProperty("b")).call(2);
  * </pre>
- *
- * @author Kohsuke Kawaguchi
  */
 public abstract class DelegatingScript extends Script {
     private Object delegate;

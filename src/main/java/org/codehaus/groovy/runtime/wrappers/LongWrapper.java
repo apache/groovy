@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
-/**
- * @author John Wilson
- */
 public class LongWrapper extends PojoWrapper {
     public LongWrapper(final long wrapped) {
         super(wrapped, long.class);

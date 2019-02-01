@@ -39,7 +39,6 @@ import java.util.Map;
  * }
  * </pre>
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 @SuppressWarnings("unchecked")

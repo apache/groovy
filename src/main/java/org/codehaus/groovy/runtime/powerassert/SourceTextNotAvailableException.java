@@ -23,8 +23,6 @@ import org.codehaus.groovy.control.SourceUnit;
 
 /**
  * Indicates that the source text for an assertion statement is not available.
- *
- * @author Peter Niederwieser
  */
 public class SourceTextNotAvailableException extends RuntimeException {
     private static final long serialVersionUID = -3815868502019514479L;

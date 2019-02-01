@@ -40,9 +40,6 @@ import java.lang.annotation.Target;
  * <li>provide one or more constructors with arguments for a quasi-singleton - these constructors will be used
  * to create instances that are independent of the singleton instance returned by the singleton property</li>
  * </ul>
- *
- * @author Alex Tkachman
- * @author Paul King
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)

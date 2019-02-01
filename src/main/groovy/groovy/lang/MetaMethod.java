@@ -29,9 +29,6 @@ import java.lang.reflect.Modifier;
 /**
  * Represents a Method on a Java object a little like {@link java.lang.reflect.Method}
  * except without using reflection to invoke the method
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Alex Tkachman
  */
 public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     public static final MetaMethod[] EMPTY_ARRAY = new MetaMethod[0];

@@ -76,10 +76,6 @@ import java.util.Set;
  * <p>
  * You can also add PhaseOperations to this compilation using the addPhaseOperation method.
  * This is commonly used when you want to wire a new AST Transformation into the compilation.
- *
- * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @author <a href="mailto:roshandawrani@codehaus.org">Roshan Dawrani</a>
  */
 
 public class CompilationUnit extends ProcessingUnit {

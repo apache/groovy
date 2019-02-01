@@ -20,9 +20,6 @@ package org.codehaus.groovy.runtime.wrappers;
 
 import groovy.lang.MetaClass;
 
-/**
- * @author John Wilson
- */
 public class PojoWrapper extends Wrapper {
     protected MetaClass delegate;
     protected final Object wrapped;

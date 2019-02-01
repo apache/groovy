@@ -26,10 +26,7 @@ import java.security.PrivilegedAction;
 /**
  * A base class for data structures that can collect messages and errors
  * during processing.
- *
- * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
-
 public abstract class ProcessingUnit {
 
     /**
@@ -45,12 +42,12 @@ public abstract class ProcessingUnit {
      * Configuration and other settings that control processing
      */
     protected CompilerConfiguration configuration;
-  
+
     /**
      * The ClassLoader to use during processing
      */
     protected GroovyClassLoader classLoader;
-    
+
     /**
      * a helper to share errors and report them
      */
@@ -67,7 +64,7 @@ public abstract class ProcessingUnit {
         this.configuration = configuration;
         this.setClassLoader(classLoader);
         configure((configuration == null ? new CompilerConfiguration() : configuration));
-        if (er==null) er = new ErrorCollector(getConfiguration());
+        if (er == null) er = new ErrorCollector(getConfiguration());
         this.errorCollector = er;
     }
 
@@ -134,13 +131,13 @@ public abstract class ProcessingUnit {
 
     /**
      * Errors found during the compilation should be reported through the ErrorCollector.
-     * @return
-     *      the ErrorCollector for this ProcessingUnit
+     *
+     * @return the ErrorCollector for this ProcessingUnit
      */
     public ErrorCollector getErrorCollector() {
         return errorCollector;
     }
-    
+
     //---------------------------------------------------------------------------
     // PROCESSING
 
@@ -150,7 +147,7 @@ public abstract class ProcessingUnit {
      * errors.
      */
 
-    public void completePhase() throws CompilationFailedException {       
+    public void completePhase() throws CompilationFailedException {
         errorCollector.failIfErrors();
         phaseComplete = true;
     }

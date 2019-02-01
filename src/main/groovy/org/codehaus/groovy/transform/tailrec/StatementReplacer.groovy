@@ -33,8 +33,6 @@ import org.codehaus.groovy.ast.stmt.WhileStatement
  * Tool for replacing Statement objects in an AST by other Statement instances.
  *
  * Within @TailRecursive it is used to swap ReturnStatements with looping back to RECUR label
- *
- * @author Johannes Link
  */
 @CompileStatic
 class StatementReplacer extends CodeVisitorSupport {
@@ -47,7 +45,7 @@ class StatementReplacer extends CodeVisitorSupport {
         root.visit(this)
     }
 
-    public void visitClosureExpression(ClosureExpression expression) {
+    void visitClosureExpression(ClosureExpression expression) {
         closureLevel++
         try {
             super.visitClosureExpression(expression)
@@ -56,7 +54,7 @@ class StatementReplacer extends CodeVisitorSupport {
         }
     }
 
-    public void visitBlockStatement(BlockStatement block) {
+    void visitBlockStatement(BlockStatement block) {
         List<Statement> copyOfStatements = new ArrayList<Statement>(block.statements)
         copyOfStatements.eachWithIndex { Statement statement, int index ->
             replaceIfNecessary(statement) { Statement node -> block.statements[index] = node }
@@ -64,23 +62,23 @@ class StatementReplacer extends CodeVisitorSupport {
         super.visitBlockStatement(block);
     }
 
-    public void visitIfElse(IfStatement ifElse) {
+    void visitIfElse(IfStatement ifElse) {
         replaceIfNecessary(ifElse.ifBlock) { Statement s -> ifElse.ifBlock = s }
         replaceIfNecessary(ifElse.elseBlock) { Statement s -> ifElse.elseBlock = s }
         super.visitIfElse(ifElse);
     }
 
-    public void visitForLoop(ForStatement forLoop) {
+    void visitForLoop(ForStatement forLoop) {
         replaceIfNecessary(forLoop.loopBlock) { Statement s -> forLoop.loopBlock = s }
         super.visitForLoop(forLoop);
     }
 
-    public void visitWhileLoop(WhileStatement loop) {
+    void visitWhileLoop(WhileStatement loop) {
         replaceIfNecessary(loop.loopBlock) { Statement s -> loop.loopBlock = s }
         super.visitWhileLoop(loop);
     }
 
-    public void visitDoWhileLoop(DoWhileStatement loop) {
+    void visitDoWhileLoop(DoWhileStatement loop) {
         replaceIfNecessary(loop.loopBlock) { Statement s -> loop.loopBlock = s }
         super.visitDoWhileLoop(loop);
     }

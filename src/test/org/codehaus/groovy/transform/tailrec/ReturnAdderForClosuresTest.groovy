@@ -25,9 +25,6 @@ import org.codehaus.groovy.control.CompilePhase
 import org.junit.Before
 import org.junit.Test
 
-/**
- * @author Johannes Link
- */
 class ReturnAdderForClosuresTest {
 
     ReturnAdderForClosures adder
@@ -38,7 +35,7 @@ class ReturnAdderForClosuresTest {
     }
 
     @Test
-    public void returnIsAddToRecursiveCallEmbeddedInClosure() throws Exception {
+    void returnIsAddToRecursiveCallEmbeddedInClosure() throws Exception {
         MethodNode method = new AstBuilder().buildFromString(CompilePhase.SEMANTIC_ANALYSIS, true, '''
             class Target {
                 int myMethod(int n) {

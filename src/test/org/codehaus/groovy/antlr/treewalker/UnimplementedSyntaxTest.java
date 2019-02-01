@@ -24,8 +24,6 @@ import groovy.util.GroovyTestCase;
 
 /**
  * This tests code that is valid in parser, but has issues further down the line.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 public class UnimplementedSyntaxTest extends GroovyTestCase {
     // ------------------------------

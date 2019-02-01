@@ -34,9 +34,6 @@ import static org.objectweb.asm.Opcodes.FREM;
 import static org.objectweb.asm.Opcodes.FSUB;
 import static org.objectweb.asm.Opcodes.POP2;
 
-/**
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- */
 public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
 
     public BinaryFloatExpressionHelper(WriterController controller) {

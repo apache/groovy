@@ -40,8 +40,6 @@ import java.util.logging.Logger;
  * groovy.indy.logging. Other than that this class contains the 
  * interfacing methods with bytecode for invokedynamic as well as some helper
  * methods and classes.
- * 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class IndyInterface {
 
@@ -55,7 +53,6 @@ public class IndyInterface {
 
         /**
          * Enum for easy differentiation between call types
-         * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
          */
         public static enum CALL_TYPES {
             /**Method invocation type*/         METHOD("invoke"), 

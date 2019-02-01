@@ -21,8 +21,6 @@ package org.codehaus.groovy.runtime.powerassert;
 /**
  * A value recorded during evaluation of an assertion, along with the column it
  * is associated with in the assertion's normalized source text.
- *
- * @author Peter Niederwieser
  */
 public class Value {
     private final Object value;

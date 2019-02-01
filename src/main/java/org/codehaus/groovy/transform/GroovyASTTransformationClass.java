@@ -33,9 +33,6 @@ import java.lang.annotation.Target;
  *
  * It is a compile time error to specify a {@link GroovyASTTransformationClass}
  * that is not accessible at compile time.  It need not be available at runtime.
- *
- * @author Danno Ferrin (shemnon)
- * @author Roshan Dawrani (roshandawrani)
  */
 
 @Retention(RetentionPolicy.RUNTIME)

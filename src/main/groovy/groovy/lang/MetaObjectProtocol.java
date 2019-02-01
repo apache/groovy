@@ -25,8 +25,6 @@ import java.util.List;
  * implemented by the reference implementation of the {@link groovy.lang.MetaClass} interface.
  *
  * @see MetaClassImpl
- * @author John Wilson
- * @author Graeme Rocher
  */
 public interface MetaObjectProtocol {
 

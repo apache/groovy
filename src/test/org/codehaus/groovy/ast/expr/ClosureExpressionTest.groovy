@@ -20,10 +20,6 @@ package org.codehaus.groovy.ast.expr
 
 import org.codehaus.groovy.ast.builder.AstBuilder
 
-/**
- * 
- * @author Hamlet D'Arcy
- */
 class ClosureExpressionTest extends GroovyTestCase {
 
     void testGetText_Simple() {

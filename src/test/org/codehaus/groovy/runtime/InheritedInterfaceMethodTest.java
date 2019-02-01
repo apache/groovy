@@ -23,9 +23,6 @@ import junit.framework.TestCase;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class InheritedInterfaceMethodTest extends TestCase {
 
     public void testInvokeNewListMethodOnArrayList() {

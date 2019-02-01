@@ -20,8 +20,6 @@ package org.codehaus.groovy.antlr;
 
 /**
  * An object representing a line and column position
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 public class LineColumn {
     private int line;

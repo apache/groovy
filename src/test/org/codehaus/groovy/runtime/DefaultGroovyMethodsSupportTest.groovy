@@ -23,9 +23,6 @@ import java.util.concurrent.*
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.createSimilarCollection
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.createSimilarMap
 
-/**
- * @author Yu Kobayashi
- */
 class DefaultGroovyMethodsSupportTest extends GroovyTestCase {
     void testCreateSimilarCollectionForSets() {
         def comparator = [

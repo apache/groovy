@@ -20,8 +20,6 @@ package org.codehaus.groovy.ast;
 
 /**
  * Represents a package in the AST.
- *
- * @author Paul King
  */
 public class PackageNode extends AnnotatedNode {
     private final String name;

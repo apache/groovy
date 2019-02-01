@@ -19,13 +19,9 @@
 package org.codehaus.groovy.transform.tailrec
 
 import groovy.transform.CompileStatic
-import groovy.transform.Memoized
 import groovy.transform.TailRecursive
 import org.junit.Test
 
-/**
- * @author Johannes Link
- */
 class TailRecursiveExamples {
 
     @Test

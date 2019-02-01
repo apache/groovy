@@ -25,8 +25,6 @@ import org.codehaus.groovy.ast.expr.Expression;
  * Interface for modules which are capable of resolving the type of an expression.
  * Several implementations are available, depending on whether you are in a dynamic
  * or static compilation mode.
- *
- * @author Cedric Champeau
  */
 public interface TypeChooser {
 

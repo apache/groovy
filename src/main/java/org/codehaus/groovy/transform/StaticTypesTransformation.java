@@ -39,10 +39,6 @@ import java.util.Map;
 
 /**
  * Handles the implementation of the {@link groovy.transform.TypeChecked} transformation.
- *
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- * @author Cedric Champeau
- * @author Guillaume Laforge
  */
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class StaticTypesTransformation implements ASTTransformation, CompilationUnitAware {

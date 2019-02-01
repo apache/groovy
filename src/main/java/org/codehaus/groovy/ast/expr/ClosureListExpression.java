@@ -34,9 +34,6 @@ import java.util.List;
  * two ConstantExpressions for the values 1 and 2, and two
  * EmptyStatement entries. The ClosureListExpression defines a new 
  * variable scope. All created Closures share this scope.
- * 
- * 
- * @author Jochen Theodorou
  */
 public class ClosureListExpression extends ListExpression {
 

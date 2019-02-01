@@ -23,8 +23,6 @@ import java.lang.reflect.Modifier;
 
 /**
  * Some reflection helper methods
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MethodHelper {
  

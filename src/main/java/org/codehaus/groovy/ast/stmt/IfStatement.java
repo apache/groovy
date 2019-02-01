@@ -23,8 +23,6 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 
 /**
  * Represents an if (condition) { ... } else { ... } statement in Groovy
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class IfStatement extends Statement {
 

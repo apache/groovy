@@ -24,8 +24,6 @@ import java.util.List;
 
 /**
  * Tests the ClassNode
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ModuleNodeTest extends TestParserSupport {
 

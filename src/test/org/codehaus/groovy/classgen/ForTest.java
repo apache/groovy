@@ -26,10 +26,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Pilho Kim
- */
 public class ForTest extends TestSupport {
 
     public void testNonLoop() throws Exception {

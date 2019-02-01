@@ -22,8 +22,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a property access such as the expression "foo.bar".
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class PropertyExpression extends Expression {
 

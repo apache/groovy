@@ -22,8 +22,6 @@ import java.io.Writer;
 
 /**
  *  An Writer than eats its input.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
 public class NullWriter extends Writer {
     public static final NullWriter DEFAULT = new NullWriter();

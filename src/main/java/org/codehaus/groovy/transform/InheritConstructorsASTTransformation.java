@@ -47,8 +47,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGener
 
 /**
  * Handles generation of code for the {@code @}InheritConstructors annotation.
- *
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class InheritConstructorsASTTransformation extends AbstractASTTransformation {

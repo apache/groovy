@@ -26,9 +26,6 @@ import java.util.Map;
 /**
  * Represents a variable scope. This is primarily used to determine variable sharing
  * across method and closure boundaries.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Jochen Theodorou
  */
 public class VariableScope  {
     private Map<String, Variable> declaredVariables = Collections.emptyMap();

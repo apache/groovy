@@ -29,7 +29,6 @@ import org.objectweb.asm.MethodVisitor;
  * the visit is completed. A copy of the variable will stay on the stack. 
  * Subsequent visits will load the stored value instead of visiting the 
  * expression again
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ExpressionAsVariableSlot extends BytecodeExpression {
     private int index = -1;

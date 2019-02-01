@@ -27,8 +27,6 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
  * Call site for constructor
  *   meta class - cached
  *   method - not cached
- *
- * @author Alex Tkachman
 */
 public class MetaClassConstructorSite extends MetaClassSite {
 

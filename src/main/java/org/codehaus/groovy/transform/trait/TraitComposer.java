@@ -83,7 +83,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecR
  * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit)}
  * aimed at generating code for a classnode implementing a trait.
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 public abstract class TraitComposer {

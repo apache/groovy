@@ -48,10 +48,6 @@ import java.util.Map;
  * Represents a module, which consists typically of a class declaration
  * but could include some imports, some statements and multiple classes
  * intermixed with statements like scripts in Python or Ruby
- *
- * @author Jochen Theodorou
- * @author Paul King
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ModuleNode extends ASTNode implements Opcodes {
 

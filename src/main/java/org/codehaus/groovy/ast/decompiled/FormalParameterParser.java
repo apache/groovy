@@ -27,9 +27,6 @@ import org.objectweb.asm.signature.SignatureVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
-* @author Peter Gromov
-*/
 abstract class FormalParameterParser extends SignatureVisitor {
     private final AsmReferenceResolver resolver;
     private String currentTypeParameter;

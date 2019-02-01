@@ -60,8 +60,6 @@ import java.util.regex.Pattern;
  * <li>out - The output PrintWriter, should you need it for some reason.</li> 
  * <li>socket - The socket, should you need it for some reason.</li> 
  * </ul>
- * 
- * @author Jeremy Rayner
  */
 public class GroovySocketServer implements Runnable {
     private URL url;

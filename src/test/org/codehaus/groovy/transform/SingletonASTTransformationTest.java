@@ -26,8 +26,6 @@ import org.junit.Test;
 
 /**
  * Unit test for SingletonASTTransformation.
- *
- * @author Hamlet D'Arcy
  */
 public class SingletonASTTransformationTest {
 

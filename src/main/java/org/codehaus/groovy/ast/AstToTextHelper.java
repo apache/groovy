@@ -22,7 +22,6 @@ import java.lang.reflect.Modifier;
 
 /**
  * Helper class for converting AST into text.
- * @author Hamlet D'Arcy
  */
 public class AstToTextHelper {
 

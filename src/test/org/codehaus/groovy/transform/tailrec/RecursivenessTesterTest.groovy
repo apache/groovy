@@ -25,17 +25,12 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
-import org.codehaus.groovy.control.CompilePhase
 import org.junit.Before
 import org.junit.Test
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import static org.objectweb.asm.Opcodes.ACC_STATIC
 
-
-/**
- * @author Johannes Link
- */
 class RecursivenessTesterTest {
 
 	RecursivenessTester tester
@@ -46,7 +41,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void recursiveCallWithoutParameter() throws Exception {
+	void recursiveCallWithoutParameter() throws Exception {
 		/*
 		 public void myMethod() {}
 		 */
@@ -75,10 +70,7 @@ class RecursivenessTesterTest {
 
 	@Test
 	public void recursiveCallWithParameters() throws Exception {
-		/*
-		 public void myMethod(String a, String b) {}
-		 */
-		def method = new AstBuilder().buildFromSpec {
+	def method = new AstBuilder().buildFromSpec {
 			method('myMethod', ACC_PUBLIC, Void.TYPE) {
 				parameters {
 					parameter 'a': String.class
@@ -108,7 +100,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void callWithDifferentNumberOfParameters() throws Exception {
+	void callWithDifferentNumberOfParameters() throws Exception {
 		/*
 		 public void myMethod(String a, String b) {}
 		 */
@@ -143,7 +135,7 @@ class RecursivenessTesterTest {
 	}
 
     @Test
-    public void callWithNonCompatibleArgType() throws Exception {
+    void callWithNonCompatibleArgType() throws Exception {
         /*
          public void myMethod(String a, String b) {}
          */
@@ -175,7 +167,7 @@ class RecursivenessTesterTest {
     }
 
     @Test
-    public void callWithArgASubtypeOfParam() throws Exception {
+    void callWithArgASubtypeOfParam() throws Exception {
         /*
          public void myMethod(Number a) {}
          */
@@ -207,7 +199,7 @@ class RecursivenessTesterTest {
     }
 
     @Test
-    public void callWithParamASubtypeOfArg() throws Exception {
+    void callWithParamASubtypeOfArg() throws Exception {
         /*
          public void myMethod(int a) {}
          */
@@ -239,7 +231,7 @@ class RecursivenessTesterTest {
     }
 
     @Test
-    public void callWithArgAnAutoboxedTypeOfParam() throws Exception {
+    void callWithArgAnAutoboxedTypeOfParam() throws Exception {
         /*
          public void myMethod(int a) {}
          */
@@ -270,7 +262,7 @@ class RecursivenessTesterTest {
     }
 
     @Test
-	public void recursiveCallWithImplicitThis() throws Exception {
+	void recursiveCallWithImplicitThis() throws Exception {
 		/*
 		 public void myMethod() {}
 		 */
@@ -292,7 +284,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void callWithDifferentName() {
+	void callWithDifferentName() {
 		/*
 		 public void myMethod() {}
 		 */
@@ -320,7 +312,7 @@ class RecursivenessTesterTest {
 	}
 
     @Test
-    public void callWithGStringMethodNameIsNotConsideredRecursive() {
+    void callWithGStringMethodNameIsNotConsideredRecursive() {
         /*
          public void myMethod() {}
          */
@@ -356,7 +348,7 @@ class RecursivenessTesterTest {
     }
 
 	@Test
-	public void callOnDifferentTarget() {
+	void callOnDifferentTarget() {
 		/*
 		 public void myMethod() {}
 		 */
@@ -384,7 +376,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void staticRecursiveCallWithParameter() {
+	void staticRecursiveCallWithParameter() {
 		/*
 		 public static void myMethod(String a) {}
 		 */
@@ -411,7 +403,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void staticRecursiveCallWithFunctionCallAsArgument() {
+	void staticRecursiveCallWithFunctionCallAsArgument() {
 		/*
 		 public static void myMethod(String a) {}
 		 */
@@ -438,7 +430,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void staticCallWithDifferentNumberOfParameters() {
+	void staticCallWithDifferentNumberOfParameters() {
 		/*
 		 public static void myMethod(String a) {}
 		 */
@@ -465,7 +457,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void staticCallOnNonStaticMethod() {
+	void staticCallOnNonStaticMethod() {
 		/*
 		 public void myMethod() {}
 		 */
@@ -488,7 +480,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void staticCallWithDifferentName() {
+	void staticCallWithDifferentName() {
 		/*
 		 public static void myMethod() {}
 		 */
@@ -511,7 +503,7 @@ class RecursivenessTesterTest {
 	}
 
 	@Test
-	public void staticCallOnDifferentClass() {
+	void staticCallOnDifferentClass() {
 		/*
 		 public static void myMethod() {}
 		 */

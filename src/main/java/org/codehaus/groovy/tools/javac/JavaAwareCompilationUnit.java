@@ -39,8 +39,6 @@ import java.util.Map;
 
 /**
  * Compilation Unit capable of compiling Java source files.
- *
- * @author Alex.Tkachman
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
     private final List<String> javaSources;

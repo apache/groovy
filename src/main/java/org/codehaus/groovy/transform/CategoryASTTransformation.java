@@ -60,8 +60,6 @@ import java.util.Set;
  * <li>all non-static methods converted to static ones with an additional 'self' parameter</li>
  * <li>references to 'this' changed to the additional 'self' parameter</li>
  * </ul>
- *
- * @author Alex Tkachman
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class CategoryASTTransformation implements ASTTransformation, Opcodes {

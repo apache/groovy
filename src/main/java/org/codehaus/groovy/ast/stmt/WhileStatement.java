@@ -23,8 +23,6 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 
 /**
  * Represents a while (condition) { ... } loop in Groovy
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class WhileStatement extends Statement implements LoopingStatement {
 

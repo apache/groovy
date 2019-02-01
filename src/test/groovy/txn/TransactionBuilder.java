@@ -20,9 +20,6 @@ package groovy.txn;
 
 import groovy.lang.Closure;
 
-/**
- * @author James Strachan
- */
 public class TransactionBuilder {
     public void transaction(Closure closure) {
         TransactionBean bean = new TransactionBean();

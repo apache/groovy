@@ -35,8 +35,6 @@ import java.util.Map;
  * classes. This loader is able to resolve all Groovy classes even if the
  * parent does not know them, but the parent serves first (Reflector during a
  * class definition is different). 
- * 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class ReflectorLoader extends ClassLoader {
     private boolean inDefine = false;

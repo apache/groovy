@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime;
 
 /**
  * Test File.deleteDir() method in Groovy
- *
- * @author <a href="mailto:j.heldmann@web.de">Joachim Heldmann</a>
  */
 class DirectoryDeleteTest extends GroovyTestCase {
 

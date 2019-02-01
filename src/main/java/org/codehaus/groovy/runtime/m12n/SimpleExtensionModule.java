@@ -81,7 +81,6 @@ import java.util.logging.Logger;
  * }
  * </pre>
  *
- * @author Cedric Champeau
  * @since 2.0.0
  */
 public abstract class SimpleExtensionModule extends ExtensionModule {

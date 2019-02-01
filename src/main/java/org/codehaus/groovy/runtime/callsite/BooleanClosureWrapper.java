@@ -32,7 +32,6 @@ import java.util.Map.Entry;
  * in {@link org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToBoolean(Object)}. The purpose of
  * this class is to avoid the slow "asBoolean" call in that method.
  * {@link BooleanReturningMethodInvoker} is used for caching.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  *
  */
 public class BooleanClosureWrapper {

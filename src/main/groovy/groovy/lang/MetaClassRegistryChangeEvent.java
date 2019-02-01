@@ -22,8 +22,6 @@ import java.util.EventObject;
 
 /**
  * An event used to propagate meta class updates
- *
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class MetaClassRegistryChangeEvent extends EventObject {
     private static final long serialVersionUID = 1647849176793457976L;

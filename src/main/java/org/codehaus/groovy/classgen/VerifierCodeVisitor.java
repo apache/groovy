@@ -35,8 +35,6 @@ import org.objectweb.asm.Opcodes;
  * Performs various checks on code inside methods and constructors
  * including checking for valid field, variables names etc. that
  * would otherwise lead to invalid code.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
 

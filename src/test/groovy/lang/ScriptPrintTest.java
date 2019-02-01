@@ -20,9 +20,6 @@ package groovy.lang;
 
 import org.codehaus.groovy.classgen.TestSupport;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class ScriptPrintTest extends TestSupport {
 
     public void testScriptWithCustomPrintln() throws Exception {

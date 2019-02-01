@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 
 /**
  * A return statement
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ReturnStatement extends Statement {
     /**

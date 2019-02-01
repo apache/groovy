@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
-/**
- * @author John Wilson
- */
 public class IntWrapper extends PojoWrapper {
     public IntWrapper(final int wrapped) {
         super(wrapped, int.class);

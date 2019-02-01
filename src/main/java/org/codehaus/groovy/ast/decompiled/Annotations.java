@@ -33,9 +33,6 @@ import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author Peter Gromov
- */
 class Annotations {
     static AnnotationNode createAnnotationNode(AnnotationStub annotation, AsmReferenceResolver resolver) {
         ClassNode classNode = resolver.resolveClassNullable(Type.getType(annotation.className).getClassName());

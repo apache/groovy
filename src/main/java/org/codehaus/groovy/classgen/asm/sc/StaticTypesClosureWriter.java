@@ -41,8 +41,6 @@ import java.util.List;
 
 /**
  * Writer responsible for generating closure classes in statically compiled mode.
- *
- * @author Cedric Champeau
  */
 public class StaticTypesClosureWriter extends ClosureWriter {
     public StaticTypesClosureWriter(WriterController wc) {

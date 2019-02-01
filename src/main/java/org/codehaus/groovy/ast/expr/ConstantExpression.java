@@ -23,8 +23,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a constant expression such as null, true, false
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ConstantExpression extends Expression {
     // The following fields are only used internally; every occurrence of a user-defined expression of the same kind

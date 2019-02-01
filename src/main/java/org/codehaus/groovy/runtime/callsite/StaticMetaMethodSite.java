@@ -29,8 +29,6 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
  * POJO call site
  *   meta class - cached
  *   method - cached
- *
- * @author Alex Tkachman
 */
 public class StaticMetaMethodSite extends MetaMethodSite {
     private final int version;

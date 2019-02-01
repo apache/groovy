@@ -70,8 +70,6 @@ import java.util.Set;
  * transformations.  They will only be handled in later phases (and then only
  * if the type was in the AST prior to any AST transformations being run
  * against it).
- *
- * @author Danno Ferrin (shemnon)
  */
 public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 

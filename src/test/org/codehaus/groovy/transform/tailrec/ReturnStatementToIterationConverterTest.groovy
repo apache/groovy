@@ -28,13 +28,10 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.junit.Test
 
-/**
- * @author Johannes Link
- */
 class ReturnStatementToIterationConverterTest {
 
     @Test
-    public void oneConstantParameter() {
+    void oneConstantParameter() {
         ReturnStatement statement = new AstBuilder().buildFromSpec {
             returnStatement {
                 methodCall {
@@ -69,7 +66,7 @@ class ReturnStatementToIterationConverterTest {
     }
 
     @Test
-    public void twoParametersOnlyOneUsedInRecursiveCall() {
+    void twoParametersOnlyOneUsedInRecursiveCall() {
 
         BlockStatement expected = new AstBuilder().buildFromSpec {
             block {
@@ -115,7 +112,7 @@ class ReturnStatementToIterationConverterTest {
     }
 
     @Test
-    public void twoParametersBothUsedInRecursiveCall() {
+    void twoParametersBothUsedInRecursiveCall() {
         BlockStatement expected = new AstBuilder().buildFromSpec {
             block {
                 expression {
@@ -172,7 +169,7 @@ class ReturnStatementToIterationConverterTest {
     }
 
     @Test
-    public void worksWithStaticMethods() {
+    void worksWithStaticMethods() {
         ReturnStatement statement = new ReturnStatement(new StaticMethodCallExpression(
                 ClassHelper.make(Math, false), "min",
                 new ArgumentListExpression(new ConstantExpression(1))))

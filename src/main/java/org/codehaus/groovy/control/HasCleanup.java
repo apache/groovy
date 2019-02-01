@@ -19,13 +19,9 @@
 package org.codehaus.groovy.control;
 
 /**
- *  An interface for things that need to be cleaned up after
- *  operations complete.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * An interface for things that need to be cleaned up after
+ * operations complete.
  */
-
-public interface HasCleanup 
-{
+public interface HasCleanup {
     void cleanup();
 }

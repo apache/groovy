@@ -28,8 +28,6 @@ import java.lang.reflect.Modifier;
  *
  * This implementation is used to add new static methods to the JDK writing them as normal
  * static methods with the first parameter being the class on which the method is added.
- *
- * @author Guillaume Laforge
  */
 public class NewStaticMetaMethod extends NewMetaMethod {
 

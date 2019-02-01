@@ -20,8 +20,6 @@ package groovy.lang;
 
 /**
  * A mock class for testing writer based code
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MockWriter {
 

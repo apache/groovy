@@ -23,9 +23,6 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-/**
- * @author Alex.Tkachman
- */
 public class ArrayCachedClass extends CachedClass {
     public ArrayCachedClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo);

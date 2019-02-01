@@ -36,8 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * In fact, this class should be called ExpandoProperty.
  *
- * @author Graeme Rocher
- * @author Alex Tkachman
  * @since 1.5
  */
 public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
@@ -147,8 +145,6 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
     /**
      * Accesses the ThreadBound state of the property as a getter
-     *
-     * @author Graeme Rocher
      */
     class ThreadBoundGetter extends MetaMethod {
         private final String name;

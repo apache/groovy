@@ -31,10 +31,6 @@ import java.util.Iterator;
  *
  * @see groovy.lang.MetaClass
  *
- * @author John Wilson
- * @author Graeme Rocher
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- *
  */
 public interface MetaClassRegistry {
     
@@ -127,7 +123,6 @@ public interface MetaClassRegistry {
      * you can have any control over the creation of what MetaClass is used
      * for a class that you want to have. 
      * WARNING: experimental code, likely to change soon
-     * @author Jochen Theodorou
      */
     class MetaClassCreationHandle {
         private boolean disableCustomMetaClassLookup;

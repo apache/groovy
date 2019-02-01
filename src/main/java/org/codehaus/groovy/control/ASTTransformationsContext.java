@@ -25,8 +25,6 @@ import java.util.Set;
 
 /**
  * Stores state information about global AST transformations applied to a compilation unit.
- *
- * @author Cedric Champeau
 */
 public class ASTTransformationsContext {
     protected final GroovyClassLoader transformLoader;  // Classloader for global and local transforms

@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.expr.Expression;
  * An utility class used to wrap an expression with additional metadata used by the type checker.
  * In particular, this is used to detect closure shared variables misuses. We need in some circumstances
  * to store the method call expression and its argument types.
- *
- * @author Cedric Champeau
  */
 class SecondPassExpression<T> {
     private final Expression expression;

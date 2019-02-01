@@ -34,7 +34,6 @@ import java.util.List;
  * to infer the expected parameter types. This is especially useful for closure parameter type
  * inference when implicit closure coercion is in action.
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 public class FromAbstractTypeMethods extends ClosureSignatureHint {

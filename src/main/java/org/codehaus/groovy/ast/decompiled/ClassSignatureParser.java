@@ -26,9 +26,6 @@ import org.objectweb.asm.signature.SignatureVisitor;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author Peter Gromov
- */
 class ClassSignatureParser {
     static void configureClass(ClassNode classNode, ClassStub stub, AsmReferenceResolver resolver) {
         if (stub.signature != null) {

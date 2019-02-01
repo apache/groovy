@@ -96,7 +96,6 @@ import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHas
  * predictable iteration order. A snapshot of the keys and entries may be
  * obtained in ascending and descending order of retention.
  *
- * @author ben.manes@gmail.com (Ben Manes)
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">

@@ -29,9 +29,6 @@ import org.codehaus.groovy.ast.stmt.*
 import org.junit.Before
 import org.junit.Test
 
-/**
- * @author Johannes Link
- */
 class StatementReplacerTest {
 
     StatementReplacer replacer
@@ -45,7 +42,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replaceSingleStatementInBlock() {
+    void replaceSingleStatementInBlock() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
         def block = new BlockStatement()
@@ -61,7 +58,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replacingElementCopiesSourcePosition() {
+    void replacingElementCopiesSourcePosition() {
         def toReplace = aReturnStatement("old")
         toReplace.lineNumber = 42
         def replacement = aReturnStatement("new")
@@ -76,7 +73,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replaceByCondition() {
+    void replaceByCondition() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
         def block = new BlockStatement()
@@ -95,7 +92,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replaceTwoStatementsInBlock() {
+    void replaceTwoStatementsInBlock() {
         def toReplace1 = aReturnStatement("old1")
         def replacement1 = aReturnStatement("new1")
         def toReplace2 = aReturnStatement("old2")
@@ -115,7 +112,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replaceIfBlock() {
+    void replaceIfBlock() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
         def ifStatement = new IfStatement(aBooleanExpression(true), toReplace, EmptyStatement.INSTANCE)
@@ -127,7 +124,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replaceElseBlock() {
+    void replaceElseBlock() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
         def ifStatement = new IfStatement(aBooleanExpression(true), EmptyStatement.INSTANCE, toReplace)
@@ -139,7 +136,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replaceForLoopBlock() {
+    void replaceForLoopBlock() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
         def forLoop = new ForStatement(new Parameter(ClassHelper.int_TYPE, "a"), aConstant(0), toReplace)
@@ -151,7 +148,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replaceWhileLoopBlock() {
+    void replaceWhileLoopBlock() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
         def whileLoop = new WhileStatement(aBooleanExpression(true), toReplace)
@@ -163,7 +160,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void replaceDoWhileLoopBlock() {
+    void replaceDoWhileLoopBlock() {
         def toReplace = aReturnStatement("old")
         def replacement = aReturnStatement("new")
         def doWhileLoop = new DoWhileStatement(aBooleanExpression(true), toReplace)
@@ -175,7 +172,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void inClosureAttributeIsTrueInClosure() {
+    void inClosureAttributeIsTrueInClosure() {
         ClosureExpression closure = new AstBuilder().buildFromSpec {
             closure {
                 parameters {
@@ -199,7 +196,7 @@ class StatementReplacerTest {
     }
 
     @Test
-    public void inClosureAttributeIsFalseOutsideClosure() {
+    void inClosureAttributeIsFalseOutsideClosure() {
         BlockStatement block = new AstBuilder().buildFromSpec {
             block {
                 expression {

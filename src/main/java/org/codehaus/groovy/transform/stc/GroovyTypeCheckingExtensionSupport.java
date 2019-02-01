@@ -58,7 +58,6 @@ import java.util.Map;
  * this class adds a number of utility methods aimed at leveraging the syntax of the Groovy language to improve
  * expressivity and conciseness.
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExtension {

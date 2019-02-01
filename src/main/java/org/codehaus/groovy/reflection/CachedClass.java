@@ -49,9 +49,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @author Alex.Tkachman
- */
 public class CachedClass {
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private final Class cachedClass;

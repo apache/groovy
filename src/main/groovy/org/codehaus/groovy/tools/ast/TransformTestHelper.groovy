@@ -29,21 +29,19 @@ import org.codehaus.groovy.transform.ASTTransformation
 
 import java.security.CodeSource
 
-/*
-* This TestHarness exists so that a global transform can be run without
-* using the Jar services mechanism, which requires building a jar.
-* 
-* To use this simply create an instance of TransformTestHelper with
-* an ASTTransformation and CompilePhase, then invoke parse(File) or
-* parse(String). 
-* 
-* This test harness is not exactly the same as executing a global transformation
-* but can greatly aide in debugging and testing a transform. You should still
-* test your global transformation when packaged as a jar service before
-* releasing it. 
-* 
-* @author Hamlet D'Arcy
-*/
+/**
+ * This TestHarness exists so that a global transform can be run without
+ * using the Jar services mechanism, which requires building a jar.
+ *
+ * To use this simply create an instance of TransformTestHelper with
+ * an ASTTransformation and CompilePhase, then invoke parse(File) or
+ * parse(String).
+ *
+ * This test harness is not exactly the same as executing a global transformation
+ * but can greatly aide in debugging and testing a transform. You should still
+ * test your global transformation when packaged as a jar service before
+ * releasing it.
+ */
 class TransformTestHelper {
 
     private final ASTTransformation transform
@@ -56,36 +54,35 @@ class TransformTestHelper {
      * @param phase
      *      the phase to run the transform in 
      */
-    def TransformTestHelper(ASTTransformation transform, CompilePhase phase) {
+    TransformTestHelper(ASTTransformation transform, CompilePhase phase) {
         this.transform = transform
         this.phase = phase
     }
 
     /**
      * Compiles the File into a Class applying the transform specified in the constructor.
-     * @input input
-     *      must be a groovy source file
+     * @input input*      must be a groovy source file
      */
-    public Class parse(File input) {
+    Class parse(File input) {
         TestHarnessClassLoader loader = new TestHarnessClassLoader(transform, phase)
         return loader.parseClass(input)
     }
 
     /**
      * Compiles the String into a Class applying the transform specified in the constructor.
-     * @input input
-     *      must be a valid groovy source string
+     * @input input*      must be a valid groovy source string
      */
-    public Class parse(String input) {
+    Class parse(String input) {
         TestHarnessClassLoader loader = new TestHarnessClassLoader(transform, phase)
         return loader.parseClass(input)
     }
 }
 
 /**
-* ClassLoader exists so that TestHarnessOperation can be wired into the compile. 
-*/
-@groovy.transform.PackageScope class TestHarnessClassLoader extends GroovyClassLoader {
+ * ClassLoader exists so that TestHarnessOperation can be wired into the compile.
+ */
+@groovy.transform.PackageScope
+class TestHarnessClassLoader extends GroovyClassLoader {
 
     private final ASTTransformation transform
     private final CompilePhase phase
@@ -103,17 +100,18 @@ class TransformTestHelper {
 }
 
 /**
-* Operation exists so that an AstTransformation can be run against the SourceUnit.
-*/
-@groovy.transform.PackageScope class TestHarnessOperation extends PrimaryClassNodeOperation {
+ * Operation exists so that an AstTransformation can be run against the SourceUnit.
+ */
+@groovy.transform.PackageScope
+class TestHarnessOperation extends PrimaryClassNodeOperation {
 
     private final ASTTransformation transform
 
-    def TestHarnessOperation(transform) {
+    TestHarnessOperation(transform) {
         this.transform = transform;
     }
 
-    public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+    void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         transform.visit(null, source)
     }
 }

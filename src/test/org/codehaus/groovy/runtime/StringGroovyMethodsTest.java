@@ -23,11 +23,6 @@ import groovy.util.GroovyTestCase;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-/**
- * @author James Strachan
- * @author Marc Guillemot
- * @author Brad Long
- */
 public class StringGroovyMethodsTest extends GroovyTestCase {
 
     public void testIncrementString() throws Exception {

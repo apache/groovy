@@ -27,8 +27,6 @@ import org.codehaus.groovy.ast.stmt.Statement
 /**
  * Since a ternary statement has more than one exit point tail-recursiveness testing cannot be easily done.
  * Therefore this class translates a ternary statement (or Elvis operator) into the equivalent if-else statement.
- *
- * @author Johannes Link
  */
 @CompileStatic
 class TernaryToIfStatementConverter {

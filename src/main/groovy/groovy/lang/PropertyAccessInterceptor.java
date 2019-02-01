@@ -22,7 +22,6 @@ package groovy.lang;
  * <p>An interface that adds the ability to intercept
  * property getters/setters
  *
- * @author Graeme Rocher
  * @since Oct 24, 2005
  */
 public interface PropertyAccessInterceptor extends Interceptor {

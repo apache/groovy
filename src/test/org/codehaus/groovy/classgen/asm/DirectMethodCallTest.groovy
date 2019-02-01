@@ -21,9 +21,6 @@ package org.codehaus.groovy.classgen.asm
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.Parameter
 
-/**
- * @author Jochen Theodorou
- */
 class DirectMethodCallTest extends AbstractBytecodeTestCase {
     
   void testVirtual() {

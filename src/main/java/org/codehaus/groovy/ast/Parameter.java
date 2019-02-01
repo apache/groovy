@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 /**
  * Represents a parameter on a constructor or method call. The type name is
  * optional - it defaults to java.lang.Object if unknown.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class Parameter extends AnnotatedNode implements Variable {
 

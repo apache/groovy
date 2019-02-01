@@ -72,8 +72,6 @@ import java.util.Map;
  *         ast(CompileStatic)
  *     }
  * </code></pre>
- *
- * @author Cedric Champeau
  */
 public class SourceAwareCustomizerFactory extends AbstractFactory implements PostCompletionFactory {
 

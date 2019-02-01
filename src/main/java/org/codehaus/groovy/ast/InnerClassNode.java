@@ -24,8 +24,6 @@ import java.util.LinkedList;
 
 /**
  * Represents an inner class declaration
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class InnerClassNode extends ClassNode {
 

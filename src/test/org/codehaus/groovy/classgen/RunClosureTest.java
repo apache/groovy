@@ -20,9 +20,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class RunClosureTest extends TestSupport {
 
     public void testClosure() throws Exception {

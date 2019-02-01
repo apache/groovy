@@ -53,14 +53,11 @@ import java.util.Map;
  * supposed to go into the method 
  * {@link ClassNodeResolver#findClassNode(String, CompilationUnit)} while the 
  * entry method is {@link ClassNodeResolver#resolveName(String, CompilationUnit)}
- * 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ClassNodeResolver {
 
     /**
      * Helper class to return either a SourceUnit or ClassNode.
-     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
      */
     public static class LookupResult {
         private final SourceUnit su;

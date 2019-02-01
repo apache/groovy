@@ -46,7 +46,6 @@ import java.util.List;
  * ... hints because it is actually much slower. Using this hint should therefore be limited
  * to cases where it's not possible to express the signature using the existing hints.</p>
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 public class FromString extends ClosureSignatureHint {

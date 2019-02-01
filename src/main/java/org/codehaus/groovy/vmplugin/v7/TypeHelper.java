@@ -27,7 +27,6 @@ import java.math.BigInteger;
  * This class contains helper methods for converting and comparing types.
  * WARNING: This class is for internal use only. do not use it outside of its 
  * package and not outside groovy-core. 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class TypeHelper {
     /**

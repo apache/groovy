@@ -27,8 +27,6 @@ import java.lang.reflect.Method;
 
 /**
  * A helper class to invoke methods more easily in ASM
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MethodCaller implements Opcodes {
 

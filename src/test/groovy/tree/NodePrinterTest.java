@@ -23,9 +23,6 @@ import org.codehaus.groovy.classgen.TestSupport;
 
 import java.util.logging.Logger;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class NodePrinterTest extends TestSupport {
 
     public void testTree() throws Exception {

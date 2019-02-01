@@ -36,8 +36,6 @@ import java.util.Set;
  * Utility class for MissingMethodException, MissingPropertyException etc.
  * This class contains methods assisting in ranking and listing probable intended
  * methods/fields when a exception is thrown.
- *
- * @author Hjalmar Ekengren
  */
 public class MethodRankHelper{
     //These are the costs for the various edit operations

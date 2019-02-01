@@ -25,9 +25,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class MetaClassTest extends GroovyTestCase {
 
     public void testMetaClass() {

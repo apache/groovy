@@ -32,7 +32,6 @@ import java.lang.reflect.Method;
  *
  * @see MetaClassImpl
  * @see MetaClass
- * @author Graeme Rocher
  * @since 1.5
  */
 public interface MutableMetaClass extends MetaClass {

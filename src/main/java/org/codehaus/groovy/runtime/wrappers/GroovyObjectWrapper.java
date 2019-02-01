@@ -21,9 +21,6 @@ package org.codehaus.groovy.runtime.wrappers;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
-/**
- * @author John Wilson
- */
 public class GroovyObjectWrapper extends Wrapper {
     protected final GroovyObject wrapped;
 

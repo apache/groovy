@@ -38,10 +38,7 @@ import java.util.List;
  *     <li>static star imports thanks to {@link #addStaticStar(String)} or {@link #addStaticStars(String...)}</li>
  * </ul>
  *
- * @author Cedric Champeau
- *
  * @since 1.8.0
- *
  */
 public class ImportCustomizer extends CompilationCustomizer {
 

@@ -45,8 +45,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  *
  * There's probably place for optimizing the amount of variable copying being done, e.g.
  * parameters that are only handed through must not be copied at all.
- *
- * @author Johannes Link
  */
 @CompileStatic
 class ReturnStatementToIterationConverter {
@@ -98,7 +96,7 @@ class ReturnStatementToIterationConverter {
         argAssignment
     }
 
-    private ExpressionStatement createTempDeclaration(int index,  Map<Integer, Map> positionMapping, Map<String, Map> tempMapping, Map tempDeclarations) {
+    private ExpressionStatement createTempDeclaration(int index, Map<Integer, Map> positionMapping, Map<String, Map> tempMapping, Map tempDeclarations) {
         String argName = positionMapping[index]['name']
         String tempName = "_${argName}_"
         ClassNode argAndTempType = positionMapping[index]['type'] as ClassNode
@@ -120,7 +118,7 @@ class ReturnStatementToIterationConverter {
     }
 
     private Set<String> replaceAllArgUsages(List<ExpressionStatement> iterationVariablesAssignmentNodes, Map<String, Map> tempMapping) {
-        Set<String> unusedTempNames = tempMapping.values().collect {Map nameAndType -> (String) nameAndType['name']} as Set<String>
+        Set<String> unusedTempNames = tempMapping.values().collect { Map nameAndType -> (String) nameAndType['name'] } as Set<String>
         VariableReplacedListener tracker = new UsedVariableTracker()
         for (ExpressionStatement statement : iterationVariablesAssignmentNodes) {
             replaceArgUsageByTempUsage((BinaryExpression) statement.expression, tempMapping, tracker)

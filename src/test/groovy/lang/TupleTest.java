@@ -26,9 +26,6 @@ import java.util.Set;
 
 import static groovy.lang.Tuple.tuple;
 
-/**
- * @author James Strachan
- */
 public class TupleTest extends GroovyTestCase {
 
     final Object[] data = {"a", "b", "c"};

@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
-/**
- * @author John Wilson
- */
 public class CharWrapper extends PojoWrapper {
     public CharWrapper(final char wrapped) {
         super(wrapped, char.class);

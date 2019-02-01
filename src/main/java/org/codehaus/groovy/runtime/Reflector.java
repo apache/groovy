@@ -24,8 +24,6 @@ import org.codehaus.groovy.reflection.CachedMethod;
 
 /**
  * Provides as alternative to reflection using bytecode generation.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class Reflector {
 

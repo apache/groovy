@@ -82,8 +82,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the @AutoClone annotation.
- *
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class AutoCloneASTTransformation extends AbstractASTTransformation {

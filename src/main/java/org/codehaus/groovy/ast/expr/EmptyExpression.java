@@ -33,7 +33,6 @@ import java.util.Map;
  * class Generation this expression should be either ignored or
  * replace with a null value.
  *   
- * @author Jochen Theodorou
  * @see org.codehaus.groovy.ast.stmt.EmptyStatement
  */
 

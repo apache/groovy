@@ -21,9 +21,6 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 
-/**
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- */
 public class StaticTypesWriterControllerFactoryImpl implements WriterControllerFactory {
 
     public WriterController makeController(WriterController normalController) {

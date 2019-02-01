@@ -22,8 +22,6 @@ import java.util.Map.Entry;
 
 /**
  * Represents a property in an Expando object
- *
- * @author John Stump
  */
 public class MetaExpandoProperty extends MetaProperty {
 

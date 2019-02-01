@@ -654,6 +654,45 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Nick Grealy'
             }
             contributor {
+                name 'Vaclav Pech'
+            }
+            contributor {
+                name 'Chuck Tassoni'
+            }
+            contributor {
+                name 'Steven Devijver'
+            }
+            contributor {
+                name 'Ben Manes'
+            }
+            contributor {
+                name 'Troy Heninger'
+            }
+            contributor {
+                name 'Andrew Eisenberg'
+            }
+            contributor {
+                name 'Eric Milles'
+            }
+            contributor {
+                name 'Kohsuke Kawaguchi'
+            }
+            contributor {
+                name 'Scott Vlaminck'
+            }
+            contributor {
+                name 'Hjalmar Ekengren'
+            }
+            contributor {
+                name 'Rafael Luque'
+            }
+            contributor {
+                name 'Joachim Heldmann'
+            }
+            contributor {
+                name 'dgouyette'
+            }
+            contributor {
                 name 'Marcin Grzejszczak'
             }
             contributor {

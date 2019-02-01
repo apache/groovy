@@ -19,9 +19,7 @@
 package org.codehaus.groovy.classgen.asm
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
-/**
- * @author Jochen Theodorou
- */
+
 class MethodPatternsTest extends AbstractBytecodeTestCase {
 
     void testUnoptimizedIfWithNestedOptimizedLoop(){

@@ -26,14 +26,11 @@ import java.io.PrintWriter;
 
 /**
  * A class for error messages produced by the parser system.
- *
- * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
-
 public class SyntaxErrorMessage extends Message {
     protected SyntaxException cause;
     protected SourceUnit source;
-    
+
     public SyntaxErrorMessage(SyntaxException cause, SourceUnit source) {
         this.cause = cause;
         this.source = source;
@@ -43,7 +40,6 @@ public class SyntaxErrorMessage extends Message {
     /**
      * Returns the underlying SyntaxException.
      */
-
     public SyntaxException getCause() {
         return this.cause;
     }
@@ -51,7 +47,6 @@ public class SyntaxErrorMessage extends Message {
     /**
      * Writes out a nicely formatted summary of the syntax error.
      */
-
     public void write(PrintWriter output, Janitor janitor) {
         String name = source.getName();
         int line = getCause().getStartLine();

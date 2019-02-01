@@ -21,9 +21,6 @@ package org.codehaus.groovy.runtime;
 
 /**
  * Utilities for handling array types
- *
- * @author <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on 2016/10/28
  */
 public class ArrayTypeUtils {
 

@@ -23,9 +23,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-/**
- * @author Alex.Tkachman
- */
 public class DoubleCachedClass extends NumberCachedClass { // Double, double
     private final boolean allowNull;
 

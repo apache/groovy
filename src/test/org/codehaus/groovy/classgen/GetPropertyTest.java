@@ -22,8 +22,6 @@ import groovy.lang.GroovyObject;
 
 /**
  * Tests using the GroovyObject API from Java on a groovy object
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class GetPropertyTest extends TestSupport {
 

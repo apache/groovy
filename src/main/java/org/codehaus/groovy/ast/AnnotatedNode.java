@@ -27,8 +27,6 @@ import java.util.List;
 
 /**
  * Base class for any AST node which is capable of being annotated
- *
- * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  */
 public class AnnotatedNode extends ASTNode implements GroovydocHolder<AnnotatedNode> {
     private List<AnnotationNode> annotations = Collections.emptyList();

@@ -26,11 +26,6 @@ import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
-/**
- *
- * @author Hamlet D'Arcy
- * @author Sergei Egorov <bsideup@gmail.com>
- */
 public abstract class MethodInvocationTrap extends CodeVisitorSupport {
 
     protected final ReaderSource source;
@@ -51,12 +46,12 @@ public abstract class MethodInvocationTrap extends CodeVisitorSupport {
      */
     public void visitMethodCallExpression(MethodCallExpression call) {
         boolean shouldContinueWalking = true;
-        
+
         if (isBuildInvocation(call)) {
             shouldContinueWalking = handleTargetMethodCallExpression(call);
         }
-        
-        if(shouldContinueWalking) {
+
+        if (shouldContinueWalking) {
             // continue normal tree walking
             call.getObjectExpression().visit(this);
             call.getMethod().visit(this);
@@ -85,7 +80,7 @@ public abstract class MethodInvocationTrap extends CodeVisitorSupport {
     protected String convertClosureToSource(ClosureExpression expression) {
         try {
             return ClosureUtils.convertClosureToSource(source, expression);
-        } catch(Exception e) {
+        } catch (Exception e) {
             addError(e.getMessage(), expression);
         }
         return null;

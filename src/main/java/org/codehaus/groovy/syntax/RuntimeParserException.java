@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.ASTNode;
 /**
  * A helper class to allow parser exceptions to be thrown anywhere in the code.
  * Should be replaced when no longer required.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class RuntimeParserException extends GroovyRuntimeException {
 

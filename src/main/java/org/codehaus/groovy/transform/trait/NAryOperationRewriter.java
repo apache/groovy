@@ -40,8 +40,6 @@ import static org.codehaus.groovy.syntax.Types.EQUAL;
 /**
  * Rewrites some expressions found in traits so that they are compatible. For example, x++ will be rewritten into x = x
  * + 1 and x += y into x = x + y
- *
- * @author Cédric Champeau
  */
 class NAryOperationRewriter extends ClassCodeExpressionTransformer {
     private final SourceUnit sourceUnit;

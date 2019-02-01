@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
-/**
- * @author John Wilson
- */
 public class FloatWrapper extends PojoWrapper {
     public FloatWrapper(final float wrapped) {
         super(wrapped, float.class);

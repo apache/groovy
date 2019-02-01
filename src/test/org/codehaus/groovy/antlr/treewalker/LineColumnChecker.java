@@ -25,8 +25,6 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 /**
  * Source AST Visitor that will assert each node has a correct line/column info
  * given a SourceBuffer
- *
- * @author Jeremy Rayner
  */
 public class LineColumnChecker extends VisitorAdapter {
     private SourceBuffer sourceBuffer;
