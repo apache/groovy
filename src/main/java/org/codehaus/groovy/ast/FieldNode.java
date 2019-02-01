@@ -25,8 +25,6 @@ import java.lang.reflect.Field;
 
 /**
  * Represents a field (member variable)
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 
@@ -37,7 +35,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     private Expression initialValueExpression;
     private boolean dynamicTyped;
     private boolean holder;
-    private ClassNode originType = ClassHelper.DYNAMIC_TYPE;
+    private ClassNode originType;
 
     public static FieldNode newStatic(Class theClass, String name) throws SecurityException, NoSuchFieldException {
         Field field = theClass.getField(name);
@@ -48,11 +46,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     public FieldNode(String name, int modifiers, ClassNode type, ClassNode owner, Expression initialValueExpression) {
         this.name = name;
         this.modifiers = modifiers;
-        this.type = type;
-        if (this.type == ClassHelper.DYNAMIC_TYPE && initialValueExpression != null)
-            this.setType(initialValueExpression.getType());
         this.setType(type);
-        this.originType = type;
         this.owner = owner;
         this.initialValueExpression = initialValueExpression;
     }
@@ -179,6 +173,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     public boolean isClosureSharedVariable() {
         return false;
     }
+
     /**
      * @deprecated
      */
@@ -189,7 +184,7 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     public ClassNode getOriginType() {
         return originType;
     }
-    
+
     public void setOriginType(ClassNode cn) {
         originType = cn;
     }
