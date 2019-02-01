@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * map uses internally a ConcurrentHashMap, thus should be safe for concurrency.
  * hashcode and equals are used to find the entries and should thus be implemented
  * properly for the keys. This map does not support null keys.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  *
  * @param <K> the key type
  * @param <V> the value type

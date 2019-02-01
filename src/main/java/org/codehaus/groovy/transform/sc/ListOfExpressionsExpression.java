@@ -28,8 +28,6 @@ import java.util.List;
 /**
  * This class is used internally by the compiler to transform expressions
  * like multiple assignments into a list of assignments.
- *
- * @author Cedric Champeau
  */
 public class ListOfExpressionsExpression extends Expression {
 

@@ -27,7 +27,7 @@ import java.util.HashMap;
 
 /**
  * Class for handling array access through invokedynamic using static callsite information
- * @author Jochen Theodorou
+ *
  * @since 2.5.0
  */
 public class IndyArrayAccess {

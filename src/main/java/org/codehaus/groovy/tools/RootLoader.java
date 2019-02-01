@@ -70,8 +70,6 @@ import java.util.Map;
  * if childLoader had tried to load the class by itself, there
  * would be no problem. Changing childLoader to be a RootLoader
  * instance will solve that problem.
- *
- * @author Jochen Theodorou
  */
 public class RootLoader extends URLClassLoader {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];

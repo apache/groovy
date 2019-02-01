@@ -24,8 +24,6 @@ import java.lang.reflect.Modifier;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public abstract class MetaProperty {
 

@@ -31,12 +31,6 @@ import java.util.Map;
 
 /**
  * A common base class of AST helper methods which can be shared across the classic and new parsers
- *
- * @author Jochen Theodorou
- * @author James Strachan
- * @author Bob McWhirter
- * @author Sam Pullara
- * @author Chris Poirier
  */
 public class ASTHelper {
 

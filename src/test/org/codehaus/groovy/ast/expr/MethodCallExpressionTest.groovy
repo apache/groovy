@@ -18,10 +18,6 @@
  */
 package org.codehaus.groovy.ast.expr
 
-/**
- * 
- * @author Hamlet D'Arcy
- */
 class MethodCallExpressionTest extends GroovyTestCase {
 
     void testGetText() {

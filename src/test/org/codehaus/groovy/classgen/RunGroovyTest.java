@@ -22,8 +22,6 @@ import groovy.lang.GroovyObject;
 
 /**
  * Tests dynamically compiling and running a new class
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class RunGroovyTest extends TestSupport {
 

@@ -31,7 +31,6 @@ import org.codehaus.groovy.classgen.asm.WriterController;
  * allows defining temporary variables loaded from variable slots directly at the AST level,
  * without any knowledge of {@link org.codehaus.groovy.classgen.AsmClassGenerator}.
  *
- * @author Cédric Champeau
  * @since 2.4.0
  */
 public class TemporaryVariableExpression extends Expression {

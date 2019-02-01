@@ -32,8 +32,6 @@ import java.util.Map;
 
 /**
  * Test the property access of the Invoker class
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class PropertyTest extends GroovyTestCase {
 

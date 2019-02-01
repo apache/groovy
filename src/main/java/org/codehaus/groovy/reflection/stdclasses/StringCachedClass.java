@@ -23,9 +23,6 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
-/**
- * @author Alex.Tkachman
- */
 public class StringCachedClass extends CachedClass {
     private static final Class STRING_CLASS = String.class;
     private static final Class GSTRING_CLASS = GString.class;

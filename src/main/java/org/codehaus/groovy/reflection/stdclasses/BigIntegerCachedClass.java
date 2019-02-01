@@ -22,9 +22,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 
 import java.math.BigInteger;
 
-/**
- * @author Alex.Tkachman
- */
 public class BigIntegerCachedClass extends NumberCachedClass {
     public BigIntegerCachedClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo);

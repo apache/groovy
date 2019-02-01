@@ -23,8 +23,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a continue statement in a loop statement
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ContinueStatement extends Statement {
 

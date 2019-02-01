@@ -46,29 +46,27 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
  * Handles generation of code for the @TailRecursive annotation.
  *
  * It's doing its work in the earliest possible compile phase
- *
- * @author Johannes Link
  */
 @CompileStatic
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
-    private static final Class MY_CLASS = TailRecursive.class;
-    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final Class MY_CLASS = TailRecursive.class
+    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS)
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage()
     private HasRecursiveCalls hasRecursiveCalls = new HasRecursiveCalls()
     private TernaryToIfStatementConverter ternaryToIfStatement = new TernaryToIfStatementConverter()
 
 
     @Override
-    public void visit(ASTNode[] nodes, SourceUnit source) {
-        init(nodes, source);
+    void visit(ASTNode[] nodes, SourceUnit source) {
+        init(nodes, source)
 
         MethodNode method = nodes[1] as MethodNode
 
         if (method.isAbstract()) {
-            addError("Annotation " + MY_TYPE_NAME + " cannot be used for abstract methods.", method);
-            return;
+            addError("Annotation " + MY_TYPE_NAME + " cannot be used for abstract methods.", method)
+            return
         }
 
         if (hasAnnotation(method, ClassHelper.make(Memoized))) {
@@ -86,7 +84,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
         if (!hasRecursiveMethodCalls(method)) {
             AnnotationNode annotationNode = method.getAnnotations(ClassHelper.make(TailRecursive))[0]
             addError("No recursive calls detected. You must remove annotation " + MY_TYPE_NAME + ".", annotationNode)
-            return;
+            return
         }
 
         transformToIteration(method, source)
@@ -94,8 +92,8 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
     }
 
     private boolean hasAnnotation(MethodNode methodNode, ClassNode annotation) {
-        List annots = methodNode.getAnnotations(annotation);
-        return (annots != null && annots.size() > 0);
+        List annots = methodNode.getAnnotations(annotation)
+        return (annots != null && annots.size() > 0)
     }
 
 
@@ -219,7 +217,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
             if (!(statement instanceof ReturnStatement)) {
                 return false
             }
-            Expression inner = ((ReturnStatement )statement).expression
+            Expression inner = ((ReturnStatement) statement).expression
             if (!(inner instanceof MethodCallExpression) && !(inner instanceof StaticMethodCallExpression)) {
                 return false
             }
@@ -243,7 +241,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
     private void ensureAllRecursiveCallsHaveBeenTransformed(MethodNode method) {
         List<Expression> remainingRecursiveCalls = new CollectRecursiveCalls().collect(method)
-        for(Expression expression : remainingRecursiveCalls) {
+        for (Expression expression : remainingRecursiveCalls) {
             addError("Recursive call could not be transformed by @TailRecursive. Maybe it's not a tail call.", expression)
         }
     }

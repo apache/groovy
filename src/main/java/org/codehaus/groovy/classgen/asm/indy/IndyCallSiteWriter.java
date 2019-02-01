@@ -27,7 +27,6 @@ import org.codehaus.groovy.classgen.asm.WriterController;
  * This class mostly contains empty stubs for calls to the call site writer,
  * since this class is normally used to prepare call site caching and in indy
  * call site caching is done by the jvm.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class IndyCallSiteWriter extends CallSiteWriter {
     private final WriterController controller;

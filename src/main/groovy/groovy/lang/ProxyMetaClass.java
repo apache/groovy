@@ -29,8 +29,6 @@ package groovy.lang;
  * as a per-instance MetaClass running in a single thread. Do not place this MetaClass in the MetaClassRegistry
  * as it will result in unpredictable behaviour
  *
- * @author Dierk Koenig
- * @author Graeme Rocher
  * @see groovy.lang.MetaClassRegistry
  */
 public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {

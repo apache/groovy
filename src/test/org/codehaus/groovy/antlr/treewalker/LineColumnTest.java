@@ -32,8 +32,6 @@ import java.io.StringReader;
 /**
  * Test that will assert each node of Source AST has a correct line/column info
  * given a SourceBuffer
- *
- * @author Jeremy Rayner
  */
 public class LineColumnTest extends TestCase {
     public void testSimpleGroovySource() throws Exception {

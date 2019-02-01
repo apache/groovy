@@ -30,8 +30,6 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * A visitor used as a callback to {@link org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor#existsProperty(org.codehaus.groovy.ast.expr.PropertyExpression, boolean, org.codehaus.groovy.ast.ClassCodeVisitorSupport)}
  * which will return set the type of the found property in the provided reference.
- *
- * @author Cedric Champeau
  */
 class PropertyLookupVisitor extends ClassCodeVisitorSupport {
     private final AtomicReference<ClassNode> result;

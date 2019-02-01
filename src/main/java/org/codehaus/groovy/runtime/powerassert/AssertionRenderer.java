@@ -27,8 +27,6 @@ import java.util.List;
 
 /**
  * Creates a string representation of an assertion and its recorded values.
- *
- * @author Peter Niederwieser
  */
 public final class AssertionRenderer {
     private final String text;

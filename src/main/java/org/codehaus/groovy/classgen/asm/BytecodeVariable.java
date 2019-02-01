@@ -24,9 +24,6 @@ import org.objectweb.asm.Label;
 
 /**
  * Represents compile time variable metadata while compiling a method.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class BytecodeVariable {
     

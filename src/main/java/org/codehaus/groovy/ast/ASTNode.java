@@ -43,9 +43,6 @@ import java.util.Objects;
  * method will not be called for this purpose anymore and might be removed in
  * future versions of Groovy</li>
  * </ul>
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ASTNode {
 

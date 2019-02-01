@@ -34,8 +34,6 @@ import java.util.List;
  * composite.visitDefault() would...
  * call on the opening visit - a.visitDefault() then b.visitDefault() then c.visitDefault()
  * call on the closing visit - c.visitDefault() then b.visitDefault() then a.visitDefault()
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 
 public class CompositeVisitor implements Visitor{

@@ -22,9 +22,6 @@ import junit.framework.TestCase;
 
 import java.util.List;
 
-/**
- * @author James Strachan
- */
 public class TupleTest extends TestCase {
 
     final Object[] data = {"a", "b", "c"};

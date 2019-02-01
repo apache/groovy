@@ -78,8 +78,6 @@ import java.util.List;
 /**
  * Abstract base class for any GroovyCodeVisitor which by default
  * just walks the code and expression tree
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 

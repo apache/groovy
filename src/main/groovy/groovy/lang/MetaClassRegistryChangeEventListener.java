@@ -26,8 +26,6 @@ import java.util.EventListener;
  * @see groovy.lang.MetaClassRegistry
  * @see groovy.lang.MetaClassRegistryChangeEvent
  *
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
-  *
  */
 public interface MetaClassRegistryChangeEventListener extends EventListener{
 

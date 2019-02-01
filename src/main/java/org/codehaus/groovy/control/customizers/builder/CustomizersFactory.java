@@ -30,7 +30,6 @@ import java.util.Map;
 /**
  * This factory generates an array of compilation customizers.
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 public class CustomizersFactory extends AbstractFactory implements PostCompletionFactory {

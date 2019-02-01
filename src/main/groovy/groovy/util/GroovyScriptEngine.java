@@ -59,12 +59,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Specific script engine able to reload modified scripts as well as dealing properly
  * with dependent scripts.
- *
- * @author sam
- * @author Marc Palmer
- * @author Guillaume Laforge
- * @author Jochen Theodorou
- * @author Mattias Reichel
  */
 public class GroovyScriptEngine implements ResourceConnector {
     private static final ClassLoader CL_STUB = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {

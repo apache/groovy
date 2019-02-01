@@ -31,7 +31,6 @@ import org.codehaus.groovy.control.SourceUnit;
  * {@link org.codehaus.groovy.control.CompilePhase} to run in.
  *
  * @see GroovyASTTransformation
- * @author Danno Ferrin (shemnon)
  */
 public interface ASTTransformation {
 

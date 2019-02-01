@@ -27,8 +27,6 @@ import java.util.List;
 
 /**
  * A list of statements and a scope. 
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class BlockStatement extends Statement {
 

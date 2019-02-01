@@ -28,9 +28,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.syntax.Token;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class TupleListTest extends TestSupport {
 
     public void testIterateOverList() throws Exception {

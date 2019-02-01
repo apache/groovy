@@ -26,8 +26,6 @@ import java.lang.reflect.Method;
  * The class is particularly useful for Groovy classes implementing <code>GroovyInterceptable</code>,
  * since it is not possible to call any method from this class,
  * because it is intercepted by the <code>invokeMethod()</code> method.
- *
- * @author Guillaume Laforge
  */
 public class ReflectionMethodInvoker {
 

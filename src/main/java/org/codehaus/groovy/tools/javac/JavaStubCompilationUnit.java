@@ -35,9 +35,6 @@ import java.util.Map;
 
 /**
  * Compilation unit to only generate stubs.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
- * @author Guillaume Laforge
  */
 public class JavaStubCompilationUnit extends CompilationUnit {
     private static final String DOT_GROOVY = ".groovy";

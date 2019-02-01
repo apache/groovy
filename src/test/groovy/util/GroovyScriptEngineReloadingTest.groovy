@@ -19,43 +19,36 @@
 package groovy.util
 
 import java.util.concurrent.ConcurrentHashMap
-import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.CompilerConfiguration
 
-/**
- *
- * @author Guillaume Laforge
- * @author David Lee
- * @author Jochen Theodorou
- * @author Chuck Tassoni
- */
 class GroovyScriptEngineReloadingTest extends GroovyTestCase {
-    GroovyScriptEngine gse;
+    GroovyScriptEngine gse
 
     void setUp() {
         MapFileSystem.instance.registerMapFileSystem()
-        makeGSE(null);
+        makeGSE(null)
     }
 
    private void makeGSE(ClassLoader parent) {
        if (parent == null) {
            gse = new GroovyScriptEngine([MapUrlConnection.URL_SCHEME] as String[]) {
-               long time=1000;
+               long time=1000
                protected long getCurrentTime() {
-                   return time;
+                   return time
                }
            }
        } else {
            gse = new GroovyScriptEngine([MapUrlConnection.URL_SCHEME] as String[], parent) {
-               long time=1000;
+               long time=1000
                protected long getCurrentTime() {
-                   return time;
+                   return time
                }
            }
        }
    }
 
     private void sleep(int i) {
-        gse.@time += i;
+        gse.@time += i
     }
 
     private void execute(intervall, sleepTime, expected) {
@@ -92,7 +85,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         execute (100000, 200000, 2)
     }
 
-    public void testReloadWith2ScriptsDependentOnSameBeanAndReloadForSecond() {
+    void testReloadWith2ScriptsDependentOnSameBeanAndReloadForSecond() {
         gse.config.minimumRecompilationInterval = 1000
         writeBean(1)
         writeScript(1)
@@ -112,7 +105,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         assert val2 =='2', "script2 should have returned 2"
     }
 
-    public void testReloadWith2ScriptsDependentOnSameBean() {
+    void testReloadWith2ScriptsDependentOnSameBean() {
         gse.config.minimumRecompilationInterval = 1
         writeBean(1)
         writeScript(1)
@@ -165,7 +158,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         assert beanClass1 != oldBeanClass, "bean class was not recompiled"
     }
 
-    public void testReloadWhenModifyingAllScripts() {
+    void testReloadWhenModifyingAllScripts() {
         gse.config.minimumRecompilationInterval = 1
         writeBean(1)
         writeScript(1)
@@ -197,7 +190,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         assert val4 == '2', "script2 should have returned 2 after bean was modified but returned $val4"
     }
 
-    public void writeScript(int name) throws IOException {
+    void writeScript(int name) throws IOException {
         def s = """
             def b = new Bean()
             return b.getVal()
@@ -205,7 +198,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         MapFileSystem.instance.modFile("script${name}.groovy", s, gse.@time)
     }
 
-    public void writeBean(int d) throws IOException {
+    void writeBean(int d) throws IOException {
         def s = """
             class Bean {
                 String prop0
@@ -216,7 +209,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         MapFileSystem.instance.modFile("Bean.groovy", s, gse.@time)
     }
 
-    public void testDynamicInstantiation() throws Exception {
+    void testDynamicInstantiation() throws Exception {
        MapFileSystem.instance.modFile("script.groovy",
            """
                def obj = dynaInstantiate.instantiate(className, getClass().getClassLoader())
@@ -250,7 +243,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
           """
               package com.company.util
               interface HelperIntf{
-                 public String getMessage();
+                 public String getMessage()
               }
           """,0)
 
@@ -265,24 +258,24 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
            """,0)
 
        //Code run in the script will modify this dimension object.
-       MyDimension dim = new MyDimension();
+       MyDimension dim = new MyDimension()
 
-       Binding binding = new Binding();
-       binding.setVariable("dim", dim);
-       binding.setVariable("dynaInstantiate", this);
+       Binding binding = new Binding()
+       binding.setVariable("dim", dim)
+       binding.setVariable("dynaInstantiate", this)
 
-       binding.setVariable("className", "com.company.MakeMe");
+       binding.setVariable("className", "com.company.MakeMe")
 
-       int addThis = 3;
-       binding.setVariable("addThis", addThis);
+       int addThis = 3
+       binding.setVariable("addThis", addThis)
 
-       gse.run("script.groovy", binding);
+       gse.run("script.groovy", binding)
 
        //The script instantiated com.company.MakeMe via our own
        //instantiate method.  The instantiated object modified the
        //width of our Dimension object, adding the value of our
        //'addThis' variable to it.
-       assertEquals(new MyDimension(addThis, 0), dim);
+       assertEquals(new MyDimension(addThis, 0), dim)
 
        assertEquals('worked', binding.getVariable("returnedMessage"))
     }
@@ -296,17 +289,17 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     * since real-world usages will likely require delegating that
     * job.
     */
-   public Object instantiate(String className, ClassLoader classLoader) {
-       Class clazz = null;
+   Object instantiate(String className, ClassLoader classLoader) {
+       Class clazz = null
        try {
-           clazz = Class.forName(className, true, classLoader);
+           clazz = Class.forName(className, true, classLoader)
        } catch (ClassNotFoundException ex) {
-           throw new RuntimeException("Class.forName failed for  " + className, ex);
+           throw new RuntimeException("Class.forName failed for  " + className, ex)
        }
        try {
-           return clazz.newInstance();
+           return clazz.newInstance()
        } catch (Exception ex) {
-           throw new RuntimeException("Could not instantiate object of class " + className, ex);
+           throw new RuntimeException("Could not instantiate object of class " + className, ex)
        }
    }
 
@@ -314,11 +307,11 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
     * Test for GROOVY-3281, to ensure details passed through CompilerConfiguration are inherited by GSE.
     */
    void testCompilerConfigurationInheritance() {
-       CompilerConfiguration cc = new CompilerConfiguration();
+       CompilerConfiguration cc = new CompilerConfiguration()
        cc.scriptBaseClass = CustomBaseClass.name
 
        GroovyClassLoader cl = new GroovyClassLoader(this.class.getClassLoader(), cc)
-       makeGSE(cl);
+       makeGSE(cl)
        
        MapFileSystem.instance.modFile(
            "groovyScriptEngineSampleScript.groovy",
@@ -428,7 +421,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         String content
         long lutime
     
-        public MapFileEntry(String content, long lutime) {
+        MapFileEntry(String content, long lutime) {
             this.content = content
             this.lutime = lutime
         }
@@ -498,7 +491,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
         private String name
     
         InputStream getInputStream() throws IOException {
-            // System.out.println(name+"\t"+MapFileSystem.fileCache.get(name).content);
+            // System.out.println(name+"\t"+MapFileSystem.fileCache.get(name).content)
             if (MapFileSystem.instance.fileCache.containsKey(name)) {
                 String content = MapFileSystem.instance.fileCache.get(name).content
                 return new ByteArrayInputStream(content.getBytes(CHARSET))
@@ -512,7 +505,7 @@ class GroovyScriptEngineReloadingTest extends GroovyTestCase {
             if (MapFileSystem.instance.fileCache.containsKey(name)) {
                 lastmodified = MapFileSystem.instance.fileCache.get(name).lutime
             }
-            // System.out.println(name+"\t"+lastmodified);
+            // System.out.println(name+"\t"+lastmodified)
             return lastmodified
         }
     

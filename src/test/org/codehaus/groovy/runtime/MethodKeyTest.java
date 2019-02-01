@@ -21,9 +21,6 @@ package org.codehaus.groovy.runtime;
 import junit.framework.TestCase;
 import org.codehaus.groovy.runtime.metaclass.TemporaryMethodKey;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class MethodKeyTest extends TestCase {
 
     public void testDefaultImplementation() throws Exception {

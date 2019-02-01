@@ -24,9 +24,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * A constructor call
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Jochen Theodorou
  */
 public class ConstructorCallExpression extends Expression implements MethodCall {
 

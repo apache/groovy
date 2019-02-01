@@ -29,7 +29,6 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 /**
  * Transformer for VariableExpression the bytecode backend wouldn't be able to
  * handle otherwise.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class VariableExpressionTransformer {
 

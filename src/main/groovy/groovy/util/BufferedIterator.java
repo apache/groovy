@@ -23,7 +23,6 @@ import java.util.Iterator;
 /**
  * An iterator that allows examining the next element without consuming it.
  *
- * @author Andrew Taylor
  * @since 2.5.0
  */
 public interface BufferedIterator<T> extends Iterator<T> {

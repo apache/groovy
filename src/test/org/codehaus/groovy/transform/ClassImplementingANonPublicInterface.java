@@ -21,8 +21,6 @@ package org.codehaus.groovy.transform;
 /**
  * Implementation of a package-scoped interface.
  * Fix for GROOVY-3380
- *
- * @author Guillaume Laforge
  */
 public class ClassImplementingANonPublicInterface implements NonPublicInterface {
     public String returnConstant() { return CONSTANT; }

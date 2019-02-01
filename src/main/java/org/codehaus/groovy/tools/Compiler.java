@@ -26,86 +26,67 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.io.File;
 
 /**
- *  A convenience front end for getting standard compilations done.
- *  All compile() routines generate classes to the filesystem.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * A convenience front end for getting standard compilations done.
+ * All compile() routines generate classes to the filesystem.
  */
-
 public class Compiler {
     // TODO: delete this constant?
     public static final Compiler DEFAULT = new Compiler();
-    
+
     private final CompilerConfiguration configuration;  // Optional configuration data
-    
-   /**
-    *  Initializes the Compiler with default configuration.
-    */
-    
-    public Compiler()
-    {
+
+    /**
+     * Initializes the Compiler with default configuration.
+     */
+    public Compiler() {
         configuration = null;
     }
-    
-    
-   /**
-    *  Initializes the Compiler with the specified configuration.
-    */
-    
-    public Compiler( CompilerConfiguration configuration )
-    {
+
+
+    /**
+     * Initializes the Compiler with the specified configuration.
+     */
+    public Compiler(CompilerConfiguration configuration) {
         this.configuration = configuration;
     }
 
-    
-   
-   /**
-    *  Compiles a single File.
-    */
-   
-    public void compile( File file ) throws CompilationFailedException
-    {
-        CompilationUnit unit = new CompilationUnit( configuration );
-        unit.addSource( file );
-        unit.compile();
-    }
-    
-    
-    
-   /**
-    *  Compiles a series of Files.
-    */
-    
-    public void compile( File[] files ) throws CompilationFailedException
-    {
-        CompilationUnit unit = new CompilationUnit( configuration );
-        unit.addSources( files );
+
+    /**
+     * Compiles a single File.
+     */
+    public void compile(File file) throws CompilationFailedException {
+        CompilationUnit unit = new CompilationUnit(configuration);
+        unit.addSource(file);
         unit.compile();
     }
 
-    
-    
-   /**
-    *  Compiles a series of Files from file names.
-    */
-    
-    public void compile( String[] files ) throws CompilationFailedException
-    {
-        CompilationUnit unit = new CompilationUnit( configuration );
-        unit.addSources( files );
+
+    /**
+     * Compiles a series of Files.
+     */
+    public void compile(File[] files) throws CompilationFailedException {
+        CompilationUnit unit = new CompilationUnit(configuration);
+        unit.addSources(files);
         unit.compile();
     }
 
-    
-    
-   /**
-    *  Compiles a string of code.
-    */
-    
-    public void compile( String name, String code ) throws CompilationFailedException
-    {
-        CompilationUnit unit = new CompilationUnit( configuration );
-        unit.addSource( new SourceUnit(name, code, configuration, unit.getClassLoader(), unit.getErrorCollector()) );
+
+    /**
+     * Compiles a series of Files from file names.
+     */
+    public void compile(String[] files) throws CompilationFailedException {
+        CompilationUnit unit = new CompilationUnit(configuration);
+        unit.addSources(files);
+        unit.compile();
+    }
+
+
+    /**
+     * Compiles a string of code.
+     */
+    public void compile(String name, String code) throws CompilationFailedException {
+        CompilationUnit unit = new CompilationUnit(configuration);
+        unit.addSource(new SourceUnit(name, code, configuration, unit.getClassLoader(), unit.getErrorCollector()));
         unit.compile();
     }
 

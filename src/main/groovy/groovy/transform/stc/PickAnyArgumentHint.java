@@ -39,7 +39,6 @@ import org.codehaus.groovy.control.SourceUnit;
  * <p></p>
  * <p>This class is extended by several hint providers that make it easier to use as annotation values.</p>
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 public class PickAnyArgumentHint extends SingleSignatureClosureHint {

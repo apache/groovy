@@ -25,8 +25,6 @@ import org.codehaus.groovy.control.SourceUnit;
 
 /**
  * An abstract base class useful for AST parser related test cases
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public abstract class TestParserSupport extends GroovyTestCase {
 

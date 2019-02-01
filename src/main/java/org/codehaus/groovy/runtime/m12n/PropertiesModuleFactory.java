@@ -25,8 +25,6 @@ import java.util.Properties;
  * using properties.
  *
  * @since 2.0.0
- *
- * @author Cedric Champeau
  */
 public abstract class PropertiesModuleFactory {
     public static final String MODULE_NAME_KEY = "moduleName";

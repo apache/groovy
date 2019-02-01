@@ -26,8 +26,6 @@ import org.objectweb.asm.MethodVisitor;
 
 /**
  * Represents some custom bytecode generation by the compiler
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public abstract class BytecodeExpression extends Expression {
     public static final BytecodeExpression NOP = new BytecodeExpression() {

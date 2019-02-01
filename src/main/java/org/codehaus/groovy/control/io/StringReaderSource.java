@@ -28,10 +28,7 @@ import java.net.URISyntaxException;
 
 /**
  *  A ReaderSource for source strings.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
-
 public class StringReaderSource extends AbstractReaderSource {
     private final String string;  // The String from which we produce Readers.
 

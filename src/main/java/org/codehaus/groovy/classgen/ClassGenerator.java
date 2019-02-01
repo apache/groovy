@@ -27,9 +27,6 @@ import java.util.LinkedList;
 
 /**
  * Abstract base class for generator of Java class versions of Groovy AST classes
- *
- * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
- * @author Russel Winder
  */
 public abstract class ClassGenerator extends ClassCodeVisitorSupport implements Opcodes {
     // inner classes created while generating bytecode

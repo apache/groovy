@@ -24,8 +24,6 @@ import org.objectweb.asm.Opcodes;
 
 /**
  * Represents a property (member variable, a getter and setter)
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class PropertyNode extends AnnotatedNode implements Opcodes, Variable {
 

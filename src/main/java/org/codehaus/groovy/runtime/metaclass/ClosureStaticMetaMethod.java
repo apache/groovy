@@ -30,7 +30,6 @@ import java.lang.reflect.Modifier;
  * This class represents a MetaMethod that is a closure that pretends to be a static method.
  * It is used by ExpandoMetaClass to allow addition of static methods defined as closures
  *
- * @author Graeme Rocher
  * @since 01.1
  */
 public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvokingMethod {

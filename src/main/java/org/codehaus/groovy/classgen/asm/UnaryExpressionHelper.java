@@ -33,8 +33,6 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
  * helper.
  *
  * @see BinaryExpressionHelper
- *
- * @author Cedric Champeau
  */
 public class UnaryExpressionHelper {
 

@@ -34,7 +34,6 @@ import java.util.logging.Logger;
  * Originally was grails.utils.GrailsUtils, removed some grails specific stuff.
  * Utility methods removing internal lines from stack traces
  *
- * @author Graeme Rocher
  * @since 1.5
  */
 public class StackTraceUtils {

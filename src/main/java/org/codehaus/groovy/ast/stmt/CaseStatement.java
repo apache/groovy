@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 
 /**
  * Represents a case statement in a switch statement
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class CaseStatement extends Statement {
 

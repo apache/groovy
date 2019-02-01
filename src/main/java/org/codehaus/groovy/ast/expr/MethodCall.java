@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ASTNode;
 /**
  * Interface defining common methods for method calls.
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 public interface MethodCall {

@@ -47,8 +47,6 @@ import java.util.List;
  * <p>
  * Both the deprecated groovy.lang.PackageScope and groovy.transform.PackageScope
  * annotations are supported. The former will be removed in a future version of Groovy.
- *
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class PackageScopeASTTransformation extends AbstractASTTransformation {

@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime.typehandling;
 
 /**
  * Integer NumberMath operations
- * 
- * @author Steve Goetze
  */
 public final class IntegerMath extends NumberMath {
 

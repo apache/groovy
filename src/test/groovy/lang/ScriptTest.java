@@ -26,9 +26,6 @@ import java.io.IOException;
 
 /**
  * Tests some particular script features.
- *
- * @author Guillaume Laforge
- * @author Jim White
  */
 public class ScriptTest extends TestSupport {
     /**

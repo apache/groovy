@@ -26,8 +26,6 @@ import java.util.List;
 /**
  * An abstract base class for a key used for comparators and Map keys to lookup a method by
  * name and parameter types
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public abstract class MethodKey {
 

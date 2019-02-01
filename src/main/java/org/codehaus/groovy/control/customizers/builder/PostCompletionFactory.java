@@ -24,7 +24,6 @@ import groovy.util.FactoryBuilderSupport;
  * A helper interface for factories which require post processing of generated nodes.
  *
  * @since 2.1.0
- * @author Cedric Champeau
  */
 public interface PostCompletionFactory {
     Object postCompleteNode(FactoryBuilderSupport factory, Object parent, Object node);

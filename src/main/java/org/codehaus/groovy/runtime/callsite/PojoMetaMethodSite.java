@@ -33,8 +33,6 @@ import java.lang.reflect.Method;
  * POJO call site
  *   meta class - cached
  *   method - cached
- *
- * @author Alex Tkachman
 */
 public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
 

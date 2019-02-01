@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 
 /**
  * A simple statement such as a method call where the return value is ignored
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ExpressionStatement extends Statement {
 

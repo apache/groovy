@@ -28,9 +28,6 @@ import java.io.IOException;
 
 /**
  * This object represents a Groovy script
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Guillaume Laforge
  */
 public abstract class Script extends GroovyObjectSupport {
     private Binding binding;

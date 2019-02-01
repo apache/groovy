@@ -29,8 +29,6 @@ import java.lang.annotation.Target;
  * Provides a mechanism for mixing in methods into a class.
  *
  * @deprecated static mixins have been deprecated in favour of traits (trait keyword).
- *
- * @author Alex Tkachman
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)

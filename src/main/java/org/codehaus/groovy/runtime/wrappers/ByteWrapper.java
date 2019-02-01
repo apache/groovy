@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
-/**
- * @author John Wilson
- */
 public class ByteWrapper extends PojoWrapper {
     public ByteWrapper(final byte wrapped) {
         super(wrapped, byte.class);

@@ -38,7 +38,6 @@ import org.codehaus.groovy.control.io.ReaderSource;
  * <pre><code>return "foo".equals(extension)</code></pre>
  *
  * @since 2.1.0
- * @author Cedric Champeau
  */
 public class SourceAwareCustomizer extends DelegatingCustomizer {
 

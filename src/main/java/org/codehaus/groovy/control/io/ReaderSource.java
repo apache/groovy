@@ -28,8 +28,6 @@ import java.net.URI;
 /**
  *  An interface for things that can supply (and potentially resupply) a Reader
  *  on a source stream.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
 public interface ReaderSource extends HasCleanup {
    /**

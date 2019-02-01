@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a field access such as the expression "this.foo".
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class FieldExpression extends Expression {
 

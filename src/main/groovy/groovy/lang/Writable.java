@@ -30,8 +30,6 @@ import java.io.Writer;
  * It is worth noting that writable implementations often override their
  * toString() implementation as well to allow rendering the same result 
  * directly to a String; however this is not required.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public interface Writable {
 

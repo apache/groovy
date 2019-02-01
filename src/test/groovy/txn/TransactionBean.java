@@ -20,9 +20,6 @@ package groovy.txn;
 
 import groovy.lang.Closure;
 
-/**
- * @author James Strachan
- */
 public class TransactionBean {
     private Closure run;
     private Closure onError;

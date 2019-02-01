@@ -24,8 +24,6 @@ package org.codehaus.groovy.ast;
  * 
  * @see org.codehaus.groovy.ast.ClassNode
  * @see org.codehaus.groovy.ast.ClassCodeVisitorSupport
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public interface GroovyClassVisitor {
 

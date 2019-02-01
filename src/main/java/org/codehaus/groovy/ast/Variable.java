@@ -23,8 +23,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 /**
  * interface to mark a AstNode as Variable. Typically these are 
  * VariableExpression, FieldNode, PropertyNode and Parameter
- * 
- * @author Jochen Theodorou
  */
 public interface Variable {
     

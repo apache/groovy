@@ -20,15 +20,28 @@ package org.codehaus.groovy.transform.tailrec
 
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.expr.*
-import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
+import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
+import org.codehaus.groovy.ast.stmt.CaseStatement
+import org.codehaus.groovy.ast.stmt.DoWhileStatement
+import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.ast.stmt.ForStatement
+import org.codehaus.groovy.ast.stmt.IfStatement
+import org.codehaus.groovy.ast.stmt.ReturnStatement
+import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.ast.stmt.SwitchStatement
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement
+import org.codehaus.groovy.ast.stmt.ThrowStatement
+import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.syntax.Token
 import org.junit.Before
 import org.junit.Test
 
-/**
- * @author Johannes Link
- */
 class VariableExpressionReplacerTest {
 
     static final Token EQUALS = Token.newSymbol("==", -1, -1)
@@ -44,7 +57,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceInReturnStatement() {
+    void replaceInReturnStatement() {
         def createStatement = { new ReturnStatement(it) }
         def accessExpression = { it.expression }
 
@@ -52,7 +65,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceEmbeddedInBooleanExpression() {
+    void replaceEmbeddedInBooleanExpression() {
         def createStatement = { new ReturnStatement(new BooleanExpression(it)) }
         def accessExpression = { it.expression.expression }
 
@@ -61,15 +74,17 @@ class VariableExpressionReplacerTest {
 
 
     @Test
-    public void replaceDeeplyEmbeddedInReturnStatement() {
-        def createStatement = { new ReturnStatement(new BooleanExpression(new BinaryExpression(it, EQUALS, aConstant('a')))) }
+    void replaceDeeplyEmbeddedInReturnStatement() {
+        def createStatement = {
+            new ReturnStatement(new BooleanExpression(new BinaryExpression(it, EQUALS, aConstant('a'))))
+        }
         def accessExpression = { it.expression.expression.leftExpression }
 
         assertReplace(createStatement, accessExpression)
     }
 
     @Test
-    public void replaceBooleanExpressionInIfElseStatement() {
+    void replaceBooleanExpressionInIfElseStatement() {
         def createStatement = { new IfStatement(new BooleanExpression(it), anEmptyStatement(), anEmptyStatement()) }
         def accessExpression = { it.booleanExpression.expression }
 
@@ -77,7 +92,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceCollectionExpressionInForLoop() {
+    void replaceCollectionExpressionInForLoop() {
         def createStatement = { new ForStatement(anyParameter(), it, anEmptyStatement()) }
         def accessExpression = { it.collectionExpression }
 
@@ -85,7 +100,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceBooleanExpressionInWhileLoop() {
+    void replaceBooleanExpressionInWhileLoop() {
         def createStatement = { VariableExpression toReplace -> new WhileStatement(new BooleanExpression(toReplace), anEmptyStatement()) }
         def accessExpression = { WhileStatement statement -> statement.booleanExpression.expression }
 
@@ -93,7 +108,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceBooleanExpressionInDoWhileLoop() {
+    void replaceBooleanExpressionInDoWhileLoop() {
         def createStatement = { VariableExpression toReplace -> new DoWhileStatement(new BooleanExpression(toReplace), anEmptyStatement()) }
         def accessExpression = { DoWhileStatement statement -> statement.booleanExpression.expression }
 
@@ -101,7 +116,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceExpressionInSwitch() {
+    void replaceExpressionInSwitch() {
         def createStatement = { VariableExpression toReplace -> new SwitchStatement(toReplace, anEmptyStatement()) }
         def accessExpression = { SwitchStatement statement -> statement.expression }
 
@@ -109,7 +124,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceExpressionInCase() {
+    void replaceExpressionInCase() {
         def createStatement = { VariableExpression toReplace -> new CaseStatement(toReplace, anEmptyStatement()) }
         def accessExpression = { CaseStatement statement -> statement.expression }
 
@@ -117,7 +132,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceExpressionInExpressionStatement() {
+    void replaceExpressionInExpressionStatement() {
         def createStatement = { VariableExpression toReplace -> new ExpressionStatement(toReplace) }
         def accessExpression = { ExpressionStatement statement -> statement.expression }
 
@@ -125,7 +140,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceExpressionInThrowStatement() {
+    void replaceExpressionInThrowStatement() {
         def createStatement = { VariableExpression toReplace -> new ThrowStatement(toReplace) }
         def accessExpression = { ThrowStatement statement -> statement.expression }
 
@@ -133,7 +148,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceBooleanExpressionInAssertStatement() {
+    void replaceBooleanExpressionInAssertStatement() {
         def createStatement = { VariableExpression toReplace -> new AssertStatement(new BooleanExpression(toReplace), aVariable('any')) }
         def accessExpression = { AssertStatement statement -> statement.booleanExpression.expression }
 
@@ -141,7 +156,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceMessageExpressionInAssertStatement() {
+    void replaceMessageExpressionInAssertStatement() {
         def createStatement = { VariableExpression toReplace -> new AssertStatement(new BooleanExpression(aVariable('any')), toReplace) }
         def accessExpression = { AssertStatement statement -> statement.messageExpression }
 
@@ -149,7 +164,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceExpressionInSynchronizedStatement() {
+    void replaceExpressionInSynchronizedStatement() {
         def createStatement = { VariableExpression toReplace -> new SynchronizedStatement(toReplace, anEmptyStatement()) }
         def accessExpression = { SynchronizedStatement statement -> statement.expression }
 
@@ -157,7 +172,7 @@ class VariableExpressionReplacerTest {
     }
 
     @Test
-    public void replaceOnlyRightExpressionInBinaryExpression() {
+    void replaceOnlyRightExpressionInBinaryExpression() {
         def toReplace = aVariable("old")
         def replacement = aVariable("new")
         def binaryExpression = new BinaryExpression(toReplace, EQUALS, toReplace)

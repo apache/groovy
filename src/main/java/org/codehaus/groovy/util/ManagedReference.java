@@ -18,12 +18,6 @@
  */
 package org.codehaus.groovy.util;
 
-/**
- * 
- * 
- * @author Alex Tkachman
- * @author Jochen Theodorou
- */
 public class ManagedReference<T> implements Finalizable {
     private static final ReferenceManager NULL_MANAGER = new ReferenceManager(null){};
     private final Reference<T,ManagedReference<T>> ref;

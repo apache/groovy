@@ -19,9 +19,7 @@
 package org.codehaus.groovy.ast.decompiled
 
 import org.codehaus.groovy.tools.stubgenerator.StubTestCase
-/**
- * @author Peter Gromov
- */
+
 class IncrementalRecompilationWithStubsTest extends StubTestCase {
     @Override
     void testRun() {
@@ -31,7 +29,7 @@ class IncrementalRecompilationWithStubsTest extends StubTestCase {
 
         File src1 = createFile(srcDir, "AsmClass1.groovy", "class AsmClass1 {}")
         File src2 = createFile(srcDir, "AsmClass2.groovy", "class AsmClass2 extends AsmClass1 {}")
-        File src3 = createFile(srcDir, "AsmClass3.groovy",   "class AsmClass3 extends AsmClass2 {}")
+        File src3 = createFile(srcDir, "AsmClass3.groovy", "class AsmClass3 extends AsmClass2 {}")
         File javaSrc = createFile(srcDir, "JavaClass.java", "class JavaClass {}")
 
         compile([src1, src2, src3, javaSrc])

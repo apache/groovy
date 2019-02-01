@@ -34,8 +34,6 @@ import java.util.PropertyPermission;
  * behavior (e.g. ensuring that GroovyCodeSources may only be created for which proper permissions exist).
  * Other tests run .groovy scripts under a secure environment and ensure that the proper permissions
  * are required for success.
- *
- * @author Steve Goetze
  */
 public class SecurityTest extends SecurityTestSupport {
 

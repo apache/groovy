@@ -27,8 +27,6 @@ import java.util.List;
 
 /**
  * A simple iterator over an ordered (flat) List of the nodes of the AST.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 public class FlatNodeListTraversal extends TraversalHelper {
     

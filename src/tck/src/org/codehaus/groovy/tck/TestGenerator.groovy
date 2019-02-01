@@ -16,14 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package org.codehaus.groovy.tck
+
 /**
  * This will take a groovy test file and turn it into a Java TestCase
- * @author Jeremy Rayner
  */
-package org.codehaus.groovy.tck
-import java.io.*;
 class TestGenerator{
-    public String generate(realOutputPath, targetDir, srcName,srcText) {
+    String generate(realOutputPath, targetDir, srcName,srcText) {
 //        System.out.println('single \\\\')
 //        System.out.println("double \\\\")
         srcText = srcText.replaceAll('\\\\','\\\\\\\\') // need to escape a slash with slash slash

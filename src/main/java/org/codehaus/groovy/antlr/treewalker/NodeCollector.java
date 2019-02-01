@@ -25,10 +25,7 @@ import java.util.List;
 
 /**
  * A simple antlr AST visitor that collects all nodes into a List.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
-
 public class NodeCollector extends VisitorAdapter {
     private final List nodes;
     public NodeCollector() {

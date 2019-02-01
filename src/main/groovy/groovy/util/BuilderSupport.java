@@ -28,10 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * An abstract base class for creating arbitrary nested trees of objects
- * or events
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * An abstract base class for creating arbitrary nested trees of objects or events
  */
 public abstract class BuilderSupport extends GroovyObjectSupport {
 

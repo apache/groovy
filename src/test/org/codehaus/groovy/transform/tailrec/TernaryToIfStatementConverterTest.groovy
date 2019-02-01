@@ -24,13 +24,10 @@ import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.junit.Test
 
-/**
- * @author Johannes Link
- */
 class TernaryToIfStatementConverterTest {
 
     @Test
-    public void simpleTernary() {
+    void simpleTernary() {
         ReturnStatement statement = new AstBuilder().buildFromSpec {
             returnStatement {
                 ternary {

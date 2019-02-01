@@ -33,8 +33,6 @@ import java.util.Date;
  * <p>
  * If you ask Duration to convert itself to milliseconds then it will work on the basis of 60 seconds in a minute.
  * If you add or subtract it from a date it will take leap seconds into account.
- *
- * @author John Wilson tug@wilson.co.uk
  */
 
 public class TimeDuration extends Duration {

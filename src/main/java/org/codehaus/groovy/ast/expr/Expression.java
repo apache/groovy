@@ -28,8 +28,6 @@ import java.util.List;
 
 /**
  * Represents a base class for expressions which evaluate as an object
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public abstract class Expression extends AnnotatedNode {
 

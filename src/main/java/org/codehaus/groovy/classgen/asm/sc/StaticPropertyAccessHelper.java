@@ -32,7 +32,6 @@ import java.util.Arrays;
 /**
  * Contains helper methods aimed at facilitating the generation of statically compiled bytecode for property access.
  *
- * @author Cédric Champeau
  * @since 2.4.0
  */
 public abstract class StaticPropertyAccessHelper {

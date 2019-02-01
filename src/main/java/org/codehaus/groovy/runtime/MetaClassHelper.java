@@ -42,10 +42,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * @author John Wilson
- * @author Jochen Theodorou
- */
 public class MetaClassHelper {
 
     public static final Object[] EMPTY_ARRAY = {};

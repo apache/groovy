@@ -31,8 +31,6 @@ import org.apache.groovy.internal.util.UncheckedThrow;
  * 
  * The nature of this class allows a per instance caching instead of a per class
  * caching like the normal {@link CallSiteArray} logic.
- * 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class BooleanReturningMethodInvoker {
     private final CallSiteArray csa;

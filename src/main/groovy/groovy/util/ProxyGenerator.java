@@ -44,10 +44,6 @@ import java.util.Set;
 /**
  * Classes to generate 'Proxy' objects which implement interfaces,
  * maps of closures and/or extend classes/delegates.
- *
- * @author Paul King
- * @author Guillaume Laforge
- * @author Cedric Champeau
  */
 public class ProxyGenerator {
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];

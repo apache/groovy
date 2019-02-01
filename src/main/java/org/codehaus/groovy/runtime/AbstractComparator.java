@@ -20,9 +20,6 @@ package org.codehaus.groovy.runtime;
 
 import java.util.Comparator;
 
-/**
- * @author Andres Almiray
- */
 public abstract class AbstractComparator<T> implements Comparator<T> {
     public boolean equals(Object obj) {
         return this == obj;

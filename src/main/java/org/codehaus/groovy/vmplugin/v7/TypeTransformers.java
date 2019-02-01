@@ -42,7 +42,6 @@ import java.util.Map;
 
 /**
  * This class contains several transformers for used during method invocation.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class TypeTransformers {
 	private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();

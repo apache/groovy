@@ -26,8 +26,6 @@ import java.util.List;
 
 /**
  * Represents a map expression [1 : 2, "a" : "b", x : y] which creates a mutable Map
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MapExpression extends Expression {
     private final List<MapEntryExpression> mapEntryExpressions;

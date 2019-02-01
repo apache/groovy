@@ -20,8 +20,6 @@ package groovy.lang;
 
 /**
  * Distinguish a parameter array from Object[].
- *
- * @author Pilho Kim
  */
 public class ParameterArray {
 

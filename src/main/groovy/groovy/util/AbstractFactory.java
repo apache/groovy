@@ -22,10 +22,6 @@ import groovy.lang.Closure;
 
 import java.util.Map;
 
-/**
- * @author <a href="mailto:aalmiray@users.sourceforge.com">Andres Almiray</a>
- * @author Danno Ferrin
- */
 public abstract class AbstractFactory implements Factory {
     public boolean isLeaf() {
         return false;

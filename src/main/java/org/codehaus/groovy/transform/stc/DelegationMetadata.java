@@ -25,8 +25,6 @@ import org.codehaus.groovy.ast.ClassNode;
  * closures.
  *
  * As closures can be organized in a hierarchy, a delegation metadata may have a parent.
- *
- * @author Cedric Champeau
  */
 class DelegationMetadata {
     private final DelegationMetadata parent;

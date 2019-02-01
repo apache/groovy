@@ -30,7 +30,6 @@ import java.util.Map;
  * to a {@link SecureASTCustomizer} instance.
  *
  * @since 2.1.0
- * @author Cedric Champeau
  */
 public class SecureASTCustomizerFactory extends AbstractFactory {
     @Override

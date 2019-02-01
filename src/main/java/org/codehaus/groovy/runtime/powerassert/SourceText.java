@@ -30,8 +30,6 @@ import java.util.List;
  * Provides the source text for an assertion statement and translates
  * coordinates in the original source text to coordinates relative to the
  * assertion's (normalized) source text.
- *
- * @author Peter Niederwieser
  */
 public class SourceText {
     private final int firstLine;

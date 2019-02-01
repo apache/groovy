@@ -28,8 +28,6 @@ import java.net.URI;
 
 /**
  * A ReaderSource for source strings.
- *
- * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
 public class InputStreamReaderSource extends AbstractReaderSource {
     private InputStream stream;  // The InputStream from which we produce a Reader.

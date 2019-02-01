@@ -30,8 +30,6 @@ import org.objectweb.asm.Type;
  *
  * @see DecompiledClassNode
  * @see AsmDecompiler
- *
- * @author Peter Gromov
  */
 public class AsmReferenceResolver {
     private final ClassNodeResolver resolver;

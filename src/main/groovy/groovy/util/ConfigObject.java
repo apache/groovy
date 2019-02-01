@@ -43,8 +43,6 @@ import java.util.Set;
  * This means that navigating to foo.bar.stuff will not return null but nested ConfigObjects which are of course empty maps
  * The Groovy truth can be used to check for the existence of "real" entries.
  *
- * @author Graeme Rocher
- * @author Guillaume Laforge (rewrite in Java related to security constraints on Google App Engine)
  * @since 1.5
  */
 public class ConfigObject extends GroovyObjectSupport implements Writable, Map, Cloneable {

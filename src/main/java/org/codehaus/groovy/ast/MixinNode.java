@@ -20,8 +20,6 @@ package org.codehaus.groovy.ast;
 
 /**
  * Represents a mixin which can be applied to any ClassNode to implement mixins
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MixinNode extends ClassNode {
 

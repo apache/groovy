@@ -24,8 +24,6 @@ import org.codehaus.groovy.reflection.CachedMethod;
 /**
  * This is a scratch class used to experiment with ASM to see what kind of
  * stuff is output for normal Java code
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class DummyReflector extends Reflector {
 

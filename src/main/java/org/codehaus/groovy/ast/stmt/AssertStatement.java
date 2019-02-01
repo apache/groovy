@@ -29,8 +29,6 @@ import org.codehaus.groovy.ast.expr.Expression;
  * <code>
  * assert i != 0 : "should never be zero";
  * </code>
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class AssertStatement extends Statement {
 

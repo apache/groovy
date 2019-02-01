@@ -25,7 +25,6 @@ import java.util.Set;
 /**
  * A wrapper for Map which allows a default value to be specified.
  *
- * @author Paul King
  * @since 1.7.1
  */
 public final class MapWithDefault<K, V> implements Map<K, V> {

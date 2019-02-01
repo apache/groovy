@@ -26,8 +26,6 @@ import java.util.List;
 
 /**
  * Represents a switch (object) { case value: ... case [1, 2, 3]: ...  default: ... } statement in Groovy.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class SwitchStatement extends Statement {
 

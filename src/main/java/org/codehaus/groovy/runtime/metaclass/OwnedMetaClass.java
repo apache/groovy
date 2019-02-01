@@ -27,9 +27,6 @@ import org.codehaus.groovy.ast.ClassNode;
 
 import java.util.List;
 
-/**
- * @author Alex Tkachman
- */
 public abstract class OwnedMetaClass extends DelegatingMetaClass {
     public OwnedMetaClass(final MetaClass delegate) {
         super(delegate);

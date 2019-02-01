@@ -497,7 +497,6 @@ public abstract class Selector {
      * Method invocation based {@link Selector}.
      * This Selector is called for method invocations and is base for cosntructor
      * calls as well as getProperty calls.
-     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
      */
     private static class MethodSelector extends Selector {
         protected MetaClass mc;

@@ -35,8 +35,6 @@ import java.util.List;
 
 /**
  * This transformer focuses on ranges to produce optimized bytecode.
- *
- * @author Cedric Champeau
  */
 public class RangeExpressionTransformer {
     private static final ClassNode INTRANGE_TYPE = ClassHelper.make(IntRange.class);

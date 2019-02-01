@@ -26,8 +26,6 @@ import java.util.List;
 
 /**
  * Represents a list expression [1, 2, 3] which creates a mutable List
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ListExpression extends Expression {
     private final List<Expression> expressions;

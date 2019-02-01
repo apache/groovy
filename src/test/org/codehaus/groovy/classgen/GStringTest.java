@@ -30,9 +30,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.syntax.Token;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class GStringTest extends TestSupport {
 
     public void testConstructor() throws Exception {

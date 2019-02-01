@@ -28,8 +28,6 @@ import java.util.ListIterator;
  * {@link Iterator} that efficiently traverses the <code>List</code> in
  * reverse. The fail-fast semantics of this iterator are the same as the
  * semantics of the underlying <code>ListIterator</code>.
- *
- * @author Mike Dillon
  */
 public class ReverseListIterator<T> implements Iterator<T> {
     private final ListIterator<T> delegate;

@@ -27,8 +27,6 @@ import java.util.Objects;
 
 /**
  * Represents a list of Objects.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class Tuple<E> extends AbstractList<E> implements Serializable {
     private static final long serialVersionUID = -6707770506387821031L;

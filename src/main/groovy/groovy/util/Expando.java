@@ -33,10 +33,6 @@ import java.util.Map.Entry;
 
 /**
  * Represents a dynamically expandable bean.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Hein Meling
- * @author Pilho Kim
  */
 public class Expando extends GroovyObjectSupport {
 

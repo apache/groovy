@@ -31,8 +31,6 @@ import java.util.logging.Logger;
  * metadata from META-INF.
  *
  * @since 2.0.0
- *
- * @author Cedric Champeau
  */
 public class MetaInfExtensionModule extends SimpleExtensionModule {
     private static final Logger LOG = Logger.getLogger(MetaInfExtensionModule.class.getName());

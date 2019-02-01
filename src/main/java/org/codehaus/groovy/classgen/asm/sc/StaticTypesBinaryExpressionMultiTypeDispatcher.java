@@ -76,9 +76,6 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIS
 /**
  * A specialized version of the multi type binary expression dispatcher which is aware of static compilation.
  * It is able to generate optimized bytecode for some operations using JVM instructions when available.
- *
- * @author Cedric Champeau
- * @author Jochen Theodorou
  */
 public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpressionMultiTypeDispatcher implements Opcodes {
 

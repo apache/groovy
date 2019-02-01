@@ -77,8 +77,6 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
  *
  * The 'useSetters' annotation attribute can be used for writable properties as per the {@code Builder} transform documentation.
  * The other annotation attributes for the {@code @Builder} transform for configuring the building process aren't applicable for this strategy.
- *
- * @author Paul King
  */
 public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {

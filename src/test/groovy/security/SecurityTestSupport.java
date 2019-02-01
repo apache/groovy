@@ -40,9 +40,6 @@ import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
 
-/**
- * @author Steve Goetze
- */
 public abstract class SecurityTestSupport extends GroovyTestCase {
     private static final String POLICY_FILE = "security/groovy.policy";
     private static int counter = 0;

@@ -29,8 +29,6 @@ import java.util.Date;
  * <p>
  * I don't know how many days in a month unless I know the name of the month 
  * (and if it's a leap year if the month is February)
- *
- * @author John Wilson tug@wilson.co.uk
  */
 public class DatumDependentDuration extends BaseDuration {
     public DatumDependentDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {

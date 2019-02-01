@@ -27,8 +27,6 @@ import java.util.Collections;
 /**
  * A treewalker for the antlr generated AST that attempts to visit the
  * AST nodes in the order needed to generate valid groovy source code.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 public class SourceCodeTraversal extends TraversalHelper {
     /**

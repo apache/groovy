@@ -43,7 +43,6 @@ import java.lang.annotation.Target;
  * during SEMANTIC_ANALYSIS.
  *
  * @see ASTTransformation
- * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

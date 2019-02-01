@@ -25,8 +25,6 @@ import java.util.List;
 
 /**
  * Represents a try { ... } catch () finally {} statement in Groovy
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class TryCatchStatement extends Statement {
 

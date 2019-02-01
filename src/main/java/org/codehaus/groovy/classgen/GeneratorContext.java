@@ -27,8 +27,6 @@ import org.codehaus.groovy.ast.MethodNode;
 
 /**
  * A context shared across generations of a class and its inner classes
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class GeneratorContext {
 

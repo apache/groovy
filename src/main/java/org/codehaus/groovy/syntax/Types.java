@@ -27,18 +27,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-
 /**
  *  Typing information for the CST system.  The types here are those
  *  used by CSTNode, Token, and Reduction.
- *
- *  @author <a href="mailto:bob@werken.com">bob mcwhirter</a>
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
-
-public class Types
-{
-
+public class Types  {
 
   //---------------------------------------------------------------------------
   // TYPES: NOTE THAT ORDERING AND VALUES ARE IMPORTANT TO LOCAL ROUTINES!

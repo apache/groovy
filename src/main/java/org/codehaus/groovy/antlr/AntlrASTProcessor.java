@@ -22,8 +22,6 @@ import antlr.collections.AST;
 
 /**
  * An interface for processing antlr AST objects
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 public interface AntlrASTProcessor {
     /**

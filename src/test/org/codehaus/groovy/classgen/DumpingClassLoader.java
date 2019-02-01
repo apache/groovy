@@ -37,8 +37,6 @@ import java.io.PrintWriter;
 /**
  * A class loader used for debugging the bytecode generation.
  * This will log all bytecode being loaded
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
 

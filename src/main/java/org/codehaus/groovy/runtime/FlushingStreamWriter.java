@@ -24,8 +24,6 @@ import java.io.OutputStreamWriter;
 
 /**
  * Stream writer which flushes after each write operation.
- *
- * @author Guillaume Laforge
  */
 public class FlushingStreamWriter extends OutputStreamWriter {
 

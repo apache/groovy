@@ -27,9 +27,6 @@ import java.util.List;
 
 /**
  * Represents a method declaration
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Hamlet D'Arcy
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
 

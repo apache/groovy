@@ -25,10 +25,7 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  * A default implementation of all visitor methods.
  * If you extend this class, any un-overridden visit methods will
  * call visitDefault.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
-
 public class VisitorAdapter implements Visitor {
     public void setUp() {}
     public void visitAbstract(GroovySourceAST t,int visit) {visitDefault(t,visit);}

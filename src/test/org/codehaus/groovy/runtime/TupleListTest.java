@@ -23,10 +23,6 @@ import groovy.util.GroovyTestCase;
 import java.util.Iterator;
 import java.util.Map;
 
-
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class TupleListTest extends GroovyTestCase {
 
     public void testIterateOverTuple() throws Exception {

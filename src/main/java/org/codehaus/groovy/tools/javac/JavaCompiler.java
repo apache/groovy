@@ -22,9 +22,6 @@ import org.codehaus.groovy.control.CompilationUnit;
 
 import java.util.List;
 
-/**
- * @author Alex.Tkachman
- */
 public interface JavaCompiler {
     void compile(List<String> files, CompilationUnit cu);
 }

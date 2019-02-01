@@ -26,8 +26,6 @@ import org.codehaus.groovy.control.SourceUnit;
 
 /**
  * Base class for every TestCase that uses an AST
- *
- * @author <a href="mailto:martin.kempf@gmail.com">Martin Kempf</a>
  */
 public abstract class ASTTest extends TestCase {
 

@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime.typehandling;
 
 /**
  * Long NumberMath operations
- * 
- * @author Steve Goetze
  */
 public final class LongMath extends NumberMath {
 

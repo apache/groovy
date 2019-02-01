@@ -40,8 +40,6 @@ import java.util.Map;
 /**
  * Visitor to transform expressions in a whole class.
  * Transformed Expressions are usually not visited.
- *
- * @author Jochen Theodorou
  */
 public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSupport implements ExpressionTransformer {
 

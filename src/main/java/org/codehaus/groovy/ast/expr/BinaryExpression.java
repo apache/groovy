@@ -26,8 +26,6 @@ import org.codehaus.groovy.syntax.Types;
 
 /**
  * Represents two expressions and an operation
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class BinaryExpression extends Expression {
 

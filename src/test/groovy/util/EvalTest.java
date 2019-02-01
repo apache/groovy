@@ -23,8 +23,6 @@ import org.codehaus.groovy.control.CompilationFailedException;
 
 /**
  * Testing the simple Groovy integration with Eval.
- *
- * @author Dierk Koenig
  */
 public class EvalTest extends TestCase {
     public void testMeSimple() throws CompilationFailedException {

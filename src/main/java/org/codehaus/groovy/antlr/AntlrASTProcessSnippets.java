@@ -21,8 +21,6 @@ package org.codehaus.groovy.antlr;
 /**
  * Process to decorate antlr AST with ending line/col info, and if
  * possible the snippet of source from the start/end line/col for each node.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 
 import antlr.collections.AST;

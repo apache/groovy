@@ -20,10 +20,7 @@ package org.codehaus.groovy.runtime.memoize
 
 import org.junit.Ignore
 
-/**
- * @author Rafael Luque
- */
-@Ignore("do not run consistently on the build server")
+@Ignore("does not run consistently on the build server")
 class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
 
     void testCollectedCacheValuesAreEnqueued() {

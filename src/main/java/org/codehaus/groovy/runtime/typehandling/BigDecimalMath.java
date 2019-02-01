@@ -25,8 +25,6 @@ import java.math.MathContext;
 
 /**
  * BigDecimal NumberMath operations
- *
- * @author Steve Goetze
  */
 public final class BigDecimalMath extends NumberMath {
 

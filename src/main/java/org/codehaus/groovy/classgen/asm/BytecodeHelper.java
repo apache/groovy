@@ -46,10 +46,6 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 
 /**
  * A helper class for bytecode generation with AsmClassGenerator.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
 public class BytecodeHelper implements Opcodes {
     

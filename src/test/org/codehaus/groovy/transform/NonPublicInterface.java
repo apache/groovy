@@ -21,8 +21,6 @@ package org.codehaus.groovy.transform;
 /**
  * Define a package-scoped interface.
  * Fix for GROOVY-3380
- *
- * @author Guillaume Laforge
  */
 interface NonPublicInterface {
     String CONSTANT = "constant";

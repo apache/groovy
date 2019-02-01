@@ -25,7 +25,6 @@ import java.util.Iterator;
 /**
  * An implementation for BufferedIterator wraps Iterator.
  *
- * @author Andrew Taylor
  * @since 2.5.0
  */
 public class IteratorBufferedIterator<T> implements BufferedIterator<T> {

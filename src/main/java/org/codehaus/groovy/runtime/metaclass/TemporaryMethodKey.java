@@ -25,8 +25,6 @@ import org.codehaus.groovy.runtime.MethodKey;
 /**
  * A temporary implementation of MethodKey used to perform a fast lookup
  * for a method using a set of arguments to a method
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class TemporaryMethodKey extends MethodKey {
 

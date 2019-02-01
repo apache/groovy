@@ -21,9 +21,6 @@ package org.codehaus.groovy.reflection.stdclasses;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
-/**
- * @author Alex.Tkachman
- */
 public class BooleanCachedClass extends CachedClass {
     private final boolean allowNull;
     public BooleanCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {

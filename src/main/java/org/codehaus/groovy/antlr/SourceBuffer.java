@@ -24,8 +24,6 @@ import java.util.List;
 /**
  * A simple buffer that provides line/col access to chunks of source code
  * held within itself.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 public class SourceBuffer {
     private final List<StringBuilder> lines;

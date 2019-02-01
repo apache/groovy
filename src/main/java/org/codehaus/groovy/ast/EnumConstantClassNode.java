@@ -23,8 +23,6 @@ package org.codehaus.groovy.ast;
  * This subtype is needed so that EnumVisitor can differentiate between the scenarios when a InnerClassNode
  * represents anonymous inner class for an enu constant and when it represents an enum class defined inside
  * another class
- * 
- * @author Roshan Dawrani
  */
 public class EnumConstantClassNode extends InnerClassNode {
 
