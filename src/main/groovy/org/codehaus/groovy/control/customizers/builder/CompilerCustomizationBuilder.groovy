@@ -26,18 +26,17 @@ import org.codehaus.groovy.control.CompilerConfiguration
  * <p>A builder which allows easy configuration of compilation customizers. Instead of creating
  * various compilation customizers by hand, you may use this builder instead, which provides a
  * shorter syntax and removes most of the verbosity.
- *
  */
 @CompileStatic
 class CompilerCustomizationBuilder extends FactoryBuilderSupport {
-    public CompilerCustomizationBuilder() {
+    CompilerCustomizationBuilder() {
         registerFactories()
     }
 
-    public static CompilerConfiguration withConfig(CompilerConfiguration config, Closure code) {
+    static CompilerConfiguration withConfig(CompilerConfiguration config,
+                                            @DelegatesTo(type = "org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder") Closure code) {
         CompilerCustomizationBuilder builder = new CompilerCustomizationBuilder()
         config.invokeMethod('addCompilationCustomizers', builder.invokeMethod('customizers', code))
-
         config
     }
 
@@ -49,7 +48,6 @@ class CompilerCustomizationBuilder extends FactoryBuilderSupport {
             value = factory.postCompleteNode(this, parent, value)
             setParent(parent, value)
         }
-
         value
     }
 
