@@ -65,21 +65,21 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 |Explanation
 
 |&#39;org.codehaus.groovy:groovy:{groovy-full-version}'
-|<groupId>org.codehaus.groovy</groupId>
-<artifactId>groovy</artifactId> 
+|<groupId>org.codehaus.groovy</groupId> +
+<artifactId>groovy</artifactId> +
 <version>{groovy-full-version}</version>
 |Just the core of groovy without the modules (see below).
 
 |&#39;org.codehaus.groovy:groovy-$module:{groovy-full-version}'
-|<groupId>org.codehaus.groovy</groupId>
-<artifactId>groovy-$module</artifactId>
+|<groupId>org.codehaus.groovy</groupId> +
+<artifactId>groovy-$module</artifactId> +
 <version>{groovy-full-version}</version>
 |"$module" stands for the different optional groovy modules "ant", "bsf", "console", "docgenerator", "groovydoc", "groovysh", "jmx", "json", "jsr223", "servlet", "sql", "swing", "test", "testng" and "xml". Example: <artifactId>groovy-sql</artifactId>
 
 |&#39;org.codehaus.groovy:groovy-all:{groovy-full-version}'
-|<groupId>org.codehaus.groovy</groupId>
-<artifactId>groovy-all</artifactId>
-<version>{groovy-full-version}</version>
+|<groupId>org.codehaus.groovy</groupId> +
+<artifactId>groovy-all</artifactId> +
+<version>{groovy-full-version}</version> +
 <type>pom</type> <!-- required JUST since Groovy 2.5.0 +-->+
 |The core plus all the modules. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
 |===
