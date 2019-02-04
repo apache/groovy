@@ -52,7 +52,7 @@ public class NumberCachedClass extends CachedClass {
     private Object coerceNumber(Object argument) {
         Class param = getTheClass();
         if (param == Byte.class /*|| param == Byte.TYPE*/) {
-            argument = Byte.valueOf(((Number) argument).byteValue());
+            argument = ((Number) argument).byteValue();
         } else if (param == BigInteger.class) {
             argument = new BigInteger(String.valueOf((Number) argument));
         }

@@ -134,7 +134,7 @@ public class Expando extends GroovyObjectSupport {
             Closure closure = (Closure) method;
             closure.setDelegate(this);
             Boolean ret = (Boolean) closure.call(obj);
-            return ret.booleanValue();
+            return ret;
         } else {
             return super.equals(obj);
         }
@@ -153,7 +153,7 @@ public class Expando extends GroovyObjectSupport {
             Closure closure = (Closure) method;
             closure.setDelegate(this);
             Integer ret = (Integer) closure.call();
-            return ret.intValue();
+            return ret;
         } else {
             return super.hashCode();
         }
