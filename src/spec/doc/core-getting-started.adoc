@@ -80,7 +80,7 @@ If you wish to embed Groovy in your application, you may just prefer to point to
 |<groupId>org.codehaus.groovy</groupId>
 <artifactId>groovy-all</artifactId>
 <version>{groovy-full-version}</version>
-<type>pom</type> <!-- required JUST since Groovy 2.5.0 -->
+<type>pom</type> <!-- required JUST since Groovy 2.5.0 +-->+
 |The core plus all the modules. Optional dependencies are marked as optional. You may need to include some of the optional dependencies to use some features of Groovy, e.g. AntBuilder, GroovyMBeans, etc.
 |===
 
