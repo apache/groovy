@@ -16096,7 +16096,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static long abs(Long number) {
-        return Math.abs(number.longValue());
+        return Math.abs(number);
     }
 
     /**
@@ -16107,7 +16107,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static float abs(Float number) {
-        return Math.abs(number.floatValue());
+        return Math.abs(number);
     }
 
     /**
@@ -16129,7 +16129,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static int round(Float number) {
-        return Math.round(number.floatValue());
+        return Math.round(number);
     }
 
     /**

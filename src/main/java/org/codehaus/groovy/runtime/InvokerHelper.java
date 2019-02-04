@@ -263,7 +263,7 @@ public class InvokerHelper {
     public static Object unaryMinus(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
-            return Integer.valueOf(-number.intValue());
+            return -number;
         }
         if (value instanceof Long) {
             Long number = (Long) value;
@@ -285,11 +285,11 @@ public class InvokerHelper {
         }
         if (value instanceof Short) {
             Short number = (Short) value;
-            return Short.valueOf((short) -number.shortValue());
+            return (short) -number;
         }
         if (value instanceof Byte) {
             Byte number = (Byte) value;
-            return Byte.valueOf((byte) -number.byteValue());
+            return (byte) -number;
         }
         if (value instanceof ArrayList) {
             // value is a list.

@@ -59,7 +59,7 @@ public class BooleanReturningMethodInvoker {
         // handle conversion to boolean
         if (arg == null) return false;
         if (arg instanceof Boolean) {
-            return ((Boolean) arg).booleanValue();
+            return (Boolean) arg;
         }
         // it was not null and not boolean, so call asBoolean
         try {
@@ -68,7 +68,7 @@ public class BooleanReturningMethodInvoker {
             // UncheckedThrow allows throwing checked exceptions without declaring a throws
             UncheckedThrow.rethrow(t);
         }
-        return ((Boolean) arg).booleanValue();
+        return (Boolean) arg;
     }
 
 }
