@@ -779,7 +779,7 @@ postfixExpression
 expression
     // qualified names, array expressions, method invocation, post inc/dec, type casting (level 1)
     // The cast expression must be put before pathExpression to resovle the ambiguities between type casting and call on parentheses expression, e.g. (int)(1 / 2)
-    :   castParExpression expression                                                        #castExprAlt
+    :   castParExpression castOperandExpression                                             #castExprAlt
     |   postfixExpression                                                                   #postfixExprAlt
 
     // ~(BNOT)/!(LNOT) (level 1)
@@ -871,6 +871,17 @@ expression
                            ) nls
                      enhancedStatementExpression                                            #assignmentExprAlt
     ;
+
+castOperandExpression
+options { baseContext = expression; }
+    :   castParExpression castOperandExpression                                             #castExprAlt
+    |   postfixExpression                                                                   #postfixExprAlt
+    // ~(BNOT)/!(LNOT) (level 1)
+    |   (BITNOT | NOT) nls castOperandExpression                                            #unaryNotExprAlt
+    // ++(prefix)/--(prefix)/+(unary)/-(unary) (level 3)
+    |   op=(INC | DEC | ADD | SUB) castOperandExpression                                    #unaryAddExprAlt
+    ;
+
 
 /*
 enhancedExpression
