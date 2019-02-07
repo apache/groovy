@@ -34,7 +34,7 @@ class CircularLanguageReferenceTest extends StubTestCase {
             assert !annotations
             assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'stubgenerator.circularLanguageReference.Shape'] as Set
             assert baseClass == 'java.lang.Object'
-            assert imports == ['java.lang.*', 'java.io.*', 'java.net.*', 'java.util.*', 'groovy.lang.*', 'groovy.util.*']
+            assert imports == ['java.lang.*', 'java.util.*', 'java.io.*', 'java.net.*', 'groovy.lang.*', 'groovy.util.*']
         }
     }
 }

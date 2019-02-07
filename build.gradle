@@ -163,6 +163,7 @@ ext {
     xstreamVersion = '1.4.11.1'
     spockVersion = '1.2-groovy-2.4-SNAPSHOT' // supports 3.0
     antlr4Version = '4.7.2'
+    classgraphVersion = '4.6.32'
     spotbugsannotationsVersion = '3.1.9'
 }
 
@@ -189,6 +190,7 @@ dependencies {
     }
     compile files("${buildDir}/generated-classes")
 
+    compileOnly "io.github.classgraph:classgraph:$classgraphVersion"
     compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsannotationsVersion"
 
     runtime("org.codehaus.gpars:gpars:$gparsVersion") {
@@ -203,6 +205,8 @@ dependencies {
     testCompile "org.apache.logging.log4j:log4j-core:$log4j2Version"
     testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
     testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+
+    testRuntime "io.github.classgraph:classgraph:$classgraphVersion"
 
     tools "org.pantsbuild:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"

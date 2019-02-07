@@ -24,6 +24,8 @@ import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.util.ReleaseInfo;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 public final class GroovySystem {
@@ -99,5 +101,26 @@ public final class GroovySystem {
      */
     public static String getVersion() {
         return ReleaseInfo.getVersion();
+    }
+
+    /**
+     * Returns the groovy root location
+     *
+     * @since 3.0.0
+     */
+    public static File getGroovyRoot() {
+        String root = System.getProperty("groovy.root");
+        File groovyRoot;
+        if (root == null) {
+            groovyRoot = new File(System.getProperty("user.home"), ".groovy");
+        } else {
+            groovyRoot = new File(root);
+        }
+        try {
+            groovyRoot = groovyRoot.getCanonicalFile();
+        } catch (IOException e) {
+            // skip canonicalization then, it may not exist yet
+        }
+        return groovyRoot;
     }
 }

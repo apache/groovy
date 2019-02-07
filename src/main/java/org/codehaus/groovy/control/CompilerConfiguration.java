@@ -55,7 +55,10 @@ public class CompilerConfiguration {
     /** This (<code>"runtimeGroovydoc"</code>) is the Optimization Option value for enabling attaching {@link groovy.lang.Groovydoc} annotation*/
     public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
-    /** This (<code>"memStub"</code>) is the Optimization Option value for enabling generating stubs in memory*/
+    /** This (<code>"collectDefaultImports"</code>) is the Optimization Option value for enabling collecting default imports. */
+    public static final String COLLECT_DEFAULT_IMPORTS = "collectDefaultImports";
+
+    /** This (<code>"memStub"</code>) is the Joint Compilation Option value for enabling generating stubs in memory*/
     public static final String MEM_STUB = "memStub";
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
@@ -275,10 +278,10 @@ public class CompilerConfiguration {
         }
 
         Map<String, Boolean> options = new HashMap<>(4);
-
         handleOptimizationOption(options, INVOKEDYNAMIC, "groovy.target.indy");
         handleOptimizationOption(options, GROOVYDOC, "groovy.attach.groovydoc");
         handleOptimizationOption(options, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
+        handleOptimizationOption(options, COLLECT_DEFAULT_IMPORTS, "groovy.collect.default.imports");
         setOptimizationOptions(options);
 
         Map<String, Object> jointCompilerOptions = new HashMap<>(4);
@@ -986,6 +989,20 @@ public class CompilerConfiguration {
         }
 
         return runtimeGroovydocEnabled;
+    }
+
+    /**
+     * Check whether collecting default imports enabled
+     * @return the result
+     */
+    public boolean isCollectDefaultImportsEnabled() {
+        Boolean collectDefaultImportsEnabled = this.getOptimizationOptions().get(COLLECT_DEFAULT_IMPORTS);
+
+        if (null == collectDefaultImportsEnabled) {
+            return false;
+        }
+
+        return collectDefaultImportsEnabled;
     }
 
     /**

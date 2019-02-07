@@ -62,6 +62,7 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.ClassNodeResolver.LookupResult;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
+import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
@@ -95,7 +96,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
  */
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // note: BigInteger and BigDecimal are also imported by default
-    public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
+    public static final String[] DEFAULT_IMPORTS = DefaultImportedClassCollectorHelper.DEFAULT_IMPORTS;
+    private static final String[] DEFAULT_GROOVY_IMPORTS = new String[] { "groovy.lang.", "groovy.util." };
+
     private static final String BIGINTEGER_STR = "BigInteger";
     private static final String BIGDECIMAL_STR = "BigDecimal";
     public static final String QUESTION_MARK = "?";
@@ -117,6 +120,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private ImportNode currImportNode = null;
     private MethodNode currentMethod;
     private ClassNodeResolver classNodeResolver;
+    private final DefaultImportsCache defaultImportsCache;
 
     /**
      * A ConstructedNestedClass consists of an outer class and a name part, denoting a
@@ -146,8 +150,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
     }
-
-
 
     private static String replacePoints(String name) {
         return name.replace('.','$');
@@ -224,6 +226,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public ResolveVisitor(CompilationUnit cu) {
         compilationUnit = cu;
         this.classNodeResolver = new ClassNodeResolver();
+        this.defaultImportsCache = new DefaultImportsCache(cu.getConfiguration());
     }
 
     public void startResolving(ClassNode node, SourceUnit source) {
@@ -607,7 +610,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean resolveFromDefaultImports(ClassNode type) {
         final String typeName = type.getName();
 
-        Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
+        Set<String> packagePrefixSet = defaultImportsCache.get(typeName);
         if (null != packagePrefixSet) {
             // if the type name was resolved before, we can try the successfully resolved packages first, which are much less and very likely successful to resolve.
             // As a result, we can avoid trying other default import packages and further resolving, which can improve the resolving performance to some extent.
@@ -616,14 +619,21 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
-        if (resolveFromDefaultImports(type, DEFAULT_IMPORTS)) {
-            return true;
+        if (defaultImportsCache.isInited()) {
+            // As `DefaultImportedClassCollector` does not collect class info under test, e.g. `groovy.lang.DummyGStringBase`
+            // The following code is just for resolving classes under test to make tests pass, so it is useless for production
+            // TODO find a solution to remove the following code
+            if (resolveFromDefaultImports(type, DEFAULT_GROOVY_IMPORTS)) {
+                return true;
+            }
+        } else {
+            if (resolveFromDefaultImports(type, DEFAULT_IMPORTS)) {
+                return true;
+            }
         }
+
         return false;
     }
-
-
-    private static final EvictableCache<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new UnlimitedConcurrentCache<>();
 
     private boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
         final String typeName = type.getName();
@@ -639,8 +649,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (resolve(tmp, false, false, false)) {
                 type.setRedirect(tmp.redirect());
 
-                if (DEFAULT_IMPORTS == packagePrefixes) { // Only the non-cached type and packages should be cached
-                    Set<String> packagePrefixSet = DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.getAndPut(typeName, key -> new HashSet<>(2));
+                if (DEFAULT_IMPORTS == packagePrefixes || DEFAULT_GROOVY_IMPORTS == packagePrefixes) { // Only the non-cached type and packages should be cached
+                    Set<String> packagePrefixSet = defaultImportsCache.getAndPut(typeName, key -> new HashSet<>(2));
                     packagePrefixSet.add(packagePrefix);
                 }
 
@@ -1706,5 +1716,46 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     public void setClassNodeResolver(ClassNodeResolver classNodeResolver) {
         this.classNodeResolver = classNodeResolver;
+    }
+
+    private static class DefaultImportsCache {
+        private static final EvictableCache<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new UnlimitedConcurrentCache<>();
+        private static volatile boolean inited = false;
+
+        DefaultImportsCache(CompilerConfiguration compilerConfiguration) {
+            if (compilerConfiguration.isCollectDefaultImportsEnabled()) {
+                if (!inited) {
+                    synchronized (DefaultImportsCache.class) {
+                        if (!inited) {
+                            Map<String, Set<String>> defaultImportedClassnameToPackageMap = DefaultImportedClassCollectorHelper.getClassNameToPackageMap();
+
+                            if (null != defaultImportedClassnameToPackageMap) {
+                                // init the cache with collected default imported class info to improve the hit ratio
+                                init(defaultImportedClassnameToPackageMap);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        boolean isInited() {
+            return inited;
+        }
+
+        Set<String> get(String typeName) {
+            return DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.get(typeName);
+        }
+
+        Set<String> getAndPut(String typeName, MemoizeCache.ValueProvider<String, Set<String>> valueProvider) {
+            return DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.getAndPut(typeName, valueProvider);
+        }
+
+        private void init(Map<String, Set<String>> defaultImportedClassnameToPackageMap) {
+            synchronized (DefaultImportsCache.class) {
+                DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(defaultImportedClassnameToPackageMap);
+                inited = true;
+            }
+        }
     }
 }

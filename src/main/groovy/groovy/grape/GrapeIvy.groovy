@@ -123,19 +123,7 @@ class GrapeIvy implements GrapeEngine {
 
     @CompileStatic
     File getGroovyRoot() {
-        String root = System.getProperty("groovy.root")
-        def groovyRoot
-        if (root == null) {
-            groovyRoot = new File(System.getProperty("user.home"), ".groovy")
-        } else {
-            groovyRoot = new File(root)
-        }
-        try {
-            groovyRoot = groovyRoot.canonicalFile
-        } catch (IOException e) {
-            // skip canonicalization then, it may not exist yet
-        }
-        return groovyRoot
+        return GroovySystem.groovyRoot
     }
 
     @CompileStatic
