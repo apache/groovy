@@ -25,6 +25,7 @@ buildscript {
             maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
         }
         jcenter()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven{
             name 'Bintray Javadoc Hotfix repo'
             url 'http://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
@@ -95,6 +96,7 @@ allprojects {
             maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
         }
         jcenter()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven { url 'http://dl.bintray.com/melix/thirdparty-apache' } // openbeans
     }
 
@@ -162,7 +164,7 @@ ext {
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.11.1'
     spockVersion = '1.2-groovy-2.4-SNAPSHOT' // supports 3.0
-    antlr4Version = '4.7.2'
+    antlr4Version = '4.7.3-SNAPSHOT'
     spotbugsannotationsVersion = '3.1.9'
 }
 
