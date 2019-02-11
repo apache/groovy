@@ -164,7 +164,7 @@ ext {
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.11.1'
     spockVersion = '1.2-groovy-2.4-SNAPSHOT' // supports 3.0
-    antlr4Version = '4.7.3-SNAPSHOT'
+    antlr4Version = '4.7.3'
     spotbugsannotationsVersion = '3.1.9'
 }
 
