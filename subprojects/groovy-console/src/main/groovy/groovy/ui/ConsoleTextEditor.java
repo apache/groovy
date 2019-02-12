@@ -331,18 +331,25 @@ public class ConsoleTextEditor extends JScrollPane {
             DocumentFilter documentFilter = (DocumentFilter) clazz.getConstructor(doc.getClass()).newInstance(doc);
             doc.setDocumentFilter(documentFilter);
 
+            disableMatchingHighlighter();
             if (documentFilter instanceof SmartDocumentFilter) {
                 final SmartDocumentFilter smartDocumentFilter = (SmartDocumentFilter) documentFilter;
-
-                for (CaretListener cl : textEditor.getCaretListeners()) {
-                    if (cl instanceof MatchingHighlighter) {
-                        textEditor.removeCaretListener(cl);
-                    }
-                }
-                textEditor.addCaretListener(new MatchingHighlighter(smartDocumentFilter, textEditor));
+                enableMatchingHighlighter(smartDocumentFilter);
             }
         } catch (ReflectiveOperationException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void enableMatchingHighlighter(SmartDocumentFilter smartDocumentFilter) {
+        textEditor.addCaretListener(new MatchingHighlighter(smartDocumentFilter, textEditor));
+    }
+
+    private void disableMatchingHighlighter() {
+        for (CaretListener cl : textEditor.getCaretListeners()) {
+            if (cl instanceof MatchingHighlighter) {
+                textEditor.removeCaretListener(cl);
+            }
         }
     }
 }
