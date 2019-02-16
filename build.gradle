@@ -52,7 +52,7 @@ buildscript {
 plugins {
     id 'com.gradle.build-scan' version '1.16'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '1.6.6'
+    id 'com.github.spotbugs' version '1.6.9'
     id "com.github.ben-manes.versions" version '0.20.0'
 }
 
