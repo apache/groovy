@@ -2454,8 +2454,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
             // e.g. 1(), 1.1(), ((int) 1 / 2)(1, 2), {a, b -> a + b }(1, 2), m()()
             return configureAST(createCallMethodCallExpression(baseExpr, argumentsExpr), ctx);
-        } else if (asBoolean(ctx.closure())) {
-            ClosureExpression closureExpression = this.visitClosure(ctx.closure());
+        } else if (asBoolean(ctx.closure()) || asBoolean(ctx.standardLambdaExpression())) {
+            // GROOVY-8991: Difference in behaviour with closure and lambda
+            ClosureExpression closureExpression =
+                    asBoolean(ctx.closure())
+                            ? this.visitClosure(ctx.closure())
+                            : this.visitStandardLambdaExpression(ctx.standardLambdaExpression());
 
             if (baseExpr instanceof MethodCallExpression) {
                 MethodCallExpression methodCallExpression = (MethodCallExpression) baseExpr;
