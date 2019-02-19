@@ -388,7 +388,11 @@ public class InvokerHelper {
 
     public static List createList(Object[] values) {
         List answer = new ArrayList(values.length);
-        answer.addAll(Arrays.asList(values));
+
+        // GROOVY-8995: Improve the performance of creating list
+        // answer.addAll(Arrays.asList(values));
+        Collections.addAll(answer, values);
+
         return answer;
     }
 
