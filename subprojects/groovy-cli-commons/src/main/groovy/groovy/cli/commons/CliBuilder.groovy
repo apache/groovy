@@ -30,11 +30,11 @@ import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Option as CliOption
 import org.apache.commons.cli.Options
 import org.apache.commons.cli.ParseException
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MetaClassHelper
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.Array
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
@@ -386,7 +386,7 @@ class CliBuilder {
         def cli = parse(args)
         def cliOptions = [:]
         setOptionsFromAnnotations(cli, optionsClass, cliOptions, false)
-        cliOptions as T
+        DefaultGroovyMethods.asType(cliOptions, optionsClass)
     }
 
     /**
@@ -417,7 +417,7 @@ class CliBuilder {
         }
         optionFields.each { Field f ->
             Annotation annotation = f.getAnnotation(Option)
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            String setterName = "set" + MetaClassHelper.capitalize(f.getName())
             Method m = optionClass.getMethod(setterName, f.getType())
             def typedOption = processAddAnnotation(annotation, m, true)
             options.addOption(typedOption.cliOption)
@@ -513,7 +513,7 @@ class CliBuilder {
         }
         optionClass.declaredFields.findAll { it.getAnnotation(Option) }.each { Field f ->
             Annotation annotation = f.getAnnotation(Option)
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            String setterName = "set" + MetaClassHelper.capitalize(f.getName())
             Method m = optionClass.getMethod(setterName, f.getType())
             Map names = calculateNames(annotation.longName(), annotation.shortName(), m, true)
             processSetAnnotation(m, t, names.long ?: names.short, cli, true)
@@ -523,7 +523,7 @@ class CliBuilder {
             processSetRemaining(m, remaining, t, cli, namesAreSetters)
         }
         optionClass.declaredFields.findAll{ it.getAnnotation(Unparsed) }.each { Field f ->
-            String setterName = "set" + MetaClassHelper.capitalize(f.getName());
+            String setterName = "set" + MetaClassHelper.capitalize(f.getName())
             Method m = optionClass.getMethod(setterName, f.getType())
             processSetRemaining(m, remaining, t, cli, namesAreSetters)
         }
@@ -536,12 +536,12 @@ class CliBuilder {
         def type = null
         if (isTyped) {
             type = resultType.componentType
-            result = remaining.collect{ cli.getValue(type, it, null) }
+            result = remaining.collect{ cli.getValue(type, it, null) }.asType(resultType)
         } else {
             result = remaining.toList()
         }
         if (namesAreSetters) {
-            m.invoke(t, isTyped ? [result.toArray(Array.newInstance(type, result.size()))] as Object[] : result)
+            m.invoke(t, isTyped ? [result] as Object[] : result)
         } else {
             Map names = calculateNames("", "", m, namesAreSetters)
             t.put(names.long, { -> result })
