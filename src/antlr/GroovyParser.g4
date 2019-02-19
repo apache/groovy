@@ -480,6 +480,7 @@ options { baseContext = standardLambdaExpression; }
 	:	lambdaParameters nls ARROW nls lambdaBody
 	;
 
+// JAVA STANDARD LAMBDA EXPRESSION
 standardLambdaExpression
 	:	standardLambdaParameters nls ARROW nls lambdaBody
 	;
@@ -503,10 +504,15 @@ lambdaBody
 	|	statementExpression
 	;
 
-
 // CLOSURE
 closure
     :   LBRACE nls (formalParameterList? nls ARROW nls)? blockStatementsOpt RBRACE
+    ;
+
+// GROOVY-8991: Difference in behaviour with closure and lambda
+closureOrLambdaExpression
+    :   closure
+    |   lambdaExpression
     ;
 
 blockStatementsOpt
@@ -872,6 +878,7 @@ expression
                      enhancedStatementExpression                                            #assignmentExprAlt
     ;
 
+
 castOperandExpression
 options { baseContext = expression; }
     :   castParExpression castOperandExpression                                             #castExprAlt
@@ -932,7 +939,8 @@ commandArgument
  *  (Compare to a C lvalue, or LeftHandSide in the JLS section 15.26.)
  *  General expressions are built up from path expressions, using operators like '+' and '='.
  *
- *  t   0: primary, 1: namePart, 2: arguments, 3: closure, 4: indexPropertyArgs, 5: namedPropertyArgs, 6: non-static inner class creator
+ *  t   0: primary, 1: namePart, 2: arguments, 3: closureOrLambdaExpression, 4: indexPropertyArgs, 5: namedPropertyArgs,
+ *      6: non-static inner class creator
  */
 pathExpression returns [int t]
     :   primary (pathElement { $t = $pathElement.t; })*
@@ -962,7 +970,7 @@ pathElement returns [int t]
         { $t = 2; }
 
     // Can always append a block, as foo{bar}
-    |   nls closure
+    |   nls closureOrLambdaExpression
         { $t = 3; }
 
     // Element selection is always an option, too.
@@ -1032,8 +1040,7 @@ primary
     |   THIS                                                                                #thisPrmrAlt
     |   SUPER                                                                               #superPrmrAlt
     |   parExpression                                                                       #parenPrmrAlt
-    |   closure                                                                             #closurePrmrAlt
-    |   lambdaExpression                                                                    #lambdaPrmrAlt
+    |   closureOrLambdaExpression                                                           #closureOrLambdaExpressionPrmrAlt
     |   list                                                                                #listPrmrAlt
     |   map                                                                                 #mapPrmrAlt
     |   builtInType                                                                         #builtInTypePrmrAlt
