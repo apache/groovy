@@ -23,6 +23,7 @@ import groovy.cli.Option
 import groovy.cli.TypedOption
 import groovy.cli.Unparsed
 import groovy.transform.Undefined
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MetaClassHelper
 import picocli.CommandLine
@@ -658,7 +659,7 @@ class CliBuilder {
         addOptionsFromAnnotations(optionsClass, cliOptions, true)
         addPositionalsFromAnnotations(optionsClass, cliOptions, true)
         parse(args)
-        cliOptions as T
+        DefaultGroovyMethods.asType(cliOptions, optionsClass)
     }
 
     /**
@@ -786,7 +787,7 @@ class CliBuilder {
     private ArgSpecAttributes extractAttributesFromField(Field f, target) {
         def getter = {
             f.accessible = true
-            f.get(target);
+            f.get(target)
         }
         def setter = { newValue ->
             f.accessible = true
@@ -799,7 +800,7 @@ class CliBuilder {
     }
 
     private PositionalParamSpec createPositionalParamSpec(Unparsed unparsed, ArgSpecAttributes attr, Object target) {
-        PositionalParamSpec.Builder builder = PositionalParamSpec.builder();
+        PositionalParamSpec.Builder builder = PositionalParamSpec.builder()
 
         CommandLine.Range arity = CommandLine.Range.valueOf("0..*")
         if (attr.type == Object) { attr.type = String[] }
@@ -922,7 +923,7 @@ class CliBuilder {
     }
 
     /** Commons-cli constant that specifies the number of argument values is infinite */
-    private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
+    private static final int COMMONS_CLI_UNLIMITED_VALUES = -2
 
     // - argName:        String
     // - longOpt:        String
