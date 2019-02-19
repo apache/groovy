@@ -180,7 +180,8 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClassOrInterfaceT
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClassicalForControlContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClassifiedModifiersContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClosureContext;
-import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClosurePrmrAltContext;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClosureOrLambdaExpressionContext;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClosureOrLambdaExpressionPrmrAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.CommandArgumentContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.CommandExprAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.CommandExpressionContext;
@@ -250,7 +251,6 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.LE;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.LT;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.LabeledStmtAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.LambdaBodyContext;
-import static org.apache.groovy.parser.antlr4.GroovyLangParser.LambdaPrmrAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ListContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ListPrmrAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.LiteralPrmrAltContext;
@@ -2454,12 +2454,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
             // e.g. 1(), 1.1(), ((int) 1 / 2)(1, 2), {a, b -> a + b }(1, 2), m()()
             return configureAST(createCallMethodCallExpression(baseExpr, argumentsExpr), ctx);
-        } else if (asBoolean(ctx.closure()) || asBoolean(ctx.standardLambdaExpression())) {
-            // GROOVY-8991: Difference in behaviour with closure and lambda
-            ClosureExpression closureExpression =
-                    asBoolean(ctx.closure())
-                            ? this.visitClosure(ctx.closure())
-                            : this.visitStandardLambdaExpression(ctx.standardLambdaExpression());
+        } else if (asBoolean(ctx.closureOrLambdaExpression())) {
+            ClosureExpression closureExpression = this.visitClosureOrLambdaExpression(ctx.closureOrLambdaExpression());
 
             if (baseExpr instanceof MethodCallExpression) {
                 MethodCallExpression methodCallExpression = (MethodCallExpression) baseExpr;
@@ -3164,13 +3160,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     @Override
-    public ClosureExpression visitClosurePrmrAlt(ClosurePrmrAltContext ctx) {
-        return configureAST(this.visitClosure(ctx.closure()), ctx);
-    }
-
-    @Override
-    public ClosureExpression visitLambdaPrmrAlt(LambdaPrmrAltContext ctx) {
-        return configureAST(this.visitStandardLambdaExpression(ctx.standardLambdaExpression()), ctx);
+    public ClosureExpression visitClosureOrLambdaExpressionPrmrAlt(ClosureOrLambdaExpressionPrmrAltContext ctx) {
+        return configureAST(this.visitClosureOrLambdaExpression(ctx.closureOrLambdaExpression()), ctx);
     }
 
     @Override
@@ -3593,7 +3584,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                 .map(e -> {
                     Expression expression = this.visitGstringValue(e);
 
-                    if (expression instanceof ClosureExpression && !asBoolean(e.closure().ARROW())) {
+                    if (expression instanceof ClosureExpression && !hasArrow(e)) {
                         List<Statement> statementList = ((BlockStatement) ((ClosureExpression) expression).getCode()).getStatements();
 
                         if (statementList.stream().noneMatch(DefaultGroovyMethods::asBoolean)) {
@@ -3625,6 +3616,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
         }
 
         return configureAST(new GStringExpression(verbatimText.toString(), stringLiteralList, values), ctx);
+    }
+
+    private boolean hasArrow(GstringValueContext e) {
+        return asBoolean(e.closure().ARROW());
     }
 
     private String parseGStringEnd(GstringContext ctx, String beginQuotation) {
@@ -4085,6 +4080,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                                 .collect(Collectors.toList())
                 ),
                 ctx);
+    }
+
+    @Override
+    public ClosureExpression visitClosureOrLambdaExpression(ClosureOrLambdaExpressionContext ctx) {
+        // GROOVY-8991: Difference in behaviour with closure and lambda
+        if (asBoolean(ctx.closure())) {
+            return configureAST(this.visitClosure(ctx.closure()), ctx);
+        } else if (asBoolean(ctx.standardLambdaExpression())) {
+            return configureAST(this.visitStandardLambdaExpression(ctx.standardLambdaExpression()), ctx);
+        }
+
+        // should never reach here
+        throw createParsingFailedException("The node is not expected here" + ctx.getText(), ctx);
     }
 
     @Override
