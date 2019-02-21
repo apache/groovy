@@ -22,12 +22,12 @@ buildscript {
     repositories {
         if (rootProject.hasProperty('buildInChina')) {
             // Try to use Aliyun maven repository when building in China
-            maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+            maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
         jcenter()
         maven{
             name 'Bintray Javadoc Hotfix repo'
-            url 'http://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
+            url 'https://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
         }
         maven {
             url "https://plugins.gradle.org/m2/"
@@ -94,10 +94,10 @@ allprojects {
     repositories {
         if (rootProject.hasProperty('buildInChina')) {
             // Try to use Aliyun maven repository when building in China
-            maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+            maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
         jcenter()
-        maven { url 'http://dl.bintray.com/melix/thirdparty-apache' } // openbeans
+        maven { url 'https://dl.bintray.com/melix/thirdparty-apache' } // openbeans
     }
 
     ext.buildDate = isReleaseVersion?new Date():new Date(0)
@@ -130,8 +130,7 @@ test.dependsOn(copyTestResources)
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-    maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
-    maven { url 'http://repo.bodar.com' } // tools - jarjar
+    maven { url 'https://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
 }
 
 configurations {

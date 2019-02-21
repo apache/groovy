@@ -29,11 +29,11 @@ project.ext.pomConfigureClosureWithoutTweaks = {
     project {
         name 'Apache Groovy'
         description 'Groovy: A powerful, dynamic language for the JVM'
-        url 'http://groovy-lang.org'
+        url 'https://groovy-lang.org'
         inceptionYear '2003'
         organization {
             name 'Apache Software Foundation'
-            url 'http://apache.org'
+            url 'https://apache.org'
         }
         developers {
             developer {
@@ -828,11 +828,11 @@ project.ext.pomConfigureClosureWithoutTweaks = {
         mailingLists {
             mailingList {
                 name 'Groovy Developer List'
-                archive 'http://mail-archives.apache.org/mod_mbox/groovy-dev/'
+                archive 'https://mail-archives.apache.org/mod_mbox/groovy-dev/'
             }
             mailingList {
                 name 'Groovy User List'
-                archive 'http://mail-archives.apache.org/mod_mbox/groovy-users/'
+                archive 'https://mail-archives.apache.org/mod_mbox/groovy-users/'
             }
         }
         licenses {
@@ -844,7 +844,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
         }
         issueManagement {
             system 'jira'
-            url 'http://issues.apache.org/jira/browse/GROOVY'
+            url 'https://issues.apache.org/jira/browse/GROOVY'
         }
         scm {
             connection 'scm:git:https://github.com/apache/groovy.git'
