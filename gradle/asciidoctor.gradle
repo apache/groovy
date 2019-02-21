@@ -48,10 +48,10 @@ asciidoctor {
     extensions {
 
         def baseUrls = [
-                jdk: "http://docs.oracle.com/javase/8/docs/api/index.html",
-                gjdk: "http://docs.groovy-lang.org/${version}/html/groovy-jdk/index.html",
-                gapi: "http://docs.groovy-lang.org/${version}/html/gapi/index.html",
-                gapid:  "http://docs.groovy-lang.org/${version}/html/gapi/",
+                jdk: "https://docs.oracle.com/javase/8/docs/api/index.html",
+                gjdk: "https://docs.groovy-lang.org/${version}/html/groovy-jdk/index.html",
+                gapi: "https://docs.groovy-lang.org/${version}/html/gapi/index.html",
+                gapid:  "https://docs.groovy-lang.org/${version}/html/gapi/",
         ]
 
         baseUrls.each { macroName, baseURL ->

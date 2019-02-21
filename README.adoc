@@ -25,10 +25,10 @@ The Groovy development team
 :build-icon: http://ci.groovy-lang.org:8111/app/rest/builds/buildType:(id:Groovy_Jdk7Build)/statusIcon
 :travis-build-icon: https://travis-ci.org/apache/groovy.svg?branch=master
 :noheader:
-:groovy-www: http://groovy-lang.org/
+:groovy-www: https://groovy-lang.org/
 :groovy-ci: http://ci.groovy-lang.org?guest=1
 :travis-ci: https://travis-ci.org/apache/groovy
-:jdk: http://www.oracle.com/technetwork/java/javase/downloads
+:jdk: https://www.oracle.com/technetwork/java/javase/downloads
 :bintray-latest-version-image: https://api.bintray.com/packages/groovy/maven/groovy/images/download.png
 :bintray-latest-version-link: https://bintray.com/groovy/maven/groovy/_latestVersion
 :bintray-watch-image: https://www.bintray.com/docs/images/bintray_badge_color.png
