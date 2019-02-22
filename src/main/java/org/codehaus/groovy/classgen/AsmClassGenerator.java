@@ -61,6 +61,7 @@ import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -153,8 +154,7 @@ public class AsmClassGenerator extends ClassGenerator {
      // spread expressions
     static final MethodCaller spreadMap = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadMap");
     static final MethodCaller despreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "despreadList");
-    // Closure
-    static final MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
+
 
     // type conversions
     static final MethodCaller createListMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createList");
@@ -776,13 +776,14 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
     }
 
+    @Override
     public void visitMethodPointerExpression(MethodPointerExpression expression) {
-        Expression subExpression = expression.getExpression();
-        subExpression.visit(this);
-        controller.getOperandStack().box();
-        controller.getOperandStack().pushDynamicName(expression.getMethodName());
-        getMethodPointer.call(controller.getMethodVisitor());
-        controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE,2);
+        controller.getMethodPointerExpressionWriter().writeMethodPointerExpression(expression);
+    }
+
+    @Override
+    public void visitMethodReferenceExpression(MethodReferenceExpression expression) {
+        controller.getMethodReferenceExpressionWriter().writeMethodReferenceExpression(expression);
     }
 
     public void visitUnaryMinusExpression(UnaryMinusExpression expression) {

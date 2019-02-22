@@ -19,6 +19,8 @@
 
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
+
 /**
  * Represents a method reference or a constructor reference,
  * e.g. System.out::println OR Objects::requireNonNull OR Integer::new OR int[]::new
@@ -26,6 +28,25 @@ package org.codehaus.groovy.ast.expr;
 public class MethodReferenceExpression extends MethodPointerExpression {
     public MethodReferenceExpression(Expression expression, Expression methodName) {
         super(expression, methodName);
+    }
+
+    @Override
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitMethodReferenceExpression(this);
+    }
+
+    @Override
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        Expression ret;
+        Expression mname = transformer.transform(methodName);
+        if (expression == null) {
+            ret = new MethodReferenceExpression(VariableExpression.THIS_EXPRESSION, mname);
+        } else {
+            ret = new MethodReferenceExpression(transformer.transform(expression), mname);
+        }
+        ret.setSourcePosition(this);
+        ret.copyNodeMetaData(this);
+        return ret;
     }
 
     @Override

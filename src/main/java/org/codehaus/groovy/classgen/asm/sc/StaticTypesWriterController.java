@@ -32,6 +32,7 @@ import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.DelegatingController;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
+import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.StatementWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
@@ -60,6 +61,7 @@ public class StaticTypesWriterController extends DelegatingController {
     private UnaryExpressionHelper unaryExpressionHelper;
     private ClosureWriter closureWriter;
     private LambdaWriter lambdaWriter;
+    private MethodReferenceExpressionWriter methodReferenceExpressionWriter;
 
     public StaticTypesWriterController(WriterController normalController) {
         super(normalController);
@@ -75,6 +77,7 @@ public class StaticTypesWriterController extends DelegatingController {
         this.invocationWriter = new StaticInvocationWriter(this);
         this.closureWriter = new StaticTypesClosureWriter(this);
         this.lambdaWriter = new StaticTypesLambdaWriter(this);
+        this.methodReferenceExpressionWriter = new StaticTypesMethodReferenceExpressionWriter(this);
         this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
 
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
@@ -169,6 +172,15 @@ public class StaticTypesWriterController extends DelegatingController {
         } else {
             return super.getBinaryExpressionHelper();
         }
+    }
+
+    @Override
+    public MethodReferenceExpressionWriter getMethodReferenceExpressionWriter() {
+        if (isInStaticallyCheckedMethod) {
+            return methodReferenceExpressionWriter;
+        }
+
+        return super.getMethodReferenceExpressionWriter();
     }
 
     @Override
