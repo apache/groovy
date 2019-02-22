@@ -31,7 +31,7 @@ public class MethodPointerExpressionWriter {
     // Closure
     static final MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
 
-    private final WriterController controller;
+    protected final WriterController controller;
 
     public MethodPointerExpressionWriter(final WriterController controller) {
         this.controller = controller;

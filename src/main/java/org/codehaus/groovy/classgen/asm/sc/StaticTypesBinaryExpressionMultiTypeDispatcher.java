@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -73,7 +74,7 @@ import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTION_INTERFACE_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 
 /**
@@ -150,8 +151,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             }
         } else {
             Expression rightExpression = expression.getRightExpression();
-            if (rightExpression instanceof LambdaExpression) {
-                rightExpression.putNodeMetaData(INFERRED_LAMBDA_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
+            if (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression) {
+                rightExpression.putNodeMetaData(INFERRED_FUNCTION_INTERFACE_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
             }
         }
         // GROOVY-5620: Spread safe/Null safe operator on LHS is not supported
