@@ -32,9 +32,8 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * </code>
  */
 public class MethodPointerExpression extends Expression {
-
-    private final Expression expression;
-    private final Expression methodName;
+    protected final Expression expression;
+    protected final Expression methodName;
 
     public MethodPointerExpression(Expression expression, Expression methodName) {
         this.expression = expression;

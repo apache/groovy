@@ -117,6 +117,16 @@ public class DelegatingController extends WriterController {
     public LambdaWriter getLambdaWriter() {
         return delegationController.getLambdaWriter();
     }
+
+    @Override
+    public MethodPointerExpressionWriter getMethodPointerExpressionWriter() {
+        return delegationController.getMethodPointerExpressionWriter();
+    }
+
+    @Override
+    public MethodReferenceExpressionWriter getMethodReferenceExpressionWriter() {
+        return delegationController.getMethodReferenceExpressionWriter();
+    }
     
     @Override
     public CompileStack getCompileStack() {

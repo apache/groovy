@@ -41,6 +41,7 @@ import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -160,6 +161,10 @@ public interface GroovyCodeVisitor {
     void visitFieldExpression(FieldExpression expression);
 
     void visitMethodPointerExpression(MethodPointerExpression expression);
+
+    default void visitMethodReferenceExpression(MethodReferenceExpression expression) {
+        visitMethodPointerExpression(expression);
+    }
 
     void visitConstantExpression(ConstantExpression expression);
 
