@@ -39,5 +39,5 @@ public enum StaticTypesMarker {
     DYNAMIC_RESOLUTION, // call recognized by a type checking extension as a dynamic method call
     SUPER_MOP_METHOD_REQUIRED, // used to store the list of MOP methods that still have to be generated
     PARAMETER_TYPE, // used to store the parameter type information of method invocation on an expression
-    INFERRED_LAMBDA_TYPE // used to store the lambda type information on a lambda expression
+    INFERRED_FUNCTION_INTERFACE_TYPE // used to store the function interface type information on an expression
 }

@@ -19,12 +19,13 @@
 package groovy.bugs
 
 class Groovy9008 extends GroovyTestCase {
-    void testMethodReference() {
+    void testMethodReferenceFunction() {
         assertScript '''
             import java.util.stream.Collectors
             
             void p() {
                 def result = [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
+                assert 3 == result.size()
                 assert ['1', '2', '3'] == result
             }
             
@@ -32,17 +33,19 @@ class Groovy9008 extends GroovyTestCase {
         '''
     }
 
-    void testMethodReferenceSC() {
+    void testMethodReferenceFunctionSC() {
         assertScript '''
             import java.util.stream.Collectors
             
             @groovy.transform.CompileStatic
             void p() {
                 def result = [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
+                assert 3 == result.size()
                 assert ['1', '2', '3'] == result
             }
             
             p()
         '''
     }
+
 }

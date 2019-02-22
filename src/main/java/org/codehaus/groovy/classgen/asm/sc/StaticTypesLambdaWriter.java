@@ -55,8 +55,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -69,7 +67,7 @@ import static org.objectweb.asm.Opcodes.NEW;
 /**
  * Writer responsible for generating lambda classes in statically compiled mode.
  */
-public class StaticTypesLambdaWriter extends LambdaWriter {
+public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFunctionInterfaceWriter {
     private static final String DO_CALL = "doCall";
     private static final String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
     private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
@@ -91,10 +89,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
     @Override
     public void writeLambda(LambdaExpression expression) {
-        ClassNode lambdaType = getLambdaType(expression);
-        ClassNode redirect = lambdaType.redirect();
+        ClassNode functionInterfaceType = getFunctionInterfaceType(expression);
+        ClassNode redirect = functionInterfaceType.redirect();
 
-        if (null == lambdaType || !ClassHelper.isFunctionalInterface(redirect)) {
+        if (null == functionInterfaceType || !ClassHelper.isFunctionalInterface(redirect)) {
             // if the parameter type is not real FunctionInterface or failed to be inferred, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
@@ -118,20 +116,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
 
         mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
-                createAbstractMethodDesc(lambdaType, lambdaWrapperClassNode),
+                createAbstractMethodDesc(functionInterfaceType, lambdaWrapperClassNode),
                 createBootstrapMethod(isInterface),
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaWrapperClassNode, syntheticLambdaMethodNode)
         );
         operandStack.replace(redirect, 2);
-    }
-
-    private ClassNode getLambdaType(LambdaExpression expression) {
-        ClassNode type = expression.getNodeMetaData(PARAMETER_TYPE);
-
-        if (null == type) {
-            type = expression.getNodeMetaData(INFERRED_LAMBDA_TYPE);
-        }
-        return type;
     }
 
     private void loadEnclosingClassInstance() {
@@ -196,16 +185,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         return BytecodeHelper.getMethodDescriptor(parameterType.redirect(), lambdaSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
     }
 
-    private Handle createBootstrapMethod(boolean isInterface) {
-        return new Handle(
-                Opcodes.H_INVOKESTATIC,
-                "java/lang/invoke/LambdaMetafactory",
-                "metafactory",
-                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
-                isInterface
-        );
-    }
-
     private Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode lambdaClassNode, MethodNode syntheticLambdaMethodNode) {
         return new Object[]{
                 Type.getType(abstractMethodDesc),
@@ -218,15 +197,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 ),
                 Type.getType(BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode.getReturnType(), syntheticLambdaMethodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE)))
         };
-    }
-
-    private String createMethodDescriptor(MethodNode abstractMethodNode) {
-        return BytecodeHelper.getMethodDescriptor(
-                abstractMethodNode.getReturnType().getTypeClass(),
-                Arrays.stream(abstractMethodNode.getParameters())
-                        .map(e -> e.getType().getTypeClass())
-                        .toArray(Class[]::new)
-        );
     }
 
     public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
