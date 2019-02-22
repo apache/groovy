@@ -76,6 +76,8 @@ public class WriterController {
     private int lineNumber = -1;
     private int helperMethodIndex = 0;
     private List<String> superMethodNames = new ArrayList<String>();
+    private MethodPointerExpressionWriter methodPointerExpressionWriter;
+    private MethodReferenceExpressionWriter methodReferenceExpressionWriter;
 
     public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
@@ -122,6 +124,8 @@ public class WriterController {
         this.assertionWriter = new AssertionWriter(this);
         this.closureWriter = new ClosureWriter(this);
         this.lambdaWriter = new LambdaWriter(this);
+        this.methodPointerExpressionWriter = new MethodPointerExpressionWriter(this);
+        this.methodReferenceExpressionWriter = new MethodReferenceExpressionWriter(this);
         this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
         this.acg = asmClassGenerator;
         this.sourceUnit = acg.getSourceUnit();
@@ -217,6 +221,14 @@ public class WriterController {
         } else {
             return binaryExpHelper;
         }
+    }
+
+    public MethodPointerExpressionWriter getMethodPointerExpressionWriter() {
+        return methodPointerExpressionWriter;
+    }
+
+    public MethodReferenceExpressionWriter getMethodReferenceExpressionWriter() {
+        return methodReferenceExpressionWriter;
     }
 
     public UnaryExpressionHelper getUnaryExpressionHelper() {
@@ -401,4 +413,5 @@ public class WriterController {
     public List<String> getSuperMethodNames() {
         return superMethodNames;
     }
+
 }
