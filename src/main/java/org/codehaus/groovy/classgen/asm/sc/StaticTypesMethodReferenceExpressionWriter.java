@@ -19,11 +19,13 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.Tuple2;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
+import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
@@ -36,6 +38,8 @@ import org.objectweb.asm.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 
 /**
  * Writer responsible for generating method reference in statically compiled mode.
@@ -53,6 +57,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode redirect = functionInterfaceType.redirect();
 
         MethodNode abstractMethodNode = ClassHelper.findSAM(redirect);
+
         String abstractMethodDesc = createMethodDescriptor(abstractMethodNode);
 
         ClassNode classNode = controller.getClassNode();
@@ -60,7 +65,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         ClassNode mrExpressionType = methodReferenceExpression.getExpression().getType();
         String mrMethodName = methodReferenceExpression.getMethodName().getText();
-        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, abstractMethodNode, mrExpressionType);
+
+
+        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, createParametersWithExactType(abstractMethodNode, functionInterfaceType), mrExpressionType);
 
         if (null == mrMethodNode) {
             throw new GroovyRuntimeException("Failed to find the expected method[" + mrMethodName + "] in type[" + mrExpressionType.getName() + "]");
@@ -76,8 +83,34 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         controller.getOperandStack().push(redirect);
     }
 
-    private MethodNode findMrMethodNode(String mrMethodName, MethodNode abstractMethodNode, ClassNode mrExpressionType) {
-        Parameter[] abstractMethodParameters = abstractMethodNode.getParameters();
+    private Parameter[] createParametersWithExactType(MethodNode abstractMethodNode, ClassNode functionInterfaceType) {
+        Tuple2<ClassNode[], ClassNode> abstractMethodNodeTypeInfo = GenericsUtils.parameterizeSAM(functionInterfaceType);
+        ClassNode[] inferredParameterTypes = abstractMethodNodeTypeInfo.getV1();
+        Parameter[] parameters = abstractMethodNode.getParameters();
+        if (parameters == null) {
+            parameters = Parameter.EMPTY_ARRAY;
+        }
+
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            ClassNode inferredType = inferredParameterTypes[i];
+
+            if (null == inferredType) {
+                continue;
+            }
+
+            // Java 11 does not allow primitive type, we should use the wrapper type
+            // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
+            ClassNode wrappedType = getWrapper(inferredType);
+
+            parameter.setType(wrappedType);
+            parameter.setOriginType(wrappedType);
+        }
+
+        return parameters;
+    }
+
+    private MethodNode findMrMethodNode(String mrMethodName, Parameter[] abstractMethodParameters, ClassNode mrExpressionType) {
         List<MethodNode> methodNodeList = mrExpressionType.getMethods(mrMethodName);
         ClassNode classNode = controller.getClassNode();
 

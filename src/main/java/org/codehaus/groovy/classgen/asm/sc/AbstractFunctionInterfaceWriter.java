@@ -28,6 +28,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.Arrays;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTION_INTERFACE_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 
 /**
@@ -35,7 +36,11 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE
  */
 public interface AbstractFunctionInterfaceWriter {
     default ClassNode getFunctionInterfaceType(Expression expression) {
-        ClassNode type = expression.getNodeMetaData(PARAMETER_TYPE);
+        ClassNode type = expression.getNodeMetaData(INFERRED_TYPE);
+
+        if (null == type) {
+            type = expression.getNodeMetaData(PARAMETER_TYPE);
+        }
 
         if (null == type) {
             type = expression.getNodeMetaData(INFERRED_FUNCTION_INTERFACE_TYPE);
