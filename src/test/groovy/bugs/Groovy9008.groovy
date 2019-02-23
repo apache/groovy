@@ -23,20 +23,6 @@ class Groovy9008 extends GroovyTestCase {
         assertScript '''
             import java.util.stream.Collectors
             
-            void p() {
-                def result = [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
-                assert 3 == result.size()
-                assert ['1', '2', '3'] == result
-            }
-            
-            p()
-        '''
-    }
-
-    void testMethodReferenceFunctionSC() {
-        assertScript '''
-            import java.util.stream.Collectors
-            
             @groovy.transform.CompileStatic
             void p() {
                 def result = [1, 2, 3].stream().map(Object::toString).collect(Collectors.toList())
@@ -48,4 +34,19 @@ class Groovy9008 extends GroovyTestCase {
         '''
     }
 
+    void testMethodReferenceBinaryOperator() {
+
+        assertScript '''
+            import java.util.stream.Stream
+
+            @groovy.transform.CompileStatic
+            void p() {
+                def result = [new BigDecimal(1), new BigDecimal(2), new BigDecimal(3)].stream().reduce(new BigDecimal(0), BigDecimal::add)
+
+                assert new BigDecimal(6) == result
+            }
+            
+            p()
+        '''
+    }
 }
