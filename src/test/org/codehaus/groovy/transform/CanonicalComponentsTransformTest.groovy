@@ -785,6 +785,22 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
             assert new FieldAndPropertyIncludedInHashCode().hashCode() == 442087
         '''
     }
+
+    // GROOVY-9009
+    void testAutoCloneToStringCompileStatic() {
+        new GroovyShell().evaluate '''
+            import groovy.transform.*
+
+            @ToString
+            @CompileStatic
+            @AutoClone
+            class SomeClass {
+                String someId
+            }
+
+            assert new SomeClass(someId: 'myid').clone().toString() == 'SomeClass(myid)'
+        '''
+    }
 }
 
 @TupleConstructor
