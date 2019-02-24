@@ -63,6 +63,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
@@ -147,12 +148,12 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         if (properties.isEmpty()) {
             // perhaps overkill but let compareTo be based on hashes for commutativity
             // return this.hashCode() <=> other.hashCode()
-            statements.add(declS(varX(THIS_HASH, ClassHelper.Integer_TYPE), callX(varX("this"), "hashCode")));
-            statements.add(declS(varX(OTHER_HASH, ClassHelper.Integer_TYPE), callX(varX(OTHER), "hashCode")));
+            statements.add(declS(localVarX(THIS_HASH, ClassHelper.Integer_TYPE), callX(varX("this"), "hashCode")));
+            statements.add(declS(localVarX(OTHER_HASH, ClassHelper.Integer_TYPE), callX(varX(OTHER), "hashCode")));
             statements.add(returnS(compareExpr(varX(THIS_HASH), varX(OTHER_HASH), reversed)));
         } else {
             // int value = 0;
-            statements.add(declS(varX(VALUE, ClassHelper.int_TYPE), constX(0)));
+            statements.add(declS(localVarX(VALUE, ClassHelper.int_TYPE), constX(0)));
             for (PropertyNode property : properties) {
                 String propName = property.getName();
                 // value = this.prop <=> other.prop;

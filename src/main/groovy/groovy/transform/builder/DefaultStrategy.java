@@ -43,6 +43,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -284,7 +285,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     }
 
     private static Expression initializeInstance(ClassNode buildee, List<PropertyInfo> props, BlockStatement body) {
-        Expression instance = varX("_the" + buildee.getNameWithoutPackage(), buildee);
+        Expression instance = localVarX("_the" + buildee.getNameWithoutPackage(), buildee);
         body.addStatement(declS(instance, ctorX(buildee)));
         for (PropertyInfo pi : props) {
             body.addStatement(stmt(assignX(propX(instance, pi.getName()), varX(pi.getName(), pi.getType()))));
