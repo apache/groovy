@@ -181,7 +181,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         List<ToStringElement> elements = new ArrayList<ToStringElement>();
 
         // def $toStringFirst = true
-        final VariableExpression first = varX("$toStringFirst");
+        final VariableExpression first = localVarX("$toStringFirst");
         body.addStatement(declS(first, constX(Boolean.TRUE)));
 
         // <class_name>(

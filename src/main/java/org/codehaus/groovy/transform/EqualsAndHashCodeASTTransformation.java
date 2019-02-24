@@ -241,7 +241,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(ifS(notX(hasClassX(other, GenericsUtils.nonGeneric(cNode))), returnS(constX(Boolean.FALSE,true))));
         }
 
-        VariableExpression otherTyped = varX("otherTyped", GenericsUtils.nonGeneric(cNode));
+        VariableExpression otherTyped = localVarX("otherTyped", GenericsUtils.nonGeneric(cNode));
         CastExpression castExpression = new CastExpression(GenericsUtils.nonGeneric(cNode), other);
         castExpression.setStrict(true);
         body.addStatement(declS(otherTyped, castExpression));

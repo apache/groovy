@@ -52,6 +52,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -172,8 +173,8 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             // Get the existing code block
             Statement code = setter.getCode();
 
-            Expression oldValue = varX("$oldValue");
-            Expression newValue = varX("$newValue");
+            Expression oldValue = localVarX("$oldValue");
+            Expression newValue = localVarX("$newValue");
             Expression proposedValue = varX(setter.getParameters()[0].getName());
             BlockStatement block = new BlockStatement();
 
