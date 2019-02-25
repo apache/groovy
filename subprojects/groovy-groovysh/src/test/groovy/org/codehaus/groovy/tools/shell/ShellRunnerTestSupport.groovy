@@ -44,9 +44,9 @@ abstract class ShellRunnerTestSupport extends GroovyTestCase {
         // setup mock and stub with calls expected from InteractiveShellRunner Constructor
 
         shellMocker = new MockFor(Groovysh)
-        shellMocker.demand.createDefaultRegistrar(1) { {Shell shell -> null} }
         // when run with compileStatic
         shellMocker.demand.getClass(0..1) {Groovysh}
+        shellMocker.demand.createDefaultRegistrar(1) { {Shell shell -> null} }
         shellMocker.demand.getIo(2) { testio }
         shellMocker.demand.getRegistry(1) {new Object() {def commands() {[]} }}
         shellMocker.demand.getHistory(1) {new Serializable(){def size() {0}; def getMaxSize() {1}}}

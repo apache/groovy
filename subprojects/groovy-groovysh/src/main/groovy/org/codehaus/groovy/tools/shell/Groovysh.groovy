@@ -98,13 +98,19 @@ class Groovysh extends Shell {
     }
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration) {
+       this(classLoader, binding, io, registrar, configuration,  new Interpreter(classLoader, binding, configuration))
+    }
+    
+    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration, Interpreter interpreter) {
         super(io)
         assert classLoader
         assert binding
-        assert registrar
+        def actualRegistrar = registrar ?: createDefaultRegistrar(classLoader)
         parser = new Parser()
-        interp = new Interpreter(classLoader, binding, configuration)
-        registrar.call(this)
+        interp = interpreter
+        if (actualRegistrar != null) {
+          actualRegistrar.call(this)
+        }
         this.packageHelper = new PackageHelperImpl(classLoader)
     }
 
@@ -122,7 +128,7 @@ class Groovysh extends Shell {
     }
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
-        this(classLoader, binding, io, createDefaultRegistrar(classLoader))
+        this(classLoader, binding, io, null)
     }
 
     Groovysh(final Binding binding, final IO io) {
@@ -134,8 +140,7 @@ class Groovysh extends Shell {
     }
 
     Groovysh(final IO io, CompilerConfiguration configuration) {
-        this(Thread.currentThread().contextClassLoader, new Binding(), io,
-                createDefaultRegistrar(Thread.currentThread().contextClassLoader), configuration)
+        this(Thread.currentThread().contextClassLoader, new Binding(), io, null, configuration)
     }
 
     Groovysh() {

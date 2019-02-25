@@ -58,6 +58,10 @@ class Interpreter implements Evaluator
         return shell.classLoader
     }
 
+    GroovyShell getGroovyShell() {
+        return shell
+    }
+
     @Override
     def evaluate(final Collection<String> buffer) {
         assert buffer
