@@ -86,7 +86,7 @@ public class GroovyShell extends GroovyObjectSupport {
     public GroovyShell(ClassLoader parent) {
         this(parent, new Binding(), CompilerConfiguration.DEFAULT);
     }
-    
+
     public GroovyShell(ClassLoader parent, Binding binding, final CompilerConfiguration config) {
         if (binding == null) {
             throw new IllegalArgumentException("Binding must not be null.");
@@ -95,15 +95,19 @@ public class GroovyShell extends GroovyObjectSupport {
             throw new IllegalArgumentException("Compiler configuration must not be null.");
         }
         final ClassLoader parentLoader = (parent!=null)?parent:GroovyShell.class.getClassLoader();
-        this.loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
-            public GroovyClassLoader run() {
-                return new GroovyClassLoader(parentLoader,config);
-            }
-        });
-        this.context = binding;        
+        if (parentLoader instanceof GroovyClassLoader) {
+          this.loader = (GroovyClassLoader) parentLoader;
+        } else {
+          this.loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+              public GroovyClassLoader run() {
+                  return new GroovyClassLoader(parentLoader,config);
+              }
+          });
+        }
+        this.context = binding;
         this.config = config;
     }
-    
+
     public void resetLoadedClasses() {
         loader.clearCache();
     }
