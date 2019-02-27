@@ -47,7 +47,7 @@ public class Groovy8008Bug extends TestCase {
         Class<Inner> innerClass = Inner.class;
         Constructor<Inner> ctor = innerClass.getDeclaredConstructor(Groovy8008Bug.class, String.class, Date.class, String.class);
 
-        assertEquals(4, ctor.getParameterTypes().length);       //Groovy8008Bug,String,Date,String
+        assertEquals(4, ctor.getParameterTypes().length);
         // JDK 9 and above correctly report 4
         // assertEquals(3, ctor.getParameterAnnotations().length); //[],[@Anno1,@Anno2],[@Anno2]
 
@@ -58,24 +58,57 @@ public class Groovy8008Bug extends TestCase {
         assertEquals(1, ctors.size());
 
         Parameter[] params = ctors.get(0).getParameters();
+        checkOuterRef(params[0], Groovy8008Bug.class);
+        checkStringWithNoAnnos(params[1]);
+        checkDateWithTwoAnnos(params[2]);
+        checkStringWithOneAnno(params[3]);
 
-        assertEquals(Groovy8008Bug.class.getName(), params[0].getType().getName());
-        assertEquals(0, params[0].getAnnotations().size());
+        // do the same again for an inner inner class
+        Class<Inner.InnerInner> innerInnerClass = Inner.InnerInner.class;
+        Constructor<Inner.InnerInner> innerCtor = innerInnerClass.getDeclaredConstructor(Groovy8008Bug.Inner.class, String.class, Date.class, String.class);
+        assertEquals(4, innerCtor.getParameterTypes().length);
 
-        assertEquals(String.class.getName(), params[1].getType().getName());
-        assertEquals(0, params[1].getAnnotations().size());
+        cn = new ClassNode(innerInnerClass);
 
-        assertEquals(Date.class.getName(), params[2].getType().getName());
-        assertEquals(2, params[2].getAnnotations().size());
-        assertEquals(TestAnno1.class.getName(), params[2].getAnnotations().get(0).getClassNode().getName());
-        assertEquals(TestAnno2.class.getName(), params[2].getAnnotations().get(1).getClassNode().getName());
+        // trigger the call to VMPlugin#configureClassNode(CompileUnit,ClassNode)
+        ctors = cn.getDeclaredConstructors();
+        assertEquals(1, ctors.size());
 
-        assertEquals(String.class.getName(), params[3].getType().getName());
-        assertEquals(1, params[3].getAnnotations().size());
-        assertEquals(TestAnno2.class.getName(), params[3].getAnnotations().get(0).getClassNode().getName());
+        params = ctors.get(0).getParameters();
+        checkOuterRef(params[0], Groovy8008Bug.Inner.class);
+        checkStringWithNoAnnos(params[1]);
+        checkDateWithTwoAnnos(params[2]);
+        checkStringWithOneAnno(params[3]);
+    }
+
+    private void checkOuterRef(Parameter param, Class outerClass) {
+        assertEquals(outerClass.getName(), param.getType().getName());
+        assertEquals(0, param.getAnnotations().size());
+    }
+
+    private void checkStringWithOneAnno(Parameter param) {
+        assertEquals(String.class.getName(), param.getType().getName());
+        assertEquals(1, param.getAnnotations().size());
+        assertEquals(TestAnno2.class.getName(), param.getAnnotations().get(0).getClassNode().getName());
+    }
+
+    private void checkStringWithNoAnnos(Parameter param) {
+        assertEquals(String.class.getName(), param.getType().getName());
+        assertEquals(0, param.getAnnotations().size());
+    }
+
+    private void checkDateWithTwoAnnos(Parameter param2) {
+        assertEquals(Date.class.getName(), param2.getType().getName());
+        assertEquals(2, param2.getAnnotations().size());
+        assertEquals(TestAnno1.class.getName(), param2.getAnnotations().get(0).getClassNode().getName());
+        assertEquals(TestAnno2.class.getName(), param2.getAnnotations().get(1).getClassNode().getName());
     }
 
     private class Inner {
         private Inner(String arg1, @TestAnno1 @TestAnno2 Date arg2, @TestAnno2 String arg3) { }
+
+        private class InnerInner {
+            private InnerInner(String arg1, @TestAnno1 @TestAnno2 Date arg2, @TestAnno2 String arg3) { }
+        }
     }
 }
