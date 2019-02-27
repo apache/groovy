@@ -431,18 +431,20 @@ public class Java5 implements VMPlugin {
         Annotation[][] annotations = constructor.getParameterAnnotations();
         int diff = parameterCount - annotations.length;
         if (diff > 0) {
-            // May happen on JDK8 and below, but we only expect to have to
-            // add a single element to the front of the array to account
-            // for the synthetic outer reference
-            if (diff > 1) {
+            // May happen on JDK8 and below. We add elements to the front of the array to account for the synthetic params:
+            // - for an inner class we expect one param to account for the synthetic outer reference
+            // - for an enum we expect two params to account for the synthetic name and ordinal
+            if ((!constructor.getDeclaringClass().isEnum() && diff > 1) || diff > 2) {
                 throw new GroovyBugError(
                         "Constructor parameter annotations length [" + annotations.length + "] " +
                         "does not match the parameter length: " + constructor
                 );
             }
             Annotation[][] adjusted = new Annotation[parameterCount][];
-            adjusted[0] = new Annotation[0];
-            System.arraycopy(annotations, 0, adjusted, 1, annotations.length);
+            for (int i = 0; i < diff; i++) {
+                adjusted[i] = new Annotation[0];
+            }
+            System.arraycopy(annotations, 0, adjusted, diff, annotations.length);
             return adjusted;
         }
         return annotations;
