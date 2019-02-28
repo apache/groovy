@@ -223,6 +223,9 @@ class GrapeMain implements Runnable {
         @Option(names = ['-i', '--ivy'], description = 'Express dependencies in an ivy-like format')
         private boolean ivyFormatRequested
 
+        @Parameters(hidden = true) // parameter description is embedded in the command description
+        List<String> args = new ArrayList<>() // the positional parameters
+
         @ParentCommand GrapeMain parentCommand
 
         void run() {
@@ -232,7 +235,7 @@ class GrapeMain implements Runnable {
             Grape.getInstance()
             parentCommand.setupLogging(Message.MSG_ERR)
 
-            if ((arg.size() % 3) != 0) {
+            if ((args.size() % 3) != 0) {
                 println 'There needs to be a multiple of three arguments: (group module version)+'
                 return
             }
@@ -254,7 +257,7 @@ class GrapeMain implements Runnable {
                 before = 'export CLASSPATH='
                 between = ':'
                 after = ''
-            } else if (ivy) {
+            } else if (ivyFormatRequested) {
                 before = '<dependency '
                 between = '">\n<dependency '
                 after = '">'
@@ -264,7 +267,7 @@ class GrapeMain implements Runnable {
                 after = '\n'
             }
 
-            iter = arg.iterator()
+            def iter = args.iterator()
             def params = [[:]]
             def depsInfo = [] // this list will contain the module/group/version info of all resolved dependencies
             if (ivyFormatRequested) {
@@ -276,7 +279,7 @@ class GrapeMain implements Runnable {
             try {
                 def results = []
                 def uris = Grape.resolve(* params)
-                if(!ivyFormatRequested) {
+                if (!ivyFormatRequested) {
                     for (URI uri: uris) {
                         if (uri.scheme == 'file') {
                             results += new File(uri).path
