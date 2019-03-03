@@ -52,9 +52,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     @Override
     public void writeMethodReferenceExpression(MethodReferenceExpression methodReferenceExpression) {
-        // TODO generate native method reference bytecode here
-        ClassNode functionInterfaceType = getFunctionInterfaceType(methodReferenceExpression);
-        ClassNode redirect = functionInterfaceType.redirect();
+        ClassNode functionalInterfaceType = getFunctionalInterfaceType(methodReferenceExpression);
+        ClassNode redirect = functionalInterfaceType.redirect();
 
         MethodNode abstractMethodNode = ClassHelper.findSAM(redirect);
 
@@ -67,7 +66,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         String mrMethodName = methodReferenceExpression.getMethodName().getText();
 
 
-        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, createParametersWithExactType(abstractMethodNode, functionInterfaceType), mrExpressionType);
+        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, createParametersWithExactType(abstractMethodNode, functionalInterfaceType), mrExpressionType);
 
         if (null == mrMethodNode) {
             throw new GroovyRuntimeException("Failed to find the expected method[" + mrMethodName + "] in type[" + mrExpressionType.getName() + "]");
@@ -78,7 +77,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 abstractMethodNode.getName(),
                 BytecodeHelper.getMethodDescriptor(redirect, Parameter.EMPTY_ARRAY),
                 createBootstrapMethod(isInterface),
-                createBootstrapMethodArguments(abstractMethodDesc, mrExpressionType, mrMethodNode, abstractMethodNode));
+                createBootstrapMethodArguments(abstractMethodDesc, mrExpressionType, mrMethodNode));
 
         controller.getOperandStack().push(redirect);
     }
@@ -143,19 +142,5 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
 
         return mrMethodNode;
-    }
-
-    private Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode expressionType, MethodNode mrMethodNode, MethodNode abstractMethodNode) {
-        return new Object[]{
-                Type.getType(abstractMethodDesc),
-                new Handle(
-                        Opcodes.H_INVOKEVIRTUAL,
-                        BytecodeHelper.getClassInternalName(expressionType.getTypeClass()),
-                        mrMethodNode.getName(),
-                        BytecodeHelper.getMethodDescriptor(mrMethodNode),
-                        expressionType.isInterface()
-                ),
-                Type.getType(BytecodeHelper.getMethodDescriptor(abstractMethodNode.getReturnType(), abstractMethodNode.getParameters()))
-        };
     }
 }

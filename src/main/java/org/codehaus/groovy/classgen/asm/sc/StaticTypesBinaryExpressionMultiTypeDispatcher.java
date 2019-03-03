@@ -74,7 +74,7 @@ import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTION_INTERFACE_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 
 /**
@@ -152,7 +152,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         } else {
             Expression rightExpression = expression.getRightExpression();
             if (rightExpression instanceof LambdaExpression || rightExpression instanceof MethodReferenceExpression) {
-                rightExpression.putNodeMetaData(INFERRED_FUNCTION_INTERFACE_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
+                rightExpression.putNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE, leftExpression.getNodeMetaData(INFERRED_TYPE));
             }
         }
         // GROOVY-5620: Spread safe/Null safe operator on LHS is not supported

@@ -20,30 +20,29 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import java.util.Arrays;
 
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTION_INTERFACE_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 
 /**
  * @since 3.0.0
  */
 public interface AbstractFunctionInterfaceWriter {
-    default ClassNode getFunctionInterfaceType(Expression expression) {
-        ClassNode type = expression.getNodeMetaData(INFERRED_TYPE);
+    String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
+
+    default ClassNode getFunctionalInterfaceType(Expression expression) {
+        ClassNode type = expression.getNodeMetaData(PARAMETER_TYPE);
 
         if (null == type) {
-            type = expression.getNodeMetaData(PARAMETER_TYPE);
-        }
-
-        if (null == type) {
-            type = expression.getNodeMetaData(INFERRED_FUNCTION_INTERFACE_TYPE);
+            type = expression.getNodeMetaData(INFERRED_FUNCTIONAL_INTERFACE_TYPE);
         }
         return type;
     }
@@ -65,5 +64,24 @@ public interface AbstractFunctionInterfaceWriter {
                 "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
                 isInterface
         );
+    }
+
+    default Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode methodOwnerClassNode, MethodNode methodNode) {
+        Parameter[] parameters = methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE);
+        if (null == parameters) {
+            parameters = methodNode.getParameters();
+        }
+
+        return new Object[]{
+                Type.getType(abstractMethodDesc),
+                new Handle(
+                        Opcodes.H_INVOKEVIRTUAL,
+                        BytecodeHelper.getClassInternalName(methodOwnerClassNode.getName()),
+                        methodNode.getName(),
+                        BytecodeHelper.getMethodDescriptor(methodNode),
+                        methodOwnerClassNode.isInterface()
+                ),
+                Type.getType(BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), parameters))
+        };
     }
 }
