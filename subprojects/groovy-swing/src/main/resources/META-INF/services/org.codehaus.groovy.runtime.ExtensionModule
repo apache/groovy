@@ -1,0 +1,3 @@
+moduleName = groovy-swing
+moduleVersion = 1.0
+extensionClasses = org.codehaus.groovy.runtime.SwingGroovyMethods

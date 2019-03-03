@@ -36,6 +36,7 @@ class ConsolePreferences {
     private final MessageSource T
 
     private JDialog dialog
+    File outputFile
 
     ConsolePreferences(console) {
         this.console = console
@@ -63,26 +64,36 @@ class ConsolePreferences {
                 title: T['prefs.dialog.title'], owner: console.frame, modal: true
         ) {
             vbox {
-                hbox(border: titledBorder(T['prefs.output.settings.title'])) {
-                    label "${T['prefs.max.characters.output']}:"
+                vbox(border: titledBorder(T['prefs.output.settings.title'])) {
+                    hbox {
+                        label "${T['prefs.max.characters.output']}:"
 
-                    formattedTextField value: maxOutputChars, id: 'txtMaxOutputChars',
-                            text:
-                                    bind(target: this, targetProperty: 'maxOutputChars',
-                                            validator: this.&isInteger, converter: Integer.&parseInt),
-                            columns: 6
+                        formattedTextField value: maxOutputChars, id: 'txtMaxOutputChars',
+                                text:
+                                        bind(target: this, targetProperty: 'maxOutputChars',
+                                                validator: this.&isInteger, converter: Integer.&parseInt),
+                                columns: 6
+                    }
+
+                    hbox {
+                        checkBox T['prefs.output.file'], id: 'outputFileCheckBox', selected: false
+                        hglue()
+                        button T['prefs.output.file.name'], id: 'outputFileName',
+                                enabled: bind(source: outputFileCheckBox, sourceProperty: 'selected'),
+                                actionPerformed: this.&onChooseFile
+                    }
                 }
-
-                vglue()
 
                 hbox {
                     button T['prefs.reset.defaults'], id: 'resetPrefsButton', actionPerformed: this.&onReset
                     hglue()
                     button T['prefs.close'], id: 'closePrefsButton', actionPerformed: this.&onClose
                 }
+
             }
         }
 
+        //console.swing.outputFileName.enabled = false
         console.swing.txtMaxOutputChars.maximumSize=new Dimension(Integer.MAX_VALUE, (int) console.swing.txtMaxOutputChars.preferredSize.height)
     }
 
@@ -106,7 +117,18 @@ class ConsolePreferences {
         if (maxOutputChars != console.maxOutputChars) {
             console.maxOutputChars = maxOutputChars
         }
+
+        console.setOutputPreferences(console.swing.outputFileCheckBox.enabled, outputFile)
+
         dialog.dispose()
+    }
+
+    private void onChooseFile(EventObject event) {
+        JFileChooser fileChooser = console.swing.fileChooser()
+
+        if (fileChooser.showOpenDialog(dialog) == JFileChooser.APPROVE_OPTION) {
+            outputFile = fileChooser.selectedFile
+        }
     }
 
     // Useful for testing gui
