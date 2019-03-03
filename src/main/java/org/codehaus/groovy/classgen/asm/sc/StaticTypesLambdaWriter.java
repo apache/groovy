@@ -69,7 +69,6 @@ import static org.objectweb.asm.Opcodes.NEW;
  */
 public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFunctionInterfaceWriter {
     private static final String DO_CALL = "doCall";
-    private static final String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
     private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
     private static final String ENCLOSING_THIS = "__enclosing_this";
     private static final String LAMBDA_THIS = "__lambda_this";
@@ -89,10 +88,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
     @Override
     public void writeLambda(LambdaExpression expression) {
-        ClassNode functionInterfaceType = getFunctionInterfaceType(expression);
-        ClassNode redirect = functionInterfaceType.redirect();
+        ClassNode functionalInterfaceType = getFunctionalInterfaceType(expression);
+        ClassNode redirect = functionalInterfaceType.redirect();
 
-        if (null == functionInterfaceType || !ClassHelper.isFunctionalInterface(redirect)) {
+        if (null == functionalInterfaceType || !ClassHelper.isFunctionalInterface(redirect)) {
             // if the parameter type is not real FunctionInterface or failed to be inferred, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
@@ -116,7 +115,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
         mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
-                createAbstractMethodDesc(functionInterfaceType, lambdaWrapperClassNode),
+                createAbstractMethodDesc(functionalInterfaceType, lambdaWrapperClassNode),
                 createBootstrapMethod(isInterface),
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaWrapperClassNode, syntheticLambdaMethodNode)
         );
@@ -183,20 +182,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         prependParameter(lambdaSharedVariableList, LAMBDA_THIS, lambdaClassNode);
 
         return BytecodeHelper.getMethodDescriptor(parameterType.redirect(), lambdaSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
-    }
-
-    private Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode lambdaClassNode, MethodNode syntheticLambdaMethodNode) {
-        return new Object[]{
-                Type.getType(abstractMethodDesc),
-                new Handle(
-                        Opcodes.H_INVOKEVIRTUAL,
-                        lambdaClassNode.getName(),
-                        syntheticLambdaMethodNode.getName(),
-                        BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode),
-                        lambdaClassNode.isInterface()
-                ),
-                Type.getType(BytecodeHelper.getMethodDescriptor(syntheticLambdaMethodNode.getReturnType(), syntheticLambdaMethodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE)))
-        };
     }
 
     public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {

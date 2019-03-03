@@ -3607,37 +3607,33 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            inferMethodReferenceType(call, argumentList, receiver);
+            inferMethodReferenceType(call, receiver, argumentList);
         } finally {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
         }
     }
 
-    private void inferMethodReferenceType(MethodCallExpression call, ArgumentListExpression argumentList, ClassNode receiver) {
-        Tuple2<ClassNode[], ClassNode> typeInfo = null;
-        ClassNode[] inferredParameterTypes = null;
+    private void inferMethodReferenceType(MethodCallExpression call, ClassNode receiver, ArgumentListExpression argumentList) {
+        MethodNode selectedMethod = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         List<Expression> argumentExpressionList = argumentList.getExpressions();
 
+        int methodReferenceParamCnt = 0;
         for (int i = 0, n = argumentExpressionList.size(); i < n; i++) {
             Expression argumentExpression = argumentExpressionList.get(i);
             if (!(argumentExpression instanceof MethodReferenceExpression)) {
                 continue;
             }
 
-            if (null == typeInfo) {
-                MethodNode directMethodCallTargetMethodNode = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-                typeInfo = GenericsUtils.parameterizeMethodNode(directMethodCallTargetMethodNode, receiver);
-            }
-
-            if (null == inferredParameterTypes) {
-                inferredParameterTypes = typeInfo.getV1();
-            }
-
-            ClassNode inferredParameterType = inferredParameterTypes[i];
-
-            storeType(argumentExpression, inferredParameterType);
+            // TODO transform method reference to lambda expression
+            methodReferenceParamCnt++;
         }
+
+        if (0 == methodReferenceParamCnt) return;
+
+        visitMethodCallArguments(receiver, argumentList, true, selectedMethod);
+
+        // TODO get the inferred types and store them in the node metadata
     }
 
     // adjust data to handle cases like nested .with since we didn't have enough information earlier
