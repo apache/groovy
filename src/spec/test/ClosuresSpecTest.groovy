@@ -311,7 +311,7 @@ class ClosuresSpecTest extends GroovyTestCase {
                     String name
                 }
                 def p = new Person(name:'Igor')
-                def cl = { name.toUpperCase() }                 // <1>
+                def cl = { delegate.name.toUpperCase() }        // <1>
                 cl.delegate = p                                 // <2>
                 assert cl() == 'IGOR'                           // <3>
                 // end::delegation_strategy_intro[]
