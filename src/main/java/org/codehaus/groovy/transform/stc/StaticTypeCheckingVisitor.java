@@ -3608,7 +3608,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            inferMethodReferenceType(call, receiver, argumentList);
+//            inferMethodReferenceType(call, receiver, argumentList);
         } finally {
             typeCheckingContext.popEnclosingMethodCall();
             extension.afterMethodCall(call);
@@ -3630,6 +3630,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         MethodNode selectedMethod = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (null == selectedMethod) return;
+
         Parameter[] parameters = selectedMethod.getParameters();
 
         List<Integer> methodReferenceParamIndexList = new LinkedList<>();
