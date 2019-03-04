@@ -76,6 +76,8 @@ public class CompilerConfiguration {
     public static final String JDK11 = "11";
     /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. **/
     public static final String JDK12 = "12";
+    /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. **/
+    public static final String JDK13 = "13";
 
     /**
      * This constant is for comparing targetBytecode to ensure it is set to JDK 1.5 or later.
@@ -103,7 +105,8 @@ public class CompilerConfiguration {
             JDK9, Opcodes.V9,
             JDK10, Opcodes.V10,
             JDK11, Opcodes.V11,
-            JDK12, Opcodes.V12
+            JDK12, Opcodes.V12,
+            JDK13, Opcodes.V13
     );
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
