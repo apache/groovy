@@ -62,6 +62,7 @@ import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -177,8 +178,10 @@ import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.cloneParams;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMap;
@@ -264,6 +267,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolv
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.toMethodParametersString;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodArgumentWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 //import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_INSTANCEOF;
 
@@ -950,15 +954,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (leftExpression instanceof VariableExpression) {
                     if (rightExpression instanceof ClosureExpression) {
                         Parameter[] parameters = ((ClosureExpression) rightExpression).getParameters();
-                        leftExpression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, parameters);
+                        leftExpression.putNodeMetaData(CLOSURE_ARGUMENTS, parameters);
                     } else if (rightExpression instanceof VariableExpression &&
                             ((VariableExpression) rightExpression).getAccessedVariable() instanceof Expression &&
-                            ((Expression) ((VariableExpression) rightExpression).getAccessedVariable()).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS) != null) {
+                            ((Expression) ((VariableExpression) rightExpression).getAccessedVariable()).getNodeMetaData(CLOSURE_ARGUMENTS) != null) {
                         Variable targetVariable = findTargetVariable((VariableExpression) leftExpression);
                         if (targetVariable instanceof ASTNode) {
                             ((ASTNode) targetVariable).putNodeMetaData(
-                                    StaticTypesMarker.CLOSURE_ARGUMENTS,
-                                    ((Expression) ((VariableExpression) rightExpression).getAccessedVariable()).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS));
+                                    CLOSURE_ARGUMENTS,
+                                    ((Expression) ((VariableExpression) rightExpression).getAccessedVariable()).getNodeMetaData(CLOSURE_ARGUMENTS));
                         }
                     }
                 }
@@ -2882,7 +2886,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // to the corresponding parameters of the SAM type method
         MethodNode methodForSAM = findSAM(classForSAM);
         ClassNode[] parameterTypesForSAM = extractTypesFromParameters(methodForSAM.getParameters());
-        ClassNode[] blockParameterTypes = (ClassNode[]) openBlock.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+        ClassNode[] blockParameterTypes = (ClassNode[]) openBlock.getNodeMetaData(CLOSURE_ARGUMENTS);
         if (blockParameterTypes == null) {
             Parameter[] p = openBlock.getParameters();
             if (p == null) {
@@ -2916,7 +2920,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         tryToInferUnresolvedBlockParameterType(paramTypeWithReceiverInformation, methodForSAM, blockParameterTypes);
 
-        openBlock.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, blockParameterTypes);
+        openBlock.putNodeMetaData(CLOSURE_ARGUMENTS, blockParameterTypes);
     }
 
     private void tryToInferUnresolvedBlockParameterType(ClassNode paramTypeWithReceiverInformation, MethodNode methodForSAM, ClassNode[] blockParameterTypes) {
@@ -3051,7 +3055,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (candidates.size() == 1) {
             ClassNode[] inferred = candidates.get(0);
             if (closureParams.length == 0 && inferred.length == 1) {
-                expression.putNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS, inferred);
+                expression.putNodeMetaData(CLOSURE_ARGUMENTS, inferred);
             } else {
                 final int length = closureParams.length;
                 for (int i = 0; i < length; i++) {
@@ -3380,7 +3384,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     GenericsType[] genericsTypes = field.getType().getGenericsTypes();
                     if (genericsTypes != null) {
                         ClassNode closureReturnType = genericsTypes[0].getType();
-                        Object data = field.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                        Object data = field.getNodeMetaData(CLOSURE_ARGUMENTS);
                         if (data != null) {
                             Parameter[] parameters = (Parameter[]) data;
                             typeCheckClosureCall(callArguments, args, parameters);
@@ -3390,7 +3394,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (objectExpression instanceof VariableExpression) {
                     Variable variable = findTargetVariable((VariableExpression) objectExpression);
                     if (variable instanceof ASTNode) {
-                        Object data = ((ASTNode) variable).getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                        Object data = ((ASTNode) variable).getNodeMetaData(CLOSURE_ARGUMENTS);
                         if (data != null) {
                             Parameter[] parameters = (Parameter[]) data;
                             typeCheckClosureCall(callArguments, args, parameters);
@@ -3616,24 +3620,46 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private void inferMethodReferenceType(MethodCallExpression call, ClassNode receiver, ArgumentListExpression argumentList) {
         MethodNode selectedMethod = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        Parameter[] parameters = selectedMethod.getParameters();
         List<Expression> argumentExpressionList = argumentList.getExpressions();
 
-        int methodReferenceParamCnt = 0;
+        List<Integer> methodReferenceParamIndexList = new LinkedList<>();
+        List<Expression> newArgumentExpressionList = new LinkedList<>();
         for (int i = 0, n = argumentExpressionList.size(); i < n; i++) {
             Expression argumentExpression = argumentExpressionList.get(i);
             if (!(argumentExpression instanceof MethodReferenceExpression)) {
+                newArgumentExpressionList.add(argumentExpression);
                 continue;
             }
 
-            // TODO transform method reference to lambda expression
-            methodReferenceParamCnt++;
+            Parameter param = parameters[i];
+            ClassNode paramType = param.getType();
+            MethodNode abstractMethodNode = ClassHelper.findSAM(paramType);
+
+            Parameter[] abstractMethodNodeParameters = abstractMethodNode.getParameters();
+            if (null == abstractMethodNodeParameters) {
+                abstractMethodNodeParameters = Parameter.EMPTY_ARRAY;
+            }
+
+            LambdaExpression lambdaExpression =
+                    new LambdaExpression(
+                            cloneParams(abstractMethodNodeParameters),
+                            block()
+                    );
+
+            newArgumentExpressionList.add(lambdaExpression);
+            methodReferenceParamIndexList.add(i);
         }
 
-        if (0 == methodReferenceParamCnt) return;
+        if (methodReferenceParamIndexList.isEmpty()) return;
 
-        visitMethodCallArguments(receiver, argumentList, true, selectedMethod);
+        visitMethodCallArguments(receiver, new ArgumentListExpression(newArgumentExpressionList), true, selectedMethod);
 
-        // TODO get the inferred types and store them in the node metadata
+        for (Integer methodReferenceParamIndex : methodReferenceParamIndexList) {
+            LambdaExpression lambdaExpression = (LambdaExpression) newArgumentExpressionList.get(methodReferenceParamIndex);
+            ClassNode[] argumentTypes = lambdaExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
+            argumentExpressionList.get(methodReferenceParamIndex).putNodeMetaData(CLOSURE_ARGUMENTS, argumentTypes);
+        }
     }
 
     // adjust data to handle cases like nested .with since we didn't have enough information earlier
@@ -5017,7 +5043,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode getTypeFromClosureArguments(Parameter parameter, TypeCheckingContext.EnclosingClosure enclosingClosure) {
         ClosureExpression closureExpression = enclosingClosure.getClosureExpression();
-        ClassNode[] closureParamTypes = (ClassNode[]) closureExpression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+        ClassNode[] closureParamTypes = (ClassNode[]) closureExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
         if (closureParamTypes == null) return null;
         final Parameter[] parameters = closureExpression.getParameters();
         String name = parameter.getName();
@@ -5369,8 +5395,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<ClassNode[]> genericsToConnect = new LinkedList<ClassNode[]>();
                 Parameter[] closureParams = ((ClosureExpression) expression).getParameters();
                 ClassNode[] closureParamTypes = extractTypesFromParameters(closureParams);
-                if (expression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS) != null) {
-                    closureParamTypes = expression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+                if (expression.getNodeMetaData(CLOSURE_ARGUMENTS) != null) {
+                    closureParamTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
                 }
                 final Parameter[] parameters = sam.getParameters();
                 for (int i = 0; i < parameters.length; i++) {

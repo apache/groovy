@@ -19,27 +19,23 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.Tuple2;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
-import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
-import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 
 /**
  * Writer responsible for generating method reference in statically compiled mode.
@@ -66,11 +62,15 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         String mrMethodName = methodReferenceExpression.getMethodName().getText();
 
 
-        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, createParametersWithExactType(abstractMethodNode, functionalInterfaceType), mrExpressionType);
+        ClassNode[] methodReferenceParamTypes = methodReferenceExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
+        Parameter[] parametersWithExactType = createParametersWithExactType(abstractMethodNode, methodReferenceParamTypes);
+        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, parametersWithExactType, mrExpressionType);
 
         if (null == mrMethodNode) {
             throw new GroovyRuntimeException("Failed to find the expected method[" + mrMethodName + "] in type[" + mrExpressionType.getName() + "]");
         }
+
+        mrMethodNode.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
 
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitInvokeDynamicInsn(
@@ -82,9 +82,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         controller.getOperandStack().push(redirect);
     }
 
-    private Parameter[] createParametersWithExactType(MethodNode abstractMethodNode, ClassNode functionInterfaceType) {
-        Tuple2<ClassNode[], ClassNode> abstractMethodNodeTypeInfo = GenericsUtils.parameterizeSAM(functionInterfaceType);
-        ClassNode[] inferredParameterTypes = abstractMethodNodeTypeInfo.getV1();
+    private Parameter[] createParametersWithExactType(MethodNode abstractMethodNode, ClassNode[] inferredParameterTypes) {
         Parameter[] parameters = abstractMethodNode.getParameters();
         if (parameters == null) {
             parameters = Parameter.EMPTY_ARRAY;

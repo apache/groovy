@@ -68,9 +68,6 @@ public interface AbstractFunctionInterfaceWriter {
 
     default Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode methodOwnerClassNode, MethodNode methodNode) {
         Parameter[] parameters = methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE);
-        if (null == parameters) {
-            parameters = methodNode.getParameters();
-        }
 
         return new Object[]{
                 Type.getType(abstractMethodDesc),
