@@ -23,6 +23,7 @@ import groovy.lang.GString;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Tuple;
 import groovy.transform.NamedParam;
+import groovy.transform.NamedParams;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -530,21 +531,23 @@ public class Sql implements AutoCloseable {
      * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static Sql newInstance(
-            @NamedParam(value = "url", type = String.class, required = true)
-            @NamedParam(value = "properties", type = Properties.class)
-            @NamedParam(value = "driverClassName", type = String.class)
-            @NamedParam(value = "driver", type = String.class)
-            @NamedParam(value = "user", type = String.class)
-            @NamedParam(value = "password", type = String.class)
-            @NamedParam(value = "cacheNamedQueries", type = Boolean.class)
-            @NamedParam(value = "cacheStatements", type = Boolean.class)
-            @NamedParam(value = "enableNamedQueries", type = Boolean.class)
-            @NamedParam(value = "resultSetConcurrency", type = Integer.class)
-            @NamedParam(value = "resultSetHoldability", type = Integer.class)
-            @NamedParam(value = "resultSetType", type = Integer.class)
-            // TODO below will be deleted once we fix type checker to understand
-            // readonly Map otherwise seen as Map<String, Serializable>
-            @NamedParam(value = "unused", type = Object.class)
+            @NamedParams({
+                    @NamedParam(value = "url", type = String.class, required = true),
+                    @NamedParam(value = "properties", type = Properties.class),
+                    @NamedParam(value = "driverClassName", type = String.class),
+                    @NamedParam(value = "driver", type = String.class),
+                    @NamedParam(value = "user", type = String.class),
+                    @NamedParam(value = "password", type = String.class),
+                    @NamedParam(value = "cacheNamedQueries", type = Boolean.class),
+                    @NamedParam(value = "cacheStatements", type = Boolean.class),
+                    @NamedParam(value = "enableNamedQueries", type = Boolean.class),
+                    @NamedParam(value = "resultSetConcurrency", type = Integer.class),
+                    @NamedParam(value = "resultSetHoldability", type = Integer.class),
+                    @NamedParam(value = "resultSetType", type = Integer.class),
+                    // TODO below will be deleted once we fix type checker to understand
+                    // readonly Map otherwise seen as Map<String, Serializable>
+                    @NamedParam(value = "unused", type = Object.class)
+            })
             Map<String, Object> args) throws SQLException, ClassNotFoundException {
         if (!args.containsKey("url"))
             throw new IllegalArgumentException("Argument 'url' is required");
@@ -616,21 +619,23 @@ public class Sql implements AutoCloseable {
      * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
     public static void withInstance(
-            @NamedParam(value = "url", type = String.class, required = true)
-            @NamedParam(value = "properties", type = Properties.class)
-            @NamedParam(value = "driverClassName", type = String.class)
-            @NamedParam(value = "driver", type = String.class)
-            @NamedParam(value = "user", type = String.class)
-            @NamedParam(value = "password", type = String.class)
-            @NamedParam(value = "cacheNamedQueries", type = Boolean.class)
-            @NamedParam(value = "cacheStatements", type = Boolean.class)
-            @NamedParam(value = "enableNamedQueries", type = Boolean.class)
-            @NamedParam(value = "resultSetConcurrency", type = Integer.class)
-            @NamedParam(value = "resultSetHoldability", type = Integer.class)
-            @NamedParam(value = "resultSetType", type = Integer.class)
-            // TODO below will be deleted once we fix type checker to understand
-            // readonly Map otherwise seen as Map<String, Serializable>
-            @NamedParam(value = "unused", type = Object.class)
+            @NamedParams({
+                    @NamedParam(value = "url", type = String.class, required = true),
+                    @NamedParam(value = "properties", type = Properties.class),
+                    @NamedParam(value = "driverClassName", type = String.class),
+                    @NamedParam(value = "driver", type = String.class),
+                    @NamedParam(value = "user", type = String.class),
+                    @NamedParam(value = "password", type = String.class),
+                    @NamedParam(value = "cacheNamedQueries", type = Boolean.class),
+                    @NamedParam(value = "cacheStatements", type = Boolean.class),
+                    @NamedParam(value = "enableNamedQueries", type = Boolean.class),
+                    @NamedParam(value = "resultSetConcurrency", type = Integer.class),
+                    @NamedParam(value = "resultSetHoldability", type = Integer.class),
+                    @NamedParam(value = "resultSetType", type = Integer.class),
+                    // TODO below will be deleted once we fix type checker to understand
+                    // readonly Map otherwise seen as Map<String, Serializable>
+                    @NamedParam(value = "unused", type = Object.class)
+            })
             Map<String, Object> args,
             Closure c) throws SQLException, ClassNotFoundException {
         try (Sql sql = newInstance(args)) {
