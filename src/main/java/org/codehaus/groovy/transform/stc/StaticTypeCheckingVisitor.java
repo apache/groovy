@@ -3620,6 +3620,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private void inferMethodReferenceType(MethodCallExpression call, ClassNode receiver, ArgumentListExpression argumentList) {
         MethodNode selectedMethod = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+
+        if (null == selectedMethod) return;
+
         Parameter[] parameters = selectedMethod.getParameters();
         List<Expression> argumentExpressionList = argumentList.getExpressions();
 
@@ -3634,6 +3637,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             Parameter param = parameters[i];
             ClassNode paramType = param.getType();
+
+            if (!ClassHelper.isFunctionalInterface(paramType.redirect())) {
+                addError("The argument is a method reference, but the parameter type is not a functional interface", argumentExpression);
+                newArgumentExpressionList.add(argumentExpression);
+                continue;
+            }
+
             MethodNode abstractMethodNode = ClassHelper.findSAM(paramType);
 
             Parameter[] abstractMethodNodeParameters = abstractMethodNode.getParameters();
