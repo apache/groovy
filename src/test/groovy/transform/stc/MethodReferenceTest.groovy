@@ -16,13 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package groovy.transform.stc
 
-class Groovy9008 extends GroovyTestCase {
-    private static final boolean SKIP = true // TODO remove it
-
+class MethodReferenceTest extends GroovyTestCase {
     void testMethodReferenceFunction() {
-        if (SKIP) return
 
         assertScript '''
             import java.util.stream.Collectors
@@ -39,8 +36,6 @@ class Groovy9008 extends GroovyTestCase {
     }
 
     void testMethodReferenceBinaryOperator() {
-        if (SKIP) return
-
         assertScript '''
             import java.util.stream.Stream
 
