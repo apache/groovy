@@ -34,7 +34,7 @@ before_script:
 
 script:
   - ./gradlew -version
-  - travis_wait 60 ./gradlew test
+  - travis_wait 60 ./gradlew clean test --no-build-cache
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
