@@ -149,52 +149,49 @@ allprojects {
 // the root project generates several alternate artifacts, e.g. 'groovy-all'
 // we don't want them in the root project so add them as artifacts with a modified name
 // we'll exclude the original artifacts during publication with an exclude pattern
-[uploadArchives, install]*.with {
-    dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin, distDoc, dist, distBin])
-    doFirst {
-        if (!rootProject.indyCapable()) {
-            throw new GradleException("Indy must be enabled to upload archives")
+def configureAdditionalArtifacts = {
+    if (!rootProject.indyCapable()) {
+        throw new GradleException("Indy must be enabled to upload archives")
+    }
+
+    project.artifacts.add('archives', distBin) { name = 'groovy-binary' }
+    project.artifacts.add('archives', sourceAllJar) { name = 'groovy-all' }
+    project.artifacts.add('archives', javadocAllJar) { name = 'groovy-all' }
+    project.artifacts.add('archives', groovydocAllJar) { name = 'groovy-all' }
+    signArchiveTask(sourceAllJar)
+    signArchiveTask(javadocAllJar)
+    signArchiveTask(groovydocAllJar)
+
+    if (isReleaseVersion) {
+        signing.sign(distBin.archivePath)
+        def ascFile = new File(distBin.destinationDir, distBin.archiveName + '.asc')
+        if (ascFile.exists()) {
+            project.artifacts.add('archives', ascFile) {
+                name = 'groovy-binary'
+                type = 'asc'
+                extension = 'zip.asc'
+            }
         }
+        signing.sign(distSrc.archivePath)
+        signing.sign(distDoc.archivePath)
+        signing.sign(dist.archivePath)
+    }
 
-        project.artifacts.add('archives', distBin) { name = 'groovy-binary' }
-        project.artifacts.add('archives', sourceAllJar) { name = 'groovy-all' }
-        project.artifacts.add('archives', javadocAllJar) { name = 'groovy-all' }
-        project.artifacts.add('archives', groovydocAllJar) { name = 'groovy-all' }
-        signArchiveTask(sourceAllJar)
-        signArchiveTask(javadocAllJar)
-        signArchiveTask(groovydocAllJar)
-
+    tasks.withType(Jar).matching { it.name.startsWith('backport') }.each { t ->
+        project.artifacts.add('archives', t.archivePath) {
+            name = t.baseName
+            type = 'jar'
+            classifier = t.classifier
+        }
         if (isReleaseVersion) {
-            signing.sign(distBin.archivePath)
-            def ascFile = new File(distBin.destinationDir, distBin.archiveName + '.asc')
+            signing.sign(t.classifier, t.archivePath)
+            def ascFile = new File(t.destinationDir, t.archiveName + '.asc')
             if (ascFile.exists()) {
                 project.artifacts.add('archives', ascFile) {
-                    name = 'groovy-binary'
+                    name = t.baseName
+                    classifier = t.classifier
                     type = 'asc'
-                    extension = 'zip.asc'
-                }
-            }
-            signing.sign(distSrc.archivePath)
-            signing.sign(distDoc.archivePath)
-            signing.sign(dist.archivePath)
-        }
-
-        tasks.withType(Jar).matching { it.name.startsWith('backport') }.each { t ->
-            project.artifacts.add('archives', t.archivePath) {
-                name = t.baseName
-                type = 'jar'
-                classifier = t.classifier
-            }
-            if (isReleaseVersion) {
-                signing.sign(t.classifier, t.archivePath)
-                def ascFile = new File(t.destinationDir, t.archiveName + '.asc')
-                if (ascFile.exists()) {
-                    project.artifacts.add('archives', ascFile) {
-                        name = t.baseName
-                        classifier = t.classifier
-                        type = 'asc'
-                        extension = t.extension + '.asc'
-                    }
+                    extension = t.extension + '.asc'
                 }
             }
         }
@@ -209,7 +206,7 @@ def optionalModules = [
         'groovy-yaml'
 ]
 
-ext.pomAll = {
+def pomAll = {
     addFilter('groovy') { artifact, file ->
         !(artifact.name.contains('groovy-all')) &&
                 !(artifact.name.contains('groovy-binary')) &&
@@ -278,15 +275,19 @@ ext.pomAll = {
 install {
     // make sure dependencies poms are built *before* the all pom
     dependsOn(modules()*.install)
+    dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin, distDoc, dist, distBin])
     repositories {
         mavenInstaller pomAll
     }
+    doFirst configureAdditionalArtifacts
 }
 
 uploadArchives {
     // make sure dependencies poms are built *before* the all pom
     dependsOn(modules()*.uploadArchives)
+    dependsOn([sourceAllJar, javadocAllJar, groovydocAllJar, distBin, distDoc, dist, distBin])
     repositories {
         mavenDeployer pomAll
     }
+    doFirst configureAdditionalArtifacts
 }
