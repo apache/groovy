@@ -839,11 +839,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Printf to a console.
+     * Printf to the standard output stream.
      *
      * @param self   any Object
      * @param format a format string
-     * @param values values referenced by the format specifiers in the format string.
+     * @param values values referenced by the format specifiers in the format string
      * @since 1.0
      */
     public static void printf(Object self, String format, Object[] values) {
@@ -854,11 +854,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Printf 0 or more values to the standard output stream using a format string.
+     * This method delegates to the owner to execute the method.
+     *
+     * @param self   a generated closure
+     * @param format a format string
+     * @param values values referenced by the format specifiers in the format string
+     * @since 3.0.0
+     */
+    public static void printf(Closure self, String format, Object[] values) {
+        Object owner = getClosureOwner(self);
+        Object[] newValues = new Object[values.length + 1];
+        newValues[0] = format;
+        System.arraycopy(values, 0, newValues, 1, values.length);
+        InvokerHelper.invokeMethod(owner, "printf", newValues);
+    }
+
+    /**
+     * Printf a value to the standard output stream using a format string.
+     * This method delegates to the owner to execute the method.
+     *
+     * @param self   a generated closure
+     * @param format a format string
+     * @param value  value referenced by the format specifier in the format string
+     * @since 3.0.0
+     */
+    public static void printf(Closure self, String format, Object value) {
+        Object owner = getClosureOwner(self);
+        Object[] newValues = new Object[2];
+        newValues[0] = format;
+        newValues[1] = value;
+        InvokerHelper.invokeMethod(owner, "printf", newValues);
+    }
+
+    /**
      * Sprintf to a string.
      *
      * @param self   any Object
      * @param format a format string
-     * @param values values referenced by the format specifiers in the format string.
+     * @param values values referenced by the format specifiers in the format string
      * @return the resulting formatted string
      * @since 1.5.0
      */
@@ -870,8 +904,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Prints a formatted string using the specified format string and
-     * arguments.
+     * Prints a formatted string using the specified format string and arguments.
      * <p>
      * Examples:
      * <pre>
