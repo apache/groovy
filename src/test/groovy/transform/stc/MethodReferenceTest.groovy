@@ -20,7 +20,6 @@ package groovy.transform.stc
 
 class MethodReferenceTest extends GroovyTestCase {
     void testMethodReferenceFunction() {
-
         assertScript '''
             import java.util.stream.Collectors
             

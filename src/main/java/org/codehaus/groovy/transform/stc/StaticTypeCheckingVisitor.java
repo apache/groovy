@@ -181,7 +181,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.cloneParams;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMap;
@@ -3634,18 +3633,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             Parameter param = parameters[i];
             ClassNode paramType = param.getType();
-            MethodNode abstractMethodNode = ClassHelper.findSAM(paramType);
 
-            Parameter[] abstractMethodNodeParameters = abstractMethodNode.getParameters();
-            if (null == abstractMethodNodeParameters) {
-                abstractMethodNodeParameters = Parameter.EMPTY_ARRAY;
+            if (!ClassHelper.isFunctionalInterface(paramType.redirect())) {
+                addError("The argument is a method reference, but the parameter type is not a functional interface", argumentExpression);
+                newArgumentExpressionList.add(argumentExpression);
+                continue;
             }
 
-            LambdaExpression lambdaExpression =
-                    new LambdaExpression(
-                            cloneParams(abstractMethodNodeParameters),
-                            block()
-                    );
+            Parameter[] newParameters = createParametersForLambdaExpression(paramType);
+            LambdaExpression lambdaExpression = new LambdaExpression(newParameters, block());
 
             newArgumentExpressionList.add(lambdaExpression);
             methodReferenceParamIndexList.add(i);
@@ -3660,6 +3656,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode[] argumentTypes = lambdaExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
             argumentExpressionList.get(methodReferenceParamIndex).putNodeMetaData(CLOSURE_ARGUMENTS, argumentTypes);
         }
+    }
+
+    private Parameter[] createParametersForLambdaExpression(ClassNode functionalInterfaceType) {
+        MethodNode abstractMethodNode = ClassHelper.findSAM(functionalInterfaceType);
+        Parameter[] abstractMethodNodeParameters = abstractMethodNode.getParameters();
+        if (null == abstractMethodNodeParameters) {
+            abstractMethodNodeParameters = Parameter.EMPTY_ARRAY;
+        }
+
+        Parameter[] newParameters = new Parameter[abstractMethodNodeParameters.length];
+        for (int j = 0; j < newParameters.length; j++) {
+            newParameters[j] = new Parameter(DYNAMIC_TYPE, "p" + System.nanoTime());
+        }
+        return newParameters;
     }
 
     // adjust data to handle cases like nested .with since we didn't have enough information earlier
