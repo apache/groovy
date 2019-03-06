@@ -3618,12 +3618,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void inferMethodReferenceType(MethodCallExpression call, ClassNode receiver, ArgumentListExpression argumentList) {
-        MethodNode selectedMethod = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (null == call) return;
+        if (null == receiver) return;
+        if (null == argumentList) return;
 
-        if (null == selectedMethod) return;
-
-        Parameter[] parameters = selectedMethod.getParameters();
         List<Expression> argumentExpressionList = argumentList.getExpressions();
+        if (null == argumentExpressionList) return;
+
+        boolean noMethodReferenceParams = argumentExpressionList.stream().noneMatch(e -> e instanceof MethodReferenceExpression);
+        if (noMethodReferenceParams) {
+            return;
+        }
+
+        MethodNode selectedMethod = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (null == selectedMethod) return;
+        Parameter[] parameters = selectedMethod.getParameters();
 
         List<Integer> methodReferenceParamIndexList = new LinkedList<>();
         List<Expression> newArgumentExpressionList = new LinkedList<>();
@@ -3643,14 +3652,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 continue;
             }
 
-            Parameter[] newParameters = createParametersForLambdaExpression(paramType);
-            LambdaExpression lambdaExpression = new LambdaExpression(newParameters, block());
+            LambdaExpression constructedLambdaExpression = constructLambdaExpressionForMethodReference(paramType);
 
-            newArgumentExpressionList.add(lambdaExpression);
+            newArgumentExpressionList.add(constructedLambdaExpression);
             methodReferenceParamIndexList.add(i);
         }
-
-        if (methodReferenceParamIndexList.isEmpty()) return;
 
         visitMethodCallArguments(receiver, new ArgumentListExpression(newArgumentExpressionList), true, selectedMethod);
 
@@ -3661,7 +3667,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private Parameter[] createParametersForLambdaExpression(ClassNode functionalInterfaceType) {
+    private LambdaExpression constructLambdaExpressionForMethodReference(ClassNode paramType) {
+        Parameter[] newParameters = createParametersForConstructedLambdaExpression(paramType);
+        return new LambdaExpression(newParameters, block());
+    }
+
+    private Parameter[] createParametersForConstructedLambdaExpression(ClassNode functionalInterfaceType) {
         MethodNode abstractMethodNode = ClassHelper.findSAM(functionalInterfaceType);
         Parameter[] abstractMethodNodeParameters = abstractMethodNode.getParameters();
         if (null == abstractMethodNodeParameters) {
