@@ -21,8 +21,6 @@ package groovy.transform.stc
 class MethodReferenceTest extends GroovyTestCase {
     // class::instanceMethod
     void testMethodReferenceFunction() {
-        if (true) return
-
         assertScript '''
             import java.util.stream.Collectors
             
@@ -39,8 +37,6 @@ class MethodReferenceTest extends GroovyTestCase {
 
     // class::instanceMethod
     void testMethodReferenceBinaryOperator() {
-        if (true) return
-
         assertScript '''
             import java.util.stream.Stream
 
