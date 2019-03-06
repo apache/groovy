@@ -594,7 +594,7 @@ JUnit4 tests. The module that is needed for JUnit 3/4 support is `geb-junit`:
 --------------------------------------------------------------------
 @Grapes([
     @Grab("org.gebish:geb-core:0.9.2"),
-    @Grab("org.gebish:geb-junit:0.9.2"),
+    @Grab("org.gebish:geb-junit4:0.9.2"),
     @Grab("org.seleniumhq.selenium:selenium-firefox-driver:2.26.0"),
     @Grab("org.seleniumhq.selenium:selenium-support:2.26.0")
 ])
@@ -605,6 +605,9 @@ The central class in Geb is the `geb.Browser` class. As its name implies it is u
 
 [source,groovy]
 ---------------------------------------------------------------------------------------------------
+import geb.Browser
+import org.openqa.selenium.firefox.FirefoxDriver
+
 def browser = new Browser(driver: new FirefoxDriver(), baseUrl: 'http://myhost:8080/myapp')  // <1>
 browser.drive {
     go "/login"                        // <2>
