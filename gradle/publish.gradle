@@ -128,4 +128,4 @@ artifactoryPublish {
     }
 }
 
-artifactoryPublish.dependsOn('backportJars')
+artifactoryPublish.dependsOn(['backportJars', 'install'])
