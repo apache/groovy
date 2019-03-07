@@ -30,10 +30,7 @@ import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
 /**
- * @author Hamlet D'Arcy
- * @author Francesco Durbin
- * @author Tomasz Bujok
- * @author Paul King
+ * Tests for Slf4j AST transformation
  */
 
 class Slf4jTest extends GroovyTestCase {
@@ -71,6 +68,76 @@ class Slf4jTest extends GroovyTestCase {
         assert clazz.declaredFields.find { Field field ->
             field.name == "log" &&
                     Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testExplicitPrivateFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PRIVATE)
+            @groovy.util.logging.Slf4j
+            class MyClass {
+            } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testPackagePrivateFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PACKAGE_PRIVATE)
+            @groovy.util.logging.Slf4j
+            class MyClass {
+            } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    !Modifier.isPrivate(field.getModifiers()) &&
+                    !Modifier.isProtected(field.getModifiers()) &&
+                    !Modifier.isPublic(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testProtectedFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PROTECTED)
+            @groovy.util.logging.Slf4j
+            class MyClass {
+            } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isProtected(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testPublicFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PUBLIC)
+            @groovy.util.logging.Slf4j
+            class MyClass {
+            } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isPublic(field.getModifiers()) &&
                     Modifier.isStatic(field.getModifiers()) &&
                     Modifier.isTransient(field.getModifiers()) &&
                     Modifier.isFinal(field.getModifiers())

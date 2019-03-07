@@ -20,8 +20,6 @@ package groovy;
 
 /**
  * Sample class used for testing that groovy can call inner classes constructors.
- *
- * @author Guillaume Laforge
  */
 public class OuterUser {
     private String name;

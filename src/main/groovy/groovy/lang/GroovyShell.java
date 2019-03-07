@@ -44,10 +44,6 @@ import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
 
 /**
  * Represents a groovy shell capable of running arbitrary groovy scripts
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Guillaume Laforge
- * @author Paul King
  */
 public class GroovyShell extends GroovyObjectSupport {
 
@@ -303,9 +299,10 @@ public class GroovyShell extends GroovyObjectSupport {
         Constructor constructor = null;
         Runnable runnable = null;
         Throwable reason = null;
+
         try {
             // first, fetch the constructor taking String[] as parameter
-            constructor = scriptClass.getConstructor((new String[]{}).getClass());
+            constructor = scriptClass.getConstructor(String[].class);
             try {
                 // instantiate a runnable and run it
                 runnable = (Runnable) constructor.newInstance(new Object[]{args});

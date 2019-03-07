@@ -29,7 +29,6 @@ import java.util.List;
 /**
  * Base class for date and time durations.
  *
- * @author John Wilson tug@wilson.co.uk
  * @see Duration
  */
 public abstract class BaseDuration implements Comparable<BaseDuration> {

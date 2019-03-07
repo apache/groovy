@@ -23,8 +23,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * An exception occurred when invoking a Closure with the wrong number and/or
  * types of arguments
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class IncorrectClosureArgumentsException extends GroovyRuntimeException {
 

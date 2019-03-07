@@ -25,8 +25,6 @@ import org.codehaus.groovy.tools.shell.util.PackageHelperImpl
 
 /**
  * Tests for the {@link GrabCommand} class.
- *
- * @author <a href="mailto:jake.gage@gmail.com">Jake Gage</a>
  */
 class GrabCommandTest extends CommandTestSupport {
 

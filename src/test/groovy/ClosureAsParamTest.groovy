@@ -22,9 +22,6 @@ import java.util.concurrent.Callable
 
 /**
  * Tests calling methods with Closures as parameters.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
  */
 class ClosureAsParamTest extends GroovyTestCase {
 

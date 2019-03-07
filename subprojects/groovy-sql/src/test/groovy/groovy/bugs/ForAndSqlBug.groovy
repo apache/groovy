@@ -20,9 +20,6 @@ package groovy.bugs
 
 import groovy.sql.SqlHelperTestCase
 
-/**
- * @author Jonathan Carlson
- */
 class ForAndSqlBug extends GroovyTestCase {
 
     void testBugInNormalMethod() {

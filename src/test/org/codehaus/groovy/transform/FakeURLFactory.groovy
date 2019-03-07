@@ -20,8 +20,6 @@ package org.codehaus.groovy.transform
 
 /**
  * A factory for creating fake URLs for testing purposes.
- *
- * @author Peter Niederwieser
  */
 
 class FakeURLFactory {

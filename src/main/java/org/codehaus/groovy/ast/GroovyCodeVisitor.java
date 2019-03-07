@@ -76,10 +76,7 @@ import java.util.List;
 
 /**
  * An implementation of the visitor pattern for working with ASTNodes
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
-
 public interface GroovyCodeVisitor {
 
     // statements

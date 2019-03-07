@@ -22,8 +22,6 @@ package org.codehaus.groovy.tools.stubgenerator
  * Given that an import with an alias always has the fully qualified
  * path we should always be able to substitute the fqn and hence don't
  * need an import. Java code has no visibility to the alias.
- *
- * @author Paul King
  */
 class ArrayAnnotationsShouldAppearInStubsTest extends StringSourcesStubTestCase {
 

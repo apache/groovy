@@ -23,8 +23,6 @@ import org.apache.groovy.json.internal.IO
 
 /**
  * Test the internal IO class
- *
- * @author Martin Stockhammer
  */
 class IOTest extends GroovyTestCase {
 

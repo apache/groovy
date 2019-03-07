@@ -24,10 +24,6 @@ import org.w3c.dom.Document
 import org.xml.sax.InputSource
 import org.xml.sax.SAXException
 
-/**
- * @author James Strachan
- * @author paulk
- */
 class DomToGroovyTest extends GroovyTestCase {
 
     private static final String TEST_XML_1 =

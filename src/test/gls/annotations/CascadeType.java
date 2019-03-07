@@ -20,8 +20,6 @@ package gls.annotations;
 
 /**
  * This class mimics JPA's CascadeType enum
- * 
- * @author Guillaume Laforge
  */
 public enum CascadeType {
     ALL, PERSIST, MERGE, REMOVE, REFRESH

@@ -43,7 +43,6 @@ import java.lang.annotation.Target;
  * assert sourceURI instanceof java.net.URI
  * </pre>
  *
- * @author Jim White
  * @since 2.3.0
  */
 @java.lang.annotation.Documented

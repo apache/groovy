@@ -21,10 +21,6 @@ package groovy.grape
 import org.codehaus.groovy.control.CompilationFailedException
 import gls.CompilableTestSupport
 
-/**
- * @author Danno Ferrin
- * @author Paul King
- */
 class GrapeIvyTest extends CompilableTestSupport {
 
     GrapeIvyTest() {

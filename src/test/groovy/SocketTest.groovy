@@ -20,8 +20,6 @@ package groovy
 
 /**
  * check that groovy Socket methods do their job.
- *
- * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  */
 class SocketTest extends GroovyTestCase {
     def mySocket
@@ -53,7 +51,7 @@ class SocketTest extends GroovyTestCase {
     }
 
     void testSocketWithStreamsClosure() {
-        mySocket.withStreams {i, o ->
+        mySocket.withStreams { i, o ->
             assert i instanceof InputStream
             assert i != null
             assert o instanceof OutputStream

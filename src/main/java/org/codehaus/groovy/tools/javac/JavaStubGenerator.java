@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -52,6 +53,7 @@ import org.codehaus.groovy.tools.Utilities;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import javax.tools.JavaFileObject;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -63,9 +65,11 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -83,7 +87,7 @@ public class JavaStubGenerator {
         this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
         this.encoding = encoding;
-        outputPath.mkdirs();
+        if (null != outputPath) outputPath.mkdirs(); // when outputPath is null, we generate stubs in memory
     }
 
     public JavaStubGenerator(final File outputPath) {
@@ -96,6 +100,7 @@ public class JavaStubGenerator {
         File dir = new File(parent, relativeFile.substring(0, index));
         dir.mkdirs();
     }
+
 
     private static final int DEFAULT_BUFFER_SIZE = 8 * 1024; // 8K
     public void generateClass(ClassNode classNode) throws FileNotFoundException {
@@ -111,22 +116,40 @@ public class JavaStubGenerator {
         // don't generate stubs for private classes, as they are only visible in the same file
         if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
 
+
+        if (null == outputPath) {
+            generateMemStub(classNode);
+        } else {
+            generateFileStub(classNode);
+        }
+    }
+
+    private void generateMemStub(ClassNode classNode) {
+        Writer writer = new StringBuilderWriter();
+        generateStubContent(classNode, writer);
+
+        javaStubCompilationUnitSet.add(new MemJavaFileObject(classNode, writer.toString()));
+    }
+
+    private void generateFileStub(ClassNode classNode) throws FileNotFoundException {
         String fileName = classNode.getName().replace('.', '/');
         mkdirs(outputPath, fileName);
         toCompile.add(fileName);
 
         File file = new File(outputPath, fileName + ".java");
-        Charset charset = Charset.forName(encoding);
 
-        try (PrintWriter out = new PrintWriter(
-                new OutputStreamWriter(
-                        new BufferedOutputStream(
-                                new FileOutputStream(file),
-                                DEFAULT_BUFFER_SIZE
-                        ),
-                        charset
-                )
-        )) {
+        Writer writer = new OutputStreamWriter(
+                new BufferedOutputStream(
+                        new FileOutputStream(file),
+                        DEFAULT_BUFFER_SIZE
+                ),
+                Charset.forName(encoding)
+        );
+        generateStubContent(classNode, writer);
+    }
+
+    private void generateStubContent(ClassNode classNode, Writer writer) {
+        try (PrintWriter out = new PrintWriter(writer)) {
             String packageName = classNode.getPackageName();
             if (packageName != null) {
                 out.println("package " + packageName + ";\n");
@@ -134,11 +157,10 @@ public class JavaStubGenerator {
 
             printImports(out, classNode);
             printClassContents(out, classNode);
-
         }
     }
 
-    private void printClassContents(PrintWriter out, ClassNode classNode) throws FileNotFoundException {
+    private void printClassContents(PrintWriter out, ClassNode classNode) {
         if (classNode instanceof InnerClassNode && ((InnerClassNode) classNode).isAnonymous()) {
             // if it is an anonymous inner class, don't generate the stub code for it.
             return;
@@ -150,12 +172,9 @@ public class JavaStubGenerator {
                     List<Statement> savedStatements = new ArrayList<Statement>(node.getObjectInitializerStatements());
                     super.visitClass(node);
                     node.getObjectInitializerStatements().addAll(savedStatements);
-                    for (ClassNode inode : node.getAllInterfaces()) {
-                        if (Traits.isTrait(inode)) {
-                            List<PropertyNode> traitProps = inode.getProperties();
-                            for (PropertyNode pn : traitProps) {
-                                super.visitProperty(pn);
-                            }
+                    for (ClassNode trait : Traits.findTraits(node)) {
+                        for (PropertyNode traitProperty : trait.getProperties()) {
+                            super.visitProperty(traitProperty);
                         }
                     }
                 }
@@ -322,38 +341,53 @@ public class JavaStubGenerator {
             printMethod(out, classNode, method);
         }
 
-        for (ClassNode node : classNode.getAllInterfaces()) {
-            if (Traits.isTrait(node)) {
-                List<MethodNode> traitMethods = node.getMethods();
-                for (MethodNode traitMethod : traitMethods) {
-                    MethodNode method = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
-                    if (method == null) {
-                        for (MethodNode methodNode : propertyMethods) {
-                            if (methodNode.getName().equals(traitMethod.getName())) {
-                                boolean sameParams = sameParameterTypes(methodNode);
-                                if (sameParams) {
-                                    method = methodNode;
-                                    break;
-                                }
-                            }
-                        }
-                        if (method==null && !traitMethod.isAbstract()) {
-                            printMethod(out, classNode, traitMethod);
+        // print the methods from traits
+        for (ClassNode trait : Traits.findTraits(classNode)) {
+            List<MethodNode> traitMethods = trait.getMethods();
+            for (MethodNode traitMethod : traitMethods) {
+                MethodNode existingMethod = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
+                if (existingMethod != null) continue;
+                for (MethodNode propertyMethod : propertyMethods) {
+                    if (propertyMethod.getName().equals(traitMethod.getName())) {
+                        boolean sameParams = sameParameterTypes(propertyMethod, traitMethod);
+                        if (sameParams) {
+                            existingMethod = propertyMethod;
+                            break;
                         }
                     }
                 }
+                if (existingMethod != null) continue;
+                boolean isCandidate = isCandidateTraitMethod(trait, traitMethod);
+                if (!isCandidate) continue;
+                printMethod(out, classNode, traitMethod);
             }
         }
-
     }
 
-    private static boolean sameParameterTypes(final MethodNode methodNode) {
-        Parameter[] a = methodNode.getParameters();
-        Parameter[] b = methodNode.getParameters();
-        boolean sameParams = a.length == b.length;
+    private boolean isCandidateTraitMethod(ClassNode trait, MethodNode traitMethod) {
+        boolean precompiled = trait.redirect() instanceof DecompiledClassNode;
+        if (!precompiled) return !traitMethod.isAbstract();
+        List<MethodNode> helperMethods = Traits.findHelper(trait).getMethods();
+        for (MethodNode helperMethod : helperMethods) {
+            boolean isSynthetic = (traitMethod.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+            if (helperMethod.getName().equals(traitMethod.getName()) && !isSynthetic && !traitMethod.getName().contains("$")) {
+                Parameter[] origParams = helperMethod.getParameters();
+                Parameter[] newParams = Arrays.copyOfRange(origParams, 1, origParams.length);
+                if (sameParameterTypes(newParams, traitMethod.getParameters())) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean sameParameterTypes(final MethodNode firstMethod, final MethodNode secondMethod) {
+        return sameParameterTypes(firstMethod.getParameters(), secondMethod.getParameters());
+    }
+
+    private static boolean sameParameterTypes(final Parameter[] firstParams, final Parameter[] secondParams) {
+        boolean sameParams = firstParams.length == secondParams.length;
         if (sameParams) {
-            for (int i = 0; i < a.length; i++) {
-                if (!a[i].getType().equals(b[i].getType())) {
+            for (int i = 0; i < firstParams.length; i++) {
+                if (!firstParams[i].getType().equals(secondParams[i].getType())) {
                     sameParams = false;
                     break;
                 }
@@ -975,6 +1009,8 @@ public class JavaStubGenerator {
         for (String path : toCompile) {
             new File(outputPath, path + ".java").delete();
         }
+
+        javaStubCompilationUnitSet.clear();
     }
 
     private static String escapeSpecialChars(String value) {
@@ -984,5 +1020,12 @@ public class JavaStubGenerator {
 
     private static boolean isInterfaceOrTrait(ClassNode cn) {
         return cn.isInterface() || Traits.isTrait(cn);
+    }
+
+
+    private final Set<JavaFileObject> javaStubCompilationUnitSet = new HashSet<>();
+
+    public Set<JavaFileObject> getJavaStubCompilationUnitSet() {
+        return javaStubCompilationUnitSet;
     }
 }

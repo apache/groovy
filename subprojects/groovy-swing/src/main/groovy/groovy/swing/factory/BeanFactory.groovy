@@ -19,27 +19,26 @@
 package groovy.swing.factory
 
 /**
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @since Groovy 1.1
  */
 class BeanFactory extends AbstractFactory {
     final Class beanClass
     final protected boolean leaf
 
-    public BeanFactory(Class beanClass) {
+    BeanFactory(Class beanClass) {
         this(beanClass, false)
     }
 
-    public BeanFactory(Class beanClass, boolean leaf) {
+    BeanFactory(Class beanClass, boolean leaf) {
         this.beanClass = beanClass
         this.leaf = leaf
     }
 
-    public boolean isLeaf() {
+    boolean isLeaf() {
         return leaf
     }
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value instanceof GString) value = value as String
         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, beanClass)) {
             return value

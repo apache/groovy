@@ -48,8 +48,6 @@ import java.lang.reflect.Method
  * Within @TailRecursive it is used
  * - to swap the access of method args with the access to iteration variables
  * - to swap the access of iteration variables with the access of temp vars
- *
- * @author Johannes Link
  */
 @CompileStatic
 class VariableExpressionReplacer extends CodeVisitorSupport {
@@ -64,69 +62,69 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
         root.visit(this)
     }
 
-    public void visitReturnStatement(ReturnStatement statement) {
+    void visitReturnStatement(ReturnStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement)
-        super.visitReturnStatement(statement);
+        super.visitReturnStatement(statement)
     }
 
-    public void visitIfElse(IfStatement ifElse) {
+    void visitIfElse(IfStatement ifElse) {
         replaceExpressionPropertyWhenNecessary(ifElse, 'booleanExpression', BooleanExpression)
-        super.visitIfElse(ifElse);
+        super.visitIfElse(ifElse)
     }
 
-    public void visitForLoop(ForStatement forLoop) {
+    void visitForLoop(ForStatement forLoop) {
         replaceExpressionPropertyWhenNecessary(forLoop, 'collectionExpression')
-        super.visitForLoop(forLoop);
+        super.visitForLoop(forLoop)
     }
 
     /**
      * It's the only Expression type in which replacing is considered.
      * That's an abuse of the class, but I couldn't think of a better way.
      */
-    public void visitBinaryExpression(BinaryExpression expression) {
+    void visitBinaryExpression(BinaryExpression expression) {
         //A hack: Only replace right expression b/c ReturnStatementToIterationConverter needs it that way :-/
         replaceExpressionPropertyWhenNecessary(expression, 'rightExpression')
-        expression.getRightExpression().visit(this);
+        expression.getRightExpression().visit(this)
         super.visitBinaryExpression(expression)
     }
 
-    public void visitWhileLoop(WhileStatement loop) {
+    void visitWhileLoop(WhileStatement loop) {
         replaceExpressionPropertyWhenNecessary(loop, 'booleanExpression', BooleanExpression)
-        super.visitWhileLoop(loop);
+        super.visitWhileLoop(loop)
     }
 
-    public void visitDoWhileLoop(DoWhileStatement loop) {
+    void visitDoWhileLoop(DoWhileStatement loop) {
         replaceExpressionPropertyWhenNecessary(loop, 'booleanExpression', BooleanExpression)
-        super.visitDoWhileLoop(loop);
+        super.visitDoWhileLoop(loop)
     }
 
-    public void visitSwitch(SwitchStatement statement) {
+    void visitSwitch(SwitchStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement)
         super.visitSwitch(statement)
     }
 
-    public void visitCaseStatement(CaseStatement statement) {
+    void visitCaseStatement(CaseStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement)
         super.visitCaseStatement(statement)
     }
 
-    public void visitExpressionStatement(ExpressionStatement statement) {
+    void visitExpressionStatement(ExpressionStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement)
-        super.visitExpressionStatement(statement);
+        super.visitExpressionStatement(statement)
     }
 
-    public void visitThrowStatement(ThrowStatement statement) {
+    void visitThrowStatement(ThrowStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement)
         super.visitThrowStatement(statement)
     }
 
-    public void visitAssertStatement(AssertStatement statement) {
+    void visitAssertStatement(AssertStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement, 'booleanExpression', BooleanExpression)
         replaceExpressionPropertyWhenNecessary(statement, 'messageExpression')
         super.visitAssertStatement(statement)
     }
 
-    public void visitSynchronizedStatement(SynchronizedStatement statement) {
+    void visitSynchronizedStatement(SynchronizedStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement)
         super.visitSynchronizedStatement(statement)
     }
@@ -149,8 +147,8 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
         //Use reflection to enable CompileStatic
         String setterName = 'set' + capitalizeFirst(propName)
         Method setExpressionMethod = node.class.getMethod(setterName, [propClass].toArray(new Class[1]))
-        newExpr.setSourcePosition(oldExpr);
-        newExpr.copyNodeMetaData(oldExpr);
+        newExpr.setSourcePosition(oldExpr)
+        newExpr.copyNodeMetaData(oldExpr)
         setExpressionMethod.invoke(node, [newExpr].toArray())
     }
 

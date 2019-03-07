@@ -27,9 +27,6 @@ import java.util.Map;
 
 /**
  * A helper class for creating nested trees of data
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Christian Stein
  */
 public class NodePrinter {
 

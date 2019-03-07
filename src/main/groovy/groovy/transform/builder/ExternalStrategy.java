@@ -36,6 +36,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -148,7 +149,7 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
     }
 
     private static Expression initializeInstance(ClassNode sourceClass, List<PropertyInfo> props, BlockStatement body) {
-        Expression instance = varX("_the" + sourceClass.getNameWithoutPackage(), sourceClass);
+        Expression instance = localVarX("_the" + sourceClass.getNameWithoutPackage(), sourceClass);
         body.addStatement(declS(instance, ctorX(sourceClass)));
         for (PropertyInfo prop : props) {
             body.addStatement(stmt(assignX(propX(instance, prop.getName()), varX(prop.getName().equals("class") ? "clazz" : prop.getName(), newClass(prop.getType())))));

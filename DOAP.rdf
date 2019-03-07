@@ -36,7 +36,7 @@
     <category rdf:resource="http://projects.apache.org/category/library" />
     <repository>
       <GitRepository>
-        <location rdf:resource="https://git-wip-us.apache.org/repos/asf/groovy.git"/>
+        <location rdf:resource="https://gitbox.apache.org/repos/asf/groovy.git"/>
         <browse rdf:resource="http://github.com/apache/groovy"/>
       </GitRepository>
     </repository>

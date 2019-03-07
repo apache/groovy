@@ -67,7 +67,6 @@ import java.util.Map;
  *
  *
  * @see org.codehaus.groovy.classgen.AsmClassGenerator
- * @author Jochen Theodorou
  */
 public class CompileStack implements Opcodes {
     /**

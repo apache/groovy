@@ -23,8 +23,6 @@ import org.objectweb.asm.Opcodes;
 
 /**
  * Tests the ClassNode
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ClassNodeTest extends TestCase implements Opcodes {
 

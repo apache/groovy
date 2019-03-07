@@ -22,9 +22,7 @@ package org.codehaus.groovy.ast.stmt;
 * This is an AST Node that provides some sort of looping mechanism. Typically
 * in the form of a block that will be executed repeatedly. 
 * DoWhileStatements, WhileStatements, and ForStatements are all examples of LoopingStatements. 
-*
-* @author Hamlet D'Arcy
-*/ 
+*/
 public interface LoopingStatement {
 
      /**

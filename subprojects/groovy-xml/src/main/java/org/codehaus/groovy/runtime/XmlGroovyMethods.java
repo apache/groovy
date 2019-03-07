@@ -29,9 +29,6 @@ import java.util.Iterator;
  * This class defines all the new XML-related groovy methods which enhance
  * the normal JDK XML classes when inside the Groovy environment.
  * Static methods are used with the first parameter the destination class.
- *
- * @author Paul King
- * @author Jochen Theodorou
  */
 public class XmlGroovyMethods {
 

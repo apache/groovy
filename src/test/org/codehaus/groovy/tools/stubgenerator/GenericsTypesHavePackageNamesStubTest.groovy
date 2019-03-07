@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Checks that generic types correctly show package names with stubs.
- *
- * @author Paul King
  */
 class GenericsTypesHavePackageNamesStubTest extends StringSourcesStubTestCase {
 

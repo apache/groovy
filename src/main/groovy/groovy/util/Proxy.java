@@ -28,9 +28,6 @@ import java.util.Iterator;
  * Dynamic groovy proxy for another object.  All method
  * invocations get forwarded to actual object, unless the proxy overrides it.
  * See groovy/util/ProxyTest.groovy for usage details.
- *
- * @author Troy Heninger
- * @author Dierk Koenig
  */
 public class Proxy extends GroovyObjectSupport {
 

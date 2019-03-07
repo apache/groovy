@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_LAMBDA_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -76,20 +77,16 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     private static final String LAMBDA_THIS = "__lambda_this";
     private static final String INIT = "<init>";
     private static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
-    private StaticTypesClosureWriter staticTypesClosureWriter;
-    private WriterController controller;
-    private WriterControllerFactory factory;
+    private final StaticTypesClosureWriter staticTypesClosureWriter;
+    private final WriterController controller;
+    private final WriterControllerFactory factory;
     private final Map<Expression,ClassNode> lambdaClassMap = new HashMap<>();
 
     public StaticTypesLambdaWriter(WriterController wc) {
         super(wc);
         this.staticTypesClosureWriter = new StaticTypesClosureWriter(wc);
         this.controller = wc;
-        this.factory = new WriterControllerFactory() {
-            public WriterController makeController(final WriterController normalController) {
-                return controller;
-            }
-        };
+        this.factory = normalController -> controller;
     }
 
     @Override
@@ -126,47 +123,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
                 createBootstrapMethodArguments(abstractMethodDesc, lambdaWrapperClassNode, syntheticLambdaMethodNode)
         );
         operandStack.replace(redirect, 2);
-
-        if (null != expression.getNodeMetaData(INFERRED_LAMBDA_TYPE)) {
-            // FIXME declaring variable whose initial value is a lambda, e.g. `Function<Integer, String> f = (Integer e) -> 'a' + e`
-            //       Groovy will `POP` automatically, use `DUP` to duplicate the element of operand stack:
-            /*
-                INVOKEDYNAMIC apply(LTest1$_p_lambda1;LTest1;)Ljava/util/function/Function; [
-                  // handle kind 0x6 : INVOKESTATIC
-                  java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
-                  // arguments:
-                  (Ljava/lang/Object;)Ljava/lang/Object;,
-                  // handle kind 0x5 : INVOKEVIRTUAL
-                  Test1$_p_lambda1.doCall(LTest1;Ljava/lang/Integer;)Ljava/lang/String;,
-                  (Ljava/lang/Integer;)Ljava/lang/String;
-                ]
-                DUP           <-------------- FIXME ADDED ON PURPOSE, WE SHOULD REMOVE IT AFTER FIND BETTER SOLUTION
-                ASTORE 0
-               L2
-                ALOAD 0
-                POP           <-------------- Since operand stack is not empty, the `POP`s are issued by `controller.getOperandStack().popDownTo(mark);` in the method `org.codehaus.groovy.classgen.asm.StatementWriter.writeExpressionStatement`, but when we try to `operandStack.pop();` instead of `mv.visitInsn(DUP);`, we will get AIOOBE...
-                POP
-            */
-
-            mv.visitInsn(DUP);
-
-            /*
-                org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
-                General error during class generation: size==0
-
-                java.lang.ArrayIndexOutOfBoundsException: size==0
-                    at org.codehaus.groovy.classgen.asm.OperandStack.getTopOperand(OperandStack.java:693)
-                    at org.codehaus.groovy.classgen.asm.BinaryExpressionHelper.evaluateEqual(BinaryExpressionHelper.java:397)
-                    at org.codehaus.groovy.classgen.asm.sc.StaticTypesBinaryExpressionMultiTypeDispatcher.evaluateEqual(StaticTypesBinaryExpressionMultiTypeDispatcher.java:179)
-                    at org.codehaus.groovy.classgen.AsmClassGenerator.visitDeclarationExpression(AsmClassGenerator.java:694)
-                    at org.codehaus.groovy.ast.expr.DeclarationExpression.visit(DeclarationExpression.java:89)
-                    at org.codehaus.groovy.classgen.asm.StatementWriter.writeExpressionStatement(StatementWriter.java:633)
-                    at org.codehaus.groovy.classgen.AsmClassGenerator.visitExpressionStatement(AsmClassGenerator.java:681)
-                    at org.codehaus.groovy.ast.stmt.ExpressionStatement.visit(ExpressionStatement.java:42)
-                             */
-                //            operandStack.pop();
-        }
-
     }
 
     private ClassNode getLambdaType(LambdaExpression expression) {
@@ -333,7 +289,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
         Parameter[] localVariableParameters = getLambdaSharedVariables(expression);
         removeInitialValues(localVariableParameters);
 
-        List<Parameter> methodParameterList = new LinkedList<Parameter>(Arrays.asList(parametersWithExactType));
+        List<Parameter> methodParameterList = new LinkedList<>(Arrays.asList(parametersWithExactType));
         prependEnclosingThis(methodParameterList);
 
         MethodNode methodNode =
@@ -373,15 +329,19 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
             parameters = Parameter.EMPTY_ARRAY;
         }
 
-        for (int i = 0; i < parameters.length; i++) {
-            ClassNode inferredType = parameters[i].getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+        for (Parameter parameter : parameters) {
+            ClassNode inferredType = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
 
             if (null == inferredType) {
                 continue;
             }
 
-            parameters[i].setType(inferredType);
-            parameters[i].setOriginType(inferredType);
+            // Java 11 does not allow primitive type, we should use the wrapper type
+            // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
+            ClassNode wrappedType = getWrapper(inferredType);
+
+            parameter.setType(wrappedType);
+            parameter.setOriginType(wrappedType);
         }
 
         return parameters;
@@ -393,11 +353,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter {
     }
 
     private static final class TransformationVisitor extends ClassCodeVisitorSupport {
-        private CorrectAccessedVariableVisitor correctAccessedVariableVisitor;
-        private Parameter enclosingThisParameter;
+        private final CorrectAccessedVariableVisitor correctAccessedVariableVisitor;
+        private final Parameter enclosingThisParameter;
 
         public TransformationVisitor(InnerClassNode icn, Parameter enclosingThisParameter) {
-            correctAccessedVariableVisitor = new CorrectAccessedVariableVisitor(icn);
+            this.correctAccessedVariableVisitor = new CorrectAccessedVariableVisitor(icn);
             this.enclosingThisParameter = enclosingThisParameter;
         }
 

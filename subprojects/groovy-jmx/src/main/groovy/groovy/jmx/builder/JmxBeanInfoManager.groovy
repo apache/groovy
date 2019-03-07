@@ -30,8 +30,6 @@ import javax.management.modelmbean.ModelMBeanOperationInfo
 /**
  * The JmxBeanInfoManager creates fully-described model mbean info object using the underlying meta map.
  * The MBeanInfo object is used to provide description about the actual exported MBean instance.
- *
- * @author Vladimir Vivien
  */
 class JmxBeanInfoManager {
     /**
@@ -39,7 +37,7 @@ class JmxBeanInfoManager {
      * @param object used for name
      * @return an instance of ObjectName
      */
-    public static ObjectName buildDefaultObjectName(String defaultDomain, String defaultType, def object) {
+    static ObjectName buildDefaultObjectName(String defaultDomain, String defaultType, def object) {
         def name = "${defaultDomain}:type=${defaultType},name=${object.class.canonicalName}@${object.hashCode()}"
         return new ObjectName(name)
     }
@@ -49,7 +47,7 @@ class JmxBeanInfoManager {
      * @param map map of object
      * @return ModelMBeanInfo built from map
      */
-    public static ModelMBeanInfo getModelMBeanInfoFromMap(Map map) {
+    static ModelMBeanInfo getModelMBeanInfoFromMap(Map map) {
         if (!map) {
             throw new JmxBuilderException("Unable to create default ModelMBeanInfo, missing meta map.")
         }
@@ -62,7 +60,7 @@ class JmxBeanInfoManager {
         def operations = JmxOperationInfoManager.getOperationInfosFromMap(map.operations) ?: []
 
         //generate setters/getters operations for found attribs
-        attributes.each {info ->
+        attributes.each { info ->
             MetaProperty prop = object.metaClass.getMetaProperty(JmxBuilderTools.uncapitalize(info.name))
             if (prop && info.isReadable()) {
                 operations << JmxOperationInfoManager.createGetterOperationInfoFromProperty(prop)

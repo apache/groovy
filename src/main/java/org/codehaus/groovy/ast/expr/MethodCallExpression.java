@@ -26,8 +26,6 @@ import org.codehaus.groovy.ast.MethodNode;
 
 /**
  * A method call on an object or class
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MethodCallExpression extends Expression implements MethodCall {
 

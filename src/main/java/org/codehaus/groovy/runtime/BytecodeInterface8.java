@@ -22,7 +22,6 @@ import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 
 /**
  * This class contains methods special to optimizations used directly from bytecode in Groovy 1.8
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class BytecodeInterface8 {
     

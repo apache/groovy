@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime.typehandling;
 
 /**
  * BigInteger NumberMath operations
- * 
- * @author Steve Goetze
  */
 public final class BigIntegerMath extends NumberMath {
 

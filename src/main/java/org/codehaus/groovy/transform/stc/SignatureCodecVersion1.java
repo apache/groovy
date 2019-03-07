@@ -47,8 +47,6 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 
 /**
  * First implementation of an inferred type signature codec.
- *
- * @author Cedric Champeau
  */
 public class SignatureCodecVersion1 implements SignatureCodec {
 

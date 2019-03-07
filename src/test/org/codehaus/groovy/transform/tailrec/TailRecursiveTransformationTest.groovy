@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.transform.tailrec
 
-/**
- * @author Johannes Link
- */
 class TailRecursiveTransformationTest extends GroovyShellTestCase {
 
     void testSimpleRecursiveMethod() {

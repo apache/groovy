@@ -61,6 +61,8 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+
 public class EnumVisitor extends ClassCodeVisitorSupport {
     // some constants for modifiers
     private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
@@ -164,7 +166,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             code.addStatement(
                     new ExpressionStatement(
                             new DeclarationExpression(
-                                    new VariableExpression("ordinal"),
+                                    localVarX("ordinal"),
                                     assign,
                                     new MethodCallExpression(
                                             new MethodCallExpression(
@@ -233,7 +235,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             code.addStatement(
                     new ExpressionStatement(
                             new DeclarationExpression(
-                                    new VariableExpression("ordinal"),
+                                    localVarX("ordinal"),
                                     assign,
                                     new MethodCallExpression(
                                             new MethodCallExpression(

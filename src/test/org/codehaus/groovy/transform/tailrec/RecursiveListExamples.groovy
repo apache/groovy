@@ -22,9 +22,6 @@ import groovy.transform.CompileStatic
 import groovy.transform.TailRecursive
 import org.junit.Test
 
-/**
- * @author Johannes Link
- */
 class RecursiveListExamples {
 
     def rlist

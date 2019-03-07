@@ -18,13 +18,8 @@
  */
 package gls.ch06.s05.testClasses;
 
-
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
-
-/**
- * @author John Wilson
- */
 
 public class Tt1cgo extends GroovyObjectSupport {
     public Closure x = new Closure(null) {

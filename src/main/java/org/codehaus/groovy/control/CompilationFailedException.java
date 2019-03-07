@@ -23,10 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 
 /**
  * Thrown when compilation fails from source errors.
- *
- * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
-
 public class CompilationFailedException extends GroovyRuntimeException {
 
     private static final long serialVersionUID = 4500269747315896966L;

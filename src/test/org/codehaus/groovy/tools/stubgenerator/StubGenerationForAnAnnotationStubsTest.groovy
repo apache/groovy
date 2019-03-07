@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test stub generation for an annotation 
- *
- * @author Roshan Dawrani
  */
 class StubGenerationForAnAnnotationStubsTest extends StringSourcesStubTestCase {
 

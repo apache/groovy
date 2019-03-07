@@ -91,8 +91,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClas
  * A call site writer which replaces call site caching with static calls. This means that the generated code
  * looks more like Java code than dynamic Groovy code. Best effort is made to use JVM instructions instead of
  * calls to helper methods.
- *
- * @author Cedric Champeau
  */
 public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes {
 

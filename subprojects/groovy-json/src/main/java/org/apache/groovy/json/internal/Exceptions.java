@@ -24,9 +24,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Collections;
 
-/**
- * @author Rick Hightower
- */
 public class Exceptions {
 
     public static boolean die() {

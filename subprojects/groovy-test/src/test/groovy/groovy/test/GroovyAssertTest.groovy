@@ -21,10 +21,6 @@ package groovy.test
 import org.junit.Test
 import static groovy.test.GroovyAssert.*
 
-/**
- * @author Paul King
- * @author Andre Steingress
- */
 class GroovyAssertTest {
 
     @Test

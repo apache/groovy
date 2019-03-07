@@ -48,14 +48,12 @@ import java.util.regex.Pattern;
 
 /**
  * A static helper class to interface bytecode and runtime
- *
- * @author Jochen Theodorou
  */
 public class ScriptBytecodeAdapter {
     public static final Object[] EMPTY_ARGS = {};
-    private static final Integer ZERO = Integer.valueOf(0);
-    private static final Integer MINUS_ONE = Integer.valueOf(-1);
-    private static final Integer ONE = Integer.valueOf(1);
+    private static final Integer ZERO = 0;
+    private static final Integer MINUS_ONE = -1;
+    private static final Integer ONE = 1;
 
     //  --------------------------------------------------------
     //                   exception handling
@@ -735,7 +733,7 @@ public class ScriptBytecodeAdapter {
         if (leftClass ==Long.class && rightClass==Long.class) {
             return (Long) left < (Long) right;
         }
-        return compareTo(left, right).intValue() < 0;
+        return compareTo(left, right) < 0;
     }
 
     public static boolean compareLessThanEqual(Object left, Object right) {
@@ -750,7 +748,7 @@ public class ScriptBytecodeAdapter {
         if (leftClass ==Long.class && rightClass==Long.class) {
             return (Long) left <= (Long) right;
         }
-        return compareTo(left, right).intValue() <= 0;
+        return compareTo(left, right) <= 0;
     }
 
     public static boolean compareGreaterThan(Object left, Object right) {
@@ -765,7 +763,7 @@ public class ScriptBytecodeAdapter {
         if (leftClass ==Long.class && rightClass==Long.class) {
             return (Long) left > (Long) right;
         }
-        return compareTo(left, right).intValue() > 0;
+        return compareTo(left, right) > 0;
     }
 
     public static boolean compareGreaterThanEqual(Object left, Object right) {
@@ -780,7 +778,7 @@ public class ScriptBytecodeAdapter {
         if (leftClass ==Long.class && rightClass==Long.class) {
             return (Long) left >= (Long) right;
         }
-        return compareTo(left, right).intValue() >= 0;
+        return compareTo(left, right) >= 0;
     }
 
     //regexpr

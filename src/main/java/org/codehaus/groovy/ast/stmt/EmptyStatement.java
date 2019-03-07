@@ -26,8 +26,6 @@ import java.util.Map;
 
 /**
  * Represents an empty statement
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 
 public class EmptyStatement extends Statement {

@@ -28,8 +28,6 @@ import java.util.Map;
 
 /**
  * Helper base class used for lazy updates.
- *
- * @author John Wilson
  */
 public abstract class ReplacementNode implements Buildable, Writable {
     public abstract void build(GroovyObject builder, Map namespaceMap, Map<String, String> namespaceTagHints);

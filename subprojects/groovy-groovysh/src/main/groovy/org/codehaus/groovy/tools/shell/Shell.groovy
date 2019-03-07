@@ -27,8 +27,6 @@ import static org.fusesource.jansi.Ansi.ansi
 
 /**
  * A simple shell for invoking commands from a command-line.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Shell
 {

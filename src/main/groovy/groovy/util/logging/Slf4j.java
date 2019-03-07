@@ -19,6 +19,7 @@
 package groovy.util.logging;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -30,7 +31,6 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 import org.codehaus.groovy.transform.LogASTTransformation;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -56,8 +56,6 @@ import java.util.Locale;
  * If the expression exp is a constant or only a variable access the method call will
  * not be transformed. But this will still cause a call on the injected logger.
  *
- * @author Hamlet D'Arcy
- * @author Alberto Mijares
  * @since 1.8.0
  */
 @java.lang.annotation.Documented
@@ -67,9 +65,16 @@ import java.util.Locale;
 public @interface Slf4j {
     String value() default "log";
     String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
+
+    /**
+     * If specified, must match the "id" attribute in a VisibilityOptions annotation to enable a custom visibility.
+     * @since 3.0.0
+     */
+    String visibilityId() default Undefined.STRING;
+
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Slf4jLoggingStrategy.class;
 
-    public static class Slf4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
+    public static class Slf4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
         private static final String LOGGER_NAME = "org.slf4j.Logger";
         private static final String FACTORY_NAME = "org.slf4j.LoggerFactory";
 
@@ -77,9 +82,10 @@ public @interface Slf4j {
             super(loader);
         }
 
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName) {
+        @Override
+        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName, int fieldModifiers) {
             return classNode.addField(logFieldName,
-                    Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE,
+                    fieldModifiers,
                     classNode(LOGGER_NAME),
                     new MethodCallExpression(
                             new ClassExpression(classNode(FACTORY_NAME)),
@@ -87,10 +93,12 @@ public @interface Slf4j {
                             new ConstantExpression(getCategoryName(classNode, categoryName))));
         }
 
+        @Override
         public boolean isLoggingMethod(String methodName) {
             return methodName.matches("error|warn|info|debug|trace");
         }
 
+        @Override
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             MethodCallExpression condition = new MethodCallExpression(
                     logVariable,

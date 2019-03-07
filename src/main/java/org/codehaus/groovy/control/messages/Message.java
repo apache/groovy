@@ -25,75 +25,48 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.io.PrintWriter;
 
-
-
 /**
- *  A base class for compilation messages.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * A base class for compilation messages.
  */
+public abstract class Message {
 
-public abstract class Message
-{
-    
-    
-   /**
-    *  Writes the message to the specified PrintWriter.  The supplied
-    *  ProcessingUnit is the unit that holds this Message.
-    */
-    
-    public abstract void write( PrintWriter writer, Janitor janitor );
-    
-    
-   /**
-    *  A synonym for write( writer, owner, null ).
-    */
-    
-    public final void write( PrintWriter writer)
-    {
-        write( writer,  null );
+    /**
+     * Writes the message to the specified PrintWriter.  The supplied
+     * ProcessingUnit is the unit that holds this Message.
+     */
+    public abstract void write(PrintWriter writer, Janitor janitor);
+
+    /**
+     * A synonym for write( writer, owner, null ).
+     */
+    public final void write(PrintWriter writer) {
+        write(writer, null);
     }
-    
-    
-    
-  //---------------------------------------------------------------------------
-  // FACTORY METHODS
-    
-    
-   /**
-    *  Creates a new Message from the specified text.
-    */
-    
-    public static Message create( String text, ProcessingUnit owner )
-    {
-        return new SimpleMessage( text, owner );
+
+    //---------------------------------------------------------------------------
+    // FACTORY METHODS
+
+    /**
+     * Creates a new Message from the specified text.
+     */
+    public static Message create(String text, ProcessingUnit owner) {
+        return new SimpleMessage(text, owner);
     }
-    
-    
-          
-   /**
-    *  Creates a new Message from the specified text.
-    */
-     
-    public static Message create( String text, Object data, ProcessingUnit owner  )
-    {
-        return new SimpleMessage( text, data, owner);
+
+    /**
+     * Creates a new Message from the specified text.
+     */
+    public static Message create(String text, Object data, ProcessingUnit owner) {
+        return new SimpleMessage(text, data, owner);
     }
-     
-     
-           
-   /**
-    *  Creates a new Message from the specified SyntaxException.
-    */
-      
-    public static Message create( SyntaxException error, SourceUnit owner )
-    {
-        return new SyntaxErrorMessage( error, owner );
+
+    /**
+     * Creates a new Message from the specified SyntaxException.
+     */
+    public static Message create(SyntaxException error, SourceUnit owner) {
+        return new SyntaxErrorMessage(error, owner);
     }
-      
-    
-      
-    
+
 }
 
 

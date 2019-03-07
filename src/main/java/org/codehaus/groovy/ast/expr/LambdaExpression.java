@@ -27,9 +27,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 /**
  * Represents a lambda expression such as e -> e * 2
  * or (x, y) -> x + y or (x, y) -> { x + y } or (int x, int y) -> { x + y }
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/10/18
  */
 public class LambdaExpression extends ClosureExpression {
     public LambdaExpression(Parameter[] parameters, Statement code) {

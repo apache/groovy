@@ -40,7 +40,6 @@ import static org.codehaus.groovy.vmplugin.v7.TypeHelper.replaceWithMoreSpecific
  * use primitive types for parameters and return types where possible. 
  * WARNING: This class is for internal use only. Do not use it outside of the 
  * org.codehaus.groovy.vmplugin.v7 package of groovy-core.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class IndyMath {
     

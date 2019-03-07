@@ -199,8 +199,6 @@ import org.codehaus.groovy.ant.Groovydoc;
 
 /**
  * Overrides GroovyDoc's default class template - for testing purpose only.
- *
- * @author Andre Steingress
  */
 public class CustomGroovyDoc extends Groovydoc {
 

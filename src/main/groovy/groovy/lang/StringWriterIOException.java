@@ -22,8 +22,6 @@ import java.io.IOException;
 
 /**
  * An IO exception occurred trying to append to a StringWriter which should never happen.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class StringWriterIOException extends RuntimeException {
 

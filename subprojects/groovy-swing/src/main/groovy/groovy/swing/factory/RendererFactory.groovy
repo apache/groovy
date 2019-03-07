@@ -23,28 +23,24 @@ import groovy.swing.impl.ClosureRenderer
 import javax.swing.*
 import java.awt.*
 
-/**
- * @author Danno Ferrin
- */
 class RendererFactory extends AbstractFactory {
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         FactoryBuilderSupport.checkValueIsNull value, name
         return new ClosureRenderer()
     }
 
-    public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
+    void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (child instanceof Component) {
             parent.children += child
         }
     }
 
-    public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         node.update = builder.context.updateClosure
         if (parent instanceof JTree) {
             parent.cellRenderer = node
-        }
-        else if (parent instanceof JList) {
+        } else if (parent instanceof JList) {
             parent.cellRenderer = node
         }
     }
@@ -52,15 +48,15 @@ class RendererFactory extends AbstractFactory {
 
 class RendererUpdateFactory extends AbstractFactory {
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         return Collections.emptyMap()
     }
 
-    public boolean isHandlesNodeChildren() {
-        return true;
+    boolean isHandlesNodeChildren() {
+        return true
     }
 
-    public boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
+    boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
         builder.parentContext.updateClosure = childContent
         return false
     }

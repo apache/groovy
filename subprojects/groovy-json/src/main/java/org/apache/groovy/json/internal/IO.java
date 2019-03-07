@@ -22,9 +22,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 
-/**
- * @author Rick Hightower
- */
 public class IO {
 
     private static final int EOF = -1;

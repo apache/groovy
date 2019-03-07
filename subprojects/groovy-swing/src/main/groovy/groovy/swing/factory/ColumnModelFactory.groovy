@@ -23,10 +23,6 @@ import groovy.util.logging.Log
 import javax.swing.*
 import javax.swing.table.TableColumnModel
 
-/**
- * @author Alexander Klein
- * @author Hamlet D'Arcy
- */
 @Log
 class ColumnModelFactory extends AbstractFactory {
 
@@ -38,16 +34,17 @@ class ColumnModelFactory extends AbstractFactory {
         Class jxTableClass = null
         try {
             jxTableClass = Class.forName("org.jdesktop.swingx.JXTable")
-        } catch (ClassNotFoundException ex) {}
+        } catch (ClassNotFoundException ex) {
+        }
 
         if (jxTableClass != null && jxTableClass.isAssignableFrom(builder.current.getClass())) {
             return Class.forName("org.jdesktop.swingx.table.DefaultTableColumnModelExt").newInstance()
-        } else{
+        } else {
             return new javax.swing.table.DefaultTableColumnModel()
         }
     }
 
-    public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if (parent instanceof JTable) {
             parent.columnModel = node
         } else {

@@ -40,9 +40,6 @@ import org.codehaus.groovy.syntax.Token;
  * you can use the method "<code>TupleExpression getTupleExpression()</code>" method.
  * Calling either of these expression getters when the "isMultipleAssignment" condition
  * is not appropriate is unsafe and will result in a <code>ClassCastException</code>.
- *
- * @author Jochen Theodorou
- * @author Hamlet D'Arcy
  */
 public class DeclarationExpression extends BinaryExpression {
     

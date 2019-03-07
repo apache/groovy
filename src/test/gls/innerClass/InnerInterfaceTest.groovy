@@ -20,8 +20,6 @@ package gls.innerClass
 
 /**
  * Tests on inner interface usage
- *
- * @author Roshan Dawrani
  */
 class InnerInterfaceTest extends GroovyTestCase {
 

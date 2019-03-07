@@ -22,12 +22,13 @@ buildscript {
     repositories {
         if (rootProject.hasProperty('buildInChina')) {
             // Try to use Aliyun maven repository when building in China
-            maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+            maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
         jcenter()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
         maven{
             name 'Bintray Javadoc Hotfix repo'
-            url 'http://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
+            url 'https://dl.bintray.com/melix/gradle-javadoc-hotfix-plugin'
         }
         maven {
             url "https://plugins.gradle.org/m2/"
@@ -43,15 +44,15 @@ buildscript {
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
         classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
-        classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
-        classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
+        classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.3.1"
+        classpath "gradle.plugin.com.github.jk1:gradle-license-report:1.3"
     }
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '1.16'
+    id 'com.gradle.build-scan' version '2.0.2'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '1.6.5'
+    id 'com.github.spotbugs' version '1.6.9'
     id "com.github.ben-manes.versions" version '0.20.0'
 }
 
@@ -92,10 +93,11 @@ allprojects {
     repositories {
         if (rootProject.hasProperty('buildInChina')) {
             // Try to use Aliyun maven repository when building in China
-            maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+            maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
         }
         jcenter()
-        maven { url 'http://dl.bintray.com/melix/thirdparty-apache' } // openbeans
+//        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+        maven { url 'https://dl.bintray.com/melix/thirdparty-apache' } // openbeans
     }
 
     ext.buildDate = isReleaseVersion?new Date():new Date(0)
@@ -128,8 +130,7 @@ test.dependsOn(copyTestResources)
 
 repositories {
     // todo Some repos are needed only for some configs. Declare them just for the configuration once Gradle allows this.
-    maven { url 'http://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
-    maven { url 'http://repo.bodar.com' } // tools - jarjar
+    maven { url 'https://repository.jboss.org/nexus/content/groups/m2-release-proxy' } // tools
 }
 
 configurations {
@@ -141,7 +142,7 @@ configurations {
 
 ext {
     antVersion = '1.10.5'
-    asmVersion = '7.0'
+    asmVersion = '7.1'
     antlrVersion = '2.7.7'
     bridgerVersion = '1.5.Final'
     coberturaVersion = '1.9.4.1'
@@ -156,14 +157,14 @@ ext {
     log4jVersion = '1.2.17'
     log4j2Version = '2.8'
     openbeansVersion = '1.0'
-    picocliVersion = '3.7.0'
+    picocliVersion = '3.9.5'
     qdoxVersion = '1.12.1'
     slf4jVersion = '1.7.25'
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.11.1'
     spockVersion = '1.2-groovy-2.4-SNAPSHOT' // supports 3.0
-    antlr4Version = '4.7.1'
-    spotbugsannotationsVersion = '3.1.8'
+    antlr4Version = '4.7.3'
+    spotbugsannotationsVersion = '3.1.11'
 }
 
 dependencies {
@@ -318,7 +319,7 @@ task ensureGrammars {
 }
 
 compileJava {
-    dependsOn ensureGrammars
+    dependsOn ensureGrammars, generateGrammarSource
     options.fork(memoryMaximumSize: javacMain_mx)
 
     doLast {
@@ -414,11 +415,11 @@ task checkCompatibility {
     }
 }
 
-if (!JavaVersion.current().java8Compatible) {
+if (!JavaVersion.current().java9Compatible) {
     logger.lifecycle '''
     **************************************** WARNING ********************************************
-    ******   You are running the build with an older JDK. NEVER try to release with 1.7.   ******
-    ******   You must use a JDK 1.8+ in order to compile all features of the language.     ******
+    ******   You are running the build with an older JDK. NEVER try to release with 1.8.   ******
+    ******   You must use a JDK 1.9+ in order to compile all features of the language.     ******
     *********************************************************************************************
 '''
 }
@@ -463,3 +464,4 @@ licenseReport {
 //licenseFormat.dependsOn licenseFormatCustom
 //licenseFormat.dependsOn licenseFormatGradle
 //
+

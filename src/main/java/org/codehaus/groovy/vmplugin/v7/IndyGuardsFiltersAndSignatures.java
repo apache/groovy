@@ -51,7 +51,6 @@ import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
 /**
  * This class contains guards, runtime filters and
  * MethodType signatures used by indy.
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class IndyGuardsFiltersAndSignatures {
 

@@ -24,7 +24,7 @@ import javax.management.remote.JMXServiceURL
 
 /**
  * This is the factory for node JmxBuilder.connectorClient.
- * A call to this node returns an insatnce of the JMXConnector interface.
+ * A call to this node returns an instance of the JMXConnector interface.
  *
  * <pre>
  * JmxBuilder.clientConnector (
@@ -35,14 +35,13 @@ import javax.management.remote.JMXServiceURL
  * )
  * </pre>
  *
- * @author Vladimir Vivien
  * @see <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/management/remote/JMXConnector.html">JMXConnector</a>
  */
 class JmxClientConnectorFactory extends AbstractFactory {
 
     private static final List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "iiop", "jmxmp"]
 
-    public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
+    Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
         if (nodeArgs) {
             throw new JmxBuilderException("Node '${nodeName}' only supports named attributes.")
         }
@@ -61,7 +60,7 @@ class JmxClientConnectorFactory extends AbstractFactory {
         }
 
         JMXServiceURL serviceUrl = (url) ? new JMXServiceURL(url) : generateServiceUrl(protocol, host, port)
-        JMXConnector connector = JMXConnectorFactory.newJMXConnector(serviceUrl, props);
+        JMXConnector connector = JMXConnectorFactory.newJMXConnector(serviceUrl, props)
 
         return connector
     }

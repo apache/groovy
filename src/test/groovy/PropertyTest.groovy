@@ -20,8 +20,6 @@ package groovy
 
 /**
  * Tests the use of properties in Groovy
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 class PropertyTest extends GroovyTestCase {
 
@@ -66,7 +64,7 @@ class PropertyTest extends GroovyTestCase {
 
         // methods should fail on non-existent method calls
         //shouldFail { foo.blah = 4 }
-        shouldFail {foo.setBlah(4)}
+        shouldFail { foo.setBlah(4) }
     }
 
     void testCannotSeePrivateProperties() {
@@ -76,7 +74,7 @@ class PropertyTest extends GroovyTestCase {
         //shouldFail { def x = foo.invisible } //todo: correct handling of access rules
 
         // methods should fail on non-existent method calls
-        shouldFail {foo.getQ()}
+        shouldFail { foo.getQ() }
     }
 
     void testConstructorWithNamedProperties() {
@@ -105,10 +103,10 @@ class PropertyTest extends GroovyTestCase {
         assert s.length == 10
 
         // this def does not mean there is a getLength() method
-        shouldFail {i.getLength()}
+        shouldFail { i.getLength() }
 
         // verify we can't set this def, it's read-only
-        shouldFail {i.length = 6}
+        shouldFail { i.length = 6 }
     }
 
     void testGstringAssignment() {
@@ -184,21 +182,21 @@ class PropertyTest extends GroovyTestCase {
         c.superThing = 'bar thing'
         assert c.superthing() == 'bar1bar thing'
     }
-    
+
     void testOverwritingNormalProperty() {
-        def c = new Child();
+        def c = new Child()
         assert c.normalProperty == 2
     }
 
     //GROOVY-2244
-    public void testWriteOnlyBeanProperty() {
+    void testWriteOnlyBeanProperty() {
         def bean = new Child()
 
         // assert the property exists
-        assert bean.metaClass.properties.findAll{it.name == 'superThing'}
+        assert bean.metaClass.properties.findAll { it.name == 'superThing' }
 
         // attempt to write to it
-        bean.superThing= 'x'
+        bean.superThing = 'x'
 
         // attempt to read it
         shouldFail(MissingPropertyException) {
@@ -219,7 +217,7 @@ class PropertyTest extends GroovyTestCase {
         '''
     }
 
-    public void testPropertyWithMultipleSetters() {
+    void testPropertyWithMultipleSetters() {
         assertScript '''
             class A {
                 private field
@@ -256,45 +254,56 @@ class Base {
     protected String field = 'bar'
 
     protected thing = 'foo thing'
-    def getXprop() {'foo x prop'}
-    def x() {'foo x'}
-    void setThing(value) {thing = value}
-    
+
+    def getXprop() { 'foo x prop' }
+
+    def x() { 'foo x' }
+
+    void setThing(value) { thing = value }
+
     //testing final property getter
-    final getFinalProperty() {1}
-    
+    final getFinalProperty() { 1 }
+
     // testing normal property
     def normalProperty = 1
 }
 
 class Child extends Base {
     protected String field = 'foo' + super.field
-    public getField() {field}
-    void setSuperField(value) {super.field = value}
-    public getSuperField() {super.field}
+
+    def getField() { field }
+
+    void setSuperField(value) { super.field = value }
+
+    def getSuperField() { super.field }
 
     def thing = 'bar thing'
+
     def superthing() {
         'bar1' + super.thing
     }
+
     def x() {
         'bar2' + super.x()
     }
+
     def getXprop() {
         'bar3' + super.xprop
     }
+
     def getXpropViaMethod() {
         'bar4' + super.getXprop()
     }
+
     def setSuperThing(value) {
         super.thing = value
     }
-    
+
     // testing final property getter
     // the following property should not add a new getter
     // method, this would result in a verify error
     def finalProperty = 32
-    
+
     // testing overwriting normal property
     def normalProperty = 2
 }

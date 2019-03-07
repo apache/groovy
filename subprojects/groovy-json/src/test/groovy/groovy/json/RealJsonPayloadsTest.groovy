@@ -18,9 +18,6 @@
  */
 package groovy.json
 
-/**
- * @author Guillaume Laforge
- */
 class RealJsonPayloadsTest extends GroovyTestCase {
 
     def parser = new JsonSlurper()

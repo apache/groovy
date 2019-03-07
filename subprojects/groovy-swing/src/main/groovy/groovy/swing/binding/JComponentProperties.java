@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author Andres Almiray
  * @since Groovy 1.6
  */
 public class JComponentProperties {

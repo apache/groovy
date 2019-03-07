@@ -18,14 +18,11 @@
  */
 package groovy
 
-/** 
- * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
- */
 class ClosureWithEmptyParametersTest extends GroovyTestCase {
 
     void testNoParams() {
 
-        def block = {-> }
+        def block = { -> }
 
         block.call()
     }

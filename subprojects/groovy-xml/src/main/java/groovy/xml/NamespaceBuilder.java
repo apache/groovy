@@ -24,8 +24,6 @@ import java.util.Map;
 
 /**
  * A helper class for creating namespaces for GroovyMarkup
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class NamespaceBuilder {
 

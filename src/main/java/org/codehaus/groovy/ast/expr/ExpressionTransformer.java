@@ -21,8 +21,6 @@ package org.codehaus.groovy.ast.expr;
 
 /**
  * Provides a way to transform expressions
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public interface ExpressionTransformer {
     

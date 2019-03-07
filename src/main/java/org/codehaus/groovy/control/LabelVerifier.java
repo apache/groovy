@@ -33,8 +33,6 @@ import java.util.List;
 
 /**
  * This class checks the handling of labels in the AST
- *
- * @author Jochen Theodorou
  */
 public class LabelVerifier extends ClassCodeVisitorSupport {
 

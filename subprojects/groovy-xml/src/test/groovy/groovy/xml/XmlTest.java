@@ -20,9 +20,6 @@ package groovy.xml;
 
 import groovy.util.GroovyTestCase;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class XmlTest extends GroovyTestCase {
 
 //    public void testTree() throws Exception {

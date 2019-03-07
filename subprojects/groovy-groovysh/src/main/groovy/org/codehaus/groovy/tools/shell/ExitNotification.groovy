@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.shell
 
 /**
  * Notification to signal the shell to exit.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ExitNotification
     extends Error

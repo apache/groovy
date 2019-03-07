@@ -18,12 +18,10 @@
  */
 package groovy.time
 
-/** 
+/**
  * Tests the groovy.time.TimeCategory class. 
  * Most of these tests use January 1 as a start time to avoid 
  * leap years and daylight savings time issues. 
- * 
- * @author Hamlet D'Arcy
  */
 class TimeCategoryTest extends GroovyTestCase {
 
@@ -210,8 +208,8 @@ class TimeCategoryTest extends GroovyTestCase {
             def t3 = t1 + 4.seconds + 2.milliseconds
             def t4 = t1 - 4.seconds - 2.milliseconds
             def t5 = t1 + 4.seconds - 2.milliseconds
-            def t6 = t1 -             2.milliseconds
-            def t7 = t1 +             2.milliseconds
+            def t6 = t1 - 2.milliseconds
+            def t7 = t1 + 2.milliseconds
             assert (t1 - t2).toString() == '3.998 seconds'
             assert (t1 - t3).toString() == '-4.002 seconds'
             assert (t1 - t4).toString() == '4.002 seconds'
@@ -229,7 +227,7 @@ class TimeCategoryTest extends GroovyTestCase {
     }
 
     void testDateEquality() {
-        use (TimeCategory) {
+        use(TimeCategory) {
             Date dt1 = 0.days.from.now
             Date dt2 = new Date(0.days.from.now.time)
 

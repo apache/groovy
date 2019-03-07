@@ -38,8 +38,6 @@ import org.objectweb.asm.Opcodes;
  *
  * This expression should only be used to compare to objects, not primitives, and only
  * in the context of reference equality check.
- *
- * @author Cedric Champeau
  */
 public class CompareIdentityExpression extends BinaryExpression implements Opcodes {
     private final Expression leftExpression;

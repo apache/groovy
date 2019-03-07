@@ -21,8 +21,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : arrays and collections.
- *
- * @author Cedric Champeau
  */
 class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 

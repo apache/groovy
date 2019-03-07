@@ -28,7 +28,6 @@ import java.util.regex.Pattern;
  * This is kept around in case someone needs its exact behavior.
  * Enum listing all the possible JSON tokens that should be recognized by the lexer.
  *
- * @author Guillaume Laforge
  * @since 1.8.0
  */
 public enum JsonTokenType {

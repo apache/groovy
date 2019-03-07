@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that empty enums are compiled successfully.
- *
- * @author Paul King
  */
 class Groovy6404Bug extends StringSourcesStubTestCase {
 

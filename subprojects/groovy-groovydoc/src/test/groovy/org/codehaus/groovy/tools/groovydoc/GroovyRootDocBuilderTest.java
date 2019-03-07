@@ -22,9 +22,6 @@ import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
 
-/**
- * @author Paul King
- */
 public class GroovyRootDocBuilderTest extends GroovyTestCase {
     private String src = "/**\n" +
             " * <h1>Description</h1>\n" +

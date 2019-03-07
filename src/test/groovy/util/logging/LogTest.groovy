@@ -26,18 +26,10 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 /**
  * Test to make sure the @Log annotation is working correctly. 
- *
- * @author Guillaume Laforge
- * @author Jochen Theodorou
- * @author Dinko Srkoc
- * @author Hamlet D'Arcy
- * @author Raffaele Cigni
- * @author Alberto Vilches Raton
- * @author Tomasz Bujok
  */
 class LogTest extends GroovyTestCase {
 
-    public void testPrivateFinalStaticLogFieldAppears() {
+    void testPrivateFinalStaticLogFieldAppears() {
 
         Class clazz = new GroovyClassLoader().parseClass("""
           @groovy.util.logging.Log
@@ -53,7 +45,7 @@ class LogTest extends GroovyTestCase {
         }
     }
 
-    public void testPrivateFinalStaticNamedLogFieldAppears() {
+    void testPrivateFinalStaticNamedLogFieldAppears() {
 
         Class clazz = new GroovyClassLoader().parseClass("""
           @groovy.util.logging.Log('logger')
@@ -69,7 +61,77 @@ class LogTest extends GroovyTestCase {
         }
     }
 
-    public void testClassAlreadyHasLogField() {
+    void testExplicitPrivateFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PRIVATE)
+            @groovy.util.logging.Log
+            class MyClass {
+            } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testPackagePrivateFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PACKAGE_PRIVATE)
+            @groovy.util.logging.Log
+            class MyClass {
+            } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    !Modifier.isPrivate(field.getModifiers()) &&
+                    !Modifier.isProtected(field.getModifiers()) &&
+                    !Modifier.isPublic(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testProtectedFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PROTECTED)
+            @groovy.util.logging.Log
+            class MyClass {
+            } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isProtected(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testPublicFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PUBLIC)
+            @groovy.util.logging.Log
+            class MyClass {
+            } ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isPublic(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testClassAlreadyHasLogField() {
 
         shouldFail {
 
@@ -83,7 +145,7 @@ class LogTest extends GroovyTestCase {
         }
     }
 
-    public void testClassAlreadyHasNamedLogField() {
+    void testClassAlreadyHasNamedLogField() {
 
         shouldFail {
 
@@ -116,7 +178,7 @@ class LogTest extends GroovyTestCase {
         assert logSpy.infoParameter == 'info    called'
     }
 
-    public void testLogInfo() {
+    void testLogInfo() {
 
         Class clazz = new GroovyClassLoader().parseClass("""
           @groovy.util.logging.Log
@@ -148,7 +210,7 @@ class LogTest extends GroovyTestCase {
         assert logSpy.finestParameter == 'finest  called'
     }
 
-    public void testLogInfoWithName() {
+    void testLogInfoWithName() {
 
         Class clazz = new GroovyClassLoader().parseClass("""
           @groovy.util.logging.Log('logger')
@@ -180,7 +242,7 @@ class LogTest extends GroovyTestCase {
         assert logSpy.finestParameter == 'finest  called'
     }
 
-    public void testLogGuard() {
+    void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass("""
                @groovy.util.logging.Log
                class MyClass {
@@ -216,7 +278,7 @@ class LogTest extends GroovyTestCase {
         assert !logSpy.finestParameter
     }
 
-    public void testInheritance() {
+    void testInheritance() {
 
         def clazz = new GroovyShell().evaluate("""
             class MyParent {
@@ -251,7 +313,7 @@ class LogTest extends GroovyTestCase {
         }
     }
 
-    public void testInheritance_ProtectedShadowing() {
+    void testInheritance_ProtectedShadowing() {
 
         shouldFail(MultipleCompilationErrorsException) {
             new GroovyClassLoader().parseClass("""
@@ -265,7 +327,7 @@ class LogTest extends GroovyTestCase {
         }
     }
 
-    public void testInheritance_PublicShadowing() {
+    void testInheritance_PublicShadowing() {
 
         shouldFail(MultipleCompilationErrorsException) {
             new GroovyClassLoader().parseClass("""
@@ -279,7 +341,7 @@ class LogTest extends GroovyTestCase {
         }
     }
 
-    public void testDefaultCategory() {
+    void testDefaultCategory() {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log
             class MyClass {
@@ -294,7 +356,7 @@ class LogTest extends GroovyTestCase {
         assert logFormatterSpy.messageReceived
     }
 
-    public void testCustomCategory() {
+    void testCustomCategory() {
         String categoryName = 'customCategory'
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log(category='$categoryName')
@@ -320,7 +382,8 @@ class LogTest extends GroovyTestCase {
     }
 }
 
-@groovy.transform.PackageScope class LoggerSpy extends Logger {
+@groovy.transform.PackageScope
+class LoggerSpy extends Logger {
 
     String severeParameter = null
     String warningParameter = null
@@ -375,7 +438,7 @@ class LogFormatterSpy extends Formatter {
     boolean messageReceived = false
 
     @Override
-    public String format(LogRecord record) {
+    String format(LogRecord record) {
         messageReceived = true
         return record.message
     }

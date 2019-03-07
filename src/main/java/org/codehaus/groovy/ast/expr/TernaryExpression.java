@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * Represents a ternary expression (booleanExpression) ? expression : expression
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class TernaryExpression extends Expression {
 

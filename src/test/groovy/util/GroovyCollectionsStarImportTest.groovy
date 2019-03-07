@@ -22,10 +22,8 @@ import static groovy.util.GroovyCollections.*
 
 /**
 * Tests GroovyCollections
-*
-* @author Paul King
 */
-public class GroovyCollectionsStarImportTest extends GroovyTestCase {
+class GroovyCollectionsStarImportTest extends GroovyTestCase {
 
     void testCombinations() {
         // use Sets because we don't care about order

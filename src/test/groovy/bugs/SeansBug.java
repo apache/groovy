@@ -21,9 +21,6 @@ package groovy.bugs;
 import groovy.lang.GroovyShell;
 import org.codehaus.groovy.classgen.TestSupport;
 
-/**
- * @author Sean Timm
- */
 public class SeansBug extends TestSupport {
 
     public void testBug() throws Exception {

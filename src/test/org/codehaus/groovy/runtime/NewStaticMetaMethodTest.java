@@ -24,9 +24,6 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
 import java.lang.reflect.Method;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class NewStaticMetaMethodTest extends TestCase {
 
     public void testInvokeMetaMethod() throws Exception {

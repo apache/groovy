@@ -20,10 +20,6 @@ package groovy.ui
 
 import junit.framework.TestCase
 
-/*
- * @author Sergii Bondarenko
- * @author Pascal Schumacher
- */
 class HistoryRecordGetTextToRunTests extends TestCase {
      
     void testImport() {

@@ -96,7 +96,6 @@ import java.lang.annotation.Target;
  * assert 'Hubert' == indexedGroup.members[1]
  * </pre>
  *
- * @author Paul King
  * @since 1.7.3
  */
 @java.lang.annotation.Documented

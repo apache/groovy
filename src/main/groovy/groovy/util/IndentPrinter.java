@@ -57,8 +57,6 @@ import java.io.Writer;
  *   child 2
  * parent2
  * </pre>
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class IndentPrinter {
 

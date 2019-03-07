@@ -21,6 +21,7 @@ package org.apache.groovy.parser.antlr4;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
@@ -34,12 +35,14 @@ import java.io.Reader;
 
 /**
  * A parser plugin for the new parser
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/08/14
  */
 public class Antlr4ParserPlugin implements ParserPlugin {
     private ReaderSource readerSource;
+    private CompilerConfiguration compilerConfiguration;
+
+    public Antlr4ParserPlugin(CompilerConfiguration compilerConfiguration) {
+        this.compilerConfiguration = compilerConfiguration;
+    }
 
     @Override
     public Reduction parseCST(SourceUnit sourceUnit, java.io.Reader reader) throws CompilationFailedException {
@@ -70,7 +73,7 @@ public class Antlr4ParserPlugin implements ParserPlugin {
             sourceUnit.setSource(this.readerSource);
         }
 
-        AstBuilder builder = new AstBuilder(sourceUnit);
+        AstBuilder builder = new AstBuilder(sourceUnit, compilerConfiguration);
 
         return builder.buildAST();
     }

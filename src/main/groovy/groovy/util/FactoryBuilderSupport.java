@@ -56,10 +56,6 @@ import static org.apache.groovy.util.BeanUtils.capitalize;
  * across threads in a multi-threaded environment.  A locking mechanism
  * should be implemented by the subclass if use is expected across
  * multiple threads.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="mailto:aalmiray@users.sourceforge.com">Andres Almiray</a>
- * @author Danno Ferrin
  */
 public abstract class FactoryBuilderSupport extends Binding {
     public static final String CURRENT_FACTORY = "_CURRENT_FACTORY_";

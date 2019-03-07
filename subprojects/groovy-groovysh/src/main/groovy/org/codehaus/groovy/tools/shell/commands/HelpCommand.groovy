@@ -26,8 +26,6 @@ import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
 
 /**
  * The 'help' command.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HelpCommand
     extends CommandSupport

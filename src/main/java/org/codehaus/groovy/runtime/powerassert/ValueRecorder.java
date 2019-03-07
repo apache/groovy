@@ -24,8 +24,6 @@ import java.util.List;
 /**
  * Records values produced during evaluation of an assertion statement's truth
  * expression.
- *
- * @author Peter Niederwieser
  */
 public class ValueRecorder {
     private final List<Value> values = new ArrayList<Value>();

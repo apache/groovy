@@ -22,8 +22,6 @@ import groovy.transform.stc.ReturnsSTCTest
 
 /**
  * Unit tests for static type checking : returns.
- *
- * @author Cedric Champeau
  */
 class ReturnsStaticCompileTest extends ReturnsSTCTest implements StaticCompilationTestSupport {
 

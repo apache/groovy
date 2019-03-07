@@ -24,10 +24,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.lang.reflect.Method;
 import java.util.List;
 
-/**
- * @author John Wilson
- */
-
 public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyObject {
     protected MetaClass delegate;
 

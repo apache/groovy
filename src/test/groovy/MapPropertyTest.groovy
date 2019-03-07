@@ -18,22 +18,19 @@
  */
 package groovy
 
-/** 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 class MapPropertyTest extends GroovyTestCase {
 
     void testGetAndSetProperties() {
-        def m = [ 'name' : 'James', 'location' : 'London', 'id':1 ]
-        
+        def m = ['name': 'James', 'location': 'London', 'id': 1]
+
         assert m.name == 'James'
         assert m.location == 'London'
         assert m.id == 1
-        
+
         m.name = 'Bob'
         m.location = 'Atlanta'
         m.id = 2
-        
+
         assert m.name == 'Bob'
         assert m.location == 'Atlanta'
         assert m.id == 2
@@ -41,16 +38,16 @@ class MapPropertyTest extends GroovyTestCase {
 
     void testSetupAndEmptyMap() {
         def m = [:]
-        
+
         m.name = 'Bob'
         m.location = 'Atlanta'
         m.id = 2
-        
+
         assert m.name == 'Bob'
         assert m.location == 'Atlanta'
         assert m.id == 2
     }
-    
+
     void testMapSubclassing() {
         def c = new MyClass()
 
@@ -64,7 +61,7 @@ class MapPropertyTest extends GroovyTestCase {
 
     // GROOVY-5985
     void testMapPutAtWithKeyMatchingReadOnlyProperty() {
-        def map = [serialVersionUID:123]
+        def map = [serialVersionUID: 123]
         assert map["serialVersionUID"] == 123
         assert map.serialVersionUID == 123
 

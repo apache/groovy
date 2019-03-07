@@ -608,6 +608,10 @@ public class GeneralUtils {
         return new BooleanExpression(new BinaryExpression(objectExpression, INSTANCEOF, classX(cNode)));
     }
 
+    public static BooleanExpression isNullX(Expression expr) {
+        return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(null)));
+    }
+
     public static BooleanExpression isOneX(Expression expr) {
         return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(1)));
     }
@@ -646,6 +650,12 @@ public class GeneralUtils {
 
     public static VariableExpression localVarX(String name) {
         VariableExpression result = new VariableExpression(name);
+        result.setAccessedVariable(result);
+        return result;
+    }
+
+    public static VariableExpression localVarX(String name, ClassNode type) {
+        VariableExpression result = new VariableExpression(name, type);
         result.setAccessedVariable(result);
         return result;
     }

@@ -37,8 +37,6 @@ import java.sql.ResultSet;
  * This way it is possible to replace and add methods. To overload methods
  * from ResultSet all methods have to be implemented on the extension
  * class.
- *
- * @author Jochen Theodorou
  */
 public final class GroovyResultSetProxy implements InvocationHandler {
 

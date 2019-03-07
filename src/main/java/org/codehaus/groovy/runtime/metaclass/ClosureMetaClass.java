@@ -67,7 +67,6 @@ import java.util.Map;
  * <p>
  * This MetaClass is for internal usage only!
  *
- * @author Jochen Theodorou
  * @since 1.5
  */
 public final class ClosureMetaClass extends MetaClassImpl {

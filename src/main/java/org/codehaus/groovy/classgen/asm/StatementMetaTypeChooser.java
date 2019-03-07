@@ -28,9 +28,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 
 /**
  * A {@link TypeChooser} which is aware of statement metadata.
- *
- * @author Jochen Theodorou
- * @author Cedric Champeau
  */
 public class StatementMetaTypeChooser implements TypeChooser {
     public ClassNode resolveType(final Expression exp, final ClassNode current) {

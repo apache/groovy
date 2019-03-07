@@ -74,7 +74,7 @@ public class BenchmarkInterceptor implements Interceptor {
      */
     public Object beforeInvoke(Object object, String methodName, Object[] arguments) {
         if (!calls.containsKey(methodName)) calls.put(methodName, new LinkedList());
-        ((List) calls.get(methodName)).add(Long.valueOf(System.currentTimeMillis()));
+        ((List) calls.get(methodName)).add(System.currentTimeMillis());
 
         return null;
     }
@@ -87,7 +87,7 @@ public class BenchmarkInterceptor implements Interceptor {
      * @return result
      */
     public Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
-        ((List) calls.get(methodName)).add(Long.valueOf(System.currentTimeMillis()));
+        ((List) calls.get(methodName)).add(System.currentTimeMillis());
         return result;
     }
 
@@ -112,14 +112,14 @@ public class BenchmarkInterceptor implements Interceptor {
             result.add(line);
             line[0] = iter.next();
             List times = (List) calls.get(line[0]);
-            line[1] = Integer.valueOf(times.size() / 2);
+            line[1] = times.size() / 2;
             int accTime = 0;
             for (Iterator it = times.iterator(); it.hasNext();) {
                 Long start = (Long) it.next();
                 Long end = (Long) it.next();
-                accTime += end.longValue() - start.longValue();
+                accTime += end - start;
             }
-            line[2] = Long.valueOf(accTime);
+            line[2] = (long) accTime;
         }
         return result;
     }

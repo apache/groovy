@@ -19,9 +19,7 @@
 package groovy.bugs
 
 /**
- *
  * Fix Bug GROOVY-683
- * @author Pilho Kim
  */
 class PrimitivePropertyBug extends GroovyTestCase {
      

@@ -18,12 +18,8 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.ast.ASTNode
-
 /**
  * Unit tests for static type checking : fields and properties.
- *
- * @author Cedric Champeau
  */
 class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
@@ -580,7 +576,7 @@ new FooWorker().doSomething()''', 'Cannot assign value of type java.util.ArrayLi
         '''
     }
 
-    public void testPropertyWithMultipleSetters() {
+    void testPropertyWithMultipleSetters() {
         assertScript '''import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.stmt.AssertStatement
@@ -813,15 +809,15 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
         '''
     }
 
-    public static interface InterfaceWithField {
+    static interface InterfaceWithField {
         String boo = "I don't fancy fields in interfaces"
     }
 
-    public static class BaseClass {
+    static class BaseClass {
         int x
     }
 
-    public static class BaseClass2 extends BaseClass {
+    static class BaseClass2 extends BaseClass {
     }
 }
 

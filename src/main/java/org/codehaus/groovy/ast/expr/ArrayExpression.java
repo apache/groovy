@@ -27,8 +27,6 @@ import java.util.List;
 /**
  * Represents an array object construction either using a fixed size
  * or an initializer expression
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ArrayExpression extends Expression {
     private final List<Expression> expressions;

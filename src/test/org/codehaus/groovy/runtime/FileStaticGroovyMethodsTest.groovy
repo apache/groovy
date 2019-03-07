@@ -20,9 +20,6 @@ package org.codehaus.groovy.runtime
 
 /**
  * Test case for File class extension methods.
- *
- * @author dgouyette
- * @author Cedric Champeau
  */
 class FileStaticGroovyMethodsTest extends GroovyTestCase {
     void testCreateTempDirectory() {

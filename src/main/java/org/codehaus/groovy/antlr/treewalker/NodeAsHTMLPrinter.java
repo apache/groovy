@@ -26,10 +26,7 @@ import java.util.Stack;
 
 /**
  * A visitor that prints a html tags of each node to the supplied PrintStream
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
-
 public class NodeAsHTMLPrinter extends VisitorAdapter {
     private final String[] tokenNames;
     private final PrintStream out;

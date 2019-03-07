@@ -20,8 +20,6 @@ package groovy.mock.interceptor
 
 /**
  * Intercepting calls to the collaborating object and notify the expectation object.
- *
- * @author Dierk Koenig
  */
 
 class MockInterceptor implements PropertyAccessInterceptor {

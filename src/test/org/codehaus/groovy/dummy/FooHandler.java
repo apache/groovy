@@ -20,9 +20,6 @@ package org.codehaus.groovy.dummy;
 
 import java.io.Reader;
 
-/**
- * @author Robert Fuller
- */
 public interface FooHandler {
     void handle(Reader reader);
 }

@@ -37,7 +37,7 @@ import java.lang.annotation.Target
  * isInterruptedCheck and throw a InterruptedException if the check yields true. The annotation by default
  * will apply to any classes defined in the script as well. Annotated a class will cause (by default) all classes
  * in the entire file ('Compilation Unit') to be enhanced. You can fine tune what is enhanced using the annotation
- * parameters. 
+ * parameters.
  * <p>
  * The following is sample usage of the annotation:
  *
@@ -100,9 +100,6 @@ import java.lang.annotation.Target
  *
  * @see TimedInterrupt
  * @see ConditionalInterrupt
- * @author Cedric Champeau
- * @author Hamlet D'Arcy
- * @author Paul King
  * @since 1.8.0
  */
 @Documented
@@ -110,39 +107,39 @@ import java.lang.annotation.Target
 @Target([ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
 @GroovyASTTransformationClass(["org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation"])
 @interface ThreadInterrupt {
-  /**
-   * Set this to false if you have multiple classes within one source file and only
-   * want isInterrupted checks on some of the classes. Place annotations on the classes
-   * you want enhanced. Set to true (the default) for blanket coverage of isInterrupted
-   * checks on all methods, loops and closures within all classes/script code.
-   *
-   * For even finer-grained control see {@code applyToAllMembers}.
-   *
-   * @see #applyToAllMembers()
-   */
-  boolean applyToAllClasses() default true
+    /**
+     * Set this to false if you have multiple classes within one source file and only
+     * want isInterrupted checks on some of the classes. Place annotations on the classes
+     * you want enhanced. Set to true (the default) for blanket coverage of isInterrupted
+     * checks on all methods, loops and closures within all classes/script code.
+     *
+     * For even finer-grained control see {@code applyToAllMembers}.
+     *
+     * @see #applyToAllMembers()
+     */
+    boolean applyToAllClasses() default true
 
-  /**
-   * Set this to false if you have multiple methods/closures within a class or script and only
-   * want isInterrupted checks on some of them. Place annotations on the methods/closures that
-   * you want enhanced. When false, {@code applyToAllClasses} is automatically set to false.
-   *
-   * Set to true (the default) for blanket coverage of isInterrupted checks on all methods, loops
-   * and closures within the class/script.
-   *
-   * @since 2.2.0
-   * @see #applyToAllClasses()
-   */
-  boolean applyToAllMembers() default true
+    /**
+     * Set this to false if you have multiple methods/closures within a class or script and only
+     * want isInterrupted checks on some of them. Place annotations on the methods/closures that
+     * you want enhanced. When false, {@code applyToAllClasses} is automatically set to false.
+     *
+     * Set to true (the default) for blanket coverage of isInterrupted checks on all methods, loops
+     * and closures within the class/script.
+     *
+     * @since 2.2.0
+     * @see #applyToAllClasses()
+     */
+    boolean applyToAllMembers() default true
 
-  /**
-   * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
-   * set this parameter to false.
-   */
-  boolean checkOnMethodStart() default true
+    /**
+     * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
+     * set this parameter to false.
+     */
+    boolean checkOnMethodStart() default true
 
-  /**
-   * Sets the type of exception which is thrown.
-   */
-  Class thrown() default InterruptedException
+    /**
+     * Sets the type of exception which is thrown.
+     */
+    Class thrown() default InterruptedException
 }

@@ -25,8 +25,6 @@ package groovy.lang;
  * method, the TrampolineClosure will again be invoked. This repetitive invocation of returned TrampolineClosure instances will continue
  * until a value other than TrampolineClosure is returned.
  * That value will become the final result of the trampoline.
- *
- * @author Vaclav Pech
  */
 final class TrampolineClosure<V> extends Closure<V> {
 

@@ -35,7 +35,6 @@ import java.util.List;
  * A {@link ClassNode} kind representing the classes coming from *.class files decompiled using ASM.
  *
  * @see AsmDecompiler
- * @author Peter Gromov
  */
 public class DecompiledClassNode extends ClassNode {
     private final ClassStub classData;

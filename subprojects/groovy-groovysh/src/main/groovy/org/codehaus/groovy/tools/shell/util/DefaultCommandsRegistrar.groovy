@@ -45,8 +45,6 @@ import org.codehaus.groovy.tools.shell.commands.ShowCommand
  *  <command>org.codehaus.groovy.tools.shell.commands.HelpCommand</command>
  * ...
  * </commands>
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class DefaultCommandsRegistrar
 {

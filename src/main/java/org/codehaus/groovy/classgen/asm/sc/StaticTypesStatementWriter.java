@@ -60,7 +60,6 @@ import static org.objectweb.asm.Opcodes.SALOAD;
 
 /**
  * A class to write out the optimized statements
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class StaticTypesStatementWriter extends StatementWriter {
 

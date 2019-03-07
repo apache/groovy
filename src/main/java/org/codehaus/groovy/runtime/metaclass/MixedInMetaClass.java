@@ -25,10 +25,6 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 
 import java.lang.ref.WeakReference;
 
-/**
- * @author Alex Tkachman
- *
- */
 public class MixedInMetaClass extends OwnedMetaClass {
     private final WeakReference owner;
 

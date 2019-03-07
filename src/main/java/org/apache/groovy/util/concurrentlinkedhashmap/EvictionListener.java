@@ -31,7 +31,6 @@ import javax.annotation.concurrent.ThreadSafe;
  * performing the operation asynchronously, such as by submitting a task to an
  * {@link java.util.concurrent.ExecutorService}.
  *
- * @author ben.manes@gmail.com (Ben Manes)
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
  */

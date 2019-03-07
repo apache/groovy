@@ -23,10 +23,6 @@ import java.lang.reflect.Modifier
 
 /**
  * Unit test for the commons logging @Log based annotation.
- *
- * @author Hamlet D'Arcy
- * @author Matthias Cullmann
- * 
  */
 class CommonsTest extends GroovyTestCase {
 
@@ -54,6 +50,80 @@ class CommonsTest extends GroovyTestCase {
         assert clazz.declaredFields.find { Field field ->
             field.name == "log" &&
                     Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testExplicitPrivateFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PRIVATE)
+            @groovy.util.logging.Commons
+            class MyClass {
+            }
+        ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isPrivate(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testPackagePrivateFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PACKAGE_PRIVATE)
+            @groovy.util.logging.Commons
+            class MyClass {
+            }
+        ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    !Modifier.isPrivate(field.getModifiers()) &&
+                    !Modifier.isProtected(field.getModifiers()) &&
+                    !Modifier.isPublic(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testProtectedFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PROTECTED)
+            @groovy.util.logging.Commons
+            class MyClass {
+            }
+        ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isProtected(field.getModifiers()) &&
+                    Modifier.isStatic(field.getModifiers()) &&
+                    Modifier.isTransient(field.getModifiers()) &&
+                    Modifier.isFinal(field.getModifiers())
+        }
+    }
+
+    void testPublicFinalStaticLogFieldAppears() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            import static groovy.transform.options.Visibility.*
+            @groovy.transform.VisibilityOptions(value = PUBLIC)
+            @groovy.util.logging.Commons
+            class MyClass {
+            }
+        ''')
+
+        assert clazz.declaredFields.find { Field field ->
+            field.name == "log" &&
+                    Modifier.isPublic(field.getModifiers()) &&
                     Modifier.isStatic(field.getModifiers()) &&
                     Modifier.isTransient(field.getModifiers()) &&
                     Modifier.isFinal(field.getModifiers())
@@ -114,7 +184,7 @@ class CommonsTest extends GroovyTestCase {
             new MyClass().loggingMethod() ''')
 
         clazz.newInstance().run()
-        
+
         String log = redirectedSystemOut.toString()
         assert log.contains("error called")
         assert log.contains("warn called")
@@ -133,7 +203,7 @@ class CommonsTest extends GroovyTestCase {
             MyClass.loggingMethod()""")
 
         clazz.newInstance().run()
-        
+
         String log = redirectedSystemOut.toString()
         assert log.contains("(static) info called")
     }
@@ -153,7 +223,7 @@ class CommonsTest extends GroovyTestCase {
             new MyClass().loggingMethod() ''')
 
         clazz.newInstance().run()
-        
+
         String log = redirectedSystemOut.toString()
         assert log.contains("error called")
         assert log.contains("warn called")

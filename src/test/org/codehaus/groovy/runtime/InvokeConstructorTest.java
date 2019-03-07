@@ -23,8 +23,6 @@ import groovy.util.GroovyTestCase;
 
 /**
  * Tests method invocation
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class InvokeConstructorTest extends GroovyTestCase {
 

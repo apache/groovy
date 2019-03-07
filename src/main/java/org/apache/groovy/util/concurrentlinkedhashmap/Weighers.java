@@ -27,7 +27,6 @@ import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHas
 /**
  * A common set of {@link Weigher} and {@link EntryWeigher} implementations.
  *
- * @author ben.manes@gmail.com (Ben Manes)
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
  */

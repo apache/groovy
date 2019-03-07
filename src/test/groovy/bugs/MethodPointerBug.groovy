@@ -18,16 +18,13 @@
  */
 package groovy.bugs
 
-/**
- * @author Pilho Kim
- */
 class MethodPointerBug extends GroovyTestCase {
 
-    def void sayHello() { 
+    void sayHello() {
         println "hello" 
     } 
 
-    def MethodPointerBug getThisObject() { 
+    MethodPointerBug getThisObject() {
         return this
     } 
 
@@ -44,7 +41,6 @@ class MethodPointerBug extends GroovyTestCase {
         y()
     } 
 
-    ///////////////////////////////////////////////////////////////////////////////////////////
     // Test a default method pointer operator "&" with this object.  For example, &bar.
     // This shows that the issue GROOVY-826 has been fixed in groovy-1.0-jar-02.
 /*
@@ -54,6 +50,7 @@ class MethodPointerBug extends GroovyTestCase {
         z()
     } 
 */
+
     // Test a default method pointer operator ".&" with returned object.  For example, someMethod().&bar.
     void testMethodPointerWithReturn() {
         def u = getThisObject().&sayHello

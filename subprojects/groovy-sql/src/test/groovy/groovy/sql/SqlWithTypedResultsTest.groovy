@@ -18,10 +18,6 @@
  */
 package groovy.sql
 
-/**
- * @author Thomas Heller
- * @author Paul King
- */
 class SqlWithTypedResultsTest extends SqlHelperTestCase {
 
     void testSqlQuery() {

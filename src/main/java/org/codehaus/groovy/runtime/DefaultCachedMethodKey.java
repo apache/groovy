@@ -23,8 +23,6 @@ import org.codehaus.groovy.reflection.CachedClass;
 
 /**
  * A default implementation of MethodKey
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class DefaultCachedMethodKey extends MethodKey{
 

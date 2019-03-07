@@ -26,8 +26,6 @@ import java.util.Map;
 
 /**
  * Lazy evaluated representation of a node's attributes filtered by a Closure.
- *
- * @author John Wilson
  */
 public class FilteredAttributes extends Attributes
 {

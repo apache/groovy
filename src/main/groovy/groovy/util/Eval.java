@@ -34,7 +34,6 @@ import org.codehaus.groovy.control.CompilationFailedException;
  * </pre>
  * 
  * @see GroovyShell
- * @author Dierk Koenig
  */
 
 public class Eval {

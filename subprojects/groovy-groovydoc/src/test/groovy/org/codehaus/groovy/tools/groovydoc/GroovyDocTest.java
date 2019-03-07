@@ -27,9 +27,6 @@ import java.io.FilenameFilter;
 import java.nio.charset.Charset;
 import java.util.List;
 
-/**
- * @author Andre Steingress
- */
 public class GroovyDocTest extends BuildFileTest {
 
     private static final String SRC_TESTFILES;

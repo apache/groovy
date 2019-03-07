@@ -58,8 +58,6 @@ import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 /**
  * This Writer is used to generate the call invocation byte codes
  * for usage by invokedynamic.
- * 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class InvokeDynamicWriter extends InvocationWriter {
     

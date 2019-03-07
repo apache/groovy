@@ -27,9 +27,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-/**
- * @author Paul King
- */
 public class ClassCompletionVerifierTest extends TestSupport {
     private SourceUnit source;
     private ClassCompletionVerifier verifier;

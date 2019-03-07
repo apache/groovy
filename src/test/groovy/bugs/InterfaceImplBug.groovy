@@ -18,19 +18,15 @@
  */
 package groovy.bugs
 
-import java.io.Reader
 import org.codehaus.groovy.dummy.FooHandler
 
-/**
- * @author Robert Fuller
- */
 class InterfaceImplBug extends GroovyTestCase implements FooHandler {
 
     void testMethodCall() {
         handle(null)
     }
-    
-    void handle(Reader reader){
+
+    void handle(Reader reader) {
         def called = true
     }
 }

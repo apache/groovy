@@ -29,7 +29,7 @@ Consider this usage of the composite pattern where we want to call `toString()` 
 
 image::assets/img/CompositeClasses.gif[]
 
-In Java, the `Component` class is essential as it provides the type used for both leaf and composite nodes. In Groovy, because of duck-typing, we don't need it for that purpose, however, it can still server as a useful place to place common behaviour between the leaf and composite nodes.
+In Java, the `Component` class is essential as it provides the type used for both leaf and composite nodes. In Groovy, because of duck-typing, we don't need it for that purpose, however, it can still serve as a useful place to place common behaviour between the leaf and composite nodes.
 
 For our purposes, we will assemble the following hierarchy of components.
 

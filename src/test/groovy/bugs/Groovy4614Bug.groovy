@@ -20,9 +20,6 @@ package groovy.bugs
 
 import gls.CompilableTestSupport
 
-/**
- * @author Guillaume Laforge
- */
 class Groovy4614Bug extends CompilableTestSupport {
 
     void testStaticOnOuterClassForbidden() {

@@ -22,8 +22,6 @@ import groovy.transform.stc.StaticTypeCheckingTestCase
 
 /**
  * Unit tests for static type checking : method calls.
- *
- * @author Cedric Champeau
  */
 class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5525

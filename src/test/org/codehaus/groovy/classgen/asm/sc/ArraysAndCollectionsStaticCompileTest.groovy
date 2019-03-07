@@ -22,8 +22,6 @@ import groovy.transform.stc.ArraysAndCollectionsSTCTest
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
- *
- * @author Cedric Champeau
  */
 class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest implements StaticCompilationTestSupport {
 

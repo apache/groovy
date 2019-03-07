@@ -78,8 +78,6 @@ import java.lang.annotation.Annotation
  * your transformation selectively. It can also be useful to debug global AST transformations without having to
  * package your annotation in a jar file.
  *
- * @author Cedric Champeau
- *
  * @since 1.8.0
  * 
  */

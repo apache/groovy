@@ -18,10 +18,8 @@
  */
 package groovy
 
-/** 
+/**
  * Tests the use of returns in Groovy
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 class ReturnTest extends GroovyTestCase {
     void testIntegerReturnValues() {
@@ -35,13 +33,13 @@ class ReturnTest extends GroovyTestCase {
     }
 
     def foo(x) {
-        return ( x * 2 )
+        return (x * 2)
     }
 
     def bar(x) {
         return x > 5
     }
-    
+
     void testVoidReturn() {
         explicitVoidReturn()
         implicitVoidReturn()
@@ -58,13 +56,13 @@ class ReturnTest extends GroovyTestCase {
     }
 
     void explicitVoidReturnWithoutFinalReturn() {
-        def x = 4;
+        def x = 4
         if (x == 3) {
-            return;
+            return
         } else {
             try {
-                x = 3;
-                return;
+                x = 3
+                return
             } finally {
                 //do nothing
             }
@@ -72,16 +70,16 @@ class ReturnTest extends GroovyTestCase {
     }
 
     def implicitVoidReturnWithoutFinalReturn() {
-        def x = 4;
+        def x = 4
         if (x == 3) {
-            return;
+            return
         } else {
             try {
-                x = 3;
-                return;
+                x = 3
+                return
             } finally {
                 //do nothing
             }
         }
-    } 
+    }
 }

@@ -22,8 +22,6 @@ import groovy.transform.stc.ClosureParamTypeInferenceSTCTest
 
 /**
  * Unit tests for static compilation: closure parameter type inference.
- *
- * @author Cedric Champeau
  */
 class ClosureParamTypeInferenceStaticCompileTest extends ClosureParamTypeInferenceSTCTest  implements StaticCompilationTestSupport { }
 

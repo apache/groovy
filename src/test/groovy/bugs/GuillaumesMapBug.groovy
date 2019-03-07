@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @author Guillaume Laforge
- */
 class GuillaumesMapBug extends GroovyTestCase {
     
     void testBug2() {

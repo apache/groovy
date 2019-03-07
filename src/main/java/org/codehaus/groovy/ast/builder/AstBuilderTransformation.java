@@ -47,10 +47,7 @@ import java.util.List;
  * closure source must be given a goto label. It is the "from string"
  * approach's responsibility to remove the BlockStatement created
  * by the label.
- *
- * @author Hamlet D'Arcy
  */
-
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class AstBuilderTransformation extends MethodCallTransformation {
 

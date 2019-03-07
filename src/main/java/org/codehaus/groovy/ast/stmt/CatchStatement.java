@@ -25,8 +25,6 @@ import org.codehaus.groovy.ast.Parameter;
 
 /**
  * Represents a catch (Exception var) { } statement
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class CatchStatement extends Statement {
 

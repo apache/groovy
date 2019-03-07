@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Checks that multiline Strings correctly appear within stubs.
- *
- * @author Paul King
  */
 class MultilineStringStubTest extends StringSourcesStubTestCase {
 

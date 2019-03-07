@@ -24,8 +24,6 @@ import groovy.lang.GroovyObject;
  * A helper class for testing bugs in code generation errors. By turning on the
  * logging in TestSupport we can dump the ASM code generation code for inner
  * classes etc.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class RunBugsTest extends TestSupport {
 

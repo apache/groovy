@@ -18,8 +18,6 @@
  */
 /**
  * Represents a plain text node for use in the AST tree made by ASTBrowser 
- * 
- * @author Roshan Dawrani
  */
 package groovy.inspect
 

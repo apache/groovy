@@ -24,8 +24,6 @@ import java.util.List;
 /**
  * This works in index overlay mode or chop mode.
  * Chop mode reduces possibility of memory leak but causes a few more buffer copies as it chops up the buffer.
- *
- * @author Rick Hightower
  */
 public class JsonFastParser extends JsonParserCharArray {
 

@@ -24,8 +24,6 @@ import java.lang.reflect.Modifier;
 /**
  * An exception occurred if a dynamic property dispatch fails with a 
  * field not accessible.
- * 
- * @author <a href="mailto:blackdrag@uni.de">Jochen Theodorou</a>
  */
 public class IllegalPropertyAccessException extends MissingPropertyException {
 

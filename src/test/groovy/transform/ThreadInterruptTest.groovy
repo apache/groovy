@@ -26,8 +26,6 @@ import java.lang.reflect.Modifier
 
 /**
  * Test for @ThreadInterrupt.
- *
- * @author Hamlet D'Arcy
  */
 class ThreadInterruptTest extends GroovyTestCase {
     private Map<String,MethodNode> oldValues = [:]

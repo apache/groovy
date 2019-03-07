@@ -25,8 +25,6 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'history' command.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HistoryCommand
     extends ComplexCommandSupport

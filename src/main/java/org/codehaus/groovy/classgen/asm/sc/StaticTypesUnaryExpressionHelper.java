@@ -46,8 +46,6 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 /**
  * An unary expression helper which generates optimized bytecode depending on
  * the current type on top of the operand stack.
- *
- * @author Cedric Champeau
  */
 public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper implements Opcodes {
     private static final UnaryMinusExpression EMPTY_UNARY_MINUS = new UnaryMinusExpression(EmptyExpression.INSTANCE);

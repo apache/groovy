@@ -20,11 +20,8 @@ package groovy.bugs
 
 /**
  * Test to fix the issue GROOVY-843.
- *
- * @author Pilho Kim
  */
-
-public class PropertyNameBug extends GroovyTestCase {
+class PropertyNameBug extends GroovyTestCase {
     void testNonJavaIdentifierChacactersWithJavaSyntax() {
         Map map = new HashMap()
         map.put("foo.bar", "FooBar")
@@ -39,5 +36,3 @@ public class PropertyNameBug extends GroovyTestCase {
         map."foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!" = "Any character"
     }
 }
-
-

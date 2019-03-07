@@ -42,15 +42,13 @@ import org.objectweb.asm.Opcodes;
 import java.util.Collections;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Token.newSymbol;
 
 /**
  * Transform try-with-resources to try-catch-finally
  * Reference JLS "14.20.3. try-with-resources"(https://docs.oracle.com/javase/specs/jls/se7/html/jls-14.html)
- *
- * @author <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- *         Created on 2016/11/04
  */
 public class TryWithResourcesASTTransformation {
     private AstBuilder astBuilder;
@@ -200,10 +198,11 @@ public class TryWithResourcesASTTransformation {
 
         // Throwable #primaryExc = null;
         String primaryExcName = this.genPrimaryExcName();
+        VariableExpression primaryExcX = localVarX(primaryExcName, ClassHelper.make(Throwable.class));
         ExpressionStatement primaryExcDeclarationStatement =
                 new ExpressionStatement(
                         new DeclarationExpression(
-                                new VariableExpression(primaryExcName, ClassHelper.make(Throwable.class)),
+                                primaryExcX,
                                 newSymbol(Types.ASSIGN, -1, -1),
                                 new ConstantExpression(null)
                         )

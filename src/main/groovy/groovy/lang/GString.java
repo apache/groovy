@@ -34,11 +34,10 @@ import java.util.regex.Pattern;
  * ${user} how are you?" which can be evaluated lazily. Advanced users can
  * iterate over the text and values to perform special processing, such as for
  * performing SQL operations, the values can be substituted for ? and the
- * actual value objects can be bound to a JDBC statement. The lovely name of
- * this class was suggested by Jules Gosnell and was such a good idea, I
- * couldn't resist :)
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * actual value objects can be bound to a JDBC statement.
+ * <p>
+ * James Strachan: The lovely name of this class was suggested by Jules Gosnell
+ * and was such a good idea, I couldn't resist :)
  */
 public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 
@@ -57,7 +56,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
         @Override
         public String[] getStrings() {
-            return new String[]{ "" };
+            return new String[]{""};
         }
     };
 
@@ -85,8 +84,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public Object invokeMethod(String name, Object args) {
         try {
             return super.invokeMethod(name, args);
-        }
-        catch (MissingMethodException e) {
+        } catch (MissingMethodException e) {
             // lets try invoke the method on the real String
             return InvokerHelper.invokeMethod(toString(), name, args);
         }
@@ -135,7 +133,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public GString plus(String that) {
-        return plus(new GStringImpl(EMPTY_OBJECT_ARRAY, new String[] { that }));
+        return plus(new GStringImpl(EMPTY_OBJECT_ARRAY, new String[]{that}));
     }
 
     public int getValueCount() {
@@ -151,8 +149,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         Writer buffer = new StringBuilderWriter(calcInitialCapacity());
         try {
             writeTo(buffer);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new StringWriterIOException(e);
         }
 
@@ -169,7 +166,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
         initialCapacity += values.length * Math.max(initialCapacity / strings.length, 8);
 
-        return Math.max((int) (initialCapacity  * 1.2), 16);
+        return Math.max((int) (initialCapacity * 1.2), 16);
     }
 
     @Override
@@ -212,10 +209,10 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
         for (int i = 0, size = s.length; i < size; i++) {
             builder.getProperty(MKP);
-            builder.invokeMethod(YIELD, new Object[]{ s[i] });
+            builder.invokeMethod(YIELD, new Object[]{s[i]});
             if (i < numberOfValues) {
                 builder.getProperty(MKP);
-                builder.invokeMethod(YIELD, new Object[]{ values[i] });
+                builder.invokeMethod(YIELD, new Object[]{values[i]});
             }
         }
     }
@@ -271,6 +268,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public byte[] getBytes(String charset) throws UnsupportedEncodingException {
-       return toString().getBytes(charset);
+        return toString().getBytes(charset);
     }
 }

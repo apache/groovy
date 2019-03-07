@@ -20,9 +20,6 @@ package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
-/**
- * @author sam
- */
 public class NotExpression extends BooleanExpression {
 
     public NotExpression(Expression expression) {

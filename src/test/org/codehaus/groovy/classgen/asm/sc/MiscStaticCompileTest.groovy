@@ -22,8 +22,6 @@ import groovy.transform.stc.MiscSTCTest
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
- *
- * @author Cedric Champeau
  */
 class MiscStaticCompileTest extends MiscSTCTest implements StaticCompilationTestSupport {
 

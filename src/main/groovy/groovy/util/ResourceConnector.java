@@ -22,8 +22,6 @@ import java.net.URLConnection;
 
 /**
  * Base interface for customizing where resources can be found for the <code>GroovyScriptEngine</code>.
- *
- * @author sam
  */
 public interface ResourceConnector {
 

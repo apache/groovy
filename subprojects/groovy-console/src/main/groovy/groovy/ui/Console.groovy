@@ -66,6 +66,7 @@ import javax.swing.event.HyperlinkEvent
 import javax.swing.event.HyperlinkListener
 import javax.swing.filechooser.FileFilter
 import javax.swing.text.AttributeSet
+import javax.swing.text.Document
 import javax.swing.text.Element
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.Style
@@ -152,6 +153,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     // Maximum number of characters to show on console at any time
     int maxOutputChars = System.getProperty('groovy.console.output.limit','20000') as int
+
+    // File to output stdout & stderr, in addition to console
+    PrintWriter outputPrintWriter = null
 
     // UI
     SwingBuilder swing
@@ -299,6 +303,30 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             consolePreferences = new ConsolePreferences(this)
         }
         consolePreferences.show()
+    }
+
+    void setOutputPreferences(boolean useOutputFile, File outputFile) {
+        if (!useOutputFile) {
+            closeOutputPrintWriter(outputFile)
+        } else {
+            if (outputFile != null) {
+                closeOutputPrintWriter()
+                createOutputPrintWriter(outputFile)
+            }
+        }
+    }
+
+    void createOutputPrintWriter(File outputFile) {
+        outputPrintWriter = new PrintWriter(new FileOutputStream(
+                outputFile,
+                true))
+    }
+
+    void closeOutputPrintWriter() {
+        if (outputPrintWriter != null) {
+            outputPrintWriter.close()
+            outputPrintWriter = null
+        }
     }
 
     Console() {
@@ -470,7 +498,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     // Ensure we don't have too much in console (takes too much memory)
     private ensureNoDocLengthOverflow(doc) {
         // if it is a case of stackOverFlowError, show the exception details from the front
-        // as there is no point in showing the repeating details at the back 
+        // as there is no point in showing the repeating details at the back
         int offset = stackOverFlowError ? maxOutputChars : 0
         if (doc.length > maxOutputChars) {
             doc.remove(offset, doc.length - maxOutputChars)
@@ -480,7 +508,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     // Append a string to the output area
     void appendOutput(String text, AttributeSet style){
         def doc = outputArea.styledDocument
-        doc.insertString(doc.length, text, style)
+        insertString(doc, doc.length, text, style)
         ensureNoDocLengthOverflow(doc)
     }
 
@@ -535,15 +563,25 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + fileNameAndLineNumber)
                 style.addAttribute(HTML.Tag.A, hrefAttr);
 
-                doc.insertString(initialLength,                     line[0..<index],                    stacktraceStyle)
-                doc.insertString(initialLength + index,             line[index..<(index + length)],     style)
-                doc.insertString(initialLength + index + length,    line[(index + length)..-1] + '\n',  stacktraceStyle)
+                insertString(doc, initialLength,                     line[0..<index],                    stacktraceStyle)
+                insertString(doc, initialLength + index,             line[index..<(index + length)],     style)
+                insertString(doc, initialLength + index + length,    line[(index + length)..-1] + '\n',  stacktraceStyle)
             } else {
-                doc.insertString(initialLength, line + '\n', stacktraceStyle)
+                insertString(doc, initialLength, line + '\n', stacktraceStyle)
             }
         }
 
         ensureNoDocLengthOverflow(doc)
+    }
+
+    void insertString(Document doc, int offset, String text, AttributeSet attributeSet) {
+        doc.insertString(offset, text, attributeSet)
+
+        // Output to file if activated
+        if (outputPrintWriter != null) {
+            outputPrintWriter.append(text)
+            outputPrintWriter.flush()
+        }
     }
 
     // Append a string to the output area on a new line
@@ -551,7 +589,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def doc = outputArea.styledDocument
         def len = doc.length
         def alreadyNewLine = (len == 0 || doc.getText(len - 1, 1) == '\n')
-        doc.insertString(doc.length, ' \n', style)
+        insertString(doc, doc.length, ' \n', style)
         if (alreadyNewLine) {
             doc.remove(len, 2) // windows hack to fix (improve?) line spacing
         }
@@ -562,7 +600,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         appendOutput(text, style)
         def doc = outputArea.styledDocument
         def len = doc.length
-        doc.insertString(len, ' \n', style)
+        insertString(doc, len, ' \n', style)
         doc.remove(len, 2) // windows hack to fix (improve?) line spacing
     }
 
@@ -604,7 +642,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         captureStdErr = evt.source.selected
         prefs.putBoolean('captureStdErr', captureStdErr)
     }
-    
+
     void fullStackTraces(EventObject evt) {
         fullStackTraces = evt.source.selected
         System.setProperty('groovy.full.stacktrace',
@@ -739,7 +777,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         consoleController.systemOutInterceptor = systemOutInterceptor
         consoleController.systemErrorInterceptor = systemErrorInterceptor
         SwingBuilder swing = new SwingBuilder()
-        consoleController.swing = swing 
+        consoleController.swing = swing
         frameConsoleDelegates.each {k, v -> swing[k] = v}
         swing.controller = consoleController
         swing.build(ConsoleActions)
@@ -830,7 +868,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     int errorLine = se.line
                     String message = se.originalMessage
 
-                    String scriptFileName = scriptFile?.name ?: DEFAULT_SCRIPT_NAME_START 
+                    String scriptFileName = scriptFile?.name ?: DEFAULT_SCRIPT_NAME_START
 
                     def doc = outputArea.styledDocument
 
@@ -840,15 +878,15 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + scriptFileName + ':' + errorLine)
                     style.addAttribute(HTML.Tag.A, hrefAttr);
 
-                    doc.insertString(doc.length, message + ' at ', stacktraceStyle)
-                    doc.insertString(doc.length, "line: ${se.line}, column: ${se.startColumn}\n\n", style)
+                    insertString(doc, doc.length, message + ' at ', stacktraceStyle)
+                    insertString(doc, doc.length, "line: ${se.line}, column: ${se.startColumn}\n\n", style)
                 } else if (error instanceof Throwable) {
                     reportException(error)
                 } else if (error instanceof ExceptionMessage) {
-                    reportException(error.cause) 
+                    reportException(error.cause)
                 } else if (error instanceof SimpleMessage) {
                     def doc = outputArea.styledDocument
-                    doc.insertString(doc.length, "${error.message}\n", new SimpleAttributeSet())
+                    insertString(doc, doc.length, "${error.message}\n", new SimpleAttributeSet())
                 }
             }
         } else {
@@ -860,7 +898,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
 
         // GROOVY-4496: set the output window position to the top-left so the exception details are visible from the start
-        outputArea.caretPosition = 0 
+        outputArea.caretPosition = 0
 
         if (detachedOutput) {
             prepareOutputWindow()
@@ -901,7 +939,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             showOutputWindow()
         }
     }
-    
+
     def compileFinishNormal() {
         statusLabel.text = 'Compilation complete.'
     }
@@ -1199,7 +1237,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     // set the flag that will be used in printing exception details in output pane
                     stackOverFlowError = true
                     clearOutput()
-                } 
+                }
                 SwingUtilities.invokeLater { finishException(t, true) }
             } finally {
                 runThread = null
@@ -1245,7 +1283,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             }
         }
     }
-    
+
     def selectFilename(name = 'Open') {
         def fc = new JFileChooser(currentFileChooserDir)
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
@@ -1331,21 +1369,21 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     void replace(EventObject evt = null) {
         FindReplaceUtility.showDialog(true)
     }
-    
+
     void comment(EventObject evt = null) {
 	def rootElement = inputArea.document.defaultRootElement
 	def cursorPos = inputArea.getCaretPosition()
 	int startRow = rootElement.getElementIndex(cursorPos)
 	int endRow = startRow
-	
+
 	if (inputArea.getSelectedText()) {
 	    def selectionStart = inputArea.getSelectionStart()
 	    startRow = rootElement.getElementIndex(selectionStart)
 	    def selectionEnd = inputArea.getSelectionEnd()
 	    endRow = rootElement.getElementIndex(selectionEnd)
 	}
-	
-	// If multiple commented lines intermix with uncommented lines, consider them uncommented 
+
+	// If multiple commented lines intermix with uncommented lines, consider them uncommented
 	def allCommented = true
 	startRow.upto(endRow) { rowIndex ->
 	    def rowElement = rootElement.getElement(rowIndex)
@@ -1356,7 +1394,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 	    	allCommented = false
 	    }
 	}
-	
+
 	startRow.upto(endRow) { rowIndex ->
 	    def rowElement = rootElement.getElement(rowIndex)
 	    int startOffset = rowElement.getStartOffset()
@@ -1371,7 +1409,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 	    	inputArea.document.insertString(startOffset, "//", new SimpleAttributeSet())
 	    }
 	}
-	
+
     }
 
     void selectBlock(EventObject evt = null) {
@@ -1453,7 +1491,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     void showCompilingMessage() {
         statusLabel.text = 'Script compiling now. Please wait.'
     }
-    
+
     // Shows the detached 'outputArea' dialog
     void showOutputWindow(EventObject evt = null) {
         if (detachedOutput) {
@@ -1503,7 +1541,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         } else if (newFontSize < 4) {
             newFontSize = 4
         }
-        
+
         prefs.putInt('fontSize', newFontSize)
 
         // don't worry, the fonts won't be changed to this family, the styles will only derive from this
@@ -1607,16 +1645,16 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
     }
 
-    public void componentShown(ComponentEvent e) { }
+    void componentShown(ComponentEvent e) { }
 
-    public void focusGained(FocusEvent e) {
+    void focusGained(FocusEvent e) {
         // remember component with focus for text-copy functionality
         if (e.component == outputArea || e.component == inputArea) {
             copyFromComponent = e.component
         }
     }
 
-    public void focusLost(FocusEvent e) { }
+    void focusLost(FocusEvent e) { }
 
     private static boolean isWindows() {
         return getOsName().startsWith("windows")

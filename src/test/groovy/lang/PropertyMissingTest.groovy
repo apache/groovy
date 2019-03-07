@@ -21,14 +21,13 @@ package groovy.lang
 /**
  * Tests the behaviour of the propertyMissing functionality of Groovy
  *
- * @author Graeme Rocher
  * @since 1.5
  */
 class PropertyMissingTest extends GroovyTestCase {
 
 
     void testPropertyMissingWithMethods() {
-         def t = new PMTest1()
+        def t = new PMTest1()
 
         assertEquals "bar", t.foo
         t.foo = "changed"
@@ -43,21 +42,21 @@ class PropertyMissingTest extends GroovyTestCase {
     void testPropertyMissingViaMetaClass() {
         def store = [:]
         PMTest2.metaClass.propertyMissing = { String name ->
-           store.name
+            store.name
         }
         PMTest2.metaClass.propertyMissing = { String name, value ->
-           store.name = value
+            store.name = value
         }
 
         def t = new PMTest2()
 
-       assertEquals "bar", t.foo
-       t.foo = "changed"
-       assertEquals "changed", t.foo
-       assertNull t.bar
-       t.bar = "keepme"
+        assertEquals "bar", t.foo
+        t.foo = "changed"
+        assertEquals "changed", t.foo
+        assertNull t.bar
+        t.bar = "keepme"
 
-       assertEquals "keepme", t.bar
+        assertEquals "keepme", t.bar
 
     }
 
@@ -102,9 +101,11 @@ class PropertyMissingTest extends GroovyTestCase {
 class PMTest1 {
     def store = [:]
     String foo = "bar"
+
     String propertyMissing(String name) {
         store.name
     }
+
     void propertyMissing(String name, value) {
         store.name = value
     }
@@ -116,6 +117,7 @@ class PMTest2 {
 
 class PMTest3 {
     String foo = 'bar'
+
     void propertyMissing(String name, value) {
         foo = "${name}-${value}"
     }

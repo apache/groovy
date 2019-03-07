@@ -27,8 +27,6 @@ import java.io.IOException;
 /**
  * Check that GroovyClassLoader (through GroovyScriptEngine) can compile scripts concurrently.
  * Test for GROOVY-4002
- *
- * @author Guillaume Laforge
  */
 public class GroovyClassLoaderDeadlockTest extends TestCase {
     private static final String PATH = "./src/test/groovy/lang/gcldeadlock/";

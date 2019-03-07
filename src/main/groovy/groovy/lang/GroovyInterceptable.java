@@ -21,8 +21,6 @@ package groovy.lang;
 /**
  * Marker interface used to notify that all methods should be intercepted through the <code>invokeMethod</code> mechanism
  * of <code>GroovyObject</code>.
- *
- * @author Guillaume Laforge
  */
 public interface GroovyInterceptable extends GroovyObject {
 }

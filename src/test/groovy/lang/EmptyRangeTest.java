@@ -28,8 +28,6 @@ import java.util.NoSuchElementException;
 
 /**
  * Provides unit tests for the {@link EmptyRange} class.
- *
- * @author Edwin Tellman
  */
 public class EmptyRangeTest extends GroovyTestCase {
 

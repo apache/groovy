@@ -24,8 +24,6 @@ import org.codehaus.groovy.tools.shell.ComplexCommandSupport
 
 /**
  * Tests for the {@link ComplexCommandSupport} class.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ComplexCommandSupportTest
     extends CommandTestSupport

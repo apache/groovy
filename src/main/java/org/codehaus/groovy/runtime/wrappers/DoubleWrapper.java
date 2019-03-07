@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
-/**
- * @author John Wilson
- */
 public class DoubleWrapper extends PojoWrapper {
     public DoubleWrapper(final double wrapped) {
         super(wrapped, double.class);

@@ -25,8 +25,6 @@ import org.codehaus.groovy.ast.tools.WideningCategories
 
 /**
  * Unit tests for signature codecs.
- *
- * @author Cedric Champeau
  */
 class SignatureCodecTest extends GroovyTestCase {
     SignatureCodec codec

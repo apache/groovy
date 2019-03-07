@@ -22,10 +22,7 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 
 /**
  * An interface for visiting a GroovySourceAST node.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
-
 public interface Visitor {
     int OPENING_VISIT = 1;
     int SECOND_VISIT = 2; // only used on rare occasions, e.g. the '(' in this snippet...   @Foo  (  a=1, b=2, c=3)

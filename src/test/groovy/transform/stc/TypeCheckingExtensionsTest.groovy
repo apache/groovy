@@ -24,8 +24,6 @@ import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 
 /**
  * Units tests for type checking extensions.
- *
- * @author Cedric Champeau
  */
 class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
 

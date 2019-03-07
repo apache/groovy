@@ -37,9 +37,6 @@ import java.util.regex.Pattern;
  * A builder for creating object graphs.<br>
  * Each node defines the class to be created and the property on its parent (if
  * any) at the same time.
- *
- * @author Scott Vlaminck (http://refactr.com)
- * @author <a href="mailto:aalmiray@users.sourceforge.com">Andres Almiray</a>
  */
 public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String NODE_CLASS = "_NODE_CLASS_";
@@ -804,7 +801,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             context.put(ObjectGraphBuilder.NODE_NAME, name);
             context.put(ObjectGraphBuilder.LAZY_REF, lazy);
 
-            if (lazy.booleanValue()) {
+            if (lazy) {
                 Map parentContext = ogbuilder.getParentContext();
 
                 Object parent = null;
@@ -827,12 +824,12 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
         public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
             Boolean lazy = (Boolean) builder.getContext().get(ObjectGraphBuilder.LAZY_REF);
-            if (!lazy.booleanValue()) super.setChild(builder, parent, child);
+            if (!lazy) super.setChild(builder, parent, child);
         }
 
         public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
             Boolean lazy = (Boolean) builder.getContext().get(ObjectGraphBuilder.LAZY_REF);
-            if (!lazy.booleanValue()) super.setParent(builder, parent, child);
+            if (!lazy) super.setParent(builder, parent, child);
         }
     }
 

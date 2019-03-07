@@ -22,9 +22,6 @@ import org.custommonkey.xmlunit.XMLUnit
 import org.custommonkey.xmlunit.Diff
 import groovy.xml.XmlUtil
 
-/**
- * @author Paul King
- */
 class GpathSyntaxTestSupport {
     private static final sampleXml = '''
 <characters>

@@ -22,10 +22,8 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
-Showing usage of the GroovyLogTestCase
-@author Dierk Koenig
-**/
-
+ * Showing usage of the GroovyLogTestCase
+ */
 class GroovyLogTestCaseTest extends GroovyLogTestCase {
 
     static final LOG = Logger.getLogger('groovy.lang.GroovyLogTestCaseTest')

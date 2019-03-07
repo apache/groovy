@@ -24,8 +24,6 @@ package org.codehaus.groovy.tools.stubgenerator
  * which is then extended by a Square Java class.
  *
  * The test below looks at the characteristics of the stub generated in Java for the Rectangle class.
- *
- * @author Guillaume Laforge
  */
 class CircularLanguageReferenceTest extends StubTestCase {
 
@@ -36,7 +34,7 @@ class CircularLanguageReferenceTest extends StubTestCase {
             assert !annotations
             assert interfaces.toSet() == ['groovy.lang.GroovyObject', 'stubgenerator.circularLanguageReference.Shape'] as Set
             assert baseClass == 'java.lang.Object'
-            assert imports == ['java.lang.*', 'java.io.*', 'java.net.*', 'java.util.*', 'groovy.lang.*', 'groovy.util.*']
+            assert imports == ['java.lang.*', 'java.util.*', 'java.io.*', 'java.net.*', 'groovy.lang.*', 'groovy.util.*']
         }
     }
 }

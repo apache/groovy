@@ -21,8 +21,6 @@ package org.codehaus.groovy.tools.stubgenerator
 /**
  * A synthetic static method $getStaticMetaClass() was part of the stubs generated,
  * which shouldn't be the case, as this method should never be used directly.
- *
- * @author Guillaume Laforge
  */
 class NoStaticGetMetaClassSyntheticMethodInStubsTest extends StringSourcesStubTestCase {
 

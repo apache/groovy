@@ -29,9 +29,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * Represents a closure expression such as { statement }
  * or { i -> statement } or { i, x, String y ->  statement }
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Hamlet D'Arcy
  */
 public class ClosureExpression extends Expression {
     

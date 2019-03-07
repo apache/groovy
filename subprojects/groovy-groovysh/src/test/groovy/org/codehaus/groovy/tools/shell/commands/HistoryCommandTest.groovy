@@ -24,8 +24,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
  * Tests for the {@link HistoryCommand} class.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class HistoryCommandTest extends CommandTestSupport
 {

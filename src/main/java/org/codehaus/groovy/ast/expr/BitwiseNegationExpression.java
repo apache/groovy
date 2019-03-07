@@ -21,9 +21,6 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
-/**
- * @author phk
- */
 public class BitwiseNegationExpression extends Expression {
 
     private final Expression expression;

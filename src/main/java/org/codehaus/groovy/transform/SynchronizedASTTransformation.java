@@ -41,8 +41,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles generation of code for the {@code @Synchronized} annotation.
- *
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class SynchronizedASTTransformation extends AbstractASTTransformation {

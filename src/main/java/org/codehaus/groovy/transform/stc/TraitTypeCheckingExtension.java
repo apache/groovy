@@ -29,6 +29,8 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -77,15 +79,22 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
                     type = receiver;
                 }
                 if (Traits.isTrait(type) && !(type instanceof UnionTypeClassNode)) {
-                    ClassNode helper = Traits.findHelper(type);
-                    Parameter[] params = new Parameter[argumentTypes.length + 1];
-                    params[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "staticSelf");
-                    for (int i = 1; i < params.length; i++) {
-                        params[i] = new Parameter(argumentTypes[i-1], "p" + i);
-                    }
-                    MethodNode method = helper.getDeclaredMethod(name, params);
-                    if (method != null) {
-                        return Collections.singletonList(makeDynamic(call, method.getReturnType()));
+                    List<ClassNode> candidates = new ArrayList<ClassNode>();
+                    candidates.add(type);
+                    while (!candidates.isEmpty()) {
+                        ClassNode next = candidates.remove(0);
+                        ClassNode helper = Traits.findHelper(next);
+                        Parameter[] params = new Parameter[argumentTypes.length + 1];
+                        params[0] = new Parameter(ClassHelper.CLASS_Type.getPlainNodeReference(), "staticSelf");
+                        for (int i = 1; i < params.length; i++) {
+                            params[i] = new Parameter(argumentTypes[i-1], "p" + i);
+                        }
+                        MethodNode method = helper.getDeclaredMethod(name, params);
+                        if (method != null) {
+                            return Collections.singletonList(makeDynamic(call, method.getReturnType()));
+                        }
+                        // GROOVY-8272 support inherited static methods
+                        candidates.addAll(Arrays.asList(next.getInterfaces()));
                     }
                 }
             }

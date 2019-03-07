@@ -24,8 +24,6 @@ import static groovy.sql.SqlTestConstants.*
 
 /**
  * Unit test of Sql statement feature
- *
- * @author Paul King
  */
 class SqlStatementTest extends GroovyTestCase {
     Sql sql

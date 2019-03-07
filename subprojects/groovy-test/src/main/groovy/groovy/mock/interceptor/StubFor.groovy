@@ -64,9 +64,6 @@ import java.util.regex.Pattern
  * <code>father.first</code> causes a call to <code>father.getFirst()</code> to occur.
  *
  * For a complete list of features, see: {@link MockFor}.
- *
- * @author Dierk Koenig
- * @author Paul King
  */
 class StubFor {
 

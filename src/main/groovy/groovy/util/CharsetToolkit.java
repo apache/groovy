@@ -55,8 +55,6 @@ import java.util.Collection;
  *     System.out.println(line);
  * }
  * </pre>
- *
- * @author Guillaume Laforge
  */
 public class CharsetToolkit {
     private static final Charset[] EMPTY_CHARSET_ARRAY = new Charset[0];

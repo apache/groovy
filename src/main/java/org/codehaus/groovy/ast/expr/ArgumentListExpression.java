@@ -25,8 +25,6 @@ import java.util.List;
 
 /**
  * Represents one or more arguments being passed into a method
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ArgumentListExpression extends TupleExpression {
 

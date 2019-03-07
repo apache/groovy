@@ -22,9 +22,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 
 import java.math.BigInteger;
 
-/**
- * @author Alex.Tkachman
- */
 public class IntegerCachedClass extends NumberCachedClass {  // int, Integer
     private final boolean allowNull;
 

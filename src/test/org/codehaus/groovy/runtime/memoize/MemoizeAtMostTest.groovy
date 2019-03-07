@@ -20,30 +20,27 @@ package org.codehaus.groovy.runtime.memoize
 
 import java.util.concurrent.atomic.AtomicInteger
 
-/**
- * @author Vaclav Pech
- */
-public class MemoizeAtMostTest extends AbstractMemoizeTestCase {
+class MemoizeAtMostTest extends AbstractMemoizeTestCase {
 
     Closure buildMemoizeClosure(Closure cl) {
         cl.memoizeAtMost(100)
     }
 
-    public void testZeroCache() {
+    void testZeroCache() {
         def flag = false
         Closure cl = {
             flag = true
             it * 2
         }
         Closure mem = cl.memoizeAtMost(0)
-        [1, 2, 3, 4, 5, 6].each {mem(it)}
+        [1, 2, 3, 4, 5, 6].each { mem(it) }
         assert flag
         flag = false
         assertEquals(12, mem(6))
         assert flag
     }
 
-    public void testLRUCache() {
+    void testLRUCache() {
         def flag = false
         Closure cl = {
             flag = true
@@ -72,7 +69,7 @@ public class MemoizeAtMostTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
-    public void testMemoizeAtMostConcurrently() {
+    void testMemoizeAtMostConcurrently() {
         AtomicInteger cnt = new AtomicInteger(0)
         Closure cl = {
             cnt.incrementAndGet()
@@ -82,6 +79,7 @@ public class MemoizeAtMostTest extends AbstractMemoizeTestCase {
         [4, 5, 6, 4, 5, 6, 4, 5, 6, 4, 5, 6].collect { num -> Thread.start { mem(num) } }*.join()
 
         int c = cnt.get()
-        assert 3 <= c && c <= 12  // cached result may be GCed due to SoftReference, so `c` may be greater than 3(in most cases, its value is 3)
+        assert 3 <= c && c <= 12
+        // cached result may be GCed due to SoftReference, so `c` may be greater than 3(in most cases, its value is 3)
     }
 }

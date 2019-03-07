@@ -22,8 +22,6 @@ import groovy.transform.CompileStatic
 
 /**
  * Unit tests for static type checking : loops.
- *
- * @author Cedric Champeau
  */
 class LoopsSTCTest extends StaticTypeCheckingTestCase {
 

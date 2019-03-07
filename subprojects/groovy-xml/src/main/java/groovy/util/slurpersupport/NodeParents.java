@@ -23,8 +23,6 @@ import java.util.Map;
 
 /**
 * Lazy evaluated representation of parent nodes without duplicates
-*
-* @author Jochen Eddel+
 */
 public class NodeParents extends NodeChildren {
     

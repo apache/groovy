@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Checks that {@code @Immutable} classes work correctly with stubs.
- *
- * @author Paul King
  */
 class ImmutableWithJointCompilationStubTest extends StringSourcesStubTestCase {
 

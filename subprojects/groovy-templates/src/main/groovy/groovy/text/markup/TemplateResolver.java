@@ -24,8 +24,6 @@ import java.net.URL;
 /**
  * Interface for template resolvers, which, given a template identifier, return an URL where the template
  * can be loaded.
- *
- * @author Cédric Champeau
  */
 public interface TemplateResolver {
     /**

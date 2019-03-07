@@ -34,9 +34,6 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 /**
  * Provide friendly error messages when parsing errors occurred.
- *
- * @author <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- *         Created on 2016/10/19
  */
 public class DescriptiveErrorStrategy extends BailErrorStrategy {
     private CharStream charStream;

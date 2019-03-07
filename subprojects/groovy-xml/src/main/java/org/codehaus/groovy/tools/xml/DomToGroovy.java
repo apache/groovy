@@ -47,9 +47,6 @@ import java.util.Map;
 
 /**
  * A SAX handler for turning XML into Groovy scripts
- * 
- * @author James Strachan
- * @author paulk
  */
 public class DomToGroovy {
 

@@ -184,7 +184,7 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
 
     /**
      * Try to get the value from cache.
-     * If not found, create the value by {@link ValueProvider} and put it into the cache, at last return the value.
+     * If not found, create the value by {@link MemoizeCache.ValueProvider} and put it into the cache, at last return the value.
      *
      * @param key
      * @param valueProvider provide the value if the associated value not found

@@ -26,8 +26,6 @@ import org.codehaus.groovy.ast.ClassNode;
  * 
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class MissingClassException extends GroovyRuntimeException {
 

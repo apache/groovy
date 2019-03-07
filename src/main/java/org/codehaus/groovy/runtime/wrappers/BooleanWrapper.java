@@ -18,9 +18,6 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
-/**
- * @author John Wilson
- */
 public class BooleanWrapper extends PojoWrapper {
     public BooleanWrapper(final boolean wrapped) {
         super(wrapped ? Boolean.TRUE : Boolean.FALSE, boolean.class);

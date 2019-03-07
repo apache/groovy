@@ -109,7 +109,7 @@ Having a XML like the following:
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategory.groovy[tags=testXML,indent=0]
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategoryTest.groovy[tags=testXML,indent=0]
 ----
 
 You can parse it using `groovy.xml.DOMBuilder` and
@@ -117,7 +117,7 @@ You can parse it using `groovy.xml.DOMBuilder` and
 
 [source,groovy]
 ----
-include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategory.groovy[tags=testExample1,indent=0]
+include::{rootProjectDir}/subprojects/groovy-xml/src/spec/test/UserGuideDOMCategoryTest.groovy[tags=testExample1,indent=0]
 ----
 
 <1> Parsing the XML

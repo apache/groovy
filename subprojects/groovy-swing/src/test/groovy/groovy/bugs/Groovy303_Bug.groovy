@@ -22,10 +22,6 @@ import java.awt.*
 import java.awt.event.*
 import javax.swing.*
 
-/**
- * @author Bing Ran
- * @author Andy Dwelly
- */
 class Groovy303_Bug extends GroovySwingTestCase {
     void testBug() {
       testInEDT {
@@ -52,7 +48,7 @@ class Scholastic implements ActionListener {
         button.doClick()
     }
 
-    public void actionPerformed(ActionEvent event) {
+    void actionPerformed(ActionEvent event) {
         println "hello"
     }
 }

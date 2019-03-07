@@ -83,7 +83,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecR
  * This class contains a static utility method {@link #doExtendTraits(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.control.CompilationUnit)}
  * aimed at generating code for a classnode implementing a trait.
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 public abstract class TraitComposer {
@@ -106,7 +105,7 @@ public abstract class TraitComposer {
             return;
         }
         if (!cNode.getNameWithoutPackage().endsWith(Traits.TRAIT_HELPER)) {
-            List<ClassNode> traits = findTraits(cNode);
+            List<ClassNode> traits = Traits.findTraits(cNode);
             for (ClassNode trait : traits) {
                 TraitHelpersTuple helpers = Traits.findHelpers(trait);
                 applyTrait(trait, cNode, helpers, unit);
@@ -117,18 +116,6 @@ public abstract class TraitComposer {
                 }
             }
         }
-    }
-
-    private static List<ClassNode> findTraits(ClassNode cNode) {
-        LinkedHashSet<ClassNode> interfaces = new LinkedHashSet<ClassNode>();
-        Traits.collectAllInterfacesReverseOrder(cNode, interfaces);
-        List<ClassNode> traits = new LinkedList<ClassNode>();
-        for (ClassNode candidate : interfaces) {
-            if (Traits.isAnnotatedWithTrait(candidate)) {
-                traits.add(candidate);
-            }
-        }
-        return traits;
     }
 
     private static void checkTraitAllowed(final ClassNode bottomTrait, final SourceUnit unit) {
@@ -166,7 +153,7 @@ public abstract class TraitComposer {
                     Parameter parameter = helperMethodParams[i];
                     ClassNode originType = parameter.getOriginType();
                     ClassNode fixedType = correctToGenericsSpecRecurse(methodGenericsSpec, originType);
-                    Parameter newParam = new Parameter(fixedType, "arg" + i);
+                    Parameter newParam = new Parameter(fixedType, parameter.getName());
                     List<AnnotationNode> copied = new LinkedList<AnnotationNode>();
                     List<AnnotationNode> notCopied = new LinkedList<AnnotationNode>();
                     GeneralUtils.copyAnnotatedNodeAnnotations(parameter, copied, notCopied);

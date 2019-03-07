@@ -133,8 +133,6 @@ import java.util.Set;
 
 /**
  * A parser plugin which adapts the JSR Antlr Parser to the Groovy runtime
- *
- * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  */
 public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, GroovyTokenTypes {
 
@@ -1748,16 +1746,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected List<CatchStatement> catchStatement(AST catchNode) {
         AST node = catchNode.getFirstChild();
         List<CatchStatement> catches = new LinkedList<CatchStatement>();
-        Statement code = statement(node.getNextSibling());
         if (MULTICATCH == node.getType()) {
-            AST variableNode = node.getNextSibling();
             final AST multicatches = node.getFirstChild();
             if (multicatches.getType() != MULTICATCH_TYPES) {
                 // catch (e)
                 // catch (def e)
                 String variable = identifier(multicatches);
                 Parameter catchParameter = new Parameter(ClassHelper.DYNAMIC_TYPE, variable);
-                CatchStatement answer = new CatchStatement(catchParameter, code);
+                CatchStatement answer = new CatchStatement(catchParameter, statement(node.getNextSibling()));
                 configureAST(answer, catchNode);
                 catches.add(answer);
             } else {
@@ -1768,7 +1764,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 while (exceptionNodes != null) {
                     ClassNode exceptionType = buildName(exceptionNodes);
                     Parameter catchParameter = new Parameter(exceptionType, variable);
-                    CatchStatement answer = new CatchStatement(catchParameter, code);
+                    CatchStatement answer = new CatchStatement(catchParameter, statement(node.getNextSibling()));
                     configureAST(answer, catchNode);
                     catches.add(answer);
                     exceptionNodes = exceptionNodes.getNextSibling();

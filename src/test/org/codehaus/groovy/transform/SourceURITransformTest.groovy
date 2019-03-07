@@ -20,10 +20,6 @@ package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
 
-/**
- *
- * @author Jim White
- */
 class SourceURITransformTest extends CompilableTestSupport {
     void testWorksInClass() {
         def groovy = new GroovyClassLoader()

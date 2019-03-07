@@ -23,8 +23,6 @@ import groovy.transform.stc.AnonymousInnerClassSTCTest
 /**
  * Statically compiled the {@link AnonymousInnerClassSTCTest tests} and runs them
  * to ensure they are compatible with static compilation.
- *
- * @author Cedric Champeau
  */
 class AnonymousInnerClassStaticCompileTest extends AnonymousInnerClassSTCTest implements StaticCompilationTestSupport {}
 

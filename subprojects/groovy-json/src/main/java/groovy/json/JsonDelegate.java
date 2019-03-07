@@ -31,8 +31,6 @@ import java.util.Map;
 /**
  * Utility class used as delegate of closures representing JSON objects.
  *
- * @author Guillaume Laforge
- * @author Andrey Bloschetsov
  * @since 1.8.0
  */
 public class JsonDelegate extends GroovyObjectSupport {

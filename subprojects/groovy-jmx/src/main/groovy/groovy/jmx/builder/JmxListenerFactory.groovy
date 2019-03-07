@@ -30,50 +30,49 @@ import javax.management.NotificationFilterSupport
  * <pre>
  * JmxBuilder.listener(event:"event type", from:"Object Name"|ObjectName(), call:{event->
  *   // event handling code here.
- * })
+ *})
  * </pre>
  *
- * @author Vladimir Vivien
  * @see groovy.jmx.builder.JmxEventListener
  */
 class JmxListenerFactory extends AbstractFactory {
-    public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttribs) {
+    Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttribs) {
         if (nodeParam) {
             throw new JmxBuilderException("Node '${nodeName}' only supports named attributes.")
         }
         JmxBuilder fsb = (JmxBuilder) builder
         def server = fsb.getMBeanServer()
-        def map = JmxMetaMapBuilder.createListenerMap(nodeAttribs);
+        def map = JmxMetaMapBuilder.createListenerMap(nodeAttribs)
 
-        def broadcaster = map.get("from");
+        def broadcaster = map.get("from")
         try {
             def eventType = (String) map.get("event");
             if (!server.isRegistered(broadcaster)) {
                 throw new JmxBuilderException("MBean '${broadcaster.toString()}' is not registered in server.")
             }
             if (eventType) {
-                NotificationFilterSupport filter = new NotificationFilterSupport();
-                filter.enableType(eventType);
-                server.addNotificationListener(broadcaster, JmxEventListener.getListener(), filter, map);
+                NotificationFilterSupport filter = new NotificationFilterSupport()
+                filter.enableType(eventType)
+                server.addNotificationListener(broadcaster, JmxEventListener.getListener(), filter, map)
             } else {
-                server.addNotificationListener(broadcaster, JmxEventListener.getListener(), null, map);
+                server.addNotificationListener(broadcaster, JmxEventListener.getListener(), null, map)
             }
         } catch (InstanceNotFoundException e) {
-            throw new JmxBuilderException(e);
+            throw new JmxBuilderException(e)
         }
 
         map
     }
 
-    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
-        return false;
+    boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
+        return false
     }
 
-    public boolean isLeaf() {
-        return true;
+    boolean isLeaf() {
+        return true
     }
 
-    public void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
         if (parentNode != null) {
             parentNode.add(thisNode)
         }

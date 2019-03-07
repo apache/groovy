@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime
 
 /**
  * Test .each with Reader and InputStream
- *
- * @author <a href="mailto:joachim.baumann@xinaris.de">Joachim Baumann</a>
  */
 class EachWithReaderAndInputStreamTest extends GroovyTestCase {
     /**

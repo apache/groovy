@@ -49,6 +49,15 @@ public class CompilerConfiguration {
     /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> compilation. */
     public static final String INVOKEDYNAMIC = "indy";
 
+    /** This (<code>"groovydoc"</code>) is the Optimization Option value for enabling attaching groovydoc as AST node metadata. */
+    public static final String GROOVYDOC = "groovydoc";
+
+    /** This (<code>"runtimeGroovydoc"</code>) is the Optimization Option value for enabling attaching {@link groovy.lang.Groovydoc} annotation*/
+    public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
+
+    /** This (<code>"memStub"</code>) is the Optimization Option value for enabling generating stubs in memory*/
+    public static final String MEM_STUB = "memStub";
+
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
     public static final String JDK4 = "1.4";
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. **/
@@ -67,6 +76,8 @@ public class CompilerConfiguration {
     public static final String JDK11 = "11";
     /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. **/
     public static final String JDK12 = "12";
+    /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. **/
+    public static final String JDK13 = "13";
 
     /**
      * This constant is for comparing targetBytecode to ensure it is set to JDK 1.5 or later.
@@ -94,7 +105,8 @@ public class CompilerConfiguration {
             JDK9, Opcodes.V9,
             JDK10, Opcodes.V10,
             JDK11, Opcodes.V11,
-            JDK12, Opcodes.V12
+            JDK12, Opcodes.V12,
+            JDK13, Opcodes.V13
     );
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
@@ -265,15 +277,16 @@ public class CompilerConfiguration {
             setTargetDirectory(target);
         }
 
-        boolean indy = getBooleanSafe("groovy.target.indy");
-        if (DEFAULT!=null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(INVOKEDYNAMIC))) {
-            indy = true;
-        }
-        Map options = new HashMap<String,Boolean>(3);
-        if (indy) {
-            options.put(INVOKEDYNAMIC, Boolean.TRUE);
-        }
+        Map<String, Boolean> options = new HashMap<>(4);
+
+        handleOptimizationOption(options, INVOKEDYNAMIC, "groovy.target.indy");
+        handleOptimizationOption(options, GROOVYDOC, "groovy.attach.groovydoc");
+        handleOptimizationOption(options, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
         setOptimizationOptions(options);
+
+        Map<String, Object> jointCompilerOptions = new HashMap<>(4);
+        handleJointCompilationOption(jointCompilerOptions, MEM_STUB, "groovy.generate.stub.in.memory");
+        setJointCompilationOptions(jointCompilerOptions);
 
         try {
             String groovyAntlr4Opt = getSystemPropertySafe(GROOVY_ANTLR4_OPT);
@@ -284,6 +297,26 @@ public class CompilerConfiguration {
                             : ParserVersion.V_2;
         } catch (Exception e) {
             // IGNORE
+        }
+    }
+
+    private void handleOptimizationOption(Map<String, Boolean> options, String optionName, String sysOptionName) {
+        boolean optionEnabled = getBooleanSafe(sysOptionName);
+        if (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName))) {
+            optionEnabled = true;
+        }
+        if (optionEnabled) {
+            options.put(optionName, Boolean.TRUE);
+        }
+    }
+
+    private void handleJointCompilationOption(Map<String, Object> options, String optionName, String sysOptionName) {
+        boolean optionEnabled = getBooleanSafe(sysOptionName);
+        if (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getJointCompilationOptions().get(optionName))) {
+            optionEnabled = true;
+        }
+        if (optionEnabled) {
+            options.put(optionName, Boolean.TRUE);
         }
     }
 
@@ -737,7 +770,7 @@ public class CompilerConfiguration {
         if (pluginFactory == null) {
             pluginFactory = ParserVersion.V_2 == parserVersion
                                 ? ParserPluginFactory.antlr2()
-                                : ParserPluginFactory.antlr4();
+                                : ParserPluginFactory.antlr4(this);
         }
         return pluginFactory;
     }
@@ -929,6 +962,49 @@ public class CompilerConfiguration {
 
         return indyEnabled;
     }
+
+    /**
+     * Check whether groovydoc enabled
+     * @return the result
+     */
+    public boolean isGroovydocEnabled() {
+        Boolean groovydocEnabled = this.getOptimizationOptions().get(GROOVYDOC);
+
+        if (null == groovydocEnabled) {
+            return false;
+        }
+
+        return groovydocEnabled;
+    }
+
+    /**
+     * Check whether runtime groovydoc enabled
+     * @return the result
+     */
+    public boolean isRuntimeGroovydocEnabled() {
+        Boolean runtimeGroovydocEnabled = this.getOptimizationOptions().get(RUNTIME_GROOVYDOC);
+
+        if (null == runtimeGroovydocEnabled) {
+            return false;
+        }
+
+        return runtimeGroovydocEnabled;
+    }
+
+    /**
+     * Check whether mem stub enabled
+     * @return the result
+     */
+    public boolean isMemStubEnabled() {
+        Object memStubEnabled = this.getJointCompilationOptions().get(MEM_STUB);
+
+        if (null == memStubEnabled) {
+            return false;
+        }
+
+        return "true".equals(memStubEnabled.toString());
+    }
+
 
 //       See http://groovy.329449.n5.nabble.com/What-the-static-compile-by-default-tt5750118.html
 //           https://issues.apache.org/jira/browse/GROOVY-8543

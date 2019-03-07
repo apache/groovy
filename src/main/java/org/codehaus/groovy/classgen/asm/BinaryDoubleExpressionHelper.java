@@ -32,9 +32,6 @@ import static org.objectweb.asm.Opcodes.DMUL;
 import static org.objectweb.asm.Opcodes.DREM;
 import static org.objectweb.asm.Opcodes.DSUB;
 
-/**
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- */
 public class BinaryDoubleExpressionHelper extends BinaryLongExpressionHelper {
 
 

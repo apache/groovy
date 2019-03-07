@@ -88,11 +88,6 @@ import java.util.Map;
  * &lt;/servlet&gt;
  * </pre>
  * In this case, your template source file should be HTML with the appropriate embedded placeholders.
- *
- * @author sam
- * @author Christian Stein
- * @author Paul King
- * @author Alex Tkachman
  */
 public class SimpleTemplateEngine extends TemplateEngine {
     private boolean verbose;

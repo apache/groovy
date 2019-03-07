@@ -32,10 +32,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author sam
- * @author Merlyn Albery-Speyer
- */
 public class GroovyShellTest extends GroovyTestCase {
 
     private String script1 = "test = 1";

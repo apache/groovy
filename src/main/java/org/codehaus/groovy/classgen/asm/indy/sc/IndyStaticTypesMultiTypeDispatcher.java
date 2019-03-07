@@ -32,7 +32,7 @@ import java.lang.invoke.MethodType;
 
 /**
  * Multi type dispatcher for binary expression backend combining indy and static compilation
- * @author Jochen Theodorou
+ *
  * @since 2.5.0
  */
 public class IndyStaticTypesMultiTypeDispatcher extends StaticTypesBinaryExpressionMultiTypeDispatcher {

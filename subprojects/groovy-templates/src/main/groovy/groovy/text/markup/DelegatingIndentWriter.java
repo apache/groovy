@@ -22,10 +22,7 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * A writer which delegates to another writer and supports an
- * additional indenting level.
- *
- * @author Cedric Champeau
+ * A writer which delegates to another writer and supports an additional indenting level.
  */
 public class DelegatingIndentWriter extends Writer {
     public static final String SPACES = "    ";

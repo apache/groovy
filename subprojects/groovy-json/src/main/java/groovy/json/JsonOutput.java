@@ -39,12 +39,6 @@ import java.util.UUID;
  * This class does not provide the ability to customize the resulting output.  A {@link JsonGenerator}
  * can be used if the ability to alter the resulting output is required.
  *
- * @author Guillaume Laforge
- * @author Roshan Dawrani
- * @author Andrey Bloschetsov
- * @author Rick Hightower
- * @author Graeme Rocher
- *
  * @see JsonGenerator
  * @since 1.8.0
  */

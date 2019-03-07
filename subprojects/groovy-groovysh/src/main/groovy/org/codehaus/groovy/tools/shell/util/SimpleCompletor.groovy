@@ -23,8 +23,6 @@ import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
  * Support for simple completors.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class SimpleCompletor implements Completer {
 

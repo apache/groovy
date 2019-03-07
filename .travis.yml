@@ -19,6 +19,7 @@ language: groovy
 # https://docs.travis-ci.com/user/reference/overview/
 sudo: required
 dist: trusty
+install: true
 
 matrix:
   include:
@@ -45,3 +46,4 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+

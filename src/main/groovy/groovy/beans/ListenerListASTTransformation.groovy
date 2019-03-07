@@ -54,6 +54,8 @@ import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.objectweb.asm.Opcodes
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
+
 /**
  * Handles generation of code for the {@code @ListenerList} annotation.
  * <p>
@@ -62,16 +64,13 @@ import org.objectweb.asm.Opcodes
  * <p>
  * Additionally it adds corresponding fire&lt;Event&gt; methods.
  * <p>
- *
- * @author Alexander Klein
- * @author Hamlet D'Arcy
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 class ListenerListASTTransformation implements ASTTransformation, Opcodes {
     private static final Class MY_CLASS = groovy.beans.ListenerList.class
     private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection)
 
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new RuntimeException("Internal error: wrong types: ${node.class} / ${parent.class}")
         }
@@ -280,7 +279,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         block.addStatements([
                 new ExpressionStatement(
                         new DeclarationExpression(
-                                new VariableExpression("__result", ClassHelper.DYNAMIC_TYPE),
+                                localVarX("__result", ClassHelper.DYNAMIC_TYPE),
                                 Token.newSymbol(Types.EQUALS, 0, 0),
                                 new ListExpression()
                         )),
@@ -348,7 +347,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
                         new BlockStatement([
                                 new ExpressionStatement(
                                         new DeclarationExpression(
-                                                new VariableExpression('__list', listenerListType),
+                                                localVarX('__list', listenerListType),
                                                 Token.newSymbol(Types.EQUALS, 0, 0),
                                                 new ConstructorCallExpression(listenerListType, new ArgumentListExpression(
                                                         new VariableExpression(field.name)

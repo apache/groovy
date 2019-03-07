@@ -27,8 +27,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression
 
 /**
  * Adds several utility methods which are used in tests on generics.
- *
- * @author Cedric Champeau
  */
 abstract class GenericsTestCase extends GroovyTestCase {
 

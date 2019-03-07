@@ -18,11 +18,8 @@
  */
 package groovy.operator
 
-/** 
+/**
  * Test Math Power Operation in Classic/New Groovy
- * 
- * @author Pilho Kim
- * @version $Revision: 4996 $
  */
 class PowerOperatorsTest extends GroovyTestCase {
 
@@ -33,10 +30,10 @@ class PowerOperatorsTest extends GroovyTestCase {
         assert -3**4 == -81
         assert 3**-4 == 3.power(-4)
         assert -3**-4 == -3.power(-4)
-        assert 7**2 - 7*3 + 2 == 30         //  49 - 21 + 2 = 30
-        assert -7**2 - 7*3 + 2 == -68       // -49 - 21 + 2 = -68
-        assert -(7**2) - 7*3 + 2 == -68     // -49 - 21 + 2 = -68
-        assert (-7)**2 - 7*3 + 2 == 30     //  49 - 21 + 2 = 30
+        assert 7**2 - 7 * 3 + 2 == 30         //  49 - 21 + 2 = 30
+        assert -7**2 - 7 * 3 + 2 == -68       // -49 - 21 + 2 = -68
+        assert -(7**2) - 7 * 3 + 2 == -68     // -49 - 21 + 2 = -68
+        assert (-7)**2 - 7 * 3 + 2 == 30     //  49 - 21 + 2 = 30
     }
 
     void testPowerOperation() {
@@ -64,9 +61,9 @@ class PowerOperatorsTest extends GroovyTestCase {
         assert x == 7
         println("${(--x)**2}")
         assert x == 6
-        assert (--x)**2 + x*2 - 1 == 34      // 5**2 + 5*2 - 1 = 34
+        assert (--x)**2 + x * 2 - 1 == 34      // 5**2 + 5*2 - 1 = 34
         assert x == 5
-        assert (x--)**2 + x*2 - 1 == 32      // 5**2 + 4*2 - 1 = 32
+        assert (x--)**2 + x * 2 - 1 == 32      // 5**2 + 4*2 - 1 = 32
         assert x == 4
     }
 
@@ -85,8 +82,8 @@ class PowerOperatorsTest extends GroovyTestCase {
         x **= y
         assert x == 25
         assert x**y == 625
-        assert x**-1 == 1/25
-        assert x**-y == 1/625
+        assert x**-1 == 1 / 25
+        assert x**-y == 1 / 625
         assert x**-y == x**(-y)
     }
 

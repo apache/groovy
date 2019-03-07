@@ -42,7 +42,6 @@ import java.util.Map;
  * &lt;/body&gt;
  * </pre>
  *
- * @author Christian Stein
  * @see groovy.util.NodePrinter
  * @see groovy.xml.XmlUtil#serialize(Node)
  */

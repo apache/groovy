@@ -27,8 +27,6 @@ import java.io.File;
 
 /**
  * Generates Java stubs from Groovy sources.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class GenerateStubsTask
     extends CompileTaskSupport

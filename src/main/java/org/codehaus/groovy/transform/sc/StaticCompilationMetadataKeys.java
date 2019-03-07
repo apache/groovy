@@ -20,8 +20,6 @@ package org.codehaus.groovy.transform.sc;
 
 /**
  * Static compilation AST node metadata keys.
- *
- * @author Cedric Champeau
  */
 public enum StaticCompilationMetadataKeys {
     STATIC_COMPILE_NODE, // used to mark a section of code as to be statically compiled

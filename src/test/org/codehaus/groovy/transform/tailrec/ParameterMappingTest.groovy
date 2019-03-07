@@ -24,15 +24,12 @@ import org.junit.Test
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
-/**
- * @author Johannes Link
- */
 class ParameterMappingTest {
 
     TailRecursiveASTTransformation transformation = new TailRecursiveASTTransformation()
 
     @Test
-    public void emptyMethod() throws Exception {
+    void emptyMethod() throws Exception {
         def myMethod = new AstBuilder().buildFromSpec {
             method('myMethod', ACC_PUBLIC, int.class) {
                 parameters {}
@@ -50,7 +47,7 @@ class ParameterMappingTest {
     }
 
     @Test
-    public void oneParameter() throws Exception {
+    void oneParameter() throws Exception {
         def myMethod = new AstBuilder().buildFromSpec {
             method('myMethod', ACC_PUBLIC, int.class) {
                 parameters { parameter 'one': int.class }
@@ -68,7 +65,7 @@ class ParameterMappingTest {
     }
 
     @Test
-    public void severalParameters() throws Exception {
+    void severalParameters() throws Exception {
         def myMethod = new AstBuilder().buildFromSpec {
             method('myMethod', ACC_PUBLIC, int.class) {
                 parameters {

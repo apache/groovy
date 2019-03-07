@@ -18,9 +18,6 @@
  */
 package groovy.util;
 
-/**
- * @author sam
- */
 public class ResourceException extends Exception {
 
     private static final long serialVersionUID = -4640685456255837192L;

@@ -41,7 +41,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * assert result == 1 
  * </pre>
  * 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @since 1.5
  */
 public class ElvisOperatorExpression extends TernaryExpression {

@@ -49,9 +49,6 @@ import java.util.Stack;
  * QName as the name which includes a namespace URI and a local name. Or a JMX ObjectName etc.
  * So this class can represent metadata like <code>{foo a=1 b="abc"}</code> or nested
  * metadata like <code>{foo a=1 b="123" { bar x=12 text="hello" }}</code>
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
  */
 public class Node implements Serializable, Cloneable {
 

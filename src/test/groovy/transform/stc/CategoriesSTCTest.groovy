@@ -21,8 +21,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : categories.
- *
- * @author Cedric Champeau
  */
 class CategoriesSTCTest extends StaticTypeCheckingTestCase {
 

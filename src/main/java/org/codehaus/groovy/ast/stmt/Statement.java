@@ -25,8 +25,6 @@ import java.util.List;
 
 /**
  * Base class for any statement
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class Statement extends ASTNode {
 

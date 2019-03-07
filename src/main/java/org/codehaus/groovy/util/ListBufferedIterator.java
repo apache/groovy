@@ -28,7 +28,6 @@ import java.util.NoSuchElementException;
  * An implementation for BufferedIterator wraps ListIterator.  This version
  * provides an implementation for remove().
  *
- * @author Andrew Taylor
  * @since 2.5.0
  */
 public class ListBufferedIterator<T> implements BufferedIterator<T> {

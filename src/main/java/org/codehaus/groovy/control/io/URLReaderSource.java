@@ -31,8 +31,6 @@ import java.net.URL;
 
 /**
  *  A ReaderSource for source files hosted at a URL.
- *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
 public class URLReaderSource extends AbstractReaderSource {
     private final URL url;  // The URL from which we produce Readers.

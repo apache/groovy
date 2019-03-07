@@ -25,8 +25,6 @@ import java.security.BasicPermission;
  * codebase cannot be determined.  Typically this permission is only
  * required by clients that want to associate a code source with a script which
  * is a String or an InputStream.
- *
- * @author Steve Goetze
  */
 public final class GroovyCodeSourcePermission extends BasicPermission {
 

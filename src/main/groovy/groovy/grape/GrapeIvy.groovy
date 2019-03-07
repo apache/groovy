@@ -64,8 +64,6 @@ import java.util.zip.ZipFile
  */
 class GrapeIvy implements GrapeEngine {
 
-    static final int DEFAULT_DEPTH = 3
-
     private static final String METAINF_PREFIX = 'META-INF/services/'
     private static final String RUNNER_PROVIDER_CONFIG = GroovyRunner.class.getName()
 
@@ -252,7 +250,7 @@ class GrapeIvy implements GrapeEngine {
     @Override
     @CompileStatic
     grab(Map args) {
-        args.calleeDepth = args.calleeDepth?:DEFAULT_DEPTH + 1
+        args.calleeDepth = args.calleeDepth?:DEFAULT_CALLEE_DEPTH + 1
         return grab(args, args)
     }
 
@@ -267,7 +265,7 @@ class GrapeIvy implements GrapeEngine {
             loader = chooseClassLoader(
                 classLoader:args.remove('classLoader'),
                 refObject:args.remove('refObject'),
-                calleeDepth:args.calleeDepth?:DEFAULT_DEPTH,
+                calleeDepth:args.calleeDepth?:DEFAULT_CALLEE_DEPTH,
             )
 
             // check for non-fail null.
@@ -610,7 +608,7 @@ class GrapeIvy implements GrapeEngine {
         ClassLoader loader = chooseClassLoader(
                 classLoader: args.remove('classLoader'),
                 refObject: args.remove('refObject'),
-                calleeDepth: args.calleeDepth ?: DEFAULT_DEPTH,
+                calleeDepth: args.calleeDepth ?: DEFAULT_CALLEE_DEPTH,
         )
 
         // check for non-fail null.

@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.shell.commands
 
 /**
  * Tests for the {@link EditCommand} class.
- *
- * @author <a href="mailto:4larryj@gmail.com">Larry Jacobson</a>
  */
 class EditCommandTest
     extends CommandTestSupport

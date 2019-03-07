@@ -40,6 +40,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -78,6 +79,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.codehaus.groovy.ast.CompileUnit.ConstructedOuterNestedClassNode;
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
@@ -93,7 +95,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
  */
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // note: BigInteger and BigDecimal are also imported by default
-    public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
+    // `java.util` is used much frequently than other two java packages(`java.io` and `java.net`), so place java.util before the two packages
+    public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.util.", "java.io.", "java.net.", "groovy.lang.", "groovy.util."};
     private static final String BIGINTEGER_STR = "BigInteger";
     private static final String BIGDECIMAL_STR = "BigDecimal";
     public static final String QUESTION_MARK = "?";
@@ -108,6 +111,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean inPropertyExpression = false;
     private boolean inClosure = false;
 
+    private final Map<ClassNode, ClassNode> possibleOuterClassNodeMap = new HashMap<>();
     private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
     private final Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
     private boolean checkingVariableTypeInDeclaration = false;
@@ -143,6 +147,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
     }
+
 
 
     private static String replacePoints(String name) {
@@ -339,7 +344,76 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {
         if (resolve(type)) return;
         if (resolveToInner(type)) return;
+        if (resolveToOuterNested(type)) return;
+
         addError("unable to resolve class " + type.getName() + " " + msg, node);
+    }
+
+    // GROOVY-7812(#1): Static inner classes cannot be accessed from other files when running by 'groovy' command
+    // if the type to resolve is an inner class and it is in an outer class which is not resolved,
+    // we set the resolved type to a placeholder class node, i.e. a ConstructedOuterNestedClass instance
+    // when resolving the outer class later, we set the resolved type of ConstructedOuterNestedClass instance to the actual inner class node(SEE GROOVY-7812(#2))
+    private boolean resolveToOuterNested(ClassNode type) {
+        CompileUnit compileUnit = currentClass.getCompileUnit();
+        String typeName = type.getName();
+
+        ModuleNode module = currentClass.getModule();
+        for (ImportNode importNode : module.getStaticImports().values()) {
+            String importFieldName = importNode.getFieldName();
+            String importAlias = importNode.getAlias();
+
+            if (!typeName.equals(importAlias)) continue;
+
+            ConstructedOuterNestedClassNode constructedOuterNestedClassNode = tryToConstructOuterNestedClassNodeViaStaticImport(compileUnit, importNode, importFieldName);
+            if (null != constructedOuterNestedClassNode) {
+                compileUnit.addClassNodeToResolve(constructedOuterNestedClassNode);
+                return true;
+            }
+        }
+
+        for (Map.Entry<String, ClassNode> entry : compileUnit.getClassesToCompile().entrySet()) {
+            ClassNode outerClassNode = entry.getValue();
+            ConstructedOuterNestedClassNode constructedOuterNestedClassNode = tryToConstructOuterNestedClassNode(type, outerClassNode);
+            if (null != constructedOuterNestedClassNode) {
+                compileUnit.addClassNodeToResolve(constructedOuterNestedClassNode);
+                return true;
+            }
+        }
+
+        boolean toResolveFurther = false;
+        for (ImportNode importNode : module.getStaticStarImports().values()) {
+            ConstructedOuterNestedClassNode constructedOuterNestedClassNode = tryToConstructOuterNestedClassNodeViaStaticImport(compileUnit, importNode, typeName);
+            if (null != constructedOuterNestedClassNode) {
+                compileUnit.addClassNodeToResolve(constructedOuterNestedClassNode);
+                toResolveFurther = true; // do not return here to try all static star imports because currently we do not know which outer class the class to resolve is declared in.
+            }
+        }
+
+        return toResolveFurther;
+    }
+
+    private ConstructedOuterNestedClassNode tryToConstructOuterNestedClassNodeViaStaticImport(CompileUnit compileUnit, ImportNode importNode, String typeName) {
+        String importClassName = importNode.getClassName();
+        ClassNode outerClassNode = compileUnit.getClass(importClassName);
+
+        if (null == outerClassNode) return null;
+
+        String outerNestedClassName = importClassName + "$" + typeName.replace(".", "$");
+        return new ConstructedOuterNestedClassNode(outerClassNode, outerNestedClassName);
+    }
+
+    private ConstructedOuterNestedClassNode tryToConstructOuterNestedClassNode(ClassNode type, ClassNode outerClassNode) {
+        String outerClassName = outerClassNode.getName();
+
+        for (String typeName = type.getName(), ident = typeName; ident.contains("."); ) {
+            ident = ident.substring(0, ident.lastIndexOf("."));
+            if (outerClassName.endsWith(ident)) {
+                String outerNestedClassName = outerClassName + typeName.substring(ident.length()).replace(".", "$");
+                return new ConstructedOuterNestedClassNode(outerClassNode, outerNestedClassName);
+            }
+        }
+
+        return null;
     }
 
     private void resolveOrFail(ClassNode type, ASTNode node, boolean prefereImports) {
@@ -411,6 +485,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         for (ClassNode classToCheck : hierClasses.values()) {
             if (setRedirect(type, classToCheck)) return true;
+        }
+
+        // GROOVY-8947: Fail to resolve non-static inner class outside of outer class
+        ClassNode possibleOuterClassNode = possibleOuterClassNodeMap.get(type);
+        if (null != possibleOuterClassNode) {
+            if (setRedirect(type, possibleOuterClassNode)) return true;
         }
 
         // another case we want to check here is if we are in a
@@ -786,9 +866,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             return true;
         }
+
         return false;
     }
-
 
     public Expression transform(Expression exp) {
         if (exp == null) return null;
@@ -1172,6 +1252,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
+        findPossibleOuterClassNodeForNonStaticInnerClassInstantiation(cce);
+
         ClassNode type = cce.getType();
         resolveOrFail(type, cce);
         if (Modifier.isAbstract(type.getModifiers())) {
@@ -1179,6 +1261,28 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         return cce.transformExpression(this);
+    }
+
+    private void findPossibleOuterClassNodeForNonStaticInnerClassInstantiation(ConstructorCallExpression cce) {
+        // GROOVY-8947: Fail to resolve non-static inner class outside of outer class
+        // `new Computer().new Cpu(4)` will be parsed to `new Cpu(new Computer(), 4)`
+        // so non-static inner class instantiation expression's first argument is a constructor call of outer class
+        // but the first argument is constructor call can not be non-static inner class instantiation expression, e.g.
+        // `new HashSet(new ArrayList())`, so we add "possible" to the variable name
+        Expression argumentExpression = cce.getArguments();
+        if (argumentExpression instanceof ArgumentListExpression) {
+            ArgumentListExpression argumentListExpression = (ArgumentListExpression) argumentExpression;
+            List<Expression> expressionList = argumentListExpression.getExpressions();
+            if (!expressionList.isEmpty()) {
+                Expression firstExpression = expressionList.get(0);
+
+                if (firstExpression instanceof ConstructorCallExpression) {
+                    ConstructorCallExpression constructorCallExpression = (ConstructorCallExpression) firstExpression;
+                    ClassNode possibleOuterClassNode = constructorCallExpression.getType();
+                    possibleOuterClassNodeMap.put(cce.getType(), possibleOuterClassNode);
+                }
+            }
+        }
     }
 
     private static String getDescription(ClassNode node) {
@@ -1386,12 +1490,45 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         checkCyclicInheritance(node, node.getUnresolvedSuperClass(), node.getInterfaces());
-        
+
         super.visitClass(node);
+
+        resolveOuterNestedClassFurther(node);
 
         currentClass = oldNode;
     }
-    
+
+    // GROOVY-7812(#2): Static inner classes cannot be accessed from other files when running by 'groovy' command
+    private void resolveOuterNestedClassFurther(ClassNode node) {
+        CompileUnit compileUnit = currentClass.getCompileUnit();
+
+        if (null == compileUnit) return;
+
+        Map<String, ConstructedOuterNestedClassNode> classesToResolve = compileUnit.getClassesToResolve();
+        List<String> resolvedInnerClassNameList = new LinkedList<>();
+
+        for (Map.Entry<String, ConstructedOuterNestedClassNode> entry : classesToResolve.entrySet()) {
+            String innerClassName = entry.getKey();
+            ConstructedOuterNestedClassNode constructedOuterNestedClass = entry.getValue();
+
+            // When the outer class is resolved, all inner classes are resolved too
+            if (node.getName().equals(constructedOuterNestedClass.getEnclosingClassNode().getName())) {
+                ClassNode innerClassNode = compileUnit.getClass(innerClassName); // find the resolved inner class
+
+                if (null == innerClassNode) {
+                    return; // "unable to resolve class" error can be thrown already, no need to `addError`, so just return
+                }
+
+                constructedOuterNestedClass.setRedirect(innerClassNode);
+                resolvedInnerClassNameList.add(innerClassName);
+            }
+        }
+
+        for (String innerClassName : resolvedInnerClassNameList) {
+            classesToResolve.remove(innerClassName);
+        }
+    }
+
     private void checkCyclicInheritance(ClassNode originalNode, ClassNode parentToCompare, ClassNode[] interfacesToCompare) {
         if(!originalNode.isInterface()) {
             if(parentToCompare == null) return;
@@ -1498,7 +1635,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         upperBoundsToResolve.add(new Tuple2<>(upperBound, classNode));
                     }
 
-                    if (upperBound.isUsingGenerics()) {
+                    if (upperBound != null && upperBound.isUsingGenerics()) {
                         upperBoundsWithGenerics.add(new Tuple2<>(upperBound, type));
                     }
                 }

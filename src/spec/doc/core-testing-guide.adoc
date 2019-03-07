@@ -587,17 +587,15 @@ Although Geb can be used standalone in a Groovy script, in many scenarios it's u
 frameworks. Geb comes with various base classes that can be used in JUnit 3, 4, TestNG or Spock tests. The base classes
 are part of additional Geb modules that need to be added as a dependency.
 
-For example, the following `@Grab` dependencies have to be used to run Geb with the Selenium Firefox driver in
-JUnit4 tests. The module that is needed for JUnit 3/4 support is `geb-junit`:
+For example, the following `@Grab` dependencies can be used to run Geb with the Selenium Firefox driver in
+JUnit4 tests. The module that is needed for JUnit 3/4 support is `geb-junit4`:
 
 [source,groovy]
 --------------------------------------------------------------------
-@Grapes([
-    @Grab("org.gebish:geb-core:0.9.2"),
-    @Grab("org.gebish:geb-junit:0.9.2"),
-    @Grab("org.seleniumhq.selenium:selenium-firefox-driver:2.26.0"),
-    @Grab("org.seleniumhq.selenium:selenium-support:2.26.0")
-])
+@Grab('org.gebish:geb-core:0.9.2')
+@Grab('org.gebish:geb-junit4:0.9.2')
+@Grab('org.seleniumhq.selenium:selenium-firefox-driver:2.26.0')
+@Grab('org.seleniumhq.selenium:selenium-support:2.26.0')
 --------------------------------------------------------------------
 
 The central class in Geb is the `geb.Browser` class. As its name implies it is used
@@ -605,6 +603,9 @@ The central class in Geb is the `geb.Browser` class. As its name implies it is u
 
 [source,groovy]
 ---------------------------------------------------------------------------------------------------
+import geb.Browser
+import org.openqa.selenium.firefox.FirefoxDriver
+
 def browser = new Browser(driver: new FirefoxDriver(), baseUrl: 'http://myhost:8080/myapp')  // <1>
 browser.drive {
     go "/login"                        // <2>

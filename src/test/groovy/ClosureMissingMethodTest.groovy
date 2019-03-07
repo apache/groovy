@@ -18,14 +18,11 @@
  */
 package groovy
 
-/**
- * @author Danno Ferrin
- */
 class ClosureMissingMethodTest extends GroovyTestCase {
 
-  void testInScript() {
-      GroovyShell shell = new GroovyShell()
-      shell.evaluate("""
+    void testInScript() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
           int count = 0
 
           foo = {
@@ -47,31 +44,31 @@ class ClosureMissingMethodTest extends GroovyTestCase {
               assert count == 1
           }
       """);
-  }
+    }
 
-  void testInMethod() {
-      int count = 0
+    void testInMethod() {
+        int count = 0
 
-      def foo = {
-          count++
-          bar()
-      }
-      def baz = {
-          foo()
-      }
+        def foo = {
+            count++
+            bar()
+        }
+        def baz = {
+            foo()
+        }
 
-      try {
-          baz()
-          fail()
-      } catch (MissingMethodException mme) {
-          assert mme.method == 'bar'
-          assert count == 1
-      }
-  }
+        try {
+            baz()
+            fail()
+        } catch (MissingMethodException mme) {
+            assert mme.method == 'bar'
+            assert count == 1
+        }
+    }
 
-  void testWithMetaClassInScript() {
-      GroovyShell shell = new GroovyShell()
-      shell.evaluate("""
+    void testWithMetaClassInScript() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
           int count = 0
 
           foo = {
@@ -96,28 +93,28 @@ class ClosureMissingMethodTest extends GroovyTestCase {
               assert count == 1
           }
       """);
-  }
+    }
 
-  void testWithMetaClassInMethod() {
-      int count = 0
+    void testWithMetaClassInMethod() {
+        int count = 0
 
-      def foo = {
-          count++
-          bar()
-      }
-      def baz = {
-          foo()
-      }
-      MetaClass mc = new ExpandoMetaClass(baz.getClass())
-      mc.initialize()
-      baz.metaClass = mc
+        def foo = {
+            count++
+            bar()
+        }
+        def baz = {
+            foo()
+        }
+        MetaClass mc = new ExpandoMetaClass(baz.getClass())
+        mc.initialize()
+        baz.metaClass = mc
 
-      try {
-          baz()
-          fail()
-      } catch (MissingMethodException mme) {
-          assert mme.method == 'bar'
-          assert count == 1
-      }
-  }
+        try {
+            baz()
+            fail()
+        } catch (MissingMethodException mme) {
+            assert mme.method == 'bar'
+            assert count == 1
+        }
+    }
 }

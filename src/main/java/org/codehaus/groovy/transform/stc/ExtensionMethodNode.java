@@ -26,8 +26,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 /**
  * Represents method nodes which are used by the static type checker to virtually add methods
  * coming from {@link org.codehaus.groovy.runtime.DefaultGroovyMethods DGM-like} methods.
- *
- * @author Cedric Champeau
  */
 public class ExtensionMethodNode extends MethodNode {
     private final MethodNode extensionMethodNode;

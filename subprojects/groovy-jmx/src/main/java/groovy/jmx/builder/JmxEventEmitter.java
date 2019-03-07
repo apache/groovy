@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * jmx.emitter.send(object)
  * </pre>
  *
- * @author Vladimir Vivien
  * @see groovy.jmx.builder.JmxEmitterFactory
  */
 public class JmxEventEmitter extends NotificationBroadcasterSupport implements JmxEventEmitterMBean {

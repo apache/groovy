@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- * @author Guillaume Laforge
- */
 class Groovy4457GenericTypeDeclarationLeakTest extends GroovyTestCase {
 
     void testLeak() {

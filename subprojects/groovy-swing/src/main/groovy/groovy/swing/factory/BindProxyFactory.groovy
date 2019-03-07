@@ -21,16 +21,15 @@ package groovy.swing.factory
 import org.codehaus.groovy.binding.BindingProxy
 
 /**
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @since Groovy 1.1
  */
-public class BindProxyFactory extends AbstractFactory {
+class BindProxyFactory extends AbstractFactory {
 
-    public boolean isLeaf() {
+    boolean isLeaf() {
         return true
     }
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value == null) {
             throw new RuntimeException("$name requires a value argument.");
         }
@@ -41,7 +40,7 @@ public class BindProxyFactory extends AbstractFactory {
         return mb;
     }
 
-    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if (builder.context.bind) {
             node.bind()
         }

@@ -49,7 +49,6 @@ import java.lang.annotation.Target;
  * The <code>node</code> variable refers to the AST node where the AST test annotation is put. In the previous example,
  * it means that <i>node</i> refers to the declaration node (int x).
  *
- * @author Cedric Champeau
  * @since 2.0.0
  *
  */

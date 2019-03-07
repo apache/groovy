@@ -22,8 +22,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test that traits do not mess up with stub generation.
- *
- * @author Cedric Champeau
  */
 class Groovy7052Bug extends StringSourcesStubTestCase {
 

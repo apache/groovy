@@ -26,9 +26,6 @@ import java.util.Map;
 
 /**
  * A bean used by the test cases
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  */
 public class DummyBean {
     private String name = "James";

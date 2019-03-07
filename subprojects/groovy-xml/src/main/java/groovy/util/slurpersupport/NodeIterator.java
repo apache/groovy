@@ -22,8 +22,6 @@ import java.util.Iterator;
 
 /**
  * Helper class for iterating through nodes.
- * 
- * @author John Wilson
  */
 public abstract class NodeIterator implements Iterator {
     private static final Object DELAYED_INIT = new Object();

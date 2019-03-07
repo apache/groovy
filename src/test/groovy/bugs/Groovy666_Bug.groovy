@@ -18,9 +18,6 @@
  */
 package groovy.bugs
 
-/**
- *  @author Russel Winder
- */ 
 class Groovy666_Bug extends GroovyShellTestCase {
   void testRunScript() {
     evaluate("x = 1")

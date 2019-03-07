@@ -18,14 +18,10 @@
  */
 package groovy.xml
 
-import groovy.util.GroovyTestCase
-
 /**
-* Tests for the Groovy Xml user guide related to XmlParser.
-*
-* @author Groovy Documentation Community
-*/
-class UserGuideXmlParserTest  extends GroovyTestCase {
+ * Tests for the Groovy Xml user guide related to XmlParser.
+ */
+class UserGuideXmlParserTest extends GroovyTestCase {
 
     // tag::responseBookXml[]
     def xml = """
@@ -33,8 +29,8 @@ class UserGuideXmlParserTest  extends GroovyTestCase {
         <value>
             <books>
                 <book id="2">
-                    <title>Don Xijote</title>
-                    <author id="1">Manuel De Cervantes</author>
+                    <title>Don Quixote</title>
+                    <author id="1">Miguel de Cervantes</author>
                 </book>
             </books>
         </value>
@@ -64,9 +60,9 @@ class UserGuideXmlParserTest  extends GroovyTestCase {
         def parser = new XmlParser()
         def response = parser.parseText(xml)
         def numberOfResults = parser.createNode(
-            response,
-            new QName("numberOfResults"),
-            [:]
+                response,
+                new QName("numberOfResults"),
+                [:]
         )
 
         numberOfResults.value = "1"
@@ -80,9 +76,9 @@ class UserGuideXmlParserTest  extends GroovyTestCase {
         def response = parser.parseText(xml)
 
         response.appendNode(
-            new QName("numberOfResults"),
-            [:],
-            "1"
+                new QName("numberOfResults"),
+                [:],
+                "1"
         )
 
         response.numberOfResults.text() == "1"
@@ -91,34 +87,34 @@ class UserGuideXmlParserTest  extends GroovyTestCase {
 
     void testModifyingNodes1() {
         // tag::testModifyingNodes1[]
-         def response = new XmlParser().parseText(xml)
+        def response = new XmlParser().parseText(xml)
 
-      /* Use the same syntax as groovy.xml.MarkupBuilder */
-         response.value.books.book[0].replaceNode{ // <1>
-             book(id:"3"){
-                 title("To Kill a Mockingbird")
-                 author(id:"3","Harper Lee")
-             }
-         }
+        /* Use the same syntax as groovy.xml.MarkupBuilder */
+        response.value.books.book[0].replaceNode { // <1>
+            book(id: "3") {
+                title("To Kill a Mockingbird")
+                author(id: "3", "Harper Lee")
+            }
+        }
 
-         def newNode = response.value.books.book[0]
+        def newNode = response.value.books.book[0]
 
-         assert newNode.name() == "book"
-         assert newNode.@id == "3"
-         assert newNode.title.text() == "To Kill a Mockingbird"
-         assert newNode.author.text() == "Harper Lee"
-         assert newNode.author.@id.first() == "3"
+        assert newNode.name() == "book"
+        assert newNode.@id == "3"
+        assert newNode.title.text() == "To Kill a Mockingbird"
+        assert newNode.author.text() == "Harper Lee"
+        assert newNode.author.@id.first() == "3"
         // end::testModifyingNodes1[]
     }
 
     void testSettingAttributes1() {
         // tag::testSettingAttributes1[]
-         def parser = new XmlParser()
-         def response = parser.parseText(xml)
+        def parser = new XmlParser()
+        def response = parser.parseText(xml)
 
-         response.@numberOfResults = "1"
+        response.@numberOfResults = "1"
 
-         assert response.@numberOfResults == "1"
+        assert response.@numberOfResults == "1"
         // end::testSettingAttributes1[]
     }
 

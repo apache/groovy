@@ -20,8 +20,6 @@ package groovy
 
 /** 
  * Tests creating Maps in Groovy
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 class MapConstructionTest extends GroovyTestCase {
 

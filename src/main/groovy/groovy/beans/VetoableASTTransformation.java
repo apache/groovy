@@ -52,6 +52,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -71,9 +72,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * <p>
  * If a {@link Bindable} annotation is detected it also adds support similar
  * to what {@link BindableASTTransformation} would do.
- *
- * @author Danno Ferrin (shemnon)
- * @author Chris Reeves
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class VetoableASTTransformation extends BindableASTTransformation {
@@ -175,8 +173,8 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             // Get the existing code block
             Statement code = setter.getCode();
 
-            Expression oldValue = varX("$oldValue");
-            Expression newValue = varX("$newValue");
+            Expression oldValue = localVarX("$oldValue");
+            Expression newValue = localVarX("$newValue");
             Expression proposedValue = varX(setter.getParameters()[0].getName());
             BlockStatement block = new BlockStatement();
 

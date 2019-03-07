@@ -27,8 +27,6 @@ import static groovy.sql.SqlTestConstants.*
 
 /**
  * Unit test of Sql cache feature 
- * @author Marc DeXeT
- * @author Paul King
  */
 class SqlCacheTest extends GroovyTestCase {
     Sql sql

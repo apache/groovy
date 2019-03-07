@@ -71,7 +71,7 @@ class CliBuilderTest extends GroovyTestCase {
         def expectedUsage = """Usage: $usageString
   -c, --encoding=<charset>   character encoding
   -h, --help                 usage information
-  -i= [<extension>]          modify files in place, create backup if extension is
+  -i=[<extension>]           modify files in place, create backup if extension is
                                specified (e.g. '.bak')"""
         assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         resetPrintWriter()
@@ -988,6 +988,20 @@ class CliBuilderTest extends GroovyTestCase {
             assert opt == 'h'
             assert longOpt == 'help'
         }
+    }
+
+    interface StringIntArray {
+        @Option(shortName='u') String user()
+        @Unparsed Integer[] nums()
+    }
+
+    // GROOVY-8975
+    void testTypedCaseWithRemainingArray() {
+        def cli = new CliBuilder()
+        def argz = '--user abc 12 34'.split()
+        StringIntArray hello = cli.parseFromSpec(StringIntArray, argz)
+        assert hello.user() == 'abc'
+        assert hello.nums() == [12, 34]
     }
 
     void testAcceptLongOptionsWithSingleHyphen_usage() {

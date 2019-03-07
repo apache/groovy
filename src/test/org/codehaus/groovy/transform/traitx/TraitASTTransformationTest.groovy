@@ -2668,4 +2668,49 @@ assert c.b() == 2
             assert Counter.count == 11
         '''
     }
+
+    //GROOVY-8954
+    void testTraitWithPropertyAlsoFromInterfaceSC() {
+        assertScript '''
+            interface DomainProp {
+                boolean isNullable()
+            }
+
+            abstract class OrderedProp implements DomainProp { }
+
+            trait Nullable {
+                boolean nullable = true
+            }
+
+            @groovy.transform.CompileStatic
+            abstract class CustomProp extends OrderedProp implements Nullable { }
+
+            assert new CustomProp() {}
+        '''
+    }
+
+    //GROOVY-8272
+    void testTraitAccessToInheritedStaticMethods() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            trait Foo {
+                static String go() {
+                    'Go!'
+                }
+            }
+
+            @CompileStatic
+            trait Bar extends Foo {
+                String doIt() {
+                    go().toUpperCase()
+                }
+            }
+
+            class Main implements Bar {}
+
+            assert new Main().doIt() == 'GO!'
+        '''
+    }
 }

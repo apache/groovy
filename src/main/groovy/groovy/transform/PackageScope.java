@@ -59,7 +59,6 @@ import java.lang.annotation.Target;
  * This transformation is not frequently needed but can be useful in certain testing scenarios
  * or when using a third-party library or framework which relies upon package scoping.
  *
- * @author Paul King
  * @since 1.8.0
  */
 @java.lang.annotation.Documented

@@ -22,8 +22,6 @@ import groovy.transform.stc.SocketGMClosureParamTypeInferenceSTCTest
 
 /**
  * Unit tests for static compilation: closure parameter type inference: {@link org.codehaus.groovy.runtime.SocketGroovyMethods}.
- *
- * @author Cedric Champeau
  */
 class SocketGMClosureParamTypeInferenceStaticCompileTest extends SocketGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 

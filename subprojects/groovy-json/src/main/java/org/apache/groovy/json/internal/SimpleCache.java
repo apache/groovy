@@ -21,9 +21,6 @@ package org.apache.groovy.json.internal;
 import org.codehaus.groovy.runtime.memoize.CommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
 
-/**
- * @author Richard Hightower
- */
 public class SimpleCache<K, V> implements Cache<K, V> {
     private EvictableCache<K, V> cache;
 

@@ -27,8 +27,6 @@ import java.util.List;
 /**
  * Represents a String expression which contains embedded values inside
  * it such as "hello there ${user} how are you" which is expanded lazily
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class GStringExpression extends Expression {
 

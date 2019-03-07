@@ -357,7 +357,7 @@ smallerFontAction = action(
 )
 
 smartHighlighterAction = action(
-        name: 'Enable smart highlighter',
+        name: 'Enable Smart Highlighter',
         closure: controller.&smartHighlighter
 )
 

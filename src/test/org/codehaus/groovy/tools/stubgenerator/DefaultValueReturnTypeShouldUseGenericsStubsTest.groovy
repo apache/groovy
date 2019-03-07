@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * GROOVY-5710: Stub generator should not use raw types when casting default return values
- *
- * @author Guillaume Laforge
  */
 class DefaultValueReturnTypeShouldUseGenericsStubsTest extends StringSourcesStubTestCase  {
 

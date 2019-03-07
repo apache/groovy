@@ -17,6 +17,7 @@
  *  under the License.
  */
 package org.codehaus.groovy.ast.decompiled
+
 import junit.framework.TestCase
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
@@ -27,11 +28,6 @@ import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
 import org.objectweb.asm.Opcodes
 
-import java.lang.annotation.RetentionPolicy
-import java.util.jar.Attributes
-/**
- * @author Peter Gromov
- */
 class AsmDecompilerTest extends TestCase {
 
     void "test decompile class"() {
@@ -202,7 +198,9 @@ class AsmDecompilerTest extends TestCase {
         assert !anno.isTargetAllowed(AnnotationNode.LOCAL_VARIABLE_TARGET)
     }
 
-    public static enum TestEnum { SOURCE, CLASS, RUNTIME }
+    static enum TestEnum {
+        SOURCE, CLASS, RUNTIME
+    }
 
     void "test enum field"() {
         def node = decompile(TestEnum.name).plainNodeReference
@@ -245,12 +243,12 @@ class AsmDecompilerTest extends TestCase {
         assert wildcard.upperBounds[0].name == Object.name
     }
 
-    public void "test non-generic exceptions"() {
+    void "test non-generic exceptions"() {
         def method = decompile().getDeclaredMethods("nonGenericExceptions")[0]
         assert method.exceptions[0].name == IOException.name
     }
 
-    public void "test non-generic parameters"() {
+    void "test non-generic parameters"() {
         def method = decompile().getDeclaredMethods("nonGenericParameters")[0]
         assert method.parameters[0].type == ClassHelper.boolean_TYPE
     }
@@ -267,7 +265,7 @@ class AsmDecompilerTest extends TestCase {
         assert tRef.genericsTypes[0].name == 'T'
     }
 
-    public void "test non-trivial erasure"() {
+    void "test non-trivial erasure"() {
         def cls = decompile(NonTrivialErasure.name)
 
         def method = cls.getDeclaredMethods("method")[0]
@@ -279,7 +277,7 @@ class AsmDecompilerTest extends TestCase {
         assert field.type.toString() == 'V -> java.lang.RuntimeException'
     }
 
-    public static class SomeInnerclass{}
+    static class SomeInnerclass {}
 
     void "test static inner class"() {
         assert (decompile(SomeInnerclass.name).modifiers & Opcodes.ACC_STATIC) != 0

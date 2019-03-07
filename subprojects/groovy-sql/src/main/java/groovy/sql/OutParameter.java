@@ -20,8 +20,6 @@ package groovy.sql;
 
 /**
  * A parameter to be returned from a CallableStatement.
- *
- * @author rfuller
  */
 public interface OutParameter {
     /**

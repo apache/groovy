@@ -29,8 +29,6 @@ import java.util.TreeMap;
 /**
  * This maps only builds once you ask for a key for the first time.
  * It is designed to not incur the overhead of creating a map unless needed.
- *
- * @author Rick Hightower
  */
 public class LazyMap extends AbstractMap<String, Object> {
 

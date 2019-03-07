@@ -43,8 +43,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * The JmxBuilderModelMBean is the MBean class that proxies exported POGO/POJO inside the MBeanServer.
  * When JmxBuilder exports an object instance, an instance of this class is created and exported inside the
  * MBeanServer.
- *
- * @author Vladimir Vivien
  */
 public class JmxBuilderModelMBean extends RequiredModelMBean implements NotificationListener {
     private final List<String> methodListeners = new ArrayList<String>(0);
@@ -173,7 +171,6 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
      * Internal class AttributeChangedListener provides hooks to handle attribute-change events
      * that occurs on registered MBeans.
      *
-     * @author Vladimir Vivien
      * @see groovy.jmx.builder.JmxBuilderModelMBean
      */
     private static final class AttributeChangedListener implements NotificationListener {

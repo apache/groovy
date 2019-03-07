@@ -20,8 +20,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : unary and binary expressions.
- *
- * @author Cedric Champeau
  */
 class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
 

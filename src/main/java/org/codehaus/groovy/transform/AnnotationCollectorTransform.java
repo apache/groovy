@@ -64,7 +64,6 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * This class is the base for any annotation alias processor. 
  * @see AnnotationCollector
  * @see AnnotationCollectorTransform#visit(AnnotationNode, AnnotationNode, AnnotatedNode, SourceUnit)
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class AnnotationCollectorTransform {
 
@@ -88,7 +87,6 @@ public class AnnotationCollectorTransform {
      * value method returning our serialized version of the data for processing
      * from a pre-compiled state. By doing this the old annotations will be
      * removed as well 
-     * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
      */
     public static class ClassChanger {
         

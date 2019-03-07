@@ -27,7 +27,6 @@ import org.codehaus.groovy.control.SourceUnit;
  * Base class for compilation customizers which delegate to another customizer. The phase this
  * customizer runs at is retrieved from the phase of the delegate.
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 public abstract class DelegatingCustomizer extends CompilationCustomizer {

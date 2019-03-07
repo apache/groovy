@@ -20,9 +20,6 @@ package org.codehaus.groovy.classgen.asm
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
-/**
- * @author Guillaume Laforge
- */
 class BinaryOperationsTest extends AbstractBytecodeTestCase {
     
     void testIntPlus() {

@@ -27,8 +27,6 @@ import java.util.List;
 
 /**
  * Tests method invocation
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class InvokeGroovyMethodTest extends GroovyTestCase {
 

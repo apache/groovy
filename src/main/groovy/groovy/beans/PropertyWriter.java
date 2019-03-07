@@ -18,9 +18,6 @@
  */
 package groovy.beans;
 
-/**
- * @author Andres Almiray
- */
 public interface PropertyWriter {
     void write(Object owner, String propertyName, Object value);
 }

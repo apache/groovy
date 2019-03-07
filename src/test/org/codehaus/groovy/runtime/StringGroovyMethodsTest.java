@@ -27,12 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- * @author James Strachan
- * @author Marc Guillemot
- * @author Brad Long
- * @author Henrique Mota
- */
 public class StringGroovyMethodsTest extends GroovyTestCase {
 
     public void testIncrementString() throws Exception {

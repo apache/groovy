@@ -23,8 +23,6 @@ import java.util.List;
 
 /**
  * Represents an inner class defined as helper for an interface
- * 
- * @author Roshan Dawrani
  */
 public class InterfaceHelperClassNode extends InnerClassNode {
 

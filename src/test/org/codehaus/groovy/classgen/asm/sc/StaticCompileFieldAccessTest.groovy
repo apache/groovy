@@ -22,8 +22,6 @@ import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
 /**
  * Unit tests for static compilation: access field nodes.
- *
- * @author Cedric Champeau
  */
 class StaticCompileFieldAccessTest extends AbstractBytecodeTestCase {
     void testAccessProperty() {

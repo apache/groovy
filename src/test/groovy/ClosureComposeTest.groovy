@@ -19,7 +19,7 @@
 package groovy
 
 /**
- * @author Paul King
+ * Tests for Closure composition
  */
 class ClosureComposeTest extends GroovyTestCase {
 

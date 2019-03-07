@@ -84,7 +84,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                     for (int i = testClosure.lineNumber; i <= testClosure.lastLineNumber; i++) {
                         sb.append(source.source.getLine(i, new Janitor())).append('\n')
                     }
-                    def testSource = sb.substring(testClosure.columnNumber + 1, sb.length())
+                    def testSource = sb.substring(testClosure.columnNumber, sb.length())
                     testSource = testSource.substring(0, testSource.lastIndexOf('}'))
                     CompilerConfiguration config = new CompilerConfiguration()
                     def customizer = new ImportCustomizer()

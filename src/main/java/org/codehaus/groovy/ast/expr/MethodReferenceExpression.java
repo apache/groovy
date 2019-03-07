@@ -22,9 +22,6 @@ package org.codehaus.groovy.ast.expr;
 /**
  * Represents a method reference or a constructor reference,
  * e.g. System.out::println OR Objects::requireNonNull OR Integer::new OR int[]::new
- *
- * @author  <a href="mailto:realbluesun@hotmail.com">Daniel.Sun</a>
- * Created on    2016/10/19
  */
 public class MethodReferenceExpression extends MethodPointerExpression {
     public MethodReferenceExpression(Expression expression, Expression methodName) {

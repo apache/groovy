@@ -24,8 +24,6 @@ import asciidoctor.Utils
 * Tests for ObjectGraphBuilder. The tests directly in this file are specific
 * to ObjectGraphBuilder. Functionality in common with other Builders
 * is tested in the parent class.
-*
-* @author Groovy Documentation Community
 */
 class ObjectGraphBuilderTest  extends GroovyTestCase {
 

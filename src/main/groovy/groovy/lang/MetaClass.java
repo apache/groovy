@@ -32,9 +32,6 @@ import java.util.List;
  *
  * @see MetaClassImpl
  * @see groovy.lang.MetaObjectProtocol
- * 
- * @author John Wilson
- * @author Graeme Rocher
  */
 public interface MetaClass extends MetaObjectProtocol {
 

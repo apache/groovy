@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.shell.expr
 
 /**
  * Tests for classes defined which have private constructors.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class ClassWithPrivateConstructor
     extends ExprTestSupport

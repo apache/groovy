@@ -29,13 +29,11 @@ import org.codehaus.groovy.control.CompilePhase
  * You can convert a String into AST using the buildFromString method.
  * You can convert code into AST using the buildFromCode method.
  * You can use the AST DSL with the buildFromSpec method. 
- * 
- * For more information, see the resources on the Groovy wiki pages. 
  *
- * @author Hamlet D'Arcy
+ * For more information, see the resources on the Groovy wiki pages. 
  */
 @CompileStatic
-public class AstBuilder {
+class AstBuilder {
 
     /**
      * Builds AST based on the code within the  {@link Closure}  parameter.
@@ -45,16 +43,12 @@ public class AstBuilder {
      * you most likely need to add stronger typing. For instance, this will not work:
      * <code>
      *      def builder = new AstBuilder()
-     *      builder.buildFromCode {
-     *             // some code
-     *      }
-     * </code>
+     *      builder.buildFromCode {*             // some code
+     *}* </code>
      * While this code will:
      * <code>
-     *      new AstBuilder().buildFromCode {
-     *             // some code
-     *      }
-     * </code>
+     *      new AstBuilder().buildFromCode {*             // some code
+     *}* </code>
      *
      * The compiler rewrites buildFromCode invocations into  {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
      * invocations. An exception raised during AST generation will show a stack trace from  {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
@@ -73,8 +67,7 @@ public class AstBuilder {
      * @param block
      *      the code that will be converted
      * @returns a List of  {@link ASTNode} .
-     * @throws IllegalStateException
-     *      this method may not be invoked at runtime. It works via a compile-time transformation
+     * @throws IllegalStateException*      this method may not be invoked at runtime. It works via a compile-time transformation
      *      of the closure source code into a String, which is sent to the  {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
      *      method. The buildFromCode() method must be invoked against a strongly typed AstBuilder.
      */
@@ -96,8 +89,7 @@ Are you sure you are using it correctly?
      * @param source
      *      The source code String that will be compiled.
      * @returns a List of  {@link ASTNode} .
-     * @throws IllegalArgumentException
-     *      if source is null or empty
+     * @throws IllegalArgumentException*      if source is null or empty
      */
     List<ASTNode> buildFromString(CompilePhase phase = CompilePhase.CLASS_GENERATION, boolean statementsOnly = true, String source) {
         if (!source || "" == source.trim()) throw new IllegalArgumentException("A source must be specified")
@@ -116,8 +108,7 @@ Are you sure you are using it correctly?
      * @param source
      *      The source code String that will be compiled. The string must be a block wrapped in curly braces. 
      * @returns a List of  {@link ASTNode} .
-     * @throws IllegalArgumentException
-     *      if source is null or empty
+     * @throws IllegalArgumentException*      if source is null or empty
      */
     private List<ASTNode> buildFromBlock(CompilePhase phase = CompilePhase.CLASS_GENERATION, boolean statementsOnly = true, String source) {
         if (!source || "" == source.trim()) throw new IllegalArgumentException("A source must be specified")
@@ -126,7 +117,7 @@ Are you sure you are using it correctly?
         // find the block statement from the result, and unwrap it from one level.
         result.collect { node ->
             if (node instanceof BlockStatement) {
-                ((BlockStatement)node).statements[0] //unwrap the artifact of pre-pending the goto label
+                ((BlockStatement) node).statements[0] //unwrap the artifact of pre-pending the goto label
             } else {
                 node
             }

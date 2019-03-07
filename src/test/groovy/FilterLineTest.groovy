@@ -22,8 +22,6 @@ package groovy
  * check that the new filterLine() method on InputStream is ok
  * (and indirectly test newReader() method on InputStream)
  * as specified in GROOVY-624 and GROOVY-625
- *
- * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  */
 
 class FilterLineTest extends GroovyTestCase {

@@ -41,9 +41,6 @@ import org.codehaus.groovy.control.CompilePhase
  * statement on the beginning of method calls.
  *
  * @see groovy.transform.ConditionalInterrupt
- * @author Cedric Champeau
- * @author Hamlet D'Arcy
- * @author Paul King
  * @since 1.8.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)

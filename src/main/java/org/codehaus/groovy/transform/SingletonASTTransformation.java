@@ -52,9 +52,6 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.newClass;
 
 /**
  * Handles generation of code for the @Singleton annotation
- *
- * @author Alex Tkachman
- * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class SingletonASTTransformation extends AbstractASTTransformation {

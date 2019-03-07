@@ -23,10 +23,6 @@ import org.custommonkey.xmlunit.Diff
 
 /**
  * Common test cases for StreamingMarkupBuilder and MarkupBuilder.
- *
- * @author Paul King
- * @author Scott Stirling
- * @author Pilho Kim
  */
 abstract class BuilderTestSupport extends GroovyTestCase {
 

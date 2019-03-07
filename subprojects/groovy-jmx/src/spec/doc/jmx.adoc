@@ -712,7 +712,7 @@ JmxBuilder **supports the explicit description and export of constructors** defi
 
 ==== Export all Constructors with "*"
 
-You can use the builder's special '""' **notation to *export all constructors** declared on the underlying bean. The builder will use default values to describe the MBean constructors.
+You can use the builder's special "*" **notation to export all constructors** declared on the underlying bean. The builder will use default values to describe the MBean constructors.
 
 [source,groovy]
 ----
@@ -747,7 +747,7 @@ Similar to constructors, JmxBuilder supports the description and export of MBean
 
 ==== Export All Operations with "*"
 
-You can use the builder's special '""'' **notation to *export all operations** defined on the bean to be exposed for management. The builder will use default descriptor values for the operations being exported.
+You can use the builder's special "*" **notation to export all operations** defined on the bean to be exposed for management. The builder will use default descriptor values for the operations being exported.
 
 [source,groovy]
 ----

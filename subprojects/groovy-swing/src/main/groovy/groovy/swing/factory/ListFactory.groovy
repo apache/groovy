@@ -25,12 +25,10 @@ import javax.swing.*
 
 /**
  * Create a JList, and handle the optional items attribute.
- *
- * @author HuberB1
  */
-public class ListFactory extends AbstractFactory {
+class ListFactory extends AbstractFactory {
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         // FactoryBuilderSupport.checkValueIsType(value, name, JList)
 
         JList list
@@ -38,7 +36,7 @@ public class ListFactory extends AbstractFactory {
 
         if (value instanceof JList) {
             list = value
-        } else if (value instanceof Vector || value instanceof Object[]){
+        } else if (value instanceof Vector || value instanceof Object[]) {
             list = new JList(value)
         } else if (value instanceof List) {
             list = new JList(new ListWrapperListModel(items))
@@ -58,7 +56,7 @@ public class ListFactory extends AbstractFactory {
         return list
     }
 
-    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
+    boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
         if (attributes.containsKey("listData")) {
             def listData = attributes.remove("listData")
             if (listData instanceof Vector || listData instanceof Object[]) {
@@ -69,10 +67,11 @@ public class ListFactory extends AbstractFactory {
                 node.listData = listData.toArray()
             } else {
                 // allow any iterable ??
-                node.listData = listData.collect([]){it} as Object[]
+                node.listData = listData.collect([]) { it } as Object[]
             }
         }
         return true
     }
+
 }
 

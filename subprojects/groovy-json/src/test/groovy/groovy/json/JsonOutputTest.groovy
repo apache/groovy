@@ -22,10 +22,6 @@ import static groovy.json.JsonOutput.toJson
 
 import groovy.transform.Canonical
 
-/**
- * @author Guillaume Laforge
- * @author Andrey Bloschetsov
- */
 class JsonOutputTest extends GroovyTestCase {
 
     // Check for GROOVY-5918

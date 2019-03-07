@@ -24,8 +24,6 @@ import java.util.logging.Logger;
 
 /** 
  * Represents a cell in a table layout.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class TableLayoutCell {
 

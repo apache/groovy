@@ -27,7 +27,6 @@ import java.util.List;
  * This class does not support concurrent modifications nor will it check
  * for them. This class is also not thread safe.
  *
- * @author Jochen Theodorou
  * @since 1.6
  * @deprecated replaced by {@link ManagedConcurrentLinkedQueue}
  */

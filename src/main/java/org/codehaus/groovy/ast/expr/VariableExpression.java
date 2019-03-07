@@ -25,8 +25,6 @@ import org.codehaus.groovy.ast.Variable;
 
 /**
  * Represents a local variable name, the simplest form of expression. e.g.&#160;"foo".
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class VariableExpression extends Expression implements Variable {
     // The following fields are only used internally; every occurrence of a user-defined expression of the same kind

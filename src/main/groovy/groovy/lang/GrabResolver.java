@@ -42,8 +42,6 @@ import java.lang.annotation.Target;
  * <p>
  * Further information about customising grape behavior can be found on the Grape documentation page:
  * <a href="http://groovy-lang.org/grape.html">http://groovy-lang.org/grape.html</a>.
- *
- * @author Merlyn Albery-Speyer
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({

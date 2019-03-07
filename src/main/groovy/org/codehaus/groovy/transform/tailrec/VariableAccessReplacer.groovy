@@ -28,8 +28,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression
  * in nameAndTypeMapping before calling replaceIn().
  *
  * The VariableReplacedListener can be set if clients want to react to variable replacement.
- *
- * @author Johannes Link
  */
 @CompileStatic
 class VariableAccessReplacer {

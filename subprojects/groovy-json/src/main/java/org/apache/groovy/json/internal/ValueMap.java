@@ -20,9 +20,6 @@ package org.apache.groovy.json.internal;
 
 import java.util.Map;
 
-/**
- * @author Richard Hightower
- */
 public interface ValueMap<K, V> extends Map<K, V> {
 
     /* add a map item value. */

@@ -43,11 +43,6 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 
 /**
  * Handles transformation for the @BaseScript annotation.
- *
- * @author Paul King
- * @author Cedric Champeau
- * @author Vladimir Orany
- * @author Jim White
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class BaseScriptASTTransformation extends AbstractASTTransformation {

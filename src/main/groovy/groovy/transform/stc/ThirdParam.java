@@ -30,7 +30,6 @@ import org.codehaus.groovy.control.SourceUnit;
  *
  * <p>This class has several inner classes that also helps picking generic argument types instead of the parameter type.</p>
  *
- * @author Cédric Champeau
  * @since 2.3.0
  */
 public class ThirdParam extends PickAnyArgumentHint {
@@ -42,7 +41,6 @@ public class ThirdParam extends PickAnyArgumentHint {
      * <p>A hint used to instruct the type checker to pick the first generic type of the third parameter type. For example:</p>
      * <code>void &lt;T&gt; doWithElements(String first, Integer second, List&lt;T&gt; third, @ClosureParams(SecondParam.FirstGenericType.class) Closure c) { ... } }</code>
      *
-     * @author Cédric Champeau
      * @since 2.3.0
      */
     public static class FirstGenericType extends PickAnyArgumentHint {
@@ -56,7 +54,6 @@ public class ThirdParam extends PickAnyArgumentHint {
      * <p>A hint used to instruct the type checker to pick the second generic type of the third parameter type. For example:</p>
      * <code>void &lt;T,U&gt; doWithElements(String first, Integer second, Tuple&lt;T,U&gt; third, @ClosureParams(SecondParam.SecondGenericType.class) Closure c) { ... }</code>
      *
-     * @author Cédric Champeau
      * @since 2.3.0
      */
     public static class SecondGenericType extends PickAnyArgumentHint {
@@ -69,7 +66,6 @@ public class ThirdParam extends PickAnyArgumentHint {
      * <p>A hint used to instruct the type checker to pick the second generic type of the third parameter type. For example:</p>
      * <code>void &lt;T,U,V&gt; doWithElements(String first, Integer second, Triple&lt;T,U,V&gt; src, @ClosureParams(SecondParam.ThirdGenericType.class) Closure c) { ... }</code>
      *
-     * @author Cédric Champeau
      * @since 2.3.0
      */
     public static class ThirdGenericType extends PickAnyArgumentHint {

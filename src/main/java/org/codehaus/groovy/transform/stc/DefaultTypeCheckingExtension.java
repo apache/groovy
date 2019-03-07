@@ -44,7 +44,6 @@ import java.util.List;
  * of delegates is set, then the type checker will try all the delegates until one is capable
  * of handling an error.
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 public class DefaultTypeCheckingExtension extends TypeCheckingExtension {

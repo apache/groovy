@@ -23,8 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This holds a mapping from value key to value value to maximize laziness.
- *
- * @author Rick Hightower
  */
 public class MapItemValue implements Map.Entry<String, Value> {
 

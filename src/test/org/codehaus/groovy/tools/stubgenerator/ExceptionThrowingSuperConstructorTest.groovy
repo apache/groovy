@@ -20,8 +20,6 @@ package org.codehaus.groovy.tools.stubgenerator
 
 /**
  * Test stub generation for super constructors with exceptions
- *
- * @author Jochen Theodorou
  */
 class ExceptionThrowingSuperConstructorTest extends StringSourcesStubTestCase {
 

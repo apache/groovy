@@ -33,10 +33,6 @@ import java.util.Map.Entry;
 
 /**
  * Represents a dynamically expandable bean.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Hein Meling
- * @author Pilho Kim
  */
 public class Expando extends GroovyObjectSupport {
 
@@ -138,7 +134,7 @@ public class Expando extends GroovyObjectSupport {
             Closure closure = (Closure) method;
             closure.setDelegate(this);
             Boolean ret = (Boolean) closure.call(obj);
-            return ret.booleanValue();
+            return ret;
         } else {
             return super.equals(obj);
         }
@@ -157,7 +153,7 @@ public class Expando extends GroovyObjectSupport {
             Closure closure = (Closure) method;
             closure.setDelegate(this);
             Integer ret = (Integer) closure.call();
-            return ret.intValue();
+            return ret;
         } else {
             return super.hashCode();
         }

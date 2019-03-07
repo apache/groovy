@@ -23,7 +23,6 @@ package org.apache.groovy.json.internal;
  *
  * @param <KEY>   key
  * @param <VALUE> value
- * @author Rick Hightower
  */
 public interface Cache<KEY, VALUE> {
 

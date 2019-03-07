@@ -39,9 +39,6 @@ import static org.objectweb.asm.Opcodes.LUSHR;
 import static org.objectweb.asm.Opcodes.LXOR;
 import static org.objectweb.asm.Opcodes.POP2;
 
-/**
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- */
 public class BinaryLongExpressionHelper extends BinaryExpressionWriter {
 
     /**

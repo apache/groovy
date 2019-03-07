@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Tuple;
+import groovy.transform.NamedParam;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -229,16 +230,6 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * the interaction with the underlying database.
  * <p>
  * This class is <b>not</b> thread-safe.
- *
- * @author Chris Stevenson
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Paul King
- * @author Marc DeXeT
- * @author John Bito
- * @author John Hurst
- * @author David Durham
- * @author Daniel Henrique Alves Lima
- * @author David Sutherland
  */
 public class Sql implements AutoCloseable {
 
@@ -304,12 +295,8 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     public static void withInstance(String url, Closure c) throws SQLException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url);
+        try (Sql sql = newInstance(url)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -344,12 +331,8 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     public static void withInstance(String url, Properties properties, Closure c) throws SQLException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, properties);
+        try (Sql sql = newInstance(url, properties)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -390,12 +373,8 @@ public class Sql implements AutoCloseable {
      */
     public static void withInstance(String url, Properties properties, String driverClassName, Closure c)
             throws SQLException, ClassNotFoundException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, properties, driverClassName);
+        try (Sql sql = newInstance(url, properties, driverClassName)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -430,12 +409,8 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     public static void withInstance(String url, String user, String password, Closure c) throws SQLException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, user, password);
+        try (Sql sql = newInstance(url, user, password)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -476,12 +451,8 @@ public class Sql implements AutoCloseable {
      */
     public static void withInstance(String url, String user, String password, String driverClassName, Closure c)
             throws SQLException, ClassNotFoundException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, user, password, driverClassName);
+        try (Sql sql = newInstance(url, user, password, driverClassName)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -515,12 +486,8 @@ public class Sql implements AutoCloseable {
      */
     public static void withInstance(String url, String driverClassName, Closure c)
             throws SQLException, ClassNotFoundException {
-        Sql sql = null;
-        try {
-            sql = newInstance(url, driverClassName);
+        try (Sql sql = newInstance(url, driverClassName)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 
@@ -562,7 +529,23 @@ public class Sql implements AutoCloseable {
      * @throws SQLException           if a database access error occurs
      * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
-    public static Sql newInstance(Map<String, Object> args) throws SQLException, ClassNotFoundException {
+    public static Sql newInstance(
+            @NamedParam(value = "url", type = String.class, required = true)
+            @NamedParam(value = "properties", type = Properties.class)
+            @NamedParam(value = "driverClassName", type = String.class)
+            @NamedParam(value = "driver", type = String.class)
+            @NamedParam(value = "user", type = String.class)
+            @NamedParam(value = "password", type = String.class)
+            @NamedParam(value = "cacheNamedQueries", type = Boolean.class)
+            @NamedParam(value = "cacheStatements", type = Boolean.class)
+            @NamedParam(value = "enableNamedQueries", type = Boolean.class)
+            @NamedParam(value = "resultSetConcurrency", type = Integer.class)
+            @NamedParam(value = "resultSetHoldability", type = Integer.class)
+            @NamedParam(value = "resultSetType", type = Integer.class)
+            // TODO below will be deleted once we fix type checker to understand
+            // readonly Map otherwise seen as Map<String, Serializable>
+            @NamedParam(value = "unused", type = Object.class)
+            Map<String, Object> args) throws SQLException, ClassNotFoundException {
         if (!args.containsKey("url"))
             throw new IllegalArgumentException("Argument 'url' is required");
 
@@ -575,6 +558,7 @@ public class Sql implements AutoCloseable {
         // Make a copy so destructive operations will not affect the caller
         Map<String, Object> sqlArgs = new HashMap<String, Object>(args);
 
+        sqlArgs.remove("unused"); // TODO remove
         Object driverClassName = sqlArgs.remove("driverClassName");
         if (driverClassName == null) driverClassName = sqlArgs.remove("driver");
         if (driverClassName != null) loadDriver(driverClassName.toString());
@@ -631,13 +615,26 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @throws ClassNotFoundException if the driver class cannot be found or loaded
      */
-    public static void withInstance(Map<String, Object> args, Closure c) throws SQLException, ClassNotFoundException {
-        Sql sql = null;
-        try {
-            sql = newInstance(args);
+    public static void withInstance(
+            @NamedParam(value = "url", type = String.class, required = true)
+            @NamedParam(value = "properties", type = Properties.class)
+            @NamedParam(value = "driverClassName", type = String.class)
+            @NamedParam(value = "driver", type = String.class)
+            @NamedParam(value = "user", type = String.class)
+            @NamedParam(value = "password", type = String.class)
+            @NamedParam(value = "cacheNamedQueries", type = Boolean.class)
+            @NamedParam(value = "cacheStatements", type = Boolean.class)
+            @NamedParam(value = "enableNamedQueries", type = Boolean.class)
+            @NamedParam(value = "resultSetConcurrency", type = Integer.class)
+            @NamedParam(value = "resultSetHoldability", type = Integer.class)
+            @NamedParam(value = "resultSetType", type = Integer.class)
+            // TODO below will be deleted once we fix type checker to understand
+            // readonly Map otherwise seen as Map<String, Serializable>
+            @NamedParam(value = "unused", type = Object.class)
+            Map<String, Object> args,
+            Closure c) throws SQLException, ClassNotFoundException {
+        try (Sql sql = newInstance(args)) {
             c.call(sql);
-        } finally {
-            if (sql != null) sql.close();
         }
     }
 

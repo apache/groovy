@@ -657,7 +657,7 @@ A detailed description of all shortcuts can be found in gapi:org.codehaus.groovy
 
 The AST transformation customizer is meant to apply AST transformations
 transparently. Unlike global AST transformations that apply on every
-class beeing compiled as long as the transform is found on classpath
+class being compiled as long as the transform is found on classpath
 (which has drawbacks like increasing the compilation time or side
 effects due to transformations applied where they should not), the
 customizer will allow you to selectively apply a transform only for

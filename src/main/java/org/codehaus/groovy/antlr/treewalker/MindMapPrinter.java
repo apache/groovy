@@ -27,8 +27,6 @@ import java.io.PrintStream;
 
 /**
  * An antlr AST visitor that prints a format suitable for viewing in http://freemind.sourceforge.net
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
 
 public class MindMapPrinter extends VisitorAdapter {

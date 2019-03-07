@@ -30,8 +30,6 @@ import java.util.Map;
 
 /**
  * A builder for generating W3C SAX events.  Use similar to MarkupBuilder.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class SAXBuilder extends BuilderSupport {
 

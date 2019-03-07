@@ -30,7 +30,6 @@ import static groovy.json.JsonTokenType.TRUE;
 /**
  * A JSON token, with a type, line / column information, and the text of that token.
  *
- * @author Guillaume Laforge
  * @since 1.8.0
  */
 public class JsonToken {

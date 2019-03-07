@@ -20,9 +20,6 @@ package org.codehaus.groovy.reflection.stdclasses;
 
 import org.codehaus.groovy.reflection.ClassInfo;
 
-/**
- * @author Alex.Tkachman
- */
 public class LongCachedClass extends NumberCachedClass {
     private final boolean allowNull;
 

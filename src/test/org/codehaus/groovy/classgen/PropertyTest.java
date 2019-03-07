@@ -25,9 +25,6 @@ import org.codehaus.groovy.runtime.DummyBean;
 
 import java.lang.reflect.Modifier;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 public class PropertyTest extends TestSupport {
 
     public void testFields() throws Exception {

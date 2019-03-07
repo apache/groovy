@@ -25,9 +25,6 @@ import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.classgen.asm.BytecodeHelper
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- */
 class BytecodeHelperTest extends GroovyTestCase {
 
     void testTypeName() {

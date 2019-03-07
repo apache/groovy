@@ -102,8 +102,6 @@ import java.util.WeakHashMap;
  *   groovy.source.encoding
  * </pre>
  *
- * @author Christian Stein
- * @author Guillaume Laforge
  * @see TemplateServlet#setVariables(ServletBinding)
  */
 public class TemplateServlet extends AbstractHttpServlet {
@@ -111,8 +109,6 @@ public class TemplateServlet extends AbstractHttpServlet {
     /**
      * Simple cache entry. If a file is supplied, then the entry is validated against
      * last modified and length attributes of the specified file.
-     *
-     * @author Christian Stein
      */
     private static class TemplateCacheEntry {
 

@@ -39,7 +39,6 @@ import java.util.NoSuchElementException;
  * the iterator risks arbitrary, non-deterministic behavior at an undetermined
  * time in the future.
  *
- * @author ben.manes@gmail.com (Ben Manes)
  * @param <E> the type of elements held in this collection
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>

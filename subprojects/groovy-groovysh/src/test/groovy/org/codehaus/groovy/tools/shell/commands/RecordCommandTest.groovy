@@ -22,8 +22,6 @@ import org.codehaus.groovy.tools.shell.CommandException
 
 /**
  * Tests for the {@link RecordCommand} class.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class RecordCommandTest
     extends CommandTestSupport

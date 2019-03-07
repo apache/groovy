@@ -18,9 +18,6 @@
  */
 package groovy.util;
 
-/**
- * @author sam
- */
 public class ScriptException extends Exception {
 
     private static final long serialVersionUID = 3447547760007143671L;

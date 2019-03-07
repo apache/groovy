@@ -34,23 +34,21 @@ package groovy.jmx.builder
  * "replace" - replaces existing bean,  <br>
  * "ignore" - ignores the registration request if bean already exists.<br>
  * "error" - throws error if bean is already registered.
- *
- * @author vladimir vivien 
  */
 class JmxBeanExportFactory extends AbstractFactory {
     // def server
     def registrationPolicy
 
-    public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
+    Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
         registrationPolicy = nodeAttribs?.remove("policy") ?: nodeAttribs?.remove("regPolicy") ?: "replace"
         return []
     }
 
-    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
-        return true;
+    boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
+        return true
     }
 
-    public boolean isLeaf() {
+    boolean isLeaf() {
         return false
     }
 }

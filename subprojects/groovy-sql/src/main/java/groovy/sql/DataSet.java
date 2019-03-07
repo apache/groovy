@@ -65,10 +65,6 @@ import java.util.Set;
  * classpath at runtime. Also, at the moment, the expressions (or nested expressions) can only contain
  * references to fields of the POGO or literals (i.e. constant Strings or numbers). This limitation
  * may be removed in a future version of Groovy.
- *
- * @author Chris Stevenson
- * @author Paul King
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class DataSet extends Sql {
 

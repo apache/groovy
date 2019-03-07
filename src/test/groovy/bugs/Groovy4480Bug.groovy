@@ -21,8 +21,6 @@ package groovy.bugs
 /**
  * Checks that if else can be used on a single line.
  * A regression got introduced wiht extended command expression that dissallowed if else on the same line
- *
- * @author Guillaume Laforge
  */
 class Groovy4480Bug extends GroovyTestCase {
 

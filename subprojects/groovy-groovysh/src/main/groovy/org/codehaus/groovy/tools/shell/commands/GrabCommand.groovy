@@ -26,8 +26,6 @@ import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
  * The 'grab' command.
- *
- * @author <a href="mailto:jake.gage@gmail.com">Jake Gage</a>
  */
 class GrabCommand extends CommandSupport {
 

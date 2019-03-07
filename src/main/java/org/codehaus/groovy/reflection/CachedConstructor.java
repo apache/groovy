@@ -27,9 +27,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-/**
- * @author Alex.Tkachman
- */
 public class CachedConstructor extends ParameterTypes {
     CachedClass clazz;
 

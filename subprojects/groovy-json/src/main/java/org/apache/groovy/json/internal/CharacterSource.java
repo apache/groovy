@@ -18,9 +18,6 @@
  */
 package org.apache.groovy.json.internal;
 
-/**
- * @author Richard Hightower
- */
 public interface CharacterSource {
 
     /**

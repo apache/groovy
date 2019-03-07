@@ -24,8 +24,6 @@ import org.codehaus.groovy.ast.ClassNode;
  * A signature codec is responsible for encoding and decoding of inferred returned types
  * as stored in bytecode. The signature must contain an appropriate version number so
  * that future versions of Groovy remain capable of decoding previous versions.
- *
- * @author Cedric Champeau
  */
 public interface SignatureCodec {
     String encode(ClassNode node);

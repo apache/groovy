@@ -48,7 +48,6 @@ import java.util.List;
  * For basic DSL type checking, implementing those methods would help the type checker and make it silent where it
  * normally throws errors.
  *
- * @author Cedric Champeau
  * @since 2.1.0
  */
 public class TypeCheckingExtension {

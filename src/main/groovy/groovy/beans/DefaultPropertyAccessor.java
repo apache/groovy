@@ -18,9 +18,6 @@
  */
 package groovy.beans;
 
-/**
- * @author Andres Almiray
- */
 public class DefaultPropertyAccessor implements PropertyAccessor {
     public static final PropertyAccessor INSTANCE = new DefaultPropertyAccessor();
 

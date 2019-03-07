@@ -33,8 +33,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @see groovy.lang.MetaClassRegistry
  * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
  * @see org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl#setMetaClassCreationHandle(groovy.lang.MetaClassRegistry.MetaClassCreationHandle)
- *
- * @author Graeme Rocher
  * @since 1.5
  */
 public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {

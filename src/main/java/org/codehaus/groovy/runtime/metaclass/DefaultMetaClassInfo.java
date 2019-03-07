@@ -22,8 +22,6 @@ package org.codehaus.groovy.runtime.metaclass;
  * WARNING: This class is for internal use only!
  * We use this class to store information about if a default MetaClass is
  * used for certain primitives.
- * @author Jochen "blackdrag" Theodorou
- *
  */
 public class DefaultMetaClassInfo {
     

@@ -26,8 +26,6 @@ import java.util.Comparator;
 
 /**
  * A Comparator which uses a closure to compare 2 values being equal
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ClosureComparator<T> implements Comparator<T>, Serializable {
 

@@ -113,7 +113,7 @@ ext.allManifest = manifest {
             'Bundle-ClassPath': '.',
             'Eclipse-BuddyPolicy': 'dependent',
             'DynamicImport-Package': '*',
-            'Main-class': 'groovy.ui.GroovyMain')
+            'Main-Class': 'groovy.ui.GroovyMain')
 }
 
 ext.groovyOsgiManifest = {
@@ -136,7 +136,7 @@ ext.subprojectOsgiManifest = {
     // Exclude attributes not needed for subprojects.
     from(allManifest) {
         eachEntry { details ->
-            if (details.key in [*excludedFromManifest, 'Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-class']) {
+            if (details.key in [*excludedFromManifest, 'Bnd-LastModified', 'Extension-Name', 'Bundle-Name', 'Bundle-Description', 'Main-Class']) {
                 details.exclude()
             }
         }

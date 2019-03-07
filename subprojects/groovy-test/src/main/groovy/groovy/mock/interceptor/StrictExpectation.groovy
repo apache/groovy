@@ -25,7 +25,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods
  *  Expects demanded call cardinalities to match demanded ranges in the sequence of recording.
  *
  *  @see LooseExpectation
- *  @author Dierk Koenig
  */
 class StrictExpectation {
     Demand fDemand  = null

@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -182,7 +181,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         List<ToStringElement> elements = new ArrayList<ToStringElement>();
 
         // def $toStringFirst = true
-        final VariableExpression first = varX("$toStringFirst");
+        final VariableExpression first = localVarX("$toStringFirst");
         body.addStatement(declS(first, constX(Boolean.TRUE)));
 
         // <class_name>(

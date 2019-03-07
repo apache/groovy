@@ -23,8 +23,6 @@ import groovy.transform.stc.DelegatesToSTCTest
 /**
  * Units tests aimed at testing the behaviour of {@link DelegatesTo} in combination
  * with static compilation.
- *
- * @author Cedric Champeau
  */
 class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticCompilationTestSupport {
 

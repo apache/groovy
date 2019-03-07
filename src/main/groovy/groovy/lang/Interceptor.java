@@ -22,7 +22,6 @@ package groovy.lang;
  * Implementers of this interface can be registered in the ProxyMetaClass for
  * notifications about method calls for objects managed by the ProxyMetaClass.
  * See groovy/lang/InterceptorTest.groovy for details.
- * @author Dierk Koenig
  */
 public interface Interceptor {
     /**

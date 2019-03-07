@@ -27,10 +27,7 @@ import java.io.IOException;
 /**
  * For ReaderSources that can choose a parent class, a base that
  * provides common functionality.
- *
- * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  */
-
 public abstract class AbstractReaderSource implements ReaderSource {
     protected CompilerConfiguration configuration;   // Configuration data
 

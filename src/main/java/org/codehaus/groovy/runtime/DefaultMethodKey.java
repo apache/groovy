@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime;
 
 /**
  * A default implementation of MethodKey
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class DefaultMethodKey extends MethodKey{
 

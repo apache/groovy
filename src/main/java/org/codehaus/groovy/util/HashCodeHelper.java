@@ -42,7 +42,7 @@ public class HashCodeHelper {
     }
 
     public static int updateHash(int current, Character var) {
-        return updateHash(current, var == null ? 0 : var.charValue());
+        return updateHash(current, var == null ? 0 : var);
     }
 
     public static int updateHash(int current, int var) {
@@ -50,7 +50,7 @@ public class HashCodeHelper {
     }
 
     public static int updateHash(int current, Integer var) {
-        return updateHash(current, var == null ? 0 : var.intValue());
+        return updateHash(current, var == null ? 0 : var);
     }
 
     public static int updateHash(int current, long var) {
@@ -58,7 +58,7 @@ public class HashCodeHelper {
     }
 
     public static int updateHash(int current, Long var) {
-        return updateHash(current, var == null ? 0L : var.longValue());
+        return updateHash(current, var == null ? 0L : var);
     }
 
     public static int updateHash(int current, float var) {
@@ -66,7 +66,7 @@ public class HashCodeHelper {
     }
 
     public static int updateHash(int current, Float var) {
-        return updateHash(current, var == null ? 0f : var.floatValue());
+        return updateHash(current, var == null ? 0f : var);
     }
 
     public static int updateHash(int current, double var) {
@@ -74,7 +74,7 @@ public class HashCodeHelper {
     }
 
     public static int updateHash(int current, Double var) {
-        return updateHash(current, var == null ? 0d : var.doubleValue());
+        return updateHash(current, var == null ? 0d : var);
     }
 
     public static int updateHash(int current, Object var) {

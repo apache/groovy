@@ -41,7 +41,6 @@ import static org.codehaus.groovy.macro.methods.MacroGroovyMethods.DOLLAR_VALUE;
 /**
  * Runtime support for <pre>{@code macro {} }</pre> method.
  *
- * @author Sergei Egorov <bsideup@gmail.com>
  * @since 2.5.0
  */
 

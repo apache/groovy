@@ -22,8 +22,6 @@ import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
 /**
  * Unit tests for static compilation: basic math operations.
- * 
- * @author Cedric Champeau
  */
 class StaticCompileMathTest extends AbstractBytecodeTestCase {
     void testIntSum() {

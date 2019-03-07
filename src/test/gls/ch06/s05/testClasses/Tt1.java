@@ -18,9 +18,6 @@
  */
 package gls.ch06.s05.testClasses;
 
-/**
- * @author John Wilson
- */
 public class Tt1 {
     public String x = "field";
 

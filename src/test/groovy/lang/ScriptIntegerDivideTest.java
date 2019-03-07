@@ -20,11 +20,6 @@ package groovy.lang;
 
 import org.codehaus.groovy.classgen.TestSupport;
 
-
-/**
- * @author Steve Goetze
- * @author Jeremy Rayner
- */
 public class ScriptIntegerDivideTest extends TestSupport {
 
     /**

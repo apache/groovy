@@ -23,8 +23,6 @@ import org.apache.tools.ant.Task;
 
 /**
  * Helper to make logging from Ant easier.
- *
- * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class LoggingHelper {
     private final Task owner;

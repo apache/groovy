@@ -18,14 +18,10 @@
  */
 package groovy.xml
 
-import groovy.util.GroovyTestCase
-
 /**
-* Tests for the Groovy Xml user guide related to XmlSlurper.
-*
-* @author Groovy Documentation Community
-*/
-class UserGuideXmlSlurperTest  extends GroovyTestCase {
+ * Tests for the Groovy Xml user guide related to XmlSlurper.
+ */
+class UserGuideXmlSlurperTest extends GroovyTestCase {
 
     // tag::books[]
     static final String books = '''
@@ -33,8 +29,8 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
             <value>
                 <books>
                     <book available="20" id="1">
-                        <title>Don Xijote</title>
-                        <author id="1">Manuel De Cervantes</author>
+                        <title>Don Quixote</title>
+                        <author id="1">Miguel de Cervantes</author>
                     </book>
                     <book available="14" id="2">
                         <title>Catcher in the Rye</title>
@@ -45,8 +41,8 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
                        <author id="3">Lewis Carroll</author>
                    </book>
                    <book available="5" id="4">
-                       <title>Don Xijote</title>
-                       <author id="4">Manuel De Cervantes</author>
+                       <title>Don Quixote</title>
+                       <author id="4">Miguel de Cervantes</author>
                    </book>
                </books>
            </value>
@@ -76,7 +72,7 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         def response = new XmlSlurper().parseText(books)
         def authorResult = response.value.books.book[0].author
 
-        assert authorResult.text() == 'Manuel De Cervantes'
+        assert authorResult.text() == 'Miguel de Cervantes'
         // end::testGettingANodeText[]
     }
 
@@ -99,7 +95,7 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         def response = new XmlSlurper().parseText(books)
 
         // .'*' could be replaced by .children()
-        def catcherInTheRye = response.value.books.'*'.find { node->
+        def catcherInTheRye = response.value.books.'*'.find { node ->
             // node.@id == 2 could be expressed as node['@id'] == 2
             node.name() == 'book' && node.@id == '2'
         }
@@ -113,7 +109,7 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         def response = new XmlSlurper().parseText(books)
 
         // .'**' could be replaced by .depthFirst()
-        def bookId = response.'**'.find { book->
+        def bookId = response.'**'.find { book ->
             book.author.text() == 'Lewis Carroll'
         }.@id
 
@@ -125,7 +121,7 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         // tag::testDepthFirst2[]
         def response = new XmlSlurper().parseText(books)
 
-        def titles = response.'**'.findAll{ node-> node.name() == 'title' }*.text()
+        def titles = response.'**'.findAll { node -> node.name() == 'title' }*.text()
 
         assert titles.size() == 4
         // end::testDepthFirst2[]
@@ -148,8 +144,8 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         // tag::testHelpers[]
         def response = new XmlSlurper().parseText(books)
 
-        def titles = response.value.books.book.findAll{book->
-         /* You can use toInteger() over the GPathResult object */
+        def titles = response.value.books.book.findAll { book ->
+            /* You can use toInteger() over the GPathResult object */
             book.@id.toInteger() > 2
         }*.title
 
@@ -162,14 +158,14 @@ class UserGuideXmlSlurperTest  extends GroovyTestCase {
         def response = new XmlSlurper().parseText(books)
 
         /* Use the same syntax as groovy.xml.MarkupBuilder */
-        response.value.books.book[0].replaceNode{
-            book(id:"3"){
+        response.value.books.book[0].replaceNode {
+            book(id: "3") {
                 title("To Kill a Mockingbird")
-                author(id:"3","Harper Lee")
+                author(id: "3", "Harper Lee")
             }
         }
 
-        assert response.value.books.book[0].title.text() == "Don Xijote"
+        assert response.value.books.book[0].title.text() == "Don Quixote"
 
         /* That mkp is a special namespace used to escape away from the normal building mode
            of the builder and get access to helper markup methods

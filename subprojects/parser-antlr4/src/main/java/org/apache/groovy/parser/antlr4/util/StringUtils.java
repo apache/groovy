@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 
 /**
  * Utilities for handling strings
+ *
  */
 public class StringUtils {
 	private static final String BACKSLASH = "\\";
@@ -167,6 +168,10 @@ public class StringUtils {
 		int length = text.length();
 
 		return length == quotationLength << 1 ? "" : text.substring(quotationLength, length - quotationLength);
+	}
+
+	public static boolean matches(String text, Pattern pattern) {
+		return pattern.matcher(text).matches();
 	}
 
 	/**

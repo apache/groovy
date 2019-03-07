@@ -47,7 +47,6 @@ import java.util.List;
  *
  * <p>Several predefined hints can be found, which should cover most of the use cases.</p>
  *
- * @author Cédric Champeau
  * @since 2.3.0
  *
  */

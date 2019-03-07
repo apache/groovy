@@ -67,7 +67,6 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  *
- * @author Paul King
  * @since 1.8.0
  */
 @java.lang.annotation.Documented

@@ -35,8 +35,6 @@ import java.util.Set;
  * Null keys or values are not supported.
  *
  * This class is not thread safe.
- *
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class ListHashMap<K,V> implements Map<K,V> {
     private final Object[] listKeys;

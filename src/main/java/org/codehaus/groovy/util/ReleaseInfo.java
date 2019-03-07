@@ -28,8 +28,6 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuiet
 
 /**
  * Exposes the Groovy release information 
- * 
- * @author Roshan Dawrani
  */
 public class ReleaseInfo {
     private static final Properties RELEASE_INFO = new Properties();

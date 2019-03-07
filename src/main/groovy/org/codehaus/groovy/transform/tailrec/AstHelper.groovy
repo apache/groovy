@@ -31,18 +31,17 @@ import java.lang.reflect.Modifier
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
 /**
  * Helping to create a few standard AST constructs
- *
- * @author Johannes Link
  */
 @CompileStatic
 class AstHelper {
 	static ExpressionStatement createVariableDefinition(String variableName, ClassNode variableType, Expression value, boolean variableShouldBeFinal = false ) {
-        def newVariable = varX(variableName, variableType)
+        def newVariable = localVarX(variableName, variableType)
         if (variableShouldBeFinal)
             newVariable.setModifiers(Modifier.FINAL)
         (ExpressionStatement) declS(newVariable, value)

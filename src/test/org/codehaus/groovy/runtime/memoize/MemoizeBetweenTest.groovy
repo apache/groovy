@@ -20,17 +20,13 @@ package org.codehaus.groovy.runtime.memoize
 
 import java.util.concurrent.atomic.AtomicInteger
 
-/**
- * @author Vaclav Pech
- */
-
-public class MemoizeBetweenTest extends AbstractMemoizeTestCase {
+class MemoizeBetweenTest extends AbstractMemoizeTestCase {
 
     Closure buildMemoizeClosure(Closure cl) {
         cl.memoizeBetween(50, 100)
     }
 
-    public void testParameters() {
+    void testParameters() {
         Closure cl = {}
         shouldFail(IllegalArgumentException) {
             cl.memoizeBetween(1, 0)
@@ -43,28 +39,28 @@ public class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         }
     }
 
-    public void testZeroCache() {
+    void testZeroCache() {
         def flag = false
         Closure cl = {
             flag = true
             it * 2
         }
         Closure mem = cl.memoizeBetween(0, 0)
-        [1, 2, 3, 4, 5, 6].each {mem(it)}
+        [1, 2, 3, 4, 5, 6].each { mem(it) }
         assert flag
         flag = false
         assert 12 == mem(6)
         assert flag
     }
 
-    public void testLRUCache() {
+    void testLRUCache() {
         def flag = false
         Closure cl = {
             flag = true
             it * 2
         }
         Closure mem = cl.memoizeBetween(3, 3)
-        [1, 2, 3, 4, 5, 6].each {mem(it)}
+        [1, 2, 3, 4, 5, 6].each { mem(it) }
         assert flag
         flag = false
         assert 8 == mem(4)
@@ -86,7 +82,7 @@ public class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
-    public void testMemoizeBetweenConcurrently() {
+    void testMemoizeBetweenConcurrently() {
         AtomicInteger cnt = new AtomicInteger(0)
         Closure cl = {
             cnt.incrementAndGet()

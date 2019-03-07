@@ -31,8 +31,6 @@ import org.apache.groovy.internal.util.UncheckedThrow;
  * 
  * The nature of this class allows a per instance caching instead of a per class
  * caching like the normal {@link CallSiteArray} logic.
- * 
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
  */
 public class BooleanReturningMethodInvoker {
     private final CallSiteArray csa;
@@ -61,7 +59,7 @@ public class BooleanReturningMethodInvoker {
         // handle conversion to boolean
         if (arg == null) return false;
         if (arg instanceof Boolean) {
-            return ((Boolean) arg).booleanValue();
+            return (Boolean) arg;
         }
         // it was not null and not boolean, so call asBoolean
         try {
@@ -70,7 +68,7 @@ public class BooleanReturningMethodInvoker {
             // UncheckedThrow allows throwing checked exceptions without declaring a throws
             UncheckedThrow.rethrow(t);
         }
-        return ((Boolean) arg).booleanValue();
+        return (Boolean) arg;
     }
 
 }

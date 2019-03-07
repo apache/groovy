@@ -25,8 +25,6 @@ package groovy.bugs
   *   <li>it is possible to call normal methods from the builder,
   *       without the methods being trapped endlessly by createNode()</li>
   * </ul>
-  *
-  * @author Guillaume Laforge
   */
 class InvokeNormalMethodFromBuilder_Bug657 extends GroovyTestCase {
     void testInvokeNormalMethod() {

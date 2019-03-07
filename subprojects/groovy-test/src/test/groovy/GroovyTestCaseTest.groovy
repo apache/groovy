@@ -20,8 +20,6 @@ import junit.framework.AssertionFailedError
 
 /**
  * Testing the notYetImplemented feature of GroovyTestCase.
- * TODO: testing all other features.
- * @author Dierk Koenig
  */
 class GroovyTestCaseTest extends GroovyTestCase {
 

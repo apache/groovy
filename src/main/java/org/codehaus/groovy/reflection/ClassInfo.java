@@ -69,8 +69,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * from the cache.  Internally the {@code Class} associated with a {@code ClassInfo}
  * instance is kept as {@link WeakReference}, so it not safe to reference
  * and instance without the Class being either strongly or softly reachable.
- *
- * @author Alex.Tkachman
  */
 public class ClassInfo implements Finalizable {
 

@@ -55,9 +55,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
  * Base class for AST Transformations which will automatically throw an {@link InterruptedException} when
  * some conditions are met.
  *
- * @author Cedric Champeau
- * @author Hamlet D'Arcy
- * @author Paul King
  * @since 1.8.0
  */
 public abstract class AbstractInterruptibleASTTransformation extends ClassCodeVisitorSupport implements ASTTransformation, Opcodes {

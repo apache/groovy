@@ -20,8 +20,6 @@ package groovy.jmx.builder;
 
 /**
  * Runtime exception used by JmxBuilder.
- *
- * @author Vladimir Vivien
  */
 public class JmxBuilderException extends RuntimeException {
     /**

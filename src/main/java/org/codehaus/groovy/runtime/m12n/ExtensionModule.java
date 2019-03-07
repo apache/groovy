@@ -28,8 +28,6 @@ import java.util.List;
  * existing classes.
  *
  * @since 2.0.0
- *
- * @author Cedric Champeau
  */
 public abstract class ExtensionModule {
     private final String name;

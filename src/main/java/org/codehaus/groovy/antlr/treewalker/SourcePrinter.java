@@ -28,10 +28,7 @@ import java.util.Stack;
 /**
  * An antlr AST visitor that prints groovy source code for each visited node
  * to the supplied PrintStream.
- *
- * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  */
-
 public class SourcePrinter extends VisitorAdapter {
     private final String[] tokenNames;
     private int tabLevel;
@@ -65,7 +62,6 @@ public class SourcePrinter extends VisitorAdapter {
         this.newLines = newLines;
         this.stack = new Stack();
     }
-    
 
     public void visitAbstract(GroovySourceAST t, int visit) {
         print(t,visit,"abstract ",null,null);

@@ -31,9 +31,6 @@ import java.util.Set;
 
 /**
  * A Collections utility class
- *
- * @author Paul King
- * @author Jim White
  */
 public class GroovyCollections {
     /**

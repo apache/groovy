@@ -19,10 +19,7 @@
 package groovy.text.markup;
 
 /**
- * An enumeration used internally to map include types to {@link groovy.text.markup.BaseTemplate} method
- * calls.
- *
- * @author Cedric Champeau
+ * An enumeration used internally to map include types to {@link groovy.text.markup.BaseTemplate} method calls.
  */
 enum IncludeType {
     template("includeGroovy"), // includes another Groovy template

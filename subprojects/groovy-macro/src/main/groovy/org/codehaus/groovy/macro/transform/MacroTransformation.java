@@ -28,10 +28,8 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 /**
- * @author Sergei Egorov <bsideup@gmail.com>
  * @since 2.5.0
  */
-
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class MacroTransformation extends MethodCallTransformation implements CompilationUnitAware {
 

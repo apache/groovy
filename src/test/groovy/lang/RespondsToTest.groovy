@@ -21,13 +21,12 @@ package groovy.lang
 /**
  * Tests the respondsTo functionality of Groovy
  *
- * @author Graeme Rocher
  * @since 1.6.0
  */
 class RespondsToTest extends GroovyTestCase {
 
     void testRespondsToForMethodEvaluation() {
-        RespondsToTestClass.metaClass.invokeMethod = {String name, args ->
+        RespondsToTestClass.metaClass.invokeMethod = { String name, args ->
             def methods = RespondsToTestClass.metaClass.respondsTo(delegate, name, args*.getClass() as Class[])
             def result
             if (methods) {
@@ -36,8 +35,7 @@ class RespondsToTest extends GroovyTestCase {
                     result = methods[0].invoke(delegate, [args] as Object[])
                 else
                     result = methods[0].invoke(delegate, args)
-            }
-            else {
+            } else {
                 result = "foo"
             }
             result
@@ -58,7 +56,7 @@ class RespondsToTest extends GroovyTestCase {
     }
 
     void testRespondsTo() {
-        RTTest2.metaClass.newM = {-> "foo" }
+        RTTest2.metaClass.newM = { -> "foo" }
         def t = new RTTest2()
         assert t.metaClass.respondsTo(t, "one")
         assert t.metaClass.respondsTo(t, "three")
@@ -90,7 +88,7 @@ class RespondsToTest extends GroovyTestCase {
     }
 
     void testHasProperty() {
-        RTTest2.metaClass.getNewProp = {-> "new" }
+        RTTest2.metaClass.getNewProp = { -> "new" }
         def t = new RTTest2()
         assert t.metaClass.hasProperty(t, "two")
         assert t.metaClass.hasProperty(t, "newtwo")
@@ -128,7 +126,7 @@ class RTTest1 {
     String five
     def two = { "three" }
 
-    def one() { "two"}
+    def one() { "two" }
 
     def one(String one) { "two: $one" }
 

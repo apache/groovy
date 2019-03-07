@@ -20,9 +20,6 @@ package groovy.transform.stc
 
 /**
  * Unit tests for static type checking : closures.
- *
- * @author Cedric Champeau
- * @author Jochen Theodorou
  */
 class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 

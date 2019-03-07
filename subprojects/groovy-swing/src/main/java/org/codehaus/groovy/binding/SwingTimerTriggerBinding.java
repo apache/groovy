@@ -23,7 +23,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 /**
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @since Groovy 1.1
  */
 public class SwingTimerTriggerBinding implements TriggerBinding {
@@ -33,7 +32,6 @@ public class SwingTimerTriggerBinding implements TriggerBinding {
 }
 
 /**
- * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @since Groovy 1.1
  */
 class SwingTimerFullBinding extends AbstractFullBinding implements ActionListener {

@@ -21,8 +21,6 @@ package groovy.mock.interceptor
 /**
  * Helper object to support convenience "ignore.methodName" notation similar to demand notation.
  * Can't be used with methods within <code>java.lang.Object</code>.
- *
- * @author Paul King
  */
 class Ignore {
 

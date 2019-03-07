@@ -22,8 +22,6 @@ package groovy.transform;
  * This enumeration can be used whenever it is preferred to annotate a class as
  * {@link TypeChecked} in general, but where only one or more methods are "dynamic". This allows the user
  * to annotate the class itself then annotate only the methods which require exclusion.
- *
- * @author Cedric Champeau
  */
 public enum TypeCheckingMode {
     PASS,

@@ -67,9 +67,6 @@ import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
  * the number 1 being int, since the 1 is an int. The 2l is a long, therefore the
  * int category will not apply and the result type can't be int. The next category
  * in the list is long, and since both apply to long, the result type is a long.
- *
- * @author <a href="mailto:blackdrag@gmx.org">Jochen "blackdrag" Theodorou</a>
- * @author Cedric Champeau
  */
 public class WideningCategories {
 
@@ -504,7 +501,7 @@ public class WideningCategories {
                 return;
             }
             if (interfaceNode.implementsInterface(node)) {
-                // the interface beeing added is more specific than the one in the list, replace it
+                // the interface being added is more specific than the one in the list, replace it
                 nodes.set(i, interfaceNode);
                 return;
             }

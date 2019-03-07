@@ -29,8 +29,6 @@ import java.util.NoSuchElementException;
 /**
  * <p><code>FileIterator</code> is an iterator over a
  * number of files from a collection of FileSet instances.
- *
- * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
  */
 public class FileIterator implements Iterator {
 

@@ -18,21 +18,16 @@
  */
 package groovy.bugs
 
-/**
- * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
- */
 class DoubleSizeParametersBug extends TestSupport {
 
     void testBug() {
-        assertScript( """
-def foo(double x, y) {
-   println "x: "+x
-   println "y: "+y
-}
+        assertScript """
+            def foo(double x, y) {
+                println "x: "+x
+                println "y: "+y
+            }
 
-foo(10.0d, 0)
-""" );
+            foo(10.0d, 0)
+        """
     }
 }
-
-

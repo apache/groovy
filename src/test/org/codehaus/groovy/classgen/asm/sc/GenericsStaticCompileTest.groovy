@@ -22,8 +22,6 @@ import groovy.transform.stc.GenericsSTCTest
 
 /**
  * Unit tests for static type checking : generics.
- *
- * @author Cedric Champeau
  */
 class GenericsStaticCompileTest extends GenericsSTCTest implements StaticCompilationTestSupport {
 
