@@ -22,11 +22,12 @@ package org.codehaus.groovy.ast.tools
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
-import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 
 import java.util.function.BiFunction
+
+import static groovy.lang.Tuple.tuple
 
 class GenericsUtilsTest extends GroovyTestCase {
     void testFindParameterizedType1() {
@@ -318,47 +319,6 @@ class GenericsUtilsTest extends GroovyTestCase {
         assert 2 == typeInfo.getV1().length
         assert ClassHelper.Integer_TYPE == typeInfo.getV1()[0]
         assert ClassHelper.Integer_TYPE == typeInfo.getV1()[1]
-        assert ClassHelper.Integer_TYPE == typeInfo.getV2()
-    }
-
-    void testParameterizeMethodNode() {
-        def code = '''
-        import java.util.function.*
-        interface T extends Function<String, Integer> {}
-        '''
-        def ast = new CompilationUnit().tap {
-            addSource 'hello.groovy', code
-            compile Phases.SEMANTIC_ANALYSIS
-        }.ast
-
-        def classNodeList = ast.getModules()[0].getClasses()
-        ClassNode parameterizedClassNode = findClassNode('T', classNodeList).getAllInterfaces().find { it.name.equals('java.util.function.Function') }
-        MethodNode methodNode = parameterizedClassNode.getMethods('apply')[0]
-        Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeMethodNode(methodNode, parameterizedClassNode)
-        assert 1 == typeInfo.getV1().length
-        assert ClassHelper.STRING_TYPE == typeInfo.getV1()[0]
-        assert ClassHelper.Integer_TYPE == typeInfo.getV2()
-    }
-
-    void testParameterizeMethodNode2() {
-        def code = '''
-        import java.util.stream.*
-        interface T extends Stream<Integer> {}
-        '''
-        def ast = new CompilationUnit().tap {
-            addSource 'hello.groovy', code
-            compile Phases.SEMANTIC_ANALYSIS
-        }.ast
-
-        def classNodeList = ast.getModules()[0].getClasses()
-        ClassNode parameterizedClassNode = findClassNode('T', classNodeList).getAllInterfaces().find { it.name.equals('java.util.stream.Stream') }
-        MethodNode methodNode = parameterizedClassNode.getMethods('reduce')[0]
-        Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeMethodNode(methodNode, parameterizedClassNode)
-//        println typeInfo
-        assert 2 == typeInfo.getV1().length
-        assert ClassHelper.Integer_TYPE == typeInfo.getV1()[0]
-        assert ClassHelper.make(java.util.function.BinaryOperator) == typeInfo.getV1()[1]
-        assert ClassHelper.Integer_TYPE == typeInfo.getV1()[1].getGenericsTypes()[0].getType()
         assert ClassHelper.Integer_TYPE == typeInfo.getV2()
     }
 }

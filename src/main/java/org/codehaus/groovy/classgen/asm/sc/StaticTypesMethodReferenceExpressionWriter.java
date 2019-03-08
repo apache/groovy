@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
@@ -83,7 +84,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     private Parameter[] createParametersWithExactType(MethodNode abstractMethodNode, ClassNode[] inferredParameterTypes) {
-        Parameter[] parameters = abstractMethodNode.getParameters();
+        Parameter[] originalParameters = abstractMethodNode.getParameters();
+
+        // We MUST clone the parameters to avoid impacting the original parameter type of SAM
+        Parameter[] parameters = GeneralUtils.cloneParams(originalParameters);
         if (parameters == null) {
             parameters = Parameter.EMPTY_ARRAY;
         }
