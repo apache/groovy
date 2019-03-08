@@ -120,6 +120,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     boolean detachedOutput = prefs.getBoolean('detachedOutput', false)
     Action detachedOutputAction
+
+    boolean orientationVertical = prefs.getBoolean('orientationVertical', true)
+    Action orientationVerticalAction
     Action showOutputWindowAction
     Action hideOutputWindowAction1
     Action hideOutputWindowAction2
@@ -626,6 +629,21 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         showToolbar = evt.source.selected
         prefs.putBoolean('showToolbar', showToolbar)
         toolbar.visible = showToolbar
+    }
+
+    void orientationVertical(EventObject evt) {
+        def oldValue = orientationVertical
+        orientationVertical = evt.source.selected
+        prefs.putBoolean('orientationVertical', orientationVertical)
+        if (oldValue != orientationVertical) {
+            if (orientationVertical) {
+                splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT)
+                splitPane.resizeWeight = 0.5
+            } else {
+                splitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT)
+                splitPane.resizeWeight = 0.5
+            }
+        }
     }
 
     void detachedOutput(EventObject evt) {
