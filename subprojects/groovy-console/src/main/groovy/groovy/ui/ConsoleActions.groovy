@@ -305,6 +305,12 @@ detachedOutputAction = action(
     mnemonic: 'D'
 )
 
+orientationVerticalAction = action(
+    name: 'Vertical Orientation',
+    closure: controller.&orientationVertical,
+    mnemonic: 'n'
+)
+
 showOutputWindowAction = action(
     closure: controller.&showOutputWindow,
     keyStroke: shortcut('shift O'),
