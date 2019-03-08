@@ -228,14 +228,14 @@ import java.lang.annotation.Target;
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation")
 public @interface EqualsAndHashCode {
     /**
-     * List of field and/or property names to exclude from the equals and hashCode calculations.
+     * List of property names (and field names if includeFields is true) to exclude from the equals and hashCode calculations.
      * Must not be used if 'includes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      */
     String[] excludes() default {};
 
     /**
-     * List of field and/or property names to include within the equals and hashCode calculations.
+     * List of property names (and field names if includeFields is true) to include within the equals and hashCode calculations.
      * Must not be used if 'excludes' is used. For convenience, a String with comma separated names
      * can be used in addition to an array (using Groovy's literal list notation) of String values.
      * The default value is a special marker value indicating that no includes are defined; all fields
