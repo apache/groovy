@@ -39,7 +39,9 @@ The Groovy development team
 :apache-groovy-twitter-link: https://twitter.com/intent/follow?screen_name=ApacheGroovy
 :jdk-icon: https://img.shields.io/badge/java-8+-4c7e9f.svg
 :bintray-download-icon: https://api.bintray.com/packages/groovy/maven/groovy/images/download.svg
-
+:opencollective-link: https://opencollective.com/friends-of-groovy
+:backers-img: https://opencollective.com/friends-of-groovy/backers.svg?width=890
+:sponsors-img: https://opencollective.com/friends-of-groovy/sponsors.svg?width=890
 
 [.left.text-left]
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
@@ -182,6 +184,21 @@ The official CI server runs {groovy-ci}[here] and is sponsored by http://www.jet
 == Java Profiler
 
 Groovy core team tunes performance through YourKit Java Profiler, which is sponsored by https://www.yourkit.com[YourKit].
+
+== Friends of Groovy Open Collective
+As an independent initiative, we have set up an open collective for Groovy:
+
+https://opencollective.com/friends-of-groovy
+
+This initiative is designed to complement the Apache project and the many contributions we get from our great community and supporters.
+
+Thank you to all our sponsors:
+
+image:{sponsors-img}[Friends of Groovy, link={opencollective-link}]
+
+Thank you to all our backers:
+
+image:{backers-img}[Friends of Groovy, link={opencollective-link}]
 
 == License
 
