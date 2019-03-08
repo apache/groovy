@@ -20,7 +20,6 @@ package org.codehaus.groovy.ast.tools;
 
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
-import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
 import org.apache.groovy.util.SystemUtil;
@@ -961,82 +960,25 @@ public class GenericsUtils {
      */
     public static Tuple2<ClassNode[], ClassNode> parameterizeSAM(ClassNode sam) {
         MethodNode methodNode = ClassHelper.findSAM(sam);
-        return parameterizeMethodNode(methodNode, sam);
-    }
-
-    /**
-     * Get the parameter and return types of the specified method node
-     *
-     * @param parameterizedClassNode the class node which contains the specified method node
-     * @param methodNode the specified method node to parameterize
-     * @return the parameter and return types
-     * @since 3.0.0
-     */
-    public static Tuple2<ClassNode[], ClassNode> parameterizeMethodNode(MethodNode methodNode, ClassNode parameterizedClassNode) {
-        final Map<GenericsType, GenericsType> map = makeDeclaringAndActualGenericsTypeMapOfExactType(methodNode.getDeclaringClass(), parameterizedClassNode);
+        final Map<GenericsType, GenericsType> map = makeDeclaringAndActualGenericsTypeMapOfExactType(methodNode.getDeclaringClass(), sam);
 
         ClassNode[] parameterTypes =
                 Arrays.stream(methodNode.getParameters())
-                    .map(e -> findActualType(e.getType(), map))
+                    .map(e -> {
+                        ClassNode originalParameterType = e.getType();
+                        return originalParameterType.isGenericsPlaceHolder()
+                                ? findActualTypeByGenericsPlaceholderName(originalParameterType.getUnresolvedName(), map)
+                                : originalParameterType;
+                    })
                     .toArray(ClassNode[]::new);
 
-        ClassNode returnType = findActualType(methodNode.getReturnType(), map);
+        ClassNode originalReturnType = methodNode.getReturnType();
+        ClassNode returnType =
+                originalReturnType.isGenericsPlaceHolder()
+                        ? findActualTypeByGenericsPlaceholderName(originalReturnType.getUnresolvedName(), map)
+                        : originalReturnType;
+
         return tuple(parameterTypes, returnType);
-    }
-
-    private static ClassNode findActualType(ClassNode originalParameterType, Map<GenericsType, GenericsType> map) {
-        if (originalParameterType.isGenericsPlaceHolder()) {
-            return findActualTypeByGenericsPlaceholderName(originalParameterType.getUnresolvedName(), map);
-        }
-
-        if (null != originalParameterType.getGenericsTypes()) {
-            return findGenericsActualType(originalParameterType, map);
-        }
-
-        return originalParameterType;
-    }
-
-    private static ClassNode findGenericsActualType(ClassNode classNodeWithGenerics, Map<GenericsType, GenericsType> map) {
-        Tuple2<ClassNode, Boolean> genericsActualTypeTuple = doFindGenericsActualType(classNodeWithGenerics, map);
-        return genericsActualTypeTuple.getV1();
-    }
-
-    private static Tuple2<ClassNode, Boolean> doFindGenericsActualType(ClassNode classNodeWithGenerics, Map<GenericsType, GenericsType> map) {
-        GenericsType[] genericsTypes = classNodeWithGenerics.getGenericsTypes();
-        if (null != genericsTypes) {
-            List<GenericsType> newGenericsTypeList = new LinkedList<>();
-            boolean hasPlaceHolders = false;
-            for (GenericsType gt : genericsTypes) {
-                ClassNode type;
-                if (gt.isPlaceholder()) {
-                    type = findActualTypeByGenericsPlaceholderName(gt.getType().getUnresolvedName(), map);
-                    hasPlaceHolders = true;
-                } else {
-                    Tuple2<ClassNode, Boolean> genericsActualTypeTuple = doFindGenericsActualType(gt.getType(), map);
-                    type = genericsActualTypeTuple.getV1();
-                    hasPlaceHolders = genericsActualTypeTuple.getV2();
-                }
-
-                if (null == type) { // TODO handle method generics, e.g. Stream.map
-                    return Tuple.tuple(classNodeWithGenerics, hasPlaceHolders);
-                }
-
-                GenericsType genericsType = new GenericsType(type);
-                genericsType.setSourcePosition(gt);
-                newGenericsTypeList.add(genericsType);
-            }
-
-            if (hasPlaceHolders) {
-                ClassNode newClassNodeWithGenerics = ClassHelper.makeWithoutCaching(classNodeWithGenerics.getTypeClass(), false);
-                newClassNodeWithGenerics.setGenericsTypes(newGenericsTypeList.toArray(GenericsType.EMPTY_ARRAY));
-                newClassNodeWithGenerics.setRedirect(classNodeWithGenerics.redirect());
-                newClassNodeWithGenerics.setSourcePosition(classNodeWithGenerics);
-
-                return Tuple.tuple(newClassNodeWithGenerics, true);
-            }
-        }
-
-        return Tuple.tuple(classNodeWithGenerics, false);
     }
 
     /**
