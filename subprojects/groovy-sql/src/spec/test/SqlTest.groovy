@@ -687,5 +687,43 @@ class SqlTest extends GroovyTestCase {
         }
         '''
     }
+    
+    void testStoredFunWithInOutParameter() {
+        assertScript '''
+        import groovy.sql.Sql
+
+        def url = 'jdbc:hsqldb:mem:yourDB'
+        def user = 'sa'
+        def password = ''
+        def driver = 'org.hsqldb.jdbcDriver'
+        Sql.withInstance(url, user, password, driver) { sql ->
+          // tag::sql_create_stored_fun_inout_parameter[]
+          sql.execute """
+           CREATE OR REPLACE FUNCTION CHECK_ID_POSITIVE_IN_OUT ( p_err IN OUT VARCHAR2, pparam NUMBER)
+           RETURN VARCHAR2 IS
+           re VARCHAR2(15);
+
+           BEGIN
+            IF pparam > 0 THEN
+              p_err := p_err || '_OK';
+              re := 'RET_OK';
+            ELSE 
+              p_err := p_err || '_ERROR';
+              re := 'RET_ERROR';   
+            END IF;
+
+            RETURN re;
+           END;
+          """
+          // end::sql_create_stored_fun_inout_parameter[]
+          // tag::sql_use_stored_fun_inout_parameter[]
+          def scall = "{? = call CHECK_ID_POSITIVE_IN_OUT(?, ?)}"
+          sql.call scall, [Sql.VARCHAR, Sql.inout(Sql.VARCHAR("MESSAGE")), 1], {
+            res, p_err -> println("result: $res -- message: $p_err")
+          }
+          // end::sql_use_stored_fun_inout_parameter[]
+        }
+        '''
+    }   
 
 }
