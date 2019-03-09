@@ -41,7 +41,8 @@ The Groovy development team
 :bintray-download-icon: https://api.bintray.com/packages/groovy/maven/groovy/images/download.svg
 :opencollective-link: https://opencollective.com/friends-of-groovy
 :sponsors-img: https://opencollective.com/friends-of-groovy/tiers/sponsor.svg?width=890
-:backers-img: https://opencollective.com/friends-of-groovy/tiers/backer.svg?width=890
+:backers-monthly-img: https://opencollective.com/friends-of-groovy/tiers/backer.svg?width=890
+:backers-all-img: https://opencollective.com/friends-of-groovy/backers.svg?width=890
 
 [.left.text-left]
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
@@ -192,13 +193,17 @@ https://opencollective.com/friends-of-groovy
 
 This initiative is designed to complement the Apache project and the many contributions we get from our great community and supporters.
 
-Thank you to all our sponsors:
+Thank you to our sponsors(donating monthly):
 
 image:{sponsors-img}[]
 
+Thank you to our backers(donating monthly):
+
+image:{backers-monthly-img}[]
+
 Thank you to all our backers:
 
-image:{backers-img}[]
+image:{backers-all-img}[]
 
 == License
 
