@@ -191,15 +191,15 @@ As an independent initiative, we have set up an open collective for Groovy:
 https://opencollective.com/friends-of-groovy
 
 This initiative is designed to complement the Apache project and the many contributions we get from our great community and supporters.
-
+////
 Thank you to all our sponsors:
 
-image:{sponsors-img}[Friends of Groovy, link={opencollective-link}]
+image:{sponsors-img}[]
 
 Thank you to all our backers:
 
-image:{backers-img}[Friends of Groovy, link={opencollective-link}]
-
+image:{backers-img}[]
+////
 == License
 
 Groovy is licensed under the terms of the http://www.apache.org/licenses/LICENSE-2.0.html[Apache License, Version 2.0]
