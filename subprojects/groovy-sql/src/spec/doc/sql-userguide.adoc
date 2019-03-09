@@ -461,6 +461,19 @@ as parameters to the method call. For output parameters, the resulting type must
 include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_proc_inout,indent=0]
 ----
 
+[source,groovy]
+.Using a stored function with input/output parameter
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_fun_inout_parameter,indent=0]
+----
+
+Printed message is "result: RET_OK -- message: MESSAGE_OK"
+
+Function `CHECK_ID_POSITIVE_IN_OUT` is defined in Oracle as:
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_create_stored_fun_inout_parameter,indent=0]
+----
+
 == Using DataSets
 
 (TBD)
