@@ -20,14 +20,33 @@
 
 package org.codehaus.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
 
 public class ParameterUtils {
     public static boolean parametersEqual(Parameter[] a, Parameter[] b) {
+        return parametersEqual(a, b, false);
+    }
+
+
+    public static boolean parametersEqualWithWrapperType(Parameter[] a, Parameter[] b) {
+        return parametersEqual(a, b, true);
+    }
+
+    private static boolean parametersEqual(Parameter[] a, Parameter[] b, boolean wrapType) {
         if (a.length == b.length) {
             boolean answer = true;
             for (int i = 0; i < a.length; i++) {
-                if (!a[i].getType().equals(b[i].getType())) {
+                ClassNode aType = a[i].getType();
+                ClassNode bType = b[i].getType();
+
+                if (wrapType) {
+                    aType = ClassHelper.getWrapper(aType);
+                    bType = ClassHelper.getWrapper(bType);
+                }
+
+                if (!aType.equals(bType)) {
                     answer = false;
                     break;
                 }

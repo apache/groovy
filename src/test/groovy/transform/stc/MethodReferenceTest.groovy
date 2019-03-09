@@ -19,7 +19,8 @@
 package groovy.transform.stc
 
 class MethodReferenceTest extends GroovyTestCase {
-    void testMethodReferenceFunction() {
+    // class::instanceMethod
+    void testFunctionCI() {
         assertScript '''
             import java.util.stream.Collectors
             
@@ -34,7 +35,8 @@ class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
-    void testMethodReferenceBinaryOperator() {
+    // class::instanceMethod
+    void testBinaryOperatorCI() {
         assertScript '''
             import java.util.stream.Stream
 
@@ -46,6 +48,73 @@ class MethodReferenceTest extends GroovyTestCase {
             }
             
             p()
+        '''
+    }
+
+    // class::staticMethod
+    void testFunctionCS() {
+        assertScript '''
+            import java.util.stream.Stream
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                def result = [1, -2, 3].stream().map(Math::abs).collect(Collectors.toList())
+
+                assert [1, 2, 3] == result
+            }
+            
+            p()
+        '''
+    }
+
+    // instance::instanceMethod
+    void testBinaryOperatorII() {
+        assertScript '''
+            import java.util.stream.Stream
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                Adder adder = new Adder()
+                def result = [new BigDecimal(1), new BigDecimal(2), new BigDecimal(3)].stream().reduce(new BigDecimal(0), adder::add)
+
+                assert new BigDecimal(6) == result
+            }
+            
+            p()
+            
+            @groovy.transform.CompileStatic
+            class Adder {
+                public BigDecimal add(BigDecimal a, BigDecimal b) {
+                    return a.add(b)
+                }
+            }
+        '''
+    }
+
+    // instance::staticMethod
+    void testBinaryOperatorIS() {
+        assertScript '''
+            import java.util.stream.Stream
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                Adder adder = new Adder()
+                def result = [new BigDecimal(1), new BigDecimal(2), new BigDecimal(3)].stream().reduce(new BigDecimal(0), adder::add)
+
+                assert new BigDecimal(6) == result
+            }
+            
+            p()
+            
+            @groovy.transform.CompileStatic
+            class Adder {
+                public static BigDecimal add(BigDecimal a, BigDecimal b) {
+                    return a.add(b)
+                }
+            }
         '''
     }
 }

@@ -42,10 +42,8 @@ import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
-import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -117,7 +115,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                 abstractMethodNode.getName(),
                 createAbstractMethodDesc(functionalInterfaceType, lambdaWrapperClassNode),
                 createBootstrapMethod(isInterface),
-                createBootstrapMethodArguments(abstractMethodDesc, lambdaWrapperClassNode, syntheticLambdaMethodNode)
+                createBootstrapMethodArguments(abstractMethodDesc, Opcodes.H_INVOKEVIRTUAL, lambdaWrapperClassNode, syntheticLambdaMethodNode)
         );
         operandStack.replace(redirect, 2);
     }
@@ -175,13 +173,13 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return lambdaSharedVariableParameters;
     }
 
-    private String createAbstractMethodDesc(ClassNode parameterType, ClassNode lambdaClassNode) {
+    private String createAbstractMethodDesc(ClassNode functionalInterfaceType, ClassNode lambdaClassNode) {
         List<Parameter> lambdaSharedVariableList = new LinkedList<>();
 
         prependEnclosingThis(lambdaSharedVariableList);
         prependParameter(lambdaSharedVariableList, LAMBDA_THIS, lambdaClassNode);
 
-        return BytecodeHelper.getMethodDescriptor(parameterType.redirect(), lambdaSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
+        return BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(), lambdaSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
     }
 
     public ClassNode getOrAddLambdaClass(LambdaExpression expression, int mods, MethodNode abstractMethodNode) {
@@ -265,17 +263,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
     private Parameter prependEnclosingThis(List<Parameter> methodParameterList) {
         return prependParameter(methodParameterList, ENCLOSING_THIS, controller.getClassNode().getPlainNodeReference());
-    }
-
-    private Parameter prependParameter(List<Parameter> methodParameterList, String parameterName, ClassNode parameterType) {
-        Parameter parameter = new Parameter(parameterType, parameterName);
-
-        parameter.setOriginType(parameterType);
-        parameter.setClosureSharedVariable(false);
-
-        methodParameterList.add(0, parameter);
-
-        return parameter;
     }
 
     private Parameter[] createParametersWithExactType(LambdaExpression expression) {

@@ -19,23 +19,33 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.BytecodeVariable;
+import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
+import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 
 /**
@@ -43,6 +53,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUME
  * @since 3.0.0
  */
 public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceExpressionWriter implements AbstractFunctionInterfaceWriter {
+    private static final String MR_EXPR_INSTANCE = "__MR_EXPR_INSTANCE";
+
     public StaticTypesMethodReferenceExpressionWriter(WriterController controller) {
         super(controller);
     }
@@ -59,28 +71,72 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode classNode = controller.getClassNode();
         boolean isInterface = classNode.isInterface();
 
-        ClassNode mrExpressionType = methodReferenceExpression.getExpression().getType();
+        Expression mrExpr = methodReferenceExpression.getExpression();
+        ClassNode mrExprType = mrExpr.getType();
         String mrMethodName = methodReferenceExpression.getMethodName().getText();
 
 
         ClassNode[] methodReferenceParamTypes = methodReferenceExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
         Parameter[] parametersWithExactType = createParametersWithExactType(abstractMethodNode, methodReferenceParamTypes);
-        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, parametersWithExactType, mrExpressionType);
+        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, parametersWithExactType, mrExpr);
 
         if (null == mrMethodNode) {
-            throw new GroovyRuntimeException("Failed to find the expected method[" + mrMethodName + "] in type[" + mrExpressionType.getName() + "]");
+            throw new GroovyRuntimeException("Failed to find the expected method["
+                    + mrMethodName + "(" + Arrays.asList(parametersWithExactType) + ")] in type[" + mrExprType.getName() + "]");
         }
 
         mrMethodNode.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
-
         MethodVisitor mv = controller.getMethodVisitor();
+
+        boolean isClassExpr = isClassExpr(mrExpr);
+        if (!isClassExpr) {
+            if (mrMethodNode.isStatic()) {
+                ClassExpression classExpression = new ClassExpression(mrExprType);
+                classExpression.setSourcePosition(mrExpr);
+                mrExpr = classExpression;
+            }
+
+            if (mrExpr instanceof VariableExpression) {
+                VariableExpression variableExpression = (VariableExpression) mrExpr;
+
+                OperandStack operandStack = controller.getOperandStack();
+                CompileStack compileStack = controller.getCompileStack();
+                BytecodeVariable variable = compileStack.getVariable(variableExpression.getName(), true);
+
+                operandStack.loadOrStoreVariable(variable, variableExpression.isUseReferenceDirectly());
+            } else if (mrExpr instanceof ClassExpression) {
+                // DO NOTHING
+            } else {
+                throw new GroovyBugError("TODO: " + mrExpr.getClass());
+            }
+        }
+
         mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
-                BytecodeHelper.getMethodDescriptor(redirect, Parameter.EMPTY_ARRAY),
+                createAbstractMethodDesc(functionalInterfaceType, mrExpr),
                 createBootstrapMethod(isInterface),
-                createBootstrapMethodArguments(abstractMethodDesc, mrExpressionType, mrMethodNode));
+                createBootstrapMethodArguments(abstractMethodDesc, mrMethodNode.isStatic() ? Opcodes.H_INVOKESTATIC : Opcodes.H_INVOKEVIRTUAL, mrExprType, mrMethodNode));
 
-        controller.getOperandStack().push(redirect);
+        if (isClassExpr) {
+            controller.getOperandStack().push(redirect);
+        } else {
+            controller.getOperandStack().replace(redirect, 1);
+        }
+    }
+
+    private boolean isClassExpr(Expression mrExpr) {
+        return mrExpr instanceof ClassExpression;
+    }
+
+    private String createAbstractMethodDesc(ClassNode functionalInterfaceType, Expression mrExpr) {
+        List<Parameter> methodReferenceSharedVariableList = new LinkedList<>();
+
+        if (!(isClassExpr(mrExpr))) {
+            ClassNode mrExprInstanceType = mrExpr.getType();
+            prependParameter(methodReferenceSharedVariableList, MR_EXPR_INSTANCE, mrExprInstanceType);
+        }
+
+        return BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(), methodReferenceSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
     }
 
     private Parameter[] createParametersWithExactType(MethodNode abstractMethodNode, ClassNode[] inferredParameterTypes) {
@@ -111,24 +167,16 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         return parameters;
     }
 
-    private MethodNode findMrMethodNode(String mrMethodName, Parameter[] abstractMethodParameters, ClassNode mrExpressionType) {
-        List<MethodNode> methodNodeList = mrExpressionType.getMethods(mrMethodName);
+    private MethodNode findMrMethodNode(String mrMethodName, Parameter[] abstractMethodParameters, Expression mrExpr) {
+        ClassNode mrExprType = mrExpr.getType();
+        List<MethodNode> methodNodeList = mrExprType.getMethods(mrMethodName);
         ClassNode classNode = controller.getClassNode();
 
         MethodNode mrMethodNode = null;
-        for (MethodNode mn : methodNodeList) {
-            if (mn.isPrivate() && !mrExpressionType.getName().equals(classNode.getName())) {
-                continue;
-            }
-            if ((mn.isPackageScope() || mn.isProtected()) && !mrExpressionType.getPackageName().equals(classNode.getPackageName())) {
-                continue;
-            }
-            if (mn.isProtected() && !classNode.isDerivedFrom(mrExpressionType)) {
-                continue;
-            }
+        for (MethodNode mn : filterMethodsByVisibility(methodNodeList, classNode)) {
 
             if (mn.isStatic()) {
-                if (ParameterUtils.parametersEqual(mn.getParameters(), abstractMethodParameters)) {
+                if (ParameterUtils.parametersEqualWithWrapperType(mn.getParameters(), abstractMethodParameters)) {
                     mrMethodNode = mn;
                     break;
                 }
@@ -136,7 +184,18 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 if (0 == abstractMethodParameters.length) {
                     break;
                 }
-                if (ParameterUtils.parametersEqual(mn.getParameters(), new ArrayList<>(Arrays.asList(abstractMethodParameters)).subList(1, abstractMethodParameters.length).toArray(Parameter.EMPTY_ARRAY))) {
+
+                Parameter[] parameters;
+                if (isClassExpr(mrExpr)) {
+                    parameters =
+                            new ArrayList<>(Arrays.asList(abstractMethodParameters))
+                                    .subList(1, abstractMethodParameters.length)
+                                    .toArray(Parameter.EMPTY_ARRAY);
+                } else {
+                    parameters = abstractMethodParameters;
+                }
+
+                if (ParameterUtils.parametersEqualWithWrapperType(mn.getParameters(), parameters)) {
                     mrMethodNode = mn;
                     break;
                 }
