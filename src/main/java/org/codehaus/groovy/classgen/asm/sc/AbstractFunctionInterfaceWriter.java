@@ -28,6 +28,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
@@ -66,13 +67,13 @@ public interface AbstractFunctionInterfaceWriter {
         );
     }
 
-    default Object[] createBootstrapMethodArguments(String abstractMethodDesc, ClassNode methodOwnerClassNode, MethodNode methodNode) {
+    default Object[] createBootstrapMethodArguments(String abstractMethodDesc, int insn, ClassNode methodOwnerClassNode, MethodNode methodNode) {
         Parameter[] parameters = methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE);
 
         return new Object[]{
                 Type.getType(abstractMethodDesc),
                 new Handle(
-                        Opcodes.H_INVOKEVIRTUAL,
+                        insn,
                         BytecodeHelper.getClassInternalName(methodOwnerClassNode.getName()),
                         methodNode.getName(),
                         BytecodeHelper.getMethodDescriptor(methodNode),
@@ -80,5 +81,16 @@ public interface AbstractFunctionInterfaceWriter {
                 ),
                 Type.getType(BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), parameters))
         };
+    }
+
+    default Parameter prependParameter(List<Parameter> methodParameterList, String parameterName, ClassNode parameterType) {
+        Parameter parameter = new Parameter(parameterType, parameterName);
+
+        parameter.setOriginType(parameterType);
+        parameter.setClosureSharedVariable(false);
+
+        methodParameterList.add(0, parameter);
+
+        return parameter;
     }
 }
