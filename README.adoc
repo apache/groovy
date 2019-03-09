@@ -40,8 +40,8 @@ The Groovy development team
 :jdk-icon: https://img.shields.io/badge/java-8+-4c7e9f.svg
 :bintray-download-icon: https://api.bintray.com/packages/groovy/maven/groovy/images/download.svg
 :opencollective-link: https://opencollective.com/friends-of-groovy
-:backers-img: https://opencollective.com/friends-of-groovy/backers.svg?width=890
-:sponsors-img: https://opencollective.com/friends-of-groovy/sponsors.svg?width=890
+:sponsors-img: https://opencollective.com/friends-of-groovy/tiers/sponsor.svg?width=890
+:backers-img: https://opencollective.com/friends-of-groovy/tiers/backer.svg?width=890
 
 [.left.text-left]
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
@@ -191,7 +191,7 @@ As an independent initiative, we have set up an open collective for Groovy:
 https://opencollective.com/friends-of-groovy
 
 This initiative is designed to complement the Apache project and the many contributions we get from our great community and supporters.
-////
+
 Thank you to all our sponsors:
 
 image:{sponsors-img}[]
@@ -199,7 +199,7 @@ image:{sponsors-img}[]
 Thank you to all our backers:
 
 image:{backers-img}[]
-////
+
 == License
 
 Groovy is licensed under the terms of the http://www.apache.org/licenses/LICENSE-2.0.html[Apache License, Version 2.0]
