@@ -288,7 +288,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         if (remaining && !remaining[-1].startsWith("-")) {
             console.loadScriptFile(remaining[-1] as File)
         }
-
     }
 
     int loadMaxOutputChars() {
@@ -306,12 +305,14 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void setOutputPreferences(boolean useOutputFile, File outputFile) {
+        prefs.remove('outputLogFileName')
         if (!useOutputFile) {
             closeOutputPrintWriter(outputFile)
         } else {
             if (outputFile != null) {
                 closeOutputPrintWriter()
                 createOutputPrintWriter(outputFile)
+                prefs.put('outputLogFileName', outputFile.getAbsolutePath())
             }
         }
     }
@@ -352,13 +353,20 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         if (indy) {
             enableIndy(baseConfig)
         }
-        newScript(parent, binding);
+
+        // Set up output file for stdout/stderr, if any
+        def outputLogFileName = prefs.get('outputLogFileName', null)
+        if (outputLogFileName) {
+            createOutputPrintWriter(new File(outputLogFileName))
+        }
+
+        newScript(parent, binding)
         try {
             System.setProperty('groovy.full.stacktrace', System.getProperty('groovy.full.stacktrace',
                     Boolean.toString(prefs.getBoolean('fullStackTraces', false))))
 
         } catch (SecurityException se) {
-            fullStackTracesAction.enabled = false;
+            fullStackTracesAction.enabled = false
         }
         consoleControllers += this
 
@@ -400,7 +408,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             },
             menuBarDelegate: {arg->
                 current.JMenuBar = build(arg)}
-        ];
+        ]
 
     void run() {
         run(frameConsoleDelegates)
@@ -476,8 +484,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
     }
 
-
-    public void installInterceptor() {
+    void installInterceptor() {
         systemOutInterceptor = new SystemOutputInterceptor(this.&notifySystemOut, true)
         systemOutInterceptor.start()
         systemErrorInterceptor = new SystemOutputInterceptor(this.&notifySystemErr, false)
@@ -521,14 +528,14 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void appendOutput(Component component, AttributeSet style) {
-        SimpleAttributeSet sas = new SimpleAttributeSet();
+        SimpleAttributeSet sas = new SimpleAttributeSet()
         sas.addAttribute(StyleConstants.NameAttribute, 'component')
         StyleConstants.setComponent(sas, component)
         appendOutput(component.toString(), sas)
     }
 
     void appendOutput(Icon icon, AttributeSet style) {
-        SimpleAttributeSet sas = new SimpleAttributeSet();
+        SimpleAttributeSet sas = new SimpleAttributeSet()
         sas.addAttribute(StyleConstants.NameAttribute, 'icon')
         StyleConstants.setIcon(sas, icon)
         appendOutput(icon.toString(), sas)
@@ -561,7 +568,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 def hrefAttr = new SimpleAttributeSet()
                 // don't pass a GString as it won't be coerced to String as addAttribute takes an Object
                 hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + fileNameAndLineNumber)
-                style.addAttribute(HTML.Tag.A, hrefAttr);
+                style.addAttribute(HTML.Tag.A, hrefAttr)
 
                 insertString(doc, initialLength,                     line[0..<index],                    stacktraceStyle)
                 insertString(doc, initialLength + index,             line[index..<(index + length)],     style)
@@ -574,11 +581,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         ensureNoDocLengthOverflow(doc)
     }
 
-    void insertString(Document doc, int offset, String text, AttributeSet attributeSet) {
+    void insertString(Document doc, int offset, String text, AttributeSet attributeSet, boolean outputToFile = true) {
         doc.insertString(offset, text, attributeSet)
 
         // Output to file if activated
-        if (outputPrintWriter != null) {
+        if (outputToFile && outputPrintWriter != null) {
             outputPrintWriter.append(text)
             outputPrintWriter.flush()
         }
@@ -600,7 +607,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         appendOutput(text, style)
         def doc = outputArea.styledDocument
         def len = doc.length
-        insertString(doc, len, ' \n', style)
+
+        // Disable output to log file in this case ('\n' is removed from outputArea next line)
+        insertString(doc, len, ' \n', style, false)
         doc.remove(len, 2) // windows hack to fix (improve?) line spacing
     }
 
@@ -876,7 +885,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     def hrefAttr = new SimpleAttributeSet()
                     // don't pass a GString as it won't be coerced to String as addAttribute takes an Object
                     hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + scriptFileName + ':' + errorLine)
-                    style.addAttribute(HTML.Tag.A, hrefAttr);
+                    style.addAttribute(HTML.Tag.A, hrefAttr)
 
                     insertString(doc, doc.length, message + ' at ', stacktraceStyle)
                     insertString(doc, doc.length, "line: ${se.line}, column: ${se.startColumn}\n\n", style)
@@ -1371,45 +1380,44 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void comment(EventObject evt = null) {
-	def rootElement = inputArea.document.defaultRootElement
-	def cursorPos = inputArea.getCaretPosition()
-	int startRow = rootElement.getElementIndex(cursorPos)
-	int endRow = startRow
+        def rootElement = inputArea.document.defaultRootElement
+        def cursorPos = inputArea.getCaretPosition()
+        int startRow = rootElement.getElementIndex(cursorPos)
+        int endRow = startRow
 
-	if (inputArea.getSelectedText()) {
-	    def selectionStart = inputArea.getSelectionStart()
-	    startRow = rootElement.getElementIndex(selectionStart)
-	    def selectionEnd = inputArea.getSelectionEnd()
-	    endRow = rootElement.getElementIndex(selectionEnd)
-	}
+        if (inputArea.getSelectedText()) {
+            def selectionStart = inputArea.getSelectionStart()
+            startRow = rootElement.getElementIndex(selectionStart)
+            def selectionEnd = inputArea.getSelectionEnd()
+            endRow = rootElement.getElementIndex(selectionEnd)
+        }
 
-	// If multiple commented lines intermix with uncommented lines, consider them uncommented
-	def allCommented = true
-	startRow.upto(endRow) { rowIndex ->
-	    def rowElement = rootElement.getElement(rowIndex)
-	    int startOffset = rowElement.getStartOffset()
-	    int endOffset = rowElement.getEndOffset()
-	    String rowText = inputArea.document.getText(startOffset, endOffset - startOffset)
-	    if (rowText.trim().length() < 2 || !rowText.trim().substring(0, 2).equals("//")) {
-	    	allCommented = false
-	    }
-	}
+        // If multiple commented lines intermix with uncommented lines, consider them uncommented
+        def allCommented = true
+        startRow.upto(endRow) { rowIndex ->
+            def rowElement = rootElement.getElement(rowIndex)
+            int startOffset = rowElement.getStartOffset()
+            int endOffset = rowElement.getEndOffset()
+            String rowText = inputArea.document.getText(startOffset, endOffset - startOffset)
+            if (rowText.trim().length() < 2 || !rowText.trim().substring(0, 2).equals("//")) {
+                allCommented = false
+            }
+        }
 
-	startRow.upto(endRow) { rowIndex ->
-	    def rowElement = rootElement.getElement(rowIndex)
-	    int startOffset = rowElement.getStartOffset()
-	    int endOffset = rowElement.getEndOffset()
-	    String rowText = inputArea.document.getText(startOffset, endOffset - startOffset)
-	    if (allCommented) {
-		// Uncomment this line if it is already commented
-		int slashOffset = rowText.indexOf("//")
-		inputArea.document.remove(slashOffset + startOffset, 2)
-	    } else {
-	    	// Add comment string in front of this line
-	    	inputArea.document.insertString(startOffset, "//", new SimpleAttributeSet())
-	    }
-	}
-
+        startRow.upto(endRow) { rowIndex ->
+            def rowElement = rootElement.getElement(rowIndex)
+            int startOffset = rowElement.getStartOffset()
+            int endOffset = rowElement.getEndOffset()
+            String rowText = inputArea.document.getText(startOffset, endOffset - startOffset)
+            if (allCommented) {
+            // Uncomment this line if it is already commented
+            int slashOffset = rowText.indexOf("//")
+            inputArea.document.remove(slashOffset + startOffset, 2)
+            } else {
+                // Add comment string in front of this line
+                inputArea.document.insertString(startOffset, "//", new SimpleAttributeSet())
+            }
+        }
     }
 
     void selectBlock(EventObject evt = null) {
