@@ -98,6 +98,12 @@ class ConsolePreferences {
         }
 
         console.swing.txtMaxOutputChars.maximumSize = new Dimension(Integer.MAX_VALUE, (int) console.swing.txtMaxOutputChars.preferredSize.height)
+
+        def outputLogFileName = console.prefs.get('outputLogFileName', null)
+        if (outputLogFileName != null) {
+            console.swing.outputFileCheckBox.selected = true
+            console.swing.outputFileName.text = outputLogFileName
+        }
     }
 
     private boolean isInteger(value) {
@@ -128,6 +134,10 @@ class ConsolePreferences {
 
     private void onChooseFile(EventObject event) {
         JFileChooser fileChooser = console.swing.fileChooser()
+
+        if (console.prefs.get('outputLogFileName', null) != null) {
+            fileChooser.setSelectedFile(new File(console.prefs.get('outputLogFileName', null)))
+        }
 
         if (fileChooser.showOpenDialog(dialog) == JFileChooser.APPROVE_OPTION) {
             outputFile = fileChooser.selectedFile
