@@ -600,7 +600,7 @@ public class DefaultTypeTransformation {
         }
 
         if (equalityCheckOnly) {
-            return -1; // anything other than 0
+            return left.equals(right) ? 0 : -1;
         }
         String message = MessageFormat.format("Cannot compare {0} with value ''{1}'' and {2} with value ''{3}''",
                 left.getClass().getName(), left, right.getClass().getName(), right);
