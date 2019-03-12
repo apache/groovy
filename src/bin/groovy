@@ -26,11 +26,6 @@
 ##                                                                          ##
 ##############################################################################
 
-##
-## $Revision$
-## $Date$
-##
-
 GROOVY_APP_NAME=Groovy
 
 # resolve links - $0 may be a soft-link
