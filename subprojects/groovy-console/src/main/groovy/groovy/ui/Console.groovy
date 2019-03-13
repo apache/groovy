@@ -638,11 +638,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         if (oldValue != orientationVertical) {
             if (orientationVertical) {
                 splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT)
-                splitPane.resizeWeight = 0.5
             } else {
                 splitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT)
-                splitPane.resizeWeight = 0.5
             }
+            splitPane.resizeWeight = detachedOutput ? 1.0 : 0.5
         }
     }
 
