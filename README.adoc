@@ -40,9 +40,9 @@ The Groovy development team
 :jdk-icon: https://img.shields.io/badge/java-8+-4c7e9f.svg
 :bintray-download-icon: https://api.bintray.com/packages/groovy/maven/groovy/images/download.svg
 :opencollective-link: https://opencollective.com/friends-of-groovy
-:sponsors-bronze-img: https://opencollective.com/friends-of-groovy/tiers/bronze-sponsor.svg?width=890
-:backers-monthly-img: https://opencollective.com/friends-of-groovy/tiers/backer.svg?width=890
-:backers-all-img: https://opencollective.com/friends-of-groovy/backers.svg?width=890
+:sponsors-bronze-img: https://opencollective.com/friends-of-groovy/tiers/bronze-sponsor.svg?avatarHeight=40&width=890
+:backers-monthly-img: https://opencollective.com/friends-of-groovy/tiers/backer.svg?avatarHeight=36&width=890
+:backers-all-img: https://opencollective.com/friends-of-groovy/backers.svg?avatarHeight=32&width=890
 
 [.left.text-left]
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
