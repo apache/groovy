@@ -1,6 +1,7 @@
-target
-build
-out
+target/
+build/
+out/
+/bin/
 *.DS_Store
 *~
 .gradle
@@ -11,7 +12,6 @@ out
 .*.swp
 *.class
 user.gradle
-/bin/
 .settings/
 .classpath
 .project
