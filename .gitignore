@@ -11,7 +11,7 @@ out
 .*.swp
 *.class
 user.gradle
-bin/
+/bin/
 .settings/
 .classpath
 .project
