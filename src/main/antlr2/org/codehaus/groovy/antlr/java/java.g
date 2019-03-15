@@ -1918,6 +1918,30 @@ IDENT
 		}
 	;
 
+protected
+DIGIT
+options {
+    paraphrase="a digit";
+}
+    :   '0'..'9'
+    // TODO:  Recognize all the Java identifier parts here (except '$').
+    ;
+
+protected
+DIGITS_WITH_UNDERSCORE
+options {
+    paraphrase="a sequence of digits and underscores, bordered by digits";
+}
+    :   DIGIT (DIGITS_WITH_UNDERSCORE_OPT)?
+    ;
+
+protected
+DIGITS_WITH_UNDERSCORE_OPT
+options {
+    paraphrase="a sequence of digits and underscores with maybe underscore starting";
+}
+    :   (DIGIT | '_')* DIGIT
+    ;
 
 // a numeric literal
 NUM_INT
@@ -1953,17 +1977,19 @@ NUM_INT
 				)+
 
 			|	//float or double with leading zero
-				(('0'..'9')+ ('.'|EXPONENT|FLOAT_SUFFIX)) => ('0'..'9')+
+                (   DIGITS_WITH_UNDERSCORE
+                    ( '.' DIGITS_WITH_UNDERSCORE | EXPONENT | FLOAT_SUFFIX)
+                ) => DIGITS_WITH_UNDERSCORE
 
 			|	('0'..'7')+									// octal
 			)?
-		|	('1'..'9') ('0'..'9')*  {isDecimal=true;}		// non-zero decimal
+		|	('1'..'9') (DIGITS_WITH_UNDERSCORE_OPT)?  {isDecimal=true;}		// non-zero decimal
 		)
 		(	('l'|'L') { _ttype = NUM_LONG; }
 
 		// only check to see if it's a float if looks like decimal so far
 		|	{isDecimal}?
-			(	'.' ('0'..'9')* (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;})?
+			(	'.' DIGITS_WITH_UNDERSCORE (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;})?
 			|	EXPONENT (f3:FLOAT_SUFFIX {t=f3;})?
 			|	f4:FLOAT_SUFFIX {t=f4;}
 			)
