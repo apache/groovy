@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
@@ -36,6 +38,7 @@ import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -45,6 +48,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 
@@ -75,10 +82,16 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ClassNode mrExprType = mrExpr.getType();
         String mrMethodName = methodReferenceExpression.getMethodName().getText();
 
-
         ClassNode[] methodReferenceParamTypes = methodReferenceExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
         Parameter[] parametersWithExactType = createParametersWithExactType(abstractMethodNode, methodReferenceParamTypes);
-        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, parametersWithExactType, mrExpr);
+
+        boolean isConstructorReference = isConstructorReference(mrMethodName);
+        if (isConstructorReference) {
+            mrMethodName = createSyntheticMethodForConstructorReference();
+            addSyntheticMethodForConstructorReference(mrMethodName, mrExprType, parametersWithExactType);
+        }
+
+        MethodNode mrMethodNode = findMrMethodNode(mrMethodName, parametersWithExactType, mrExpr, isConstructorReference);
 
         if (null == mrMethodNode) {
             throw new GroovyRuntimeException("Failed to find the expected method["
@@ -89,7 +102,13 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         MethodVisitor mv = controller.getMethodVisitor();
 
         boolean isClassExpr = isClassExpr(mrExpr);
+
         if (!isClassExpr) {
+            if (isConstructorReference) {
+                // TODO move the checking code to the Parrot parser
+                throw new GroovyRuntimeException("Constructor reference must be className::new");
+            }
+
             if (mrMethodNode.isStatic()) {
                 ClassExpression classExpression = new ClassExpression(mrExprType);
                 classExpression.setSourcePosition(mrExpr);
@@ -115,13 +134,50 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 abstractMethodNode.getName(),
                 createAbstractMethodDesc(functionalInterfaceType, mrExpr),
                 createBootstrapMethod(isInterface),
-                createBootstrapMethodArguments(abstractMethodDesc, mrMethodNode.isStatic() ? Opcodes.H_INVOKESTATIC : Opcodes.H_INVOKEVIRTUAL, mrExprType, mrMethodNode));
+                createBootstrapMethodArguments(
+                        abstractMethodDesc,
+                        mrMethodNode.isStatic() || isConstructorReference ? Opcodes.H_INVOKESTATIC : Opcodes.H_INVOKEVIRTUAL,
+                        isConstructorReference ? controller.getClassNode() : mrExprType,
+                        mrMethodNode)
+        );
 
         if (isClassExpr) {
             controller.getOperandStack().push(redirect);
         } else {
             controller.getOperandStack().replace(redirect, 1);
         }
+    }
+
+    private void addSyntheticMethodForConstructorReference(String syntheticMethodName, ClassNode returnType, Parameter[] parametersWithExactType) {
+        ArgumentListExpression ctorArgs = args(parametersWithExactType);
+
+        controller.getClassNode().addSyntheticMethod(
+                syntheticMethodName,
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_SYNTHETIC,
+                returnType,
+                parametersWithExactType,
+                ClassNode.EMPTY_ARRAY,
+                block(
+                        returnS(
+                                returnType.isArray()
+                                        ?   new ArrayExpression(
+                                                ClassHelper.make(ArrayTypeUtils.elementType(returnType.getTypeClass())),
+                                                null,
+                                                ctorArgs.getExpressions()
+                                            )
+                                        :   ctorX(returnType, ctorArgs)
+                        )
+                )
+        );
+
+    }
+
+    private String createSyntheticMethodForConstructorReference() {
+        return controller.getContext().getNextConstructorReferenceSyntheticMethodName(controller.getMethodNode());
+    }
+
+    private boolean isConstructorReference(String mrMethodName) {
+        return "new".equals(mrMethodName);
     }
 
     private boolean isClassExpr(Expression mrExpr) {
@@ -167,7 +223,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         return parameters;
     }
 
-    private MethodNode findMrMethodNode(String mrMethodName, Parameter[] abstractMethodParameters, Expression mrExpr) {
+    private MethodNode findMrMethodNode(String mrMethodName, Parameter[] abstractMethodParameters, Expression mrExpr, boolean isConstructorReference) {
+        if (isConstructorReference) {
+            return controller.getClassNode().getMethod(mrMethodName, abstractMethodParameters);
+        }
+
         ClassNode mrExprType = mrExpr.getType();
         List<MethodNode> methodNodeList = mrExprType.getMethods(mrMethodName);
         ClassNode classNode = controller.getClassNode();

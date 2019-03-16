@@ -1136,8 +1136,22 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             visitor.visitConstructor(cn);
         }
 
-        for (MethodNode mn : getMethods()) {
+        visitMethods(visitor);
+    }
+
+    private void visitMethods(GroovyClassVisitor visitor) {
+        List<MethodNode> methodList = new ArrayList<>(getMethods());
+        for (MethodNode mn : methodList) {
             visitor.visitMethod(mn);
+        }
+
+        // visit the method node added while iterating the above methodList, e.g. synthetic method for constructor reference
+        List<MethodNode> changedMethodList = new ArrayList<>(getMethods());
+        boolean changed = changedMethodList.removeAll(methodList);
+        if (changed) {
+            for (MethodNode mn : changedMethodList) {
+                visitor.visitMethod(mn);
+            }
         }
     }
 
