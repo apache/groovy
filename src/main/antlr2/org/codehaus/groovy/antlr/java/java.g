@@ -897,6 +897,7 @@ interfaceField!    {Token first = LT(1);}
 			// This is not allowed for variable definitions, but this production
 			// allows it, a semantic check could be used if you want a more strict
 			// grammar.
+			("default"!)?          // just to keep groovydoc parsing happy
 			t:typeSpec[false]		// method or variable declaration(s)
 			(	IDENT				// the name of the method
 
