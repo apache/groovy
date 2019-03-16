@@ -1210,11 +1210,26 @@ forIter  {Token first = LT(1);}
 	;
 
 // an exception handler try/catch block
+// TODO currently handles try-with-resources only enough for groovydoc, not java2groovy
+// plan is to switch java2groovy over to using parrot parser (or some other alternative)
 tryBlock
-	:	"try"^ compoundStatement
+	:	"try"^ ((LPAREN) => resources)? compoundStatement
 		(handler)*
 		( finallyClause )?
 	;
+
+resources
+    :   LPAREN! resourceList (SEMI!)? RPAREN!
+    ;
+
+resourceList
+    :   resource (SEMI! resource)*
+    ;
+
+resource
+    : (declaration) => declaration
+	| expression
+    ;
 
 finallyClause
 	:	"finally"^ compoundStatement
