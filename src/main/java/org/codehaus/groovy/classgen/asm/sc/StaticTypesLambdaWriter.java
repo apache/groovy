@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -272,18 +271,17 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
 
         for (Parameter parameter : parameters) {
+            ClassNode parameterType = parameter.getType();
             ClassNode inferredType = parameter.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
 
             if (null == inferredType) {
                 continue;
             }
 
-            // Java 11 does not allow primitive type, we should use the wrapper type
-            // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
-            ClassNode wrappedType = getWrapper(inferredType);
+            ClassNode type = convertParameterType(parameterType, inferredType);
 
-            parameter.setType(wrappedType);
-            parameter.setOriginType(wrappedType);
+            parameter.setType(type);
+            parameter.setOriginType(type);
         }
 
         return parameters;

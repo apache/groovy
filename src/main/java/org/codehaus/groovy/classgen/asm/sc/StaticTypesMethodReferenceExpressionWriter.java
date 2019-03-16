@@ -206,18 +206,17 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
+            ClassNode parameterType = parameter.getType();
             ClassNode inferredType = inferredParameterTypes[i];
 
             if (null == inferredType) {
                 continue;
             }
 
-            // Java 11 does not allow primitive type, we should use the wrapper type
-            // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
-            ClassNode wrappedType = getWrapper(inferredType);
+            ClassNode type = convertParameterType(parameterType, inferredType);
 
-            parameter.setType(wrappedType);
-            parameter.setOriginType(wrappedType);
+            parameter.setType(type);
+            parameter.setOriginType(type);
         }
 
         return parameters;

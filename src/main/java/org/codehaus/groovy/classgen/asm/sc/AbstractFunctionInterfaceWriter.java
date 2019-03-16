@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -30,6 +31,7 @@ import org.objectweb.asm.Type;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCTIONAL_INTERFACE_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 
@@ -81,6 +83,24 @@ public interface AbstractFunctionInterfaceWriter {
                 ),
                 Type.getType(BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), parameters))
         };
+    }
+
+    default ClassNode convertParameterType(ClassNode parameterType, ClassNode inferredType) {
+        ClassNode type;
+        boolean isParameterTypePrimitive = ClassHelper.isPrimitiveType(parameterType);
+        boolean isInferredTypePrimitive = ClassHelper.isPrimitiveType(inferredType);
+        if (!isParameterTypePrimitive && isInferredTypePrimitive) {
+            // The non-primitive type and primitive type are not allowed to mix since Java 9+
+            // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
+            type = getWrapper(inferredType);
+        } else if (isParameterTypePrimitive && !isInferredTypePrimitive) {
+            // The non-primitive type and primitive type are not allowed to mix since Java 9+
+            // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: class java.lang.Integer is not a subtype of int
+            type = ClassHelper.getUnwrapper(inferredType);
+        } else {
+            type = inferredType;
+        }
+        return type;
     }
 
     default Parameter prependParameter(List<Parameter> methodParameterList, String parameterName, ClassNode parameterType) {
