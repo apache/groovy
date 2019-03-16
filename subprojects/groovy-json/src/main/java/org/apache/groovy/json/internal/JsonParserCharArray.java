@@ -19,6 +19,7 @@
 package org.apache.groovy.json.internal;
 
 import groovy.json.JsonException;
+import org.apache.groovy.internal.util.UnicodeConst;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,8 +71,7 @@ public class JsonParserCharArray extends BaseJsonParser {
                 __index++;
                 return __currentChar = charArray[__index];
             } else {
-                // TODO move unicode 0 to separate file to avoid doc parsing issues
-                return '\u0000';
+                return UnicodeConst.ZERO;
             }
         } catch (Exception ex) {
             throw new JsonException(exceptionDetails("unable to advance character"), ex);
