@@ -59,6 +59,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipException
 import java.util.zip.ZipFile
 
+import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly
+
 /**
  * Implementation supporting {@code @Grape} and {@code @Grab} annotations based on Ivy.
  */
@@ -329,13 +331,7 @@ class GrapeIvy implements GrapeEngine {
                             is = jar.getInputStream(entry)
                             props.load(is)
                         } finally {
-                            if (null != is) {
-                                try {
-                                    is.close()
-                                } catch (e) {
-                                    // ignore
-                                }
-                            }
+                            closeQuietly(is)
                         }
 
                         Map<CachedClass, List<MetaMethod>> metaMethods = new HashMap<CachedClass, List<MetaMethod>>()
@@ -356,13 +352,7 @@ class GrapeIvy implements GrapeEngine {
                 } catch(ZipException zipException) {
                     throw new RuntimeException("Grape could not load jar '$file'", zipException)
                 } finally {
-                    if (null != jar) {
-                        try {
-                            jar.close()
-                        } catch (e) {
-                            // ignore
-                        }
-                    }
+                    closeQuietly(jar)
                 }
             }
         }
@@ -397,13 +387,7 @@ class GrapeIvy implements GrapeEngine {
                     is = zf.getInputStream(serializedCategoryMethods)
                     processSerializedCategoryMethods(is)
                 } finally {
-                    if (null != is) {
-                        try {
-                            is.close()
-                        } catch (e) {
-                            // ignore
-                        }
-                    }
+                    closeQuietly(is)
                 }
 
             }
@@ -418,13 +402,7 @@ class GrapeIvy implements GrapeEngine {
                     is = zf.getInputStream(pluginRunners)
                     processRunners(is, f.getName(), loader)
                 } finally {
-                    if (null != is) {
-                        try {
-                            is.close()
-                        } catch (e) {
-                            // ignore
-                        }
-                    }
+                    closeQuietly(is)
                 }
             }
             // GroovyRunners are loaded per ClassLoader using a ServiceLoader so here
@@ -436,13 +414,7 @@ class GrapeIvy implements GrapeEngine {
             // ignore files we can't process, e.g. non-jar/zip artifacts
             // TODO log a warning
         } finally {
-            if (null != zf) {
-                try {
-                    zf.close()
-                } catch (e) {
-                    // ignore
-                }
-            }
+            closeQuietly(zf)
         }
         return services
     }
