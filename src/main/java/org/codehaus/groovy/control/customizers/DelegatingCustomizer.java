@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.control.customizers;
 
+import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 
 /**
@@ -29,12 +31,19 @@ import org.codehaus.groovy.control.SourceUnit;
  *
  * @since 2.1.0
  */
-public abstract class DelegatingCustomizer extends CompilationCustomizer {
+public abstract class DelegatingCustomizer extends CompilationCustomizer implements CompilationUnitAware {
     protected final CompilationCustomizer delegate;
 
     public DelegatingCustomizer(CompilationCustomizer delegate) {
         super(delegate.getPhase());
         this.delegate = delegate;
+    }
+
+    @Override
+    public void setCompilationUnit(final CompilationUnit compilationUnit) {
+        if (delegate instanceof CompilationUnitAware) {
+            ((CompilationUnitAware) delegate).setCompilationUnit(compilationUnit);
+        }
     }
 
     @Override
