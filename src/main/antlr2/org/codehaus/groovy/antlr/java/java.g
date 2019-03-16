@@ -1214,7 +1214,7 @@ forIter  {Token first = LT(1);}
 // TODO currently handles try-with-resources only enough for groovydoc, not java2groovy
 // plan is to switch java2groovy over to using parrot parser (or some other alternative)
 tryBlock
-	:	"try"^ ((LPAREN) => resources)? compoundStatement
+	:	"try"^ ((LPAREN) => resources!)? compoundStatement
 		(handler)*
 		( finallyClause )?
 	;
