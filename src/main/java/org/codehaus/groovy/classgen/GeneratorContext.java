@@ -32,7 +32,7 @@ public class GeneratorContext {
 
     private int innerClassIdx = 1;
     private int closureClassIdx = 1;
-    private int lambdaClassIdx = 1;
+    private int syntheticMethodIdx = 0;
     private final CompileUnit compileUnit;
     
     public GeneratorContext(CompileUnit compileUnit) {
@@ -75,6 +75,13 @@ public class GeneratorContext {
         return methodName + "_" + classifier + closureClassIdx++;
     }
 
+    public String getNextConstructorReferenceSyntheticMethodName(MethodNode enclosingMethodNode) {
+        return "constructorReference$"
+                + (null == enclosingMethodNode
+                        ? ""
+                        : enclosingMethodNode.getName().replace("<", "").replace(">", "") + "$" )
+                + syntheticMethodIdx++;
+    }
 
     private static final int MIN_ENCODING = ' ';
     private static final int MAX_ENCODING = ']';
