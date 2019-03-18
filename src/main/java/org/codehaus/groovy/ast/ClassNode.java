@@ -1140,12 +1140,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     private void visitMethods(GroovyClassVisitor visitor) {
+        // create snapshot of the method list to avoid java.util.ConcurrentModificationException
         List<MethodNode> methodList = new ArrayList<>(getMethods());
         for (MethodNode mn : methodList) {
             visitor.visitMethod(mn);
         }
 
-        // visit the method node added while iterating the above methodList, e.g. synthetic method for constructor reference
+        // visit the method nodes added while iterating,
+        // e.g. synthetic method for constructor reference
         List<MethodNode> changedMethodList = new ArrayList<>(getMethods());
         boolean changed = changedMethodList.removeAll(methodList);
         if (changed) {
