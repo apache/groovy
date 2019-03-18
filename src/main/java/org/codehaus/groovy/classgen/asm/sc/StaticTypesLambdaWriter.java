@@ -139,7 +139,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitInsn(DUP);
 
         loadEnclosingClassInstance();
-        loadEnclosingClassInstance();
+        controller.getOperandStack().dup();
 
         loadSharedVariables(syntheticLambdaMethodNode);
 
