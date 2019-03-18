@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.GroovyRuntimeException;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -29,14 +28,10 @@ import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.classgen.asm.BytecodeVariable;
-import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
-import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.objectweb.asm.MethodVisitor;
@@ -47,7 +42,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -70,6 +64,12 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     public void writeMethodReferenceExpression(MethodReferenceExpression methodReferenceExpression) {
         ClassNode functionalInterfaceType = getFunctionalInterfaceType(methodReferenceExpression);
         ClassNode redirect = functionalInterfaceType.redirect();
+
+        if (null == functionalInterfaceType || !ClassHelper.isFunctionalInterface(redirect)) {
+            // if the parameter type is not real FunctionInterface or failed to be inferred, generate the default bytecode, which is actually a method closure
+            super.writeMethodReferenceExpression(methodReferenceExpression);
+            return;
+        }
 
         MethodNode abstractMethodNode = ClassHelper.findSAM(redirect);
 
@@ -113,20 +113,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 ClassExpression classExpression = new ClassExpression(mrExprType);
                 classExpression.setSourcePosition(mrExpr);
                 mrExpr = classExpression;
+                isClassExpr = true;
             }
 
-            if (mrExpr instanceof VariableExpression) {
-                VariableExpression variableExpression = (VariableExpression) mrExpr;
-
-                OperandStack operandStack = controller.getOperandStack();
-                CompileStack compileStack = controller.getCompileStack();
-                BytecodeVariable variable = compileStack.getVariable(variableExpression.getName(), true);
-
-                operandStack.loadOrStoreVariable(variable, variableExpression.isUseReferenceDirectly());
-            } else if (mrExpr instanceof ClassExpression) {
-                // DO NOTHING
-            } else {
-                throw new GroovyBugError("TODO: " + mrExpr.getClass());
+            if (!isClassExpr) {
+                mrExpr.visit(controller.getAcg());
             }
         }
 
