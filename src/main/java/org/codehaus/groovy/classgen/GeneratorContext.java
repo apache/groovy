@@ -76,7 +76,7 @@ public class GeneratorContext {
     }
 
     public String getNextConstructorReferenceSyntheticMethodName(MethodNode enclosingMethodNode) {
-        return "constructorReference$"
+        return "ctorRef$"
                 + (null == enclosingMethodNode
                         ? ""
                         : enclosingMethodNode.getName().replace("<", "").replace(">", "") + "$" )
