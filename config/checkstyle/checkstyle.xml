@@ -166,7 +166,6 @@
         <!-- add below in eventually for consistency -->
         <!--<module name="ArrayTypeStyle"/>-->
 
-        <module name="FileContentsHolder" />
     </module>
     <!-- Item 6 - Avoid finalizers -->
     <!-- this will not find violations that contain linebreaks -->
