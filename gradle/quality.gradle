@@ -36,6 +36,13 @@ allprojects {
             substitute module("org.codehaus.groovy:groovy-xml") with project(":groovy-xml")
             substitute module("org.codehaus.groovy:groovy-groovydoc") with project(":groovy-groovydoc")
         }
+        
+        exclude module: 'groovy-all'
+    }
+    
+    dependencies {
+        codenarc "org.codenarc:CodeNarc:1.2.1"
+        codenarc project(":groovy-templates")
     }
 
 //    license {
@@ -59,9 +66,12 @@ allprojects {
 
     // don't fail build on CodeNarc tasks
     tasks.withType(CodeNarc) {
-        dependsOn jar
+        //dependsOn jar
         ignoreFailures = true
         configFile = file("$rootProject.projectDir/config/codenarc/codenarc.groovy")
+        doFirst {
+            configurations.codenarc.files.each { println it }
+        }
     }
 
     tasks.withType(Checkstyle) {
