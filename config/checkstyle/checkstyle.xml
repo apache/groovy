@@ -166,6 +166,12 @@
         <!-- add below in eventually for consistency -->
         <!--<module name="ArrayTypeStyle"/>-->
 
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
+            <property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
+            <property name="checkFormat" value="$1"/>
+        </module>
+
     </module>
     <!-- Item 6 - Avoid finalizers -->
     <!-- this will not find violations that contain linebreaks -->
@@ -181,11 +187,6 @@
         <property name="allowLegacy" value="true"/>
     </module>
 
-    <module name="SuppressionCommentFilter">
-        <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
-        <property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
-        <property name="checkFormat" value="$1"/>
-    </module>
 <!--
     <module name="au.com.redhillconsulting.simian.SimianCheck">
         <property name="threshold" value="8"/>
