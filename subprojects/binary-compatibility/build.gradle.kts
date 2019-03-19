@@ -26,7 +26,7 @@ val checkBinaryCompatibility = tasks.register("checkBinaryCompatibility") {
     description = "Generates binary compatibility reports"
 }
 
-tasks.named("check").configure {
+tasks.check {
     dependsOn(checkBinaryCompatibility)
 }
 
@@ -42,7 +42,7 @@ val compatibilityBaselineVersion = "2.4.15"
 val binaryCompatProject = project
 
 rootProject.allprojects {
-    if (!(name in excludeModules)) {
+    if (name !in excludeModules) {
         val baseline = binaryCompatProject.configurations.create("${getJapiTaskName()}Baseline") {
             dependencies.add(binaryCompatProject.dependencies.create("org.codehaus.groovy:${project.name}:${compatibilityBaselineVersion}@jar"))
         }
@@ -59,7 +59,7 @@ rootProject.allprojects {
             packageExcludes = listOf("**internal**", "groovyjarjar**")
             htmlOutputFile = file("${binaryCompatProject.buildDir}/reports/${getJapiTaskName()}.html")
         }
-        checkBinaryCompatibility.configure {
+        checkBinaryCompatibility {
             dependsOn(singleProjectCheck)
         }
     }
