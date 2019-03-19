@@ -22,7 +22,7 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
     // are not specifically asking for code coverage
 
     allprojects {
-        if (!['performance'].contains(it.name)) {
+        if (!['performance', 'binary-compatibility'].contains(it.name)) {
             apply plugin: 'jacoco'
         }
 
