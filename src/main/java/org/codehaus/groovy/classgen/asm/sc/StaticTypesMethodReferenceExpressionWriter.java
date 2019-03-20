@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.Tuple;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -171,7 +172,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         return "new".equals(mrMethodName);
     }
 
-    private boolean isClassExpr(Expression mrExpr) {
+    private static boolean isClassExpr(Expression mrExpr) {
         return mrExpr instanceof ClassExpression;
     }
 
@@ -222,13 +223,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         List<MethodNode> methodNodeList = mrExprType.getMethods(mrMethodName);
         ClassNode classNode = controller.getClassNode();
 
-        MethodNode mrMethodNode = null;
+        List<MethodNode> mrMethodNodeList = new LinkedList<>();
         for (MethodNode mn : filterMethodsByVisibility(methodNodeList, classNode)) {
-
             if (mn.isStatic()) {
                 if (ParameterUtils.parametersEqualWithWrapperType(mn.getParameters(), abstractMethodParameters)) {
-                    mrMethodNode = mn;
-                    break;
+                    mrMethodNodeList.add(mn);
                 }
             } else {
                 if (0 == abstractMethodParameters.length) {
@@ -246,12 +245,49 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 }
 
                 if (ParameterUtils.parametersEqualWithWrapperType(mn.getParameters(), parameters)) {
-                    mrMethodNode = mn;
-                    break;
+                    mrMethodNodeList.add(mn);
                 }
             }
         }
 
-        return mrMethodNode;
+        MethodNode result = chooseMrMethodNodeCandidate(mrExpr, mrMethodNodeList);
+
+        return result;
+    }
+
+    /**
+     * Choose the best method node for method reference.
+     */
+    private MethodNode chooseMrMethodNodeCandidate(Expression mrExpr, List<MethodNode> mrMethodNodeList) {
+        if (1 == mrMethodNodeList.size()) return mrMethodNodeList.get(0);
+
+        return mrMethodNodeList.stream()
+                .map(e -> Tuple.tuple(e, matchingScore(e, mrExpr)))
+                .sorted((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2()))
+                .findFirst()
+                .get()
+                .getV1();
+    }
+
+    private static Integer matchingScore(MethodNode mn, Expression mrExpr) {
+        ClassNode mrExprType = mrExpr.getType();
+
+        int score = 9;
+        for (ClassNode cn = mn.getDeclaringClass(); null != cn && !cn.equals(mrExprType); cn = cn.getSuperClass()) {
+            score--;
+        }
+        if (score < 0) {
+            score = 0;
+        }
+        score *= 10;
+
+        boolean isClassExpr = isClassExpr(mrExpr);
+        boolean isStaticMethod = mn.isStatic();
+
+        if (isClassExpr && isStaticMethod || !isClassExpr && !isStaticMethod) {
+            score += 9;
+        }
+
+        return score;
     }
 }
