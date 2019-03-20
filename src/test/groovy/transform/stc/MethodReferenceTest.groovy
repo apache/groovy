@@ -36,6 +36,22 @@ class MethodReferenceTest extends GroovyTestCase {
     }
 
     // class::instanceMethod
+    void testFunctionCI_MULTI_MATCHED_METHODS() {
+        assertScript '''
+            import java.util.stream.Collectors
+            
+            @groovy.transform.CompileStatic
+            void p() {
+                def result = [1, 2, 3].stream().map(Integer::toString).collect(Collectors.toList())
+                assert 3 == result.size()
+                assert ['1', '2', '3'] == result
+            }
+            
+            p()
+        '''
+    }
+
+    // class::instanceMethod
     void testBinaryOperatorCI() {
         assertScript '''
             import java.util.stream.Stream
@@ -252,5 +268,4 @@ class MethodReferenceTest extends GroovyTestCase {
 
         '''
     }
-
 }
