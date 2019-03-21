@@ -59,7 +59,7 @@ class GeneratedAnnotationTest extends GroovyShellTestCase {
     }
 
     @Test
-    void testDefaultConstructorIsAnnotatedWithGenerated() {
+    void testDefaultConstructorIsAnnotatedWithGenerated_GROOVY9051() {
         def person = evaluate('''
             class Person {
             }
