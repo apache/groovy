@@ -43,6 +43,7 @@ import org.objectweb.asm.Opcodes;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -73,7 +74,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * If a {@link Vetoable} annotation is detected it does nothing and
  * lets the {@link VetoableASTTransformation} handle all the changes.
  */
-@GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
     protected static final ClassNode boundClassNode = ClassHelper.make(Bindable.class);
@@ -253,7 +254,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                 setterBlock);
         setter.setSynthetic(true);
         // add it to the class
-        declaringClass.addMethod(setter);
+        addGeneratedMethod(declaringClass, setter);
     }
 
     /**
@@ -339,7 +340,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // void addPropertyChangeListener(listener) {
         //     this$propertyChangeSupport.addPropertyChangeListener(listener)
         //  }
-        declaringClass.addMethod(
+        addGeneratedMethod(declaringClass,
                 new MethodNode(
                         "addPropertyChangeListener",
                         ACC_PUBLIC,
@@ -352,7 +353,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // void addPropertyChangeListener(name, listener) {
         //     this$propertyChangeSupport.addPropertyChangeListener(name, listener)
         //  }
-        declaringClass.addMethod(
+        addGeneratedMethod(declaringClass,
                 new MethodNode(
                         "addPropertyChangeListener",
                         ACC_PUBLIC,
@@ -365,7 +366,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // boolean removePropertyChangeListener(listener) {
         //    return this$propertyChangeSupport.removePropertyChangeListener(listener);
         // }
-        declaringClass.addMethod(
+        addGeneratedMethod(declaringClass,
                 new MethodNode(
                         "removePropertyChangeListener",
                         ACC_PUBLIC,
@@ -375,7 +376,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                         stmt(callX(fieldX(pcsField), "removePropertyChangeListener", args(varX("listener", pclClassNode))))));
 
         // add method: void removePropertyChangeListener(name, listener)
-        declaringClass.addMethod(
+        addGeneratedMethod(declaringClass,
                 new MethodNode(
                         "removePropertyChangeListener",
                         ACC_PUBLIC,
@@ -388,7 +389,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // void firePropertyChange(String name, Object oldValue, Object newValue) {
         //     this$propertyChangeSupport.firePropertyChange(name, oldValue, newValue)
         //  }
-        declaringClass.addMethod(
+        addGeneratedMethod(declaringClass,
                 new MethodNode(
                         "firePropertyChange",
                         ACC_PUBLIC,
@@ -401,7 +402,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // PropertyChangeListener[] getPropertyChangeListeners() {
         //   return this$propertyChangeSupport.getPropertyChangeListeners
         // }
-        declaringClass.addMethod(
+        addGeneratedMethod(declaringClass,
                 new MethodNode(
                         "getPropertyChangeListeners",
                         ACC_PUBLIC,
@@ -414,7 +415,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // PropertyChangeListener[] getPropertyChangeListeners(String name) {
         //   return this$propertyChangeSupport.getPropertyChangeListeners(name)
         // }
-        declaringClass.addMethod(
+        addGeneratedMethod(declaringClass,
                 new MethodNode(
                         "getPropertyChangeListeners",
                         ACC_PUBLIC,
