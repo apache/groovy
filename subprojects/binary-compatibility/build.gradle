@@ -22,7 +22,7 @@ plugins {
     id("me.champeau.gradle.japicmp") version "0.2.6"
 }
 
-val checkBinaryCompatibility = tasks.register("checkBinaryCompatibility") {
+task(checkBinaryCompatibility) {
     description = "Generates binary compatibility reports"
 }
 
@@ -31,22 +31,24 @@ tasks.check {
 }
 
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.
-val excludeModules = setOf(
+Set excludeModules = [
         "groovy-cli-picocli", "groovy-cli-commons", "groovy-dateutil", "groovy-datetime", "groovy-jaxb",
         "groovy-macro", "groovy-json-direct", "groovy-test-junit5", "groovy-yaml", "performance", "tests-vm8",
         "binary-compatibility"
-)
+]
 
-val compatibilityBaselineVersion = "2.4.15"
+def compatibilityBaselineVersion = "2.4.15"
 
-val binaryCompatProject = project
+def thisProject = project
 
 rootProject.allprojects {
-    if (name !in excludeModules) {
-        val baseline = binaryCompatProject.configurations.create("${getJapiTaskName()}Baseline") {
-            dependencies.add(binaryCompatProject.dependencies.create("org.codehaus.groovy:${project.name}:${compatibilityBaselineVersion}@jar"))
+    if (!(name in excludeModules)) {
+        def taskName = "japicmp${project.name.split('-').collect{ it.capitalize() }.join()}"
+        def baselineCoords = "org.codehaus.groovy:${project.name}:${compatibilityBaselineVersion}@jar"
+        def baseline = thisProject.configurations.create("${taskName}Baseline") {
+            dependencies.add(thisProject.dependencies.create(baselineCoords))
         }
-        val singleProjectCheck = binaryCompatProject.tasks.register<JapicmpTask>(getJapiTaskName()) {
+        def singleProjectCheck = thisProject.tasks.register(taskName, JapicmpTask) {
             oldArchives = baseline
             newArchives = files(tasks.named("jarjar"))
             oldClasspath = files()
@@ -55,15 +57,10 @@ rootProject.allprojects {
             onlyModified = true
             failOnModification = false
             ignoreMissingClasses = true
-            classExcludes = listOf("**_closure**", "org.codehaus.groovy.runtime.dgm$**")
-            packageExcludes = listOf("**internal**", "groovyjarjar**")
-            htmlOutputFile = file("${binaryCompatProject.buildDir}/reports/${getJapiTaskName()}.html")
+            classExcludes = ["**_closure**", "org.codehaus.groovy.runtime.dgm\$**"]
+            packageExcludes = ["**internal**", "groovyjarjar**"]
+            htmlOutputFile = file("${thisProject.buildDir}/reports/${taskName}.html")
         }
-        checkBinaryCompatibility {
-            dependsOn(singleProjectCheck)
-        }
+        thisProject.tasks.checkBinaryCompatibility.dependsOn(singleProjectCheck)
     }
 }
-
-fun Project.getJapiTaskName() =
-        "japicmp${name.split('-').joinToString(separator = "", transform = String::capitalize)}"
