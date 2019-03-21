@@ -25,7 +25,7 @@ import java.beans.PropertyChangeListener
 import static java.lang.reflect.Modifier.isPublic
 import static java.lang.reflect.Modifier.isSynthetic
 
-class BindableTest extends GroovyTestCase {
+class BindableTransformTest extends GroovyShellTestCase {
 
     void testSimpleBindableProperty() {
         assertScript """
@@ -368,5 +368,32 @@ class BindableTest extends GroovyTestCase {
             }
             assert new MyBean()
         """
+    }
+
+    void testBindableGeneratedMethodsAreAnnotatedWithGenerated_GROOVY9053() {
+        def person = evaluate('''
+            class Person {
+                @groovy.beans.Bindable
+                String firstName
+
+                void setFirstName(String fn) {
+                    this.firstName = fn.toUpperCase()
+                }
+
+                @groovy.beans.Bindable
+                def zipCode
+             }
+             new Person()
+        ''')
+
+        person.class.declaredMethods.each { m ->
+            if (m.name.contains('PropertyChange') || m.name in ['setZipCode']) {
+                assert m.annotations*.annotationType().name.contains('groovy.transform.Generated')
+            }
+            if (m.name in ['setFirstName']) {
+                // wrapped methods should not be marked since they contain non-generated logic
+                assert !m.annotations*.annotationType().name.contains('groovy.transform.Generated')
+            }
+        }
     }
 }
