@@ -30,7 +30,7 @@ import org.junit.runners.JUnit4
  * Tests for the @Generated annotation.
  */
 @RunWith(JUnit4)
-class GeneratedTransformTest extends GroovyShellTestCase {
+class GeneratedAnnotationTest extends GroovyShellTestCase {
     @Rule public TestName nameRule = new TestName()
 
     @Before
@@ -59,7 +59,20 @@ class GeneratedTransformTest extends GroovyShellTestCase {
     }
 
     @Test
-    void testOverridenDefaultGroovyMethodsAreNotAnnotatedWithGenerated() {
+    void testDefaultConstructorIsAnnotatedWithGenerated() {
+        def person = evaluate('''
+            class Person {
+            }
+            new Person()
+        ''')
+
+        def cons = person.class.declaredConstructors
+        assert cons.size() == 1
+        assert cons[0].annotations*.annotationType().name.contains('groovy.transform.Generated')
+    }
+
+    @Test
+    void testOverriddenDefaultGroovyMethodsAreNotAnnotatedWithGenerated() {
         def person = evaluate('''
             class Person {
                 String name
