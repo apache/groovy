@@ -276,8 +276,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         for (ClassNode cn = mn.getDeclaringClass(); null != cn && !cn.equals(mrExprType); cn = cn.getSuperClass()) {
             score--;
         }
-        if (score < 1) {
-            score = 1;
+        if (score < 0) {
+            score = 0;
         }
         score *= 10;
 
