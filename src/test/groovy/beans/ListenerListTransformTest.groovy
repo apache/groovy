@@ -22,9 +22,9 @@ package groovy.beans
  * Unit test for ListenerList.
  */
 
-class ListenerListASTTest extends GroovyTestCase {
+class ListenerListTransformTest extends GroovyTestCase {
 
-    public void testDefaultFireAndName() {
+    void testDefaultFireAndName() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
             import groovy.beans.*
@@ -52,7 +52,7 @@ class ListenerListASTTest extends GroovyTestCase {
         assert evt.message.is(message)
     }
 
-    public void testCustomFireAndName() {
+    void testCustomFireAndName() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
             package b
@@ -85,7 +85,7 @@ class ListenerListASTTest extends GroovyTestCase {
         assert evt.message.is(message)
     }
 
-    public void testMultipleMethodListener() {
+    void testMultipleMethodListener() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
             package b
@@ -120,7 +120,7 @@ class ListenerListASTTest extends GroovyTestCase {
         assert evt2.message.is(message2)
     }
 
-    public void testMultipleListenersConflictsDetected() {
+    void testMultipleListenersConflictsDetected() {
         def message = shouldFail {
             new GroovyShell().evaluate("""
                 package b
