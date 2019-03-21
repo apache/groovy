@@ -22,7 +22,7 @@ plugins {
     id("me.champeau.gradle.japicmp") version "0.2.6"
 }
 
-task(checkBinaryCompatibility) {
+def checkBinaryCompatibility = tasks.register("checkBinaryCompatibility") {
     description = "Generates binary compatibility reports"
 }
 
