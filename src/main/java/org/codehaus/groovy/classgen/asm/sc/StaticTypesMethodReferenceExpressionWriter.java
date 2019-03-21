@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Tuple;
-import groovy.lang.Tuple2;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -43,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -263,41 +261,33 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     private MethodNode chooseMrMethodNodeCandidate(Expression mrExpr, List<MethodNode> mrMethodNodeList) {
         if (1 == mrMethodNodeList.size()) return mrMethodNodeList.get(0);
 
-        Optional<Tuple2<MethodNode, Integer>> methodNodeResult =
-                mrMethodNodeList.stream()
-                        .map(e -> Tuple.tuple(e, score(e, mrExpr)))
-                        .sorted((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2()))
-                        .findFirst();
-
-        return methodNodeResult.get().getV1();
+        return mrMethodNodeList.stream()
+                .map(e -> Tuple.tuple(e, matchingScore(e, mrExpr)))
+                .sorted((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2()))
+                .findFirst()
+                .get()
+                .getV1();
     }
 
-    private static Integer score(MethodNode mn, Expression mrExpr) {
+    private static Integer matchingScore(MethodNode mn, Expression mrExpr) {
         ClassNode mrExprType = mrExpr.getType();
-        String mrExprTypeName = mrExprType.getName();
 
-        boolean sameClass = mrExprTypeName.equals(mn.getDeclaringClass().getName());
+        int score = 9;
+        for (ClassNode cn = mn.getDeclaringClass(); null != cn && !cn.equals(mrExprType); cn = cn.getSuperClass()) {
+            score--;
+        }
+        if (score < 1) {
+            score = 1;
+        }
+        score *= 10;
+
         boolean isClassExpr = isClassExpr(mrExpr);
         boolean isStaticMethod = mn.isStatic();
 
-        if (sameClass) {
-            if (isClassExpr && isStaticMethod) {
-                return 10;
-            }
-
-            if (!isClassExpr && !isStaticMethod) {
-                return 10;
-            }
-            return 8;
-        } else {
-            if (isClassExpr && isStaticMethod) {
-                return 6;
-            }
-
-            if (!isClassExpr && !isStaticMethod) {
-                return 6;
-            }
-            return 4;
+        if (isClassExpr && isStaticMethod || !isClassExpr && !isStaticMethod) {
+            score += 9;
         }
+
+        return score;
     }
 }
