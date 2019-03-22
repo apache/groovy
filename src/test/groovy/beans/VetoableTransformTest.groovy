@@ -20,7 +20,7 @@ package groovy.beans
 
 import org.codehaus.groovy.control.CompilationFailedException
 
-class VetoableTest extends GroovyTestCase {
+class VetoableTransformTest extends GroovyShellTestCase {
 
     void testSimpleConstrainedProperty() {
         GroovyShell shell = new GroovyShell()
@@ -455,5 +455,30 @@ class VetoableTest extends GroovyTestCase {
             }
             assert new MyBean()
         """
+    }
+
+    void testVetoableGeneratedMethodsAreAnnotatedWithGenerated_GROOVY9052() {
+        def person = evaluate('''
+            @groovy.beans.Vetoable
+            class Person {
+                String firstName
+
+                void setFirstName(String fn) {
+                    this.firstName = fn.toUpperCase()
+                }
+
+                def zipCode
+             }
+             new Person()
+        ''')
+
+        person.class.declaredMethods.each { m ->
+            if (m.name.contains('VetoableChange') || m.name in ['setZipCode']) {
+                assert m.annotations*.annotationType().name.contains('groovy.transform.Generated')
+            } else if (m.name in ['setFirstName']) {
+                // wrapped methods should not be marked since they contain non-generated logic
+                assert !m.annotations*.annotationType().name.contains('groovy.transform.Generated')
+            }
+        }
     }
 }
