@@ -27,10 +27,10 @@ but enhances it with specific constructs for Groovy, and allows certain simplifi
 
 == Comments
 
-=== Single line comment
+=== Single-line comment
 
-Single line comments start with `//` and can be found at any position in the line.
-The characters following `//`, till the end of the line, are considered part of the comment.
+Single-line comments start with `//` and can be found at any position in the line.
+The characters following `//`, until the end of the line, are considered part of the comment.
 
 [source,groovy]
 ----
@@ -49,17 +49,17 @@ Multiline comments can thus be put at the end of a statement, or even inside a s
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=multiline_comment,indent=0]
 ----
 
-=== GroovyDoc comment
+=== Groovydoc comment
 
-Similarly to multiline comments, GroovyDoc comments are multiline, but start with `/\**` and end with `*/`.
-Lines following the first GroovyDoc comment line can optionally start with a star `*`.
+Similarly to multiline comments, Groovydoc comments are multiline, but start with `/\**` and end with `*/`.
+Lines following the first Groovydoc comment line can optionally start with a star `*`.
 Those comments are associated with:
 
 * type definitions (classes, interfaces, enums, annotations),
 * fields and properties definitions
 * methods definitions
 
-Although the compiler will not complain about GroovyDoc comments not being associated with the above language elements,
+Although the compiler will not complain about Groovydoc comments not being associated with the above language elements,
 you should prepend those constructs with the comment right before it.
 
 [source,groovy]
@@ -67,12 +67,12 @@ you should prepend those constructs with the comment right before it.
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=groovydoc_comment,indent=0]
 ----
 
-GroovyDoc follows the same conventions as Java's own JavaDoc.
-So you'll be able to use the same tags as with JavaDoc.
+Groovydoc follows the same conventions as Java's own Javadoc.
+So you'll be able to use the same tags as with Javadoc.
 
 === Shebang line
 
-Beside the single line comment, there is a special line comment, often called the _shebang_ line understood by UNIX systems
+Beside the single-line comment, there is a special line comment, often called the _shebang_ line understood by UNIX systems
 which allows scripts to be run directly from the command-line, provided you have installed the Groovy distribution
 and the `groovy` command is available on the `PATH`.
 
@@ -213,16 +213,16 @@ Text literals are represented in the form of chain of characters called strings.
 Groovy lets you instantiate `java.lang.String` objects, as well as GStrings (`groovy.lang.GString`)
 which are also called _interpolated strings_ in other programming languages.
 
-=== Single quoted string
+=== Single-quoted string
 
-Single quoted strings are a series of characters surrounded by single quotes:
+Single-quoted strings are a series of characters surrounded by single quotes:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_1,indent=0]
 ----
 
-NOTE: Single quoted strings are plain `java.lang.String` and don't support interpolation.
+NOTE: Single-quoted strings are plain `java.lang.String` and don't support interpolation.
 
 === String concatenation
 
@@ -233,18 +233,18 @@ All the Groovy strings can be concatenated with the `+` operator:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_plus,indent=0]
 ----
 
-=== Triple single quoted string
+=== Triple-single-quoted string
 
-Triple single quoted strings are a series of characters surrounded by triplets of single quotes:
+Triple-single-quoted strings are a series of characters surrounded by triplets of single quotes:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_0,indent=0]
 ----
 
-NOTE: Triple single quoted strings are plain `java.lang.String` and don't support interpolation.
+NOTE: Triple-single-quoted strings are plain `java.lang.String` and don't support interpolation.
 
-Triple single quoted strings are multiline.
+Triple-single-quoted strings are multiline.
 You can span the content of the string across line boundaries without the need to split the string in several pieces, without contatenation or newline escape characters:
 
 [source,groovy]
@@ -294,30 +294,32 @@ Some special characters also use the backslash as escape character:
 |Escape sequence
 |Character
 
-|'\t'
+|\t
 |tabulation
 
-|'\b'
+|\b
 |backspace
 
-|'\n'
+|\n
 |newline
 
-|'\r'
+|\r
 |carriage return
 
-|'\f'
+|\f
 |formfeed
 
-|'\\'
+|\\
 |backslash
 
-|'\''
-|single quote (for single quoted and triple single quoted strings)
+|\'
+|single quote within a single-quoted string (and optional for triple-single-quoted and double-quoted strings)
 
-|'\"'
-|double quote (for double quoted and triple double quoted strings)
+|\"
+|double quote within a double-quoted string (and optional for triple-double-quoted and single-quoted strings)
 |====
+
+We'll see some more escaping details when it comes to other types of strings discussed later.
 
 ==== Unicode escape sequence
 
@@ -331,23 +333,23 @@ For example, the Euro currency symbol can be represented with:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_4,indent=0]
 ----
 
-=== Double quoted string
+=== Double-quoted string
 
-Double quoted strings are a series of characters surrounded by double quotes:
+Double-quoted strings are a series of characters surrounded by double quotes:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=string_5,indent=0]
 ----
 
-NOTE: Double quoted strings are plain `java.lang.String` if there's no interpolated expression,
+NOTE: Double-quoted strings are plain `java.lang.String` if there's no interpolated expression,
 but are `groovy.lang.GString` instances if interpolation is present.
 
 NOTE: To escape a double quote, you can use the backslash character: +"A double quote: \""+.
 
 ==== String interpolation
 
-Any Groovy expression can be interpolated in all string literals, apart from single and triple single quoted strings.
+Any Groovy expression can be interpolated in all string literals, apart from single and triple-single-quoted strings.
 Interpolation is the act of replacing a placeholder in the string with its value upon evaluation of the string.
 The placeholder expressions are surrounded by `${}` or prefixed with `$` for dotted expressions.
 The expression value inside the placeholder is evaluated to its string representation when the GString is passed to a method taking a String as argument by calling `toString()` on that expression.
@@ -476,20 +478,20 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_hashcode_2,in
 <1> The map is created with an initial pair whose key is a GString
 <2> When we try to fetch the value with a String key, we will not find it, as Strings and GString have different hashCode values
 
-=== Triple double quoted string
+=== Triple-double-quoted string
 
-Triple double quoted strings behave like double quoted strings, with the addition that they are multiline, like the triple single quoted strings.
+Triple-double-quoted strings behave like double-quoted strings, with the addition that they are multiline, like the triple-single-quoted strings.
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_double_1,indent=0]
 ----
 
-NOTE: Neither double quotes nor single quotes need be escaped in triple double quoted strings.
+NOTE: Neither double quotes nor single quotes need be escaped in triple-double-quoted strings.
 
 === Slashy string
 
-Beyond the usual quoted strings, Groovy offers slashy strings, which use `/` as delimiters.
+Beyond the usual quoted strings, Groovy offers slashy strings, which use `/` as the opening and closing delimiter.
 Slashy strings are particularly useful for defining regular expressions and patterns, 
 as there is no need to escape backslashes.
 
@@ -556,25 +558,25 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=dollar_slashy_1,inden
 |Multiline
 |Escape character
 
-|Single quoted
+|Single-quoted
 |`'...'`
 |icon:check-empty[]
 |icon:check-empty[]
 |`\`
 
-|Triple single quoted
+|Triple-single-quoted
 |`'''...'''`
 |icon:check-empty[]
 |icon:check[]
 |`\`
 
-|Double quoted
+|Double-quoted
 |`"..."`
 |icon:check[]
 |icon:check-empty[]
 |`\`
 
-|Triple double quoted
+|Triple-double-quoted
 |`"""..."""`
 |icon:check[]
 |icon:check[]
