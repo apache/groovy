@@ -41,6 +41,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper implements Opcodes {
@@ -71,8 +72,8 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             innerClass = (InnerClassNode) node;
             thisField = innerClass.getField("this$0");
             if (innerClass.getVariableScope() == null && innerClass.getDeclaredConstructors().isEmpty()) {
-                // add dummy constructor
-                innerClass.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);
+                // add empty default constructor
+                addGeneratedConstructor(innerClass, ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);
             }
         }
         if (node.isEnum() || node.isInterface()) return;
