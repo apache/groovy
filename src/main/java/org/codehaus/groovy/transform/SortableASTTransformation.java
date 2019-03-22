@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedInnerClass;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
@@ -189,7 +190,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         String className = classNode.getName() + "$" + propName + "Comparator";
         ClassNode superClass = makeClassSafeWithGenerics(AbstractComparator.class, classNode);
         InnerClassNode cmpClass = new InnerClassNode(classNode, className, ACC_PRIVATE | ACC_STATIC, superClass);
-        classNode.getModule().addClass(cmpClass);
+        addGeneratedInnerClass(classNode, cmpClass);
 
         addGeneratedMethod(cmpClass,
                 "compare",
