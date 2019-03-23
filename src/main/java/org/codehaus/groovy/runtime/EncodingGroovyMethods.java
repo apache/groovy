@@ -26,7 +26,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -436,6 +435,6 @@ public class EncodingGroovyMethods {
         MessageDigest md = MessageDigest.getInstance(algorithm);
         md.update(ByteBuffer.wrap(self));
 
-        return String.format("%032x", new BigInteger(1, md.digest()));
+        return encodeHex(md.digest()).toString();
     }
 }
