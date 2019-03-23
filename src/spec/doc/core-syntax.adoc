@@ -244,8 +244,9 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_0,inden
 
 NOTE: Triple-single-quoted strings are plain `java.lang.String` and don't support interpolation.
 
-Triple-single-quoted strings are multiline.
-You can span the content of the string across line boundaries without the need to split the string in several pieces, without contatenation or newline escape characters:
+Triple-single-quoted strings may span multiple lines.
+The content of the string can cross line boundaries without the need to split the string in several pieces
+and without concatenation or newline escape characters:
 
 [source,groovy]
 ----
@@ -351,8 +352,11 @@ NOTE: To escape a double quote, you can use the backslash character: +"A double 
 
 Any Groovy expression can be interpolated in all string literals, apart from single and triple-single-quoted strings.
 Interpolation is the act of replacing a placeholder in the string with its value upon evaluation of the string.
-The placeholder expressions are surrounded by `${}` or prefixed with `$` for dotted expressions.
-The expression value inside the placeholder is evaluated to its string representation when the GString is passed to a method taking a String as argument by calling `toString()` on that expression.
+The placeholder expressions are surrounded by `${}`. The curly braces may be omitted for unambiguous dotted expressions,
+i.e. we can use just a $ prefix in those cases.
+If the GString is ever passed to a method taking a String, the expression value inside the placeholder
+is evaluated to its string representation (by calling `toString()` on that expression) and the resulting
+String is passed to the method.
 
 Here, we have a string with a placeholder referencing a local variable:
 
@@ -361,7 +365,7 @@ Here, we have a string with a placeholder referencing a local variable:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_1,indent=0]
 ----
 
-But any Groovy expression is valid, as we can see in this example with an arithmetic expression:
+Any Groovy expression is valid, as we can see in this example with an arithmetic expression:
 
 [source,groovy]
 ----
@@ -380,7 +384,8 @@ In addition to `${}` placeholders, we can also use a lone `$` sign prefixing a d
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3,indent=0]
 ----
 
-But only dotted expressions of the form `a.b`, `a.b.c`, etc, are valid, but expressions that would contain parentheses like method calls, curly braces for closures, or arithmetic operators would be invalid.
+But only dotted expressions of the form `a.b`, `a.b.c`, etc, are valid. Expressions containing parentheses like method calls,
+curly braces for closures, dots which aren't part of a property expression or arithmetic operators would be invalid.
 Given the following variable definition of a number:
 
 [source,groovy]
@@ -396,6 +401,15 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_5,indent=0]
 ----
 
 NOTE: You can think of `"$number.toString()"` as being interpreted by the parser as `"${number.toString}()"`.
+
+Similarly, if the expression is ambiguous, you need to keep the curly braces:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3b,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3b2,indent=0]
+include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=gstring_3b3,indent=0]
+----
 
 If you need to escape the `$` or `${}` placeholders in a GString so they appear as is without interpolation,
 you just need to use a `\` backslash character to escape the dollar sign:
@@ -516,14 +530,14 @@ Slashy strings are multiline:
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_3,indent=0]
 ----
 
-Slashy strings can also be interpolated (ie. a GString):
+Slashy strings can be thought of as just another way to define a GString but with different escaping rules. They hence support interpolation:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_4,indent=0]
 ----
 
-There are a few gotchas to be aware of.
+==== Special cases
 
 An empty slashy string cannot be represented with a double forward slash, as it's understood by the Groovy parser as a line comment. 
 That's why the following assert would actually not compile as it would look like a non-terminated statement:
@@ -533,13 +547,23 @@ That's why the following assert would actually not compile as it would look like
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=slashy_5,indent=0]
 ----
 
-NOTE: As slashy strings were mostly designed to make regexp easier so a few things that are errors in GStrings like `$()` will work with slashy strings.
+As slashy strings were mostly designed to make regexp easier so a few things that
+are errors in GStrings like `$()` or `$5` will work with slashy strings.
+
+Remember that escaping backslashes is not required. An alternative way of thinking of this is
+that in fact escaping is not supported. The slashy string `/\t/` won't contain a tab but instead
+a backslash followed by the character 't'. Escaping is only allowed for the slash character, i.e. `/\/folder/`
+will be a slashy string containing `'/folder'`. A consequence of slash escaping is that a slashy string
+can't end with a backslash. Otherwise that will escape the slashy string terminator.
+You can instead use a special trick, `/ends with slash ${'\'}/`. But best just avoid using a slashy string in such a case.
 
 === Dollar slashy string
 
 Dollar slashy strings are multiline GStrings delimited with an opening `$/` and and a closing `/$`.
 The escaping character is the dollar sign, and it can escape another dollar, or a forward slash.
-But both dollar and forward slashes don't need to be escaped, except to escape the dollar of a string subsequence that would start like a GString placeholder sequence, or if you need to escape a sequence that would start like a closing dollar slashy string delimiter.
+But both dollar and forward slashes don't need to be escaped, except to escape the dollar of a string
+subsequence that would start like a GString placeholder sequence, or if you need to escape a sequence
+that would start like a closing dollar slashy string delimiter.
 
 Here's an example:
 
@@ -547,6 +571,9 @@ Here's an example:
 ----
 include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=dollar_slashy_1,indent=0]
 ----
+
+It was created to overcome some of the limitations of the slashy string escaping rules.
+Use it when its escaping rules suit your string contents (typically if it has some slashes you don't want to escape).
 
 === String summary table
 
