@@ -15,3 +15,4 @@ user.gradle
 .settings/
 .classpath
 .project
+.shelf
