@@ -197,7 +197,7 @@ public class XmlTemplateEngine extends TemplateEngine {
 
         protected boolean printSpecialNode(Node node) {
             Object name = node.name();
-            if (name != null && name instanceof QName) {
+            if (name instanceof QName) {
                 QName qn = (QName) name;
                 // check uri and for legacy cases just check prefix name (not recommended)
                 if (qn.getNamespaceURI().equals("http://groovy.codehaus.org/2005/gsp") || qn.getPrefix().equals("gsp")) {
@@ -242,7 +242,7 @@ public class XmlTemplateEngine extends TemplateEngine {
         public XmlWritable(Script script, Binding binding) {
             this.script = script;
             this.binding = binding;
-            this.result = new WeakReference(null);
+            this.result = new WeakReference<>(null);
         }
 
         public Writer writeTo(Writer out) {
@@ -259,7 +259,7 @@ public class XmlTemplateEngine extends TemplateEngine {
                 return result.get().toString();
             }
             String string = writeTo(new StringBuilderWriter(1024)).toString();
-            result = new WeakReference(string);
+            result = new WeakReference<>(string);
             return string;
         }
     }
