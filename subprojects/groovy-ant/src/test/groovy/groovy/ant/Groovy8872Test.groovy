@@ -70,7 +70,7 @@ class Groovy8872Test extends AntTestCase {
 
                     @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
                     class ExtractParamNamesTransformation extends AbstractASTTransformation {
-                        void accept(ASTNode[] nodes, SourceUnit source) {
+                        void visit(ASTNode[] nodes, SourceUnit source) {
                             init(nodes, source)
                             def classNode = nodes[1]
                             assert classNode instanceof ClassNode
