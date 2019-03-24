@@ -241,7 +241,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
             public Expression transform(Expression exp) {
                 if (exp instanceof ClosureExpression) {
                     ClosureExpression ce = (ClosureExpression) exp;
-                    ce.getCode().visit(this);
+                    ce.getCode().accept(this);
                 } else if (exp instanceof VariableExpression) {
                     VariableExpression ve = (VariableExpression) exp;
                     if ("args".equals(ve.getName()) && ve.getAccessedVariable() instanceof DynamicVariable) {

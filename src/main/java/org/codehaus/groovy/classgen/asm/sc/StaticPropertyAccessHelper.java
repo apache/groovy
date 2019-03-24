@@ -89,8 +89,8 @@ public abstract class StaticPropertyAccessHelper {
         }
 
         @Override
-        public void visit(final GroovyCodeVisitor visitor) {
-            super.visit(visitor);
+        public void accept(final GroovyCodeVisitor visitor) {
+            super.accept(visitor);
             if (visitor instanceof AsmClassGenerator) {
                 tmp.remove(((AsmClassGenerator) visitor).getController());
             }
@@ -121,8 +121,8 @@ public abstract class StaticPropertyAccessHelper {
         }
 
         @Override
-        public void visit(final GroovyCodeVisitor visitor) {
-            super.visit(visitor);
+        public void accept(final GroovyCodeVisitor visitor) {
+            super.accept(visitor);
             if (visitor instanceof AsmClassGenerator) {
                 // ignore the return of the call
                 ((AsmClassGenerator) visitor).getController().getOperandStack().pop();

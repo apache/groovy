@@ -64,7 +64,7 @@ public class MethodCallExpression extends Expression implements MethodCall {
         this.setImplicitThis(true);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitMethodCallExpression(this);
     }
 

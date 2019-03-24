@@ -39,7 +39,7 @@ public class PrefixExpression extends Expression {
         return super.toString() + "[" + operation + expression + "]";
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitPrefixExpression(this);
     }
 

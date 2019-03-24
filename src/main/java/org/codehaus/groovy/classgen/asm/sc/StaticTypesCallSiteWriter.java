@@ -162,7 +162,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         MethodVisitor mv = controller.getMethodVisitor();
 
         if (receiverType.isArray() && methodName.equals("length")) {
-            receiver.visit(controller.getAcg());
+            receiver.accept(controller.getAcg());
             ClassNode arrayGetReturnType = typeChooser.resolveType(receiver, classNode);
             controller.getOperandStack().doGroovyCast(arrayGetReturnType);
             mv.visitInsn(ARRAYLENGTH);
@@ -179,7 +179,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             expr.setMethodTarget(COLLECTION_SIZE_METHOD);
             expr.setImplicitThis(implicitThis);
             expr.setSafe(safe);
-            expr.visit(controller.getAcg());
+            expr.accept(controller.getAcg());
             return;
         }
 
@@ -236,7 +236,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 call.setImplicitThis(false);
                 call.setSourcePosition(receiver);
                 call.setSafe(safe);
-                call.visit(controller.getAcg());
+                call.accept(controller.getAcg());
                 return;
             }
 
@@ -260,7 +260,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 call.setImplicitThis(false);
                 call.setSafe(safe);
                 call.setSourcePosition(receiver);
-                call.visit(controller.getAcg());
+                call.accept(controller.getAcg());
                 return;
             }
         }
@@ -289,11 +289,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         mce.setSafe(false);
         mce.setImplicitThis(false);
         mce.setMethodTarget(target);
-        mce.visit(controller.getAcg());
+        mce.accept(controller.getAcg());
     }
 
     private void writeMapDotProperty(final Expression receiver, final String methodName, final MethodVisitor mv, final boolean safe) {
-        receiver.visit(controller.getAcg()); // load receiver
+        receiver.accept(controller.getAcg()); // load receiver
 
         Label exit = new Label();
         if (safe) {
@@ -303,7 +303,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             mv.visitInsn(ACONST_NULL);
             mv.visitJumpInsn(GOTO, exit);
             mv.visitLabel(doGet);
-            receiver.visit(controller.getAcg());
+            receiver.accept(controller.getAcg());
         }
 
         mv.visitLdcInsn(methodName); // load property name
@@ -327,7 +327,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
         Label exit = new Label();
         if (safe) {
-            receiver.visit(controller.getAcg());
+            receiver.accept(controller.getAcg());
             Label doGet = new Label();
             mv.visitJumpInsn(IFNONNULL, doGet);
             controller.getOperandStack().remove(1);
@@ -345,14 +345,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
         mv.visitTypeInsn(NEW, "java/util/ArrayList");
         mv.visitInsn(DUP);
-        receiver.visit(controller.getAcg());
+        receiver.accept(controller.getAcg());
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "size", "()I", true);
         controller.getOperandStack().remove(1);
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "(I)V", false);
         mv.visitVarInsn(ASTORE, var);
         Label l1 = new Label();
         mv.visitLabel(l1);
-        receiver.visit(controller.getAcg());
+        receiver.accept(controller.getAcg());
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "iterator", "()Ljava/util/Iterator;", true);
         controller.getOperandStack().remove(1);
         mv.visitVarInsn(ASTORE, it);
@@ -381,7 +381,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 return finalComponentType;
             }
         }, methodName);
-        pexp.visit(controller.getAcg());
+        pexp.accept(controller.getAcg());
         controller.getOperandStack().box();
         controller.getOperandStack().remove(1);
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
@@ -440,7 +440,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     mce.setMethodTarget(methodNode);
                     mce.setSafe(safe);
                     mce.setImplicitThis(implicitThis);
-                    mce.visit(controller.getAcg());
+                    mce.accept(controller.getAcg());
                     return true;
                 }
             }
@@ -477,7 +477,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                         pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
                         pexp = new PropertyExpression(pexp, prop);
                     }
-                    pexp.visit(controller.getAcg());
+                    pexp.accept(controller.getAcg());
                     return;
                 }
             }
@@ -495,7 +495,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         call.setImplicitThis(implicitThis);
         call.setSafe(safe);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
-        call.visit(controller.getAcg());
+        call.accept(controller.getAcg());
     }
 
     @Override
@@ -545,7 +545,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             call.setMethodTarget(getterNode);
             call.setImplicitThis(implicitThis);
             call.setSafe(safe);
-            call.visit(controller.getAcg());
+            call.accept(controller.getAcg());
             return true;
         }
 
@@ -587,7 +587,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 if (implicitThis) {
                     compileStack.pushImplicitThis(implicitThis);
                 }
-                receiver.visit(controller.getAcg());
+                receiver.accept(controller.getAcg());
                 if (implicitThis) compileStack.popImplicitThis();
                 Label exit = new Label();
                 if (safe) {
@@ -736,7 +736,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     call.setSourcePosition(arguments);
                     call.setImplicitThis(false);
                     call.setMethodTarget(getAtNode);
-                    call.visit(controller.getAcg());
+                    call.accept(controller.getAcg());
                     return true;
                 }
 
@@ -764,7 +764,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     call.setSourcePosition(arguments);
                     call.setImplicitThis(false);
                     call.setMethodTarget(methodNode);
-                    call.visit(controller.getAcg());
+                    call.accept(controller.getAcg());
                     return true;
                 }
                 if (implementsInterfaceOrIsSubclassOf(rType, MAP_TYPE)) {
@@ -779,7 +779,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     call.setMethodTarget(MAP_GET_METHOD);
                     call.setSourcePosition(arguments);
                     call.setImplicitThis(false);
-                    call.visit(controller.getAcg());
+                    call.accept(controller.getAcg());
                     return true;
                 }
             }
@@ -806,9 +806,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         OperandStack operandStack = controller.getOperandStack();
         int m1 = operandStack.getStackLength();
         // visit receiver
-        receiver.visit(controller.getAcg());
+        receiver.accept(controller.getAcg());
         // visit arguments as array index
-        arguments.visit(controller.getAcg());
+        arguments.accept(controller.getAcg());
         operandStack.doGroovyCast(int_TYPE);
         int m2 = operandStack.getStackLength();
         // array access
@@ -906,7 +906,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         String ownerName = BytecodeHelper.getClassInternalName(fn.getOwner());
         if (!fn.isStatic()) {
             controller.getCompileStack().pushLHS(false);
-            objectExpression.visit(controller.getAcg());
+            objectExpression.accept(controller.getAcg());
             controller.getCompileStack().popLHS();
             if (!rType.equals(stack.getTopOperand())) {
                 BytecodeHelper.doCast(mv, rType);

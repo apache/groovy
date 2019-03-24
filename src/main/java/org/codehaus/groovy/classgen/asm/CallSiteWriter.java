@@ -251,14 +251,14 @@ public class CallSiteWriter {
         CompileStack compileStack = controller.getCompileStack();
         compileStack.pushImplicitThis(implicitThis);
         compileStack.pushLHS(lhs);
-        receiver.visit(controller.getAcg());
+        receiver.accept(controller.getAcg());
         controller.getOperandStack().box();
         compileStack.popLHS();
         compileStack.popImplicitThis();
     }
     
     protected void visitBoxedArgument(Expression exp) {
-        exp.visit(controller.getAcg());
+        exp.accept(controller.getAcg());
         if (!(exp instanceof TupleExpression)) {
             // we are not in a tuple, so boxing might be missing for
             // this single argument call
@@ -323,7 +323,7 @@ public class CallSiteWriter {
                 numberOfArguments = ae.getExpressions().size();
                 for (int i = 0; i < numberOfArguments; i++) {
                     Expression argument = ae.getExpression(i);
-                    argument.visit(controller.getAcg());
+                    argument.accept(controller.getAcg());
                     operandStack.box();
                     if (argument instanceof CastExpression) controller.getAcg().loadWrapper(argument);
                 }

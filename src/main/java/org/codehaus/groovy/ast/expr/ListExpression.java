@@ -58,7 +58,7 @@ public class ListExpression extends Expression {
         return wrapped;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitListExpression(this);
     }
 

@@ -33,7 +33,7 @@ public class LambdaExpression extends ClosureExpression {
         super(parameters, code);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitLambdaExpression(this);
     }
 

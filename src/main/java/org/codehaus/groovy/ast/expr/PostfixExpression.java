@@ -39,7 +39,7 @@ public class PostfixExpression extends Expression {
         return super.toString() + "[" + expression + operation + "]";
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitPostfixExpression(this);
     }
 

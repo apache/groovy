@@ -143,7 +143,7 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
         return type == null ? null : type.getName();
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
     }
 
 }

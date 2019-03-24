@@ -37,7 +37,7 @@ public class SpreadExpression extends Expression {
         return expression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitSpreadExpression(this);
     }
 

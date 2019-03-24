@@ -47,7 +47,7 @@ public class SynchronizedStatement extends Statement {
         return expression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitSynchronizedStatement(this);
     }
     public void setExpression(Expression expression) {

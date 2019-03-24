@@ -95,7 +95,7 @@ public class AssertionWriter {
             }
         }
         
-        statement.getBooleanExpression().visit(controller.getAcg());
+        statement.getBooleanExpression().accept(controller.getAcg());
 
         Label exceptionThrower = operandStack.jump(IFEQ);
 
@@ -121,7 +121,7 @@ public class AssertionWriter {
         assertionTracker = null;
         
         // now the optional exception expression
-        statement.getMessageExpression().visit(controller.getAcg());
+        statement.getMessageExpression().accept(controller.getAcg());
         operandStack.box();
         assertFailedMethod.call(mv);
         operandStack.remove(2); // assertFailed called static with 2 arguments 
@@ -187,7 +187,7 @@ public class AssertionWriter {
                 mv.visitInsn(POP);
 
                 mv.visitVarInsn(ALOAD, tempIndex);
-                new VariableExpression(name).visit(controller.getAcg());
+                new VariableExpression(name).accept(controller.getAcg());
                 operandStack.box();
                 mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "toString", "(Ljava/lang/Object;)Ljava/lang/String;", false);
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuffer", "append", "(Ljava/lang/String;)Ljava/lang/StringBuffer;", false);

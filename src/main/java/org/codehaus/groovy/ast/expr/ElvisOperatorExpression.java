@@ -55,7 +55,7 @@ public class ElvisOperatorExpression extends TernaryExpression {
        return be;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitShortTernaryExpression(this);
     }
     

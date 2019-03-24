@@ -26,7 +26,7 @@ public class NotExpression extends BooleanExpression {
         super(expression);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitNotExpression(this);
     }
 

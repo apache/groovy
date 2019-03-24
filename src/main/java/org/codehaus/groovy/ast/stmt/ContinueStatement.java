@@ -40,7 +40,7 @@ public class ContinueStatement extends Statement {
         return label;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitContinueStatement(this);
     }
 }

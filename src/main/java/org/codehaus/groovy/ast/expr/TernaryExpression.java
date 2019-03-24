@@ -39,7 +39,7 @@ public class TernaryExpression extends Expression {
         this.trueExpression = trueExpression;
         this.falseExpression = falseExpression;
     }
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitTernaryExpression(this);
     }
 

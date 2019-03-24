@@ -49,9 +49,9 @@ public class ExpressionAsVariableSlot extends BytecodeExpression {
     @Override
     public void visit(MethodVisitor mv) {
         OperandStack os = controller.getOperandStack();
-        if (index == -1) { // first visit
-            // visit expression
-            exp.visit(controller.getAcg());
+        if (index == -1) { // first accept
+            // accept expression
+            exp.accept(controller.getAcg());
             // make copy & set type
             os.dup();
             this.setType(os.getTopOperand());

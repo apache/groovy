@@ -39,6 +39,6 @@ public class PackageNode extends AnnotatedNode {
         return "package " + name;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
     }
 }

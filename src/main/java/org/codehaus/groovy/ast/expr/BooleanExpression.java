@@ -36,7 +36,7 @@ public class BooleanExpression extends Expression {
         return expression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitBooleanExpression(this);
     }
 

@@ -31,7 +31,7 @@ public class SqlOrderByVisitor extends CodeVisitorSupport {
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
-        statement.getExpression().visit(this);
+        statement.getExpression().accept(this);
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {

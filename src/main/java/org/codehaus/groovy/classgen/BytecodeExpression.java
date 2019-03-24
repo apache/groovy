@@ -41,7 +41,7 @@ public abstract class BytecodeExpression extends Expression {
         super.setType(type);
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitBytecodeExpression(this);
     }
 

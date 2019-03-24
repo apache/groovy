@@ -31,7 +31,7 @@ public class ClassExpression extends Expression {
         super.setType(type);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitClassExpression(this);
     }
     

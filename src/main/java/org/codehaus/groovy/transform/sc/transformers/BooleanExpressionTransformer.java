@@ -104,20 +104,20 @@ public class BooleanExpressionTransformer {
         }
 
         @Override
-        public void visit(final GroovyCodeVisitor visitor) {
+        public void accept(final GroovyCodeVisitor visitor) {
             if (visitor instanceof AsmClassGenerator) {
                 AsmClassGenerator acg = (AsmClassGenerator) visitor;
                 WriterController controller = acg.getController();
                 OperandStack os = controller.getOperandStack();
 
                 if (type.equals(ClassHelper.boolean_TYPE)) {
-                    expression.visit(visitor);
+                    expression.accept(visitor);
                     os.doGroovyCast(ClassHelper.boolean_TYPE);
                     return;
                 }
                 if (type.equals(ClassHelper.Boolean_TYPE)) {
                     MethodVisitor mv = controller.getMethodVisitor();
-                    expression.visit(visitor);
+                    expression.accept(visitor);
                     Label unbox = new Label();
                     Label exit = new Label();
                     // check for null
@@ -137,7 +137,7 @@ public class BooleanExpressionTransformer {
                 }
                 ClassNode top = type;
                 if (ClassHelper.isPrimitiveType(top)) {
-                    expression.visit(visitor);
+                    expression.accept(visitor);
                     // in case of null safe invocation, it is possible that what was supposed to be a primitive type
                     // becomes the "null" constant, so we need to recheck
                     top = controller.getOperandStack().getTopOperand();
@@ -168,15 +168,15 @@ public class BooleanExpressionTransformer {
                                 CompareToNullExpression expr = new CompareToNullExpression(
                                         expression, false
                                 );
-                                expr.visit(acg);
+                                expr.accept(acg);
                                 return;
                             }
                         }
                     }
                 }
-                super.visit(visitor);
+                super.accept(visitor);
             } else {
-                super.visit(visitor);
+                super.accept(visitor);
             }
         }
     }

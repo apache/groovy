@@ -77,7 +77,7 @@ public class ConstantExpression extends Expression {
         return "ConstantExpression[" + value + "]";
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitConstantExpression(this);
     }
 

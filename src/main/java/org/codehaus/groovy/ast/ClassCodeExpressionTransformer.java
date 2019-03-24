@@ -57,9 +57,9 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
         Expression exp = statement.getExpression();
         statement.setExpression(transform(exp));
         for (CaseStatement caseStatement : statement.getCaseStatements()) {
-            caseStatement.visit(this);
+            caseStatement.accept(this);
         }
-        statement.getDefaultStatement().visit(this);
+        statement.getDefaultStatement().accept(this);
     }
 
     public void visitField(FieldNode node) {
@@ -79,8 +79,8 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     public void visitIfElse(IfStatement ifElse) {
         ifElse.setBooleanExpression((BooleanExpression) (transform(ifElse.getBooleanExpression())));
-        ifElse.getIfBlock().visit(this);
-        ifElse.getElseBlock().visit(this);
+        ifElse.getIfBlock().accept(this);
+        ifElse.getElseBlock().accept(this);
     }
 
     public Expression transform(Expression exp) {
@@ -111,7 +111,7 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     public void visitCaseStatement(CaseStatement statement) {
         statement.setExpression(transform(statement.getExpression()));
-        statement.getCode().visit(this);
+        statement.getCode().accept(this);
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {

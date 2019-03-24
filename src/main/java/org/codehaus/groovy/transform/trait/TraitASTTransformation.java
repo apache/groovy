@@ -646,11 +646,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     private Statement processBody(VariableExpression thisObject, Statement code, ClassNode trait, ClassNode traitHelper, ClassNode fieldHelper, Collection<String> knownFields) {
         if (code == null) return null;
         NAryOperationRewriter operationRewriter = new NAryOperationRewriter(unit, knownFields);
-        code.visit(operationRewriter);
+        code.accept(operationRewriter);
         SuperCallTraitTransformer superTrn = new SuperCallTraitTransformer(unit);
-        code.visit(superTrn);
+        code.accept(superTrn);
         TraitReceiverTransformer trn = new TraitReceiverTransformer(thisObject, unit, trait, traitHelper, fieldHelper, knownFields);
-        code.visit(trn);
+        code.accept(trn);
         return code;
     }
 

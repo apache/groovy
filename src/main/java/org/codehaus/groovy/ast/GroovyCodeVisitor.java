@@ -198,9 +198,9 @@ public interface GroovyCodeVisitor {
         for (Expression expression : list) {
             if (expression instanceof SpreadExpression) {
                 Expression spread = ((SpreadExpression) expression).getExpression();
-                spread.visit(this);
+                spread.accept(this);
             } else {
-                expression.visit(this);
+                expression.accept(this);
             }
         }
     }

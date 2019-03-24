@@ -122,7 +122,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private void declare(Parameter[] parameters, ASTNode node) {
         for (Parameter parameter : parameters) {
             if (parameter.hasInitialExpression()) {
-                parameter.getInitialExpression().visit(this);
+                parameter.getInitialExpression().accept(this);
             }
             declare(parameter, node);
         }
@@ -332,12 +332,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     public void visitIfElse(IfStatement ifElse) {
-        ifElse.getBooleanExpression().visit(this);
+        ifElse.getBooleanExpression().accept(this);
         pushState();
-        ifElse.getIfBlock().visit(this);
+        ifElse.getIfBlock().accept(this);
         popState();
         pushState();
-        ifElse.getElseBlock().visit(this);
+        ifElse.getElseBlock().accept(this);
         popState();
     }
 
@@ -345,7 +345,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         visitAnnotations(expression);
         // visit right side first to avoid the usage of a
         // variable before its declaration
-        expression.getRightExpression().visit(this);
+        expression.getRightExpression().accept(this);
 
         if (expression.isMultipleAssignmentDeclaration()) {
             TupleExpression list = expression.getTupleExpression();
@@ -400,8 +400,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
-        expression.getObjectExpression().visit(this);
-        expression.getProperty().visit(this);
+        expression.getObjectExpression().accept(this);
+        expression.getProperty().accept(this);
         checkPropertyOnExplicitThis(expression);
     }
 
@@ -415,7 +415,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             for (Parameter parameter : parameters) {
                 parameter.setInStaticContext(currentScope.isInStaticContext());
                 if (parameter.hasInitialExpression()) {
-                    parameter.getInitialExpression().visit(this);
+                    parameter.getInitialExpression().accept(this);
                 }
                 declare(parameter, expression);
             }
@@ -563,13 +563,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                         continue;
                     }
                 }
-                expression.visit(this);
+                expression.accept(this);
             }
             popState();
         }
 
         for (Statement statement : innerClass.getObjectInitializerStatements()) {
-            statement.visit(this);
+            statement.accept(this);
         }
         markClosureSharedVariables();
         popState();
@@ -595,7 +595,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (an.isBuiltIn()) continue;
             for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
                 Expression annMemberValue = member.getValue();
-                annMemberValue.visit(this);
+                annMemberValue.accept(this);
             }
         }
     }

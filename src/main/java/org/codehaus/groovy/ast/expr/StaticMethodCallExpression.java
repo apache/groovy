@@ -39,7 +39,7 @@ public class StaticMethodCallExpression extends Expression implements MethodCall
         this.arguments = arguments;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitStaticMethodCallExpression(this);
     }
 

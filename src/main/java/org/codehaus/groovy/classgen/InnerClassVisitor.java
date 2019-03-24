@@ -109,7 +109,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         // GROOVY-5681: initial expressions should be visited too!
         for (Parameter param : node.getParameters()) {
             if (param.hasInitialExpression()) {
-                param.getInitialExpression().visit(this);
+                param.getInitialExpression().accept(this);
             }
             visitAnnotations(param);
         }

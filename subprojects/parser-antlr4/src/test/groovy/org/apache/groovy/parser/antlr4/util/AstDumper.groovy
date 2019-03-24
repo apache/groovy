@@ -171,7 +171,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
 
         if (showScriptFreeForm && !scriptHasBeenVisited) {
             scriptHasBeenVisited = true
-            source?.getAST()?.getStatementBlock()?.visit(this)
+            source?.getAST()?.getStatementBlock()?.accept(this)
         }
         if (showScriptClass || !classNode.isScript()) {
             visitClass classNode
@@ -336,7 +336,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
             print '{'
             printLineBreak()
             indented {
-                stmt.visit(this)
+                stmt.accept(this)
             }
             printLineBreak()
             print '}'
@@ -399,7 +399,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
             print ' ' + it.name
             if (it.initialExpression && !(it.initialExpression instanceof EmptyExpression)) {
                 print ' = '
-                it.initialExpression.visit this
+                it.initialExpression.accept this
             }
         }
     }
@@ -441,7 +441,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         }
 
         indented {
-            node?.code?.visit(this)
+            node?.code?.accept(this)
         }
         printLineBreak()
         print '}'
@@ -496,7 +496,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
                     print ', '
                 }
                 print name + ' = '
-                value.visit(this)
+                value.accept(this)
             }
             print ')'
         }
@@ -515,7 +515,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
             printLineBreak()
             indented {
                 block?.statements?.each {
-                    it.visit(this)
+                    it.accept(this)
                     printLineBreak()
                 }
             }
@@ -523,7 +523,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
             printLineBreak()
         } else {
             block?.statements?.each {
-                it.visit(this)
+                it.accept(this)
                 printLineBreak()
             }
         }
@@ -542,14 +542,14 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         }
 
         if (statement?.collectionExpression instanceof ListExpression) {
-            statement?.collectionExpression?.visit this
+            statement?.collectionExpression?.accept this
         } else {
-            statement?.collectionExpression?.visit this
+            statement?.collectionExpression?.accept this
         }
         print ') {'
         printLineBreak()
         indented {
-            statement?.loopBlock?.visit this
+            statement?.loopBlock?.accept this
         }
         print '}'
         printLineBreak()
@@ -559,18 +559,18 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     void visitIfElse(IfStatement ifElse) {
         printStatementLabels(ifElse)
         print 'if ('
-        ifElse?.booleanExpression?.visit this
+        ifElse?.booleanExpression?.accept this
         print ') {'
         printLineBreak()
         indented {
-            ifElse?.ifBlock?.visit this
+            ifElse?.ifBlock?.accept this
         }
         printLineBreak()
         if (ifElse?.elseBlock && !(ifElse.elseBlock instanceof EmptyStatement)) {
             print '} else {'
             printLineBreak()
             indented {
-                ifElse?.elseBlock?.visit this
+                ifElse?.elseBlock?.accept this
             }
             printLineBreak()
         }
@@ -580,14 +580,14 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
 
     @Override
     void visitExpressionStatement(ExpressionStatement statement) {
-        statement.expression.visit this
+        statement.expression.accept this
     }
 
     @Override
     void visitReturnStatement(ReturnStatement statement) {
         printLineBreak()
         print 'return '
-        statement.getExpression().visit(this)
+        statement.getExpression().accept(this)
         printLineBreak()
     }
 
@@ -595,7 +595,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     void visitSwitch(SwitchStatement statement) {
         printStatementLabels(statement)
         print 'switch ('
-        statement?.expression?.visit this
+        statement?.expression?.accept this
         print ') {'
         printLineBreak()
         indented {
@@ -605,7 +605,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
             if (statement?.defaultStatement) {
                 print 'default: '
                 printLineBreak()
-                statement?.defaultStatement?.visit this
+                statement?.defaultStatement?.accept this
             }
         }
         print '}'
@@ -615,11 +615,11 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     @Override
     void visitCaseStatement(CaseStatement statement) {
         print 'case '
-        statement?.expression?.visit this
+        statement?.expression?.accept this
         print ':'
         printLineBreak()
         indented {
-            statement?.code?.visit this
+            statement?.code?.accept this
         }
     }
 
@@ -648,7 +648,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         if (objectExp instanceof VariableExpression) {
             visitVariableExpression(objectExp, false)
         } else {
-            objectExp.visit(this)
+            objectExp.accept(this)
         }
         if (expression.spreadSafe) {
             print '*'
@@ -661,9 +661,9 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         if (method instanceof ConstantExpression) {
             visitConstantExpression(method, true)
         } else {
-            method.visit(this)
+            method.accept(this)
         }
-        expression.getArguments().visit(this)
+        expression.getArguments().accept(this)
     }
 
     @Override
@@ -671,10 +671,10 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         print expression?.ownerType?.name + '.' + expression?.method
         if (expression?.arguments instanceof VariableExpression || expression?.arguments instanceof MethodCallExpression) {
             print '('
-            expression?.arguments?.visit this
+            expression?.arguments?.accept this
             print ')'
         } else {
-            expression?.arguments?.visit this
+            expression?.arguments?.accept this
         }
     }
 
@@ -688,14 +688,14 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
             print 'new '
             visitType expression?.type
         }
-        expression?.arguments?.visit this
+        expression?.arguments?.accept this
     }
 
     @Override
     void visitBinaryExpression(BinaryExpression expression) {
-        expression?.leftExpression?.visit this
+        expression?.leftExpression?.accept this
         print " $expression.operation.text "
-        expression.rightExpression.visit this
+        expression.rightExpression.accept this
 
         if (expression?.operation?.text == '[') {
             print ']'
@@ -705,7 +705,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     @Override
     void visitPostfixExpression(PostfixExpression expression) {
         print '('
-        expression?.expression?.visit this
+        expression?.expression?.accept this
         print ')'
         print expression?.operation?.text
     }
@@ -714,7 +714,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     void visitPrefixExpression(PrefixExpression expression) {
         print expression?.operation?.text
         print '('
-        expression?.expression?.visit this
+        expression?.expression?.accept this
         print ')'
     }
 
@@ -728,7 +728,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         }
         printLineBreak()
         indented {
-            expression?.code?.visit this
+            expression?.code?.accept this
         }
         print '}'
     }
@@ -748,15 +748,15 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     @Override
     void visitRangeExpression(RangeExpression expression) {
         print '('
-        expression?.from?.visit this
+        expression?.from?.accept this
         print '..'
-        expression?.to?.visit this
+        expression?.to?.accept this
         print ')'
     }
 
     @Override
     void visitPropertyExpression(PropertyExpression expression) {
-        expression?.objectExpression?.visit this
+        expression?.objectExpression?.accept this
         if (expression?.spreadSafe) {
             print '*'
         } else if (expression?.isSafe()) {
@@ -766,7 +766,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         if (expression?.property instanceof ConstantExpression) {
             visitConstantExpression((ConstantExpression) expression?.property, true)
         } else {
-            expression?.property?.visit this
+            expression?.property?.accept this
         }
     }
 
@@ -811,7 +811,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
             print 'def '
             visitArgumentlistExpression((ArgumentListExpression) expression?.leftExpression, true)
             print " $expression.operation.text "
-            expression.rightExpression.visit this
+            expression.rightExpression.accept this
 
             if (expression?.operation?.text == '[') {
                 print ']'
@@ -830,34 +830,34 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     @Override
     void visitSpreadExpression(SpreadExpression expression) {
         print '*'
-        expression?.expression?.visit this
+        expression?.expression?.accept this
     }
 
     @Override
     void visitNotExpression(NotExpression expression) {
         print '!('
-        expression?.expression?.visit this
+        expression?.expression?.accept this
         print ')'
     }
 
     @Override
     void visitUnaryMinusExpression(UnaryMinusExpression expression) {
         print '-('
-        expression?.expression?.visit this
+        expression?.expression?.accept this
         print ')'
     }
 
     @Override
     void visitUnaryPlusExpression(UnaryPlusExpression expression) {
         print '+('
-        expression?.expression?.visit this
+        expression?.expression?.accept this
         print ')'
     }
 
     @Override
     void visitCastExpression(CastExpression expression) {
         print '(('
-        expression?.expression?.visit this
+        expression?.expression?.accept this
         print ') as '
         visitType(expression?.type)
         print ')'
@@ -892,7 +892,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
             } else if (it instanceof ConstantExpression) {
                 visitConstantExpression it, false
             } else {
-                it.visit this
+                it.accept this
             }
             count--
             if (count) print ', '
@@ -923,10 +923,10 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         if (expression?.keyExpression instanceof SpreadMapExpression) {
             print '*'            // is this correct?
         } else {
-            expression?.keyExpression?.visit this
+            expression?.keyExpression?.accept this
         }
         print ': '
-        expression?.valueExpression?.visit this
+        expression?.valueExpression?.accept this
     }
 
     @Override
@@ -942,7 +942,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         print 'try {'
         printLineBreak()
         indented {
-            statement?.tryStatement?.visit this
+            statement?.tryStatement?.accept this
         }
         printLineBreak()
         print '} '
@@ -953,7 +953,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         print 'finally { '
         printLineBreak()
         indented {
-            statement?.finallyStatement?.visit this
+            statement?.finallyStatement?.accept this
         }
         print '} '
         printLineBreak()
@@ -962,7 +962,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     @Override
     void visitThrowStatement(ThrowStatement statement) {
         print 'throw '
-        statement?.expression?.visit this
+        statement?.expression?.accept this
         printLineBreak()
     }
 
@@ -970,22 +970,22 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     void visitSynchronizedStatement(SynchronizedStatement statement) {
         printStatementLabels(statement)
         print 'synchronized ('
-        statement?.expression?.visit this
+        statement?.expression?.accept this
         print ') {'
         printLineBreak()
         indented {
-            statement?.code?.visit this
+            statement?.code?.accept this
         }
         print '}'
     }
 
     @Override
     void visitTernaryExpression(TernaryExpression expression) {
-        expression?.booleanExpression?.visit this
+        expression?.booleanExpression?.accept this
         print ' ? '
-        expression?.trueExpression?.visit this
+        expression?.trueExpression?.accept this
         print ' : '
-        expression?.falseExpression?.visit this
+        expression?.falseExpression?.accept this
     }
 
     @Override
@@ -995,18 +995,18 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
 
     @Override
     void visitBooleanExpression(BooleanExpression expression) {
-        expression?.expression?.visit this
+        expression?.expression?.accept this
     }
 
     @Override
     void visitWhileLoop(WhileStatement statement) {
         printStatementLabels(statement)
         print 'while ('
-        statement?.booleanExpression?.visit this
+        statement?.booleanExpression?.accept this
         print ') {'
         printLineBreak()
         indented {
-            statement?.loopBlock?.visit this
+            statement?.loopBlock?.accept this
         }
         printLineBreak()
         print '}'
@@ -1019,10 +1019,10 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         print 'do {'
         printLineBreak()
         indented {
-            statement?.loopBlock?.visit this
+            statement?.loopBlock?.accept this
         }
         print '} while ('
-        statement?.booleanExpression?.visit this
+        statement?.booleanExpression?.accept this
         print ')'
         printLineBreak()
     }
@@ -1034,7 +1034,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         print ') {'
         printLineBreak()
         indented {
-            statement.code?.visit this
+            statement.code?.accept this
         }
         print '} '
         printLineBreak()
@@ -1043,16 +1043,16 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
     @Override
     void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
         print '~('
-        expression?.expression?.visit this
+        expression?.expression?.accept this
         print ') '
     }
 
     @Override
     void visitAssertStatement(AssertStatement statement) {
         print 'assert '
-        statement?.booleanExpression?.visit this
+        statement?.booleanExpression?.accept this
         print ' : '
-        statement?.messageExpression?.visit this
+        statement?.messageExpression?.accept this
     }
 
     @Override
@@ -1063,15 +1063,15 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
                 print ';'
             }
             first = false
-            it.visit this
+            it.accept this
         }
     }
 
     @Override
     void visitMethodPointerExpression(MethodPointerExpression expression) {
-        expression?.expression?.visit this
+        expression?.expression?.accept this
         print '.&'
-        expression?.methodName?.visit this
+        expression?.methodName?.accept this
     }
 
     @Override
@@ -1090,14 +1090,14 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
                 print ', '
             }
             first = false
-            ((ASTNode) it).visit this
+            ((ASTNode) it).accept this
         }
     }
 
     @Override
     void visitSpreadMapExpression(SpreadMapExpression expression) {
         print '*:'
-        expression?.expression?.visit this
+        expression?.expression?.accept this
     }
 
     /**

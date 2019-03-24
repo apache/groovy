@@ -48,7 +48,7 @@ public class ClosureListExpression extends ListExpression {
         this(new ArrayList<Expression>(3));
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitClosureListExpression(this);
     }
     

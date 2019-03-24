@@ -53,9 +53,9 @@ public abstract class MethodInvocationTrap extends CodeVisitorSupport {
 
         if (shouldContinueWalking) {
             // continue normal tree walking
-            call.getObjectExpression().visit(this);
-            call.getMethod().visit(this);
-            call.getArguments().visit(this);
+            call.getObjectExpression().accept(this);
+            call.getMethod().accept(this);
+            call.getArguments().accept(this);
         }
     }
 

@@ -135,7 +135,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
         Statement code = node.getCode();
         if (code != null) {
-            code.visit(this);
+            code.accept(this);
         }
 
     }

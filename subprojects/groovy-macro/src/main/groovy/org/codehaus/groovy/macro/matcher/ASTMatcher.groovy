@@ -105,7 +105,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         if (pattern instanceof ClassNode) {
             matcher.visitClass(pattern)
         } else {
-            pattern.visit(matcher)
+            pattern.accept(matcher)
         }
 
         matcher.match
@@ -134,7 +134,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
      */
     public static List<TreeContext> find(ASTNode node, ASTNode pattern) {
         ASTFinder finder = new ASTFinder(pattern);
-        node.visit(finder);
+        node.accept(finder);
 
         finder.matches
     }
@@ -288,7 +288,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                 def iterator = initializers.iterator()
                 for (Statement element : node.objectInitializerStatements) {
                     doWithNode(element, iterator.next()) {
-                        element.visit(this)
+                        element.accept(this)
                     }
                 }
             } else {
@@ -302,7 +302,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         if (node) {
             doWithNode(node, current) {
                 visitAnnotations(node)
-                node.visit(this)
+                node.accept(this)
             }
         }
     }
@@ -318,7 +318,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                     for (ImportNode importNode : node.imports) {
                         doWithNode(importNode, iter.next()) {
                             visitAnnotations(importNode)
-                            importNode.visit(this)
+                            importNode.accept(this)
                         }
                     }
                 } else {
@@ -331,7 +331,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                     for (ImportNode importNode : node.starImports) {
                         doWithNode(importNode, iter.next()) {
                             visitAnnotations(importNode)
-                            importNode.visit(this)
+                            importNode.accept(this)
                         }
                     }
                 } else {
@@ -344,7 +344,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                     for (ImportNode importNode : node.staticImports.values()) {
                         doWithNode(importNode, iter.next()) {
                             visitAnnotations(importNode)
-                            importNode.visit(this)
+                            importNode.accept(this)
                         }
                     }
                 } else {
@@ -356,7 +356,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                     for (ImportNode importNode : node.staticStarImports.values()) {
                         doWithNode(importNode, iter.next()) {
                             visitAnnotations(importNode)
-                            importNode.visit(this)
+                            importNode.accept(this)
                         }
                     }
                 } else {
@@ -397,7 +397,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                         def next = entryIt.next()
                         if (next.key == member.key) {
                             doWithNode(member.value, next.value) {
-                                member.value.visit(this)
+                                member.value.accept(this)
                             }
                         } else {
                             failIfNot(false)
@@ -414,7 +414,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     protected void visitClassCodeContainer(final Statement code) {
         doWithNode(code, current) {
             if (code) {
-                code.visit(this)
+                code.accept(this)
             }
         }
     }
@@ -464,7 +464,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             if (init) {
                 if (curInit) {
                     doWithNode(init, curInit) {
-                        init.visit(this)
+                        init.accept(this)
                     }
                 } else {
                     failIfNot(false)
@@ -498,7 +498,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             if (init) {
                 if (curInit) {
                     doWithNode(init, curInit) {
-                        init.visit(this)
+                        init.accept(this)
                     }
                 } else {
                     failIfNot(false)
@@ -513,7 +513,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     void visitExpressionStatement(final ExpressionStatement statement) {
         doWithNode(statement.expression, ((ExpressionStatement) current).expression) {
             visitStatement(statement)
-            statement.expression.visit(this)
+            statement.expression.accept(this)
         }
     }
 
@@ -525,7 +525,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                 def iter = statements.iterator()
                 for (Statement statement : block.statements) {
                     doWithNode(statement, iter.next()) {
-                        statement.visit(this)
+                        statement.accept(this)
                     }
                 }
             } else {
@@ -539,13 +539,13 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(call, current) {
             def mce = (MethodCallExpression) current
             doWithNode(call.objectExpression, mce.objectExpression) {
-                call.objectExpression.visit(this)
+                call.objectExpression.accept(this)
             }
             doWithNode(call.method, mce.method) {
-                call.method.visit(this)
+                call.method.accept(this)
             }
             doWithNode(call.arguments, mce.arguments) {
-                call.arguments.visit(this)
+                call.arguments.accept(this)
             }
             failIfNot(matchByName(call.methodAsString, mce.methodAsString) &&
                     (call.safe == mce.safe) &&
@@ -564,7 +564,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(call, current) {
             def cur = (ConstructorCallExpression) current
             doWithNode(call.arguments, cur.arguments) {
-                call.arguments.visit(this)
+                call.arguments.accept(this)
                 failIfNot(call.type == cur.type)
             }
         }
@@ -576,11 +576,11 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def bin = (BinaryExpression) current
             def leftExpression = expression.getLeftExpression()
             doWithNode(leftExpression, bin.leftExpression) {
-                leftExpression.visit(this)
+                leftExpression.accept(this)
             }
             def rightExpression = expression.getRightExpression()
             doWithNode(rightExpression, bin.rightExpression) {
-                rightExpression.visit(this)
+                rightExpression.accept(this)
             }
             if (bin.operation.type != expression.operation.type) {
                 failIfNot(ifConstraint(false) {
@@ -606,15 +606,15 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(expression, current) {
             TernaryExpression te = (TernaryExpression) current
             doWithNode(expression.booleanExpression, te.booleanExpression) {
-                expression.booleanExpression.visit(this)
+                expression.booleanExpression.accept(this)
             }
             def trueExpression = expression.trueExpression
             doWithNode(trueExpression, te.trueExpression) {
-                trueExpression.visit(this)
+                trueExpression.accept(this)
             }
             def falseExpression = expression.falseExpression
             doWithNode(falseExpression, te.falseExpression) {
-                falseExpression.visit(this)
+                falseExpression.accept(this)
             }
         }
     }
@@ -625,7 +625,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def origExpr = expression.expression
             def curExpr = (PostfixExpression) current
             doWithNode(origExpr, curExpr.expression) {
-                origExpr.visit(this)
+                origExpr.accept(this)
                 failIfNot(expression.operation.type == curExpr.operation.type)
             }
         }
@@ -637,7 +637,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def origExpr = expression.expression
             def curExpr = (PrefixExpression) current
             doWithNode(origExpr, curExpr.expression) {
-                origExpr.visit(this)
+                origExpr.accept(this)
                 failIfNot(expression.operation.type == curExpr.operation.type)
             }
         }
@@ -647,7 +647,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     public void visitBooleanExpression(final BooleanExpression expression) {
         doWithNode(expression, current) {
             doWithNode(expression.expression, ((BooleanExpression) current).expression) {
-                expression.expression.visit(this)
+                expression.expression.accept(this)
             }
         }
     }
@@ -658,7 +658,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def expr = expression.expression
             def cur = ((NotExpression) current).expression
             doWithNode(expr, cur) {
-                expr.visit(this)
+                expr.accept(this)
             }
         }
     }
@@ -669,7 +669,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def code = expression.code
             def cl = (ClosureExpression) current
             doWithNode(code, cl.code) {
-                code.visit(this)
+                code.accept(this)
                 checkParameters(expression.parameters, cl.parameters)
             }
         }
@@ -754,10 +754,10 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def curKey = cur.keyExpression
             def curValue = cur.valueExpression
             doWithNode(key, curKey) {
-                key.visit(this)
+                key.accept(this)
             }
             doWithNode(value, curValue) {
-                value.visit(this)
+                value.accept(this)
             }
         }
     }
@@ -771,10 +771,10 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def curFrom = cur.from
             def curTo = cur.to
             doWithNode(from, curFrom) {
-                from.visit(this)
+                from.accept(this)
             }
             doWithNode(to, curTo) {
-                to.visit(this)
+                to.accept(this)
             }
         }
     }
@@ -784,7 +784,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((SpreadExpression) current).expression) {
-                expr.visit(this)
+                expr.accept(this)
             }
         }
     }
@@ -803,10 +803,10 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def curExpr = cur.expression
             def curName = cur.methodName
             doWithNode(expr, curExpr) {
-                expr.visit(this)
+                expr.accept(this)
             }
             doWithNode(methodName, curName) {
-                methodName.visit(this)
+                methodName.accept(this)
             }
         }
     }
@@ -816,7 +816,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((UnaryMinusExpression) current).expression) {
-                expr.visit(this)
+                expr.accept(this)
             }
         }
     }
@@ -826,7 +826,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((UnaryPlusExpression) current).expression) {
-                expr.visit(this)
+                expr.accept(this)
             }
         }
     }
@@ -836,7 +836,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((BitwiseNegationExpression) current).expression) {
-                expr.visit(this)
+                expr.accept(this)
             }
         }
     }
@@ -846,7 +846,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((CastExpression) current).expression) {
-                expr.visit(this)
+                expr.accept(this)
             }
             failIfNot(expression.type == ((CastExpression) current).type)
         }
@@ -888,10 +888,10 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(expression, current) {
             def currentPexp = (PropertyExpression) current
             doWithNode(expression.objectExpression, currentPexp.objectExpression) {
-                expression.objectExpression.visit(this)
+                expression.objectExpression.accept(this)
             }
             doWithNode(expression.property, currentPexp.property) {
-                expression.property.visit(this)
+                expression.property.accept(this)
             }
             failIfNot((expression.propertyAsString == currentPexp.propertyAsString) &&
                     (expression.implicitThis == currentPexp.implicitThis) &&
@@ -905,10 +905,10 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         doWithNode(expression, current) {
             def currentPexp = (AttributeExpression) current
             doWithNode(expression.objectExpression, currentPexp.objectExpression) {
-                expression.objectExpression.visit(this)
+                expression.objectExpression.accept(this)
             }
             doWithNode(expression.property, currentPexp.property) {
-                expression.property.visit(this)
+                expression.property.accept(this)
             }
             failIfNot((expression.propertyAsString == currentPexp.propertyAsString) &&
                     (expression.implicitThis == currentPexp.implicitThis) &&
@@ -951,7 +951,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         for (Expression expression : list) {
             def next = iter.next()
             doWithNode(expression, next) {
-                expression.visit(this)
+                expression.accept(this)
             }
         }
     }
@@ -985,14 +985,14 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def ifBlock = ifElse.ifBlock
             def elseBlock = ifElse.elseBlock
             doWithNode(bool, cur.booleanExpression) {
-                bool.visit(this)
+                bool.accept(this)
             }
             doWithNode(ifBlock, cur.ifBlock) {
-                ifBlock.visit(this)
+                ifBlock.accept(this)
             }
             failIfNot(elseBlock && cur.elseBlock || !elseBlock && !cur.elseBlock)
             doWithNode(elseBlock, cur.elseBlock) {
-                elseBlock.visit(this)
+                elseBlock.accept(this)
             }
         }
     }
@@ -1005,10 +1005,10 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def col = forLoop.collectionExpression
             def block = forLoop.loopBlock
             doWithNode(col, cur.collectionExpression) {
-                col.visit(this)
+                col.accept(this)
             }
             doWithNode(block, cur.loopBlock) {
-                block.visit(this)
+                block.accept(this)
             }
         }
     }
@@ -1021,10 +1021,10 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def bool = loop.booleanExpression
             def block = loop.loopBlock
             doWithNode(bool, cur.booleanExpression) {
-                bool.visit(this)
+                bool.accept(this)
             }
             doWithNode(block, cur.loopBlock) {
-                block.visit(this)
+                block.accept(this)
             }
         }
     }

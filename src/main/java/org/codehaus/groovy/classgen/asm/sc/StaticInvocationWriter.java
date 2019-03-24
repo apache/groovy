@@ -348,7 +348,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                             )
                     );
                     mce.setMethodTarget(target.isStatic() ? INVOKERHELPER_INVOKESTATICMETHOD : INVOKERHELPER_INVOKEMETHOD);
-                    mce.visit(controller.getAcg());
+                    mce.accept(controller.getAcg());
                     return true;
                 }
                 return true;
@@ -462,7 +462,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             for (int i = 0; i < para.length - 1; i++) {
                 Expression expression = argumentList.get(i);
                 expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
-                expression.visit(acg);
+                expression.accept(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());
                 }
@@ -476,7 +476,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     lastParaType.getComponentType(),
                     lastParams
             );
-            array.visit(acg);
+            array.accept(acg);
             // adjust stack length
             while (operandStack.getStackLength() < stackLen) {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
@@ -488,7 +488,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             for (int i = 0; i < argumentListSize; i++) {
                 Expression expression = argumentList.get(i);
                 expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
-                expression.visit(acg);
+                expression.accept(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());
                 }
@@ -520,7 +520,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             for (int i = 0; i < arguments.length; i++) {
                 Expression expression = arguments[i];
                 expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
-                expression.visit(acg);
+                expression.accept(acg);
                 if (!isNullConstant(expression)) {
                     operandStack.doGroovyCast(para[i].getType());
                 }
@@ -575,10 +575,10 @@ public class StaticInvocationWriter extends InvocationWriter {
             ConstructorCallExpression cce = new ConstructorCallExpression(StaticCompilationVisitor.ARRAYLIST_CLASSNODE, ArgumentListExpression.EMPTY_ARGUMENTS);
             cce.setNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
             TemporaryVariableExpression result = new TemporaryVariableExpression(cce);
-            result.visit(controller.getAcg());
+            result.accept(controller.getAcg());
             operandStack.pop();
             // if (receiver != null)
-            tmpReceiver.visit(controller.getAcg());
+            tmpReceiver.accept(controller.getAcg());
             Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
             mv.visitJumpInsn(IFNULL, ifnull);
             operandStack.remove(1); // receiver consumed by if()
@@ -609,13 +609,13 @@ public class StaticInvocationWriter extends InvocationWriter {
                     tmpReceiver,
                     new ExpressionStatement(add)
             );
-            stmt.visit(controller.getAcg());
+            stmt.accept(controller.getAcg());
             // else { empty list }
             mv.visitLabel(ifnull);
 
             // end of if/else
             // return result list
-            result.visit(controller.getAcg());
+            result.accept(controller.getAcg());
 
             // cleanup temporary variables
             if (tmpReceiver instanceof TemporaryVariableExpression) {
@@ -630,7 +630,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             int counter = labelCounter.incrementAndGet();
             // if (receiver != null)
             ExpressionAsVariableSlot slot = new ExpressionAsVariableSlot(controller, receiver);
-            slot.visit(controller.getAcg());
+            slot.accept(controller.getAcg());
             operandStack.box();
             Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
             mv.visitJumpInsn(IFNULL, ifnull);
@@ -648,7 +648,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             newMCE.setSafe(false);
             newMCE.setImplicitThis(origMCE.isImplicitThis());
             newMCE.setSourcePosition(origMCE);
-            newMCE.visit(controller.getAcg());
+            newMCE.accept(controller.getAcg());
             compileStack.removeVar(slot.getIndex());
             ClassNode returnType = operandStack.getTopOperand();
             if (ClassHelper.isPrimitiveType(returnType) && !ClassHelper.VOID_TYPE.equals(returnType)) {
@@ -701,7 +701,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 );
                 rewritten.setSpreadSafe(((PropertyExpression) origin).isSpreadSafe());
                 rewritten.setImplicitThis(false);
-                rewritten.visit(controller.getAcg());
+                rewritten.accept(controller.getAcg());
                 rewritten.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, origin.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE));
                 return true;
             }
@@ -728,8 +728,8 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
 
         @Override
-        public void visit(final GroovyCodeVisitor visitor) {
-            receiver.visit(visitor);
+        public void accept(final GroovyCodeVisitor visitor) {
+            receiver.accept(visitor);
             if (visitor instanceof AsmClassGenerator) {
                 ClassNode topOperand = controller.getOperandStack().getTopOperand();
                 ClassNode type = getType();

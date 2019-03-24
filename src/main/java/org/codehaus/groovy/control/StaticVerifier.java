@@ -90,7 +90,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
             for (final Parameter param : node.getParameters()) {
                 exceptions.add(param.getName());
                 if (param.hasInitialExpression()) {
-                    param.getInitialExpression().visit(new CodeVisitorSupport() {
+                    param.getInitialExpression().accept(new CodeVisitorSupport() {
                         @Override
                         public void visitVariableExpression(VariableExpression ve) {
                             if (exceptions.contains(ve.getName())) return;

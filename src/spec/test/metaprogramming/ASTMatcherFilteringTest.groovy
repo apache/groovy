@@ -73,7 +73,7 @@ class JokingASTTransformation extends AbstractASTTransformation {
 
         methodNode
             .getCode()
-            .visit(new ConvertOnePlusOneToThree(source))  // <1>
+            .accept(new ConvertOnePlusOneToThree(source))  // <1>
     }
 }
 // end::jokingtransformation[]

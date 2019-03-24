@@ -121,13 +121,13 @@ public class ConstructorCallTransformer {
         }
 
         @Override
-        public void visit(final GroovyCodeVisitor visitor) {
+        public void accept(final GroovyCodeVisitor visitor) {
             if (visitor instanceof AsmClassGenerator) {
                 acg = (AsmClassGenerator) visitor;
             } else {
-                originalCall.visit(visitor);
+                originalCall.accept(visitor);
             } 
-            super.visit(visitor);
+            super.accept(visitor);
         }
         @Override
         public ClassNode getType() {
@@ -177,7 +177,7 @@ public class ConstructorCallTransformer {
                         valueExpression
                 );
                 bexp.setSourcePosition(entryExpression);
-                bexp.visit(acg);
+                bexp.accept(acg);
                 operandStack.pop(); // consume argument
             }
 

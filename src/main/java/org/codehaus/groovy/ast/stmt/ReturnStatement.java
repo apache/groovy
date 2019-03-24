@@ -43,7 +43,7 @@ public class ReturnStatement extends Statement {
         this.expression = expression;
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitReturnStatement(this);
     }
 

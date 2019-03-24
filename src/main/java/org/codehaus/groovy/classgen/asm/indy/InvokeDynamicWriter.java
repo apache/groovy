@@ -107,7 +107,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         
         // load normal receiver as first argument
         compileStack.pushImplicitThis(implicitThis);
-        receiver.visit(controller.getAcg());
+        receiver.accept(controller.getAcg());
         compileStack.popImplicitThis();
         return "("+getTypeDescription(operandStack.getTopOperand());
     }
@@ -136,7 +136,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
             sig.append(getTypeDescription(Object[].class));
         } else {
             for (Expression arg : ae.getExpressions()) {
-                arg.visit(controller.getAcg());
+                arg.accept(controller.getAcg());
                 if (arg instanceof CastExpression) {
                     operandStack.box();
                     controller.getAcg().loadWrapper(arg);

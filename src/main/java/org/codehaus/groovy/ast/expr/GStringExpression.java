@@ -48,7 +48,7 @@ public class GStringExpression extends Expression {
         super.setType(ClassHelper.GSTRING_TYPE);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitGStringExpression(this);
     }
 

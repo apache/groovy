@@ -53,12 +53,12 @@ public class CompareToNullExpression extends BinaryExpression implements Opcodes
     }
 
     @Override
-    public void visit(final GroovyCodeVisitor visitor) {
+    public void accept(final GroovyCodeVisitor visitor) {
         if (visitor instanceof AsmClassGenerator) {
             AsmClassGenerator acg = (AsmClassGenerator) visitor;
             WriterController controller = acg.getController();
             MethodVisitor mv = controller.getMethodVisitor();
-            objectExpression.visit(acg);
+            objectExpression.accept(acg);
             ClassNode top = controller.getOperandStack().getTopOperand();
             if (ClassHelper.isPrimitiveType(top)) {
                 controller.getOperandStack().pop();
@@ -76,7 +76,7 @@ public class CompareToNullExpression extends BinaryExpression implements Opcodes
             mv.visitLabel(end);
             controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
         } else {
-            super.visit(visitor);
+            super.accept(visitor);
         }
     }
 }

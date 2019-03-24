@@ -70,7 +70,7 @@ public class ArgumentListExpression extends TupleExpression {
         return ret;
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitArgumentlistExpression(this);
     }
 }

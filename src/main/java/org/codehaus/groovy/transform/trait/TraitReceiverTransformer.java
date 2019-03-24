@@ -184,7 +184,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             mce.setSourcePosition(exp);
             boolean oldInClosure = inClosure;
             inClosure = true;
-            ((ClosureExpression) exp).getCode().visit(this);
+            ((ClosureExpression) exp).getCode().accept(this);
             inClosure = oldInClosure;
             // The rewrite we do is causing some troubles with type checking, which will
             // not be able to perform closure parameter type inference

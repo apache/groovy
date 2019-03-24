@@ -45,7 +45,7 @@ public class EmptyExpression extends Expression {
         return this;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
     }
 
 

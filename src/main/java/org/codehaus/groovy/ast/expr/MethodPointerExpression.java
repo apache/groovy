@@ -52,7 +52,7 @@ public class MethodPointerExpression extends Expression {
         return methodName;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitMethodPointerExpression(this);
     }
 

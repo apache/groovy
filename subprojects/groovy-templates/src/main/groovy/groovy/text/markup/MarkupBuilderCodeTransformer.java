@@ -88,7 +88,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
         }
         if (exp instanceof ClosureExpression) {
             ClosureExpression cl = (ClosureExpression) exp;
-            cl.getCode().visit(this);
+            cl.getCode().accept(this);
             return cl;
         }
         if (exp instanceof VariableExpression) {

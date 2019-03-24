@@ -164,7 +164,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             @Override
             public void visitForLoop(ForStatement forLoop) {
                 Expression exp = forLoop.getCollectionExpression();
-                exp.visit(this);
+                exp.accept(this);
                 Parameter loopParam = forLoop.getVariable();
                 if (loopParam != null) {
                     varStack.getLast().add(loopParam.getName());
@@ -177,7 +177,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 // GROOVY-3543: visit the declaration expressions so that declaration variables get added on the varStack
                 Expression exp = es.getExpression();
                 if (exp instanceof DeclarationExpression) {
-                    exp.visit(this);
+                    exp.accept(this);
                 }
                 super.visitExpressionStatement(es);
             }
@@ -214,7 +214,7 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                         };
                     }
                     addVariablesToStack(params);
-                    ce.getCode().visit(this);
+                    ce.getCode().accept(this);
                     varStack.removeLast();
                 }
                 return super.transform(exp);

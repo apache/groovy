@@ -40,7 +40,7 @@ public class EmptyStatement extends Statement {
         // so we keep the constructor for the time being, but it will be removed finally.
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
     }
 
     public boolean isEmpty() {

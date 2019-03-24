@@ -165,7 +165,7 @@ public class MacroGroovyMethods {
         if (expr instanceof ClassNode) {
             visitor.visitClass((ClassNode) expr);
         } else {
-            expr.visit(visitor);
+            expr.accept(visitor);
         }
         return listExpression;
     }

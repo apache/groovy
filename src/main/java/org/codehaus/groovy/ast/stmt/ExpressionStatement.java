@@ -36,7 +36,7 @@ public class ExpressionStatement extends Statement {
         this.expression = expression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitExpressionStatement(this);
     }
 

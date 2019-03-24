@@ -285,7 +285,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
         for (Parameter parameter : parameters) {
             visitType(parameter.getOriginType())
             if (parameter.hasInitialExpression()) {
-                parameter.getInitialExpression().visit(this)
+                parameter.getInitialExpression().accept(this)
             }
         }
     }

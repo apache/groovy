@@ -61,7 +61,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
 
     @Override
     public void writeBitwiseNegate(final BitwiseNegationExpression expression) {
-        expression.getExpression().visit(controller.getAcg());
+        expression.getExpression().accept(controller.getAcg());
         if (isPrimitiveOnTop()) {
             final ClassNode top = getTopOperand();
             if (top==int_TYPE || top==short_TYPE || top==byte_TYPE || top==char_TYPE || top==long_TYPE) {
@@ -84,7 +84,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
                         }
                     }
                 };
-                bytecodeExpression.visit(controller.getAcg());
+                bytecodeExpression.accept(controller.getAcg());
                 controller.getOperandStack().remove(1);
                 return;
             }
@@ -98,7 +98,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
         Expression subExpression = expression.getExpression();
         ClassNode classNode = controller.getClassNode();
         if (typeChooser.resolveType(subExpression, classNode) == boolean_TYPE) {
-            subExpression.visit(controller.getAcg());
+            subExpression.accept(controller.getAcg());
             controller.getOperandStack().doGroovyCast(boolean_TYPE);
             BytecodeExpression bytecodeExpression = new BytecodeExpression() {
                 @Override
@@ -113,7 +113,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
                     mv.visitLabel(out);
                 }
             };
-            bytecodeExpression.visit(controller.getAcg());
+            bytecodeExpression.accept(controller.getAcg());
             controller.getOperandStack().remove(1);
             return;
         }
@@ -122,7 +122,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
 
     @Override
     public void writeUnaryMinus(final UnaryMinusExpression expression) {
-        expression.getExpression().visit(controller.getAcg());
+        expression.getExpression().accept(controller.getAcg());
         if (isPrimitiveOnTop()) {
             final ClassNode top = getTopOperand();
             if (top!=boolean_TYPE) {
@@ -147,7 +147,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
                         }
                     }
                 };
-                bytecodeExpression.visit(controller.getAcg());
+                bytecodeExpression.accept(controller.getAcg());
                 controller.getOperandStack().remove(1);
                 return;
             }
@@ -158,7 +158,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
 
     @Override
     public void writeUnaryPlus(final UnaryPlusExpression expression) {
-        expression.getExpression().visit(controller.getAcg());
+        expression.getExpression().accept(controller.getAcg());
         if (isPrimitiveOnTop()) {
             // only visit the expression
             return;

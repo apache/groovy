@@ -313,7 +313,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
             return transformed;
         } else if (expr instanceof ClosureExpression) {
             ClosureExpression ce = (ClosureExpression) expr;
-            ce.getCode().visit(this);
+            ce.getCode().accept(this);
         } else if (expr instanceof ConstructorCallExpression) {
             ConstructorCallExpression cce = (ConstructorCallExpression) expr;
             if (cce.isUsingAnonymousInnerClass()) {

@@ -49,7 +49,7 @@ public class MapExpression extends Expression {
         return mapEntryExpressions;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitMapExpression(this);
     }
 

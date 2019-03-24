@@ -65,7 +65,7 @@ public class BlockStatement extends Statement {
         this.scope = scope;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitBlockStatement(this);
     }
 

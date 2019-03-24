@@ -33,7 +33,7 @@ public class UnaryMinusExpression extends Expression {
         return expression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitUnaryMinusExpression(this);
     }
 

@@ -56,7 +56,7 @@ public class JavaAwareResolveVisitor extends ResolveVisitor {
         Statement code = node.getCode();
         Expression cce = getConstructorCall(code);
         if (cce==null) return;
-        cce.visit(this);
+        cce.accept(this);
     }
 
     protected void visitClassCodeContainer(Statement code) {

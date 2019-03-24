@@ -61,11 +61,11 @@ class AutoNewLineTransformer extends ClassCodeVisitorSupport {
             if (!expressions.isEmpty()) {
                 Expression lastArg = expressions.get(expressions.size() - 1);
                 if (lastArg instanceof ClosureExpression) {
-                    call.getObjectExpression().visit(this);
-                    call.getMethod().visit(this);
+                    call.getObjectExpression().accept(this);
+                    call.getMethod().accept(this);
                     for (Expression expression : expressions) {
                         inBuilderMethod =  (expression == lastArg);
-                        expression.visit(this);
+                        expression.accept(this);
                     }
                 }
             }

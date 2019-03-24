@@ -340,7 +340,7 @@ public class BinaryExpressionHelper {
                 ae, InvocationWriter.invokeMethod, safe, false, false);
         controller.getOperandStack().pop();
         // return value of assignment
-        rhsValueLoader.visit(controller.getAcg());
+        rhsValueLoader.accept(controller.getAcg());
     }
 
     private static boolean isNull(Expression exp) {
@@ -387,12 +387,12 @@ public class BinaryExpressionHelper {
             ListExpression list = (ListExpression) rightExpression;
             ArrayExpression array = new ArrayExpression(lhsType.getComponentType(), list.getExpressions());
             array.setSourcePosition(list);
-            array.visit(acg);
+            array.accept(acg);
         } else if (rightExpression instanceof EmptyExpression) {
             rhsType = leftExpression.getType();
             loadInitValue(rhsType);
         } else {
-            rightExpression.visit(acg);
+            rightExpression.accept(acg);
         }
         rhsType = operandStack.getTopOperand();
 
@@ -451,7 +451,7 @@ public class BinaryExpressionHelper {
                 MethodCallExpression call = new MethodCallExpression(
                         rhsValueLoader, "getAt",
                         new ArgumentListExpression(new ConstantExpression(i)));
-                call.visit(acg);
+                call.accept(acg);
                 i++;
                 if (defineVariable) {
                     operandStack.doGroovyCast(var);
@@ -464,7 +464,7 @@ public class BinaryExpressionHelper {
         } 
         // single declaration
         else if (defineVariable) {
-            rhsValueLoader.visit(acg);
+            rhsValueLoader.accept(acg);
             operandStack.remove(1);
             compileStack.popLHS();
             return;
@@ -473,17 +473,17 @@ public class BinaryExpressionHelper {
         else {
             int mark = operandStack.getStackLength();
             // to leave a copy of the rightExpression value on the stack after the assignment.
-            rhsValueLoader.visit(acg);
+            rhsValueLoader.accept(acg);
             TypeChooser typeChooser = controller.getTypeChooser();
             ClassNode targetType = typeChooser.resolveType(leftExpression, controller.getClassNode());
             operandStack.doGroovyCast(targetType);
-            leftExpression.visit(acg);
+            leftExpression.accept(acg);
             operandStack.remove(operandStack.getStackLength()-mark);
         }
         compileStack.popLHS();
         
         // return value of assignment
-        rhsValueLoader.visit(acg);
+        rhsValueLoader.accept(acg);
         compileStack.removeVar(rhsValueId);
     }
 
@@ -517,9 +517,9 @@ public class BinaryExpressionHelper {
             AsmClassGenerator acg = controller.getAcg();
             OperandStack operandStack = controller.getOperandStack();
             
-            leftExp.visit(acg);
+            leftExp.accept(acg);
             operandStack.box();
-            rightExp.visit(acg);
+            rightExp.accept(acg);
             operandStack.box();
     
             compareMethod.call(controller.getMethodVisitor());
@@ -536,12 +536,12 @@ public class BinaryExpressionHelper {
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
         
-        leftExpression.visit(acg);
+        leftExpression.accept(acg);
         operandStack.box();
 
         // if the right hand side is a boolean expression, we need to autobox
         Expression rightExpression = expression.getRightExpression();
-        rightExpression.visit(acg);
+        rightExpression.accept(acg);
         operandStack.box();
 
         compareToMethod.call(controller.getMethodVisitor());
@@ -553,20 +553,20 @@ public class BinaryExpressionHelper {
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
 
-        expression.getLeftExpression().visit(acg);
+        expression.getLeftExpression().accept(acg);
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
         Label falseCase = operandStack.jump(IFEQ);
 
-        expression.getRightExpression().visit(acg);
+        expression.getRightExpression().accept(acg);
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
         operandStack.jump(IFEQ,falseCase);
 
-        ConstantExpression.PRIM_TRUE.visit(acg);
+        ConstantExpression.PRIM_TRUE.accept(acg);
         Label trueCase = new Label();
         mv.visitJumpInsn(GOTO, trueCase);
 
         mv.visitLabel(falseCase);
-        ConstantExpression.PRIM_FALSE.visit(acg);
+        ConstantExpression.PRIM_FALSE.accept(acg);
 
         mv.visitLabel(trueCase);
         operandStack.remove(1); // have to remove 1 because of the GOTO
@@ -579,20 +579,20 @@ public class BinaryExpressionHelper {
 
         Label end = new Label();
 
-        expression.getLeftExpression().visit(acg);
+        expression.getLeftExpression().accept(acg);
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
         Label trueCase = operandStack.jump(IFNE);
         
-        expression.getRightExpression().visit(acg);
+        expression.getRightExpression().accept(acg);
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
         Label falseCase = operandStack.jump(IFEQ);
         
         mv.visitLabel(trueCase);
-        ConstantExpression.PRIM_TRUE.visit(acg);
+        ConstantExpression.PRIM_TRUE.accept(acg);
         operandStack.jump(GOTO, end);
 
         mv.visitLabel(falseCase);
-        ConstantExpression.PRIM_FALSE.visit(acg);
+        ConstantExpression.PRIM_FALSE.accept(acg);
         
         mv.visitLabel(end);
     }
@@ -629,7 +629,7 @@ public class BinaryExpressionHelper {
         ExpressionAsVariableSlot ret = new ExpressionAsVariableSlot(controller, operation, "ret");
         MethodCallExpression putAt = new MethodCallExpression(receiver, "putAt", new ArgumentListExpression(subscript, ret));
 
-        putAt.visit(acg);
+        putAt.accept(acg);
         os.pop();
         os.load(ret.getType(), ret.getIndex());
 
@@ -657,14 +657,14 @@ public class BinaryExpressionHelper {
         operandStack.dup();
         
         controller.getCompileStack().pushLHS(true);
-        leftExpression.visit(acg);
+        leftExpression.accept(acg);
         controller.getCompileStack().popLHS();
     }
     
     private void evaluateInstanceof(BinaryExpression expression) {
         OperandStack operandStack = controller.getOperandStack();
         
-        expression.getLeftExpression().visit(controller.getAcg());
+        expression.getLeftExpression().accept(controller.getAcg());
         operandStack.box();
         Expression rightExp = expression.getRightExpression();
         ClassNode classType;
@@ -765,21 +765,21 @@ public class BinaryExpressionHelper {
                 // right expression is the subscript expression
                 // we store the result of the subscription on the stack
                 Expression subscript = be.getRightExpression();
-                subscript.visit(controller.getAcg());
+                subscript.accept(controller.getAcg());
                 ClassNode subscriptType = operandStack.getTopOperand();
                 int id = controller.getCompileStack().defineTemporaryVariable("$subscript", subscriptType, true);
                 VariableSlotLoader subscriptExpression = new VariableSlotLoader(subscriptType, id, operandStack);
-                // do modified visit
+                // do modified accept
                 BinaryExpression newBe = new BinaryExpression(be.getLeftExpression(), be.getOperation(), subscriptExpression);
                 newBe.copyNodeMetaData(be);
                 newBe.setSourcePosition(be);
-                newBe.visit(controller.getAcg());
+                newBe.accept(controller.getAcg());
                 return subscriptExpression;
             } 
         } 
         
         // normal loading of expression
-        expression.visit(controller.getAcg());
+        expression.accept(controller.getAcg());
         return null;
     }
     
@@ -809,7 +809,7 @@ public class BinaryExpressionHelper {
         {
             operandStack.dup();
             controller.getCompileStack().pushLHS(true);
-            expression.visit(controller.getAcg());
+            expression.accept(controller.getAcg());
             controller.getCompileStack().popLHS();
         }
         // other cases don't need storing, so nothing to be done for them
@@ -883,7 +883,7 @@ public class BinaryExpressionHelper {
 
         // load x, dup it, store one in $t and cast the remaining one to boolean
         int mark = operandStack.getStackLength();
-        boolPart.visit(controller.getAcg());
+        boolPart.accept(controller.getAcg());
         operandStack.dup();
         if (ClassHelper.isPrimitiveType(truePartType) && !ClassHelper.isPrimitiveType(operandStack.getTopOperand())) {
             truePartType = ClassHelper.getWrapper(truePartType);
@@ -900,7 +900,7 @@ public class BinaryExpressionHelper {
         
         // false part: load false expression and cast to S
         mv.visitLabel(l0);
-        falsePart.visit(controller.getAcg());        
+        falsePart.accept(controller.getAcg());
         operandStack.doGroovyCast(common);
         
         // finish and cleanup
@@ -931,19 +931,19 @@ public class BinaryExpressionHelper {
 
         // load b and convert to boolean
         int mark = operandStack.getStackLength();
-        boolPart.visit(controller.getAcg());
+        boolPart.accept(controller.getAcg());
         operandStack.castToBool(mark,true);
         
         Label l0 = operandStack.jump(IFEQ);
         // true part: load x and cast to S
-        truePart.visit(controller.getAcg());
+        truePart.accept(controller.getAcg());
         operandStack.doGroovyCast(common);
         Label l1 = new Label();
         mv.visitJumpInsn(GOTO, l1);
         
         // false part: load y and cast to S
         mv.visitLabel(l0);
-        falsePart.visit(controller.getAcg());        
+        falsePart.accept(controller.getAcg());
         operandStack.doGroovyCast(common);
         
         // finish and cleanup

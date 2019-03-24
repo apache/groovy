@@ -170,14 +170,14 @@ public class InvocationWriter {
                     // we are calling an outer class method
                     compileStack.pushImplicitThis(false);
                     if (controller.isInClosure()) {
-                        new VariableExpression("thisObject").visit(controller.getAcg());
+                        new VariableExpression("thisObject").accept(controller.getAcg());
                     } else {
                         Expression expr = new PropertyExpression(new ClassExpression(declaringClass), "this");
-                        expr.visit(controller.getAcg());
+                        expr.accept(controller.getAcg());
                     }
                 } else {
                     compileStack.pushImplicitThis(implicitThis);
-                    receiver.visit(controller.getAcg());
+                    receiver.accept(controller.getAcg());
                 }
                 operandStack.doGroovyCast(declaringClass);
                 compileStack.popImplicitThis();
@@ -258,7 +258,7 @@ public class InvocationWriter {
             // varg call
             // first parameters as usual
             for (int i = 0; i < para.length-1; i++) {
-                argumentList.get(i).visit(acg);
+                argumentList.get(i).accept(acg);
                 operandStack.doGroovyCast(para[i].getType());
             }
             // last parameters wrapped in an array
@@ -270,7 +270,7 @@ public class InvocationWriter {
                     lastParaType.getComponentType(),
                     lastParams
             );
-            array.visit(acg);
+            array.accept(acg);
             // adjust stack length
             while (operandStack.getStackLength()<stackLen) {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
@@ -280,7 +280,7 @@ public class InvocationWriter {
             }
         } else {
             for (int i = 0; i < argumentList.size(); i++) {
-                argumentList.get(i).visit(acg);
+                argumentList.get(i).accept(acg);
                 operandStack.doGroovyCast(para[i].getType());
             }
         }
@@ -363,9 +363,9 @@ public class InvocationWriter {
 
         // sender only for call sites
         if (adapter == AsmClassGenerator.setProperty) {
-            ConstantExpression.NULL.visit(acg);
+            ConstantExpression.NULL.accept(acg);
         } else {
-            sender.visit(acg);
+            sender.accept(acg);
         }
 
         String methodName = getMethodName(message);
@@ -375,7 +375,7 @@ public class InvocationWriter {
         
         // receiver
         compileStack.pushImplicitThis(implicitThis);
-        receiver.visit(acg);
+        receiver.accept(acg);
         operandStack.box();
         compileStack.popImplicitThis();
         
@@ -383,7 +383,7 @@ public class InvocationWriter {
         int operandsToRemove = 2;
         // message
         if (message != null) {
-            message.visit(acg);
+            message.accept(acg);
             operandStack.box();
             operandsToRemove++;
         }
@@ -395,14 +395,14 @@ public class InvocationWriter {
             if (containsSpreadExpression) {
                 acg.despreadList(ae.getExpressions(), true);
             } else {
-                ae.visit(acg);
+                ae.accept(acg);
             }
         } else if (numberOfArguments > 0) {
             operandsToRemove += numberOfArguments;
             TupleExpression te = (TupleExpression) arguments;
             for (int i = 0; i < numberOfArguments; i++) {
                 Expression argument = te.getExpression(i);
-                argument.visit(acg);
+                argument.accept(acg);
                 operandStack.box();
                 if (argument instanceof CastExpression) acg.loadWrapper(argument);
             }
@@ -561,9 +561,9 @@ public class InvocationWriter {
         acg.visitVariableExpression(new VariableExpression(methodName));
         controller.getOperandStack().box();
         if (arguments instanceof TupleExpression) {
-            arguments.visit(acg);
+            arguments.accept(acg);
         } else {
-            new TupleExpression(arguments).visit(acg);
+            new TupleExpression(arguments).accept(acg);
         }
         invokeClosureMethod.call(controller.getMethodVisitor());
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
@@ -674,7 +674,7 @@ public class InvocationWriter {
                 VariableExpression var = (VariableExpression) arg;
                 loadVariableWithReference(var);
             } else {
-                arg.visit(controller.getAcg());
+                arg.accept(controller.getAcg());
             }
             os.doGroovyCast(p.getType());
         }
@@ -685,7 +685,7 @@ public class InvocationWriter {
     
     private void loadVariableWithReference(VariableExpression var) {
         if (!var.isUseReferenceDirectly()) {
-            var.visit(controller.getAcg());
+            var.accept(controller.getAcg());
         } else {
             ClosureWriter.loadReference(var.getName(), controller);
         }
@@ -755,7 +755,7 @@ public class InvocationWriter {
         mv.visitVarInsn(ALOAD, 0);
         for (int i=0; i<params.length; i++) {
             Expression expression = argumentList.get(i);
-            expression.visit(controller.getAcg());
+            expression.accept(controller.getAcg());
             if (!AsmClassGenerator.isNullConstant(expression)) {
                 operandStack.doGroovyCast(params[i].getType());
             }
@@ -770,7 +770,7 @@ public class InvocationWriter {
     private void makeMOPBasedConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
-        call.getArguments().visit(controller.getAcg());
+        call.getArguments().accept(controller.getAcg());
         // keep Object[] on stack
         mv.visitInsn(DUP);
         // to select the constructor we need also the number of
@@ -939,12 +939,12 @@ public class InvocationWriter {
         } else if (ClassHelper.STRING_TYPE.equals(targetType)) {
             castToStringMethod.call(mv);
         } else if (targetType.isDerivedFrom(ClassHelper.Enum_Type)) {
-            (new ClassExpression(targetType)).visit(controller.getAcg());
+            (new ClassExpression(targetType)).accept(controller.getAcg());
             os.remove(1);
             castToEnumMethod.call(mv);
             BytecodeHelper.doCast(mv, targetType);
         } else {
-            (new ClassExpression(targetType)).visit(controller.getAcg());
+            (new ClassExpression(targetType)).accept(controller.getAcg());
             os.remove(1);
             castToTypeMethod.call(mv);
         }
@@ -960,7 +960,7 @@ public class InvocationWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack os = controller.getOperandStack();
         os.box();
-        (new ClassExpression(target)).visit(controller.getAcg());
+        (new ClassExpression(target)).accept(controller.getAcg());
         os.remove(1);
         asTypeMethod.call(mv);
         BytecodeHelper.doCast(mv,target);

@@ -59,7 +59,7 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
 
     synchronized void replaceIn(ASTNode root) {
         transformer = new VariableExpressionTransformer(when: when, replaceWith: replaceWith)
-        root.visit(this)
+        root.accept(this)
     }
 
     void visitReturnStatement(ReturnStatement statement) {
@@ -84,7 +84,7 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
     void visitBinaryExpression(BinaryExpression expression) {
         //A hack: Only replace right expression b/c ReturnStatementToIterationConverter needs it that way :-/
         replaceExpressionPropertyWhenNecessary(expression, 'rightExpression')
-        expression.getRightExpression().visit(this)
+        expression.getRightExpression().accept(this)
         super.visitBinaryExpression(expression)
     }
 

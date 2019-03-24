@@ -42,7 +42,7 @@ public class ClosureExpression extends Expression {
         super.setType(ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitClosureExpression(this);
     }
 

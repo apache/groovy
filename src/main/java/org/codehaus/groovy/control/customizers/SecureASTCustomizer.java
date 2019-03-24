@@ -610,13 +610,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
 
         final SecuringCodeVisitor visitor = new SecuringCodeVisitor();
-        ast.getStatementBlock().visit(visitor);
+        ast.getStatementBlock().accept(visitor);
         for (ClassNode clNode : ast.getClasses()) {
             if (clNode!=classNode) {
                 checkMethodDefinitionAllowed(clNode);
                 for (MethodNode methodNode : clNode.getMethods()) {
                     if (!methodNode.isSynthetic() && methodNode.getCode() != null) {
-                        methodNode.getCode().visit(visitor);
+                        methodNode.getCode().accept(visitor);
                     }
                 }
             }
@@ -625,7 +625,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         List<MethodNode> methods = filterMethods(classNode);
         if (isMethodDefinitionAllowed) {
             for (MethodNode method : methods) {
-                if (method.getDeclaringClass()==classNode && method.getCode() != null) method.getCode().visit(visitor);
+                if (method.getDeclaringClass()==classNode && method.getCode() != null) method.getCode().accept(visitor);
             }
         }
     }
@@ -800,33 +800,33 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         public void visitBlockStatement(final BlockStatement block) {
             assertStatementAuthorized(block);
             for (Statement statement : block.getStatements()) {
-                statement.visit(this);
+                statement.accept(this);
             }
         }
 
 
         public void visitForLoop(final ForStatement forLoop) {
             assertStatementAuthorized(forLoop);
-            forLoop.getCollectionExpression().visit(this);
-            forLoop.getLoopBlock().visit(this);
+            forLoop.getCollectionExpression().accept(this);
+            forLoop.getLoopBlock().accept(this);
         }
 
         public void visitWhileLoop(final WhileStatement loop) {
             assertStatementAuthorized(loop);
-            loop.getBooleanExpression().visit(this);
-            loop.getLoopBlock().visit(this);
+            loop.getBooleanExpression().accept(this);
+            loop.getLoopBlock().accept(this);
         }
 
         public void visitDoWhileLoop(final DoWhileStatement loop) {
             assertStatementAuthorized(loop);
-            loop.getBooleanExpression().visit(this);
-            loop.getLoopBlock().visit(this);
+            loop.getBooleanExpression().accept(this);
+            loop.getLoopBlock().accept(this);
         }
 
         public void visitIfElse(final IfStatement ifElse) {
             assertStatementAuthorized(ifElse);
-            ifElse.getBooleanExpression().visit(this);
-            ifElse.getIfBlock().visit(this);
+            ifElse.getBooleanExpression().accept(this);
+            ifElse.getIfBlock().accept(this);
 
             Statement elseBlock = ifElse.getElseBlock();
             if (elseBlock instanceof EmptyStatement) {
@@ -834,31 +834,31 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 // must call our visitEmptyStatement explicitly
                 visitEmptyStatement((EmptyStatement) elseBlock);
             } else {
-                elseBlock.visit(this);
+                elseBlock.accept(this);
             }
         }
 
         public void visitExpressionStatement(final ExpressionStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getExpression().visit(this);
+            statement.getExpression().accept(this);
         }
 
         public void visitReturnStatement(final ReturnStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getExpression().visit(this);
+            statement.getExpression().accept(this);
         }
 
         public void visitAssertStatement(final AssertStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getBooleanExpression().visit(this);
-            statement.getMessageExpression().visit(this);
+            statement.getBooleanExpression().accept(this);
+            statement.getMessageExpression().accept(this);
         }
 
         public void visitTryCatchFinally(final TryCatchStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getTryStatement().visit(this);
+            statement.getTryStatement().accept(this);
             for (CatchStatement catchStatement : statement.getCatchStatements()) {
-                catchStatement.visit(this);
+                catchStatement.accept(this);
             }
             Statement finallyStatement = statement.getFinallyStatement();
             if (finallyStatement instanceof EmptyStatement) {
@@ -866,7 +866,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 // must call our visitEmptyStatement explicitly
                 visitEmptyStatement((EmptyStatement) finallyStatement);
             } else {
-                finallyStatement.visit(this);
+                finallyStatement.accept(this);
             }
         }
 
@@ -876,17 +876,17 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitSwitch(final SwitchStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getExpression().visit(this);
+            statement.getExpression().accept(this);
             for (CaseStatement caseStatement : statement.getCaseStatements()) {
-                caseStatement.visit(this);
+                caseStatement.accept(this);
             }
-            statement.getDefaultStatement().visit(this);
+            statement.getDefaultStatement().accept(this);
         }
 
         public void visitCaseStatement(final CaseStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getExpression().visit(this);
-            statement.getCode().visit(this);
+            statement.getExpression().accept(this);
+            statement.getCode().accept(this);
         }
 
         public void visitBreakStatement(final BreakStatement statement) {
@@ -899,18 +899,18 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitThrowStatement(final ThrowStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getExpression().visit(this);
+            statement.getExpression().accept(this);
         }
 
         public void visitSynchronizedStatement(final SynchronizedStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getExpression().visit(this);
-            statement.getCode().visit(this);
+            statement.getExpression().accept(this);
+            statement.getCode().accept(this);
         }
 
         public void visitCatchStatement(final CatchStatement statement) {
             assertStatementAuthorized(statement);
-            statement.getCode().visit(this);
+            statement.getCode().accept(this);
         }
 
         public void visitMethodCallExpression(final MethodCallExpression call) {
@@ -922,10 +922,10 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
                 throw new SecurityException("Method calls not allowed on [" + typeName + "]");
             }
-            receiver.visit(this);
+            receiver.accept(this);
             final Expression method = call.getMethod();
             checkConstantTypeIfNotMethodNameOrProperty(method);
-            call.getArguments().visit(this);
+            call.getArguments().accept(this);
         }
 
         public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
@@ -936,19 +936,19 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
                 throw new SecurityException("Method calls not allowed on [" + typeName + "]");
             }
-            call.getArguments().visit(this);
+            call.getArguments().accept(this);
         }
 
         public void visitConstructorCallExpression(final ConstructorCallExpression call) {
             assertExpressionAuthorized(call);
-            call.getArguments().visit(this);
+            call.getArguments().accept(this);
         }
 
         public void visitTernaryExpression(final TernaryExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getBooleanExpression().visit(this);
-            expression.getTrueExpression().visit(this);
-            expression.getFalseExpression().visit(this);
+            expression.getBooleanExpression().accept(this);
+            expression.getTrueExpression().accept(this);
+            expression.getFalseExpression().accept(this);
         }
 
         public void visitShortTernaryExpression(final ElvisOperatorExpression expression) {
@@ -959,31 +959,31 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         public void visitBinaryExpression(final BinaryExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
-            expression.getLeftExpression().visit(this);
-            expression.getRightExpression().visit(this);
+            expression.getLeftExpression().accept(this);
+            expression.getRightExpression().accept(this);
         }
 
         public void visitPrefixExpression(final PrefixExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitPostfixExpression(final PostfixExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitBooleanExpression(final BooleanExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitClosureExpression(final ClosureExpression expression) {
             assertExpressionAuthorized(expression);
             if (!isClosuresAllowed) throw new SecurityException("Closures are not allowed");
-            expression.getCode().visit(this);
+            expression.getCode().accept(this);
         }
 
         public void visitTupleExpression(final TupleExpression expression) {
@@ -998,8 +998,8 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitMapEntryExpression(final MapEntryExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getKeyExpression().visit(this);
-            expression.getValueExpression().visit(this);
+            expression.getKeyExpression().accept(this);
+            expression.getValueExpression().accept(this);
         }
 
         public void visitListExpression(final ListExpression expression) {
@@ -1009,8 +1009,8 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitRangeExpression(final RangeExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getFrom().visit(this);
-            expression.getTo().visit(this);
+            expression.getFrom().accept(this);
+            expression.getTo().accept(this);
         }
 
         public void visitPropertyExpression(final PropertyExpression expression) {
@@ -1022,7 +1022,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
                 throw new SecurityException("Property access not allowed on [" + typeName + "]");
             }
-            receiver.visit(this);
+            receiver.accept(this);
             final Expression property = expression.getProperty();
             checkConstantTypeIfNotMethodNameOrProperty(property);
         }
@@ -1030,10 +1030,10 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         private void checkConstantTypeIfNotMethodNameOrProperty(final Expression expr) {
             if (expr instanceof ConstantExpression) {
                 if (!"java.lang.String".equals(expr.getType().getName())) {
-                    expr.visit(this);
+                    expr.accept(this);
                 }
             } else {
-                expr.visit(this);
+                expr.accept(this);
             }
         }
 
@@ -1046,7 +1046,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             } else if (receiversBlackList != null && receiversBlackList.contains(typeName)) {
                 throw new SecurityException("Attribute access not allowed on [" + typeName + "]");
             }
-            receiver.visit(this);
+            receiver.accept(this);
             final Expression property = expression.getProperty();
             checkConstantTypeIfNotMethodNameOrProperty(property);
         }
@@ -1057,8 +1057,8 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitMethodPointerExpression(final MethodPointerExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
-            expression.getMethodName().visit(this);
+            expression.getExpression().accept(this);
+            expression.getMethodName().accept(this);
         }
 
         public void visitConstantExpression(final ConstantExpression expression) {
@@ -1106,37 +1106,37 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
         public void visitSpreadExpression(final SpreadExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitSpreadMapExpression(final SpreadMapExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitNotExpression(final NotExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitCastExpression(final CastExpression expression) {
             assertExpressionAuthorized(expression);
-            expression.getExpression().visit(this);
+            expression.getExpression().accept(this);
         }
 
         public void visitArgumentlistExpression(final ArgumentListExpression expression) {

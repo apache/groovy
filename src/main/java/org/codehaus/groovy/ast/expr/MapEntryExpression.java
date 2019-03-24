@@ -33,7 +33,7 @@ public class MapEntryExpression extends Expression {
         this.valueExpression = valueExpression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitMapEntryExpression(this);
     }
 

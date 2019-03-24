@@ -436,7 +436,7 @@ public class DataSet extends Sql {
                 if (method != null) {
                     Statement statement = method.getCode();
                     if (statement != null) {
-                        statement.visit(visitor);
+                        statement.accept(visitor);
                     }
                 }
             }

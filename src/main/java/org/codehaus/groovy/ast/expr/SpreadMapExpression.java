@@ -39,7 +39,7 @@ public class SpreadMapExpression extends Expression {
         return expression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitSpreadMapExpression(this);
     }
 

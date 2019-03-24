@@ -44,7 +44,7 @@ public class AssertStatement extends Statement {
         this.messageExpression = messageExpression;
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitAssertStatement(this);
     }
 

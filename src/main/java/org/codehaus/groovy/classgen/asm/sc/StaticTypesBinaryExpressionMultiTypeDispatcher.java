@@ -103,7 +103,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     ArgumentListExpression.EMPTY_ARGUMENTS
             );
             call.setMethodTarget(mn);
-            call.visit(controller.getAcg());
+            call.accept(controller.getAcg());
             return;
         }
 
@@ -189,9 +189,9 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 Token.newSymbol("=", spreadExpression.getLineNumber(), spreadExpression.getColumnNumber()),
                 cce
         );
-        declr.visit(controller.getAcg());
+        declr.accept(controller.getAcg());
         // if (receiver != null)
-        receiver.visit(controller.getAcg());
+        receiver.accept(controller.getAcg());
         Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
         mv.visitJumpInsn(IFNULL, ifnull);
         operandStack.remove(1); // receiver consumed by if()
@@ -222,13 +222,13 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 receiver,
                 new ExpressionStatement(add)
         );
-        stmt.visit(controller.getAcg());
+        stmt.accept(controller.getAcg());
         // else { empty list }
         mv.visitLabel(ifnull);
 
         // end of if/else
         // return result list
-        result.visit(controller.getAcg());
+        result.accept(controller.getAcg());
 
     }
 
@@ -260,9 +260,9 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 OperandStack operandStack = controller.getOperandStack();
                 MethodVisitor mv = controller.getMethodVisitor();
                 if (!fn.isStatic()) {
-                    receiver.visit(controller.getAcg());
+                    receiver.accept(controller.getAcg());
                 }
-                arguments.visit(controller.getAcg());
+                arguments.accept(controller.getAcg());
                 operandStack.doGroovyCast(fn.getOriginType());
                 mv.visitFieldInsn(fn.isStatic() ? PUTSTATIC : PUTFIELD,
                         BytecodeHelper.getClassInternalName(fn.getOwner()),
@@ -307,7 +307,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                         true, // to be replaced with a proper test whether a return value should be used or not
                         message
                 );
-                call.visit(controller.getAcg());
+                call.accept(controller.getAcg());
                 return true;
             }
             if (isThisExpression && !controller.isInClosure()) {
@@ -360,7 +360,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                         mce.setSafe(safe);
                         mce.setSpreadSafe(spreadSafe);
                     mce.setImplicitThis(implicitThis);
-                    mce.visit(controller.getAcg());
+                    mce.accept(controller.getAcg());
                     return true;
                 }
             }
@@ -407,11 +407,11 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             visitor.visitMethodCallExpression(mce);
             OperandStack operandStack = controller.getOperandStack();
             int height = operandStack.getStackLength();
-            mce.visit(controller.getAcg());
+            mce.accept(controller.getAcg());
             operandStack.pop();
             operandStack.remove(operandStack.getStackLength()-height);
             // return value of assignment
-            rhsValueLoader.visit(controller.getAcg());
+            rhsValueLoader.accept(controller.getAcg());
         }
     }
 

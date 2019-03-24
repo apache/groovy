@@ -51,16 +51,16 @@ public class TemporaryVariableExpression extends Expression {
     }
 
     @Override
-    public void visit(final GroovyCodeVisitor visitor) {
+    public void accept(final GroovyCodeVisitor visitor) {
         if (visitor instanceof AsmClassGenerator) {
             if (variable==null) {
                 AsmClassGenerator acg = (AsmClassGenerator) visitor;
                 WriterController controller = acg.getController();
                 variable = new ExpressionAsVariableSlot(controller, expression);
             }
-            variable.visit(visitor);
+            variable.accept(visitor);
         } else {
-            expression.visit(visitor);
+            expression.accept(visitor);
         }
     }
 

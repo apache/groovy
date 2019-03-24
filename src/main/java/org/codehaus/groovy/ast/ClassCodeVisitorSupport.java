@@ -57,14 +57,14 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     
     protected void visitObjectInitializerStatements(ClassNode node) {
         for (Statement element : node.getObjectInitializerStatements()) {
-            element.visit(this);
+            element.accept(this);
         }
     }
 
     public void visitPackage(PackageNode node) {
         if (node != null) {
             visitAnnotations(node);
-            node.visit(this);
+            node.accept(this);
         }
     }
 
@@ -72,19 +72,19 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         if (node != null) {
             for (ImportNode importNode : node.getImports()) {
                 visitAnnotations(importNode);
-                importNode.visit(this);
+                importNode.accept(this);
             }
             for (ImportNode importStarNode : node.getStarImports()) {
                 visitAnnotations(importStarNode);
-                importStarNode.visit(this);
+                importStarNode.accept(this);
             }
             for (ImportNode importStaticNode : node.getStaticImports().values()) {
                 visitAnnotations(importStaticNode);
-                importStaticNode.visit(this);
+                importStaticNode.accept(this);
             }
             for (ImportNode importStaticStarNode : node.getStaticStarImports().values()) {
                 visitAnnotations(importStaticStarNode);
-                importStaticStarNode.visit(this);
+                importStaticStarNode.accept(this);
             }
         }
     }
@@ -96,7 +96,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
             // skip built-in properties
             if (an.isBuiltIn()) continue;
             for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
-                member.getValue().visit(this);
+                member.getValue().accept(this);
             }
         }
     }
@@ -107,7 +107,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
 
     protected void visitClassCodeContainer(Statement code) {
-        if (code != null) code.visit(this);
+        if (code != null) code.accept(this);
     }
 
     @Override
@@ -135,7 +135,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     public void visitField(FieldNode node) {
         visitAnnotations(node);
         Expression init = node.getInitialExpression();
-        if (init != null) init.visit(this);
+        if (init != null) init.accept(this);
     }
 
     public void visitProperty(PropertyNode node) {
@@ -147,7 +147,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         visitClassCodeContainer(statement);
 
         Expression init = node.getInitialExpression();
-        if (init != null) init.visit(this);
+        if (init != null) init.accept(this);
     }
 
     public void addError(String msg, ASTNode expr) {

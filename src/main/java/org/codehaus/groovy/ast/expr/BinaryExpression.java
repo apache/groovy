@@ -54,7 +54,7 @@ public class BinaryExpression extends Expression {
         return super.toString() + "[" + leftExpression + operation + rightExpression + "]";
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitBinaryExpression(this);
     }
 

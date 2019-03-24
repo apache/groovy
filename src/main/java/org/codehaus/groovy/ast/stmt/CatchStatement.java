@@ -37,7 +37,7 @@ public class CatchStatement extends Statement {
         this.code = code;
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitCatchStatement(this);
     }
     

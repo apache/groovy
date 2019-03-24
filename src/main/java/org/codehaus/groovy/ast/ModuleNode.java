@@ -169,7 +169,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         methods.add(node);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
     }
 
     public String getPackageName() {

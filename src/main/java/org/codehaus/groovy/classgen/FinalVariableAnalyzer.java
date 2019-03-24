@@ -162,9 +162,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
         // visit RHS first for expressions like a = b = 0
         inAssignmentRHS = assignment;
-        rightExpression.visit(this);
+        rightExpression.accept(this);
         inAssignmentRHS = false;
-        leftExpression.visit(this);
+        leftExpression.accept(this);
         if (assignment) {
             recordAssignments(expression, isDeclaration, leftExpression, rightExpression);
         }
@@ -272,9 +272,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     @Override
     public void visitIfElse(final IfStatement ifElse) {
         visitStatement(ifElse);
-        ifElse.getBooleanExpression().visit(this);
+        ifElse.getBooleanExpression().accept(this);
         Map<Variable, VariableState> ifState = pushState();
-        ifElse.getIfBlock().visit(this);
+        ifElse.getIfBlock().accept(this);
         popState();
         Statement elseBlock = ifElse.getElseBlock();
         Map<Variable, VariableState> elseState = pushState();
@@ -306,7 +306,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             // must call our visitEmptyStatement explicitly
             visitEmptyStatement((EmptyStatement) block);
         } else {
-            block.visit(this);
+            block.accept(this);
         }
     }
 
@@ -320,7 +320,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         Map<Variable, VariableState> beforeTryState = new HashMap<Variable, VariableState>(getState());
         pushState();
         Statement tryStatement = statement.getTryStatement();
-        tryStatement.visit(this);
+        tryStatement.accept(this);
         Map<Variable, VariableState> afterTryState = new HashMap<Variable, VariableState>(getState());
         Statement finallyStatement = statement.getFinallyStatement();
         List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
@@ -373,7 +373,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 //        getState().clear();
         getState().putAll(initialVarState);
         Statement code = catchStatement.getCode();
-        catchStatement.visit(this);
+        catchStatement.accept(this);
         visitPossiblyEmptyStatement(finallyStatement);
         if (code == null || !returningBlock(code)) {
             afterTryCatchStates.add(new HashMap<Variable, VariableState>(getState()));

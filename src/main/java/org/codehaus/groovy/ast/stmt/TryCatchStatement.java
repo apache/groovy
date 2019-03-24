@@ -41,7 +41,7 @@ public class TryCatchStatement extends Statement {
         this.finallyStatement = finallyStatement;
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitTryCatchFinally(this);
     }
 

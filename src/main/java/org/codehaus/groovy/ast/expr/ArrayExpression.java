@@ -82,7 +82,7 @@ public class ArrayExpression extends Expression {
         return expressions;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitArrayExpression(this);
     }
 

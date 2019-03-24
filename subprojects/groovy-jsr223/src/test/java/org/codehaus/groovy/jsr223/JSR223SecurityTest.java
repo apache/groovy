@@ -165,7 +165,7 @@ class CustomPrimaryClassNodeOperation extends PrimaryClassNodeOperation {
 
     public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         for (Object statement : source.getAST().getStatementBlock().getStatements())
-            ((ExpressionStatement) statement).visit(new CustomCodeVisitorSupport());
+            ((ExpressionStatement) statement).accept(new CustomCodeVisitorSupport());
     }
 }
 

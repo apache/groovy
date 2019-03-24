@@ -37,7 +37,7 @@ public class ThrowStatement extends Statement {
         return expression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitThrowStatement(this);
     }
     public void setExpression(Expression expression) {

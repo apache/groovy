@@ -298,7 +298,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             // display the source unit AST
             ModuleNode ast = source.getAST()
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            ast.getStatementBlock().visit(visitor)
+            ast.getStatementBlock().accept(visitor)
             if (visitor.currentNode) root.add(visitor.currentNode)
             collectModuleNodeMethodData('Methods', ast.getMethods())
         }
@@ -358,7 +358,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             allProperties.add(ggrandchild)
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             if (propertyNode.field?.initialValueExpression) {
-                propertyNode.field.initialValueExpression.visit(visitor)
+                propertyNode.field.initialValueExpression.accept(visitor)
                 ggrandchild.add(visitor.currentNode)
             }
         }
@@ -372,7 +372,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             allFields.add(ggrandchild)
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             if (fieldNode.initialValueExpression) {
-                fieldNode.initialValueExpression.visit(visitor)
+                fieldNode.initialValueExpression.accept(visitor)
                 if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
             }
         }
@@ -404,7 +404,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
                 ggrandchild.add(gggrandchild)
                 if (parameter.initialExpression) {
                     TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-                    parameter.initialExpression.visit(visitor)
+                    parameter.initialExpression.accept(visitor)
                     if (visitor.currentNode) gggrandchild.add(visitor.currentNode)
                 }
             }
@@ -412,7 +412,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             // print out code of method
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             if (methodNode.code) {
-                methodNode.code.visit(visitor)
+                methodNode.code.accept(visitor)
                 if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
             }
         }
@@ -427,7 +427,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             allCtors.add(ggrandchild)
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             if (ctorNode.code) {
-                ctorNode.code.visit(visitor)
+                ctorNode.code.accept(visitor)
                 if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
             }
         }
@@ -443,7 +443,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         parent.add(allInitializers)
         for (Statement stmt : initStatements) {
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            stmt.visit(visitor)
+            stmt.accept(visitor)
             if (visitor.currentNode) {
                 allInitializers.add(visitor.currentNode)
             }
@@ -643,7 +643,7 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     void visitParameter(Parameter node) {
         addNode(node, Parameter, {
           if (node.initialExpression) {
-            node.initialExpression?.visit(this)
+            node.initialExpression?.accept(this)
           }
         })
     }
@@ -730,7 +730,7 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
                 if (it.accessedVariable instanceof Parameter) {
                     visitParameter((Parameter)it.accessedVariable)
                 } else if (it.accessedVariable instanceof DynamicVariable) {
-                    addNode(it.accessedVariable, DynamicVariable,{ it.initialExpression?.visit(this)})
+                    addNode(it.accessedVariable, DynamicVariable,{ it.initialExpression?.accept(this)})
                 }
             }
         })
@@ -788,9 +788,9 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     void visitListOfExpressions(List<? extends Expression> list) {
         list.each { Expression node ->
             if (node instanceof NamedArgumentListExpression ) {
-                addNode(node, NamedArgumentListExpression, { it.visit(this) })
+                addNode(node, NamedArgumentListExpression, { it.accept(this) })
             } else {
-                node.visit(this)
+                node.accept(this)
             }
         }
     }

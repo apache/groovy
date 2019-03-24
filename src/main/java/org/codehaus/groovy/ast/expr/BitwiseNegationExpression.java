@@ -33,7 +33,7 @@ public class BitwiseNegationExpression extends Expression {
         return expression;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitBitwiseNegationExpression(this);
     }
 

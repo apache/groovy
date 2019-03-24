@@ -82,7 +82,7 @@ public class DeclarationExpression extends BinaryExpression {
         }
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitDeclarationExpression(this);
     }
 

@@ -50,8 +50,18 @@ public class ASTNode implements NodeMetaDataHandler {
     private int lastColumnNumber = -1;
     private Map metaDataMap = null;
 
+    public void accept(GroovyCodeVisitor visitor) {
+        throw new RuntimeException("No accept() method implemented for class: " + getClass().getName());
+    }
+
+    /**
+     * An alias method for {@link org.codehaus.groovy.ast.ASTNode#accept(GroovyCodeVisitor)}
+     * Note: the method will be removed in a future version, e.g. Groovy 4 or Groovy 5
+     *
+     * @param visitor the visitor
+     */
     public void visit(GroovyCodeVisitor visitor) {
-        throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
+        this.accept(visitor);
     }
 
     public String getText() {

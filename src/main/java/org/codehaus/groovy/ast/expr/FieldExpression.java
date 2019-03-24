@@ -34,7 +34,7 @@ public class FieldExpression extends Expression {
         this.field = field;
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitFieldExpression(this);
     }
 

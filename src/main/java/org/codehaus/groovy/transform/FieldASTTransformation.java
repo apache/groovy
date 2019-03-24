@@ -282,7 +282,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     @Override
     public void visitExpressionStatement(ExpressionStatement es) {
         Expression exp = es.getExpression();
-        exp.visit(this);
+        exp.accept(this);
         super.visitExpressionStatement(es);
     }
 

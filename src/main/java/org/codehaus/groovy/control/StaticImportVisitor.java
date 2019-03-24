@@ -359,7 +359,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             }
         }
         Statement code = ce.getCode();
-        if (code != null) code.visit(this);
+        if (code != null) code.accept(this);
         inClosure = oldInClosure;
         return ce;
     }

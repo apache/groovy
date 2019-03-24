@@ -47,9 +47,9 @@ public class ListOfExpressionsExpression extends Expression {
     }
 
     @Override
-    public void visit(final GroovyCodeVisitor visitor) {
+    public void accept(final GroovyCodeVisitor visitor) {
         for (Expression expression : expressions) {
-            expression.visit(visitor);
+            expression.accept(visitor);
         }
     }
 

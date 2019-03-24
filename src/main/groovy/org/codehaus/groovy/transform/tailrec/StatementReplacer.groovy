@@ -42,7 +42,7 @@ class StatementReplacer extends CodeVisitorSupport {
     int closureLevel = 0
 
     void replaceIn(ASTNode root) {
-        root.visit(this)
+        root.accept(this)
     }
 
     void visitClosureExpression(ClosureExpression expression) {

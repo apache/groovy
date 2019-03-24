@@ -814,7 +814,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             final Expression leftExpression = expression.getLeftExpression();
             final Expression rightExpression = expression.getRightExpression();
             int op = expression.getOperation().getType();
-            leftExpression.visit(this);
+            leftExpression.accept(this);
             SetterInfo setterInfo = removeSetterInfo(leftExpression);
             ClassNode lType = null;
             if (setterInfo != null) {
@@ -826,7 +826,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 lType = getType(leftExpression);
                 inferParameterAndReturnTypesOfClosureOnRHS(lType, rightExpression, op);
 
-                rightExpression.visit(this);
+                rightExpression.accept(this);
             }
 
             if (null == lType) lType = getType(leftExpression);
@@ -850,7 +850,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (op == ELVIS_EQUAL) {
                 ElvisOperatorExpression elvisOperatorExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
                 elvisOperatorExpression.setSourcePosition(expression);
-                elvisOperatorExpression.visit(this);
+                elvisOperatorExpression.accept(this);
                 resultType = getType(elvisOperatorExpression);
                 storeType(leftExpression, resultType);
             }
@@ -891,7 +891,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // left hand side of an assignment : map['foo'] = ...
                 Expression enclosingBE_rightExpr = enclosingBinaryExpression.getRightExpression();
                 if (!(enclosingBE_rightExpr instanceof ClosureExpression)) {
-                    enclosingBE_rightExpr.visit(this);
+                    enclosingBE_rightExpr.accept(this);
                 }
                 ClassNode[] arguments = {rType, getType(enclosingBE_rightExpr)};
                 List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
@@ -1708,7 +1708,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (!pexp.isSpreadSafe()) return null;
         MethodCallExpression mce = callX(varX("_", testClass), "iterator", ArgumentListExpression.EMPTY_ARGUMENTS);
         mce.setImplicitThis(false);
-        mce.visit(this);
+        mce.accept(this);
         ClassNode callType = getType(mce);
         if (!implementsInterfaceOrIsSubclassOf(callType, Iterator_TYPE)) return null;
         GenericsType[] types = callType.getGenericsTypes();
@@ -1931,7 +1931,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitForLoop(final ForStatement forLoop) {
         // collect every variable expression used in the loop body
         final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
-        forLoop.getLoopBlock().visit(new VariableExpressionTypeMemoizer(varOrigType));
+        forLoop.getLoopBlock().accept(new VariableExpressionTypeMemoizer(varOrigType));
 
         // visit body
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
@@ -1940,7 +1940,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // for (int i=0; i<...; i++) style loop
             super.visitForLoop(forLoop);
         } else {
-            collectionExpression.visit(this);
+            collectionExpression.accept(this);
             final ClassNode collectionType = getType(collectionExpression);
             ClassNode forLoopVariableType = forLoop.getVariableType();
             ClassNode componentType;
@@ -2183,7 +2183,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Token.newSymbol(EQUAL, -1, -1),
                 varX("{source}", source)
         );
-        virtualDecl.visit(this);
+        virtualDecl.accept(this);
         ClassNode newlyInferred = (ClassNode) virtualDecl.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
 
         return !missesGenericsTypes(newlyInferred) ? newlyInferred : null;
@@ -2374,7 +2374,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // collect every variable expression used in the loop body
         final Map<VariableExpression, ClassNode> varOrigType = new HashMap<VariableExpression, ClassNode>();
         Statement code = expression.getCode();
-        code.visit(new VariableExpressionTypeMemoizer(varOrigType));
+        code.accept(new VariableExpressionTypeMemoizer(varOrigType));
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
 
         // first, collect closure shared variables and reinitialize types
@@ -2512,7 +2512,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         for (Parameter parameter : node.getParameters()) {
             if (parameter.getInitialExpression() != null) {
-                parameter.getInitialExpression().visit(this);
+                parameter.getInitialExpression().accept(this);
             }
         }
         super.visitConstructor(node);
@@ -2542,7 +2542,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             super.visitMethod(node);
             for (Parameter parameter : node.getParameters()) {
                 if (parameter.getInitialExpression() != null) {
-                    parameter.getInitialExpression().visit(this);
+                    parameter.getInitialExpression().accept(this);
                 }
             }
 /*
@@ -2718,7 +2718,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         inferClosureParameterTypes(receiver, newArgs, (ClosureExpression) expression, param, selectedMethod);
                     }
                 }
-                expression.visit(this);
+                expression.accept(this);
                 if (expression.getNodeMetaData(StaticTypesMarker.DELEGATION_METADATA) != null) {
                     expression.removeNodeMetaData(StaticTypesMarker.DELEGATION_METADATA);
                 }
@@ -3323,8 +3323,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         typeCheckingContext.pushEnclosingMethodCall(call);
         final Expression objectExpression = call.getObjectExpression();
 
-        objectExpression.visit(this);
-        call.getMethod().visit(this);
+        objectExpression.accept(this);
+        call.getMethod().accept(this);
 
         // if the call expression is a spread operator call, then we must make sure that
         // the call is made on a collection type
@@ -3840,8 +3840,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // create a new temporary element in the if-then-else type info
             typeCheckingContext.pushTemporaryTypeInfo();
             visitStatement(ifElse);
-            ifElse.getBooleanExpression().visit(this);
-            ifElse.getIfBlock().visit(this);
+            ifElse.getBooleanExpression().accept(this);
+            ifElse.getIfBlock().accept(this);
 
             // pop if-then-else temporary type info
             typeCheckingContext.popTemporaryTypeInfo();
@@ -3855,7 +3855,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // must call our visitEmptyStatement explicitly
                 visitEmptyStatement((EmptyStatement) elseBlock);
             } else {
-                elseBlock.visit(this);
+                elseBlock.accept(this);
             }
         } finally {
             popAssignmentTracking(oldTracker);
@@ -4097,13 +4097,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         // create a new temporary element in the if-then-else type info
         typeCheckingContext.pushTemporaryTypeInfo();
-        expression.getBooleanExpression().visit(this);
+        expression.getBooleanExpression().accept(this);
         Expression trueExpression = expression.getTrueExpression();
         Expression falseExpression = expression.getFalseExpression();
-        trueExpression.visit(this);
+        trueExpression.accept(this);
         // pop if-then-else temporary type info
         typeCheckingContext.popTemporaryTypeInfo();
-        falseExpression.visit(this);
+        falseExpression.accept(this);
         ClassNode resultType;
         ClassNode typeOfFalse = getType(falseExpression);
         ClassNode typeOfTrue = getType(trueExpression);

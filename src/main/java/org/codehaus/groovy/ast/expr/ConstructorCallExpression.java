@@ -39,7 +39,7 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
         }
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitConstructorCallExpression(this);
     }
 

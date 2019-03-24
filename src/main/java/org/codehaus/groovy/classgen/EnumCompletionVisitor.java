@@ -157,7 +157,7 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
                 if (expression.getName().equals(name)) found[0] = Boolean.TRUE;
             }
         };
-        code.visit(cv);
+        code.accept(cv);
         if (found[0] != null) return getUniqueVariableName("_" + name, code);
         return name;
     }

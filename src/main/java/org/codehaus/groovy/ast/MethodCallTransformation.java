@@ -32,21 +32,21 @@ public abstract class MethodCallTransformation implements ASTTransformation {
         if (nodes != null) {
             for (ASTNode it : nodes) {
                 if (!(it instanceof AnnotationNode) && !(it instanceof ClassNode)) {
-                    it.visit(transformer);
+                    it.accept(transformer);
                 }
             }
         }
         if (sourceUnit.getAST() != null) {
-            sourceUnit.getAST().visit(transformer);
+            sourceUnit.getAST().accept(transformer);
             if (sourceUnit.getAST().getStatementBlock() != null) {
-                sourceUnit.getAST().getStatementBlock().visit(transformer);
+                sourceUnit.getAST().getStatementBlock().accept(transformer);
             }
             if (sourceUnit.getAST().getClasses() != null) {
                 for (ClassNode classNode : sourceUnit.getAST().getClasses()) {
                     if (classNode.getMethods() != null) {
                         for (MethodNode node : classNode.getMethods()) {
                             if (node != null && node.getCode() != null) {
-                                node.getCode().visit(transformer);
+                                node.getCode().accept(transformer);
                             }
                         }
                     }
@@ -55,7 +55,7 @@ public abstract class MethodCallTransformation implements ASTTransformation {
                         if (classNode.getDeclaredConstructors() != null) {
                             for (MethodNode node : classNode.getDeclaredConstructors()) {
                                 if (node != null && node.getCode() != null) {
-                                    node.getCode().visit(transformer);
+                                    node.getCode().accept(transformer);
                                 }
                             }
                         }
@@ -67,7 +67,7 @@ public abstract class MethodCallTransformation implements ASTTransformation {
                     if (classNode.getFields() != null) {
                         for (FieldNode node : classNode.getFields()) {
                             if (node.getInitialValueExpression() != null) {
-                                node.getInitialValueExpression().visit(transformer);
+                                node.getInitialValueExpression().accept(transformer);
                             }
                         }
                     }
@@ -76,7 +76,7 @@ public abstract class MethodCallTransformation implements ASTTransformation {
                         if (classNode.getObjectInitializerStatements() != null) {
                             for (Statement node : classNode.getObjectInitializerStatements()) {
                                 if (node != null) {
-                                    node.visit(transformer);
+                                    node.accept(transformer);
                                 }
                             }
                         }
@@ -93,12 +93,12 @@ public abstract class MethodCallTransformation implements ASTTransformation {
                         if (node.getParameters() != null) {
                             for (Parameter parameter : node.getParameters()) {
                                 if (parameter != null && parameter.getInitialExpression() != null) {
-                                    parameter.getInitialExpression().visit(transformer);
+                                    parameter.getInitialExpression().accept(transformer);
                                 }
                             }
                         }
                         if (node.getCode() != null) {
-                            node.getCode().visit(transformer);
+                            node.getCode().accept(transformer);
                         }
                     }
                 }

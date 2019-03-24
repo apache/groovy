@@ -578,7 +578,7 @@ public class OperandStack {
                 return;
             }
         }
-        new CastExpression(ClassHelper.STRING_TYPE, name).visit(controller.getAcg());
+        new CastExpression(ClassHelper.STRING_TYPE, name).accept(controller.getAcg());
     }
 
     public void loadOrStoreVariable(BytecodeVariable variable, boolean useReferenceDirectly) {

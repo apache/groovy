@@ -43,7 +43,7 @@ public class ForStatement extends Statement implements LoopingStatement {
         this.loopBlock = loopBlock;
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitForLoop(this);
     }
     

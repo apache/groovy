@@ -49,7 +49,7 @@ public class UnaryExpressionHelper {
 
     public void writeUnaryPlus(UnaryPlusExpression expression) {
         Expression subExpression = expression.getExpression();
-        subExpression.visit(controller.getAcg());
+        subExpression.accept(controller.getAcg());
         controller.getOperandStack().box();
         unaryPlus.call(controller.getMethodVisitor());
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
@@ -58,7 +58,7 @@ public class UnaryExpressionHelper {
 
     public void writeUnaryMinus(UnaryMinusExpression expression) {
         Expression subExpression = expression.getExpression();
-        subExpression.visit(controller.getAcg());
+        subExpression.accept(controller.getAcg());
         controller.getOperandStack().box();
         unaryMinus.call(controller.getMethodVisitor());
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
@@ -67,7 +67,7 @@ public class UnaryExpressionHelper {
 
     public void writeBitwiseNegate(BitwiseNegationExpression expression) {
         Expression subExpression = expression.getExpression();
-        subExpression.visit(controller.getAcg());
+        subExpression.accept(controller.getAcg());
         controller.getOperandStack().box();
         bitwiseNegate.call(controller.getMethodVisitor());
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
@@ -77,7 +77,7 @@ public class UnaryExpressionHelper {
     public void writeNotExpression(NotExpression expression) {
         Expression subExpression = expression.getExpression();
         int mark = controller.getOperandStack().getStackLength();
-        subExpression.visit(controller.getAcg());
+        subExpression.accept(controller.getAcg());
         controller.getOperandStack().castToBool(mark, true);
         BytecodeHelper.negateBoolean(controller.getMethodVisitor());
         controller.getAssertionWriter().record(expression);

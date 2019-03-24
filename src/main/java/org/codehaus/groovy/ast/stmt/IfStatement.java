@@ -37,7 +37,7 @@ public class IfStatement extends Statement {
         this.elseBlock = elseBlock;
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitIfElse(this);
     }
     

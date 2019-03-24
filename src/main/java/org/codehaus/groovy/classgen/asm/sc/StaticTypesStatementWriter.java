@@ -126,7 +126,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         AsmClassGenerator acg = controller.getAcg();
 
         // load array on stack
-        collectionExpression.visit(acg);
+        collectionExpression.accept(acg);
         mv.visitInsn(DUP);
         int array = compileStack.defineTemporaryVariable("$arr", collectionType, true);
         mv.visitJumpInsn(IFNULL, breakLabel);
@@ -155,7 +155,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         mv.visitIincInsn(loopIdx, 1);
 
         // loop body
-        loop.getLoopBlock().visit(acg);
+        loop.getLoopBlock().accept(acg);
 
         mv.visitJumpInsn(GOTO, continueLabel);
 
@@ -223,9 +223,9 @@ public class StaticTypesStatementWriter extends StatementWriter {
             MethodCallExpression iterator = new MethodCallExpression(collectionExpression, "iterator", new ArgumentListExpression());
             iterator.setMethodTarget(collectionType.getMethod("iterator", Parameter.EMPTY_ARRAY));
             iterator.setImplicitThis(false);
-            iterator.visit(controller.getAcg());
+            iterator.accept(controller.getAcg());
         } else {
-            collectionExpression.visit(controller.getAcg());
+            collectionExpression.accept(controller.getAcg());
             mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "iterator", "(Ljava/lang/Object;)Ljava/util/Iterator;", false);
             operandStack.replace(ClassHelper.Iterator_TYPE);
         }
@@ -249,7 +249,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         operandStack.storeVar(variable);
 
         // Generate the loop body
-        loop.getLoopBlock().visit(controller.getAcg());
+        loop.getLoopBlock().accept(controller.getAcg());
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
@@ -267,7 +267,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         // Declare the loop counter.
         BytecodeVariable variable = compileStack.defineVariable(loopVariable, false);
 
-        collectionExpression.visit(controller.getAcg());
+        collectionExpression.accept(controller.getAcg());
 
         // Then get the iterator and generate the loop control
 
@@ -288,7 +288,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         operandStack.storeVar(variable);
 
         // Generate the loop body
-        loop.getLoopBlock().visit(controller.getAcg());
+        loop.getLoopBlock().accept(controller.getAcg());
 
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);

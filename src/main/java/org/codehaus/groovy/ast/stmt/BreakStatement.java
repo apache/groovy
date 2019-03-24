@@ -39,7 +39,7 @@ public class BreakStatement extends Statement {
         return label;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitBreakStatement(this);
     }
 }

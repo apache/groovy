@@ -1123,7 +1123,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void visitContents(GroovyClassVisitor visitor) {
-        // now let's visit the contents of the class
+        // now let's accept the contents of the class
         for (PropertyNode pn : getProperties()) {
             visitor.visitProperty(pn);
         }

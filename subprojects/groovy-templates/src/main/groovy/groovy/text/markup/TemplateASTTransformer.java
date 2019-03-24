@@ -76,7 +76,7 @@ class TemplateASTTransformer extends CompilationCustomizer {
         MethodNode runMethod = classNode.getDeclaredMethod("run", Parameter.EMPTY_ARRAY);
         Statement code = runMethod.getCode();
         MarkupBuilderCodeTransformer transformer = new MarkupBuilderCodeTransformer(source, classNode, config.isAutoEscape());
-        code.visit(transformer);
+        code.accept(transformer);
     }
 
     private void createConstructor(final ClassNode classNode) {

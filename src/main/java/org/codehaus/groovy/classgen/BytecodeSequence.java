@@ -48,11 +48,11 @@ public class BytecodeSequence extends Statement {
     }
 
     /**
-     * Delegates to the visit method used for this class.
+     * Delegates to the accept method used for this class.
      * If the visitor is a ClassGenerator, then 
      * {@link ClassGenerator#visitBytecodeSequence(BytecodeSequence)}
      * is called with this instance. If the visitor is no 
-     * ClassGenerator, then this method will call visit on
+     * ClassGenerator, then this method will call accept on
      * each ASTNode element sorted by this class. If one
      * element is a BytecodeInstruction, then it will be skipped
      * as it is no ASTNode. 
@@ -60,7 +60,7 @@ public class BytecodeSequence extends Statement {
      * @param visitor the visitor
      * @see ClassGenerator
      */
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         if (visitor instanceof ClassGenerator) {
             ClassGenerator gen = (ClassGenerator) visitor;
             gen.visitBytecodeSequence(this);
@@ -69,7 +69,7 @@ public class BytecodeSequence extends Statement {
         for (Iterator iterator = instructions.iterator(); iterator.hasNext();) {
             Object part = (Object) iterator.next();
             if (part instanceof ASTNode) {
-                ((ASTNode)part).visit(visitor);
+                ((ASTNode)part).accept(visitor);
             }
         }
     }

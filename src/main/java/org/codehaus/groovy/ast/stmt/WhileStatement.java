@@ -35,7 +35,7 @@ public class WhileStatement extends Statement implements LoopingStatement {
         this.loopBlock = loopBlock;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitWhileLoop(this);
     }
 

@@ -642,7 +642,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         @Override
         public void visitDeclarationExpression(DeclarationExpression expression) {
             Expression right = expression.getRightExpression();
-            right.visit(this);
+            right.accept(this);
 
             ClassNode leftType = typeChooser.resolveType(expression.getLeftExpression(), node);
             Expression rightExpression = expression.getRightExpression();
@@ -805,7 +805,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             boolean optAll = true;
             for (Statement statement : block.getStatements()) {
                 opt.push();
-                statement.visit(this);
+                statement.accept(this);
                 optAll = optAll && opt.canOptimize();
                 opt.pop(true);
             }

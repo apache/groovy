@@ -55,16 +55,16 @@ public class CompareIdentityExpression extends BinaryExpression implements Opcod
     }
 
     @Override
-    public void visit(final GroovyCodeVisitor visitor) {
+    public void accept(final GroovyCodeVisitor visitor) {
         if (visitor instanceof AsmClassGenerator) {
             AsmClassGenerator acg = (AsmClassGenerator) visitor;
             WriterController controller = acg.getController();
             controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
             controller.getTypeChooser().resolveType(rightExpression, controller.getClassNode());
             MethodVisitor mv = controller.getMethodVisitor();
-            leftExpression.visit(acg);
+            leftExpression.accept(acg);
             controller.getOperandStack().box();
-            rightExpression.visit(acg);
+            rightExpression.accept(acg);
             controller.getOperandStack().box();
             Label l1 = new Label();
             mv.visitJumpInsn(IF_ACMPNE, l1);
@@ -76,7 +76,7 @@ public class CompareIdentityExpression extends BinaryExpression implements Opcod
             mv.visitLabel(l2);
             controller.getOperandStack().replace(ClassHelper.boolean_TYPE, 2);
         } else {
-            super.visit(visitor);
+            super.accept(visitor);
         }
     }
 }

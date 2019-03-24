@@ -51,7 +51,7 @@ public class PropertyExpression extends Expression {
         this.safe = safe;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitPropertyExpression(this);
     }
 

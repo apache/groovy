@@ -33,7 +33,7 @@ public class AttributeExpression extends PropertyExpression {
         super(objectExpression, property, safe);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitAttributeExpression(this);
     }
 

@@ -55,7 +55,7 @@ class HasRecursiveCalls extends CodeVisitorSupport {
     synchronized boolean test(MethodNode method) {
         hasRecursiveCalls = false
         this.method = method
-        this.method.code.visit(this)
+        this.method.code.accept(this)
         hasRecursiveCalls
     }
 }

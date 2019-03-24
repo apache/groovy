@@ -267,7 +267,7 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
                 call.methodTarget = METHOD_MISSING
                 call
             } else if (exp instanceof ClosureExpression) {
-                exp.code.visit(this)
+                exp.code.accept(this)
                 super.transform(exp)
             } else {
                 super.transform(exp)

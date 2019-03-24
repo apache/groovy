@@ -81,7 +81,7 @@ public class CastExpression extends Expression {
         return super.toString() +"[(" + getType().getName() + ") " + expression + "]";
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitCastExpression(this);
     }
 

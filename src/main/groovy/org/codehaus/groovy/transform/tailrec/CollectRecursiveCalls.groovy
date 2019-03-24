@@ -54,7 +54,7 @@ class CollectRecursiveCalls extends CodeVisitorSupport {
 	synchronized List<Expression> collect(MethodNode method) {
 		recursiveCalls.clear()
 		this.method = method
-		this.method.code.visit(this)
+		this.method.code.accept(this)
 		recursiveCalls
 	}
 }

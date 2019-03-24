@@ -191,15 +191,15 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
 
         public static List<Statement> lookup(MethodNode node, String label) {
             LabelFinder finder = new LabelFinder(label, null)
-            node.code.visit(finder)
+            node.code.accept(finder)
 
             finder.targets
         }
 
         public static List<Statement> lookup(ClassNode node, String label) {
             LabelFinder finder = new LabelFinder(label, null)
-            node.methods*.code*.visit(finder)
-            node.declaredConstructors*.code*.visit(finder)
+            node.methods*.code*.accept(finder)
+            node.declaredConstructors*.code*.accept(finder)
 
             finder.targets
         }

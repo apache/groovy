@@ -76,7 +76,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
         return expressions;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitTupleExpression(this);
     }
 

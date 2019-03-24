@@ -66,7 +66,7 @@ public class VariableExpression extends Expression implements Variable {
         setModifiers(variable.getModifiers());
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitVariableExpression(this);
     }
 

@@ -80,28 +80,28 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     public void visitBlockStatement(BlockStatement block) {
         for (Statement statement : block.getStatements()) {
-            statement.visit(this);
+            statement.accept(this);
         }
     }
 
     public void visitForLoop(ForStatement forLoop) {
-        forLoop.getCollectionExpression().visit(this);
-        forLoop.getLoopBlock().visit(this);
+        forLoop.getCollectionExpression().accept(this);
+        forLoop.getLoopBlock().accept(this);
     }
 
     public void visitWhileLoop(WhileStatement loop) {
-        loop.getBooleanExpression().visit(this);
-        loop.getLoopBlock().visit(this);
+        loop.getBooleanExpression().accept(this);
+        loop.getLoopBlock().accept(this);
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {
-        loop.getLoopBlock().visit(this);
-        loop.getBooleanExpression().visit(this);
+        loop.getLoopBlock().accept(this);
+        loop.getBooleanExpression().accept(this);
     }
 
     public void visitIfElse(IfStatement ifElse) {
-        ifElse.getBooleanExpression().visit(this);
-        ifElse.getIfBlock().visit(this);
+        ifElse.getBooleanExpression().accept(this);
+        ifElse.getIfBlock().accept(this);
 
         Statement elseBlock = ifElse.getElseBlock();
         if (elseBlock instanceof EmptyStatement) {
@@ -109,27 +109,27 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
             // must call our visitEmptyStatement explicitly
             visitEmptyStatement((EmptyStatement) elseBlock);
         } else {
-            elseBlock.visit(this);
+            elseBlock.accept(this);
         }
     }
 
     public void visitExpressionStatement(ExpressionStatement statement) {
-        statement.getExpression().visit(this);
+        statement.getExpression().accept(this);
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
-        statement.getExpression().visit(this);
+        statement.getExpression().accept(this);
     }
 
     public void visitAssertStatement(AssertStatement statement) {
-        statement.getBooleanExpression().visit(this);
-        statement.getMessageExpression().visit(this);
+        statement.getBooleanExpression().accept(this);
+        statement.getMessageExpression().accept(this);
     }
 
     public void visitTryCatchFinally(TryCatchStatement statement) {
-        statement.getTryStatement().visit(this);
+        statement.getTryStatement().accept(this);
         for (CatchStatement catchStatement : statement.getCatchStatements()) {
-            catchStatement.visit(this);
+            catchStatement.accept(this);
         }
         Statement finallyStatement = statement.getFinallyStatement();
         if (finallyStatement instanceof EmptyStatement) {
@@ -137,7 +137,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
             // must call our visitEmptyStatement explicitly
             visitEmptyStatement((EmptyStatement) finallyStatement);
         } else {
-            finallyStatement.visit(this);
+            finallyStatement.accept(this);
         }
     }
 
@@ -146,16 +146,16 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     public void visitSwitch(SwitchStatement statement) {
-        statement.getExpression().visit(this);
+        statement.getExpression().accept(this);
         for (CaseStatement caseStatement : statement.getCaseStatements()) {
-            caseStatement.visit(this);
+            caseStatement.accept(this);
         }
-        statement.getDefaultStatement().visit(this);
+        statement.getDefaultStatement().accept(this);
     }
 
     public void visitCaseStatement(CaseStatement statement) {
-        statement.getExpression().visit(this);
-        statement.getCode().visit(this);
+        statement.getExpression().accept(this);
+        statement.getCode().accept(this);
     }
 
     public void visitBreakStatement(BreakStatement statement) {
@@ -165,37 +165,37 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     public void visitSynchronizedStatement(SynchronizedStatement statement) {
-        statement.getExpression().visit(this);
-        statement.getCode().visit(this);
+        statement.getExpression().accept(this);
+        statement.getCode().accept(this);
     }
 
     public void visitThrowStatement(ThrowStatement statement) {
-        statement.getExpression().visit(this);
+        statement.getExpression().accept(this);
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
-        call.getObjectExpression().visit(this);
-        call.getMethod().visit(this);
-        call.getArguments().visit(this);
+        call.getObjectExpression().accept(this);
+        call.getMethod().accept(this);
+        call.getArguments().accept(this);
     }
 
     public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
-        call.getArguments().visit(this);
+        call.getArguments().accept(this);
     }
 
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
-        call.getArguments().visit(this);
+        call.getArguments().accept(this);
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {
-        expression.getLeftExpression().visit(this);
-        expression.getRightExpression().visit(this);
+        expression.getLeftExpression().accept(this);
+        expression.getRightExpression().accept(this);
     }
 
     public void visitTernaryExpression(TernaryExpression expression) {
-        expression.getBooleanExpression().visit(this);
-        expression.getTrueExpression().visit(this);
-        expression.getFalseExpression().visit(this);
+        expression.getBooleanExpression().accept(this);
+        expression.getTrueExpression().accept(this);
+        expression.getFalseExpression().accept(this);
     }
 
     public void visitShortTernaryExpression(ElvisOperatorExpression expression) {
@@ -203,23 +203,23 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     public void visitPostfixExpression(PostfixExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitPrefixExpression(PrefixExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitBooleanExpression(BooleanExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitNotExpression(NotExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        expression.getCode().visit(this);
+        expression.getCode().accept(this);
     }
 
     public void visitTupleExpression(TupleExpression expression) {
@@ -241,43 +241,43 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     public void visitMapEntryExpression(MapEntryExpression expression) {
-        expression.getKeyExpression().visit(this);
-        expression.getValueExpression().visit(this);
+        expression.getKeyExpression().accept(this);
+        expression.getValueExpression().accept(this);
 
     }
 
     public void visitRangeExpression(RangeExpression expression) {
-        expression.getFrom().visit(this);
-        expression.getTo().visit(this);
+        expression.getFrom().accept(this);
+        expression.getTo().accept(this);
     }
 
     public void visitSpreadExpression(SpreadExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitSpreadMapExpression(SpreadMapExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitMethodPointerExpression(MethodPointerExpression expression) {
-        expression.getExpression().visit(this);
-        expression.getMethodName().visit(this);
+        expression.getExpression().accept(this);
+        expression.getMethodName().accept(this);
     }
 
     public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitCastExpression(CastExpression expression) {
-        expression.getExpression().visit(this);
+        expression.getExpression().accept(this);
     }
 
     public void visitConstantExpression(ConstantExpression expression) {
@@ -294,13 +294,13 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
-        expression.getObjectExpression().visit(this);
-        expression.getProperty().visit(this);
+        expression.getObjectExpression().accept(this);
+        expression.getProperty().accept(this);
     }
 
     public void visitAttributeExpression(AttributeExpression expression) {
-        expression.getObjectExpression().visit(this);
-        expression.getProperty().visit(this);
+        expression.getObjectExpression().accept(this);
+        expression.getProperty().accept(this);
     }
 
     public void visitFieldExpression(FieldExpression expression) {
@@ -312,7 +312,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     public void visitCatchStatement(CatchStatement statement) {
-        statement.getCode().visit(this);
+        statement.getCode().accept(this);
     }
 
     public void visitArgumentlistExpression(ArgumentListExpression ale) {

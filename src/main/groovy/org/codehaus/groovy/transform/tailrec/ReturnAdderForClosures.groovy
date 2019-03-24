@@ -33,7 +33,7 @@ import org.codehaus.groovy.classgen.ReturnAdder
 class ReturnAdderForClosures extends CodeVisitorSupport {
 
     synchronized void visitMethod(MethodNode method) {
-        method.code.visit(this)
+        method.code.accept(this)
     }
 
     void visitClosureExpression(ClosureExpression expression) {

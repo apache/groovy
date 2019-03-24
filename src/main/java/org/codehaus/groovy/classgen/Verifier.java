@@ -612,7 +612,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         };
         for (Statement stm : init) {
-            stm.visit(cvs);
+            stm.accept(cvs);
         }
     }
 
@@ -629,14 +629,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 if (name == null) return;
                 if (!name.equals("super") && !name.equals("this")) return;
                 type = name;
-                call.getArguments().visit(this);
+                call.getArguments().accept(this);
                 type = null;
             }
 
             public void visitConstructorCallExpression(ConstructorCallExpression call) {
                 if (!call.isSpecialCall()) return;
                 type = call.getText();
-                call.getArguments().visit(this);
+                call.getArguments().accept(this);
                 type = null;
             }
 
@@ -651,9 +651,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (s == null) {
             return;
         } else {
-            s.visit(new VerifierCodeVisitor(this));
+            s.accept(new VerifierCodeVisitor(this));
         }
-        s.visit(checkSuper);
+        s.accept(checkSuper);
     }
 
     public void visitMethod(MethodNode node) {
@@ -667,7 +667,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addReturnIfNeeded(node);
         Statement statement;
         statement = node.getCode();
-        if (statement != null) statement.visit(new VerifierCodeVisitor(this));
+        if (statement != null) statement.accept(new VerifierCodeVisitor(this));
     }
 
     private static void adjustTypesIfStaticMainMethod(MethodNode node) {
@@ -1575,12 +1575,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         @Override
-        public void visit(final GroovyCodeVisitor visitor) {
+        public void accept(final GroovyCodeVisitor visitor) {
             if (visitor instanceof AsmClassGenerator) {
                 AsmClassGenerator generator = (AsmClassGenerator) visitor;
                 controller = generator.getController();
             }
-            super.visit(visitor);
+            super.accept(visitor);
         }
 
         private static class SwapInitInstruction extends BytecodeInstruction {

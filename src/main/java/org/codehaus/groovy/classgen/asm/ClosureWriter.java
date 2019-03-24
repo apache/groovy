@@ -106,8 +106,8 @@ public class ClosureWriter {
         mv.visitTypeInsn(NEW, closureClassinternalName);
         mv.visitInsn(DUP);
         if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall()) {
-            (new ClassExpression(classNode)).visit(acg);
-            (new ClassExpression(controller.getOutermostClass())).visit(acg);
+            (new ClassExpression(classNode)).accept(acg);
+            (new ClassExpression(controller.getOutermostClass())).accept(acg);
         } else {
             mv.visitVarInsn(ALOAD, 0);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
@@ -383,9 +383,9 @@ public class ClosureWriter {
         ClassNode callNode = classNode.getSuperClass();
         TupleExpression arguments = (TupleExpression) call.getArguments();
         if (arguments.getExpressions().size()!=2) throw new GroovyBugError("expected 2 arguments for closure constructor super call, but got"+arguments.getExpressions().size());
-        arguments.getExpression(0).visit(acg);
+        arguments.getExpression(0).accept(acg);
         operandStack.box();
-        arguments.getExpression(1).visit(acg);
+        arguments.getExpression(1).accept(acg);
         operandStack.box();
         //TODO: replace with normal String, p not needed
         Parameter p = new Parameter(ClassHelper.OBJECT_TYPE,"_p");

@@ -37,7 +37,7 @@ public class RangeExpression extends Expression {
         this.inclusive = inclusive;
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public void accept(GroovyCodeVisitor visitor) {
         visitor.visitRangeExpression(this);
     }
 
