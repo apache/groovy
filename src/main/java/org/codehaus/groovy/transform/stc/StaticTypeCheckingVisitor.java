@@ -265,6 +265,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.toMeth
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodArgumentWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CONSTRUCTED_LAMBDA_EXPRESSION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 //import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_INSTANCEOF;
 
@@ -827,7 +828,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             } else {
                 lType = getType(leftExpression);
-                inferParameterAndReturnTypesOfClosureOnRHS(lType, rightExpression, op);
+
+                Expression constructedRightExpression = rightExpression;
+
+                boolean isMrExprRHS = rightExpression instanceof MethodReferenceExpression && ClassHelper.isFunctionalInterface(lType);
+                if (isMrExprRHS) {
+                    constructedRightExpression = constructLambdaExpressionForMethodReference(lType);
+                }
+
+                inferParameterAndReturnTypesOfClosureOnRHS(lType, constructedRightExpression, op);
+
+                if (isMrExprRHS) {
+                    LambdaExpression lambdaExpression = (LambdaExpression) constructedRightExpression;
+                    ClassNode[] argumentTypes =
+                            Arrays.stream(lambdaExpression.getParameters())
+                                    .map(Parameter::getType)
+                                    .toArray(ClassNode[]::new);
+
+                    rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS, argumentTypes);
+                    rightExpression.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
+                }
 
                 rightExpression.visit(this);
             }
@@ -4355,8 +4375,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // ex : def foos = ['a','b','c']
                 return right;
             }
-            if (rightRedirect.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftRedirect) && rightExpression instanceof ClosureExpression) {
-                return inferSAMTypeGenericsInAssignment(left, findSAM(left), right, (ClosureExpression) rightExpression);
+            if (rightRedirect.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftRedirect)) {
+                ClosureExpression closureExpression = null;
+                if (rightExpression instanceof ClosureExpression) {
+                    closureExpression = (ClosureExpression) rightExpression;
+                } else if (rightExpression instanceof MethodReferenceExpression) {
+                    closureExpression = rightExpression.getNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION);
+                }
+
+                if (null != closureExpression) {
+                    return inferSAMTypeGenericsInAssignment(left, findSAM(left), right, closureExpression);
+                }
             }
 
             if (leftExpression instanceof VariableExpression) {
