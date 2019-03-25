@@ -268,4 +268,41 @@ class MethodReferenceTest extends GroovyTestCase {
 
         '''
     }
+
+    // class::staticMethod
+    void testFunctionCS_RHS() {
+        assertScript '''
+            import java.util.function.Function
+            import java.util.stream.Stream
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                Function<Integer, Integer> f = Math::abs
+                def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
+
+                assert [1, 2, 3] == result
+            }
+            
+            p()
+        '''
+    }
+
+    // class::new
+    void testFunctionCN_RHS() {
+        assertScript '''
+            import java.util.function.Function
+            import java.util.stream.Stream
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                Function<String, Integer> f = Integer::new
+                assert [1, 2, 3] == ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
+            }
+            
+            p()
+
+        '''
+    }
 }
