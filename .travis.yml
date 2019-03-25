@@ -23,7 +23,6 @@ install: true
 
 matrix:
   include:
-    - jdk: openjdk12
     - jdk: openjdk11
     - jdk: openjdk10
     - jdk: oraclejdk9
