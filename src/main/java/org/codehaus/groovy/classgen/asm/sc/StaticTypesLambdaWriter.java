@@ -86,10 +86,15 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     @Override
     public void writeLambda(LambdaExpression expression) {
         ClassNode functionalInterfaceType = getFunctionalInterfaceType(expression);
-        ClassNode redirect = functionalInterfaceType.redirect();
+        if (null == functionalInterfaceType) {
+            // if the parameter type failed to be inferred, generate the default bytecode, which is actually a closure
+            super.writeLambda(expression);
+            return;
+        }
 
-        if (null == functionalInterfaceType || !ClassHelper.isFunctionalInterface(redirect)) {
-            // if the parameter type is not real FunctionInterface or failed to be inferred, generate the default bytecode, which is actually a closure
+        ClassNode redirect = functionalInterfaceType.redirect();
+        if (!ClassHelper.isFunctionalInterface(redirect)) {
+            // if the parameter type is not real FunctionalInterface, generate the default bytecode, which is actually a closure
             super.writeLambda(expression);
             return;
         }

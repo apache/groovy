@@ -64,10 +64,15 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     @Override
     public void writeMethodReferenceExpression(MethodReferenceExpression methodReferenceExpression) {
         ClassNode functionalInterfaceType = getFunctionalInterfaceType(methodReferenceExpression);
-        ClassNode redirect = functionalInterfaceType.redirect();
+        if (null == functionalInterfaceType) {
+            // if the parameter type failed to be inferred, generate the default bytecode, which is actually a method closure
+            super.writeMethodReferenceExpression(methodReferenceExpression);
+            return;
+        }
 
-        if (null == functionalInterfaceType || !ClassHelper.isFunctionalInterface(redirect)) {
-            // if the parameter type is not real FunctionInterface or failed to be inferred, generate the default bytecode, which is actually a method closure
+        ClassNode redirect = functionalInterfaceType.redirect();
+        if (!ClassHelper.isFunctionalInterface(redirect)) {
+            // if the parameter type is not real FunctionalInterface, generate the default bytecode, which is actually a method closure
             super.writeMethodReferenceExpression(methodReferenceExpression);
             return;
         }
