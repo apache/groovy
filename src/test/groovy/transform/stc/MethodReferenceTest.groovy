@@ -292,6 +292,78 @@ class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
+    // class::staticMethod
+    void testFunctionCS_RHS_NOTYPE() {
+        assertScript '''
+            import java.util.function.Function
+            import java.util.stream.Stream
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                def f = Math::abs // No explicit type defined, so it is actually a method closure. We can make it smarter in a later version.
+                def result = [1, -2, 3].stream().map(f).collect(Collectors.toList())
+
+                assert [1, 2, 3] == result
+            }
+            
+            p()
+        '''
+    }
+
+    // instance::instanceMethod
+    void testBinaryOperatorII_RHS() {
+        assertScript '''
+            import java.util.function.BinaryOperator
+            import java.util.stream.Stream
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                Adder adder = new Adder()
+                BinaryOperator<BigDecimal> b = adder::add
+                def result = [new BigDecimal(1), new BigDecimal(2), new BigDecimal(3)].stream().reduce(new BigDecimal(0), b)
+
+                assert new BigDecimal(6) == result
+            }
+            
+            p()
+            
+            @groovy.transform.CompileStatic
+            class Adder {
+                public BigDecimal add(BigDecimal a, BigDecimal b) {
+                    return a.add(b)
+                }
+            }
+        '''
+    }
+
+    // expression::instanceMethod
+    void testBinaryOperatorII_RHS2() {
+        assertScript '''
+            import java.util.function.BinaryOperator
+            import java.util.stream.Stream
+            import java.util.stream.Collectors
+
+            @groovy.transform.CompileStatic
+            void p() {
+                BinaryOperator<BigDecimal> b = new Adder()::add
+                def result = [new BigDecimal(1), new BigDecimal(2), new BigDecimal(3)].stream().reduce(new BigDecimal(0), b)
+
+                assert new BigDecimal(6) == result
+            }
+            
+            p()
+            
+            @groovy.transform.CompileStatic
+            class Adder {
+                public BigDecimal add(BigDecimal a, BigDecimal b) {
+                    return a.add(b)
+                }
+            }
+        '''
+    }
+
     // class::new
     void testFunctionCN_RHS() {
         assertScript '''
@@ -303,6 +375,23 @@ class MethodReferenceTest extends GroovyTestCase {
             void p() {
                 Function<String, Integer> f = Integer::new
                 assert [1, 2, 3] == ["1", "2", "3"].stream().map(f).collect(Collectors.toList())
+            }
+            
+            p()
+
+        '''
+    }
+
+    // arrayClass::new
+    void testIntFunctionCN_RHS() {
+        assertScript '''
+            import java.util.function.IntFunction
+            import java.util.stream.Stream
+
+            @groovy.transform.CompileStatic
+            void p() {
+                IntFunction<Integer[]> f = Integer[]::new
+                assert new Integer[] { 1, 2, 3 } == [1, 2, 3].stream().toArray(f)
             }
             
             p()
