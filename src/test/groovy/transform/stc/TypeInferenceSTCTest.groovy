@@ -423,7 +423,9 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
         def inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
         assert inft instanceof WideningCategories.LowestUpperBoundClassNode
-        assert inft.interfaces as Set == [ClassHelper.make(Comparable), ClassHelper.make(Serializable)] as Set
+        [Comparable, Serializable].each {
+            assert ClassHelper.make(it) in inft.interfaces
+        }
 
         assertScript '''
             void method() {
