@@ -36,9 +36,10 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_FUNCT
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 
 /**
+ * Represents functional interface writer which contains some common methods to complete generating bytecode
  * @since 3.0.0
  */
-public interface AbstractFunctionInterfaceWriter {
+public interface AbstractFunctionalInterfaceWriter {
     String ORIGINAL_PARAMETERS_WITH_EXACT_TYPE = "__ORIGINAL_PARAMETERS_WITH_EXACT_TYPE";
 
     default ClassNode getFunctionalInterfaceType(Expression expression) {

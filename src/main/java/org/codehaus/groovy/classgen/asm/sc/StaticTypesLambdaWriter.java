@@ -64,7 +64,7 @@ import static org.objectweb.asm.Opcodes.NEW;
 /**
  * Writer responsible for generating lambda classes in statically compiled mode.
  */
-public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFunctionInterfaceWriter {
+public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFunctionalInterfaceWriter {
     private static final String DO_CALL = "doCall";
     private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
     private static final String ENCLOSING_THIS = "__enclosing_this";

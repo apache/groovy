@@ -54,7 +54,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUME
  * Writer responsible for generating method reference in statically compiled mode.
  * @since 3.0.0
  */
-public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceExpressionWriter implements AbstractFunctionInterfaceWriter {
+public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceExpressionWriter implements AbstractFunctionalInterfaceWriter {
     private static final String MR_EXPR_INSTANCE = "__MR_EXPR_INSTANCE";
 
     public StaticTypesMethodReferenceExpressionWriter(WriterController controller) {
