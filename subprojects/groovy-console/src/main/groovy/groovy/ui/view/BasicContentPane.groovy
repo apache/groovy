@@ -19,6 +19,7 @@
 package groovy.ui.view
 
 import groovy.ui.Console
+import groovy.ui.ConsoleTextEditor
 
 import javax.swing.*
 import javax.swing.text.Style
@@ -40,6 +41,7 @@ outputWindow = frame(visible:false, defaultCloseOperation: WindowConstants.HIDE_
 }
 splitPane = splitPane(resizeWeight: 0.5, orientation:
         prefs.getBoolean('orientationVertical', true) ? VERTICAL_SPLIT : HORIZONTAL_SPLIT) {
+    inputEditor = widget(new ConsoleTextEditor(), border:emptyBorder(0))
     buildOutputArea(prefs)
 }
 
