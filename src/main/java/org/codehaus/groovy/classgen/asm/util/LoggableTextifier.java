@@ -479,4 +479,40 @@ public class LoggableTextifier extends Textifier {
         log();
     }
 
+    @Override
+    public void visitNestHost(String nestHost) {
+        super.visitNestHost(nestHost);
+        log();
+    }
+
+    @Override
+    public void visitNestMember(String nestMember) {
+        super.visitNestMember(nestMember);
+        log();
+    }
+
+    @Override
+    public void visitMainClass(String mainClass) {
+        super.visitMainClass(mainClass);
+        log();
+    }
+
+    @Override
+    public void visitPackage(String packaze) {
+        super.visitPackage(packaze);
+        log();
+    }
+
+    @Override
+    public void visitOpen(String packaze, int access, String... modules) {
+        super.visitOpen(packaze, access, modules);
+        log();
+    }
+
+    @Override
+    public Textifier visitAnnotableParameterCount(int parameterCount, boolean visible) {
+        Textifier t = super.visitAnnotableParameterCount(parameterCount, visible);
+        log();
+        return t;
+    }
 }
