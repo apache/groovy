@@ -70,10 +70,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.lang.Math.ceil;
 import static java.lang.Math.log;
 import static java.lang.Math.max;
-import static java.lang.Math.pow;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
@@ -403,26 +401,16 @@ public class InvokerHelper {
     }
 
     /**
-     * Get the initial capacity of hash map, which is the closest power of 2 to the entry count.
+     * According to the initial entry count, calculate the initial capacity of hash map, which is power of 2
      * (SEE https://stackoverflow.com/questions/8352378/why-does-hashmap-require-that-the-initial-capacity-be-a-power-of-two)
-     *
-     * e.g.
-     * 1: 1
-     * 2: 2
-     * 3: 4
-     * 4: 4
-     * 5: 8
-     * 6: 8
-     * 7: 8
-     * 8: 8
-     * 9: 16
-     * ...
      *
      * @param initialEntryCnt the initial entry count
      * @return the initial capacity
      */
     public static int initialCapacity(int initialEntryCnt) {
-        return (int) pow(2, ceil(log(initialEntryCnt) / LN2));
+        if (0 == initialEntryCnt) return 16;
+
+        return Integer.highestOneBit(initialEntryCnt) << 1;
     }
 
     public static Map createMap(Object[] values) {

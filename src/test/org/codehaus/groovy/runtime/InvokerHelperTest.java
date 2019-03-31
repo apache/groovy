@@ -56,14 +56,15 @@ public class InvokerHelperTest extends TestCase {
     }
 
     public void testInitialCapacity() {
-        assertEquals(1, initialCapacity(1));
-        assertEquals(2, initialCapacity(2));
+        assertEquals(16, initialCapacity(0));
+        assertEquals(2, initialCapacity(1));
+        assertEquals(4, initialCapacity(2));
         assertEquals(4, initialCapacity(3));
-        assertEquals(4, initialCapacity(4));
+        assertEquals(8, initialCapacity(4));
         assertEquals(8, initialCapacity(5));
         assertEquals(8, initialCapacity(6));
         assertEquals(8, initialCapacity(7));
-        assertEquals(8, initialCapacity(8));
+        assertEquals(16, initialCapacity(8));
         assertEquals(16, initialCapacity(9));
         assertEquals(16, initialCapacity(10));
         assertEquals(16, initialCapacity(11));
@@ -71,7 +72,7 @@ public class InvokerHelperTest extends TestCase {
         assertEquals(16, initialCapacity(13));
         assertEquals(16, initialCapacity(14));
         assertEquals(16, initialCapacity(15));
-        assertEquals(16, initialCapacity(16));
+        assertEquals(32, initialCapacity(16));
         assertEquals(32, initialCapacity(17));
     }
 }
