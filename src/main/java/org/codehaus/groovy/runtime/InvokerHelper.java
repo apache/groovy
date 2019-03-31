@@ -70,6 +70,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Math.max;
+
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
  */
@@ -396,10 +398,23 @@ public class InvokerHelper {
         return answer;
     }
 
+    /**
+     * According to the initial entry count, calculate the initial capacity of hash map, which is power of 2
+     * (SEE https://stackoverflow.com/questions/8352378/why-does-hashmap-require-that-the-initial-capacity-be-a-power-of-two)
+     *
+     * @param initialEntryCnt the initial entry count
+     * @return the initial capacity
+     */
+    public static int initialCapacity(int initialEntryCnt) {
+        if (0 == initialEntryCnt) return 16;
+
+        return Integer.highestOneBit(initialEntryCnt) << 1;
+    }
+
     public static Map createMap(Object[] values) {
-        Map answer = new LinkedHashMap(values.length / 2);
-        int i = 0;
-        while (i < values.length - 1) {
+        Map answer = new LinkedHashMap(initialCapacity(values.length / 2));
+
+        for (int i = 0, n = values.length; i < n - 1; ) {
             if ((values[i] instanceof SpreadMap) && (values[i + 1] instanceof Map)) {
                 Map smap = (Map) values[i + 1];
                 for (Object e : smap.entrySet()) {
@@ -726,7 +741,7 @@ public class InvokerHelper {
     }
 
     private static int sizeLeft(int maxSize, StringBuilder buffer) {
-        return maxSize == -1 ? maxSize : Math.max(0, maxSize - buffer.length());
+        return maxSize == -1 ? maxSize : max(0, maxSize - buffer.length());
     }
 
     private static String formatCollection(Collection collection, boolean verbose, int maxSize, boolean safe) {
