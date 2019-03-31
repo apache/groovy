@@ -67,7 +67,7 @@ public @interface Commons {
     String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default CommonsLoggingStrategy.class;
 
-    public  static class CommonsLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
+    public static class CommonsLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategy {
 
         private static final String LOGGER_NAME = "org.apache.commons.logging.Log";
         private static final String LOGGERFACTORY_NAME = "org.apache.commons.logging.LogFactory";
