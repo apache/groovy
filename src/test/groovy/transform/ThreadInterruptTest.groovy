@@ -21,40 +21,55 @@ package groovy.transform
 import groovy.mock.interceptor.StubFor
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 
 import java.lang.reflect.Modifier
+
+import static groovy.util.GroovyAssert.shouldFail
+import static org.junit.Assume.assumeTrue
 
 /**
  * Test for @ThreadInterrupt.
  */
-class ThreadInterruptTest extends GroovyTestCase {
-    private Map<String,MethodNode> oldValues = [:]
-    @Override protected void tearDown() {
+class ThreadInterruptTest {
+    private static final boolean jdk12plus = System.getProperty('java.specification.version') >= '12'
+    private Map<String, MethodNode> oldValues = [:]
+
+    @After
+    void tearDown() {
+        if (jdk12plus) return
         Thread.metaClass = null
         ['CURRENTTHREAD_METHOD', 'ISINTERRUPTED_METHOD'].each {
             def ov = ThreadInterruptibleASTTransformation.getDeclaredField(it)
             def modifiersField = ov.class.getDeclaredField("modifiers")
             modifiersField.accessible = true
-            modifiersField.setInt(ov, ov.modifiers & ~Modifier.FINAL);
+            modifiersField.setInt(ov, ov.modifiers & ~Modifier.FINAL)
             ov.accessible = true
             ov.set(ThreadInterruptibleASTTransformation, oldValues[it])
         }
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp()
+    @Before
+    void setUp() throws Exception {
+        // JDK12+ doesn't allow adjusting static final fields even via reflection, so
+        // skip all tests on such JDK versions - it is only test code that's affected
+        // and currently we have coverage from builds with lower JDK versions.
+        assumeTrue !jdk12plus
+
         ['CURRENTTHREAD_METHOD', 'ISINTERRUPTED_METHOD'].each {
             def ov = ThreadInterruptibleASTTransformation.getDeclaredField(it)
             def modifiersField = ov.class.getDeclaredField("modifiers")
             modifiersField.accessible = true
-            modifiersField.setInt(ov, ov.modifiers & ~Modifier.FINAL);
+            modifiersField.setInt(ov, ov.modifiers & ~Modifier.FINAL)
             ov.accessible = true
             oldValues[it] = ov.get(ThreadInterruptibleASTTransformation)
             ov.set(ThreadInterruptibleASTTransformation, null)
         }
     }
 
+    @Test
     void testDefaultParameters_Method() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -73,6 +88,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 1 == counter.interruptedCheckCount
     }
 
+    @Test
     void testNoMethodCheck_Method() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -90,6 +106,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         // no exception means success
     }
 
+    @Test
     void testDefaultParameters_ForLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -112,6 +129,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 100 == counter.interruptedCheckCount
     }
 
+    @Test
     void testDefaultParameters_WhileLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -135,6 +153,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 100 == counter.interruptedCheckCount
     }
 
+    @Test
     void testDefaultParameters_Closure() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -157,6 +176,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 100 == counter.interruptedCheckCount
     }
 
+    @Test
     void testInterrupt_Method_AndTestExceptionMessage() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -169,11 +189,12 @@ class ThreadInterruptTest extends GroovyTestCase {
         def mocker = new StubFor(Thread.class)
         mocker.demand.currentThread(1..Integer.MAX_VALUE) { new InterruptingThread() }
         mocker.use {
-            def message = shouldFail(InterruptedException) { c.newInstance().myMethod() }
-            assert message == 'Execution interrupted. The current thread has been interrupted.'
+            def ex = shouldFail(InterruptedException) { c.newInstance().myMethod() }
+            assert ex.message == 'Execution interrupted. The current thread has been interrupted.'
         }
     }
 
+    @Test
     void testInterrupt_ForLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -194,6 +215,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testInterrupt_WhileLoop() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -215,6 +237,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testInterrupt_Closure() {
 
         def c = new GroovyClassLoader().parseClass("""
@@ -235,6 +258,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testInterrupt_ClosureWithCustomExceptionType() {
 
         def c = new GroovyClassLoader(this.class.classLoader).parseClass("""
@@ -255,6 +279,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEntireCompileUnitIsAffected() {
 
         def script = '''
@@ -282,6 +307,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 3 == counter.interruptedCheckCount
     }
 
+    @Test
     void testOnlyScriptAffected() {
 
         def script = '''
@@ -308,6 +334,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 2 == counter.interruptedCheckCount
     }
 
+    @Test
     void testAnnotationOnImport() {
 
         def script = '''
@@ -328,6 +355,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 4 == counter.interruptedCheckCount
     }
 
+    @Test
     void testOnlyClassAffected() {
 
         def script = '''
@@ -354,6 +382,7 @@ class ThreadInterruptTest extends GroovyTestCase {
         assert 1 == counter.interruptedCheckCount
     }
 
+    @Test
     void testThreadInterruptOnAbstractClass() {
         def script = '''
             @groovy.transform.ThreadInterrupt
@@ -374,7 +403,9 @@ class ThreadInterruptTest extends GroovyTestCase {
         def mocker = new StubFor(Thread.class)
         mocker.demand.currentThread(1..Integer.MAX_VALUE) { new InterruptingThread() }
         mocker.use {
-            shouldFail(InterruptedException) { new GroovyShell(ThreadInterruptibleASTTransformation.getClassLoader()).evaluate(script) }
+            shouldFail(InterruptedException) {
+                new GroovyShell(ThreadInterruptibleASTTransformation.getClassLoader()).evaluate(script)
+            }
         }
 
     }
