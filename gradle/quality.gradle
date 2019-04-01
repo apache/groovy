@@ -41,7 +41,7 @@ allprojects {
     }
     
     dependencies {
-        codenarc "org.codenarc:CodeNarc:1.2.1"
+        codenarc "org.codenarc:CodeNarc:1.3"
         codenarc project(":groovy-templates")
     }
 
@@ -134,7 +134,7 @@ allprojects {
 
     spotbugs {
         toolVersion = '3.1.7'
-        // continue build despite findbug warnings
+        // continue build despite warnings
         ignoreFailures = true
         //defining source set is needless
         //just run ./gradlew spotbugsMain then it will parse src/main/java.
@@ -162,12 +162,12 @@ subprojects { sp ->
                     'src/test/resources/includes/hello-escaped.txt',
                     'src/test/resources/includes/hello.html'
             ]
-            break;
+            break
         case ['groovy-groovydoc', 'groovy-docgenerator']:
             extras = [
                     '**/stylesheet.css'  // MIT license as per NOTICE/LICENSE files
             ]
-            break;
+            break
     }
     rat {
         inputDir = sp.projectDir.absolutePath
