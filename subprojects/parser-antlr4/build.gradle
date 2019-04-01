@@ -18,6 +18,7 @@
  */
 
 apply plugin: 'antlr'
+
 sourceSets {
     main {
         antlr {
@@ -33,6 +34,8 @@ def srcTest = "$srcBase/test"
 generateGrammarSource {
     maxHeapSize = '1g'
     outputs.cacheIf { true }
+    outputDirectory = file("$generatedDirectory/antlr4")
+    sourceSets.main.java.srcDirs += outputDirectory
 
     final PARSER_PACKAGE_NAME = 'org.apache.groovy.parser.antlr4'
     arguments += ["-visitor", "-no-listener", "-package", PARSER_PACKAGE_NAME]

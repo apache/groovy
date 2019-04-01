@@ -188,7 +188,6 @@ dependencies {
     compile("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
-    compile files("${buildDir}/generated-classes")
 
     compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsannotationsVersion"
 
@@ -225,21 +224,21 @@ dependencies {
     testCompile project(':groovy-macro')
 }
 
-ext.generatedDirectory = "${buildDir}/generated-sources"
+ext.generatedDirectory = "${buildDir}/generated/sources"
 
 sourceSets {
     main {
         java {
             // the only reason we add src/main/groovy here is for the bootstrap compiler
             srcDir 'src/main/groovy'
-            srcDir "$generatedDirectory/src/main"
+            srcDir "$generatedDirectory/antlr2/src/main"
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
             }
         }
         groovy {
-            srcDir "$generatedDirectory/src/main"
+            srcDir "$generatedDirectory/antlr2/src/main"
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
@@ -294,7 +293,7 @@ task ensureGrammars {
     description = 'Ensure all the Antlr2 generated files are up to date.'
     ext.antlrDirectory = "$projectDir/src/main/antlr2/org/codehaus/groovy/antlr"
     ext.javaParserDirectory = "$ext.antlrDirectory/java"
-    ext.genPath = "$generatedDirectory/src/main/org/codehaus/groovy/antlr"
+    ext.genPath = "$generatedDirectory/antlr2/src/main/org/codehaus/groovy/antlr"
     ext.groovyOutDir = "$ext.genPath/parser"
     ext.javaOutDir = "$ext.genPath/java"
     inputs.dir(antlrDirectory)
