@@ -107,7 +107,7 @@ import java.lang.annotation.Target
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target([ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
-@GroovyASTTransformationClass(["org.codehaus.groovy.transform.ConditionalInterruptibleASTTransformation"])
+@GroovyASTTransformationClass(['org.codehaus.groovy.transform.ConditionalInterruptibleASTTransformation'])
 @interface ConditionalInterrupt {
     /**
      * Set this to false if you have multiple classes within one source file and only

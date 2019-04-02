@@ -86,7 +86,7 @@ import java.util.concurrent.TimeoutException
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target([ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
-@GroovyASTTransformationClass(["org.codehaus.groovy.transform.TimedInterruptibleASTTransformation"])
+@GroovyASTTransformationClass(['org.codehaus.groovy.transform.TimedInterruptibleASTTransformation'])
 @interface TimedInterrupt {
     /**
      * Set this to false if you have multiple classes within one source file and only want

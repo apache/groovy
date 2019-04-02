@@ -165,7 +165,7 @@ class FileTreeBuilder {
         baseDir
     }
 
-
+    @SuppressWarnings('Instanceof')
     def methodMissing(String name, args) {
         if (args instanceof Object[] && ((Object[]) args).length == 1) {
             def arg = ((Object[]) args)[0]
