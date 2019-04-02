@@ -86,7 +86,7 @@ class ReturnStatementToIterationConverter {
         }
         result.addStatement(recurStatement)
 
-        return result
+        result
     }
 
     private ExpressionStatement createAssignmentToIterationVariable(Expression expression, int index, Map<Integer, Map> positionMapping) {
@@ -103,9 +103,10 @@ class ReturnStatementToIterationConverter {
         ExpressionStatement tempDeclaration = AstHelper.createVariableAlias(tempName, argAndTempType, argName)
         tempMapping[argName] = [name: tempName, type: argAndTempType]
         tempDeclarations[tempName] = tempDeclaration
-        return tempDeclaration
+        tempDeclaration
     }
 
+    @SuppressWarnings('Instanceof')
     private List<Expression> getArguments(Expression recursiveCall) {
         if (recursiveCall instanceof MethodCallExpression)
             return ((TupleExpression) ((MethodCallExpression) recursiveCall).arguments).expressions
@@ -124,7 +125,7 @@ class ReturnStatementToIterationConverter {
             replaceArgUsageByTempUsage((BinaryExpression) statement.expression, tempMapping, tracker)
         }
         unusedTempNames = unusedTempNames - tracker.usedVariableNames
-        return unusedTempNames
+        unusedTempNames
     }
 
     private void replaceArgUsageByTempUsage(BinaryExpression binary, Map tempMapping, UsedVariableTracker tracker) {

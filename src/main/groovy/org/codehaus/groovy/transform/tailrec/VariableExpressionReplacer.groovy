@@ -84,7 +84,7 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
     void visitBinaryExpression(BinaryExpression expression) {
         //A hack: Only replace right expression b/c ReturnStatementToIterationConverter needs it that way :-/
         replaceExpressionPropertyWhenNecessary(expression, 'rightExpression')
-        expression.getRightExpression().visit(this)
+        expression.rightExpression.visit(this)
         super.visitBinaryExpression(expression)
     }
 
@@ -129,7 +129,8 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
         super.visitSynchronizedStatement(statement)
     }
 
-    private void replaceExpressionPropertyWhenNecessary(ASTNode node, String propName = "expression", Class propClass = Expression) {
+    @SuppressWarnings('Instanceof')
+    private void replaceExpressionPropertyWhenNecessary(ASTNode node, String propName = 'expression', Class propClass = Expression) {
         Expression expr = getExpression(node, propName)
 
         if (expr instanceof VariableExpression) {
@@ -147,7 +148,7 @@ class VariableExpressionReplacer extends CodeVisitorSupport {
         //Use reflection to enable CompileStatic
         String setterName = 'set' + capitalizeFirst(propName)
         Method setExpressionMethod = node.class.getMethod(setterName, [propClass].toArray(new Class[1]))
-        newExpr.setSourcePosition(oldExpr)
+        newExpr.sourcePosition = oldExpr
         newExpr.copyNodeMetaData(oldExpr)
         setExpressionMethod.invoke(node, [newExpr].toArray())
     }

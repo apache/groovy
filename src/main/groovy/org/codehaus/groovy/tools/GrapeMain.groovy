@@ -29,44 +29,46 @@ import picocli.CommandLine.ParentCommand
 import picocli.CommandLine.RunLast
 import picocli.CommandLine.Unmatched
 
-@Command(name = "grape", description = "Allows for the inspection and management of the local grape cache.",
+@SuppressWarnings('Println')
+@Command(name = 'grape', description = 'Allows for the inspection and management of the local grape cache.',
         subcommands = [
-                Install.class,
-                Uninstall.class,
-                ListCommand.class,
-                Resolve.class,
-                picocli.CommandLine.HelpCommand.class])
+                Install,
+                Uninstall,
+                ListCommand,
+                Resolve,
+                picocli.CommandLine.HelpCommand])
 class GrapeMain implements Runnable {
-    @Option(names = ["-D", "--define"], description = "define a system property", paramLabel = "<name=value>")
-    private Map<String, String> properties = new LinkedHashMap<String, String>()
+    @Option(names = ['-D', '--define'], description = 'define a system property', paramLabel = '<name=value>')
+    private final Map<String, String> properties = new LinkedHashMap<String, String>()
 
-    @Option(names = ["-r", "--resolver"], description = "define a grab resolver (for install)", paramLabel = "<url>")
-    private List<String> resolvers = new ArrayList<String>()
+    @SuppressWarnings('UnusedPrivateField') // used in run()
+    @Option(names = ['-r', '--resolver'], description = 'define a grab resolver (for install)', paramLabel = '<url>')
+    private final List<String> resolvers = new ArrayList<String>()
 
-    @Option(names = ["-q", "--quiet"], description = "Log level 0 - only errors")
+    @Option(names = ['-q', '--quiet'], description = 'Log level 0 - only errors')
     private boolean quiet
 
-    @Option(names = ["-w", "--warn"], description = "Log level 1 - errors and warnings")
+    @Option(names = ['-w', '--warn'], description = 'Log level 1 - errors and warnings')
     private boolean warn
 
-    @Option(names = ["-i", "--info"], description = "Log level 2 - info")
+    @Option(names = ['-i', '--info'], description = 'Log level 2 - info')
     private boolean info
 
-    @Option(names = ["-V", "--verbose"], description = "Log level 3 - verbose")
+    @Option(names = ['-V', '--verbose'], description = 'Log level 3 - verbose')
     private boolean verbose
 
-    @Option(names = ["-d", "--debug"], description = "Log level 4 - debug")
+    @Option(names = ['-d', '--debug'], description = 'Log level 4 - debug')
     private boolean debug
 
     @Unmatched List<String> unmatched = new ArrayList<String>()
 
     private CommandLine parser
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         GrapeMain grape = new GrapeMain()
         def parser = new CommandLine(grape)
-        parser.addMixin("helpOptions", new HelpOptionsMixin())
-        parser.subcommands.findAll { k, v -> k != 'help' }.each { k, v -> v.addMixin("helpOptions", new HelpOptionsMixin()) }
+        parser.addMixin('helpOptions', new HelpOptionsMixin())
+        parser.subcommands.findAll { k, v -> k != 'help' }.each { k, v -> v.addMixin('helpOptions', new HelpOptionsMixin()) }
 
         grape.parser = parser
         parser.parseWithHandler(new RunLast(), args)
@@ -80,25 +82,27 @@ class GrapeMain implements Runnable {
         }
     }
 
+    @SuppressWarnings('UnusedPrivateMethod') // used in run()
     private void init() {
         properties.each { k, v ->
             System.setProperty(k, v)
         }
     }
 
+    @SuppressWarnings('UnusedPrivateMethod') // used in run()
     private void setupLogging(int defaultLevel = 2) { // = Message.MSG_INFO -> some parsing error :(
         if (quiet) {
-            Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_ERR))
+            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_ERR)
         } else if (warn) {
-            Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_WARN))
+            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_WARN)
         } else if (info) {
-            Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_INFO))
+            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_INFO)
         } else if (verbose) {
-            Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_VERBOSE))
+            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_VERBOSE)
         } else if (debug) {
-            Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_DEBUG))
+            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_DEBUG)
         } else {
-            Message.setDefaultLogger(new DefaultMessageLogger(defaultLevel))
+            Message.defaultLogger = new DefaultMessageLogger(defaultLevel)
         }
     }
 
@@ -111,18 +115,18 @@ class GrapeMain implements Runnable {
     // the unix standard short option for version help is uppercase -V, while previous versions
     // of this class use lowercase -v. This custom mixin preserves option compatibility.
     @Command(versionProvider = VersionProvider, sortOptions = false,
-            parameterListHeading = "%nParameters:%n",
-            optionListHeading = "%nOptions:%n",
-            descriptionHeading = "%n")
+            parameterListHeading = '%nParameters:%n',
+            optionListHeading = '%nOptions:%n',
+            descriptionHeading = '%n')
     private static class HelpOptionsMixin {
-        @Option(names = ["-h", "--help"], usageHelp = true, description = "usage information") boolean isHelpRequested
-        @Option(names = ["-v", "--version"], versionHelp = true, description = "display the Groovy and JVM versions") boolean isVersionRequested
+        @Option(names = ['-h', '--help'], usageHelp = true, description = 'usage information') boolean isHelpRequested
+        @Option(names = ['-v', '--version'], versionHelp = true, description = 'display the Groovy and JVM versions') boolean isVersionRequested
     }
 
     private static class VersionProvider implements CommandLine.IVersionProvider {
         String[] getVersion() {
-            String version = GroovySystem.getVersion()
-            return ["Groovy Version: $version JVM: ${System.getProperty('java.version')}"]
+            String version = GroovySystem.version
+            ["Groovy Version: $version JVM: ${System.getProperty('java.version')}"]
         }
     }
 
@@ -147,7 +151,7 @@ class GrapeMain implements Runnable {
             parentCommand.init()
 
             // set the instance so we can re-set the logger
-            Grape.getInstance()
+            Grape.instance
             parentCommand.setupLogging()
 
             parentCommand.resolvers.each { String url ->
@@ -157,7 +161,7 @@ class GrapeMain implements Runnable {
             try {
                 Grape.grab(autoDownload: true, group: group, module: module, version: version, classifier: classifier, noExceptions: true)
             } catch (Exception ex) {
-                println "An error occured : $ex"
+                System.err.println "An error occured : $ex"
             }
         }
     }
@@ -171,13 +175,13 @@ class GrapeMain implements Runnable {
         void run() {
             parentCommand.init()
 
-            println ""
+            println ''
 
             int moduleCount = 0
             int versionCount = 0
 
             // set the instance so we can re-set the logger
-            Grape.getInstance()
+            Grape.instance
             parentCommand.setupLogging()
 
             Grape.enumerateGrapes().each {String groupName, Map group ->
@@ -187,14 +191,14 @@ class GrapeMain implements Runnable {
                     versionCount += versions.size()
                 }
             }
-            println ""
+            println ''
             println "$moduleCount Grape modules cached"
             println "$versionCount Grape module versions cached"
         }
     }
 
     @Command(name = 'resolve', header = 'Enumerates the jars used by a grape',
-            customSynopsis = "grape resolve [-adhisv] (<groupId> <artifactId> <version>)+",
+            customSynopsis = 'grape resolve [-adhisv] (<groupId> <artifactId> <version>)+',
             description = [
                     'Prints the file locations of the jars representing the artifcats for the specified module(s) and the respective transitive dependencies.',
                     '',
@@ -232,7 +236,7 @@ class GrapeMain implements Runnable {
             parentCommand.init()
 
             // set the instance so we can re-set the logger
-            Grape.getInstance()
+            Grape.instance
             parentCommand.setupLogging(Message.MSG_ERR)
 
             if ((args.size() % 3) != 0) {
@@ -299,8 +303,8 @@ class GrapeMain implements Runnable {
                     println 'Nothing was resolved'
                 }
             } catch (Exception e) {
-                println "Error in resolve:\n\t$e.message"
-                if (e.message =~ /unresolved dependency/) println "Perhaps the grape is not installed?"
+                System.err.println "Error in resolve:\n\t$e.message"
+                if (e.message =~ /unresolved dependency/) println 'Perhaps the grape is not installed?'
             }
         }
     }
@@ -327,7 +331,7 @@ class GrapeMain implements Runnable {
             parentCommand.init()
 
             // set the instance so we can re-set the logger
-            Grape.getInstance()
+            Grape.instance
             parentCommand.setupLogging()
 
             if (!Grape.enumerateGrapes().find {String groupName, Map g ->

@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS
+
 /**
  * Since a ternary statement has more than one exit point tail-recursiveness testing cannot be easily done.
  * Therefore this class translates a ternary statement (or Elvis operator) into the equivalent if-else statement.
@@ -31,10 +33,11 @@ import org.codehaus.groovy.ast.stmt.Statement
 @CompileStatic
 class TernaryToIfStatementConverter {
 
+    @SuppressWarnings('Instanceof')
     Statement convert(ReturnStatement statementWithInnerTernaryExpression) {
         if (!(statementWithInnerTernaryExpression.expression instanceof TernaryExpression))
             return statementWithInnerTernaryExpression
         TernaryExpression ternary = statementWithInnerTernaryExpression.expression as TernaryExpression
-        return new IfStatement(ternary.booleanExpression, new ReturnStatement(ternary.trueExpression), new ReturnStatement(ternary.falseExpression))
+        ifElseS(ternary.booleanExpression, new ReturnStatement(ternary.trueExpression), new ReturnStatement(ternary.falseExpression))
     }
 }

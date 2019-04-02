@@ -38,8 +38,8 @@ class ReturnAdderForClosures extends CodeVisitorSupport {
 
     void visitClosureExpression(ClosureExpression expression) {
         //Create a dummy method with the closure's code as the method's code. Then user ReturnAdder, which only works for methods.
-        MethodNode node = new MethodNode("dummy", 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.code);
-        new ReturnAdder().visitMethod(node);
+        MethodNode node = new MethodNode('dummy', 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.code)
+        new ReturnAdder().visitMethod(node)
         super.visitClosureExpression(expression)
     }
 

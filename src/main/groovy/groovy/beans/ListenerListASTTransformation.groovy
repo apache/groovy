@@ -169,7 +169,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
     }
 
     /**
-     * Adds the remove<Listener> method like:
+     * Adds the remove&lt;Listener&gt; method like:
      * <pre>
      * synchronized void remove${name.capitalize}(${listener.name} listener) {
      *     if (listener == null)

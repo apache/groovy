@@ -23,9 +23,7 @@ import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.classgen.GeneratorContext
@@ -37,6 +35,9 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
 
 import java.lang.annotation.Annotation
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
 
 /**
  * This customizer allows applying an AST transformation to a source unit with
@@ -82,11 +83,11 @@ import java.lang.annotation.Annotation
  * 
  */
 class ASTTransformationCustomizer extends CompilationCustomizer implements CompilationUnitAware {
-    private final AnnotationNode annotationNode;
+    private final AnnotationNode annotationNode
     final ASTTransformation transformation
 
-    protected CompilationUnit compilationUnit;
-    private boolean applied = false; // used for global AST transformations
+    protected CompilationUnit compilationUnit
+    private boolean applied = false     // used for global AST transformations
 
     /**
      * Creates an AST transformation customizer using the specified annotation. The transformation classloader can
@@ -99,7 +100,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      */
     ASTTransformationCustomizer(final Class<? extends Annotation> transformationAnnotation, String astTransformationClassName, ClassLoader transformationClassLoader) {
         super(findPhase(transformationAnnotation, astTransformationClassName, transformationClassLoader))
-        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation, astTransformationClassName, transformationClassLoader)
+        final Class<ASTTransformation> clazz = findASTTransformationClass(transformationAnnotation, astTransformationClassName, transformationClassLoader)
         this.transformation = clazz.newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
     }
@@ -127,10 +128,10 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      */
     ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation, String astTransformationClassName, ClassLoader transformationClassLoader) {
         super(findPhase(transformationAnnotation, astTransformationClassName, transformationClassLoader))
-        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation, astTransformationClassName, transformationClassLoader)
+        final Class<ASTTransformation> clazz = findASTTransformationClass(transformationAnnotation, astTransformationClassName, transformationClassLoader)
         this.transformation = clazz.newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
-        setAnnotationParameters(annotationParams)
+        this.annotationParameters = annotationParams
     }
 
     ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation, String astTransformationClassName) {
@@ -145,7 +146,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      */
     ASTTransformationCustomizer(final Class<? extends Annotation> transformationAnnotation, ClassLoader transformationClassLoader) {
         super(findPhase(transformationAnnotation, transformationClassLoader))
-        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation, transformationClassLoader)
+        final Class<ASTTransformation> clazz = findASTTransformationClass(transformationAnnotation, transformationClassLoader)
         this.transformation = clazz.newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
     }
@@ -176,10 +177,10 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      */
     ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation, ClassLoader transformationClassLoader) {
         super(findPhase(transformationAnnotation, transformationClassLoader))
-        final Class<ASTTransformation> clazz = findASTTranformationClass(transformationAnnotation, transformationClassLoader)
+        final Class<ASTTransformation> clazz = findASTTransformationClass(transformationAnnotation, transformationClassLoader)
         this.transformation = clazz.newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
-        setAnnotationParameters(annotationParams)
+        this.annotationParameters = annotationParams
     }
 
     ASTTransformationCustomizer(final Map annotationParams, final Class<? extends Annotation> transformationAnnotation) {
@@ -188,46 +189,48 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
 
     ASTTransformationCustomizer(final Map annotationParams, final ASTTransformation transformation) {
         this(transformation)
-        setAnnotationParameters(annotationParams)
+        this.annotationParameters = annotationParams
     }
 
     void setCompilationUnit(CompilationUnit unit) {
         compilationUnit = unit
     }
 
-    private static Class<ASTTransformation> findASTTranformationClass(Class<? extends Annotation> anAnnotationClass, ClassLoader transformationClassLoader) {
+    @SuppressWarnings('ClassForName')
+    private static Class<ASTTransformation> findASTTransformationClass(Class<? extends Annotation> anAnnotationClass, ClassLoader transformationClassLoader) {
         final GroovyASTTransformationClass annotation = anAnnotationClass.getAnnotation(GroovyASTTransformationClass)
-        if (annotation==null) throw new IllegalArgumentException("Provided class doesn't look like an AST @interface")
+        if (annotation == null) throw new IllegalArgumentException("Provided class doesn't look like an AST @interface")
 
         Class[] classes = annotation.classes()
         String[] classesAsStrings = annotation.value()
-        if (classes.length+classesAsStrings.length>1) {
+        if (classes.length + classesAsStrings.length > 1) {
             throw new IllegalArgumentException("AST transformation customizer doesn't support AST transforms with multiple classes")
         }
-        return classes?classes[0]:Class.forName(classesAsStrings[0], true, transformationClassLoader?:anAnnotationClass.classLoader)
+        classes ? classes[0] : Class.forName(classesAsStrings[0], true, transformationClassLoader ?: anAnnotationClass.classLoader)
     }
 
-    private static Class<ASTTransformation> findASTTranformationClass(Class<? extends Annotation> anAnnotationClass, String astTransformationClassName, ClassLoader transformationClassLoader) {
-        return Class.forName(astTransformationClassName, true, transformationClassLoader?:anAnnotationClass.classLoader) as Class<ASTTransformation>
+    @SuppressWarnings('ClassForName')
+    private static Class<ASTTransformation> findASTTransformationClass(Class<? extends Annotation> anAnnotationClass, String astTransformationClassName, ClassLoader transformationClassLoader) {
+        Class.forName(astTransformationClassName, true, transformationClassLoader ?: anAnnotationClass.classLoader) as Class<ASTTransformation>
     }
 
     private static CompilePhase findPhase(ASTTransformation transformation) {
-        if (transformation==null) throw new IllegalArgumentException("Provided transformation must not be null")
+        if (transformation == null) throw new IllegalArgumentException('Provided transformation must not be null')
         final Class<?> clazz = transformation.class
         final GroovyASTTransformation annotation = clazz.getAnnotation(GroovyASTTransformation)
-        if (annotation==null) throw new IllegalArgumentException("Provided ast transformation is not annotated with "+GroovyASTTransformation.name)
+        if (annotation == null) throw new IllegalArgumentException("Provided ast transformation is not annotated with $GroovyASTTransformation.name")
 
         annotation.phase()
     }
 
     private static CompilePhase findPhase(Class<? extends Annotation> annotationClass, ClassLoader transformationClassLoader) {
-        Class<ASTTransformation> clazz = findASTTranformationClass(annotationClass, transformationClassLoader);
+        Class<ASTTransformation> clazz = findASTTransformationClass(annotationClass, transformationClassLoader)
 
         findPhase(clazz.newInstance())
     }
 
     private static CompilePhase findPhase(Class<? extends Annotation> annotationClass, String astTransformationClassName, ClassLoader transformationClassLoader) {
-        Class<ASTTransformation> clazz = findASTTranformationClass(annotationClass, astTransformationClassName, transformationClassLoader);
+        Class<ASTTransformation> clazz = findASTTransformationClass(annotationClass, astTransformationClassName, transformationClassLoader)
 
         findPhase(clazz.newInstance())
     }
@@ -255,38 +258,40 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      *
      * @since 1.8.1
      */
-    public void setAnnotationParameters(Map<String,Object> params) {
-        if (params==null || annotationNode==null) return;
+    @SuppressWarnings('Instanceof')
+    void setAnnotationParameters(Map<String, Object> params) {
+        if (params == null || annotationNode == null) return
         params.each { key, value ->
             if (!annotationNode.classNode.getMethod(key)) {
                 throw new IllegalArgumentException("${annotationNode.classNode.name} does not accept any [$key] parameter")
             }
             if (value instanceof Closure) {
-                throw new IllegalArgumentException("Direct usage of closure is not supported by the AST " +
-                "compilation customizer. Please use ClosureExpression instead.")
+                throw new IllegalArgumentException('Direct usage of closure is not supported by the AST ' +
+                        'compilation customizer. Please use ClosureExpression instead.')
             } else if (value instanceof Expression) {
                 // avoid NPEs due to missing source code
-                value.setLineNumber(0)
-                value.setLastLineNumber(0)
+                value.lineNumber = 0
+                value.lastLineNumber = 0
                 annotationNode.addMember(key, value)
             } else if (value instanceof Class) {
-                annotationNode.addMember(key, new ClassExpression(ClassHelper.make(value)))
+                annotationNode.addMember(key, classX(value))
             } else if (value instanceof List) {
                 annotationNode.addMember(key, new ListExpression(value.collect {
-                    it instanceof Class ? new ClassExpression(ClassHelper.make(it)) : new ConstantExpression(it)
+                    it instanceof Class ? classX(it) : constX(it)
                 }))
             } else {
-                annotationNode.addMember(key, new ConstantExpression(value))
+                annotationNode.addMember(key, constX(value))
             }
         }
     }
 
     @Override
+    @SuppressWarnings('Instanceof')
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         if (transformation instanceof CompilationUnitAware) {
             transformation.compilationUnit = compilationUnit
         }
-        if (annotationNode!=null) {
+        if (annotationNode != null) {
             // this is a local ast transformation which is applied on every class node
             annotationNode.sourcePosition = classNode
             transformation.visit([annotationNode, classNode] as ASTNode[], source)

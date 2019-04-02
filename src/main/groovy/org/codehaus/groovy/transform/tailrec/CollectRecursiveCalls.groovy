@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 
 /**
  * Collect all recursive calls within method
@@ -33,14 +33,14 @@ class CollectRecursiveCalls extends CodeVisitorSupport {
 	MethodNode method
 	List<Expression> recursiveCalls = []
 
-	public void visitMethodCallExpression(MethodCallExpression call) {
+	void visitMethodCallExpression(MethodCallExpression call) {
 		if (isRecursive(call)) {
 			recursiveCalls << call
 		}
         super.visitMethodCallExpression(call)
     }
 
-	public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+	void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
 		if (isRecursive(call)) {
             recursiveCalls << call
         }
