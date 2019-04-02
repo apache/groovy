@@ -28,6 +28,6 @@ import java.lang.annotation.Documented
  * @since 2.1.0
  */
 @Documented
-@AnnotationCollector(processor = "org.codehaus.groovy.transform.CompileDynamicProcessor")
+@AnnotationCollector(processor = 'org.codehaus.groovy.transform.CompileDynamicProcessor')
 @interface CompileDynamic {
 }

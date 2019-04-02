@@ -30,7 +30,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  *     mail.host = 'smtp.myisp.com'
  *     mail.auth.user = 'server'
  * }
- * resources.URL = "http://localhost:80/resources"
+ * resources.URL = 'http://localhost:80/resources'
  * </code></pre>
  *
  * Settings can either be bound into nested maps or onto a specified JavaBean instance.
@@ -74,7 +74,7 @@ class ConfigSlurper {
     }
 
     String getEnvironment() {
-        return conditionValues[ENVIRONMENTS_METHOD]
+        conditionValues[ENVIRONMENTS_METHOD]
     }
 
     void setEnvironment(String environment) {
@@ -96,48 +96,52 @@ class ConfigSlurper {
     ConfigObject parse(Properties properties) {
         ConfigObject config = new ConfigObject()
         for (key in properties.keySet()) {
-            def tokens = key.split(/\./)
-
-            def current = config
-            def last
-            def lastToken
-            def foundBase = false
-            for (token in tokens) {
-                if (foundBase) {
-                    // handle not properly nested tokens by ignoring
-                    // hierarchy below this point
-                    lastToken += "." + token
-                    current = last
-                } else {
-                    last = current
-                    lastToken = token
-                    current = current."${token}"
-                    if (!(current instanceof ConfigObject)) foundBase = true
-                }
-            }
-
-            if (current instanceof ConfigObject) {
-                if (last[lastToken]) {
-                    def flattened = last.flatten()
-                    last.clear()
-                    flattened.each { k2, v2 -> last[k2] = v2 }
-                    last[lastToken] = properties.get(key)
-                }
-                else {
-                    last[lastToken] = properties.get(key)
-                }
-            }
-            current = config
+            parseKey(key, config, properties)
         }
-        return config
+        config
     }
+
+    @SuppressWarnings('Instanceof')
+    private void parseKey(key, ConfigObject config, Properties properties) {
+        def tokens = key.split(/\./)
+
+        def current = config
+        def last
+        def lastToken
+        def foundBase = false
+        for (token in tokens) {
+            if (foundBase) {
+                // handle not properly nested tokens by ignoring
+                // hierarchy below this point
+                lastToken += '.' + token
+                current = last
+            } else {
+                last = current
+                lastToken = token
+                current = current."${token}"
+                if (!(current instanceof ConfigObject)) foundBase = true
+            }
+        }
+
+        if (current instanceof ConfigObject) {
+            if (last[lastToken]) {
+                def flattened = last.flatten()
+                last.clear()
+                flattened.each { k2, v2 -> last[k2] = v2 }
+                last[lastToken] = properties.get(key)
+            } else {
+                last[lastToken] = properties.get(key)
+            }
+        }
+    }
+
     /**
      * Parse the given script as a string and return the configuration object
      *
      * @see ConfigSlurper#parse(groovy.lang.Script)
      */
     ConfigObject parse(String script) {
-        return parse(classLoader.parseClass(script))
+        parse(classLoader.parseClass(script))
     }
 
     /**
@@ -146,7 +150,7 @@ class ConfigSlurper {
      * @see ConfigSlurper#parse(groovy.lang.Script)
      */
     ConfigObject parse(Class scriptClass) {
-        return parse(scriptClass.newInstance())
+        parse(scriptClass.newInstance())
     }
 
     /**
@@ -157,7 +161,7 @@ class ConfigSlurper {
      * @return A Map of maps that can be navigating with dot de-referencing syntax to obtain configuration entries
      */
     ConfigObject parse(Script script) {
-        return parse(script, null)
+        parse(script, null)
     }
 
     /**
@@ -167,7 +171,7 @@ class ConfigSlurper {
      * @return The ConfigObject instance
      */
     ConfigObject parse(URL scriptLocation) {
-        return parse(classLoader.parseClass(scriptLocation.text).newInstance(), scriptLocation)
+        parse(classLoader.parseClass(scriptLocation.text).newInstance(), scriptLocation)
     }
 
     /**
@@ -178,12 +182,13 @@ class ConfigSlurper {
      * @param location The original location of the Script as a URL
      * @return The ConfigObject instance
      */
+    @SuppressWarnings('Instanceof')
     ConfigObject parse(Script script, URL location) {
         Stack<String> currentConditionalBlock = new Stack<String>()
         def config = location ? new ConfigObject(location) : new ConfigObject()
         GroovySystem.metaClassRegistry.removeMetaClass(script.class)
         def mc = script.class.metaClass
-        def prefix = ""
+        def prefix = ''
         LinkedList stack = new LinkedList()
         stack << [config: config, scope: [:]]
         def pushStack = { co ->
@@ -261,7 +266,7 @@ class ConfigSlurper {
                     prefix = name + '.'
                     assignName.call(name, args[0])
                     args[1].call()
-                } finally { prefix = "" }
+                } finally { prefix = '' }
             } else {
                 MetaMethod mm = mc.getMetaMethod(name, args)
                 if (mm) {
@@ -279,7 +284,7 @@ class ConfigSlurper {
         }
         def binding = new ConfigBinding(setProperty)
         if (this.bindingVars) {
-            binding.getVariables().putAll(this.bindingVars)
+            binding.variables.putAll(this.bindingVars)
         }
         script.binding = binding
 
@@ -287,7 +292,7 @@ class ConfigSlurper {
 
         config.merge(overrides)
 
-        return config
+        config
     }
 }
 

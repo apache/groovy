@@ -105,7 +105,7 @@ import java.lang.annotation.Target
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target([ElementType.PACKAGE, ElementType.METHOD, ElementType.FIELD, ElementType.TYPE, ElementType.LOCAL_VARIABLE])
-@GroovyASTTransformationClass(["org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation"])
+@GroovyASTTransformationClass(['org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation'])
 @interface ThreadInterrupt {
     /**
      * Set this to false if you have multiple classes within one source file and only

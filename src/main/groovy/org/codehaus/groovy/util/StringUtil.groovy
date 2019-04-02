@@ -38,9 +38,9 @@ class StringUtil {
         replacement = expandHyphen(replacement)
 
         // padding replacement with a last character, if necessary
-        replacement = replacement.padRight(source.size(), replacement[replacement.size() - 1])
+        replacement = replacement.padRight(source.size(), replacement[-1])
 
-        return text.collect { String original ->
+        text.collect { String original ->
             if (source.contains(original)) {
                 replacement[source.lastIndexOf(original)]
             } else {
@@ -52,6 +52,6 @@ class StringUtil {
     // no expansion for hyphen at start or end of Strings
     private static String expandHyphen(String text) {
         if (!text.contains('-')) { return text }
-        return text.replaceAll(/(.)-(.)/, { all, begin, end -> (begin..end).join('') })
+        text.replaceAll(/(.)-(.)/, { all, begin, end -> (begin..end).join('') })
     }
 }

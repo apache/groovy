@@ -120,7 +120,7 @@ import java.lang.annotation.Target
      * defaulting to the name of the listener type, e.g. if name is set to MyListener,
      * then the class will have addMyListener, removeMyListener, and getMyListeners methods.
      */
-    String name() default ""
+    String name() default ''
 
     /**
      * Whether or not the methods created should be synchronized at the method level.

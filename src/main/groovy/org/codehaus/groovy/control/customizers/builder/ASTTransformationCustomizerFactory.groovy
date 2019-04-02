@@ -36,18 +36,18 @@ class ASTTransformationCustomizerFactory extends AbstractFactory {
 
     @Override
     @CompileStatic
-    public boolean isLeaf() {
+    boolean isLeaf() {
         true
     }
 
     @Override
     @CompileStatic
-    public boolean onHandleNodeAttributes(final FactoryBuilderSupport builder, final Object node, final Map attributes) {
+    boolean onHandleNodeAttributes(final FactoryBuilderSupport builder, final Object node, final Map attributes) {
         false
     }
 
     @Override
-    public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
+    Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         ASTTransformationCustomizer customizer
         if (attributes) {
             customizer = new ASTTransformationCustomizer(attributes, value)

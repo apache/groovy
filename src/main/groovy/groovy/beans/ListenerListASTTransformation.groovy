@@ -28,33 +28,33 @@ import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.VariableScope
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
-import org.codehaus.groovy.ast.expr.BinaryExpression
-import org.codehaus.groovy.ast.expr.BooleanExpression
-import org.codehaus.groovy.ast.expr.CastExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression
-import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.ListExpression
-import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.EmptyStatement
-import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ForStatement
-import org.codehaus.groovy.ast.stmt.IfStatement
-import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.codehaus.groovy.syntax.SyntaxException
-import org.codehaus.groovy.syntax.Token
-import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.objectweb.asm.Opcodes
 
+import static org.codehaus.groovy.ast.stmt.ReturnStatement.RETURN_NULL_OR_VOID
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
 /**
  * Handles generation of code for the {@code @ListenerList} annotation.
@@ -66,10 +66,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
  * <p>
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+@SuppressWarnings('ParameterCount')
 class ListenerListASTTransformation implements ASTTransformation, Opcodes {
-    private static final Class MY_CLASS = groovy.beans.ListenerList.class
+    private static final Class MY_CLASS = groovy.beans.ListenerList
     private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection)
 
+    @SuppressWarnings('Instanceof')
     void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new RuntimeException("Internal error: wrong types: ${node.class} / ${parent.class}")
@@ -119,13 +121,10 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
-    private static def addError(AnnotationNode node, SourceUnit source, String message) {
+    private static addError(AnnotationNode node, SourceUnit source, String message) {
         source.errorCollector.addError(
-                new SyntaxErrorMessage(new SyntaxException(
-                        message,
-                        node.lineNumber,
-                        node.columnNumber),
-                        source))
+                new SyntaxErrorMessage(
+                        new SyntaxException(message, node.lineNumber, node.columnNumber), source))
     }
 
     /**
@@ -147,7 +146,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def methodName = "add${name.capitalize()}"
         def cn = ClassHelper.makeWithoutCaching(listener.name)
         cn.redirect = listener
-        def methodParameter = [new Parameter(cn,'listener')] as Parameter[]
+        def methodParameter = [param(cn, 'listener')] as Parameter[]
 
         if (declaringClass.hasMethod(methodName, methodParameter)) {
             addError node, source, "Conflict using @${MY_CLASS.name}. Class $declaringClass.name already has method $methodName"
@@ -156,37 +155,15 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
 
         BlockStatement block = new BlockStatement()
         block.addStatements([
-                new IfStatement(
-                        new BooleanExpression(
-                                new BinaryExpression(
-                                        new VariableExpression('listener'),
-                                        Token.newSymbol(Types.COMPARE_EQUAL, 0, 0),
-                                        ConstantExpression.NULL
-                                )
-                        ),
-                        new ReturnStatement(ConstantExpression.NULL),
-                        EmptyStatement.INSTANCE
+                ifS(
+                        equalsNullX(varX('listener')),
+                        RETURN_NULL_OR_VOID
                 ),
-                new IfStatement(
-                        new BooleanExpression(
-                                new BinaryExpression(
-                                        new VariableExpression(field.name),
-                                        Token.newSymbol(Types.COMPARE_EQUAL, 0, 0),
-                                        ConstantExpression.NULL
-                                )
-                        ),
-                        new ExpressionStatement(
-                                new BinaryExpression(
-                                        new VariableExpression(field.name),
-                                        Token.newSymbol(Types.EQUAL, 0, 0),
-                                        new ListExpression()
-                                )
-                        ),
-                        EmptyStatement.INSTANCE
+                ifS(
+                        equalsNullX(varX(field.name)),
+                        assignS(varX(field.name), new ListExpression())
                 ),
-                new ExpressionStatement(
-                        new MethodCallExpression(new VariableExpression(field.name), new ConstantExpression('add'), new ArgumentListExpression(new VariableExpression('listener')))
-                )
+                stmt(callX(varX(field.name), constX('add'), args(varX('listener'))))
         ])
         declaringClass.addMethod(new MethodNode(methodName, methodModifiers, methodReturnType, methodParameter, [] as ClassNode[], block))
     }
@@ -209,7 +186,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         def methodName = "remove${name.capitalize()}"
         def cn = ClassHelper.makeWithoutCaching(listener.name)
         cn.redirect = listener
-        def methodParameter = [new Parameter(cn,'listener')] as Parameter[]
+        def methodParameter = [param(cn, 'listener')] as Parameter[]
 
         if (declaringClass.hasMethod(methodName, methodParameter)) {
             addError node, source, "Conflict using @${MY_CLASS.name}. Class $declaringClass.name already has method $methodName"
@@ -218,37 +195,15 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
 
         BlockStatement block = new BlockStatement()
         block.addStatements([
-                new IfStatement(
-                        new BooleanExpression(
-                                new BinaryExpression(
-                                        new VariableExpression('listener'),
-                                        Token.newSymbol(Types.COMPARE_EQUAL, 0, 0),
-                                        ConstantExpression.NULL
-                                )
-                        ),
-                        new ReturnStatement(ConstantExpression.NULL),
-                        EmptyStatement.INSTANCE
+                ifS(
+                        equalsNullX(varX('listener')),
+                        RETURN_NULL_OR_VOID
                 ),
-                new IfStatement(
-                        new BooleanExpression(
-                                new BinaryExpression(
-                                        new VariableExpression(field.name),
-                                        Token.newSymbol(Types.COMPARE_EQUAL, 0, 0),
-                                        ConstantExpression.NULL
-                                )
-                        ),
-                        new ExpressionStatement(
-                                new BinaryExpression(
-                                        new VariableExpression(field.name),
-                                        Token.newSymbol(Types.EQUAL, 0, 0),
-                                        new ListExpression()
-                                )
-                        ),
-                        EmptyStatement.INSTANCE
+                ifS(
+                        equalsNullX(varX(field.name)),
+                        assignS(varX(field.name), new ListExpression())
                 ),
-                new ExpressionStatement(
-                        new MethodCallExpression(new VariableExpression(field.name), new ConstantExpression('remove'), new ArgumentListExpression(new VariableExpression("listener")))
-                )
+                stmt(callX(varX(field.name), constX('remove'), args(varX('listener'))))
         ])
         declaringClass.addMethod(new MethodNode(methodName, methodModifiers, methodReturnType, methodParameter, [] as ClassNode[], block))
     }
@@ -277,31 +232,12 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
 
         BlockStatement block = new BlockStatement()
         block.addStatements([
-                new ExpressionStatement(
-                        new DeclarationExpression(
-                                localVarX("__result", ClassHelper.DYNAMIC_TYPE),
-                                Token.newSymbol(Types.EQUALS, 0, 0),
-                                new ListExpression()
-                        )),
-                new IfStatement(
-                        new BooleanExpression(
-                                new BinaryExpression(
-                                        new VariableExpression(field.name),
-                                        Token.newSymbol(Types.COMPARE_NOT_EQUAL, 0, 0),
-                                        ConstantExpression.NULL
-                                )
-                        ),
-                        new ExpressionStatement(
-                                new MethodCallExpression(new VariableExpression('__result'), new ConstantExpression('addAll'), new ArgumentListExpression(new VariableExpression(field.name)))
-                        ),
-                        EmptyStatement.INSTANCE
+                declS(localVarX('__result', ClassHelper.DYNAMIC_TYPE), new ListExpression()),
+                ifS(
+                        notNullX(varX(field.name)),
+                        stmt(callX(varX('__result'), constX('addAll'), args(varX(field.name))))
                 ),
-                new ReturnStatement(
-                        new CastExpression(
-                                methodReturnType,
-                                new VariableExpression('__result')
-                        )
-                )
+                returnS(castX(methodReturnType, varX('__result')))
         ])
         declaringClass.addMethod(new MethodNode(methodName, methodModifiers, methodReturnType, methodParameter, [] as ClassNode[], block))
     }
@@ -312,7 +248,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      * void fire${fireMethod.capitalize()}(${parameterList.join(', ')}) {
      *     if (${field.name} != null) {
      *         def __list = new ArrayList(${field.name})
-     *         __list.each { listener ->
+     *         for (listener in __list) {
      *             listener.$eventMethod(${evt})
      *         }
      *     }
@@ -330,53 +266,35 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
             return
         }
 
-        def args = new ArgumentListExpression(method.parameters)
+        def methodArgs = args(method.parameters)
 
         BlockStatement block = new BlockStatement()
         def listenerListType = ClassHelper.make(ArrayList).plainNodeReference
-        listenerListType.setGenericsTypes(types)
+        listenerListType.genericsTypes = types
         block.addStatements([
-                new IfStatement(
-                        new BooleanExpression(
-                                new BinaryExpression(
-                                        new VariableExpression(field.name),
-                                        Token.newSymbol(Types.COMPARE_NOT_EQUAL, 0, 0),
-                                        ConstantExpression.NULL
-                                )
-                        ),
+                ifS(
+                        notNullX(varX(field.name)),
                         new BlockStatement([
-                                new ExpressionStatement(
-                                        new DeclarationExpression(
-                                                localVarX('__list', listenerListType),
-                                                Token.newSymbol(Types.EQUALS, 0, 0),
-                                                new ConstructorCallExpression(listenerListType, new ArgumentListExpression(
-                                                        new VariableExpression(field.name)
-                                                ))
-                                        )
+                                declS(
+                                        localVarX('__list', listenerListType),
+                                        ctorX(listenerListType, args(varX(field.name)))
                                 ),
                                 new ForStatement(
-                                        new Parameter(ClassHelper.DYNAMIC_TYPE, 'listener'),
-                                        new VariableExpression('__list'),
+                                        param(ClassHelper.DYNAMIC_TYPE, 'listener'),
+                                        varX('__list'),
                                         new BlockStatement([
-                                                new ExpressionStatement(
-                                                        new MethodCallExpression(
-                                                                new VariableExpression('listener'),
-                                                                method.name,
-                                                                args
-                                                        )
-                                                )
+                                                stmt(callX(varX('listener'), method.name, methodArgs))
                                         ], new VariableScope())
                                 )
-                        ], new VariableScope()),
-                        EmptyStatement.INSTANCE
+                        ], new VariableScope())
                 )
         ])
 
         def params = method.parameters.collect {
             def paramType = ClassHelper.getWrapper(it.type)
             def cn = paramType.plainNodeReference
-            cn.setRedirect(paramType)
-            new Parameter(cn, it.name)
+            cn.redirect = paramType
+            param(cn, it.name)
         }
         declaringClass.addMethod(methodName, methodModifiers, methodReturnType, params as Parameter[], [] as ClassNode[], block)
     }

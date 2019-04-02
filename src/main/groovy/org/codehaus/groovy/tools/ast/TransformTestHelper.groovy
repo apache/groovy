@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.ast
 
+import groovy.transform.PackageScope
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
@@ -65,7 +66,7 @@ class TransformTestHelper {
      */
     Class parse(File input) {
         TestHarnessClassLoader loader = new TestHarnessClassLoader(transform, phase)
-        return loader.parseClass(input)
+        loader.parseClass(input)
     }
 
     /**
@@ -74,14 +75,14 @@ class TransformTestHelper {
      */
     Class parse(String input) {
         TestHarnessClassLoader loader = new TestHarnessClassLoader(transform, phase)
-        return loader.parseClass(input)
+        loader.parseClass(input)
     }
 }
 
 /**
  * ClassLoader exists so that TestHarnessOperation can be wired into the compile.
  */
-@groovy.transform.PackageScope
+@PackageScope
 class TestHarnessClassLoader extends GroovyClassLoader {
 
     private final ASTTransformation transform
@@ -94,24 +95,24 @@ class TestHarnessClassLoader extends GroovyClassLoader {
 
     protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource codeSource) {
         CompilationUnit cu = super.createCompilationUnit(config, codeSource)
-        cu.addPhaseOperation(new TestHarnessOperation(transform), phase.getPhaseNumber())
-        return cu
+        cu.addPhaseOperation(new TestHarnessOperation(transform), phase.phaseNumber)
+        cu
     }
 }
 
 /**
  * Operation exists so that an AstTransformation can be run against the SourceUnit.
  */
-@groovy.transform.PackageScope
+@PackageScope
 class TestHarnessOperation extends PrimaryClassNodeOperation {
 
     private final ASTTransformation transform
 
     TestHarnessOperation(transform) {
-        this.transform = transform;
+        this.transform = transform
     }
 
-    void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+    void call(SourceUnit source, GeneratorContext ignoredContext, ClassNode ignoredNode) {
         transform.visit(null, source)
     }
 }

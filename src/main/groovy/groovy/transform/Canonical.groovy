@@ -128,4 +128,4 @@ package groovy.transform
  * @since 1.8.0
  */
 @AnnotationCollector(value=[ToString, TupleConstructor, EqualsAndHashCode], mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
-public @interface Canonical { }
+@interface Canonical { }

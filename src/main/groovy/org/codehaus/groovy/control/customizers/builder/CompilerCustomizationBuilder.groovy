@@ -34,13 +34,14 @@ class CompilerCustomizationBuilder extends FactoryBuilderSupport {
     }
 
     static CompilerConfiguration withConfig(CompilerConfiguration config,
-                                            @DelegatesTo(type = "org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder") Closure code) {
+                                            @DelegatesTo(type = 'org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder') Closure code) {
         CompilerCustomizationBuilder builder = new CompilerCustomizationBuilder()
         config.invokeMethod('addCompilationCustomizers', builder.invokeMethod('customizers', code))
         config
     }
 
     @Override
+    @SuppressWarnings('Instanceof')
     protected Object postNodeCompletion(final Object parent, final Object node) {
         Object value = super.postNodeCompletion(parent, node)
         Object factory = getContextAttribute(CURRENT_FACTORY)
@@ -52,11 +53,11 @@ class CompilerCustomizationBuilder extends FactoryBuilderSupport {
     }
 
     private void registerFactories() {
-        registerFactory("ast", new ASTTransformationCustomizerFactory())
-        registerFactory("customizers", new CustomizersFactory())
-        registerFactory("imports", new ImportCustomizerFactory())
-        registerFactory("inline", new InlinedASTCustomizerFactory())
-        registerFactory("secureAst", new SecureASTCustomizerFactory())
-        registerFactory("source", new SourceAwareCustomizerFactory())
+        registerFactory('ast', new ASTTransformationCustomizerFactory())
+        registerFactory('customizers', new CustomizersFactory())
+        registerFactory('imports', new ImportCustomizerFactory())
+        registerFactory('inline', new InlinedASTCustomizerFactory())
+        registerFactory('secureAst', new SecureASTCustomizerFactory())
+        registerFactory('source', new SourceAwareCustomizerFactory())
     }
 }
