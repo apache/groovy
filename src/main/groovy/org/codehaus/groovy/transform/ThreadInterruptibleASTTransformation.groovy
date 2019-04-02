@@ -41,7 +41,7 @@ import org.codehaus.groovy.control.CompilePhase
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 @CompileStatic
-public class ThreadInterruptibleASTTransformation extends AbstractInterruptibleASTTransformation {
+class ThreadInterruptibleASTTransformation extends AbstractInterruptibleASTTransformation {
 
     private static final ClassNode MY_TYPE = ClassHelper.make(ThreadInterrupt)
     private static final ClassNode THREAD_TYPE = ClassHelper.make(Thread)
@@ -54,7 +54,7 @@ public class ThreadInterruptibleASTTransformation extends AbstractInterruptibleA
     }
 
     protected ClassNode type() {
-        return MY_TYPE;
+        MY_TYPE
     }
 
     protected String getErrorMessage() {
@@ -77,17 +77,17 @@ public class ThreadInterruptibleASTTransformation extends AbstractInterruptibleA
 
 
     @Override
-    public void visitClosureExpression(ClosureExpression closureExpr) {
+    void visitClosureExpression(ClosureExpression closureExpr) {
         def code = closureExpr.code
         closureExpr.code = wrapBlock(code)
         super.visitClosureExpression closureExpr
     }
 
     @Override
-    public void visitMethod(MethodNode node) {
+    void visitMethod(MethodNode node) {
         if (checkOnMethodStart && !node.isSynthetic() && !node.isAbstract()) {
             def code = node.code
-            node.code = wrapBlock(code);
+            node.code = wrapBlock(code)
         }
         super.visitMethod(node)
     }

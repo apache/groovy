@@ -49,6 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 class ASTTestTransformation extends AbstractASTTransformation implements CompilationUnitAware {
     private CompilationUnit compilationUnit
 
+    @SuppressWarnings('Instanceof')
     void visit(final ASTNode[] nodes, final SourceUnit source) {
         AnnotationNode annotationNode = nodes[0]
         def member = annotationNode.getMember('phase')
@@ -63,10 +64,10 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         }
         member = annotationNode.getMember('value')
         if (member && !(member instanceof ClosureExpression)) {
-            throw new SyntaxException("ASTTest value must be a closure", member.getLineNumber(), member.getColumnNumber())
+            throw new SyntaxException('ASTTest value must be a closure', member.getLineNumber(), member.getColumnNumber())
         }
         if (!member && !annotationNode.getNodeMetaData(ASTTestTransformation)) {
-            throw new SyntaxException("Missing test expression", annotationNode.getLineNumber(), annotationNode.getColumnNumber())
+            throw new SyntaxException('Missing test expression', annotationNode.getLineNumber(), annotationNode.getColumnNumber())
         }
         // convert value into node metadata so that the expression doesn't mix up with other AST xforms like type checking
         annotationNode.putNodeMetaData(ASTTestTransformation, member)
@@ -74,11 +75,11 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
 
         def pcallback = compilationUnit.progressCallback
         def callback = new CompilationUnit.ProgressCallback() {
-            Binding binding = new Binding([:].withDefault {null})
+            Binding binding = new Binding([:].withDefault { null })
 
             @Override
             void call(final ProcessingUnit context, final int phaseRef) {
-                if (phase==null ||  phaseRef == phase.phaseNumber) {
+                if (phase == null || phaseRef == phase.phaseNumber) {
                     ClosureExpression testClosure = nodes[0].getNodeMetaData(ASTTestTransformation)
                     StringBuilder sb = new StringBuilder()
                     for (int i = testClosure.lineNumber; i <= testClosure.lastLineNumber; i++) {
@@ -91,7 +92,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                     config.addCompilationCustomizers(customizer)
                     binding['sourceUnit'] = source
                     binding['node'] = nodes[1]
-                    binding['lookup'] = new MethodClosure(LabelFinder, "lookup").curry(nodes[1])
+                    binding['lookup'] = new MethodClosure(LabelFinder, 'lookup').curry(nodes[1])
                     binding['compilationUnit'] = compilationUnit
                     binding['compilePhase'] = CompilePhase.fromPhaseNumber(phaseRef)
 
@@ -113,16 +114,16 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                 }
             }
         }
-        
-        if (pcallback!=null) {
+
+        if (pcallback != null) {
             if (pcallback instanceof ProgressCallbackChain) {
-                pcallback.addCallback(callback)                
+                pcallback.addCallback(callback)
             } else {
                 pcallback = new ProgressCallbackChain(pcallback, callback)
             }
             callback = pcallback
         }
-        
+
         compilationUnit.setProgressCallback(callback)
 
     }
@@ -141,28 +142,26 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
 
         @Override
         String getSample(final int line, final int column, final Janitor janitor) {
-            String sample = null;
-            String text = delegate.getLine(line, janitor);
+            String sample = null
+            String text = delegate.getLine(line, janitor)
 
             if (text != null) {
                 if (column > 0) {
-                    String marker = Utilities.repeatString(" ", column - 1) + "^";
+                    String marker = Utilities.repeatString(' ', column - 1) + '^'
 
                     if (column > 40) {
-                        int start = column - 30 - 1;
-                        int end = (column + 10 > text.length() ? text.length() : column + 10 - 1);
-                        sample = "   " + text.substring(start, end) + Utilities.eol() + "   " +
-                                marker.substring(start, marker.length());
+                        int start = column - 30 - 1
+                        int end = (column + 10 > text.length() ? text.length() : column + 10 - 1)
+                        sample = '   ' + text.substring(start, end) + Utilities.eol() + '   ' +
+                                marker.substring(start, marker.length())
                     } else {
-                        sample = "   " + text + Utilities.eol() + "   " + marker;
+                        sample = '   ' + text + Utilities.eol() + '   ' + marker
                     }
                 } else {
-                    sample = text;
+                    sample = text
                 }
             }
-
-            return sample;
-
+            sample
         }
 
     }
@@ -177,7 +176,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
             }
         }
 
-        public void addCallback(CompilationUnit.ProgressCallback callback) {
+        void addCallback(CompilationUnit.ProgressCallback callback) {
             chain << callback
         }
         
@@ -187,16 +186,16 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         }
     }
 
-    public static class LabelFinder extends ClassCodeVisitorSupport {
+    static class LabelFinder extends ClassCodeVisitorSupport {
 
-        public static List<Statement> lookup(MethodNode node, String label) {
+        static List<Statement> lookup(MethodNode node, String label) {
             LabelFinder finder = new LabelFinder(label, null)
             node.code.visit(finder)
 
             finder.targets
         }
 
-        public static List<Statement> lookup(ClassNode node, String label) {
+        static List<Statement> lookup(ClassNode node, String label) {
             LabelFinder finder = new LabelFinder(label, null)
             node.methods*.code*.visit(finder)
             node.declaredConstructors*.code*.visit(finder)
@@ -207,11 +206,11 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         private final String label
         private final SourceUnit unit
 
-        private final List<Statement> targets = new LinkedList<Statement>();
+        private final List<Statement> targets = new LinkedList<Statement>()
 
         LabelFinder(final String label, final SourceUnit unit) {
             this.label = label
-            this.unit = unit;
+            this.unit = unit
         }
 
         @Override
@@ -226,7 +225,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         }
 
         List<Statement> getTargets() {
-            return Collections.unmodifiableList(targets)
+            Collections.unmodifiableList(targets)
         }
     }
 

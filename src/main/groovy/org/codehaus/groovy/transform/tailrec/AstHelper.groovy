@@ -25,7 +25,6 @@ import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.ContinueStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
-import org.codehaus.groovy.ast.stmt.ThrowStatement
 
 import java.lang.reflect.Modifier
 
@@ -33,6 +32,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
 /**
@@ -40,16 +40,16 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  */
 @CompileStatic
 class AstHelper {
-	static ExpressionStatement createVariableDefinition(String variableName, ClassNode variableType, Expression value, boolean variableShouldBeFinal = false ) {
+    static ExpressionStatement createVariableDefinition(String variableName, ClassNode variableType, Expression value, boolean variableShouldBeFinal = false) {
         def newVariable = localVarX(variableName, variableType)
         if (variableShouldBeFinal)
-            newVariable.setModifiers(Modifier.FINAL)
+            newVariable.modifiers = Modifier.FINAL
         (ExpressionStatement) declS(newVariable, value)
-	}
+    }
 
-	static ExpressionStatement createVariableAlias(String aliasName, ClassNode variableType, String variableName ) {
-		createVariableDefinition(aliasName, variableType, varX(variableName, variableType))
-	}
+    static ExpressionStatement createVariableAlias(String aliasName, ClassNode variableType, String variableName) {
+        createVariableDefinition(aliasName, variableType, varX(variableName, variableType))
+    }
 
     static VariableExpression createVariableReference(Map variableSpec) {
         varX((String) variableSpec.name, (ClassNode) variableSpec.type)
@@ -70,6 +70,6 @@ class AstHelper {
      */
     static Statement recurByThrowStatement() {
         // throw InWhileLoopWrapper.LOOP_EXCEPTION
-        new ThrowStatement(propX(classX(InWhileLoopWrapper), 'LOOP_EXCEPTION'))
+        throwS(propX(classX(InWhileLoopWrapper), 'LOOP_EXCEPTION'))
     }
 }

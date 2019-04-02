@@ -51,7 +51,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
-    private static final Class MY_CLASS = TailRecursive.class
+    private static final Class MY_CLASS = TailRecursive
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS)
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage()
     private HasRecursiveCalls hasRecursiveCalls = new HasRecursiveCalls()
@@ -99,13 +99,13 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
     private void transformToIteration(MethodNode method, SourceUnit source) {
         if (method.isVoidMethod()) {
-            transformVoidMethodToIteration(method, source)
+            transformVoidMethodToIteration(method)
         } else {
             transformNonVoidMethodToIteration(method, source)
         }
     }
 
-    private void transformVoidMethodToIteration(MethodNode method, SourceUnit source) {
+    private void transformVoidMethodToIteration(MethodNode method) {
         addError("Void methods are not supported by @TailRecursive yet.", method)
     }
 
@@ -127,6 +127,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
         new VariableScopeVisitor(source).visitClass(method.declaringClass)
     }
 
+    @SuppressWarnings('Instanceof')
     private void replaceReturnsWithTernariesToIfStatements(MethodNode method) {
         Closure<Boolean> whenReturnWithTernary = { ASTNode node ->
             if (!(node instanceof ReturnStatement)) {
@@ -190,6 +191,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
         replaceRecursiveReturnsInsideClosures(method, positionMapping)
     }
 
+    @SuppressWarnings('Instanceof')
     private void replaceRecursiveReturnsOutsideClosures(MethodNode method, Map<Integer, Map> positionMapping) {
         Closure<Boolean> whenRecursiveReturn = { Statement statement, boolean inClosure ->
             if (inClosure)
@@ -210,6 +212,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
         replacer.replaceIn(method.code)
     }
 
+    @SuppressWarnings('Instanceof')
     private void replaceRecursiveReturnsInsideClosures(MethodNode method, Map<Integer, Map> positionMapping) {
         Closure<Boolean> whenRecursiveReturn = { Statement statement, boolean inClosure ->
             if (!inClosure)
@@ -250,6 +253,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
         hasRecursiveCalls.test(method)
     }
 
+    @SuppressWarnings('Instanceof')
     private boolean isRecursiveIn(Expression methodCall, MethodNode method) {
         if (methodCall instanceof MethodCallExpression)
             return new RecursivenessTester().isRecursive(method, (MethodCallExpression) methodCall)

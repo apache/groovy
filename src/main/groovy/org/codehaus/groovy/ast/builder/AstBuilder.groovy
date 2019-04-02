@@ -36,23 +36,27 @@ import org.codehaus.groovy.control.CompilePhase
 class AstBuilder {
 
     /**
-     * Builds AST based on the code within the  {@link Closure}  parameter.
+     * Builds AST based on the code within the {@link Closure}  parameter.
      *
      * This method <strong>must</strong> be invoked at compile time and never at runtime, because
      * an ASTTransformation must be run to support it. If you receive an IllegalStateException then
      * you most likely need to add stronger typing. For instance, this will not work:
      * <code>
      *      def builder = new AstBuilder()
-     *      builder.buildFromCode {*             // some code
-     *}* </code>
+     *      builder.buildFromCode {
+     *             // some code
+     *      }
+     * </code>
      * While this code will:
      * <code>
-     *      new AstBuilder().buildFromCode {*             // some code
-     *}* </code>
+     *      new AstBuilder().buildFromCode {
+     *             // some code
+     *      }
+     * </code>
      *
-     * The compiler rewrites buildFromCode invocations into  {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
-     * invocations. An exception raised during AST generation will show a stack trace from  {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
-     * and not from  {@link AstBuilder#buildFromCode(CompilePhase, boolean, Closure)} .
+     * The compiler rewrites buildFromCode invocations into {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
+     * invocations. An exception raised during AST generation will show a stack trace from {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
+     * and not from {@link AstBuilder#buildFromCode(CompilePhase, boolean, Closure)} .
      *
      * The compiler saves the source code of the closure as a String within the Java class file. The String source
      * of the closure will be visible and un-obfuscated within the class file. If your Closure parameter contains
@@ -60,21 +64,21 @@ class AstBuilder {
      * Do not store sensitive data within the closure parameter.
      *
      * @param phase
-     *      the  {@link CompilePhase}  the AST will be targeted towards. Default is  {@link CompilePhase#CLASS_GENERATION}
+     *      the {@link CompilePhase} the AST will be targeted towards. Default is {@link CompilePhase#CLASS_GENERATION}
      * @param statementsOnly
      *      when true, only the script statements are returned. WHen false, you will
      *      receive back a Script class node also. Default is true.
      * @param block
      *      the code that will be converted
-     * @returns a List of  {@link ASTNode} .
-     * @throws IllegalStateException*      this method may not be invoked at runtime. It works via a compile-time transformation
-     *      of the closure source code into a String, which is sent to the  {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
-     *      method. The buildFromCode() method must be invoked against a strongly typed AstBuilder.
+     * @returns a List of {@link ASTNode}
+     * @throws IllegalStateException
+     * this method may not be invoked at runtime. It works via a compile-time transformation
+     * of the closure source code into a String, which is sent to the {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
+     * method. The buildFromCode() method must be invoked against a strongly typed AstBuilder.
      */
-    List<ASTNode> buildFromCode(CompilePhase phase = CompilePhase.CLASS_GENERATION, boolean statementsOnly = true, Closure block) {
-        throw new IllegalStateException("""AstBuilder.build(CompilePhase, boolean, Closure):List<ASTNode> should never be called at runtime.
-Are you sure you are using it correctly?
-""")
+    List<ASTNode> buildFromCode(CompilePhase ignoredPhase = CompilePhase.CLASS_GENERATION, boolean ignoredStatementsOnly = true, Closure ignoredBlock) {
+        throw new IllegalStateException('''AstBuilder.build(CompilePhase, boolean, Closure):List<ASTNode> should never be called at runtime.
+Are you sure you are using it correctly?''')
     }
 
 
@@ -89,11 +93,12 @@ Are you sure you are using it correctly?
      * @param source
      *      The source code String that will be compiled.
      * @returns a List of  {@link ASTNode} .
-     * @throws IllegalArgumentException*      if source is null or empty
+     * @throws IllegalArgumentException
+     *      if source is null or empty
      */
     List<ASTNode> buildFromString(CompilePhase phase = CompilePhase.CLASS_GENERATION, boolean statementsOnly = true, String source) {
-        if (!source || "" == source.trim()) throw new IllegalArgumentException("A source must be specified")
-        return new AstStringCompiler().compile(source, phase, statementsOnly);
+        if (!source || '' == source.trim()) throw new IllegalArgumentException('A source must be specified')
+        new AstStringCompiler().compile(source, phase, statementsOnly)
     }
 
     /**
@@ -107,11 +112,12 @@ Are you sure you are using it correctly?
      *      receive back a Script class node also. Default is true.
      * @param source
      *      The source code String that will be compiled. The string must be a block wrapped in curly braces. 
-     * @returns a List of  {@link ASTNode} .
-     * @throws IllegalArgumentException*      if source is null or empty
+     * @returns a List of {@link ASTNode}.
+     * @throws IllegalArgumentException if source is null or empty
      */
+    @SuppressWarnings('Instanceof')
     private List<ASTNode> buildFromBlock(CompilePhase phase = CompilePhase.CLASS_GENERATION, boolean statementsOnly = true, String source) {
-        if (!source || "" == source.trim()) throw new IllegalArgumentException("A source must be specified")
+        if (!source || '' == source.trim()) throw new IllegalArgumentException('A source must be specified')
         def labelledSource = "__synthesized__label__${System.currentTimeMillis()}__:" + source
         List<ASTNode> result = new AstStringCompiler().compile(labelledSource, phase, statementsOnly)
         // find the block statement from the result, and unwrap it from one level.
@@ -132,6 +138,6 @@ Are you sure you are using it correctly?
     List<ASTNode> buildFromSpec(@DelegatesTo(AstSpecificationCompiler) Closure specification) {
         if (specification == null) throw new IllegalArgumentException('Null: specification')
         def properties = new AstSpecificationCompiler(specification)
-        return properties.expression
+        properties.expression
     }
 }

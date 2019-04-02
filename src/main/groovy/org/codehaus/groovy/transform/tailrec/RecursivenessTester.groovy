@@ -46,6 +46,7 @@ class RecursivenessTester {
 		isRecursive(params.method, params.call)
 	}
 
+    @SuppressWarnings('Instanceof')
 	boolean isRecursive(MethodNode method, MethodCallExpression call) {
 		if (!isCallToThis(call))
 			return false
@@ -67,21 +68,22 @@ class RecursivenessTester {
         methodParamsMatchCallArgs(method, call)
     }
 
+    @SuppressWarnings('Instanceof')
 	private boolean isCallToThis(MethodCallExpression call) {
 		if (call.objectExpression == null)
 			return call.isImplicitThis()
         if (! (call.objectExpression instanceof VariableExpression)) {
             return false
         }
-		return call.objectExpression.isThisExpression()
+		call.objectExpression.isThisExpression()
 	}
 	
 	private boolean methodParamsMatchCallArgs(method, call) {
         if (method.parameters.size() != call.arguments.expressions.size())
             return false
         def classNodePairs = [method.parameters*.type, call.arguments*.type].transpose()
-        return classNodePairs.every { ClassNode paramType, ClassNode argType  ->
-            return areTypesCallCompatible(argType, paramType)
+        classNodePairs.every { ClassNode paramType, ClassNode argType  ->
+            areTypesCallCompatible(argType, paramType)
         }
 	}
 
@@ -93,7 +95,7 @@ class RecursivenessTester {
     private areTypesCallCompatible(ClassNode argType, ClassNode paramType) {
         ClassNode boxedArg = ClassHelper.getWrapper(argType)
         ClassNode boxedParam = ClassHelper.getWrapper(paramType)
-        return boxedArg.isDerivedFrom(boxedParam) || boxedParam.isDerivedFrom(boxedArg)
+        boxedArg.isDerivedFrom(boxedParam) || boxedParam.isDerivedFrom(boxedArg)
     }
 
 }

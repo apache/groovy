@@ -33,21 +33,25 @@ import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.ast.stmt.WhileStatement
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block
+import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param
+
 /**
  * Wrap the body of a method in a while loop, nested in a try-catch.
  * This is the first step in making a tail recursive method iterative.
  *
  * There are two ways to invoke the next iteration step:
  * <ol>
- * <li>"continue _RECURE_HERE_" is used by recursive calls outside of closures</li>
+ * <li>"continue _RECUR_HERE_" is used by recursive calls outside of closures</li>
  * <li>"throw LOOP_EXCEPTION" is used by recursive calls within closures b/c you cannot invoke "continue" from there</li>
  * </ol>
  */
 @CompileStatic
 class InWhileLoopWrapper {
-	
 	static final String LOOP_LABEL = '_RECUR_HERE_'
-    static final GotoRecurHereException  LOOP_EXCEPTION = new GotoRecurHereException()
+    static final GotoRecurHereException LOOP_EXCEPTION = new GotoRecurHereException()
 
 	void wrap(MethodNode method) {
 		BlockStatement oldBody = method.code as BlockStatement
@@ -56,18 +60,18 @@ class InWhileLoopWrapper {
                 EmptyStatement.INSTANCE
         )
         tryCatchStatement.addCatch(new CatchStatement(
-                new Parameter(ClassHelper.make(GotoRecurHereException), 'ignore'),
+                param(ClassHelper.make(GotoRecurHereException), 'ignore'),
                 new ContinueStatement(InWhileLoopWrapper.LOOP_LABEL)
         ))
 
         WhileStatement whileLoop = new WhileStatement(
-                new BooleanExpression(new ConstantExpression(true)),
-                new BlockStatement([tryCatchStatement] as List<Statement>, new VariableScope(method.variableScope))
+                boolX(constX(true)),
+                block(new VariableScope(method.variableScope), tryCatchStatement)
         )
         List<Statement> whileLoopStatements = ((BlockStatement) whileLoop.loopBlock).statements
         if (whileLoopStatements.size() > 0)
             whileLoopStatements[0].statementLabel = LOOP_LABEL
-		BlockStatement newBody = new BlockStatement([] as List<Statement>, new VariableScope(method.variableScope))
+		BlockStatement newBody = block(new VariableScope(method.variableScope))
 		newBody.addStatement(whileLoop)
 		method.code = newBody
 	}
@@ -76,6 +80,6 @@ class InWhileLoopWrapper {
 /**
  * Exception will be thrown by recursive calls in closures and caught in while loop to continue to LOOP_LABEL
  */
-class GotoRecurHereException extends Throwable {
+class GotoRecurHereException extends Exception {
 
 }

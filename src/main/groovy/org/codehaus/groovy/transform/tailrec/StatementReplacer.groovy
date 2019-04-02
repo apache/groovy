@@ -59,36 +59,36 @@ class StatementReplacer extends CodeVisitorSupport {
         copyOfStatements.eachWithIndex { Statement statement, int index ->
             replaceIfNecessary(statement) { Statement node -> block.statements[index] = node }
         }
-        super.visitBlockStatement(block);
+        super.visitBlockStatement(block)
     }
 
     void visitIfElse(IfStatement ifElse) {
         replaceIfNecessary(ifElse.ifBlock) { Statement s -> ifElse.ifBlock = s }
         replaceIfNecessary(ifElse.elseBlock) { Statement s -> ifElse.elseBlock = s }
-        super.visitIfElse(ifElse);
+        super.visitIfElse(ifElse)
     }
 
     void visitForLoop(ForStatement forLoop) {
         replaceIfNecessary(forLoop.loopBlock) { Statement s -> forLoop.loopBlock = s }
-        super.visitForLoop(forLoop);
+        super.visitForLoop(forLoop)
     }
 
     void visitWhileLoop(WhileStatement loop) {
         replaceIfNecessary(loop.loopBlock) { Statement s -> loop.loopBlock = s }
-        super.visitWhileLoop(loop);
+        super.visitWhileLoop(loop)
     }
 
     void visitDoWhileLoop(DoWhileStatement loop) {
         replaceIfNecessary(loop.loopBlock) { Statement s -> loop.loopBlock = s }
-        super.visitDoWhileLoop(loop);
+        super.visitDoWhileLoop(loop)
     }
 
 
     private void replaceIfNecessary(Statement nodeToCheck, Closure replacementCode) {
         if (conditionFulfilled(nodeToCheck)) {
             ASTNode replacement = replaceWith(nodeToCheck)
-            replacement.setSourcePosition(nodeToCheck);
-            replacement.copyNodeMetaData(nodeToCheck);
+            replacement.sourcePosition = nodeToCheck
+            replacement.copyNodeMetaData(nodeToCheck)
             replacementCode(replacement)
         }
     }
@@ -96,8 +96,7 @@ class StatementReplacer extends CodeVisitorSupport {
     private boolean conditionFulfilled(ASTNode nodeToCheck) {
         if (when.maximumNumberOfParameters < 2)
             return when(nodeToCheck)
-        else
-            return when(nodeToCheck, isInClosure())
+        when(nodeToCheck, isInClosure())
     }
 
     private boolean isInClosure() {
