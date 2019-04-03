@@ -77,7 +77,7 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
         init(nodes, source)
         AnnotationNode node = nodes[0]
         AnnotatedNode annotatedNode = nodes[1]
-        if (!MY_TYPE.equals(node.getClassNode())) {
+        if (!MY_TYPE.equals(node.classNode)) {
             internalError("Transformation called from wrong annotation: $node.classNode.name")
         }
 
@@ -87,13 +87,13 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
         def maximum = getConstantAnnotationParameter(node, 'value', Long.TYPE, Long.MAX_VALUE)
         def thrown = AbstractInterruptibleASTTransformation.getClassAnnotationParameter(node, THROWN_EXCEPTION_TYPE, make(TimeoutException))
 
-        Expression unit = node.getMember('unit') ?: propX(classX(TimeUnit), "SECONDS")
+        Expression unit = node.getMember('unit') ?: propX(classX(TimeUnit), 'SECONDS')
 
         // should be limited to the current SourceUnit or propagated to the whole CompilationUnit
         // DO NOT inline visitor creation in code below. It has state that must not persist between calls
         if (applyToAllClasses) {
             // guard every class and method defined in this script
-            source.getAST()?.classes?.each { ClassNode it ->
+            source.AST?.classes?.each { ClassNode it ->
                 def visitor = new TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, applyToAllMembers, maximum, unit, thrown, node.hashCode())
                 visitor.visitClass(it)
             }
@@ -118,7 +118,7 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
             visitor.visitClass annotatedNode.declaringClass
         } else {
             // only guard the script class
-            source.getAST()?.classes?.each { ClassNode it ->
+            source.AST?.classes?.each { ClassNode it ->
                 if (it.isScript()) {
                     def visitor = new TimedInterruptionVisitor(source, checkOnMethodStart, applyToAllClasses, applyToAllMembers, maximum, unit, thrown, node.hashCode())
                     visitor.visitClass(it)
@@ -232,7 +232,7 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
                                     args(constX(maximum, true), unit)
                             )
                     )
-            );
+            )
             expireTimeField.synthetic = true
             startTimeField = node.addField(basename + '$startTime',
                     ACC_FINAL | ACC_PRIVATE,

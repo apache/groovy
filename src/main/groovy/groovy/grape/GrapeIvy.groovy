@@ -445,11 +445,11 @@ class GrapeIvy implements GrapeEngine {
         }
 
         // resolve grab and dependencies
-        ResolveOptions resolveOptions = new ResolveOptions()
-                .setConfs(GrapeIvy.DEF_CONFIG as String[])
-                .setOutputReport(false)
-                .setValidate((boolean) (args.containsKey('validate') ? args.validate : false))
-
+        ResolveOptions resolveOptions = new ResolveOptions().tap {
+            confs = DEF_CONFIG as String[]
+            outputReport = false
+            validate = (boolean) (args.containsKey('validate') ? args.validate : false)
+        }
         ivyInstance.settings.defaultResolver = args.autoDownload ? 'downloadGrapes' : 'cachedGrapes'
         if (args.disableChecksums) {
             ivyInstance.settings.setVariable('ivy.checksums', '')
@@ -714,7 +714,7 @@ class GrapeIvy implements GrapeEngine {
                         module : grabbed.mrid.name,
                         version: grabbed.mrid.revision
                 ]
-                if (grabbed.conf != GrapeIvy.DEF_CONFIG) {
+                if (grabbed.conf != DEF_CONFIG) {
                     dep.conf = grabbed.conf
                 }
                 if (grabbed.changing) {

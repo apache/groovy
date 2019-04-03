@@ -47,14 +47,14 @@ class AstStringCompiler {
      */
     List<ASTNode> compile(String script, CompilePhase compilePhase, boolean statementsOnly) {
         final scriptClassName = makeScriptClassName()
-        GroovyCodeSource codeSource = new GroovyCodeSource(script, "${scriptClassName}.groovy", "/groovy/script")
+        GroovyCodeSource codeSource = new GroovyCodeSource(script, "${scriptClassName}.groovy", '/groovy/script')
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, AccessController.doPrivileged({
             new GroovyClassLoader()
         } as PrivilegedAction<GroovyClassLoader>))
-        cu.addSource(codeSource.getName(), script)
-        cu.compile(compilePhase.getPhaseNumber())
+        cu.addSource(codeSource.name, script)
+        cu.compile(compilePhase.phaseNumber)
         // collect all the ASTNodes into the result, possibly ignoring the script body if desired
-        return (List<ASTNode>) cu.getAST().modules.inject([]) { List acc, ModuleNode node ->
+        (List<ASTNode>) cu.AST.modules.inject([]) { List acc, ModuleNode node ->
             if (node.statementBlock) acc.add(node.statementBlock)
             node.classes?.each {
                 if (!(statementsOnly && it.name == scriptClassName)) {
@@ -66,6 +66,6 @@ class AstStringCompiler {
     }
 
     private static String makeScriptClassName() {
-        return "Script${System.nanoTime()}"
+        "Script${System.nanoTime()}"
     }
 }
