@@ -27,27 +27,27 @@ public class ArrayUtil {
 """
 
 def genMethods () {
-    def res = ""
+    def res = ''
     for (i in 1..250)
-      res += "\n\n" + genMethod (i)
+      res += '\n\n' + genMethod (i)
     res
 }
 
 def genMethod (int paramNum) {
-    def res = "public static Object [] createArray ("
+    def res = 'public static Object [] createArray ('
     for (k in 0..<paramNum) {
-        res += "Object arg" + k
+        res += 'Object arg' + k
         if (k != paramNum-1)
-          res += ", "
+          res += ', '
     }
-    res += ") {\n"
-    res += "return new Object [] {\n"
+    res += ') {\n'
+    res += 'return new Object [] {\n'
         for (k in 0..<paramNum) {
-            res += "arg" + k
+            res += 'arg' + k
             if (k != paramNum-1)
-              res += ", "
+              res += ', '
         }
-        res += "};\n"
-    res += "}"
+        res += '};\n'
+    res += '}'
     res
 }

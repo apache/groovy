@@ -53,9 +53,9 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
     private static final Class MY_CLASS = TailRecursive
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS)
-    static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage()
-    private HasRecursiveCalls hasRecursiveCalls = new HasRecursiveCalls()
-    private TernaryToIfStatementConverter ternaryToIfStatement = new TernaryToIfStatementConverter()
+    static final String MY_TYPE_NAME = '@' + MY_TYPE.nameWithoutPackage
+    private final HasRecursiveCalls hasRecursiveCalls = new HasRecursiveCalls()
+    private final TernaryToIfStatementConverter ternaryToIfStatement = new TernaryToIfStatementConverter()
 
 
     @Override
@@ -65,7 +65,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
         MethodNode method = nodes[1] as MethodNode
 
         if (method.isAbstract()) {
-            addError("Annotation " + MY_TYPE_NAME + " cannot be used for abstract methods.", method)
+            addError("Annotation $MY_TYPE_NAME cannot be used for abstract methods.", method)
             return
         }
 
@@ -75,7 +75,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
                 if (annotationNode.classNode == MY_TYPE)
                     break
                 if (annotationNode.classNode == memoizedClassNode) {
-                    addError("Annotation " + MY_TYPE_NAME + " must be placed before annotation @Memoized.", annotationNode)
+                    addError("Annotation $MY_TYPE_NAME must be placed before annotation @Memoized.", annotationNode)
                     return
                 }
             }
@@ -83,7 +83,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
         if (!hasRecursiveMethodCalls(method)) {
             AnnotationNode annotationNode = method.getAnnotations(ClassHelper.make(TailRecursive))[0]
-            addError("No recursive calls detected. You must remove annotation " + MY_TYPE_NAME + ".", annotationNode)
+            addError("No recursive calls detected. You must remove annotation ${MY_TYPE_NAME}.", annotationNode)
             return
         }
 
@@ -93,7 +93,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
     private boolean hasAnnotation(MethodNode methodNode, ClassNode annotation) {
         List annots = methodNode.getAnnotations(annotation)
-        return (annots != null && annots.size() > 0)
+        annots != null && annots.size() > 0
     }
 
 
@@ -106,7 +106,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
     }
 
     private void transformVoidMethodToIteration(MethodNode method) {
-        addError("Void methods are not supported by @TailRecursive yet.", method)
+        addError('Void methods are not supported by @TailRecursive yet.', method)
     }
 
     private void transformNonVoidMethodToIteration(MethodNode method, SourceUnit source) {
@@ -133,7 +133,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
             if (!(node instanceof ReturnStatement)) {
                 return false
             }
-            return (((ReturnStatement) node).expression instanceof TernaryExpression)
+            ((ReturnStatement) node).expression instanceof TernaryExpression
         }
         Closure<Statement> replaceWithIfStatement = { ReturnStatement statement ->
             ternaryToIfStatement.convert(statement)
@@ -167,7 +167,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
             String iterationVariableName = iterationVariableName(paramName)
             nameAndTypeMapping[paramName] = [name: iterationVariableName, type: paramType]
         }
-        return nameAndTypeMapping
+        nameAndTypeMapping
     }
 
     // Public b/c there are tests for this method
@@ -179,7 +179,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
             String iterationVariableName = this.iterationVariableName(paramName)
             positionMapping[index] = [name: iterationVariableName, type: paramType]
         }
-        return positionMapping
+        positionMapping
     }
 
     private String iterationVariableName(String paramName) {
@@ -203,7 +203,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
             if (!(inner instanceof MethodCallExpression) && !(inner instanceof StaticMethodCallExpression)) {
                 return false
             }
-            return isRecursiveIn(inner, method)
+            isRecursiveIn(inner, method)
         }
         Closure<Statement> replaceWithContinueBlock = { ReturnStatement statement ->
             new ReturnStatementToIterationConverter().convert(statement, positionMapping)
@@ -224,7 +224,7 @@ class TailRecursiveASTTransformation extends AbstractASTTransformation {
             if (!(inner instanceof MethodCallExpression) && !(inner instanceof StaticMethodCallExpression)) {
                 return false
             }
-            return isRecursiveIn(inner, method)
+            isRecursiveIn(inner, method)
         }
         Closure<Statement> replaceWithThrowLoopException = { ReturnStatement statement ->
             new ReturnStatementToIterationConverter(recurStatement: AstHelper.recurByThrowStatement()).convert(statement, positionMapping)

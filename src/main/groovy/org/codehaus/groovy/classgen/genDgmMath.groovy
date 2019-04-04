@@ -18,22 +18,22 @@
  */
 package org.codehaus.groovy.classgen
 
-def types = ["Integer", "Long", "Float", "Double"]
+def types = ['Integer', 'Long', 'Float', 'Double']
 
 def getMath (a,b) {
-    if (a == "Double" || b == "Double" || a == "Float" || b == "Float")
-      return "FloatingPointMath"
+    if (a == 'Double' || b == 'Double' || a == 'Float' || b == 'Float')
+      return 'FloatingPointMath'
 
-    if (a == "Long" || b == "Long")
-      return "LongMath"
+    if (a == 'Long' || b == 'Long')
+      return 'LongMath'
 
-    "IntegerMath"
+    'IntegerMath'
 }
 
-println """
+println '''
 public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
     NumberMath m = NumberMath.getMath((Number)receiver, (Number)args[0]);
-"""
+'''
 
 types.each {
     a ->
@@ -54,10 +54,10 @@ types.each {
             };
         """
     }
-    println "}"
+    println '}'
 }
 
-println """
+println '''
     return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
         public final Object invoke(Object receiver, Object[] args) {
             return math.addImpl((Number)receiver,(Number)args[0]);
@@ -67,21 +67,26 @@ println """
             return math.addImpl((Number)receiver,(Number)arg);
         }
 }
-"""
+'''
 
 for (i in 2..256) {
     print "public Object invoke$i (Object receiver, "
-    for (j in 1..(i-1)) {
+    printParams(i)
+    println "Object a$i) {"
+    print '  return invoke (receiver, new Object[] {'
+    printArgs(i)
+    println "a$i} );"
+    println '}'
+}
+
+private void printParams(int i) {
+    for (j in 1..(i - 1)) {
         print "Object a$j, "
     }
-    println "Object a$i) {"
+}
 
-    print "  return invoke (receiver, new Object[] {"
-
-    for (j in 1..(i-1)) {
+private void printArgs(int i) {
+    for (j in 1..(i - 1)) {
         print "a$j, "
     }
-    println "a$i} );"
-
-    println "}"
 }
