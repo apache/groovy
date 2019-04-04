@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package gls.ch06.s05;
+package gls.ch06.s05
 
-import gls.ch06.s05.testClasses.Tt1cgi;
-import gls.ch06.s05.testClasses.Tt1cgo;
-import gls.ch06.s05.testClasses.Tt1gi;
-import gls.ch06.s05.testClasses.Tt1go;
-import gls.ch06.s05.testClasses.Tt1;
-import gls.ch06.s05.testClasses.Tt1c;
+import gls.ch06.s05.testClasses.Tt1cgi
+import gls.ch06.s05.testClasses.Tt1cgo
+import gls.ch06.s05.testClasses.Tt1gi
+import gls.ch06.s05.testClasses.Tt1go
+import gls.ch06.s05.testClasses.Tt1
+import gls.ch06.s05.testClasses.Tt1c
 
 class GName1Test extends GroovyTestCase {
   void testObjectSupportNameHandling() {
