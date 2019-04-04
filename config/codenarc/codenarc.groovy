@@ -167,7 +167,10 @@ ruleset {
 
     ruleset('rulesets/logging.xml') {
         exclude 'SystemOutPrint'  // too many to worry about, review later
-        exclude 'SystemErrPrint'    // too many to worry about, review later
+        exclude 'SystemErrPrint'  // too many to worry about, review later
+        'Println' {
+            doNotApplyToFileNames='genArrayAccess.groovy,genArrayUtil.groovy,genDgmMath.groovy,genMathModification.groovy,'
+        }
     }
     ruleset('rulesets/braces.xml') {
         exclude 'ForStatementBraces' // for statements without braces seems acceptable in our coding standards
@@ -220,7 +223,6 @@ ruleset {
     }
     ruleset('rulesets/dry.xml') {
         exclude 'DuplicateNumberLiteral'    // too many to worry about, review later
-        exclude 'DuplicateStringLiteralRule'    // too many to worry about, review later
         exclude 'DuplicateStringLiteral'    // too many to worry about, review later
     }
     ruleset('rulesets/design.xml') {

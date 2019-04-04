@@ -64,14 +64,14 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         }
         member = annotationNode.getMember('value')
         if (member && !(member instanceof ClosureExpression)) {
-            throw new SyntaxException('ASTTest value must be a closure', member.getLineNumber(), member.getColumnNumber())
+            throw new SyntaxException('ASTTest value must be a closure', member.lineNumber, member.columnNumber)
         }
         if (!member && !annotationNode.getNodeMetaData(ASTTestTransformation)) {
-            throw new SyntaxException('Missing test expression', annotationNode.getLineNumber(), annotationNode.getColumnNumber())
+            throw new SyntaxException('Missing test expression', annotationNode.lineNumber, annotationNode.columnNumber)
         }
         // convert value into node metadata so that the expression doesn't mix up with other AST xforms like type checking
         annotationNode.putNodeMetaData(ASTTestTransformation, member)
-        annotationNode.getMembers().remove('value')
+        annotationNode.members.remove('value')
 
         def pcallback = compilationUnit.progressCallback
         def callback = new CompilationUnit.ProgressCallback() {
@@ -85,8 +85,8 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                     for (int i = testClosure.lineNumber; i <= testClosure.lastLineNumber; i++) {
                         sb.append(source.source.getLine(i, new Janitor())).append('\n')
                     }
-                    def testSource = sb.substring(testClosure.columnNumber, sb.length())
-                    testSource = testSource.substring(0, testSource.lastIndexOf('}'))
+                    def testSource = sb[testClosure.columnNumber..<sb.length()]
+                    testSource = testSource[0..<testSource.lastIndexOf('}')]
                     CompilerConfiguration config = new CompilerConfiguration()
                     def customizer = new ImportCustomizer()
                     config.addCompilationCustomizers(customizer)
@@ -124,8 +124,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
             callback = pcallback
         }
 
-        compilationUnit.setProgressCallback(callback)
-
+        compilationUnit.progressCallback = callback
     }
 
     void setCompilationUnit(final CompilationUnit unit) {
@@ -152,8 +151,8 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
                     if (column > 40) {
                         int start = column - 30 - 1
                         int end = (column + 10 > text.length() ? text.length() : column + 10 - 1)
-                        sample = '   ' + text.substring(start, end) + Utilities.eol() + '   ' +
-                                marker.substring(start, marker.length())
+                        sample = '   ' + text[start..<end] + Utilities.eol() + '   ' +
+                                marker[start..<marker.length()]
                     } else {
                         sample = '   ' + text + Utilities.eol() + '   ' + marker
                     }

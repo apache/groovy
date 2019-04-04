@@ -18,15 +18,18 @@
  */
 package org.codehaus.groovy.classgen
 
+// TODO this generator template has drifted apart from the now modified generated classes
+// Is it worth keeping this template and/or getting it back up to date?
+
 println """
 package org.codehaus.groovy.runtime.dgmimpl;
 
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
 public class ArrayOperations {
   ${genInners()}
@@ -34,17 +37,17 @@ public class ArrayOperations {
 """
 
 def genInners () {
-    def res = ""
+    def res = ''
 
     final Map primitives = [
-            "boolean": "Boolean",
-            "byte": "Byte",
-            "char": "Character",
-            "short": "Short",
-            "int": "Integer",
-            "long": "Long",
-            "float": "Float",
-            "double": "Double"
+            'boolean': 'Boolean',
+            'byte': 'Byte',
+            'char': 'Character',
+            'short': 'Short',
+            'int': 'Integer',
+            'long': 'Long',
+            'float': 'Float',
+            'double': 'Double'
     ]
 
     primitives.each {primName, clsName ->
@@ -62,7 +65,7 @@ def genInners () {
 
             public Object invoke(Object object, Object[] args) {
                 final ${primName}[] objects = (${primName}[]) object;
-                return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
+                return objects[normaliseIndex((Integer) args[0], objects.length)];
             }
 
             public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
@@ -72,14 +75,14 @@ def genInners () {
                     return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
                         public Object invoke(Object receiver, Object[] args) {
                             final ${primName}[] objects = (${primName}[]) receiver;
-                            return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
+                            return objects[normaliseIndex((Integer) args[0], objects.length)];
                         }
 
                         public Object callBinop(Object receiver, Object arg) {
                             if ((receiver instanceof ${primName}[] && arg instanceof Integer)
                                     && checkMetaClass()) {
                                 final ${primName}[] objects = (${primName}[]) receiver;
-                                return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
+                                return objects[normaliseIndex((Integer) arg, objects.length)];
                             }
                             else
                               return super.callBinop(receiver,arg);
@@ -87,7 +90,7 @@ def genInners () {
 
                         public Object invokeBinop(Object receiver, Object arg) {
                             final ${primName}[] objects = (${primName}[]) receiver;
-                            return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
+                            return objects[normaliseIndex((Integer) arg, objects.length)];
                         }
                     };
             }
@@ -109,7 +112,7 @@ def genInners () {
 
             public Object invoke(Object object, Object[] args) {
                 final ${primName}[] objects = (${primName}[]) object;
-                final int index = normaliseIndex(((Integer) args[0]).intValue(), objects.length);
+                final int index = normaliseIndex((Integer) args[0], objects.length);
                 Object newValue = args[1];
                 if (!(newValue instanceof ${clsName})) {
                     Number n = (Number) newValue;
@@ -129,7 +132,7 @@ def genInners () {
                             if ((receiver instanceof ${primName}[] && args[0] instanceof Integer && args[1] instanceof ${clsName} )
                                     && checkMetaClass()) {
                                 final ${primName}[] objects = (${primName}[]) receiver;
-                                objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((${clsName})args[1]).${primName}Value();
+                                objects[normaliseIndex((Integer) args[0], objects.length)] = ((${clsName})args[1]).${primName}Value();
                                 return null;
                             }
                             else
