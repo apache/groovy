@@ -58,7 +58,7 @@ public class GroovySunClassLoader extends SunClassLoader {
     }
 
     private void loadAbstract() throws IOException {
-        final InputStream asStream = GroovySunClassLoader.class.getClass().getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"));
+        final InputStream asStream = GroovySunClassLoader.class.getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"));
         ClassReader reader = new ClassReader(asStream);
         final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         final ClassVisitor cv = new ClassVisitor(4, cw) {
