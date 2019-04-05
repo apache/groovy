@@ -506,6 +506,8 @@ public class Types {
                 return specific >= NEWLINE && specific <= PIPE;
 
             case LITERAL:
+
+            case LITERAL_EXPRESSION:
                 return specific >= STRING && specific <= DECIMAL_NUMBER;
 
             case NUMBER:
@@ -526,6 +528,8 @@ public class Types {
                 return specific == KEYWORD_TRUE || specific == KEYWORD_FALSE;
 
             case TYPE_NAME:
+
+            case CREATABLE_TYPE_NAME:
                 if (specific == IDENTIFIER) {
                     return true;
                 }
@@ -535,12 +539,7 @@ public class Types {
             case PRIMITIVE_TYPE:
                 return specific >= KEYWORD_VOID && specific <= KEYWORD_CHAR;
 
-            case CREATABLE_TYPE_NAME:
-                if (specific == IDENTIFIER) {
-                    return true;
-                }
-
-                /* FALL THROUGH */
+            /* FALL THROUGH */
 
             case CREATABLE_PRIMITIVE_TYPE:
                 return specific >= KEYWORD_BOOLEAN && specific <= KEYWORD_CHAR;
@@ -726,9 +725,6 @@ public class Types {
                 }
                 break;
 
-            case LITERAL_EXPRESSION:
-                return specific >= STRING && specific <= DECIMAL_NUMBER;
-
             case ARRAY_EXPRESSION:
                 return specific == LEFT_SQUARE_BRACKET;
 
@@ -828,6 +824,8 @@ public class Types {
             case SYNTH_MIXIN:
             case SYNTH_METHOD:
             case SYNTH_PROPERTY:
+
+            case SYNTH_VARIABLE_DECLARATION:
                 return actual == IDENTIFIER;
 
             case SYNTH_LIST:
@@ -843,9 +841,6 @@ public class Types {
 
             case SYNTH_LABEL:
                 return actual == COLON;
-
-            case SYNTH_VARIABLE_DECLARATION:
-                return actual == IDENTIFIER;
         }
 
         return false;
