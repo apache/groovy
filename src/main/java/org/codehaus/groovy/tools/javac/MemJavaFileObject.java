@@ -41,7 +41,7 @@ public class MemJavaFileObject extends SimpleJavaFileObject {
      * @param classNode  the groovy class node
      * @param src  the stub source code
      */
-    protected MemJavaFileObject(ClassNode classNode, String src) {
+    public MemJavaFileObject(ClassNode classNode, String src) {
         super(createURI(classNode), JavaFileObject.Kind.SOURCE);
         this.className = classNode.getName();
         this.src = src;
@@ -78,6 +78,8 @@ public class MemJavaFileObject extends SimpleJavaFileObject {
 
     @Override
     public String toString() {
-        return className;
+        return "MemJavaFileObject{" +
+                "className=" + className +
+                '}';
     }
 }

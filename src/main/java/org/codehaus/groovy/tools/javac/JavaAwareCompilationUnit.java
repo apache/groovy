@@ -109,9 +109,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 module.setImportsResolved(false);
             }
             try {
-                if (memStubEnabled) {
-                    this.addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
-                }
+                this.addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
 
                 JavaCompiler compiler = compilerFactory.createCompiler(getConfiguration());
                 compiler.compile(javaSources, this);

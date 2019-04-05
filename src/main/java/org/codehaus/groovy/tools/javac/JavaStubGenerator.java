@@ -53,6 +53,7 @@ import org.codehaus.groovy.tools.Utilities;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -76,7 +77,6 @@ public class JavaStubGenerator {
     private final String encoding;
     private final boolean requireSuperResolved;
     private final File outputPath;
-    private final List<String> toCompile = new ArrayList<String>();
     private final ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
     private final Map<String, MethodNode> propertyMethodsWithSigs = new HashMap<String, MethodNode>();
     private final ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
@@ -134,9 +134,8 @@ public class JavaStubGenerator {
     private void generateFileStub(ClassNode classNode) throws FileNotFoundException {
         String fileName = classNode.getName().replace('.', '/');
         mkdirs(outputPath, fileName);
-        toCompile.add(fileName);
 
-        File file = new File(outputPath, fileName + ".java");
+        File file = createJavaStubFile(fileName);
 
         Writer writer = new OutputStreamWriter(
                 new BufferedOutputStream(
@@ -146,6 +145,8 @@ public class JavaStubGenerator {
                 Charset.forName(encoding)
         );
         generateStubContent(classNode, writer);
+
+        javaStubCompilationUnitSet.add(new RawJavaFileObject(createJavaStubFile(fileName).toPath().toUri()));
     }
 
     private void generateStubContent(ClassNode classNode, Writer writer) {
@@ -1006,11 +1007,12 @@ public class JavaStubGenerator {
     }
 
     public void clean() {
-        for (String path : toCompile) {
-            new File(outputPath, path + ".java").delete();
-        }
-
+        javaStubCompilationUnitSet.parallelStream().peek(FileObject::delete);
         javaStubCompilationUnitSet.clear();
+    }
+
+    private File createJavaStubFile(String path) {
+        return new File(outputPath, path + ".java");
     }
 
     private static String escapeSpecialChars(String value) {
