@@ -38,6 +38,7 @@ import org.codehaus.groovy.util.ReferenceBundle;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class MixinInMetaClass extends ManagedConcurrentMap {
     final ExpandoMetaClass emc;
@@ -199,7 +200,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
 
         MixinInMetaClass that = (MixinInMetaClass) o;
 
-        if (mixinClass != null ? !mixinClass.equals(that.mixinClass) : that.mixinClass != null) return false;
+        if (!Objects.equals(mixinClass, that.mixinClass)) return false;
 
         return true;
     }

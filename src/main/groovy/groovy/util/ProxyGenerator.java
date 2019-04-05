@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -287,10 +288,10 @@ public class ProxyGenerator {
 
             if (emptyMethods != cacheKey.emptyMethods) return false;
             if (useDelegate != cacheKey.useDelegate) return false;
-            if (baseClass != null ? !baseClass.equals(cacheKey.baseClass) : cacheKey.baseClass != null) return false;
-            if (delegateClass != null ? !delegateClass.equals(cacheKey.delegateClass) : cacheKey.delegateClass != null) return false;
+            if (!Objects.equals(baseClass, cacheKey.baseClass)) return false;
+            if (!Objects.equals(delegateClass, cacheKey.delegateClass)) return false;
             if (!Arrays.equals(interfaces, cacheKey.interfaces)) return false;
-            if (methods != null ? !methods.equals(cacheKey.methods) : cacheKey.methods != null) return false;
+            if (!Objects.equals(methods, cacheKey.methods)) return false;
 
             return true;
         }

@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Class providing various type conversions, coercions and boxing/unboxing operations.
@@ -641,7 +642,7 @@ public class DefaultTypeTransformation {
         if (left instanceof Map.Entry && right instanceof Map.Entry) {
             Object k1 = ((Map.Entry) left).getKey();
             Object k2 = ((Map.Entry) right).getKey();
-            if (k1 == k2 || (k1 != null && k1.equals(k2))) {
+            if (Objects.equals(k1, k2)) {
                 Object v1 = ((Map.Entry) left).getValue();
                 Object v2 = ((Map.Entry) right).getValue();
                 if (v1 == v2 || (v1 != null && DefaultTypeTransformation.compareEqual(v1, v2)))
