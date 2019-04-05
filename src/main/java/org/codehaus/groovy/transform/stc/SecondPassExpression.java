@@ -20,6 +20,8 @@ package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.ast.expr.Expression;
 
+import java.util.Objects;
+
 /**
  * An utility class used to wrap an expression with additional metadata used by the type checker.
  * In particular, this is used to detect closure shared variables misuses. We need in some circumstances
@@ -54,7 +56,7 @@ class SecondPassExpression<T> {
 
         final SecondPassExpression that = (SecondPassExpression) o;
 
-        if (data != null ? !data.equals(that.data) : that.data != null) return false;
+        if (!Objects.equals(data, that.data)) return false;
         if (!expression.equals(that.expression)) return false;
 
         return true;

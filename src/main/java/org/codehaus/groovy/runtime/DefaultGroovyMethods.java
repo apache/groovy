@@ -132,6 +132,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
@@ -4919,7 +4920,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean contains(Iterable self, Object item) {
         for (Object e : self) {
-            if (item == null ? e == null : item.equals(e)) {
+            if (Objects.equals(item, e)) {
                 return true;
             }
         }
