@@ -192,7 +192,7 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
      */
     @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
-        return map.computeIfAbsent(key, k -> valueProvider.provide(k));
+        return map.computeIfAbsent(key, valueProvider::provide);
     }
 
     /**

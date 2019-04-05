@@ -60,7 +60,7 @@ public final class LRUCache<K, V> implements MemoizeCache<K, V> {
      */
     @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {
-        return map.computeIfAbsent(key, k -> valueProvider.provide(k));
+        return map.computeIfAbsent(key, valueProvider::provide);
     }
 
     /**

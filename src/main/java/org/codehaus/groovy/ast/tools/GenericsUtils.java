@@ -916,7 +916,7 @@ public class GenericsUtils {
      * @since 3.0.0
      */
     public static boolean hasPlaceHolders(ClassNode parameterizedType) {
-        return checkPlaceHolders(parameterizedType, genericsType -> genericsType.isPlaceholder());
+        return checkPlaceHolders(parameterizedType, GenericsType::isPlaceholder);
     }
 
     private static boolean checkPlaceHolders(ClassNode parameterizedType, Predicate<GenericsType> p) {
