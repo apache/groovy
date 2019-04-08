@@ -199,6 +199,9 @@ public class GroovyMain {
         @Option(names = {"-pa", "--parameters"}, description = "Generate metadata for reflection on method parameter names (jdk8+ only)")
         private boolean parameterMetadata;
 
+        @Option(names = {"-pr", "--enable-preview"}, description = "Enable preview Java features (JEP 12) (jdk12+ only)")
+        private boolean previewFeatures;
+
         @Option(names = "-l", arity = "0..1", paramLabel = "<port>", description = "Listen on a port and process inbound lines (default: 1960)")
         private String port;
 
@@ -241,6 +244,7 @@ public class GroovyMain {
             main.debug = debug;
             main.conf.setDebug(main.debug);
             main.conf.setParameters(parameterMetadata);
+            main.conf.setPreviewFeatures(previewFeatures);
             main.processFiles = lineByLine || lineByLinePrint;
             main.autoOutput = lineByLinePrint;
             main.editFiles = extension != null;

@@ -896,6 +896,7 @@ class CliBuilderTest extends GroovyTestCase {
             h(longOpt: 'help', 'cli.option.help.description')
             V(longOpt: 'version', 'cli.option.version.description')
             pa(longOpt: 'parameters', 'cli.option.parameters.description')
+            pr(longOpt: 'preview', 'cli.option.preview.description')
             i(longOpt: 'indy', 'cli.option.indy.description')
             D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
@@ -912,6 +913,14 @@ class CliBuilderTest extends GroovyTestCase {
         assert !options.parameters
         assert !options.pa
         assert options.arguments() == ['-parameters']
+
+        assert cli.parse(['--enable-preview']).preview
+        assert cli.parse(['--enable-preview']).pr
+
+        options = cli.parse(['-preview'])
+        assert !options.preview
+        assert !options.pr
+        assert options.arguments() == ['-preview']
 
         assert cli.parse(['--indy']).indy
         assert cli.parse(['--indy']).i
@@ -951,6 +960,7 @@ class CliBuilderTest extends GroovyTestCase {
             h(longOpt: 'help', 'cli.option.help.description')
             V(longOpt: 'version', 'cli.option.version.description')
             pa(longOpt: 'parameters', 'cli.option.parameters.description')
+            pr(longOpt: 'preview', 'cli.option.preview.description')
             i(longOpt: 'indy', 'cli.option.indy.description')
             D(longOpt: 'define', args: 2, argName: 'name=value', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
@@ -963,6 +973,10 @@ class CliBuilderTest extends GroovyTestCase {
         assert cli.parse(['--parameters']).pa
         assert cli.parse(['-parameters']).pa
         assert cli.parse(['-pa']).parameters
+
+        assert cli.parse(['--enable-preview']).pr
+        assert cli.parse(['-preview']).pr
+        assert cli.parse(['-pr']).preview
 
         assert cli.parse(['--indy']).i
         assert cli.parse(['-indy']).i
@@ -1012,13 +1026,15 @@ class CliBuilderTest extends GroovyTestCase {
             h(longOpt: 'help', 'cli.option.help.description')
             V(longOpt: 'version', 'cli.option.version.description')
             pa(longOpt: 'parameters', 'cli.option.parameters.description')
+            pr(longOpt: 'preview', 'cli.option.preview.description')
             i(longOpt: 'indy', 'cli.option.indy.description')
             D(longOpt: 'define', args: 2, argName: 'String', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
         }
         cli.usage()
         def expectedUsage = """\
-Usage: groovy [-hiV] [-cp] [-pa] [-configscript=PARAM] [-D=<String>=<String>]...
+Usage: groovy [-hiV] [-cp] [-pa] [-pr] [-configscript=PARAM]
+              [-D=<String>=<String>]...
       -configscript, --configscript=PARAM
                             cli.option.configscript.description
       -cp, -classpath, --classpath
@@ -1029,6 +1045,8 @@ Usage: groovy [-hiV] [-cp] [-pa] [-configscript=PARAM] [-D=<String>=<String>]...
   -i, -indy, --indy         cli.option.indy.description
       -pa, -parameters, --parameters
                             cli.option.parameters.description
+      -pr, -preview, --enable-preview
+                            cli.option.preview.description
   -V, -version, --version   cli.option.version.description"""
         assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
 
@@ -1039,13 +1057,14 @@ Usage: groovy [-hiV] [-cp] [-pa] [-configscript=PARAM] [-D=<String>=<String>]...
             h(longOpt: 'help', 'cli.option.help.description')
             V(longOpt: 'version', 'cli.option.version.description')
             pa(longOpt: 'parameters', 'cli.option.parameters.description')
+            pr(longOpt: 'preview', 'cli.option.preview.description')
             i(longOpt: 'indy', 'cli.option.indy.description')
             D(longOpt: 'define', args: 2, argName: 'String', valueSeparator: '=', 'cli.option.define.description')
             _(longOpt: 'configscript', args: 1, 'cli.option.configscript.description')
         }
         cli.usage()
         expectedUsage = """\
-Usage: groovy [-hiV] [-cp] [-pa] [--configscript=PARAM]
+Usage: groovy [-hiV] [-cp] [-pa] [-pr] [--configscript=PARAM]
               [-D=<String>=<String>]...
       --configscript=PARAM   cli.option.configscript.description
       -cp, --classpath       cli.option.cp.description
@@ -1054,6 +1073,7 @@ Usage: groovy [-hiV] [-cp] [-pa] [--configscript=PARAM]
   -h, --help                 cli.option.help.description
   -i, --indy                 cli.option.indy.description
       -pa, --parameters      cli.option.parameters.description
+      -pr, --enable-preview         cli.option.preview.description
   -V, --version              cli.option.version.description"""
         assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
     }
