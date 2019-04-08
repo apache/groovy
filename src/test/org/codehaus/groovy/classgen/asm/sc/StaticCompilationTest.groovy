@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.codehaus.groovy.runtime.MethodClosure
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
@@ -690,5 +691,30 @@ assert o.blah() == 'outer'
                 // because the RHS is no longer a CastExpression but a ConstantExpression
                 'ISTORE'
         ])
+    }
+
+    void testInstanceMethodReference() {
+        // dynamic case should be a method closure
+        assert String::toUpperCase instanceof MethodClosure
+
+        // static case should be compiled into functional interface
+        String code = '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+
+        @CompileStatic
+        void m() {
+            assert ['foo'].stream().map(String::toUpperCase).collect(Collectors.toList()) == ['FOO']
+        }
+        m()
+        '''
+        assert compile([method:'m'],code).hasSequence([
+                'INVOKEDYNAMIC apply()Ljava/util/function/Function;',
+                /* handle kind 0x6 : INVOKESTATIC */
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                /* handle kind 0x5 : INVOKEVIRTUAL */
+                'java/lang/String.toUpperCase()Ljava/lang/String;'
+        ])
+        assertScript(code)
     }
 }
