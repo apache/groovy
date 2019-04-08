@@ -90,7 +90,7 @@ function _picocli_groovyConsole() {
   PREV_WORD=${COMP_WORDS[COMP_CWORD-1]}
 
   COMMANDS=""
-  FLAG_OPTS="-cp -classpath --classpath -h --help -V --version -pa --parameters -i --indy"
+  FLAG_OPTS="-cp -classpath --classpath -h --help -V --version -pa --parameters -pr --enable-preview -i --indy"
   ARG_OPTS="-D --define --configscript"
 
   COMPREPLY=( $(compgen -W "${FLAG_OPTS} ${ARG_OPTS} ${COMMANDS}" -- ${CURR_WORD}) )

@@ -217,6 +217,11 @@ public class Groovyc extends MatchingTask {
     private boolean parameters = false;
 
     /**
+     * If true, enable preview Java features (JEP 12) (jdk12+ only). Defaults to false.
+     */
+    private boolean previewFeatures = false;
+
+    /**
      * Adds a path for source compilation.
      *
      * @return a nested src element.
@@ -826,6 +831,22 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * If true, enable preview Java features (JEP 12) (jdk12+ only).
+     *
+     * @param previewFeatures set to true to enable preview features
+     */
+    public void setPreviewFeatures(boolean previewFeatures) {
+        this.previewFeatures = previewFeatures;
+    }
+
+    /**
+     * Returns true if preview features has been enabled.
+     */
+    public boolean getPreviewFeatures() {
+        return previewFeatures;
+    }
+
+    /**
      * Executes the task.
      *
      * @throws BuildException if an error occurs
@@ -1101,6 +1122,9 @@ public class Groovyc extends MatchingTask {
         }
         if (parameters) {
             commandLineList.add("--parameters");
+        }
+        if (previewFeatures) {
+            commandLineList.add("--enable-preview");
         }
         if (useIndy) {
             commandLineList.add("--indy");

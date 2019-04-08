@@ -62,8 +62,9 @@ The Groovy Swing Console allows a user to enter and run Groovy scripts.
   -D, --define=<name=value>  Define a system property
   -h, --help                 Display this help message
   -i, --indy                 Enable InvokeDynamic (Indy) compilation for scripts
-      -pa, --parameters      Generate metadata for reflection on method parameter
+  -pa, --parameters          Generate metadata for reflection on method parameter
                                names (jdk8+ only)
+  -pr, --enable-preview             Enable preview Java features (JEP 12) (jdk12+ only)
   -V, --version              Display the version
 -----------------------------------------------------------------
 

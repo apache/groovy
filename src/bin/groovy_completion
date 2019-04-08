@@ -90,7 +90,7 @@ function _picocli_groovy() {
   PREV_WORD=${COMP_WORDS[COMP_CWORD-1]}
 
   COMMANDS=""
-  FLAG_OPTS="-d --debug -n -p -pa --parameters --indy -h --help -v --version"
+  FLAG_OPTS="-d --debug -n -p -pa --parameters -pr --enable-preview --indy -h --help -v --version"
   ARG_OPTS="-cp -classpath --classpath -D --define --disableopt -c --encoding -e -i -l -a --autosplit --configscript -b --basescript"
 
   COMPREPLY=( $(compgen -W "${FLAG_OPTS} ${ARG_OPTS} ${COMMANDS}" -- ${CURR_WORD}) )
