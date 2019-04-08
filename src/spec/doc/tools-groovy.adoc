@@ -60,4 +60,5 @@ int (disable any int based optimizations) |
 | -p | | process files line by line and print result (see also -n) |
 | -v | --version | display the Groovy and JVM versions | groovy -v
 | -pa | --parameters | Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. | groovy --parameters Person.groovy
+| -pr | --enable-preview | Enable preview Java features (JEP 12) (jdk12+ only). | groovy --enable-preview Person.groovy
 |=======================================================================

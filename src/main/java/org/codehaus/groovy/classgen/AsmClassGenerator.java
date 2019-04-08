@@ -221,7 +221,7 @@ public class AsmClassGenerator extends ClassGenerator {
             Object min = classNode.getNodeMetaData(MINIMUM_BYTECODE_VERSION);
             if (min instanceof Integer) {
                 int minVersion = (int) min;
-                if (bytecodeVersion < minVersion) {
+                if ((bytecodeVersion ^ Opcodes.V_PREVIEW) < minVersion) {
                     bytecodeVersion = minVersion;
                 }
             }

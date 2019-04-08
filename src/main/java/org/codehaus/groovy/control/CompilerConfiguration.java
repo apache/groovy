@@ -208,6 +208,11 @@ public class CompilerConfiguration {
     private String targetBytecode;
 
     /**
+     * Whether the bytecode version has preview features enabled (JEP 12)
+     */
+    private boolean previewFeatures;
+
+    /**
      * options for joint compilation (null by default == no joint compilation)
      */
     private Map<String, Object> jointCompilationOptions;
@@ -243,7 +248,6 @@ public class CompilerConfiguration {
      * Sets the Flags to defaults.
      */
     public CompilerConfiguration() {
-        //
         // Set in safe defaults
 
         setWarningLevel(WarningMessage.LIKELY_ERRORS);
@@ -258,6 +262,7 @@ public class CompilerConfiguration {
         setRecompileGroovySource(false);
         setMinimumRecompilationInterval(100);
         setTargetBytecode(getSystemPropertySafe("groovy.target.bytecode", getMinBytecodeVersion()));
+        setPreviewFeatures(getSystemPropertySafe("groovy.preview.features") != null);
         setDefaultScriptExtension(getSystemPropertySafe("groovy.default.scriptExtension", ".groovy"));
 
         // Source file encoding
@@ -349,6 +354,7 @@ public class CompilerConfiguration {
         setRecompileGroovySource(configuration.getRecompileGroovySource());
         setMinimumRecompilationInterval(configuration.getMinimumRecompilationInterval());
         setTargetBytecode(configuration.getTargetBytecode());
+        setPreviewFeatures(configuration.isPreviewFeatures());
         setDefaultScriptExtension(configuration.getDefaultScriptExtension());
         setSourceEncoding(configuration.getSourceEncoding());
         setTargetDirectory(configuration.getTargetDirectory());
@@ -398,6 +404,7 @@ public class CompilerConfiguration {
      *      <tr><td><code>"groovy.source.encoding"</code></td><td>{@link #getSourceEncoding}</td></tr>
      *      <tr><td><code>"groovy.target.directory"</code></td><td>{@link #getTargetDirectory}</td></tr>
      *      <tr><td><code>"groovy.target.bytecode"</code></td><td>{@link #getTargetBytecode}</td></tr>
+     *      <tr><td><code>"groovy.preview.features"</code></td><td>{@link #isPreviewFeatures}</td></tr>
      *      <tr><td><code>"groovy.classpath"</code></td><td>{@link #getClasspath}</td></tr>
      *      <tr><td><code>"groovy.output.verbose"</code></td><td>{@link #getVerbose}</td></tr>
      *      <tr><td><code>"groovy.output.debug"</code></td><td>{@link #getDebug}</td></tr>
@@ -510,6 +517,9 @@ public class CompilerConfiguration {
 
         text = configuration.getProperty("groovy.target.bytecode");
         if (text != null) setTargetBytecode(text);
+
+        text = configuration.getProperty("groovy.preview.features");
+        if (text != null && text.equalsIgnoreCase("true")) setPreviewFeatures(true);
 
         //
         // Classpath
@@ -844,6 +854,24 @@ public class CompilerConfiguration {
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
+    }
+
+    /**
+     * Whether the bytecode version has preview features enabled (JEP 12)
+     *
+     * @return preview features
+     */
+    public boolean isPreviewFeatures() {
+        return previewFeatures;
+    }
+
+    /**
+     * Sets whether the bytecode version has preview features enabled (JEP 12).
+     *
+     * @param previewFeatures whether to support preview features
+     */
+    public void setPreviewFeatures(boolean previewFeatures) {
+        this.previewFeatures = previewFeatures;
     }
 
     private static String getMinBytecodeVersion() {

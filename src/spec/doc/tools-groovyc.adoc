@@ -52,6 +52,7 @@ a number of command line switches:
 | -Jproperty=value | | Properties to be passed to `javac` if joint compilation is enabled | groovyc -j -Jtarget=1.6 -Jsource=1.6 A.groovy B.java
 | -Fflag | | Flags to be passed to `javac` if joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java
 | -pa | --parameters | Generates metadata for reflection on method parameter names. Requires Java 8+. | groovyc --parameters Person.groovy
+| -pr | --enable-preview | Enable preview Java features (JEP 12) (jdk12+ only). | groovy --enable-preview Person.groovy
 | @argfile | | Read options and source files from specified file. | groovyc @conf/args
 |=======================================================================
 

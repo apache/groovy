@@ -90,7 +90,7 @@ function _picocli_groovyc() {
   PREV_WORD=${COMP_WORDS[COMP_CWORD-1]}
 
   COMMANDS=""
-  FLAG_OPTS="-e --exception -pa --parameters -j --jointCompilation --indy -h --help -v --version"
+  FLAG_OPTS="-e --exception -pa --parameters -pr --enable-preview -j --jointCompilation --indy -h --help -v --version"
   ARG_OPTS="-cp -classpath --classpath -sourcepath --sourcepath --temp --encoding -d -b --basescript -J -F --configscript"
 
   case ${CURR_WORD} in

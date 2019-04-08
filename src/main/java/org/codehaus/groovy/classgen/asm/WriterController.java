@@ -98,7 +98,7 @@ public class WriterController {
         this.outermostClass = null;
         this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
 
-        bytecodeVersion = chooseBytecodeVersion(invokedynamic, config.getTargetBytecode());
+        bytecodeVersion = chooseBytecodeVersion(invokedynamic, config.isPreviewFeatures(), config.getTargetBytecode());
 
         if (invokedynamic) {
             this.invocationWriter = new InvokeDynamicWriter(this);
@@ -149,14 +149,14 @@ public class WriterController {
         }
         return new LoggableClassVisitor(cv);
     }
-    private static int chooseBytecodeVersion(final boolean invokedynamic, final String targetBytecode) {
+    private static int chooseBytecodeVersion(final boolean invokedynamic, final boolean previewFeatures, final String targetBytecode) {
         Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
 
         if (invokedynamic && bytecodeVersion < Opcodes.V1_8) {
-            return Opcodes.V1_8;
+            return previewFeatures ? Opcodes.V1_8 | Opcodes.V_PREVIEW : Opcodes.V1_8;
         } else {
             if (null != bytecodeVersion) {
-                return bytecodeVersion;
+                return previewFeatures ? bytecodeVersion | Opcodes.V_PREVIEW : bytecodeVersion;
             }
         }
 
