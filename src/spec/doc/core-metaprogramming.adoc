@@ -98,7 +98,7 @@ include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags
 
 ==== get/setMetaClass
 
-You can a access an object's `metaClass` or set your own `MetaClass` implementation for changing the default interception mechanism. For example, you can write your own implementation of the `MetaClass` interface and assign it to objects in order to change the interception mechanism:
+You can access an object's `metaClass` or set your own `MetaClass` implementation for changing the default interception mechanism. For example, you can write your own implementation of the `MetaClass` interface and assign it to objects in order to change the interception mechanism:
 
 [source,groovy]
 ----
