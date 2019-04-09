@@ -791,7 +791,7 @@ The snippet above shows all of the ways JmxBuilder allows you to describe an ope
 
 - Operations **start() and stop()** are described by the "desc" key (this is enough since there are no params).
 - In operation **setResource()** uses of a shorthand version of **params**: to describe the parameters for the method.
-- **makeRequest()** uses the the extended descriptor syntax to describe all aspects of the operation.
+- **makeRequest()** uses the extended descriptor syntax to describe all aspects of the operation.
 
 === Embedding Descriptor
 

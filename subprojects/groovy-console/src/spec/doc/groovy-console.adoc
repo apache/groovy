@@ -75,7 +75,7 @@ There are several shortcuts that you can use to run scripts or code snippets:
 * `Ctrl+Enter` and `Ctrl+R` are both shortcut keys for `Run Script`.
 * If you highlight just part of the text in the input area, then Groovy
 runs just that text.
-* The result of a script is the the value of the last expression
+* The result of a script is the value of the last expression
 executed.
 * You can turn the System.out capture on and off by selecting `Capture
 System.out` from the `Actions` menu

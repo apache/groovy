@@ -219,16 +219,16 @@ include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags
 -------------------------------------
 
 The `upto` method will accomplish the same as the range in the above example.
-The `upto` method iterates from the earlier start value (inclusive) to the later end value
-(also inclusive), calling the closure with the incremented value once per iteration.
+The `upto` method iterates from the earlier `start` value (inclusive) to the later `end` value
+(also inclusive), calling the closure with the incremented `next` value once per iteration.
 
 [source,groovy]
 -------------------------------------
 include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_upto_date,indent=0]
 -------------------------------------
 
-The `downto` method iterates in the opposite direction, from a later start value
-to an earlier end value.
+The `downto` method iterates in the opposite direction, from a later `start` value
+to an earlier `end` value.
 
 The unit of iteration for `upto`, `downto`, and ranges is the same as the unit for addition
 and subtraction: `LocalDate` iterates by one day at a time,
@@ -245,11 +245,11 @@ https://docs.oracle.com/javase/8/docs/api/java/time/temporal/ChronoUnit.html#MON
 include::{projectdir}/src/spec/test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=date_upto_date_by_months,indent=0]
 -------------------------------------
 
-Since the start date is inclusive, the closure is called with date March 1st. The `upto` method
-then increments the date by one month, yielding the date, April 1st. Because this date is _after_ the
-specified end date of March 2nd, the iteration stops immediately, having only called the closure
-once. This behavior is the same for the `downto` method except that the iteration will stop
-as soon as the the value of `end` becomes earlier than the targeted end date.
+Since the `start` date is inclusive, the closure is called with a `next` date value of March 1st.
+The `upto` method then increments the date by one month, yielding the date, April 1st.
+Because this date is _after_ the specified `end` date of March 2nd, the iteration stops immediately,
+having only called the closure once. This behavior is the same for the `downto` method except that
+the iteration will stop as soon as the value of `next` becomes earlier than the targeted `end` date.
 
 In short, when iterating with the `upto` or `downto` methods with a custom unit of iteration,
 the current value of iteration will never exceed the end value.

@@ -796,7 +796,7 @@ public class BinaryExpressionHelper {
         // this will load the callsite and the receiver normally in the wrong
         // order since the receiver is already present, but before the callsite
         // Therefore we use callSiteReceiverSwap to correct the order. 
-        // After this call the JVM operand stack will contain the the result of
+        // After this call the JVM operand stack will contain the result of
         // the method call... usually simply Object in operandStack
         controller.getCallSiteWriter().makeCallSite(
                 callSiteReceiverSwap,

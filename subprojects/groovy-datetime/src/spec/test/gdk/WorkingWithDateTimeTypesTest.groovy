@@ -72,8 +72,8 @@ class WorkingWithDateTimeTypesTest extends GroovyTestCase {
         // tag::date_upto_date[]
         def start = LocalDate.now()
         def end = start + 6 // 6 days later
-        start.upto(end) { date ->
-            println date.dayOfWeek
+        start.upto(end) { next ->
+            println next.dayOfWeek
         }
         // end::date_upto_date[]
     }
@@ -84,8 +84,8 @@ class WorkingWithDateTimeTypesTest extends GroovyTestCase {
         def end = start + 1 // 1 day later
 
         int iterationCount = 0
-        start.upto(end, ChronoUnit.MONTHS) { date ->
-            println date
+        start.upto(end, ChronoUnit.MONTHS) { next ->
+            println next
             ++iterationCount
         }
 

@@ -83,7 +83,7 @@ class SwitchTest extends GroovyTestCase {
         assert result == expected, "Expected $expected but found $result when calling switch with $x"
     }
 
-    // test the continue in switch, which should jump to the the while start
+    // test the continue in switch, which should jump to the while start
     void testSwitchScope() {
         def i = 0
         def j = 0

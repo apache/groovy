@@ -274,7 +274,7 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=triple_single_3,inden
 
 ==== Escaping special characters
 
-You can escape single quotes with the the backslash character to avoid terminating the string literal:
+You can escape single quotes with the backslash character to avoid terminating the string literal:
 
 [source,groovy]
 ----
