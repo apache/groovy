@@ -304,7 +304,7 @@ the code easier to read like in the following example:
 include::{projectdir}/src/spec/test/semantics/LabelsTest.groovy[tags=test_labels,indent=0]
 ----
 
-Despite not changing the semantics of the the labelled statement, it is possible to use labels in the `break` instruction
+Despite not changing the semantics of the labelled statement, it is possible to use labels in the `break` instruction
 as a target for jump, as in the next example. However, even if this is allowed, this coding style is in general considered
 a bad practice:
 

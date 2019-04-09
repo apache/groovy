@@ -663,7 +663,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Allows you to use a list of categories, specifying the list as varargs.
      * <code>use(CategoryClass1, CategoryClass2) { ... }</code>
-     * This method saves having to wrap the the category
+     * This method saves having to wrap the category
      * classes in a list.
      *
      * @param self  any Object
