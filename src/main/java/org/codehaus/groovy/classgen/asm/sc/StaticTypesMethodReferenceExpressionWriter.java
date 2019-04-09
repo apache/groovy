@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Tuple;
+import groovy.lang.Tuple2;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -268,9 +269,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         return mrMethodNodeList.stream()
                 .map(e -> Tuple.tuple(e, matchingScore(e, mrExpr)))
-                .min((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2()))
-                .get()
-                .getV1();
+                .min((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2())).map(Tuple2::getV1).orElse(null);
     }
 
     private static Integer matchingScore(MethodNode mn, Expression mrExpr) {
