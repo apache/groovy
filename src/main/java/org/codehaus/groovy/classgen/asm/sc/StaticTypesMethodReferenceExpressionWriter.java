@@ -268,8 +268,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         return mrMethodNodeList.stream()
                 .map(e -> Tuple.tuple(e, matchingScore(e, mrExpr)))
-                .sorted((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2()))
-                .findFirst()
+                .min((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2()))
                 .get()
                 .getV1();
     }
