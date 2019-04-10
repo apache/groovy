@@ -326,12 +326,12 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=direct_field_op,in
 [[method-pointer-operator]]
 === Method pointer operator
 
-The method pointer operator (`.&`) call be used to store a reference to a method in a variable, in order to call it
-later:
+The method pointer operator (`.&`) can be used to store a reference to a method in a variable,
+in order to call it later:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference,indent=0]
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_pointer,indent=0]
 ----
 <1> the `str` variable contains a `String`
 <2> we store a reference to the `toUpperCase` method on the `str` instance inside a variable named `fun`
@@ -344,7 +344,7 @@ convert an existing method for the needs of the strategy pattern:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference_strategy,indent=0]
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_pointer_strategy,indent=0]
 ----
 <1> the `transform` method takes each element of the list and calls the `action` closure on them, returning a new list
 <2> we define a function that takes a `Person` and returns a `String`
@@ -358,13 +358,44 @@ will be done at runtime:
 
 [source,groovy]
 ----
-include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_reference_dispatch,indent=0]
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_pointer_dispatch,indent=0]
 ----
 <1> define an overloaded `doSomething` method accepting a `String` as an argument
 <2> define an overloaded `doSomething` method accepting an `Integer` as an argument
 <3> create a single method pointer on `doSomething`, without specifying argument types
 <4> using the method pointer with a `String` calls the `String` version of `doSomething`
 <5> using the method pointer with an `Integer` calls the `Integer` version of `doSomething`
+
+[[method-reference-operator]]
+=== Method reference operator
+
+The Parrot parser in Groovy 3+ supports the Java 8+ method reference operator.
+The method reference operator (`::`) can be used to reference a method or constructor
+in contexts expecting a functional interface. This overlaps somewhat with the functionality
+provided by Groovy's method pointer operator. Indeed, for dynamic Groovy, the method
+reference operator is just an alias for the method pointer operator.
+For static Groovy, the operator results in bytecode similar to the bytecode
+that Java would produce for the same context.
+
+Some examples highlighting various supported method reference cases are shown in the following script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_refs,indent=0]
+----
+<1> class instance method reference: add(BigInteger val) is an instance method in BigInteger
+<2> object instance method reference: add(BigInteger val) is an instance method for object 3G
+<3> class static method reference: valueOf(long val) is a static method for class BigInteger
+<4> object static method reference: valueOf(long val) is a static method for object 3G (some consider this bad style in normal circumstances)
+
+Some examples highlighting various supported constructor reference cases are shown in the following script:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=constructor_refs,indent=0]
+----
+<1> class constructor reference
+<2> array constructor reference
 
 == Regular expression operators
 

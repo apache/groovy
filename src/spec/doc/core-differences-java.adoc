@@ -201,18 +201,18 @@ There is a danger that you will write new X() instead of new X(this) for
 example. Since this might also be the regular way we have not yet found
 a good way to prevent this problem.
 
-== Lambdas
+== Lambda expressions and the method reference operator
 
-Java 8 supports lambdas and method references:
+Java 8+ supports lambda expressions and the method reference operator (`::`):
 
-[source,groovy]
+[source,java]
 ----
-Runnable run = () -> System.out.println("Run");
+Runnable run = () -> System.out.println("Run");  // Java
 list.forEach(System.out::println);
 ----
 
-Java 8 lambdas can be more or less considered as anonymous inner classes. Groovy doesn't support that syntax, but has closures
-instead:
+Groovy 3 and above also support these within the Parrot parser.
+In earlier versions of Groovy you should use closures instead:
 
 [source,groovy]
 ----
