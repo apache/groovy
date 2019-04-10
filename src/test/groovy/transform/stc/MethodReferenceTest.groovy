@@ -21,9 +21,6 @@ package groovy.transform.stc
 class MethodReferenceTest extends GroovyTestCase {
     // class::instanceMethod
     void testFunctionCI() {
-        // TODO can this be removed on JDK12
-        if (true) return
-
         assertScript '''
             import java.util.stream.Collectors
             
@@ -56,9 +53,6 @@ class MethodReferenceTest extends GroovyTestCase {
 
     // class::instanceMethod
     void testBinaryOperatorCI() {
-        // TODO can this be removed on JDK12
-        if (true) return
-
         assertScript '''
             @groovy.transform.CompileStatic
             void p() {
