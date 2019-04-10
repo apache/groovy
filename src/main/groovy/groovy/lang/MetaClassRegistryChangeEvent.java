@@ -33,7 +33,7 @@ public class MetaClassRegistryChangeEvent extends EventObject {
     /**
      *Constructs a new MetaClassRegistryChangeEvent Object
      *
-     * @param source The object the the event originates at.
+     * @param source The object the event originates at.
      * @param instance Object instance  the MetaClass change is on.
      * @param clazz  The class that is affected by the registry change
      * @param oldMetaClass The old MetaClass

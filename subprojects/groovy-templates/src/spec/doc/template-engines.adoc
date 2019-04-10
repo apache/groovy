@@ -76,7 +76,7 @@ include::{rootProjectDir}/subprojects/groovy-templates/src/spec/test/TemplateEng
 
 === Advanced Usage Note
 
-If you happen to be embedding your template directly in your script (as we did above) you have to be careful about backslash escaping. Because the template string itself will be parsed by Groovy before it is passed to the the templating framework, you have to escape any backslashes inside GString expressions or scriptlet 'code' that are entered as part of a Groovy program. E.g. if we wanted quotes around __The Big Apple__ above, we would use:
+If you happen to be embedding your template directly in your script (as we did above) you have to be careful about backslash escaping. Because the template string itself will be parsed by Groovy before it is passed to the templating framework, you have to escape any backslashes inside GString expressions or scriptlet 'code' that are entered as part of a Groovy program. E.g. if we wanted quotes around __The Big Apple__ above, we would use:
 
 [source,groovy]
 ----

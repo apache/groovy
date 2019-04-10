@@ -3468,7 +3468,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                     // if the receiver is "this" or "implicit this", then we must make sure that the compatible
                     // methods are only static if we are in a static context
-                    // if we are not in a static context but the the current receiver is a static class, we must
+                    // if we are not in a static context but the current receiver is a static class, we must
                     // ensure that all methods are either static or declared by the current receiver or a superclass
                     if (!mn.isEmpty()
                             && (typeCheckingContext.isInStaticContext || (receiverType.getModifiers() & Opcodes.ACC_STATIC) != 0)

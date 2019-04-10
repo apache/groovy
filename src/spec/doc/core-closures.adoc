@@ -220,7 +220,7 @@ using an explicit `this`:
 include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_this,indent=0]
 ----
 <1> a closure is defined inside the `Enclosing` class, and returns `getThisObject`
-<2> calling the closure will return the instance of `Enclosing` where the the closure is defined
+<2> calling the closure will return the instance of `Enclosing` where the closure is defined
 <3> in general, you will just want to use the shortcut `this` notation
 <4> and it returns *exactly* the same object
 <5> if the closure is defined in a inner class
@@ -247,7 +247,7 @@ it will return the direct enclosing object, be it a closure or a class:
 include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_owner,indent=0]
 ----
 <1> a closure is defined inside the `Enclosing` class, and returns `getOwner`
-<2> calling the closure will return the instance of `Enclosing` where the the closure is defined
+<2> calling the closure will return the instance of `Enclosing` where the closure is defined
 <3> in general, you will just want to use the shortcut `owner` notation
 <4> and it returns *exactly* the same object
 <5> if the closure is defined in a inner class
