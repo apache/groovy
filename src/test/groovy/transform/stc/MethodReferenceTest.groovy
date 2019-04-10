@@ -182,7 +182,7 @@ class MethodReferenceTest extends GroovyTestCase {
         assertScript '''
             @groovy.transform.CompileStatic
             void p() {
-                def result = [2.0G, 2.0G, 3.0G].stream().reduce(0.0G, new Adder()::add)
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, new Adder()::add)
 
                 assert 6.0G == result
             }
