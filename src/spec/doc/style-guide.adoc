@@ -498,7 +498,7 @@ These methods add a functional flavor to the programming language and help worki
 Lots of new methods are applied to various types, through decoration, thanks to the dynamic nature of the language.
 You can find lots of very useful methods on String, Files, Streams, Collections, and much more:
 
-http://beta.groovy-lang.org/gdk.html
+http://groovy-lang.org/gdk.html
 
 == The power of switch
 
