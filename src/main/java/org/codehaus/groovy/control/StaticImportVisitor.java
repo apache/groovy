@@ -57,9 +57,9 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticProper
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasStaticProperty;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
+import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
-import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 
 /**
