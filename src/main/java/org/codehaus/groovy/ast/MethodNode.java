@@ -55,8 +55,6 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         this.modifiers = modifiers;
         this.code = code;
         setReturnType(returnType);
-        VariableScope scope = new VariableScope();
-        setVariableScope(scope);
         setParameters(parameters);
         this.hasDefault = false;
         this.exceptions = exceptions;
