@@ -23,29 +23,19 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 
-
 /**
  * Represents a constructor declaration
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  */
 public class ConstructorNode extends MethodNode {
-    
+
     public ConstructorNode(int modifiers, Statement code) {
         this(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
     }
-    
+
     public ConstructorNode(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
-        super("<init>",modifiers,ClassHelper.VOID_TYPE,parameters,exceptions,code);
-        
-        // This variable scope is thrown out and replaced with a different one during semantic analysis.
-        VariableScope scope = new VariableScope();
-        for (int i = 0; i < parameters.length; i++) {
-            scope.putDeclaredVariable(parameters[i]);
-        }
-        this.setVariableScope(scope);
+        super("<init>", modifiers, ClassHelper.VOID_TYPE, parameters, exceptions, code);
     }
-    
+
     public boolean firstStatementIsSpecialConstructorCall() {
         Statement code = getFirstStatement();
         if (code == null || !(code instanceof ExpressionStatement)) return false;
