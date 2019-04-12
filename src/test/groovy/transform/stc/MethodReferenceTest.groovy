@@ -360,4 +360,17 @@ class MethodReferenceTest extends GroovyTestCase {
             p()
         '''
     }
+
+    void testMethodNotFound() {
+        def errMsg = shouldFail '''
+            @groovy.transform.CompileStatic
+            void p() {
+                [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, BigDecimal::addx)
+            }
+            
+            p()
+        '''
+
+        assert errMsg.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
+    }
 }
