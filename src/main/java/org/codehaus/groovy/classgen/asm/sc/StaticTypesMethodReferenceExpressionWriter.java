@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -57,7 +58,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUME
  * @since 3.0.0
  */
 public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceExpressionWriter implements AbstractFunctionalInterfaceWriter {
-    private static final String MR_EXPR_INSTANCE = "__MR_EXPR_INSTANCE";
+    private static final String METHODREF_EXPR_INSTANCE = "__METHODREF_EXPR_INSTANCE";
 
     public StaticTypesMethodReferenceExpressionWriter(WriterController controller) {
         super(controller);
@@ -103,7 +104,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (null == methodRefMethod) {
             throw new GroovyRuntimeException("Failed to find the expected method["
-                    + methodRefName + "(" + Arrays.asList(parametersWithExactType) + ")] in type[" + typeOrTargetRefType.getName() + "]");
+                    + methodRefName + "("
+                    + Arrays.stream(parametersWithExactType)
+                            .map(e -> e.getType().getName())
+                            .collect(Collectors.joining(","))
+                    + ")] in the type[" + typeOrTargetRefType.getName() + "]");
         }
 
         methodRefMethod.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
@@ -190,7 +195,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (!(isClassExpr(methodRef))) {
             ClassNode methodRefTargetType = methodRef.getType();
-            prependParameter(methodReferenceSharedVariableList, MR_EXPR_INSTANCE, methodRefTargetType);
+            prependParameter(methodReferenceSharedVariableList, METHODREF_EXPR_INSTANCE, methodRefTargetType);
         }
 
         return BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(), methodReferenceSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
@@ -270,7 +275,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         return candidates.stream()
                 .map(e -> Tuple.tuple(e, matchingScore(e, methodRef)))
-                .min((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2())).map(Tuple2::getV1).orElse(null);
+                .min((t1, t2) -> Integer.compare(t2.getV2(), t1.getV2()))
+                .map(Tuple2::getV1)
+                .orElse(null);
     }
 
     private static Integer matchingScore(MethodNode mn, Expression typeOrTargetRef) {
