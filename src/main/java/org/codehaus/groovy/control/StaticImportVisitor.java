@@ -57,9 +57,10 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticProper
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasStaticProperty;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
-import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
+import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 
 /**
  * Visitor to resolve constants and method calls from static Imports
@@ -351,11 +352,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformClosureExpression(ClosureExpression ce) {
         boolean oldInClosure = inClosure;
         inClosure = true;
-        if (ce.getParameters() != null) {
-            for (Parameter p : ce.getParameters()) {
-                if (p.hasInitialExpression()) {
-                    p.setInitialExpression(transform(p.getInitialExpression()));
-                }
+        for (Parameter p : getParametersSafe(ce)) {
+            if (p.hasInitialExpression()) {
+                p.setInitialExpression(transform(p.getInitialExpression()));
             }
         }
         Statement code = ce.getCode();
@@ -550,7 +549,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private Expression findStaticPropertyAccessorByFullName(ClassNode staticImportType, String accessorMethodName) {
         // anything will do as we only check size == 1
         ArgumentListExpression dummyArgs = new ArgumentListExpression();
-        dummyArgs.addExpression(new EmptyExpression());
+        dummyArgs.addExpression(EmptyExpression.INSTANCE);
         return findStaticMethod(staticImportType, accessorMethodName, (inLeftExpression ? dummyArgs : ArgumentListExpression.EMPTY_ARGUMENTS));
     }
 

@@ -32,6 +32,22 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testClosureWithoutArgumentsExplicit() {
+        // GROOVY-9079: no params to statically type check but shouldn't get NPE
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.concurrent.Callable
+
+            @CompileStatic
+            String makeFoo() {
+                Callable<String> call = { -> 'foo' }
+                call()
+            }
+
+            assert makeFoo() == 'foo'
+        '''
+    }
+
     void testClosureWithArguments() {
         assertScript '''
             def printSum = { int a, int b -> print a+b }

@@ -170,6 +170,7 @@ import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.void_WRAPPER_TYPE;
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
+import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -2340,11 +2341,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // restore original metadata
         restoreVariableExpressionMetadata(typesBeforeVisit);
         typeCheckingContext.isInStaticContext = oldStaticContext;
-        Parameter[] parameters = expression.getParameters();
-        if (parameters != null) {
-            for (Parameter parameter : parameters) {
-                typeCheckingContext.controlStructureVariables.remove(parameter);
-            }
+        for (Parameter parameter : getParametersSafe(expression)) {
+            typeCheckingContext.controlStructureVariables.remove(parameter);
         }
     }
 
@@ -4255,15 +4253,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // next we get the block parameter types and set the generics
         // information just like before
         // TODO: add vargs handling
-        Parameter[] closureParams = closureExpression.getParameters();
-        Parameter[] methodParams = sam.getParameters();
-        for (int i = 0; i < closureParams.length; i++) {
-            ClassNode fromClosure = closureParams[i].getType();
-            ClassNode fromMethod = methodParams[i].getType();
-            extractGenericsConnections(connections, fromClosure, fromMethod);
+        if (closureExpression.isParameterSpecified()) {
+            Parameter[] closureParams = closureExpression.getParameters();
+            Parameter[] methodParams = sam.getParameters();
+            for (int i = 0; i < closureParams.length; i++) {
+                ClassNode fromClosure = closureParams[i].getType();
+                ClassNode fromMethod = methodParams[i].getType();
+                extractGenericsConnections(connections, fromClosure, fromMethod);
+            }
         }
-        ClassNode result = applyGenericsContext(connections, samUsage.redirect());
-        return result;
+        return applyGenericsContext(connections, samUsage.redirect());
     }
 
     protected static ClassNode getGroupOperationResultType(ClassNode a, ClassNode b) {

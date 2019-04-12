@@ -66,6 +66,22 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
         assertScript(script)
     }
 
+    @Test
+    void testNoargClosureSuccessfullyParsed() {
+        // GROOVY-9079: no params to make final but shouldn't get NPE
+        assertScript '''
+            import groovy.transform.AutoFinal
+            import java.util.concurrent.Callable
+
+            String makeFoo() {
+                @AutoFinal
+                Callable<String> call = { -> 'foo' }
+                call()
+            }
+
+            assert makeFoo() == 'foo'
+        '''
+    }
 
     void assertAutoFinalClassTestScript(final String paramName, final String classPart) {
         assertAutoFinalTestScriptWithAnnotation(paramName, classPart)
