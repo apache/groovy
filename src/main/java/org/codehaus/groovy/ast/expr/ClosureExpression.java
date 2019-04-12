@@ -74,10 +74,16 @@ public class ClosureExpression extends Expression {
         this.code = code;
     }
 
+    /**
+     * @return an array of zero (for implicit it) or more (when explicit args given) parameters or null otherwise (representing explicit no args)
+     */
     public Parameter[] getParameters() {
         return parameters;
     }
 
+    /**
+     * @return true if one or more explicit parameters are supplied
+     */
     public boolean isParameterSpecified() {
         return parameters != null && parameters.length > 0;
     }
