@@ -23,6 +23,8 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.Statement;
 
+import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
+
 public class ClosureExpressionTransformer {
     private final StaticCompilationTransformer transformer;
 
@@ -31,12 +33,9 @@ public class ClosureExpressionTransformer {
     }
 
     Expression transformClosureExpression(final ClosureExpression expr) {
-        Parameter[] parameters = expr.getParameters();        
-        if (parameters!=null) {
-            for (Parameter parameter : parameters) {
-                if (parameter.hasInitialExpression()) {
-                    parameter.setInitialExpression(transformer.transform(parameter.getInitialExpression()));
-                }
+        for (Parameter parameter : getParametersSafe(expr)) {
+            if (parameter.hasInitialExpression()) {
+                parameter.setInitialExpression(transformer.transform(parameter.getInitialExpression()));
             }
         }
         Statement code = expr.getCode();
