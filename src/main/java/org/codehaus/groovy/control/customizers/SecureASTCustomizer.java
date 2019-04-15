@@ -42,11 +42,13 @@ import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -986,6 +988,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getCode().visit(this);
         }
 
+        @Override
+        public void visitLambdaExpression(LambdaExpression expression) {
+            visitClosureExpression(expression);
+        }
+
         public void visitTupleExpression(final TupleExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
@@ -1059,6 +1066,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
             expression.getMethodName().visit(this);
+        }
+
+        @Override
+        public void visitMethodReferenceExpression(final MethodReferenceExpression expression) {
+            visitMethodPointerExpression(expression);
         }
 
         public void visitConstantExpression(final ConstantExpression expression) {

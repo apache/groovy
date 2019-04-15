@@ -34,11 +34,13 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodPointerExpression;
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -222,6 +224,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         expression.getCode().visit(this);
     }
 
+    public void visitLambdaExpression(LambdaExpression expression) {
+        visitClosureExpression(expression);
+    }
+
     public void visitTupleExpression(TupleExpression expression) {
         visitListOfExpressions(expression.getExpressions());
     }
@@ -262,6 +268,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitMethodPointerExpression(MethodPointerExpression expression) {
         expression.getExpression().visit(this);
         expression.getMethodName().visit(this);
+    }
+
+    public void visitMethodReferenceExpression(MethodReferenceExpression expression) {
+        visitMethodPointerExpression(expression);
     }
 
     public void visitUnaryMinusExpression(UnaryMinusExpression expression) {

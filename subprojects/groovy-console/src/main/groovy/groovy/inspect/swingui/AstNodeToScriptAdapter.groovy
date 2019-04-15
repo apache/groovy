@@ -52,11 +52,13 @@ import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.FieldExpression
 import org.codehaus.groovy.ast.expr.GStringExpression
+import org.codehaus.groovy.ast.expr.LambdaExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.MethodPointerExpression
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression
 import org.codehaus.groovy.ast.expr.NotExpression
 import org.codehaus.groovy.ast.expr.PostfixExpression
 import org.codehaus.groovy.ast.expr.PrefixExpression
@@ -777,6 +779,20 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     }
 
     @Override
+    void visitLambdaExpression(LambdaExpression expression) {
+        print '( '
+        if (expression?.parameters) {
+            visitParameters(expression?.parameters)
+        }
+        print ') -> {'
+        printLineBreak()
+        indented {
+            expression?.code?.visit this
+        }
+        print '}'
+    }
+
+    @Override
     void visitTupleExpression(TupleExpression expression) {
         print '('
         visitExpressionsAndCommaSeparate(expression?.expressions)
@@ -1109,6 +1125,13 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     void visitMethodPointerExpression(MethodPointerExpression expression) {
         expression?.expression?.visit this
         print '.&'
+        expression?.methodName?.visit this
+    }
+
+    @Override
+    void visitMethodReferenceExpression(MethodReferenceExpression expression) {
+        expression?.expression?.visit this
+        print '::'
         expression?.methodName?.visit this
     }
 

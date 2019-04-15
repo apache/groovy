@@ -52,11 +52,13 @@ import org.codehaus.groovy.ast.expr.ElvisOperatorExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.FieldExpression
 import org.codehaus.groovy.ast.expr.GStringExpression
+import org.codehaus.groovy.ast.expr.LambdaExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
 import org.codehaus.groovy.ast.expr.MapExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.MethodPointerExpression
+import org.codehaus.groovy.ast.expr.MethodReferenceExpression
 import org.codehaus.groovy.ast.expr.NamedArgumentListExpression
 import org.codehaus.groovy.ast.expr.NotExpression
 import org.codehaus.groovy.ast.expr.PostfixExpression
@@ -632,8 +634,17 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     @Override
     void visitClosureExpression(ClosureExpression node) {
         addNode(node, ClosureExpression, { 
-          it.parameters?.each { parameter -> visitParameter(parameter) }
-          super.visitClosureExpression(it) 
+            it.parameters?.each { parameter -> visitParameter(parameter) }
+            super.visitClosureExpression(it)
+        })
+    }
+
+    @Override
+    void visitLambdaExpression(LambdaExpression node) {
+        addNode(node, LambdaExpression, {
+            // params will be catered for by super call
+            //it.parameters?.each { parameter -> visitParameter(parameter) }
+            super.visitLambdaExpression(it)
         })
     }
 
@@ -642,9 +653,9 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
      */
     void visitParameter(Parameter node) {
         addNode(node, Parameter, {
-          if (node.initialExpression) {
-            node.initialExpression?.visit(this)
-          }
+            if (node.initialExpression) {
+                node.initialExpression?.visit(this)
+            }
         })
     }
 
@@ -691,6 +702,11 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     @Override
     void visitMethodPointerExpression(MethodPointerExpression node) {
         addNode(node, MethodPointerExpression, { super.visitMethodPointerExpression(it) })
+    }
+
+    @Override
+    void visitMethodReferenceExpression(MethodReferenceExpression node) {
+        addNode(node, MethodReferenceExpression, { super.visitMethodReferenceExpression(it) })
     }
 
     @Override
