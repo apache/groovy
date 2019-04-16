@@ -183,14 +183,12 @@ def filterClassName(Path path) {
     }
 }
 
-class GroovyFileVisitor extends SimpleFileVisitor {}
-
 // walk each file and directory, possibly storing directories as packages, and files as classes
 Files.walkFileTree(fs.getPath('modules'),
         [preVisitDirectory: { dir, attrs -> filterPackageName(dir); FileVisitResult.CONTINUE },
          visitFile: { file, attrs -> filterClassName(file); FileVisitResult.CONTINUE}
         ]
-            as GroovyFileVisitor)
+            as SimpleFileVisitor)
 '''
 
         Set<String> jigsawPackages = (Set<String>) shell.getProperty('result')

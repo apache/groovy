@@ -36,7 +36,6 @@ import org.apache.tools.ant.util.FileUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
-import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
@@ -431,7 +430,7 @@ public class Groovy extends Java {
             try {
                 final Object propsHandler = project.getClass().getMethod("getPropsHandler").invoke(project);
                 final Field contextField = propsHandler.getClass().getDeclaredField("context");
-                ReflectionUtils.trySetAccessible(contextField);
+                contextField.setAccessible(true);
                 final Object context = contextField.get(propsHandler);
                 mavenPom = InvokerHelper.invokeMethod(context, "getProject", EMPTY_OBJECT_ARRAY);
             }

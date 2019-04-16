@@ -28,8 +28,8 @@ class Groovy4078Bug extends GroovyTestCase {
         
         5.0.step (5.0, 1 ) { assert it != null } // DGM.step(), BigDecimal
         
-        def from = BigInteger.valueOf(5)
-        def to = BigInteger.valueOf(5)
+        def from = new BigInteger(5)
+        def to = new BigInteger(5)
         from.step (to, 1 ) { assert it != null }  // DGM.step(), BigInteger
 
         try{

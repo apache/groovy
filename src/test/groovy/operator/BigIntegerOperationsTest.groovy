@@ -58,7 +58,7 @@ class BigIntegerOperationsTest extends GroovyTestCase {
     }
     
     void testAsOperatorPrecisionLoss() {
-        def value = BigInteger.valueOf(Long.MAX_VALUE) + 1
+        def value = new BigInteger(Long.MAX_VALUE) + 1
         def value2 = value as BigInteger
         assert value == value2
     }
