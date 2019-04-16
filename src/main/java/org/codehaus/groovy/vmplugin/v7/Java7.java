@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v7;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.vmplugin.v6.Java6;
 
 import java.lang.invoke.MethodHandle;
@@ -46,10 +47,10 @@ public class Java7 extends Java6 {
             try {
                 if (!con.isAccessible()) {
                     final Constructor tmp = con;
-                    AccessController.doPrivileged(new PrivilegedAction() {
+                    AccessController.doPrivileged(new PrivilegedAction<Object>() {
                         @Override
                         public Object run() {
-                            tmp.setAccessible(true);
+                            ReflectionUtils.trySetAccessible(tmp);
                             return null;
                         }
                     });
@@ -85,10 +86,10 @@ public class Java7 extends Java6 {
             return super.getInvokeSpecialHandle(method, receiver);
         }
         if (!method.isAccessible()) {
-            AccessController.doPrivileged(new PrivilegedAction() {
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 @Override
                 public Object run() {
-                    method.setAccessible(true);
+                    ReflectionUtils.trySetAccessible(method);
                     return null;
                 }
             });

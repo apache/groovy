@@ -59,6 +59,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
@@ -449,9 +450,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     if (groovyObject && field.getName().equals("metaClass")) {
                         continue;
                     }
-                    AccessController.doPrivileged(new PrivilegedAction() {
+                    AccessController.doPrivileged(new PrivilegedAction<Object>() {
                         public Object run() {
-                            field.setAccessible(true);
+                            ReflectionUtils.trySetAccessible(field);
                             return null;
                         }
                     });

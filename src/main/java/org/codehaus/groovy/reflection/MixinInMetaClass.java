@@ -136,7 +136,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
                 if (!Modifier.isPublic(mod))
                     continue;
 
-                if (method instanceof CachedMethod && ((CachedMethod) method).getCachedMethod().isSynthetic())
+                if (method instanceof CachedMethod && ((CachedMethod) method).isSynthetic())
                     continue;
 
                 if (method instanceof CachedMethod && hasAnnotation((CachedMethod) method, Internal.class))
@@ -165,7 +165,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
     }
 
     private static boolean hasAnnotation(CachedMethod method, Class<Internal> annotationClass) {
-        return method.getCachedMethod().getAnnotation(annotationClass) != null;
+        return method.getAnnotation(annotationClass) != null;
     }
 
     private static void staticMethod(final MetaClass self, List<MetaMethod> arr, final CachedMethod method) {

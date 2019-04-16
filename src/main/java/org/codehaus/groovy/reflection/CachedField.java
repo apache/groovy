@@ -25,12 +25,14 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import static org.codehaus.groovy.reflection.ReflectionUtils.makeAccessibleInPrivilegedAction;
+
 public class CachedField extends MetaProperty {
-    public final Field field;
+    private final Field cachedField;
 
     public CachedField(Field field) {
         super (field.getName(), field.getType());
-        this.field = field;
+        this.cachedField = field;
     }
 
     public boolean isStatic() {
@@ -42,7 +44,7 @@ public class CachedField extends MetaProperty {
     }
 
     public int getModifiers() {
-        return field.getModifiers();
+        return cachedField.getModifiers();
     }
 
     /**
@@ -50,9 +52,10 @@ public class CachedField extends MetaProperty {
      * @throws RuntimeException if the property could not be evaluated
      */
     public Object getProperty(final Object object) {
-        AccessPermissionChecker.checkAccessPermission(field);
+        makeAccessibleIfNecessary();
+        AccessPermissionChecker.checkAccessPermission(cachedField);
         try {
-            return field.get(object);
+            return cachedField.get(object);
         } catch (IllegalAccessException e) {
             throw new GroovyRuntimeException("Cannot get the property '" + name + "'.", e);
         }
@@ -66,16 +69,35 @@ public class CachedField extends MetaProperty {
      * @throws RuntimeException if the property could not be set
      */
     public void setProperty(final Object object, Object newValue) {
-        AccessPermissionChecker.checkAccessPermission(field);
-        final Object goalValue = DefaultTypeTransformation.castToType(newValue, field.getType());
+        makeAccessibleIfNecessary();
+        AccessPermissionChecker.checkAccessPermission(cachedField);
+        final Object goalValue = DefaultTypeTransformation.castToType(newValue, cachedField.getType());
 
         if (isFinal()) {
             throw new GroovyRuntimeException("Cannot set the property '" + name + "' because the backing field is final.");
         }
         try {
-            field.set(object, goalValue);
+            cachedField.set(object, goalValue);
         } catch (IllegalAccessException ex) {
             throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", ex);
+        }
+    }
+
+    public Class getDeclaringClass() {
+        return cachedField.getDeclaringClass();
+    }
+
+    public Field getCachedField() {
+        makeAccessibleIfNecessary();
+        AccessPermissionChecker.checkAccessPermission(cachedField);
+        return cachedField;
+    }
+
+    private boolean makeAccessibleDone = false;
+    private void makeAccessibleIfNecessary() {
+        if (!makeAccessibleDone) {
+            makeAccessibleInPrivilegedAction(cachedField);
+            makeAccessibleDone = true;
         }
     }
 }

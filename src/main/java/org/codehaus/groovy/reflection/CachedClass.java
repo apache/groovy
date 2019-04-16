@@ -31,8 +31,6 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.ReferenceBundle;
 
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -49,6 +47,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static org.codehaus.groovy.reflection.ReflectionUtils.checkCanSetAccessible;
+
+
 public class CachedClass {
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private final Class cachedClass;
@@ -60,15 +61,17 @@ public class CachedClass {
         private static final long serialVersionUID = 5450437842165410025L;
 
         public CachedField[] initValue() {
-            final Field[] declaredFields = (Field[])
-               AccessController.doPrivileged(new PrivilegedAction<Field[]>() {
-                   public Field[] run() {
-                       Field[] df = getTheClass().getDeclaredFields();
-                       df = (Field[]) makeAccessible(df);
-                       return df;                                                   
-                   }
-               });
-            CachedField [] fields = new CachedField[declaredFields.length];
+            final Field[] declaredFields = AccessController.doPrivileged(new PrivilegedAction<Field[]>() {
+                public Field[] run() {
+                    Field[] df = getTheClass().getDeclaredFields();
+                    df = Arrays.stream(df)
+                            .filter(f -> checkCanSetAccessible(f, CachedClass.class))
+                            .toArray(Field[]::new);
+//                    df = (Field[]) ReflectionUtils.makeAccessible(df);
+                    return df;
+                }
+            });
+            CachedField[] fields = new CachedField[declaredFields.length];
             for (int i = 0; i != fields.length; ++i)
                 fields[i] = new CachedField(declaredFields[i]);
             return fields;
@@ -80,49 +83,36 @@ public class CachedClass {
 
         public CachedConstructor[] initValue() {
             final Constructor[] declaredConstructors = (Constructor[])
-               AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
-                   public /*Constructor[]*/ Object run() {
-                       return getTheClass().getDeclaredConstructors();
+               AccessController.doPrivileged(new PrivilegedAction<Constructor[]>() {
+                   public Constructor[] run() {
+                       Constructor[] dc = getTheClass().getDeclaredConstructors();
+                       dc = Arrays.stream(dc)
+                               .filter(c -> checkCanSetAccessible(c, CachedClass.class))
+                               .toArray(Constructor[]::new);
+
+                       return dc;
                    }
                });
-            CachedConstructor [] constructors = new CachedConstructor[declaredConstructors.length];
+            CachedConstructor[] constructors = new CachedConstructor[declaredConstructors.length];
             for (int i = 0; i != constructors.length; ++i)
                 constructors[i] = new CachedConstructor(CachedClass.this, declaredConstructors[i]);
             return constructors;
         }
     };
 
-    // to be run in PrivilegedAction!
-    private static AccessibleObject[] makeAccessible(final AccessibleObject[] aoa) {
-        try {
-            AccessibleObject.setAccessible(aoa, true);
-            return aoa;
-        } catch (Throwable outer) {
-            // swallow for strict security managers, module systems, android or others,
-            // but try one-by-one to get the allowed ones at least
-            final ArrayList<AccessibleObject> ret = new ArrayList<>(aoa.length);
-            for (final AccessibleObject ao : aoa) {
-                try {
-                    ao.setAccessible(true);
-                    ret.add(ao);
-                } catch (Throwable inner) {
-                    // swallow for strict security managers, module systems, android or others
-                }
-            }
-            return ret.toArray((AccessibleObject[]) Array.newInstance(aoa.getClass().getComponentType(), ret.size()));
-        }
-    }
-
     private final LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]>(softBundle) {
         private static final long serialVersionUID = 6347586066597418308L;
 
         public CachedMethod[] initValue() {
-            final Method[] declaredMethods = (Method[])
-               AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
-                   public /*Method[]*/ Object run() {
+            final Method[] declaredMethods =
+               AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+                   public Method[] run() {
                        try {
                            Method[] dm = getTheClass().getDeclaredMethods();
-                           dm = (Method[]) makeAccessible(dm);
+                           dm = Arrays.stream(dm)
+                                   .filter(m -> checkCanSetAccessible(m, CachedClass.class))
+                                   .toArray(Method[]::new);
+//                           dm = (Method[]) ReflectionUtils.makeAccessible(dm);
                            return dm;
                        } catch (Throwable e) {
                            // Typically, Android can throw ClassNotFoundException
@@ -148,7 +138,7 @@ public class CachedClass {
                 else
                   methods.add(cachedMethod);
             }
-            CachedMethod [] resMethods = methods.toArray(CachedMethod.EMPTY_ARRAY);
+            CachedMethod[] resMethods = methods.toArray(CachedMethod.EMPTY_ARRAY);
             Arrays.sort(resMethods);
 
             final CachedClass superClass = getCachedSuperClass();
@@ -217,7 +207,7 @@ public class CachedClass {
 
     int hashCode;
 
-    public  CachedMethod [] mopMethods;
+    public  CachedMethod[] mopMethods;
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
     private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> (softBundle) {

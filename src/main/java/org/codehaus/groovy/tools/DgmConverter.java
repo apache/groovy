@@ -59,7 +59,7 @@ public class DgmConverter implements Opcodes {
             if (!method.isStatic() || !method.isPublic())
                 continue;
 
-            if (method.getCachedMethod().getAnnotation(Deprecated.class) != null)
+            if (method.getAnnotation(Deprecated.class) != null)
                 continue;
 
             if (method.getParameterTypes().length == 0)

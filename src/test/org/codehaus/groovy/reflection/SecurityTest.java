@@ -128,7 +128,7 @@ public class SecurityTest extends GroovyTestCase {
         cachedMethodUnderTest = createCachedMethod("publicMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertEquals("publicMethod", cachedMethodUnderTest.setAccessible().getName());
-        assertEquals("publicMethod", cachedMethodUnderTest.getCachedMethod().getName());
+        assertEquals("publicMethod", cachedMethodUnderTest.getName());
     }
 
     public void testAccessesPublicFieldsWithoutChecks() throws Exception {
@@ -156,7 +156,7 @@ public class SecurityTest extends GroovyTestCase {
         cachedMethodUnderTest = createCachedMethod("privateMethod");
         System.setSecurityManager(null);
         assertEquals("privateMethod", cachedMethodUnderTest.setAccessible().getName());
-        assertEquals("privateMethod", cachedMethodUnderTest.getCachedMethod().getName());
+        assertEquals("privateMethod", cachedMethodUnderTest.getName());
     }
 
     public void testChecksReflectPermissionForInvokeOnPrivateMethods() throws Exception {

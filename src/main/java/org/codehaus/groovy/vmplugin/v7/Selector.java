@@ -325,7 +325,7 @@ public abstract class Selector {
                 insertName = true;
             } else if (res instanceof CachedField) {
                 CachedField cf = (CachedField) res;
-                Field f = cf.field;
+                Field f = cf.getCachedField();
                 try {
                     handle = LOOKUP.unreflectGetter(f);
                     if (Modifier.isStatic(f.getModifiers())) {
@@ -428,7 +428,7 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
                 MetaConstructor mc = (MetaConstructor) method;
                 isVargs = mc.isVargsMethod();
-                Constructor con = mc.getCachedConstrcutor().cachedConstructor;
+                Constructor con = mc.getCachedConstrcutor().getCachedConstructor();
                 try {
                     handle = LOOKUP.unreflectConstructor(con);
                     if (LOG_ENABLED) LOG.info("successfully unreflected constructor");

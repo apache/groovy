@@ -18,9 +18,19 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
+
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Array;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -29,9 +39,9 @@ import java.util.Set;
  * groovy MOP are excluded from the level counting.
  */
 public class ReflectionUtils {
-
     // these are packages in the call stack that are only part of the groovy MOP
     private static final Set<String> IGNORED_PACKAGES = new HashSet<String>();
+    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
     static {
         //IGNORED_PACKAGES.add("java.lang.reflect");
@@ -117,6 +127,55 @@ public class ReflectionUtils {
             return c;
         } catch (Throwable t) {
             return null;
+        }
+    }
+
+    public static boolean checkCanSetAccessible(AccessibleObject accessibleObject,
+                                         Class<?> caller) {
+        return VM_PLUGIN.checkCanSetAccessible(accessibleObject, caller);
+    }
+
+    public static boolean trySetAccessible(AccessibleObject ao) {
+        try {
+            return VM_PLUGIN.trySetAccessible(ao);
+        } catch (Throwable t) {
+            // swallow for strict security managers, module systems, android or others
+        }
+
+        return false;
+    }
+
+    public static Optional<AccessibleObject> makeAccessibleInPrivilegedAction(final AccessibleObject ao) {
+        return AccessController.doPrivileged(new PrivilegedAction<Optional<AccessibleObject>>() {
+            public Optional<AccessibleObject> run() {
+                return makeAccessible(ao);
+            }
+        });
+    }
+
+    // to be run in PrivilegedAction!
+    public static Optional<AccessibleObject> makeAccessible(final AccessibleObject ao) {
+        AccessibleObject[] result = makeAccessible(new AccessibleObject[] { ao });
+
+        return Optional.ofNullable(0 == result.length ? null : result[0]);
+    }
+
+    // to be run in PrivilegedAction!
+    public static AccessibleObject[] makeAccessible(final AccessibleObject[] aoa) {
+        try {
+            AccessibleObject.setAccessible(aoa, true);
+            return aoa;
+        } catch (Throwable outer) {
+            // swallow for strict security managers, module systems, android or others,
+            // but try one-by-one to get the allowed ones at least
+            final List<AccessibleObject> ret = new ArrayList<>(aoa.length);
+            for (final AccessibleObject ao : aoa) {
+                boolean accessible = trySetAccessible(ao);
+                if (accessible) {
+                    ret.add(ao);
+                }
+            }
+            return ret.toArray((AccessibleObject[]) Array.newInstance(aoa.getClass().getComponentType(), 0));
         }
     }
 

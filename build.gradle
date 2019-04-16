@@ -236,12 +236,20 @@ sourceSets {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
             }
+            if (!JavaVersion.current().isJava9Compatible()) {
+                exclude '**/v9/*'
+                exclude '**/vm9/*'
+            }
         }
         groovy {
             srcDir "$generatedDirectory/antlr2/src/main"
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
+            }
+            if (!JavaVersion.current().isJava9Compatible()) {
+                exclude '**/v9/*'
+                exclude '**/vm9/*'
             }
         }
         resources {
@@ -259,6 +267,10 @@ sourceSets {
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
                 exclude '**/vm8/*'
+            }
+            if (!JavaVersion.current().isJava9Compatible()) {
+                exclude '**/v9/*'
+                exclude '**/vm9/*'
             }
         }
         resources {

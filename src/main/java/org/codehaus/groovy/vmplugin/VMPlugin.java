@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 
 /**
@@ -60,4 +61,23 @@ public interface VMPlugin {
      */
     int getVersion();
 
+    /**
+     * Check whether invoking {@link AccessibleObject#setAccessible(boolean)} on the accessible object will be completed successfully
+     *
+     * @param accessibleObject the accessible object to check
+     * @param caller the caller to invoke {@code setAccessible}
+     * @return the check result
+     */
+    boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> caller);
+
+    /**
+     * Set the {@code accessible} flag for this reflected object to {@code true}
+     * if possible.
+     *
+     * @param ao the accessible object
+     * @return {@code true} if the {@code accessible} flag is set to {@code true};
+     *         {@code false} if access cannot be enabled.
+     * @throws SecurityException if the request is denied by the security manager
+     */
+    boolean trySetAccessible(AccessibleObject ao);
 }

@@ -31,12 +31,15 @@ import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.MethodHelper;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Comparator;
+
+import static org.codehaus.groovy.reflection.ReflectionUtils.makeAccessibleInPrivilegedAction;
 
 public class CachedMethod extends MetaMethod implements Comparable {
     public static final CachedMethod[] EMPTY_ARRAY = new CachedMethod[0];
@@ -92,6 +95,8 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     public final Object invoke(Object object, Object[] arguments) {
+        makeAccessibleIfNecessary();
+
         try {
             AccessPermissionChecker.checkAccessPermission(cachedMethod);
         } catch (CacheAccessControlException ex) {
@@ -130,6 +135,8 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     public final Method setAccessible() {
+        makeAccessibleIfNecessary();
+
         AccessPermissionChecker.checkAccessPermission(cachedMethod);
 //        if (queuedToCompile.compareAndSet(false,true)) {
 //            if (isCompilable())
@@ -332,10 +339,25 @@ public class CachedMethod extends MetaMethod implements Comparable {
         }
     }
 
+    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+        return cachedMethod.getAnnotation(annotationClass);
+    }
+
+    public boolean isSynthetic() {
+        return cachedMethod.isSynthetic();
+    }
+
     public Method getCachedMethod() {
+        makeAccessibleIfNecessary();
         AccessPermissionChecker.checkAccessPermission(cachedMethod);
         return cachedMethod;
     }
 
+    private boolean makeAccessibleDone = false;
+    private void makeAccessibleIfNecessary() {
+        if (!makeAccessibleDone) {
+            makeAccessibleInPrivilegedAction(cachedMethod);
+            makeAccessibleDone = true;
+        }
+    }
 }
-

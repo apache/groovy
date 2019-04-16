@@ -1467,11 +1467,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public Constructor retrieveConstructor(Class[] arguments) {
         CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments);
         if (constructor != null) {
-            return constructor.cachedConstructor;
+            return constructor.getCachedConstructor();
         }
         constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments);
         if (constructor != null) {
-            return constructor.cachedConstructor;
+            return constructor.getCachedConstructor();
         }
         return null;
     }
@@ -2496,7 +2496,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static boolean packageLocal(CachedField mfp, CachedClass klass) {
         if (klass == null)
             return false;
-        return isDefaultVisibility(mfp.getModifiers()) && inSamePackage(mfp.field.getDeclaringClass(), klass.getTheClass());
+        return isDefaultVisibility(mfp.getModifiers()) && inSamePackage(mfp.getDeclaringClass(), klass.getTheClass());
     }
 
     private void applyStrayPropertyMethods(LinkedList<CachedClass> superClasses, Index classPropertyIndex, boolean isThis) {
