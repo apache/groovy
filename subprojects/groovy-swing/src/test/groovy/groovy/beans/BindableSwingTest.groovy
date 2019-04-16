@@ -27,6 +27,17 @@ class BindableSwingTest extends GroovySwingTestCase {
 
                 class BindableTestBean6 extends javax.swing.JPanel {
                     @Bindable String testField
+                    
+                    /*
+                    // if the following stub added, the illegal access warnings can be fixed
+                    // java.awt.Component.firePropertyChange(java.lang.String,java.lang.Object,java.lang.Object)
+                    // should we add this kind of stubs automatically?
+                    void firePropertyChange(String propertyName,
+                                      Object oldValue, Object newValue) {
+                    
+                        super.firePropertyChange(propertyName, oldValue, newValue)                  
+                    }
+                    */
                 }
 
                 sb = new BindableTestBean6()

@@ -21,6 +21,7 @@ package org.codehaus.groovy.binding;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Reference;
+import org.codehaus.groovy.reflection.ReflectionUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -81,13 +82,13 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
                     }
                     try {
                         boolean acc = constructor.isAccessible();
-                        constructor.setAccessible(true);
+                        ReflectionUtils.trySetAccessible(constructor);
                         Closure localCopy = (Closure) constructor.newInstance(args);
                         if (!acc) { constructor.setAccessible(false); }
                         localCopy.setResolveStrategy(Closure.DELEGATE_ONLY);
                         for (Field f:closureClass.getDeclaredFields()) {
                             acc = f.isAccessible();
-                            f.setAccessible(true);
+                            ReflectionUtils.trySetAccessible(f);
                             if (f.getType() == Reference.class) {
                                 delegate.fields.put(f.getName(),
                                         (BindPathSnooper) ((Reference) f.get(localCopy)).get());

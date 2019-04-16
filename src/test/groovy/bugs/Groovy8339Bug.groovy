@@ -16,21 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.callsite;
+package groovy.bugs
 
-import groovy.lang.MetaClass;
-import groovy.lang.MetaMethod;
-
-/**
- * Call site which caches meta method
- */
-public abstract class MetaMethodSite extends MetaClassSite {
-    final MetaMethod metaMethod;
-    protected final Class[] params;
-
-    public MetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
-        super(site, metaClass);
-        this.metaMethod = metaMethod;
-        this.params = params;
+// TODO add JVM option `--illegal-access=deny` when all warnings fixed
+class Groovy8339Bug extends GroovyTestCase {
+    void testCase2() {
+        StringBuilder sb = new StringBuilder()
+        sb.setLength(0)
     }
 }

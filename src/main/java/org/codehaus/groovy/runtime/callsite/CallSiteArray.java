@@ -29,10 +29,10 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+
 public final class CallSiteArray {
     public final CallSite[] array;
-
-    public static final Object [] NOPARAM = new Object[0];
+    public static final Object[] NOPARAM = new Object[0];
     public final Class owner;
 
     public CallSiteArray(Class owner, String [] names) {

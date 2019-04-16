@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v5;
 
+import groovy.lang.MetaClass;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -43,6 +45,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -51,9 +54,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.ReflectPermission;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.security.Permission;
 import java.util.List;
 
 /**
@@ -535,5 +540,55 @@ public class Java5 implements VMPlugin {
     public Object invokeHandle(Object handle, Object[] args) throws Throwable {
         throw new GroovyBugError("invokeHandle requires at least JDK 7");
     }
+
+    /**
+     * The following scenarios can not set accessible, i.e. the return value is false
+     * 1) SecurityException occurred
+     * 2) the accessible object is a Constructor object for the Class class
+     *
+     * @param accessibleObject the accessible object to check
+     * @param caller the caller to invoke {@code setAccessible}
+     * @return the check result
+     */
+    @Override
+    public boolean checkCanSetAccessible(AccessibleObject accessibleObject,
+                                  Class<?> caller) {
+        SecurityManager sm = System.getSecurityManager();
+        try {
+            if (sm != null) {
+                sm.checkPermission(ACCESS_PERMISSION);
+            }
+        } catch (SecurityException e) {
+            return false;
+        }
+
+        if (accessibleObject instanceof Constructor) {
+            Constructor c = (Constructor) accessibleObject;
+            if (c.getDeclaringClass() == Class.class) {
+                return false; // Cannot make a java.lang.Class constructor accessible
+            }
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean trySetAccessible(AccessibleObject ao) {
+        try {
+            ao.setAccessible(true);
+            return true;
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    @Override
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+        return metaMethod;
+    }
+
+    private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
 }
 

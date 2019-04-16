@@ -20,17 +20,14 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-/**
- * Call site which caches meta method
- */
-public abstract class MetaMethodSite extends MetaClassSite {
-    final MetaMethod metaMethod;
-    protected final Class[] params;
+public class CallSiteHelper {
+    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
-    public MetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
-        super(site, metaClass);
-        this.metaMethod = metaMethod;
-        this.params = params;
+    public static MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+        return VM_PLUGIN.transformMetaMethod(metaClass, metaMethod, params, caller);
     }
+
 }

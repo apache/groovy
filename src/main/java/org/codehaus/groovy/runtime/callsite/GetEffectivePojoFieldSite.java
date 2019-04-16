@@ -33,7 +33,7 @@ class GetEffectivePojoFieldSite extends AbstractCallSite {
     public GetEffectivePojoFieldSite(CallSite site, MetaClassImpl metaClass, CachedField effective) {
         super(site);
         this.metaClass = metaClass;
-        this.effective = effective.field;
+        this.effective = effective.getCachedField();
         version = metaClass.getVersion();
     }
 

@@ -35,6 +35,7 @@ import org.apache.tools.ant.dispatch.DispatchUtils;
 import org.apache.tools.ant.helper.AntXMLContext;
 import org.apache.tools.ant.helper.ProjectHelper2;
 import org.codehaus.groovy.ant.FileScanner;
+import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -320,7 +321,7 @@ public class AntBuilder extends BuilderSupport {
         try {
             // Have to call fireTestStared/fireTestFinished via reflection as they unfortunately have protected access in Project
             final Method fireTaskStarted = Project.class.getDeclaredMethod("fireTaskStarted", Task.class);
-            fireTaskStarted.setAccessible(true);
+            ReflectionUtils.trySetAccessible(fireTaskStarted);
             fireTaskStarted.invoke(project, task);
 
             Object realThing;
@@ -354,7 +355,7 @@ public class AntBuilder extends BuilderSupport {
         finally {
             try {
                 final Method fireTaskFinished = Project.class.getDeclaredMethod("fireTaskFinished", Task.class, Throwable.class);
-                fireTaskFinished.setAccessible(true);
+                ReflectionUtils.trySetAccessible(fireTaskFinished);
                 fireTaskFinished.invoke(project, task, reason);
             }
             catch (Exception e) {

@@ -32,7 +32,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class CallSiteGenerator {
@@ -71,9 +70,8 @@ public class CallSiteGenerator {
             BytecodeHelper.doCast(mv, callClass);
             if (useInterface) invokeMethodCode = Opcodes.INVOKEINTERFACE;
         }
-        
-        Method method = cachedMethod.setAccessible();
-        Class<?>[] parameters = method.getParameterTypes();
+
+        Class<?>[] parameters = cachedMethod.getPT();
         int size = parameters.length;
         for (int i = 0; i < size; i++) {
             if (useArray) {
@@ -231,7 +229,7 @@ public class CallSiteGenerator {
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
-        final String name = callSiteLoader.createClassName(cachedMethod.setAccessible());
+        final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genPogoMetaMethodSite(cachedMethod, cw, name);
         
@@ -243,7 +241,7 @@ public class CallSiteGenerator {
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
-        final String name = callSiteLoader.createClassName(cachedMethod.setAccessible());
+        final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genPojoMetaMethodSite(cachedMethod, cw, name);
         
@@ -255,7 +253,7 @@ public class CallSiteGenerator {
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
-        final String name = callSiteLoader.createClassName(cachedMethod.setAccessible());
+        final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genStaticMetaMethodSite(cachedMethod, cw, name);
         

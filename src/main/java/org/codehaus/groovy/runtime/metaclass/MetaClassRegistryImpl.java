@@ -229,7 +229,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
             for (CachedMethod method : methods) {
                 final int mod = method.getModifiers();
-                if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && method.getCachedMethod().getAnnotation(Deprecated.class) == null) {
+                if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && method.getAnnotation(Deprecated.class) == null) {
                     CachedClass[] paramTypes = method.getParameterTypes();
                     if (paramTypes.length > 0) {
                         List<MetaMethod> arr = map.get(paramTypes[0]);

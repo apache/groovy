@@ -33,7 +33,7 @@ public class GetEffectivePogoFieldSite extends AbstractCallSite {
     public GetEffectivePogoFieldSite(CallSite site, MetaClass metaClass, CachedField effective) {
         super(site);
         this.metaClass = metaClass;
-        this.effective = effective.field;
+        this.effective = effective.getCachedField();
     }
 
     public final Object callGetProperty (Object receiver) throws Throwable {
