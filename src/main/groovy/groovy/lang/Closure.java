@@ -656,7 +656,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return new ComposedClosure<V>(other, this);
     }
 
-    /* *
+    /**
      * Alias for calling a Closure for non-closure arguments.
      * <p>
      * Typical usage:
