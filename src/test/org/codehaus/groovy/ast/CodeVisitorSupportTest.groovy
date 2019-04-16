@@ -42,7 +42,7 @@ class CodeVisitorSupportTest extends GroovyTestCase {
         assert visitor.history[2] == BooleanExpression
         assert visitor.history[3] == BlockStatement
         assert visitor.history[4] == BlockStatement
-        assert visitor.history.size == 5
+        assert visitor.history.size() == 5
     }
 
     void testEmptyStatementsOnIfElse() {
@@ -57,7 +57,7 @@ class CodeVisitorSupportTest extends GroovyTestCase {
         assert visitor.history[2] == BooleanExpression
         assert visitor.history[3] == BlockStatement
         assert visitor.history[4] == EmptyStatement
-        assert visitor.history.size == 5
+        assert visitor.history.size() == 5
     }
 
     void testTryCatchFinally() {

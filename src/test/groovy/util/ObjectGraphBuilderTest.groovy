@@ -278,7 +278,7 @@ class ObjectGraphBuilderTest extends GroovyTestCase {
       assert actualCompany.financialController.address.line1 == expectedAddress.line1
 
       assert actualCompany.drones != null
-      assert actualCompany.drones.size == 2
+      assert actualCompany.drones.size() == 2
       assert actualCompany.drones[0].name == expectedDrone0.name
       assert actualCompany.drones[0].employeeId == expectedDrone0.employeeId
       assert actualCompany.drones[0].address != null
