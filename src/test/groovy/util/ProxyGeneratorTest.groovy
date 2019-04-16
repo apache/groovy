@@ -93,7 +93,8 @@ class ProxyGeneratorTest extends GroovyTestCase {
         assert 3 == testClass[2]
         testClass[3] = 99
         assert 99 == testClass[3]
-        testClass.removeRange(1, 3)
+        testClass.removeAt(2)
+        testClass.removeAt(1)
         assert [1, 99, 5] == testClass
     }
 
