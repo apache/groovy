@@ -66,8 +66,8 @@ class TailRecursiveExamples {
         assert target.reduce(0, plus, 1, 5, 10) == 16
         assert target.reduce(99, plus, 1, 5, 10, 98) == 213
 
-        def numbersFrom1to1000 = (1..1000).collect { new BigInteger(it) }.toArray()
-        assert target.reduce(new BigInteger(1), { BigInteger a, BigInteger b -> a * b }, numbersFrom1to1000).bitCount() == 3788
+        def numbersFrom1to1000 = (1..1000).collect { BigInteger.valueOf(it) }.toArray()
+        assert target.reduce(BigInteger.ONE, { BigInteger a, BigInteger b -> a * b }, numbersFrom1to1000).bitCount() == 3788
     }
 
     @Test
