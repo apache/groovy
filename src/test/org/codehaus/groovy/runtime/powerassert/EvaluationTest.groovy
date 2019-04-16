@@ -156,7 +156,7 @@ class EvaluationTest extends GroovyTestCase {
     }
 
     void testPropertyExpression() {
-        assert [1,2,3].size == 3
+        assert 'A'.bytes == [65] as byte[]
         assert (new Properties().next.next.next.x = 10) == 10
         assert Integer.MIN_VALUE < Integer.MAX_VALUE
     }

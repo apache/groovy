@@ -340,14 +340,14 @@ assert (a..<b) == null
 
     void testPropertyExpression() {
         isRendered """
-assert a.size == null
-       | |    |
-       | 1    false
-       [9]
+assert a.bytes == null
+       | |     |
+       | [65]  false
+       'A'
 
         """, {
-            def a = [9]
-            assert a.size == null
+            def a = 'A'
+            assert a.bytes == null
         }
 
         isRendered """
