@@ -18,8 +18,8 @@
  */
 
 /**
-* Tests for groovy.sql.Sql.
-*/
+ * Tests for groovy.sql.Sql.
+ */
 class SqlTest extends GroovyTestCase {
 
     void testConnectingToHsqlDB() {
@@ -687,7 +687,7 @@ class SqlTest extends GroovyTestCase {
         }
         '''
     }
-    
+
     void testStoredFunWithInOutParameter() {
         assertScript '''
         import groovy.sql.Sql
@@ -699,31 +699,26 @@ class SqlTest extends GroovyTestCase {
         Sql.withInstance(url, user, password, driver) { sql ->
           // tag::sql_create_stored_fun_inout_parameter[]
           sql.execute """
-           CREATE OR REPLACE FUNCTION CHECK_ID_POSITIVE_IN_OUT ( p_err IN OUT VARCHAR2, pparam NUMBER)
-           RETURN VARCHAR2 IS
-           re VARCHAR2(15);
-
-           BEGIN
-            IF pparam > 0 THEN
-              p_err := p_err || '_OK';
-              re := 'RET_OK';
-            ELSE 
-              p_err := p_err || '_ERROR';
-              re := 'RET_ERROR';   
-            END IF;
-
-            RETURN re;
-           END;
+            CREATE PROCEDURE CHECK_ID_POSITIVE_IN_OUT ( INOUT p_err VARCHAR(64), IN pparam INTEGER, OUT re VARCHAR(15))
+            BEGIN ATOMIC
+              IF pparam > 0 THEN
+                set p_err = p_err || '_OK';
+                set re = 'RET_OK';
+              ELSE
+                set p_err = p_err || '_ERROR';
+                set re = 'RET_ERROR';
+              END IF;
+            END;
           """
           // end::sql_create_stored_fun_inout_parameter[]
           // tag::sql_use_stored_fun_inout_parameter[]
-          def scall = "{? = call CHECK_ID_POSITIVE_IN_OUT(?, ?)}"
-          sql.call scall, [Sql.VARCHAR, Sql.inout(Sql.VARCHAR("MESSAGE")), 1], {
-            res, p_err -> println("result: $res -- message: $p_err")
+          def scall = "{call CHECK_ID_POSITIVE_IN_OUT(?, ?, ?)}"
+          sql.call scall, [Sql.inout(Sql.VARCHAR("MESSAGE")), 1, Sql.VARCHAR], {
+            res, p_err -> assert res == 'MESSAGE_OK' && p_err == 'RET_OK'
           }
           // end::sql_use_stored_fun_inout_parameter[]
         }
         '''
-    }   
+    }
 
 }
