@@ -462,16 +462,15 @@ include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[ta
 ----
 
 [source,groovy]
-.Using a stored function with input/output parameter
-----
-include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_fun_inout_parameter,indent=0]
-----
-
-Printed message is "result: RET_OK -- message: MESSAGE_OK"
-
-Function `CHECK_ID_POSITIVE_IN_OUT` is defined in Oracle as:
+.Creating a stored procedure with an input/output parameter
 ----
 include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_create_stored_fun_inout_parameter,indent=0]
+----
+
+[source,groovy]
+.Using a stored procedure with an input/output parameter
+----
+include::{rootProjectDir}/subprojects/groovy-sql/src/spec/test/SqlTest.groovy[tags=sql_use_stored_fun_inout_parameter,indent=0]
 ----
 
 == Using DataSets
