@@ -34,7 +34,7 @@ class SocketGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCas
                     assert !it.closed
                 }
             }
-            ServerSocket s = [bound:{true}, accept: {[:] as Socket}] as ServerSocket
+            ServerSocket s = [isBound:{true}, accept: {[:] as Socket}] as ServerSocket
             foo(s)
             bar(s)
         '''
