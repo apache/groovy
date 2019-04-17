@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 class InterfaceConversionTest extends GroovyTestCase {
 
     void testClosureConversion() {
@@ -41,12 +43,8 @@ class InterfaceConversionTest extends GroovyTestCase {
 
     //GROOVY-7104
     void testDefaultInterfaceMethodCallOnProxy() {
-        try {
-            // checks for Java 8
-            Class.forName("java.util.function.Consumer", false, this.class.classLoader)
-        } catch (ignore) {
-            return
-        }
+        // reversed is a default method within the Comparator interface for 1.8+
+        if (!isAtLeastJdk("1.8")) return
         Comparator c1 = { a, b -> a <=> b }
         assert c1.compare("a", "b") == -1
         def c2 = c1.reversed()
