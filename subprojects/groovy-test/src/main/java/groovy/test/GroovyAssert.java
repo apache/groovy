@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -331,6 +332,19 @@ public class GroovyAssert extends org.junit.Assert {
             notYetImplementedFlag.set(null);
         }
         return true;
+    }
+
+    /**
+     * @return true if the JDK version is at least the version given by specVersion (e.g. "1.8", "9.0")
+     * @since 2.5.7
+     */
+    public static boolean isAtLeastJdk(String specVersion) {
+        boolean result = false;
+        try {
+            result = new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal(specVersion)) >= 0;
+        } catch (Exception ignore) {
+        }
+        return result;
     }
 
     private static String buildExceptionList(Throwable th) {
