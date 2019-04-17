@@ -183,7 +183,7 @@ class SqlTest extends GroovyTestCase {
                 metaData.getColumnName(it).toLowerCase()
             }
         }
-        assert data.size == 2 && !(data - ['firstname', 'lastname'])
+        assert data.size() == 2 && !(data - ['firstname', 'lastname'])
     }
 
     void testCallMethodFromObjectOnGroovyResultSet() {
