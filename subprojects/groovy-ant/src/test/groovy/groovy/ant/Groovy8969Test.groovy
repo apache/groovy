@@ -18,6 +18,8 @@
  */
 package groovy.ant
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 class Groovy8969Test extends AntTestCase {
     private scriptParamNameCheck = '''
         import org.codehaus.groovy.control.CompilerConfiguration
@@ -38,7 +40,8 @@ class Groovy8969Test extends AntTestCase {
     '''
 
     void testParameterNamesSeenInAST() {
-        if (System.getProperty('java.specification.version') < '1.8') return
+        // parameter name inclusion in bytecode is a JDK8+ feature
+        if (!isAtLeastJdk('1.8')) return
 //        def debugLogger = new org.apache.tools.ant.DefaultLogger()
 //        debugLogger.setMessageOutputLevel(4)
 //        debugLogger.setOutputPrintStream(System.out)

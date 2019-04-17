@@ -18,6 +18,8 @@
  */
 package groovy.execute
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 /**
  *  Cross platform tests for the DGM#execute() family of methods.
  */
@@ -72,7 +74,7 @@ class ExecuteTest extends GroovyTestCase {
                 "groovy.ui.GroovyMain",
                 "-e",
                 "sleep(2000); println('Done'); System.exit(0)"]
-        if (System.getProperty('java.specification.version') >= '9') {
+        if (isAtLeastJdk('9.0')) {
             javaArgs.add(3, '--add-modules')
             javaArgs.add(4, 'java.xml.bind')
         }
@@ -124,7 +126,7 @@ class ExecuteTest extends GroovyTestCase {
                 "groovy.ui.GroovyMain",
                 "-e",
                 "println(System.getenv('foo'))"]
-        if (System.getProperty('java.specification.version') >= '9') {
+        if (isAtLeastJdk('9.0')) {
             javaArgs.add(3, '--add-modules')
             javaArgs.add(4, 'java.xml.bind')
         }

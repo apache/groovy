@@ -21,6 +21,8 @@ package groovy.util.logging
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 /**
  * Unit test for the commons logging @Log based annotation.
  */
@@ -161,7 +163,7 @@ class CommonsTest extends GroovyTestCase {
         // JDK12+ doesn't allow adjusting static final fields even via reflection
         // so skip this test on such JDK versions - it is only this test which is affected
         // and currently we have coverage from builds with lower JDK versions.
-        if (System.getProperty('java.specification.version') >= '12') return
+        if (isAtLeastJdk('12')) return
 
         Class clazz = new GroovyClassLoader().parseClass('''
             class LogDecorator extends groovy.util.Proxy {

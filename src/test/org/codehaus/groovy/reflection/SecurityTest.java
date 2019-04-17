@@ -31,6 +31,8 @@ import java.security.Permission;
 import java.security.Permissions;
 import java.security.ProtectionDomain;
 
+import static groovy.test.GroovyAssert.isAtLeastJdk;
+
 public class SecurityTest extends GroovyTestCase {
 
     @SuppressWarnings("unused")
@@ -216,7 +218,7 @@ public class SecurityTest extends GroovyTestCase {
 
     public void testChecksReflectPermissionForInvokeOnPackagePrivateMethodsInRestrictedJavaPackages() throws Exception {
         // FIX_JDK9 remove this exemption for JDK9
-        if (new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal("9.0")) >= 0) {
+        if (isAtLeastJdk("9.0")) {
             return;
         }
         cachedMethodUnderTest = createCachedMethod(ClassLoader.class, "getBootstrapClassPath", new Class[0]);
