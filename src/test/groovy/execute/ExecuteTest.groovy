@@ -74,7 +74,8 @@ class ExecuteTest extends GroovyTestCase {
                 "groovy.ui.GroovyMain",
                 "-e",
                 "sleep(2000); println('Done'); System.exit(0)"]
-        if (isAtLeastJdk('9.0')) {
+        // jaxb deprecated in 9, gone in 11
+        if (isAtLeastJdk('9.0') && !isAtLeastJdk('11.0')) {
             javaArgs.add(3, '--add-modules')
             javaArgs.add(4, 'java.xml.bind')
         }
@@ -126,7 +127,8 @@ class ExecuteTest extends GroovyTestCase {
                 "groovy.ui.GroovyMain",
                 "-e",
                 "println(System.getenv('foo'))"]
-        if (isAtLeastJdk('9.0')) {
+        // jaxb deprecated in 9, gone in 11
+        if (isAtLeastJdk('9.0') && !isAtLeastJdk('11.0')) {
             javaArgs.add(3, '--add-modules')
             javaArgs.add(4, 'java.xml.bind')
         }
