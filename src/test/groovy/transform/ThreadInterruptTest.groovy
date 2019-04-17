@@ -27,14 +27,15 @@ import org.junit.Test
 
 import java.lang.reflect.Modifier
 
-import static groovy.util.GroovyAssert.shouldFail
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.Assume.assumeTrue
 
 /**
  * Test for @ThreadInterrupt.
  */
 class ThreadInterruptTest {
-    private static final boolean jdk12plus = System.getProperty('java.specification.version') >= '12'
+    private static final boolean jdk12plus = isAtLeastJdk('12.0')
     private Map<String, MethodNode> oldValues = [:]
 
     @After
