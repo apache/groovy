@@ -20,9 +20,11 @@ allprojects {
     tasks.withType(Test) {
         def jdk8 = ['-XX:+UseConcMarkSweepGC']
         def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
+//        def jdk9 = ['-Djava.locale.providers=COMPAT,SPI', '--illegal-access=debug']
         def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-Duser.language=en" ]
         if (JavaVersion.current().isJava9Compatible()) {
             jvmArgs (*common, *jdk9)
+            systemProperty "groovy.force.illegal.access", findProperty("groovy.force.illegal.access")
         } else if (JavaVersion.current().isJava8Compatible()) {
             jvmArgs (*common, *jdk8)
         } else {
