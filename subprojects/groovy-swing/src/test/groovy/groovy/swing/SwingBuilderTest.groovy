@@ -379,8 +379,8 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
             def swing = new SwingBuilder()
             swing.panel(layout: new BorderLayout()) {
-                label(id: 'label0', text: 'Name0', mnemonic: 48)
-                label(id: 'label1', text: 'Name1', mnemonic: 'N')
+                label(id: 'label0', text: 'Name0', displayedMnemonic: 48)
+                label(id: 'label1', text: 'Name1', displayedMnemonic: 'N' as char)
             }
             int expected0 = '0'
             int expected1 = 'N'
