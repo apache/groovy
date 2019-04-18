@@ -182,7 +182,7 @@ class EnumTest extends CompilableTestSupport {
     // the fix for GROOVY-3161
     def void testStaticEnumFieldWithEnumValues() {
         def allColors = GroovyColors3161.ALL_COLORS
-        assert allColors.size == 3
+        assert allColors.size() == 3
         assert allColors[0] == GroovyColors3161.red
         assert allColors[1] == GroovyColors3161.blue
         assert allColors[2] == GroovyColors3161.green
