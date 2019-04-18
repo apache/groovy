@@ -21,35 +21,35 @@ package groovy
 class PrimitiveTypesTest extends GroovyTestCase {
 
     int getInt() {
-        return 1;
+        return 1
     }
     
     short getShort() {
-        return 1;
+        return 1
     }
     
     boolean getBoolean() {
-        return true;
+        return true
     }
     
     double getDouble() {
-        return 1.0;
+        return 1.0
     }
     
     float getFloat() {
-        return 1.0;
+        return 1.0
     }
     
     byte getByte() {
-        return 1;
+        return 1
     }
     
     long getLong() {
-        return 1;
+        return 1
     }
 
     char getChar() {
-        return 'a';
+        return 'a'
     }
     
     int getNextInt(int i) {
@@ -85,14 +85,13 @@ class PrimitiveTypesTest extends GroovyTestCase {
     }
 
     void testBigInteger2BigDecimal() {
-        BigInteger big = new BigInteger(Long.MAX_VALUE)
+        BigInteger big = BigInteger.valueOf(Long.MAX_VALUE)
         assert big.longValue() == testMethod(big).longValueExact()
     }
 
     private testMethod(BigDecimal bd) {
-        return bd;
+        return bd
     }
-
 
     static void main(args) {
         new PrimitiveTypesTest().testPrimitiveTypes()
