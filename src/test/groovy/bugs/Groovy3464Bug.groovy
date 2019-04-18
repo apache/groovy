@@ -40,8 +40,8 @@ class Groovy3464Bug extends GroovyTestCase {
             jointCompilationOptions = [stubDir: createTempDir()]
         }
 
-        def groovyFile = new File('GroovyThing.groovy', config.targetDirectory)
-        def javaFile = new File('JavaThing.java', config.targetDirectory)
+        def groovyFile = new File(config.targetDirectory, 'GroovyThing.groovy')
+        def javaFile = new File(config.targetDirectory, 'JavaThing.java')
 
         groovyFile << '''
             class GroovyThing {
@@ -110,4 +110,3 @@ class Groovy3464Bug extends GroovyTestCase {
         return tempDirectory
     }
 }
-
