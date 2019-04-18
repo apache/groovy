@@ -23,7 +23,6 @@ import org.codehaus.groovy.control.CompilationFailedException
 import java.beans.PropertyChangeListener
 
 import static java.lang.reflect.Modifier.isPublic
-import static java.lang.reflect.Modifier.isSynthetic
 
 class BindableTransformTest extends GroovyShellTestCase {
 
@@ -352,9 +351,9 @@ class BindableTransformTest extends GroovyShellTestCase {
 
     void testPropertyChangeMethodsNotSynthetic() {
         def clazz = new GroovyClassLoader().parseClass('class MyBean { @groovy.beans.Bindable String dummy }', 'dummyName')
-        def modifiers = clazz.getMethod('addPropertyChangeListener', PropertyChangeListener).modifiers
-        assert isPublic(modifiers)
-        assert !isSynthetic(modifiers)
+        def method = clazz.getMethod('addPropertyChangeListener', PropertyChangeListener)
+        assert isPublic(method.modifiers)
+        assert !method.isSynthetic()
     }
 
     void testPropertyChangeMethodWithCompileStatic() {
