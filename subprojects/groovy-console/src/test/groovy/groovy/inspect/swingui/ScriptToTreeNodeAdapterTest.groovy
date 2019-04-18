@@ -84,9 +84,10 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
      */
     private assertMapEntry(mapEntry, expectedKey, expectedValue) {
         assertNotNull('Could not locate 1st MapEntryExpression in AST', mapEntry)
-        assertEquals('Wrong # map entries', 2, mapEntry.children.size())
-        assertEquals('Wrong key', expectedKey, mapEntry.children[0].toString())
-        assertEquals('Wrong value', expectedValue, mapEntry.children[1].toString())
+        def children = mapEntry.children().toList()
+        assertEquals('Wrong # map entries', 2, children.size())
+        assertEquals('Wrong key', expectedKey, children[0].toString())
+        assertEquals('Wrong value', expectedValue, children[1].toString())
     }
 
     /**
@@ -222,10 +223,11 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         }
         assertNotNull('Could not locate NamedArgumentListExpression in AST', namedArgList)
 
-        assertEquals('Wrong # named arguments', 2, namedArgList.children.size())
+        def children = namedArgList.children().toList()
+        assertEquals('Wrong # named arguments', 2, children.size())
 
-        assertMapEntry(namedArgList.children[0], 'Constant - foo : java.lang.String', 'Constant - bar : java.lang.String')
-        assertMapEntry(namedArgList.children[1], 'Constant - baz : java.lang.String', 'Constant - qux : java.lang.String')
+        assertMapEntry(children[0], 'Constant - foo : java.lang.String', 'Constant - bar : java.lang.String')
+        assertMapEntry(children[1], 'Constant - baz : java.lang.String', 'Constant - qux : java.lang.String')
     }
 
     void testDynamicVariable() {
