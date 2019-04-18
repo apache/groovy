@@ -211,7 +211,7 @@ public abstract class BaseTemplate implements Writable {
 
     private String escapeQuotes(String str) {
         String quote = configuration.isUseDoubleQuotes() ? "\"" : "'";
-        String escape = configuration.isUseDoubleQuotes() ? "&quote;" : "&apos;";
+        String escape = configuration.isUseDoubleQuotes() ? "&quot;" : "&apos;";
         return str.replace(quote, escape);
     }
 
