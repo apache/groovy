@@ -45,7 +45,7 @@ class BadLineNumberOnExceptionBugTest extends GroovyTestCase {
 
                 assert false
             } catch (MissingMethodException e) {
-                def scriptTraceElement = e.stackTrace.find { it.declaringClass.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 9 == scriptTraceElement.lineNumber
             }
         """
@@ -65,7 +65,7 @@ class BadLineNumberOnExceptionBugTest extends GroovyTestCase {
 
                 assert false
             } catch (MissingPropertyException e) {
-                def scriptTraceElement = e.stackTrace.find { it.declaringClass.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 3 == scriptTraceElement.lineNumber
             }
         """
