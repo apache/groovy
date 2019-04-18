@@ -1516,7 +1516,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void updateTitle() {
-        if (frame.properties.containsKey('title')) {
+        if (frame.title) {
             String title = 'GroovyConsole'
             if (indy) {
                 title += ' (Indy)'
