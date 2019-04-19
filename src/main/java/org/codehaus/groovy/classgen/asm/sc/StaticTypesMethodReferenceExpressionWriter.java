@@ -240,7 +240,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         List<MethodNode> candidates = new LinkedList<>();
         for (MethodNode mn : filterMethodsByVisibility(methodNodeList, classNode)) {
             if (mn.isStatic()) {
-                if (ParameterUtils.parametersEqualWithWrapperType(mn.getParameters(), abstractMethodParameters)) {
+                if (ParameterUtils.parametersCompatible(abstractMethodParameters, mn.getParameters())) {
                     candidates.add(mn);
                 }
             } else {
@@ -258,7 +258,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                     parameters = abstractMethodParameters;
                 }
 
-                if (ParameterUtils.parametersEqualWithWrapperType(mn.getParameters(), parameters)) {
+                if (ParameterUtils.parametersCompatible(parameters, mn.getParameters())) {
                     candidates.add(mn);
                 }
             }

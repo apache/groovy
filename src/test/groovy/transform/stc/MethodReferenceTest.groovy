@@ -103,6 +103,28 @@ class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
+    // instance::instanceMethod
+    void testBinaryOperatorII_COMPATIBLE() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void p() {
+                Adder adder = new Adder()
+                def result = [1.0G, 2.0G, 3.0G].stream().reduce(0.0G, adder::add)
+
+                assert 6.0G == result
+            }
+            
+            p()
+            
+            @groovy.transform.CompileStatic
+            class Adder {
+                BigDecimal add(Number a, Number b) {
+                    ((BigDecimal) a).add((BigDecimal) b)
+                }
+            }
+        '''
+    }
+
     // expression::instanceMethod
     void testBinaryOperatorII_EXPRESSION() {
         assertScript '''
