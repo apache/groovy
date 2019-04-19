@@ -33,6 +33,7 @@ public abstract class ProcessingUnit {
      * The current phase
      */
     protected int phase;
+
     /**
      * Set true if phase is finished
      */
@@ -53,11 +54,9 @@ public abstract class ProcessingUnit {
      */
     protected ErrorCollector errorCollector;
 
-
     /**
      * Initialize the ProcessingUnit to the empty state.
      */
-
     public ProcessingUnit(CompilerConfiguration configuration, GroovyClassLoader classLoader, ErrorCollector er) {
 
         this.phase = Phases.INITIALIZATION;
@@ -68,14 +67,12 @@ public abstract class ProcessingUnit {
         this.errorCollector = er;
     }
 
-
     /**
      * Reconfigures the ProcessingUnit.
      */
     public void configure(CompilerConfiguration configuration) {
         this.configuration = configuration;
     }
-
 
     public CompilerConfiguration getConfiguration() {
         return configuration;
@@ -88,43 +85,35 @@ public abstract class ProcessingUnit {
     /**
      * Returns the class loader in use by this ProcessingUnit.
      */
-
     public GroovyClassLoader getClassLoader() {
         return classLoader;
     }
 
-
     /**
      * Sets the class loader for use by this ProcessingUnit.
      */
-
     public void setClassLoader(final GroovyClassLoader loader) {
-        // Classloaders should only be created inside doPrivileged block
-        // This code creates a classloader, which needs permission if a security manage is installed.
-        // If this code might be invoked by code that does not have security permissions, then the classloader creation needs to occur inside a doPrivileged block.
-        this.classLoader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+        // Classloaders should only be created inside a doPrivileged block in case
+        // this method is invoked by code that does not have security permissions
+        this.classLoader = loader != null ? loader : AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
             public GroovyClassLoader run() {
                 ClassLoader parent = Thread.currentThread().getContextClassLoader();
                 if (parent == null) parent = ProcessingUnit.class.getClassLoader();
-                return loader == null ? new GroovyClassLoader(parent, configuration) : loader;
+                return new GroovyClassLoader(parent, configuration);
             }
         });
     }
 
-
     /**
      * Returns the current phase.
      */
-
     public int getPhase() {
         return this.phase;
     }
 
-
     /**
      * Returns the description for the current phase.
      */
-
     public String getPhaseDescription() {
         return Phases.getDescription(this.phase);
     }
@@ -146,12 +135,10 @@ public abstract class ProcessingUnit {
      * Marks the current phase complete and processes any
      * errors.
      */
-
     public void completePhase() throws CompilationFailedException {
         errorCollector.failIfErrors();
         phaseComplete = true;
     }
-
 
     /**
      * A synonym for <code>gotoPhase( phase + 1 )</code>.
@@ -159,7 +146,6 @@ public abstract class ProcessingUnit {
     public void nextPhase() throws CompilationFailedException {
         gotoPhase(this.phase + 1);
     }
-
 
     /**
      * Wraps up any pending operations for the current phase
