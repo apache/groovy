@@ -43,6 +43,6 @@ public class AnnotationConstantExpression extends ConstantExpression {
     }
 
     public String toString() {
-        return "AnnotationConstantExpression[" + getValue() + "]";
+        return super.toString() + "[" + getValue() + "]";
     }
 }

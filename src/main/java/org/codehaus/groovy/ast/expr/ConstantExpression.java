@@ -34,17 +34,16 @@ public class ConstantExpression extends Expression {
     public static final ConstantExpression EMPTY_STRING = new ConstantExpression("");
     public static final ConstantExpression PRIM_TRUE = new ConstantExpression(Boolean.TRUE, true);
     public static final ConstantExpression PRIM_FALSE = new ConstantExpression(Boolean.FALSE, true);
-    //public static final Expression EMPTY_ARRAY = new PropertyExpression(new ClassExpression(ArgumentListExpression.class.getName()), "EMPTY_ARRAY");
 
     // the following fields are only used internally; there are no user-defined expressions of the same kind
     public static final ConstantExpression VOID = new ConstantExpression(Void.class);
     public static final ConstantExpression EMPTY_EXPRESSION = new ConstantExpression(null);
-    
+
     private final Object value;
     private String constantName;
 
     public ConstantExpression(Object value) {
-        this(value,false);
+        this(value, false);
     }
 
     public ConstantExpression(Object value, boolean keepPrimitive) {
@@ -74,7 +73,7 @@ public class ConstantExpression extends Expression {
     }
 
     public String toString() {
-        return "ConstantExpression[" + value + "]";
+        return super.toString() + "[" + value + "]";
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -87,13 +86,13 @@ public class ConstantExpression extends Expression {
 
     /**
      * @return the value of this constant expression
-     */    
+     */
     public Object getValue() {
         return value;
     }
 
     public String getText() {
-        return (value == null) ? "null" : value.toString();
+        return value == null ? "null" : value.toString();
     }
 
     public String getConstantName() {

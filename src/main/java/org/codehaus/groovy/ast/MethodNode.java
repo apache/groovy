@@ -188,7 +188,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
-        return "MethodNode@" + hashCode() + "[" + getDeclaringClass().getName() + "#" + getTypeDescriptor() + "]";
+        return super.toString() + "[" + getDeclaringClass().getName() + "#" + getTypeDescriptor() + "]";
     }
 
     public void setReturnType(ClassNode returnType) {
@@ -264,7 +264,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     public String getText() {
         String retType = AstToTextHelper.getClassText(returnType);
         String exceptionTypes = AstToTextHelper.getThrowsClauseText(exceptions);
-        String parms = AstToTextHelper.getParametersText(parameters);
-        return AstToTextHelper.getModifiersText(modifiers) + " " + retType + " " + name + "(" + parms + ") " + exceptionTypes + " { ... }";
+        String params = AstToTextHelper.getParametersText(parameters);
+        return AstToTextHelper.getModifiersText(modifiers) + " " + retType + " " + name + "(" + params + ") " + exceptionTypes + " { ... }";
     }
 }
