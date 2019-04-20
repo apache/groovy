@@ -342,6 +342,15 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         assert config.compilationCustomizers.first().importsWhitelist == []
     }
 
+    // GROOVY-9035
+    void testEmptySourceAwareCustomizerBuilder() {
+        def builder = new CompilerCustomizationBuilder()
+        def cz = builder.source {
+            // intentionally empty
+        }
+        assert cz instanceof SourceAwareCustomizer
+    }
+
     private static class SourceUnit {
         String name
     }
