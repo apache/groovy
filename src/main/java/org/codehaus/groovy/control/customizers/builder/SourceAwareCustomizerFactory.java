@@ -21,6 +21,10 @@ package org.codehaus.groovy.control.customizers.builder;
 import groovy.lang.Closure;
 import groovy.util.AbstractFactory;
 import groovy.util.FactoryBuilderSupport;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.customizers.SourceAwareCustomizer;
 
@@ -79,6 +83,13 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         SourceOptions data = new SourceOptions();
         if (value instanceof CompilationCustomizer) {
             data.delegate = (CompilationCustomizer) value;
+        } else {
+            // GROOVY-9035 supply a "no-op" CompilationCustomizer if none found to make DSL friendly for empty case
+            data.delegate = new CompilationCustomizer(CompilePhase.FINALIZATION) {
+                @Override
+                public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                }
+            };
         }
         return data;
     }
@@ -116,7 +127,6 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
                 private static final long serialVersionUID = 925642730835101872L;
 
                 @Override
-                @SuppressWarnings("unchecked")
                 public Boolean call(final Object arguments) {
                     return extensions.contains(arguments);
                 }
@@ -134,7 +144,6 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
                 private static final long serialVersionUID = 7714937867958607043L;
 
                 @Override
-                @SuppressWarnings("unchecked")
                 public Boolean call(final Object arguments) {
                     return basenames.contains(arguments);
                 }
