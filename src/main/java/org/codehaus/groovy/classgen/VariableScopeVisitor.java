@@ -61,7 +61,7 @@ import static java.lang.reflect.Modifier.isFinal;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 
 /**
- * goes through an AST and initializes the scopes
+ * Goes through an AST and initializes the scopes.
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
@@ -207,6 +207,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         return findClassMember(cn.getOuterClass(), name);
     }
 
+    private static boolean isAnonymous(ClassNode node) {
+        return (!node.isEnum() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous());
+    }
+
     // -------------------------------
     // different Variable based checks
     // -------------------------------
@@ -221,9 +225,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         boolean crossingStaticContext = false;
         while (true) {
             crossingStaticContext = crossingStaticContext || scope.isInStaticContext();
-            Variable var1;
-            var1 = scope.getDeclaredVariable(var.getName());
 
+            Variable var1 = scope.getDeclaredVariable(var.getName());
             if (var1 != null) {
                 var = var1;
                 break;
@@ -268,7 +271,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name) == null)) {
                 scope.putReferencedClassVariable(var);
             } else {
-                //var.setClosureSharedVariable(var.isClosureSharedVariable() || inClosure);
                 scope.putReferencedLocalVariable(var);
             }
             scope = scope.getParent();
@@ -427,8 +429,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         expression.setVariableScope(currentScope);
 
         if (expression.isParameterSpecified()) {
-            Parameter[] parameters = expression.getParameters();
-            for (Parameter parameter : parameters) {
+            for (Parameter parameter : expression.getParameters()) {
                 parameter.setInStaticContext(currentScope.isInStaticContext());
                 if (parameter.hasInitialExpression()) {
                     parameter.getInitialExpression().visit(this);
@@ -476,10 +477,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     public void visitClass(ClassNode node) {
         // AIC are already done, doing them here again will lead to wrong scopes
-        if (node instanceof InnerClassNode) {
-            InnerClassNode in = (InnerClassNode) node;
-            if (in.isAnonymous() && !in.isEnum()) return;
-        }
+        if (isAnonymous(node)) return;
 
         pushState();
 
@@ -496,8 +494,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Setup the current class node context.
-     * @param node
+     * Sets the current class node context.
      */
     public void prepareVisit(ClassNode node) {
         currentClass = node;
@@ -509,7 +506,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         inConstructor = isConstructor;
         node.setVariableScope(currentScope);
         visitAnnotations(node);
-        
+
         // GROOVY-2156
         Parameter[] parameters = node.getParameters();
         for (Parameter parameter : parameters) {
