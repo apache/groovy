@@ -896,8 +896,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (lType.isUsingGenerics() && missesGenericsTypes(resultType) && isAssignment(op)) {
                 // unchecked assignment
                 // examples:
-                // List<A> list = new LinkedList()
                 // List<A> list = []
+                // List<A> list = new LinkedList()
                 // Iterable<A> list = new LinkedList()
 
                 // in that case, the inferred type of the binary expression is the type of the RHS
@@ -907,11 +907,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 resultType = completedType;
 
             }
-            if (isArrayOp(op) &&
-                    enclosingBinaryExpression != null
+            if (isArrayOp(op)
+                    && !lType.isArray()
+                    && enclosingBinaryExpression != null
                     && enclosingBinaryExpression.getLeftExpression() == expression
                     && isAssignment(enclosingBinaryExpression.getOperation().getType())
-                    && !lType.isArray()) {
+            ) {
                 // left hand side of an assignment : map['foo'] = ...
                 Expression enclosingBE_rightExpr = enclosingBinaryExpression.getRightExpression();
                 if (!(enclosingBE_rightExpr instanceof ClosureExpression)) {
@@ -2857,7 +2858,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-
     private void inferSAMType(Parameter param, ClassNode receiver, MethodNode methodWithSAMParameter, ArgumentListExpression originalMethodCallArguments, ClosureExpression openBlock) {
         // In a method call with SAM coercion the inference is to be
         // understood as a two phase process. We have the normal method call
@@ -3554,15 +3554,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, mn.get(0), call)) {
                             returnType = adjustWithTraits(directMethodCallCandidate, chosenReceiver.getType(), args, returnType);
-
-                            /*
-                            if (null != typeCheckingContext.getEnclosingReturnStatement() && !isNestedOrSandwichedMethodCall()) {
-                                ClassNode inferredType = infer(returnType, typeCheckingContext.getEnclosingMethod().getReturnType());
-                                if (null != inferredType) {
-                                    returnType = inferredType;
-                                }
-                            }
-                            */
 
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
