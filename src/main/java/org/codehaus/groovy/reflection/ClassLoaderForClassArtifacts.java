@@ -60,12 +60,16 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
     }
 
     public String createClassName(Method method) {
+        return createClassName(method.getName());
+    }
+
+    public String createClassName(String methodName) {
         final String name;
         final String clsName = klazz.get().getName();
         if (clsName.startsWith("java."))
-          name = clsName.replace('.','_') + "$" + method.getName();
+            name = clsName.replace('.','_') + "$" + methodName;
         else
-          name = clsName + "$" + method.getName();
+            name = clsName + "$" + methodName;
         int suffix = classNamesCounter.getAndIncrement();
         return suffix == -1? name : name + "$" + suffix;
     }

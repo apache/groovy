@@ -178,8 +178,8 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
         final Method reflect;
 
         public PojoCachedMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
-            super(site, metaClass, metaMethod, params);
-            reflect = ((CachedMethod)metaMethod).setAccessible();
+            super(site, metaClass, CallSiteHelper.transformMetaMethod(metaClass, metaMethod, params, site.getArray().owner), params);
+            reflect = ((CachedMethod) super.metaMethod).setAccessible();
         }
 
         public Object invoke(Object receiver, Object[] args) throws Throwable {

@@ -18,7 +18,11 @@
  */
 package org.codehaus.groovy.vmplugin.v9;
 
+import groovy.lang.MetaClass;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.codehaus.groovy.vmplugin.v8.Java8;
@@ -33,6 +37,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Optional;
 
 /**
  * Additional Java 9 based functions will be added here as needed.
@@ -136,7 +141,6 @@ public class Java9 extends Java8 {
         if (callerModule == Object.class.getModule()) return true;
         if (!declaringModule.isNamed()) return true;
 
-        String pn = declaringClass.getPackageName();
         int modifiers;
         if (accessibleObject instanceof Executable) {
             modifiers = ((Executable) accessibleObject).getModifiers();
@@ -144,11 +148,72 @@ public class Java9 extends Java8 {
             modifiers = ((Field) accessibleObject).getModifiers();
         }
 
+        return checkAccessible(caller, declaringClass, modifiers, true);
+    }
+
+
+    @Override
+    public boolean trySetAccessible(AccessibleObject ao) {
+        return ao.trySetAccessible();
+    }
+
+    @Override
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+        if (!(metaMethod instanceof CachedMethod)) {
+            return metaMethod;
+        }
+
+        CachedMethod cachedMethod = (CachedMethod) metaMethod;
+        CachedClass methodDeclaringClass = cachedMethod.getDeclaringClass();
+
+        if (null == methodDeclaringClass) {
+            return metaMethod;
+        }
+
+        Class<?> declaringClass = methodDeclaringClass.getTheClass();
+        Class theClass = metaClass.getTheClass();
+
+        if (declaringClass == theClass) {
+            return metaMethod;
+        }
+
+        int modifiers = cachedMethod.getModifiers();
+
+        // if caller can access the method,
+        // no need to transform the meta method
+        if (checkAccessible(caller, declaringClass, modifiers, false)) {
+            return metaMethod;
+        }
+
+        // if caller can not access the method,
+        // try to find the corresponding method in its derived class
+        if (declaringClass.isAssignableFrom(theClass)) {
+            Optional<Method> optionalMethod = ReflectionUtils.getMethod(theClass, metaMethod.getName(), params);
+            if (optionalMethod.isPresent()) {
+                return new CachedMethod(optionalMethod.get());
+            }
+        }
+
+        return metaMethod;
+    }
+
+    private static boolean checkAccessible(Class<?> caller, Class<?> declaringClass, int modifiers, boolean allowIllegalAccess) {
+        Module callerModule = caller.getModule();
+        Module declaringModule = declaringClass.getModule();
+        String pn = declaringClass.getPackageName();
+
+        boolean unnamedModuleAccessNamedModule = !callerModule.isNamed() && declaringModule.isNamed();
+        boolean illegalAccess = !allowIllegalAccess && unnamedModuleAccessNamedModule;
+
         // class is public and package is exported to caller
         boolean isClassPublic = Modifier.isPublic(declaringClass.getModifiers());
         if (isClassPublic && declaringModule.isExported(pn, callerModule)) {
             // member is public
             if (Modifier.isPublic(modifiers)) {
+                if (illegalAccess) {
+                    return false;
+                }
+
                 return true;
             }
 
@@ -156,12 +221,20 @@ public class Java9 extends Java8 {
             if (Modifier.isProtected(modifiers)
                     && Modifier.isStatic(modifiers)
                     && isSubclassOf(caller, declaringClass)) {
+                if (illegalAccess) {
+                    return false;
+                }
+
                 return true;
             }
         }
 
         // package is open to caller
         if (declaringModule.isOpen(pn, callerModule)) {
+            if (illegalAccess) {
+                return false;
+            }
+
             return true;
         }
 
@@ -176,10 +249,5 @@ public class Java9 extends Java8 {
             queryClass = queryClass.getSuperclass();
         }
         return false;
-    }
-
-    @Override
-    public boolean trySetAccessible(AccessibleObject ao) {
-        return ao.trySetAccessible();
     }
 }

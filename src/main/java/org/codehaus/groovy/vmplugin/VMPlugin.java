@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin;
 
+import groovy.lang.MetaClass;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -80,4 +82,15 @@ public interface VMPlugin {
      * @throws SecurityException if the request is denied by the security manager
      */
     boolean trySetAccessible(AccessibleObject ao);
+
+    /**
+     * transform meta method
+     *
+     * @param metaClass meta class
+     * @param metaMethod the original meta method
+     * @param params parameter types
+     * @param caller caller type
+     * @return the transformed meta method
+     */
+    MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller);
 }

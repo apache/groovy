@@ -22,9 +22,11 @@ import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.CallSiteGenerator;
+import org.codehaus.groovy.runtime.callsite.CallSiteHelper;
 import org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
@@ -78,7 +80,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return methods[i];
     }
 
-    protected Class[] getPT() {
+    public Class[] getPT() {
         return cachedMethod.getParameterTypes();
     }
 
@@ -95,7 +97,20 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     public final Object invoke(Object object, Object[] arguments) {
-        makeAccessibleIfNecessary();
+        CachedMethod transformedCachedMethod =
+                (CachedMethod) CallSiteHelper.transformMetaMethod(
+                        InvokerHelper.getMetaClass(object.getClass()),
+                        this,
+                        this.getPT(),
+                        CachedMethod.class);
+
+        Method cachedMethod = transformedCachedMethod.cachedMethod;
+
+        if (transformedCachedMethod == this) {
+            makeAccessibleIfNecessary();
+        } else {
+            ReflectionUtils.trySetAccessible(cachedMethod);
+        }
 
         try {
             AccessPermissionChecker.checkAccessPermission(cachedMethod);

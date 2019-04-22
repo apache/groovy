@@ -18,11 +18,13 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -128,6 +130,36 @@ public class ReflectionUtils {
         } catch (Throwable t) {
             return null;
         }
+    }
+
+    public static Optional<Method> getMethod(Class type, String name, Class<?>... parameterTypes) {
+        out:
+        for (Method m : type.getMethods()) {
+            if (!m.getName().equals(name)) {
+                continue;
+            }
+
+            Class<?>[] methodParameterTypes = m.getParameterTypes();
+            if (methodParameterTypes.length != parameterTypes.length) {
+                continue;
+            }
+
+            for (int i = 0, n = methodParameterTypes.length; i < n; i++) {
+                Class<?> parameterType = TypeUtil.autoboxType(parameterTypes[i]);
+                if (null == parameterType) {
+                    continue out;
+                }
+
+                Class<?> methodParameterType = TypeUtil.autoboxType(methodParameterTypes[i]);
+                if (!methodParameterType.isAssignableFrom(parameterType)) {
+                    continue out;
+                }
+            }
+
+            return Optional.of(m);
+        }
+
+        return Optional.empty();
     }
 
     public static boolean checkCanSetAccessible(AccessibleObject accessibleObject,
