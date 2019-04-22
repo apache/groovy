@@ -1629,6 +1629,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (getter != null) {
                         ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                         storeInferredTypeForPropertyExpression(pexp, cn);
+                        storeTargetMethod(pexp, getter);
                         pexp.removeNodeMetaData(StaticTypesMarker.READONLY_PROPERTY);
                         String delegationData = receiver.getData();
                         if (delegationData != null)
@@ -1693,7 +1694,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         ClassNode cn = inferReturnTypeGenerics(dgmReceiver, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                         storeInferredTypeForPropertyExpression(pexp, cn);
-
+                        storeTargetMethod(pexp, getter);
                         return true;
                     }
                 }
