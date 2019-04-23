@@ -160,7 +160,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             // if we are in a class and no variable is declared until
             // now, then we can break the loop, because we are allowed
             // to declare a variable of the same name as a class member
-            if (scope.getClassScope() != null) break;
+            if (scope.getClassScope() != null && !isAnonymous(scope.getClassScope())) break;
 
             if (scope.getDeclaredVariable(var.getName()) != null) {
                 // variable already declared
@@ -204,6 +204,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         Variable ret = findClassMember(cn.getSuperClass(), name);
         if (ret != null) return ret;
+        if (isAnonymous(cn)) return null;
         return findClassMember(cn.getOuterClass(), name);
     }
 
@@ -255,7 +256,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     if (!(staticScope && !staticMember))
                         var = member;
                 }
-                break;
+                // GROOVY-5961
+                if (!isAnonymous(classScope))
+                    break;
             }
             scope = scope.getParent();
         }
@@ -541,6 +544,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         pushState();
         InnerClassNode innerClass = (InnerClassNode) call.getType();
         innerClass.setVariableScope(currentScope);
+        currentScope.setClassScope(innerClass);
+        currentScope.setInStaticContext(false);
         for (MethodNode method : innerClass.getMethods()) {
             Parameter[] parameters = method.getParameters();
             if (parameters.length == 0) parameters = null; // null means no implicit "it"
