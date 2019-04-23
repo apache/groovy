@@ -21,6 +21,27 @@ package org.codehaus.groovy.transform
 import java.lang.reflect.Modifier
 
 class PackageScopeTransformTest extends GroovyShellTestCase {
+    // GROOVY-9043
+    void testPackagePrivateAccessFromInnerClassCS() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.PackageScope
+            @CompileStatic
+            class Test {
+                @PackageScope
+                static final String S = 'S'
+                static private final String T = 'T'
+                static protected final String U = 'U'
+                static class Inner {
+                    String method() {
+                        S + T + U
+                    }
+                }
+            }
+
+            assert new Test.Inner().method() == 'STU'
+        '''
+    }
 
     void testImmutable() {
         def objects = evaluate("""
