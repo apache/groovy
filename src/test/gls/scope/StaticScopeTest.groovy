@@ -20,9 +20,9 @@ package gls.scope
 
 import gls.CompilableTestSupport
 
-public class StaticScopeTest extends CompilableTestSupport {
+class StaticScopeTest extends CompilableTestSupport {
 
-    public void testNormalStaticScopeInScript() {
+    void testNormalStaticScopeInScript() {
         shouldNotCompile """
         static foo() {
             foo = 1
@@ -36,7 +36,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testStaticImportInclass() {
+    void testStaticImportInclass() {
         assertScript """
         import static java.lang.Math.*
         class B {
@@ -45,7 +45,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testStaticMethodInConstructor() {
+    void testStaticMethodInConstructor() {
         assertScript """
         class B {
             def instanceVariable = 0
@@ -59,7 +59,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testStaticMethodInSpecialConstructorCall() {
+    void testStaticMethodInSpecialConstructorCall() {
         assertScript """
         class A {
             def instanceVariable = 0
@@ -84,7 +84,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testStaticImportProperty() {
+    void testStaticImportProperty() {
         assertScript """
         import static A.*
         class B {
@@ -94,7 +94,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testNormalStaticScopeInClass() {
+    void testNormalStaticScopeInClass() {
         assertScript """
         class A {
             static i
@@ -116,7 +116,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testClosureInStaticScope() {
+    void testClosureInStaticScope() {
         shouldCompile """
         5.times { foo=2 }
         """
@@ -126,7 +126,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testScriptMethodCall() {
+    void testScriptMethodCall() {
         assertScript """
         import static java.util.Calendar.getInstance as now
         def now = now().time
@@ -145,7 +145,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testFullyQualifiedClassName() {
+    void testFullyQualifiedClassName() {
         assertScript """
         static foo() {java.lang.Integer}
         assert foo() == java.lang.Integer
@@ -160,7 +160,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testStaticPropertyInit() {
+    void testStaticPropertyInit() {
         // GROOVY-1910
         assertScript """
         class Foo {
@@ -182,7 +182,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testSpecialConstructorAccess() {
+    void testSpecialConstructorAccess() {
         shouldCompile """
         class A{ A(x){} }
         class B extends A {
@@ -221,7 +221,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
     
-    public void testStaticMethodAccessingDynamicField() {
+    void testStaticMethodAccessingDynamicField() {
         shouldFail MissingMethodException, """
             class A {
                 def x = { }
@@ -231,7 +231,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
     
-    public void testStaticThisWithClass() {
+    void testStaticThisWithClass() {
         assertScript """
             static foo(){this}
             assert foo() instanceof Class
@@ -244,7 +244,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
     
-    public void testConstructorParameterDefault() {
+    void testConstructorParameterDefault() {
         shouldNotCompile """
             class Child {
                 Child(nr=map.B) {super(nr)}

@@ -22,7 +22,7 @@ import gls.CompilableTestSupport
 
 class MetaClassOverridingTest extends CompilableTestSupport {
 
-    public void testOverridingMetaClassProperty() {
+    void testOverridingMetaClassProperty() {
         shouldCompile """
             class A {
                  private MetaClass metaClass

@@ -18,7 +18,9 @@
  */
 package gls.types
 
-public class GroovyCastTest extends gls.CompilableTestSupport {
+import gls.CompilableTestSupport
+
+class GroovyCastTest extends CompilableTestSupport {
     void testSAMVariable() {
         assertScript """
             interface SAM { def foo(); }

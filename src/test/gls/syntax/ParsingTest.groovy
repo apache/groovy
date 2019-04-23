@@ -18,7 +18,9 @@
  */
 package gls.syntax
 
-public class ParsingTest extends gls.CompilableTestSupport {
+import gls.CompilableTestSupport
+
+class ParsingTest extends CompilableTestSupport {
     void testExpressionParsingWithCastingInFrontOfAClosure() {
         int[] numbers = new int[3]
 

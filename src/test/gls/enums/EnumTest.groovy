@@ -121,7 +121,7 @@ class EnumTest extends CompilableTestSupport {
                 ONE([111, 222])
                 ListEnum1(Object listArg){
                     assert listArg == [111, 222]
-                    assert listArg instanceof java.util.ArrayList
+                    assert listArg instanceof ArrayList
                 }
             }
             println ListEnum1.ONE
@@ -133,23 +133,22 @@ class EnumTest extends CompilableTestSupport {
                 TWO([234, [567,12]])
                 ListEnum2(Object listArg){
                     assert listArg == [234, [567, 12]]
-                    assert listArg instanceof java.util.ArrayList
+                    assert listArg instanceof ArrayList
                 }
             }
             println ListEnum2.TWO
         """
-        sh.evaluate(enumStr);
+        sh.evaluate(enumStr)
     }
     
     void testSingleListDoesNoInfluenceMaps() {
         // the fix for GROOVY-2933 caused map["taku"]
         // to become map[(["take])] instead. -> GROOVY-3214
         assertScript """
-            public enum FontFamily {
+            enum FontFamily {
                 ARIAL
             
-                static public void obtainMyMap()
-                {
+                static void obtainMyMap() {
                     Map map = [:]
                     map["taku"] = "dio"
                     assert map.taku == "dio"
@@ -180,7 +179,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // the fix for GROOVY-3161
-    def void testStaticEnumFieldWithEnumValues() {
+    void testStaticEnumFieldWithEnumValues() {
         def allColors = GroovyColors3161.ALL_COLORS
         assert allColors.size() == 3
         assert allColors[0] == GroovyColors3161.red
@@ -189,7 +188,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // the fix for GROOVY-3283
-    def void testImportStaticMoreThanOneEnum() {
+    void testImportStaticMoreThanOneEnum() {
         assertScript """
             enum Foo3283 { A,B }
             enum Bar3283 { X,Y }

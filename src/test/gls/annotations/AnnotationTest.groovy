@@ -692,7 +692,7 @@ class AnnotationTest extends CompilableTestSupport {
 
             class Foo {
               @NonNull public Integer foo
-              @NonNull public Integer bar(@NonNull String baz) {}
+              @NonNull Integer bar(@NonNull String baz) {}
             }
 
             def expected = '@NonNull()'

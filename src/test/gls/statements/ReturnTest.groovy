@@ -20,9 +20,9 @@ package gls.statements
 
 import gls.CompilableTestSupport
 
-public class ReturnTest extends CompilableTestSupport {
+class ReturnTest extends CompilableTestSupport {
 
-  public void testObjectInitializer() {
+  void testObjectInitializer() {
       shouldNotCompile """
          class A {
             {return}
@@ -30,7 +30,7 @@ public class ReturnTest extends CompilableTestSupport {
       """
   }
   
-  public void testStaticInitializer() {
+  void testStaticInitializer() {
       assertScript """
          class A {
              static foo=2
@@ -40,7 +40,7 @@ public class ReturnTest extends CompilableTestSupport {
       """      
   }
 
-  public void testReturnAdditionInFinally() {
+  void testReturnAdditionInFinally() {
       //GROOVY-7065
       assertScript """
         class CountDown { int counter = 10 }
