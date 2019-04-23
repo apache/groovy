@@ -18,14 +18,10 @@
  */
 package groovy.bugs
 
-/**
- */
 class VariableScopingBug extends TestSupport {
     
-    void testBug() {
-        // undeclared variable x
-
-        shouldFail {
+    void testUndeclaredVariable() {
+        shouldFail(MissingPropertyException) {
             def shell = new GroovyShell()
             shell.evaluate("""
                 class SomeTest {
@@ -35,17 +31,18 @@ class VariableScopingBug extends TestSupport {
                         }
 
                         for (t in 0..3) {
-                            for (y in x) {
+                            for (y in x) { // previous x no longer be in scope
                                 println x
                             }
                         }
                     }
-               }
-               new SomeTest().run()""")
-           }
+                }
+                new SomeTest().run()
+            """)
+        }
     }
 
-    void testVariableReuse() {
+    void testVariableReuseAllowedInDifferentScopes() {
         def shell = new GroovyShell()
         shell.evaluate("""
             for (z in 0..2) {
@@ -55,6 +52,25 @@ class VariableScopingBug extends TestSupport {
             for (t in 0..3) {
                 def x = 123
                 println x
-            }""")
+            }
+        """)
+    }
+
+    // GROOVY-5961
+    void testVariableInAicInsideStaticMethod() {
+        def shell = new GroovyShell()
+        shell.evaluate("""
+            static foo() {
+                new LinkedList([1, 2]) {
+                    int count
+                    Object get(int i) { super.get(count++) }
+                }
+            }
+
+            def l = foo()
+            assert l.count == 0
+            assert l[0] == 1
+            assert l.count == 1
+        """)
     }
 }

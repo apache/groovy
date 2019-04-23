@@ -103,7 +103,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 
     protected static boolean isStatic(InnerClassNode node) {
         VariableScope scope = node.getVariableScope();
-        if (scope != null) return scope.isInStaticContext();
+        if (scope != null) return scope.getParent().isInStaticContext();
         return (node.getModifiers() & Opcodes.ACC_STATIC) != 0;
     }
 
