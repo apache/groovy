@@ -20,13 +20,13 @@ package gls.invocation
 
 import gls.CompilableTestSupport
 
-public class MethodSelectionTest extends CompilableTestSupport {
+class MethodSelectionTest extends CompilableTestSupport {
 
   /**
    * This test ensures Groovy can choose a method based on interfaces.
    * Choosing such an interface should not be hidden by subclasses.
    */
-  public void testMostSpecificInterface() {
+  void testMostSpecificInterface() {
     assertScript """
       interface A{}
       interface B extends A{}
@@ -61,7 +61,7 @@ public class MethodSelectionTest extends CompilableTestSupport {
     """
   }
   
-  public void testMostGeneralForNull() {
+  void testMostGeneralForNull() {
     // we use the same signatures with different method orders,
     // because we want to catch method ordering bugs
     assertScript """

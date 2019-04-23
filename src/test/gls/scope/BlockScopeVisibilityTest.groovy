@@ -22,7 +22,7 @@ import gls.CompilableTestSupport
 
 class BlockScopeVisibilityTest extends CompilableTestSupport {
 
-    public void testForLoopVariableNotVisibleOutside() {
+    void testForLoopVariableNotVisibleOutside() {
         assertScript """
             i=1
             for (i in [2,3]) {}
@@ -30,7 +30,7 @@ class BlockScopeVisibilityTest extends CompilableTestSupport {
         """
     }
 
-    public void testCatchParameterNotVisibleInOtherCatch() {
+    void testCatchParameterNotVisibleInOtherCatch() {
         shouldFail(MissingPropertyException) {
             try {
                 throw new RuntimeException("not important");
@@ -43,12 +43,12 @@ class BlockScopeVisibilityTest extends CompilableTestSupport {
         }
     }
 
-    public void testInnerClosureCanAccessImplicitItOfOuterClosure() {
+    void testInnerClosureCanAccessImplicitItOfOuterClosure() {
         def c = { {-> it}}
         assert c(1)() == 1
     }
 
-    public void testForLoopStatement() {
+    void testForLoopStatement() {
         // this example requires not to put the declaration
         // into a block !
         if (false)

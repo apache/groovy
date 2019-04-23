@@ -18,7 +18,9 @@
  */
 package gls.syntax
 
-public class NumberLiteralTest extends gls.CompilableTestSupport {
+import gls.CompilableTestSupport
+
+class NumberLiteralTest extends CompilableTestSupport {
 
     void testLargeNumbersOverflowing() {
         shouldCompile '''

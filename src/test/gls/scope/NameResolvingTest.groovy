@@ -21,19 +21,19 @@ package gls.scope
 import gls.CompilableTestSupport
 
 class NameResolvingTest extends CompilableTestSupport {
-    public void testVariableNameEqualsToAClassName() {
+    void testVariableNameEqualsToAClassName() {
         Object String = ""
         assert String == ""
         assert String.class == java.lang.String
     }
 
-    public void testVariableNameEqualsCurrentClassName() {
+    void testVariableNameEqualsCurrentClassName() {
         Object NameResolvingTest = ""
         assert NameResolvingTest == ""
         assert NameResolvingTest.class == java.lang.String.class
     }
 
-    public void testClassNoVariableInStaticMethod() {
+    void testClassNoVariableInStaticMethod() {
         assertScript """
             static def foo() {
                 Class.forName('java.lang.Integer')
@@ -42,20 +42,20 @@ class NameResolvingTest extends CompilableTestSupport {
         """
     }
 
-    public void testInAsDefAllowedInPackageNames() {
+    void testInAsDefAllowedInPackageNames() {
         shouldCompile """
             package as.in.def
             class X {}
         """
     }
 
-    public void testAssignmentToNonLocalVariableWithSameNameAsClass() {
+    void testAssignmentToNonLocalVariableWithSameNameAsClass() {
         shouldNotCompile """
             String = 1
         """
     }
 
-    public void testClassUsageInSuper() {
+    void testClassUsageInSuper() {
         shouldCompile """
             class A {A(x){}}
             class B extends A {
@@ -64,7 +64,7 @@ class NameResolvingTest extends CompilableTestSupport {
         """
     }
     
-    public void testSuperClassVariableAccess() {
+    void testSuperClassVariableAccess() {
         assertScript """
             class U {
                 public static final int uint

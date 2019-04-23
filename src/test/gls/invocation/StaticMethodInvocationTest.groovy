@@ -20,7 +20,7 @@ package gls.invocation
 
 import gls.CompilableTestSupport
 
-public class StaticMethodInvocationTest extends CompilableTestSupport {
+class StaticMethodInvocationTest extends CompilableTestSupport {
 
     void testDifferentCalls() {
         // GROOVY-2409

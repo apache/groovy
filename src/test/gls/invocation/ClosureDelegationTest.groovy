@@ -20,9 +20,9 @@ package gls.invocation
 
 import gls.CompilableTestSupport
 
-public class ClosureDelegationTest extends CompilableTestSupport {
+class ClosureDelegationTest extends CompilableTestSupport {
 
-    public void testMissingMethodMissingMethod() {
+    void testMissingMethodMissingMethod() {
       assertScript """
 class A {
   def methodMissing(String name, args) {
@@ -43,7 +43,7 @@ assert visited==true
         """
     }
 
-    public void testInvokeMethodMissingMethod() {
+    void testInvokeMethodMissingMethod() {
       assertScript """
 class A {
   def invokeMethod(String name, args) {
@@ -64,7 +64,7 @@ assert visited==true
         """
     }
     
-    public void testMissingMethodInvokeMethod() {
+    void testMissingMethodInvokeMethod() {
       assertScript """
 class A {
   def methodMissing(String name, args) {
@@ -85,7 +85,7 @@ assert visited==true
         """
     }
     
-    public void testInvokeMethodInvokeMethod() {
+    void testInvokeMethodInvokeMethod() {
       assertScript """
 class A {
   def invokeMethod(String name, args) {

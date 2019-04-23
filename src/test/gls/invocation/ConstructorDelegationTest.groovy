@@ -20,9 +20,9 @@ package gls.invocation
 
 import gls.CompilableTestSupport
 
-public class ConstructorDelegationTest extends CompilableTestSupport {
+class ConstructorDelegationTest extends CompilableTestSupport {
 
-    public void testThisCallWithParameter() {
+    void testThisCallWithParameter() {
         assertScript """
             class A {
                 def foo
@@ -34,7 +34,7 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
         """
     }
 
-    public void testThisCallWithoutParameter() {
+    void testThisCallWithoutParameter() {
         assertScript """
             class A {
                 def foo
@@ -46,7 +46,7 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
         """
     }
 
-    public void testThisConstructorCallNotOnFirstStmt() {
+    void testThisConstructorCallNotOnFirstStmt() {
         shouldNotCompile """
             class ThisConstructorCall {
                 public ThisConstructorCall() {
@@ -61,7 +61,7 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
         """
     }
 
-    public void testSuperConstructorCallNotOnFirstStmt() {
+    void testSuperConstructorCallNotOnFirstStmt() {
         shouldNotCompile """
             class SuperConstructorCall {
                 public SuperConstructorCall() {
@@ -73,7 +73,7 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
         """
     }
 
-    public void testConstructorDelegationWithThisOrSuperInArgs() {
+    void testConstructorDelegationWithThisOrSuperInArgs() {
         def scriptStr
         // all 4 cases below were compiling earlier but giving VerifyError at runtime
         scriptStr = """
@@ -120,7 +120,7 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
     }
 
     // GROOVY-6618
-    public void testVarsConstructor() {
+    void testVarsConstructor() {
         assertScript '''
             class Foo {
                 public info

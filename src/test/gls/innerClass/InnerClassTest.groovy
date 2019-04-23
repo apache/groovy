@@ -570,7 +570,7 @@ import org.codehaus.groovy.classgen.Verifier
                     if (variables[field.name]) {
                         AccessController.doPrivileged(new PrivilegedAction() {
                             @Override
-                            public Object run() {
+                            Object run() {
                                 boolean wasAccessible = field.isAccessible()
                                 try {
                                     field.accessible = true

@@ -18,7 +18,7 @@
  */
 package gls.syntax
 
-public class MethodCallValidationTest extends gls.CompilableTestSupport {
+class MethodCallValidationTest extends gls.CompilableTestSupport {
 
     void testDeclarationInMethodCall() {
         shouldNotCompile """

@@ -19,32 +19,33 @@
 package gls.statements
 
 import gls.CompilableTestSupport
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 
-public class DeclarationTest extends CompilableTestSupport {
+class DeclarationTest extends CompilableTestSupport {
 
-  
-  public void testSingleDeclarationInParenthesis() {
-      shouldNotCompile """
-         (def a=1).method()
-      """      
-      shouldCompile """
-         (a=1).method()
-      """
-  }
-  
-  public void testNullAssignmentToPrimitive() {
-      shouldFail (org.codehaus.groovy.runtime.typehandling.GroovyCastException, """
-          int x = null
-      """)
-      assertScript """
-          Integer x = null
-      """
-  }
-  
-  public void testNullAssignmentToPrimitiveForSharedVariable() {
-      shouldFail(org.codehaus.groovy.runtime.typehandling.GroovyCastException, """
-          int i = null
-          def c = {i}
-      """)
-  }
+
+    void testSingleDeclarationInParenthesis() {
+        shouldNotCompile """
+            (def a=1).method()
+        """
+        shouldCompile """
+            (a=1).method()
+        """
+    }
+
+    void testNullAssignmentToPrimitive() {
+        shouldFail(GroovyCastException, """
+            int x = null
+        """)
+        assertScript """
+            Integer x = null
+        """
+    }
+
+    void testNullAssignmentToPrimitiveForSharedVariable() {
+        shouldFail(GroovyCastException, """
+            int i = null
+            def c = {i}
+        """)
+    }
 }

@@ -196,9 +196,9 @@ class GenericsTest extends GenericsTestBase {
 
     void testParameterAsParameterForReturnTypeAndFieldClass() {
         createClassInfo """
-               public class B<T> {
+               class B<T> {
                    private T owner;
-                   public Class<T> getOwnerClass(){}
+                   Class<T> getOwnerClass(){}
    
             } 
         """
@@ -279,7 +279,7 @@ class GenericsTest extends GenericsTestBase {
         import java.util.concurrent.*
 
         class CallableTask implements Callable<String> {
-          public String call() { "x" }
+            String call() { "x" }
         } 
         
         def task = new CallableTask()
@@ -294,7 +294,7 @@ class GenericsTest extends GenericsTestBase {
         abstract class AbstractCallableTask<T> implements Callable<T> { }
         abstract class SubclassCallableTask<T> extends AbstractCallableTask<T> { }
         class CallableTask extends SubclassCallableTask<String> {
-          public String call() { return "x"; }
+            String call() { return "x"; }
         }
         assert "x" == new CallableTask().call();
       """
@@ -337,23 +337,21 @@ class GenericsTest extends GenericsTestBase {
         assertScript """
 import java.util.concurrent.atomic.AtomicInteger
 
- public class ThreadId
- {
-  private static final AtomicInteger nextId = new AtomicInteger(0)
-  private static final ThreadLocal<Integer> threadId = [
-                  initialValue: { return nextId.getAndIncrement() }
-                  ] as ThreadLocal<Integer>
+class ThreadId {
+    private static final AtomicInteger nextId = new AtomicInteger(0)
+    private static final ThreadLocal<Integer> threadId = [
+        initialValue: { return nextId.getAndIncrement() }
+    ] as ThreadLocal<Integer>
 
-  public static int get()
-  {
-      System.out.println( "Thread ID: " + threadId.get());
-      return threadId.get();
-  }
+    static int get() {
+        println "Thread ID: " + threadId.get()
+        return threadId.get()
+    }
 
  }
  // we do not actually want to execute something, just
  // ensure this compiles, so we do a dummy command here
- assert ThreadId!=null
+ assert ThreadId != null
        """
     }
 

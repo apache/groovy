@@ -20,7 +20,7 @@ package gls.invocation
 
 import gls.CompilableTestSupport
 
-public class CovariantReturnTest extends CompilableTestSupport {
+class CovariantReturnTest extends CompilableTestSupport {
 
     void testCovariantReturn() {
         assertScript """

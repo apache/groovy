@@ -20,9 +20,9 @@ package gls.scope
 
 import gls.CompilableTestSupport
 
-public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
+class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
 
-    public void testInSameBlock() {
+    void testInSameBlock() {
         shouldNotCompile """
             def foo = 1
             def foo = 2
@@ -38,7 +38,7 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
         """
     }
 
-    public void testInSubBlocks() {
+    void testInSubBlocks() {
         shouldNotCompile """
              def foo = 1
              5.times { def foo=2 }
@@ -60,7 +60,7 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
         """
     }
 
-    public void testInNestedClosure() {
+    void testInNestedClosure() {
         shouldNotCompile """
             def foo = 1
             5.times { 6.times {def foo=2 }
@@ -73,7 +73,7 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
         """
     }
 
-    public void testBindingHiding() {
+    void testBindingHiding() {
         assertScript """
             foo = 1
             def foo = 3
@@ -83,7 +83,7 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
         """
     }
 
-    public void testBindingAccessInMethod() {
+    void testBindingAccessInMethod() {
         assertScript """
             def methodUsingBinding() {
                 try {
@@ -98,7 +98,7 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
         """
     }
 
-    public void testMultipleOfSameName() {
+    void testMultipleOfSameName() {
         shouldNotCompile """
             class DoubleField {
                 def zero = 0

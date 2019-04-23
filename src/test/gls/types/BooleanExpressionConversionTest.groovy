@@ -18,7 +18,9 @@
  */
 package gls.types
 
-public class BooleanExpressionConversionTest extends gls.CompilableTestSupport {
+import gls.CompilableTestSupport
+
+class BooleanExpressionConversionTest extends CompilableTestSupport {
     void testInt() {
         assertScript """
             boolean foo(int i){
