@@ -290,7 +290,7 @@ startGroovy ( ) {
             "$STARTER_MAIN_CLASS" \
             --main "$CLASS" \
             --conf "$GROOVY_CONF" \
-            --classpath "$CP" "$REPLACE_PREVIEW" \
+            --classpath "$CP" $REPLACE_PREVIEW \
             "$@"
     fi
 }
