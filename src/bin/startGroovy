@@ -81,6 +81,14 @@ if [ "$1" = "-cp" ] || [ "$1" = "-classpath" ] || [ "$1" = "--classpath" ] ; the
     shift 2
 fi
 
+REPLACE_PREVIEW=
+if [ "$1" = "-pr" ] || [ "$1" = "--enable-preview" ] ; then
+    JAVA_OPTS="$JAVA_OPTS --enable-preview -Dgroovy.preview.features=true"
+    # for now, also remember arg to pass through
+    REPLACE_PREVIEW="--enable-preview"
+    shift 1
+fi
+
 # Attempt to set JAVA_HOME if it's not already set.
 if [ -z "$JAVA_HOME" ] ; then
     if $darwin ; then 
@@ -282,7 +290,7 @@ startGroovy ( ) {
             "$STARTER_MAIN_CLASS" \
             --main "$CLASS" \
             --conf "$GROOVY_CONF" \
-            --classpath "$CP" \
+            --classpath "$CP" "$REPLACE_PREVIEW" \
             "$@"
     fi
 }

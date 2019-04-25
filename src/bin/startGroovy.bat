@@ -119,9 +119,25 @@ set CP=
 if "x%~1" == "x-cp" set CP=%~2
 if "x%~1" == "x-classpath" set CP=%~2
 if "x%~1" == "x--classpath" set CP=%~2
-if "x" == "x%CP%" goto init
+if "x" == "x%CP%" goto preview_check
 set _SKIP=4
 shift
+shift
+
+:preview_check
+@rem classpath handling
+set PREV=
+set REPLACE_PREVIEW=
+if "x%~1" == "x-pr" goto preview_enable
+if "x%~1" == "x--enable-preview" goto preview_enable
+goto init
+
+:preview_enable
+set JAVA_OPTS=%JAVA_OPTS% --enable-preview -Dgroovy.preview.features=true
+@rem for now, also remember arg to pass through
+set REPLACE_PREVIEW=--enable-preview
+if "%_SKIP%" == "4" set _SKIP=5
+if "%_SKIP%" == "2" set _SKIP=3
 shift
 
 :init
@@ -193,6 +209,7 @@ rem  add the next part to _ARG until the matching quote is found
 goto :win9xME_args_loop
 
 :argIsComplete
+if "x5" == "x%_SKIP%" goto skip_5
 if "x4" == "x%_SKIP%" goto skip_4
 if "x3" == "x%_SKIP%" goto skip_3
 if "x2" == "x%_SKIP%" goto skip_2
@@ -207,6 +224,11 @@ set _ARG=%_ARG:-d=-%
 
 set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
 set _ARG=
+goto win9xME_args_loop
+
+:skip_5
+set _ARG=
+set _SKIP=4
 goto win9xME_args_loop
 
 :skip_4
@@ -273,7 +295,7 @@ if "%JAVA_VERSION%" gtr "1.8.0" if "%GROOVY_TURN_OFF_JAVA_WARNINGS%" == "true"  
 if exist "%USERPROFILE%/.groovy/postinit.bat" call "%USERPROFILE%/.groovy/postinit.bat"
 
 @rem Execute Groovy
-"%JAVA_EXE%" %GROOVY_OPTS% %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %CMD_LINE_ARGS%
+"%JAVA_EXE%" %GROOVY_OPTS% %JAVA_OPTS% -classpath "%STARTER_CLASSPATH%" %STARTER_MAIN_CLASS% --main %CLASS% --conf "%STARTER_CONF%" --classpath "%CP%" %REPLACE_PREVIEW% %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
