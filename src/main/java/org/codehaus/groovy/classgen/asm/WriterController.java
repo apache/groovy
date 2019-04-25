@@ -149,11 +149,12 @@ public class WriterController {
         }
         return new LoggableClassVisitor(cv);
     }
+
     private static int chooseBytecodeVersion(final boolean invokedynamic, final boolean previewFeatures, final String targetBytecode) {
         Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
 
         if (invokedynamic && bytecodeVersion < Opcodes.V1_8) {
-            return previewFeatures ? Opcodes.V1_8 | Opcodes.V_PREVIEW : Opcodes.V1_8;
+            return Opcodes.V1_8;
         } else {
             if (null != bytecodeVersion) {
                 return previewFeatures ? bytecodeVersion | Opcodes.V_PREVIEW : bytecodeVersion;
