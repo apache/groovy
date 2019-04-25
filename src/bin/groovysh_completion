@@ -87,7 +87,7 @@ function _picocli_groovysh() {
   PREV_WORD=${COMP_WORDS[COMP_CWORD-1]}
 
   COMMANDS=""
-  FLAG_OPTS="-cp -classpath --classpath -h --help -V --version -v --verbose -q --quiet -d --debug -pr --enable-preview -pr --parameters"
+  FLAG_OPTS="-cp -classpath --classpath -h --help -V --version -v --verbose -q --quiet -d --debug -pr --enable-preview -pa --parameters"
   ARG_OPTS="-e --evaluate -C --color -D --define -T --terminal"
 
   COMPREPLY=( $(compgen -W "${FLAG_OPTS} ${ARG_OPTS} ${COMMANDS}" -- ${CURR_WORD}) )
