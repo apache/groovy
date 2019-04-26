@@ -47,6 +47,8 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -152,17 +154,17 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             addError("Annotations are not supported in the current runtime. " + JVM_ERROR_MESSAGE, node);
             return;
         }
-        Map<String, List<AnnotationNode>> runtimeAnnotations = new LinkedHashMap<String, List<AnnotationNode>>();
+        Map<String, List<AnnotationNode>> nonSourceAnnotations = new LinkedHashMap<String, List<AnnotationNode>>();
         for (AnnotationNode unvisited : node.getAnnotations()) {
             AnnotationNode visited = visitAnnotation(unvisited);
             String name = visited.getClassNode().getName();
-            if (visited.hasRuntimeRetention()) {
-                List<AnnotationNode> seen = runtimeAnnotations.get(name);
+            if (!visited.hasSourceRetention()) {
+                List<AnnotationNode> seen = nonSourceAnnotations.get(name);
                 if (seen == null) {
                     seen = new ArrayList<AnnotationNode>();
                 }
                 seen.add(visited);
-                runtimeAnnotations.put(name, seen);
+                nonSourceAnnotations.put(name, seen);
             }
             boolean isTargetAnnotation = name.equals("java.lang.annotation.Target");
 
@@ -175,7 +177,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             visitDeprecation(node, visited);
             visitOverride(node, visited);
         }
-        checkForDuplicateAnnotations(node, runtimeAnnotations);
+        checkForDuplicateAnnotations(node, nonSourceAnnotations);
     }
 
     private void checkForDuplicateAnnotations(AnnotatedNode node, Map<String, List<AnnotationNode>> runtimeAnnotations) {
@@ -199,7 +201,20 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 }
                 if (repeatable != null) {
                     AnnotationNode collector = new AnnotationNode(repeatable);
-                    collector.setRuntimeRetention(true); // checked earlier
+                    if (repeatable.isResolved()) {
+                        Class repeatableType = repeatable.getTypeClass();
+                        Retention retAnn = (Retention) repeatableType.getAnnotation(Retention.class);
+                        collector.setRuntimeRetention(retAnn != null && retAnn.value().equals(RetentionPolicy.RUNTIME));
+                    } else if (repeatable.redirect() != null) {
+                        for (AnnotationNode annotationNode : repeatable.redirect().getAnnotations()) {
+                            if (!annotationNode.getClassNode().getName().equals("java.lang.annotation.Retention"))
+                                continue;
+                            String value = annotationNode.getMember("value").getText();
+                            collector.setRuntimeRetention(value.equals(RetentionPolicy.RUNTIME.name()) ||
+                                    value.equals(RetentionPolicy.class.getName() + "." + RetentionPolicy.RUNTIME.name()));
+                        }
+                    }
+
                     List<Expression> annos = new ArrayList<Expression>();
                     for (AnnotationNode an : next.getValue()) {
                         annos.add(new AnnotationConstantExpression(an));
@@ -281,7 +296,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
             ClassNode superClass = next.getUnresolvedSuperClass();
             if (superClass != null) {
-                next =  correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
+                next = correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
             } else {
                 next = null;
             }
@@ -290,7 +305,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     private static MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
-        for (MethodNode orig :  correctedNext.getDeclaredMethods(mn.getName())) {
+        for (MethodNode orig : correctedNext.getDeclaredMethods(mn.getName())) {
             MethodNode method = correctToGenericsSpec(genericsSpec, orig);
             if (ParameterUtils.parametersEqual(method.getParameters(), mn.getParameters())) {
                 return method;

@@ -1336,8 +1336,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (annType.isResolved()) {
                 Class annTypeClass = annType.getTypeClass();
                 Retention retAnn = (Retention) annTypeClass.getAnnotation(Retention.class);
-                if (retAnn != null && retAnn.value().equals(RetentionPolicy.RUNTIME) && !isRepeatable(annTypeClass)) {
-                    // remember runtime/non-repeatable annos (auto collecting of Repeatable annotations is handled elsewhere)
+                if (retAnn != null && !retAnn.value().equals(RetentionPolicy.SOURCE) && !isRepeatable(annTypeClass)) {
+                    // remember non-source/non-repeatable annos (auto collecting of Repeatable annotations is handled elsewhere)
                     AnnotationNode anyPrevAnnNode = tmpAnnotations.put(annTypeClass.getName(), an);
                     if (anyPrevAnnNode != null) {
                         addError("Cannot specify duplicate annotation on the same member : " + annType.getName(), an);
