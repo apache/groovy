@@ -278,7 +278,7 @@ class AnnotationTest extends CompilableTestSupport {
         assertScript """
             import java.lang.annotation.*
 
-            // a random annnotation type
+            // a random annotation type
             @Retention(RetentionPolicy.RUNTIME)
             @interface MyAnnotation {
                 String stringValue()

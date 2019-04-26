@@ -26,7 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Represents an annotation which can be attached to interfaces, classes, methods and fields.
+ * Represents an annotation which can be attached to interfaces, classes, methods, fields, parameters, and other places.
  */
 public class AnnotationNode extends ASTNode {
     public static final int CONSTRUCTOR_TARGET = 1 << 1;
@@ -45,7 +45,7 @@ public class AnnotationNode extends ASTNode {
 
     private final ClassNode classNode;
     private Map<String, Expression> members;
-    private boolean runtimeRetention= false, sourceRetention= false, classRetention = false;
+    private boolean runtimeRetention = false, sourceRetention = false, /* explicit */ classRetention = false;
     private int allowedTargets = ALL_TARGETS;
 
     public AnnotationNode(ClassNode classNode) {
@@ -62,7 +62,7 @@ public class AnnotationNode extends ASTNode {
         }
         return members;
     }
-    
+
     public Expression getMember(String name) {
         if (members == null) {
             return null;
@@ -91,62 +91,67 @@ public class AnnotationNode extends ASTNode {
         assertMembers();
         members.put(name, value);
     }
-    
+
     public boolean isBuiltIn(){
         return false;
     }
 
     /**
-     * Flag corresponding to <code>RetentionPolicy</code>.
-     * @return <tt>true</tt> if the annotation should be visible at runtime, 
-     *      <tt>false</tt> otherwise
+     * Flag corresponding to <code>RetentionPolicy.RUNTIME</code>.
+     * @return <tt>true</tt> if the annotation should be visible at runtime,
+     *         <tt>false</tt> otherwise
      */
     public boolean hasRuntimeRetention() {
         return this.runtimeRetention;
     }
 
     /**
-     * Sets the internal flag of this annotation runtime retention policy.
-     * If the current annotation has 
-     * <code>RetentionPolicy.RUNTIME</code> or if <tt>false</tt>
-     * if the <code>RetentionPolicy.CLASS</code>.
+     * Sets the internal flag if the current annotation has
+     * <code>RetentionPolicy.SOURCE</code>.
+     *
      * @param flag if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.RUNTIME</code>. If <tt>false</tt> then
-     *     the annotation has <code>RetentionPolicy.CLASS</code>.
+     *     <code>RetentionPolicy.RUNTIME</code>.
      */
     public void setRuntimeRetention(boolean flag) {
         this.runtimeRetention = flag;
     }
-    
+
     /**
      * Flag corresponding to <code>RetentionPolicy.SOURCE</code>.
-     * @return <tt>true</tt> if the annotation is only allowed in sources 
-     *      <tt>false</tt> otherwise
+     * @return <tt>true</tt> if the annotation is only allowed in sources
+     *         <tt>false</tt> otherwise
      */
     public boolean hasSourceRetention() {
-        if (!runtimeRetention && !classRetention) return true;
         return this.sourceRetention;
     }
 
-    /** Sets the internal flag if the current annotation has 
-     * <code>RetentionPolicy.SOURCE</code>.
-     */ 
+    /**
+     * Sets the internal flag if the current annotation has <code>RetentionPolicy.SOURCE</code>.
+     *
+     * @param flag if <tt>true</tt> then current annotation is marked as having
+     *     <code>RetentionPolicy.SOURCE</code>.
+     */
     public void setSourceRetention(boolean flag) {
         this.sourceRetention = flag;
     }
 
     /**
      * Flag corresponding to <code>RetentionPolicy.CLASS</code>.
-     * @return <tt>true</tt> if the annotation is recorded by the compiler,
-     *                       but not visible at runtime     *
-      *        <tt>false</tt> otherwise
+     * This is the default when no <code>RetentionPolicy</code> annotations are present.
+     *
+     * @return <tt>true</tt> if the annotation is written in the bytecode, but not visible at runtime
+     *         <tt>false</tt> otherwise
      */
     public boolean hasClassRetention() {
+        if (!runtimeRetention && !sourceRetention) return true;
         return this.classRetention;
     }
 
-    /** Sets the internal flag if the current annotation has
-     * <code>RetentionPolicy.CLASS</code>.
+    /**
+     * Sets the internal flag if the current annotation has an explicit <code>RetentionPolicy.CLASS</code>.
+     *
+     * @param flag if <tt>true</tt> then current annotation is marked as having
+     *     <code>RetentionPolicy.CLASS</code>.
      */
     public void setClassRetention(boolean flag) {
         this.classRetention = flag;
@@ -155,11 +160,11 @@ public class AnnotationNode extends ASTNode {
     public void setAllowedTargets(int bitmap) {
         this.allowedTargets = bitmap;
     }
-    
+
     public boolean isTargetAllowed(int target) {
         return (this.allowedTargets & target) == target;
     }
-    
+
     public static String targetToName(int target) {
         switch(target) {
             case TYPE_TARGET:

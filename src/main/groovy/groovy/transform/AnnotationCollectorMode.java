@@ -21,7 +21,6 @@
 package groovy.transform;
 
 public enum AnnotationCollectorMode {
-    // TODO should we support @Repeatable from Java 8?
     /**
      * Annotations from the annotation collection will always be inserted. After all transforms have been run, it will
      * be an error if multiple annotations (excluding those with SOURCE retention) exist.
