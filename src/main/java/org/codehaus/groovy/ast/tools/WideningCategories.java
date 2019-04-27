@@ -583,7 +583,7 @@ public class WideningCategories {
     /**
      * This {@link ClassNode} specialization is used when the lowest upper bound of two types
      * cannot be represented by an existing type. For example, if B extends A,  C extends A
-     * and both C & B implement a common interface not implemented by A, then we use this class
+     * and both C and B implement a common interface not implemented by A, then we use this class
      * to represent the bound.
      *
      * At compile time, some classes like {@link org.codehaus.groovy.classgen.AsmClassGenerator} need

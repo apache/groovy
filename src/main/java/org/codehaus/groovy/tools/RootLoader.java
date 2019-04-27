@@ -38,8 +38,7 @@ import java.util.Map;
  * classloaders. Normal is to first check parent and then look in
  * the resources you gave this classloader.
  * <p>
- * It's possible to add urls to the classpath at runtime through
- * {@link <a href="#addURL(URL)">addURL(URL)</a>}
+ * It's possible to add urls to the classpath at runtime through {@link #addURL(URL)}.
  * <p>
  * <b>Why using RootLoader?</b>
  * If you have to load classes with multiple classloaders and a
@@ -57,15 +56,17 @@ import java.util.Map;
  *           |
  *           |
  *       childLoader    (has classpath: a.jar;b.jar;c.jar)
- *       </pre>
+ * </pre>
  *
  * class C (from c.jar) extends B (from b.jar)
  *
  * childLoader.find("C")
- * --> parentLoader does know C.class, try to load it
- * --> to load C.class it has to load B.class
- * --> parentLoader is unable to find B.class in a.jar or c.jar
- * --> NoClassDefFoundException!
+ * <pre>
+ * --&gt; parentLoader does know C.class, try to load it
+ * --&gt; to load C.class it has to load B.class
+ * --&gt; parentLoader is unable to find B.class in a.jar or c.jar
+ * --&gt; NoClassDefFoundException!
+ * </pre>
  *
  * if childLoader had tried to load the class by itself, there
  * would be no problem. Changing childLoader to be a RootLoader

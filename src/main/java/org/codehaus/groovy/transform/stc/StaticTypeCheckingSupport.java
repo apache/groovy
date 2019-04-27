@@ -346,7 +346,7 @@ public abstract class StaticTypeCheckingSupport {
      *
      * @param params method parameters
      * @param args   type arguments
-     * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
+     * @return -1 if arguments do not match, 0 if arguments are of the exact type and &gt; 0 when one or more argument is
      * not of the exact type but still match
      */
     public static int allParametersAndArgumentsMatch(Parameter[] params, ClassNode[] args) {

@@ -537,7 +537,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * def text = "Groovy"
      * assert text.dropWhile{ false } == 'Groovy'
      * assert text.dropWhile{ true } == ''
-     * assert text.dropWhile{ it < 'Z' } == 'roovy'
+     * assert text.dropWhile{ it {@code <} 'Z' } == 'roovy'
      * assert text.dropWhile{ it != 'v' } == 'vy'
      * </pre>
      *
@@ -700,9 +700,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * assert "Groovy".collectReplacements{ it == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
      * assert "Groovy".collectReplacements{ it.equalsIgnoreCase('O') ? '_O_' : null } == 'Gr_O__O_vy'
-     * assert "Groovy".collectReplacements{ char c -> c == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
-     * assert "Groovy".collectReplacements{ Character c -> c == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
-     * assert "B&W".collectReplacements{ it == '&' ? '&amp;' : null } == 'B&amp;W'
+     * assert "Groovy".collectReplacements{ char c {@code ->} c == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
+     * assert "Groovy".collectReplacements{ Character c {@code ->} c == 'o' ? '_O_' : null } == 'Gr_O__O_vy'
+     * assert "B&amp;W".collectReplacements{ {@code it == '&' ? '&' : null} } == 'B&amp;W'
      * </pre>
      *
      * @param orig the original String
@@ -972,19 +972,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * For example, if the pattern doesn't match, the result is null:
      * <pre class="groovyTestCase">
-     *     assert "New York, NY".find(~/\d{5}/) { match -> return "-$match-"} == null
+     *     assert "New York, NY".find(~/\d{5}/) { match {@code ->} return "-$match-"} == null
      * </pre>
      *
      * If it does match and we don't have any capture groups in our regex, there is a single parameter
      * on the closure that the match gets passed to:
      * <pre class="groovyTestCase">
-     *      assert "New York, NY 10292-0098".find(~/\d{5}/) { match -> return "-$match-"} == "-10292-"
+     *      assert "New York, NY 10292-0098".find(~/\d{5}/) { match {@code ->} return "-$match-"} == "-10292-"
      * </pre>
      *
      * If we have capture groups in our expression, our closure has one parameter for the match, followed by
      * one for each of the capture groups:
      * <pre class="groovyTestCase">
-     *      assert "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
+     *      assert "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour {@code ->}
      *          assert match == "10292-0098"
      *          assert zip == "10292"
      *          assert plusFour == "0098"
@@ -995,7 +995,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * the closure will be passed an array with the first element corresponding to the whole match,
      * followed by an element for each of the capture groups:
      * <pre class="groovyTestCase">
-     *      assert "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { array ->
+     *      assert "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { array {@code ->}
      *          assert array[0] == "10292-0098"
      *          assert array[1] == "10292"
      *          assert array[2] == "0098"
@@ -1005,7 +1005,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a capture group is optional, and doesn't match, then the corresponding value
      * for that capture group passed to the closure will be null as illustrated here:
      * <pre class="groovyTestCase">
-     *      assert "adsf 233-9999 adsf".find(~/(\d{3})?-?(\d{3})-(\d{4})/) { match, areaCode, exchange, stationNumber ->
+     *      assert "adsf 233-9999 adsf".find(~/(\d{3})?-?(\d{3})-(\d{4})/) { match, areaCode, exchange, stationNumber {@code ->}
      *          assert "233-9999" == match
      *          assert null == areaCode
      *          assert "233" == exchange
@@ -1106,16 +1106,16 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * For example, if the regex doesn't match, it returns an empty list:
      * <pre class="groovyTestCase">
-     * assert "foo".findAll(/(\w*) Fish/) { match, firstWord -> return firstWord } == []
+     * assert "foo".findAll(/(\w*) Fish/) { match, firstWord {@code ->} return firstWord } == []
      * </pre>
      * Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
      * <pre class="groovyTestCase">
-     * assert "I could not, would not, with a fox.".findAll(/.ould/) { match -> "${match}n't"} == ["couldn't", "wouldn't"]
+     * assert "I could not, would not, with a fox.".findAll(/.ould/) { match {@code ->} "${match}n't"} == ["couldn't", "wouldn't"]
      * </pre>
      * If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
      * <pre class="groovyTestCase">
      * def orig = "There's a Wocket in my Pocket"
-     * assert orig.findAll(/(.)ocket/) { match, firstLetter -> "$firstLetter > $match" } == ["W > Wocket", "P > Pocket"]
+     * assert orig.findAll(/(.)ocket/) { match, firstLetter {@code ->} "$firstLetter {@code >} $match" } == ["W {@code >} Wocket", "P {@code >} Pocket"]
      * </pre>
      *
      * @param self    a CharSequence
@@ -1170,17 +1170,17 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * For example, if the pattern doesn't match, it returns an empty list:
      * <pre class="groovyTestCase">
-     * assert "foo".findAll(~/(\w*) Fish/) { match, firstWord -> return firstWord } == []
+     * assert "foo".findAll(~/(\w*) Fish/) { match, firstWord {@code ->} return firstWord } == []
      * </pre>
      * Any regular expression matches are passed to the closure, if there are no capture groups, there will be one
      * parameter for the match:
      * <pre class="groovyTestCase">
-     * assert "I could not, would not, with a fox.".findAll(~/.ould/) { match -> "${match}n't"} == ["couldn't", "wouldn't"]
+     * assert "I could not, would not, with a fox.".findAll(~/.ould/) { match {@code ->} "${match}n't"} == ["couldn't", "wouldn't"]
      * </pre>
      * If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
      * <pre class="groovyTestCase">
      * def orig = "There's a Wocket in my Pocket"
-     * assert orig.findAll(~/(.)ocket/) { match, firstLetter -> "$firstLetter > $match" } == ["W > Wocket", "P > Pocket"]
+     * assert orig.findAll(~/(.)ocket/) { match, firstLetter {@code ->} "$firstLetter {@code >} $match" } == ["W {@code >} Wocket", "P {@code >} Pocket"]
      * </pre>
      *
      * @param self    a CharSequence
@@ -2507,14 +2507,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      *     assert "hello world".replaceAll("(o)") { it[0].toUpperCase() } == "hellO wOrld"
      *
-     *     assert "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() }) == "FOOBAR-FOOBAR-"
+     *     assert "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { Object[] it {@code ->} it[0].toUpperCase() }) == "FOOBAR-FOOBAR-"
      *
      *     // Here,
      *     //   it[0] is the global string of the matched group
      *     //   it[1] is the first string in the matched group
      *     //   it[2] is the second string in the matched group
      *
-     *     assert "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() }) == "FOO-FOO-"
+     *     assert "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z {@code ->} z.toUpperCase() }) == "FOO-FOO-"
      *
      *     // Here,
      *     //   x is the global string of the matched group
@@ -2576,14 +2576,14 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *     //   it[1] is the first string in the matched group
      *     //   it[2] is the second string in the matched group
      *
-     *     assert "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() }) == "FOOBAR-FOOBAR-"
+     *     assert "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { Object[] it {@code ->} it[0].toUpperCase() }) == "FOOBAR-FOOBAR-"
      *
      *     // Here,
      *     //   it[0] is the global string of the matched group
      *     //   it[1] is the first string in the matched group
      *     //   it[2] is the second string in the matched group
      *
-     *     assert "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() }) == "FOO-FOO-"
+     *     assert "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z {@code ->} z.toUpperCase() }) == "FOO-FOO-"
      *
      *     // Here,
      *     //   x is the global string of the matched group
@@ -3322,10 +3322,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * <pre class="groovyTestCase">
      * def text = "Groovy"
-     * assert text.takeWhile{ it < 'A' } == ''
-     * assert text.takeWhile{ it < 'Z' } == 'G'
+     * assert text.takeWhile{ it {@code <} 'A' } == ''
+     * assert text.takeWhile{ it {@code <} 'Z' } == 'G'
      * assert text.takeWhile{ it != 'v' } == 'Groo'
-     * assert text.takeWhile{ it < 'z' } == 'Groovy'
+     * assert text.takeWhile{ it {@code <} 'z' } == 'Groovy'
      * </pre>
      *
      * @param self      the original CharSequence

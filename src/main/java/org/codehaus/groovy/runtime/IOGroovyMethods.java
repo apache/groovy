@@ -478,7 +478,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre>
      * def s = 'The 3 quick\nbrown 4 fox'
      * def result = ''
-     * new StringReader(s).splitEachLine(/\d/){ parts ->
+     * new StringReader(s).splitEachLine(/\d/){ parts {@code ->}
      *     result += "${parts[0]}_${parts[1]}|"
      * }
      * assert result == 'The _ quick|brown _ fox|'
@@ -508,7 +508,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre>
      * def s = 'The 3 quick\nbrown 4 fox'
      * def result = ''
-     * new StringReader(s).splitEachLine(~/\d/){ parts ->
+     * new StringReader(s).splitEachLine(~/\d/){ parts {@code ->}
      *     result += "${parts[0]}_${parts[1]}|"
      * }
      * assert result == 'The _ quick|brown _ fox|'

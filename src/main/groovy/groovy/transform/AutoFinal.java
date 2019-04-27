@@ -53,7 +53,7 @@ import java.lang.annotation.Target;
  *         this.last = last
  *     }
  *     String fullName(boolean reversed = false, String separator = ' ') {
- *         final concatCls = { String n0, String n1 -> "$n0$separator$n1" }
+ *         final concatCls = { String n0, String n1 {@code ->} "$n0$separator$n1" }
  *         concatCls(reversed ? last : first, reversed ? first : last)
  *     }
  * }
@@ -77,7 +77,7 @@ import java.lang.annotation.Target;
  * </pre>
  * and the closure will have become:
  * <pre>
- * { final String n0, final String n1 -> "$n0$separator$n1" }
+ * { final String n0, final String n1 {@code ->} "$n0$separator$n1" }
  * </pre>
  *
  * @since 2.5.0
