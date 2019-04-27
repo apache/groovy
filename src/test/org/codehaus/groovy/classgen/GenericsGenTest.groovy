@@ -88,6 +88,6 @@ class GenericsGenTest extends GroovyTestCase {
         File tempFile = File.createTempDir(prefix, suffix)
         tempFile.deleteOnExit()
         filesToDelete.add(tempFile)
-        return tempFile;
+        return tempFile
     }
 }
