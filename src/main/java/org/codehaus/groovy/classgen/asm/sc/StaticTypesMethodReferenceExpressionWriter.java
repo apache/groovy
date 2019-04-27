@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -36,6 +35,7 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
+import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -100,15 +100,16 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             addSyntheticMethodForConstructorReference(methodRefName, typeOrTargetRefType, parametersWithExactType);
         }
 
+        // TODO move the `findMethodRefMethod` and checking to `StaticTypeCheckingVisitor`
         MethodNode methodRefMethod = findMethodRefMethod(methodRefName, parametersWithExactType, typeOrTargetRef, isConstructorReference);
 
         if (null == methodRefMethod) {
-            throw new GroovyRuntimeException("Failed to find the expected method["
+            throw new RuntimeParserException("Failed to find the expected method["
                     + methodRefName + "("
                     + Arrays.stream(parametersWithExactType)
                             .map(e -> e.getType().getName())
                             .collect(Collectors.joining(","))
-                    + ")] in the type[" + typeOrTargetRefType.getName() + "]");
+                    + ")] in the type[" + typeOrTargetRefType.getName() + "]", methodReferenceExpression);
         }
 
         methodRefMethod.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
@@ -119,7 +120,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         if (!isClassExpr) {
             if (isConstructorReference) {
                 // TODO move the checking code to the Parrot parser
-                throw new GroovyRuntimeException("Constructor reference must be className::new");
+                throw new RuntimeParserException("Constructor reference must be className::new", methodReferenceExpression);
             }
 
             if (methodRefMethod.isStatic()) {
