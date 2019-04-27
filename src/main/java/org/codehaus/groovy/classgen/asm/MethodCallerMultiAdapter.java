@@ -60,7 +60,7 @@ public class MethodCallerMultiAdapter {
 
     /**
      * @param methodVisitor
-     * @param numberOfArguments a value >0 describing how many arguments are additionally used for the method call
+     * @param numberOfArguments a value &gt; 0 describing how many arguments are additionally used for the method call
      * @param safe
      * @param spreadSafe
      */

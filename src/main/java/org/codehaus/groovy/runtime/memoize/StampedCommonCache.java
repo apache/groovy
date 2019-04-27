@@ -30,7 +30,7 @@ import java.util.concurrent.locks.StampedLock;
  * StampedCommonCache has better performance than {@link ConcurrentCommonCache},
  * but it is not reentrant, in other words, <b>it may cause deadlock</b> if {@link #getAndPut(Object, MemoizeCache.ValueProvider)}
  * or {@link #getAndPut(Object, MemoizeCache.ValueProvider, boolean)} is called recursively:
- * readlock -> upgrade to writelock -> readlock (fails to get and waits forever)
+ * readlock -&gt; upgrade to writelock -&gt; readlock (fails to get and waits forever)
  *
  * @param <K> type of the keys
  * @param <V> type of the values

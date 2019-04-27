@@ -33,7 +33,7 @@ import java.util.List;
  *
  * Particular range implementations may also support the notion of inclusivity
  * and exclusivity with respect to the ending value in the range.
- * E.g. <code>1..3 == [1, 2, 3]</code>; but <code>1..<3 == [1, 2]</code>.
+ * E.g. {@code 1..3 == [1, 2, 3]}; but {@code 1..<3 == [1, 2]}.
  *
  * In general, the second boundary may not be contained in the range,
  * and <code>a..b</code> may produce a different set of elements than <code>(b..a).reversed()</code>.

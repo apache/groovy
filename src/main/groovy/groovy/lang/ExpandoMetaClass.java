@@ -63,25 +63,25 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Some examples of usage:
  * <pre>
  * // defines or replaces instance method:
- * metaClass.myMethod = { args -> }
+ * metaClass.myMethod = { args {@code ->} }
  *
  * // defines a new instance method
- * metaClass.myMethod << { args -> }
+ * metaClass.myMethod {@code <<} { args {@code ->} }
  *
  * // creates multiple overloaded methods of the same name
- * metaClass.myMethod << { String s -> } << { Integer i -> }
+ * metaClass.myMethod {@code <<} { String s {@code ->} } {@code <<} { Integer i {@code ->} }
  *
  * // defines or replaces a static method with the 'static' qualifier
- * metaClass.'static'.myMethod = { args ->  }
+ * metaClass.'static'.myMethod = { args {@code ->}  }
  *
  * // defines a new static method with the 'static' qualifier
- * metaClass.'static'.myMethod << { args ->  }
+ * metaClass.'static'.myMethod {@code <<} { args {@code ->}  }
  *
  * // defines a new constructor
- * metaClass.constructor << { String arg -> }
+ * metaClass.constructor {@code <<} { String arg {@code ->} }
  *
  * // defines or replaces a constructor
- * metaClass.constructor = { String arg -> }
+ * metaClass.constructor = { String arg {@code ->} }
  *
  * // defines a new property with an initial value of "blah"
  * metaClass.myProperty = "blah"
@@ -89,14 +89,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * <p>
  * ExpandoMetaClass also supports a DSL/builder like notation to combine multiple definitions together. So instead of this:
  * <pre>
- * Number.metaClass.multiply = { Amount amount -> amount.times(delegate) }
- * Number.metaClass.div =      { Amount amount -> amount.inverse().times(delegate) }
+ * Number.metaClass.multiply = { Amount amount {@code ->} amount.times(delegate) }
+ * Number.metaClass.div =      { Amount amount {@code ->} amount.inverse().times(delegate) }
  * </pre>
  * You can also now do this:
  * <pre>
  * Number.metaClass {
- *     multiply { Amount amount -> amount.times(delegate) }
- *     div      { Amount amount -> amount.inverse().times(delegate) }
+ *     multiply { Amount amount {@code ->} amount.times(delegate) }
+ *     div      { Amount amount {@code ->} amount.inverse().times(delegate) }
  * }
  * </pre>
  * <p>
@@ -138,12 +138,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * <pre>
  * class Student {
  *     List<String> schedule = []
- *     def addLecture(String lecture) { schedule << lecture }
+ *     def addLecture(String lecture) { schedule {@code <<} lecture }
  * }
  *
  * class Worker {
  *     List<String> schedule = []
- *     def addMeeting(String meeting) { schedule << meeting }
+ *     def addMeeting(String meeting) { schedule {@code <<} meeting }
  * }
  * </pre>
  * We can mimic a form of multiple inheritance as follows:
@@ -198,16 +198,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * ndq.metaClass {
  *     mixin ArrayDeque
  *     mixin HashSet
- *     leftShift = { Object o ->
+ *     leftShift = { Object o  {@code ->} 
  *         if (!mixedIn[Set].contains(o)) {
  *             mixedIn[Queue].push(o)
  *             mixedIn[Set].add(o)
  *         }
  *     }
  * }
- * ndq << 1
- * ndq << 2
- * ndq << 1
+ * ndq {@code <<} 1
+ * ndq {@code <<} 2
+ * ndq {@code <<} 1
  * assert ndq.size() == 2
  * </pre>
  * As a final example, we sometimes need to pass such mixed in classes or objects
@@ -232,8 +232,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * o.metaClass.mixin CustomComparator, CustomCloseable
  * def items = ['a', 'bbb', 'cc']
  * sort(items, o as Comparator)
- * println items                // => [a, cc, bbb]
- * closeQuietly(o as Closeable) // => Lights out - I am closing
+ * println items                // {@code =>} [a, cc, bbb]
+ * closeQuietly(o as Closeable) // {@code =>} Lights out - I am closing
  * </pre>
  * <p>
  * <b>Further details</b>
@@ -559,11 +559,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Instances of this class are returned when using the << left shift operator.
+     * Instances of this class are returned when using the {@code <<} left shift operator.
      * <p>
      * Example:
      * <p>
-     * metaClass.myMethod << { String args -> }
+     * metaClass.myMethod {@code <<} { String args {@code ->} }
      * <p>
      * This allows callbacks to the ExpandoMetaClass for registering appending methods
      */

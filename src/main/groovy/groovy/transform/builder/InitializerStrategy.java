@@ -106,7 +106,9 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * </pre>
  * then the following compile-time error would result:
  * <pre>
+ * {@code
  * [Static type checking] - Cannot find matching method Person#<init>(Person$PersonInitializer <groovy.transform.builder.InitializerStrategy$SET, groovy.transform.builder.InitializerStrategy$SET, groovy.transform.builder.InitializerStrategy$UNSET>). Please check if the declared type is correct and if the method exists.
+ * }
  * </pre>
  * The message is a little cryptic, but it is basically the static compiler telling us that the third parameter, {@code age} in our case, is unset.
  *
