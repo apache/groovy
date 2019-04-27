@@ -44,8 +44,8 @@ import java.util.Set;
  * def db = // an instance of groovy.sql.Sql
  * def sql = '''select * from Person
  *     where (purchaseCount > ? and birthMonth = ?)
- *     and (lastName &lt; ? or lastName > ?)
- *     and age &lt; ? and age > ? and firstName != ?
+ *     and (lastName < ? or lastName > ?)
+ *     and age < ? and age > ? and firstName != ?
  *     order by firstName DESC, age'''
  * def params = [10, "January", "Zulu", "Alpha", 99, 5, "Bert"]
  * def sortedPeopleOfInterest = db.rows(sql, params)
@@ -53,14 +53,15 @@ import java.util.Set;
  * </pre>
  * You can write code like this:
  * <pre>
- * @{code
+ * {@code
  * def person = new DataSet(db, 'Person') // or db.dataSet('Person'), or db.dataSet(Person)
  * def janFrequentBuyers = person.findAll { it.purchaseCount > 10 && it.lastName == "January" }
  * def sortedPeopleOfInterest = janFrequentBuyers.
- *     findAll{ it.lastName &lt; 'Zulu' || it.lastName > 'Alpha' }.
- *     findAll{ it.age &lt; 99 }.
+ *     findAll{ it.lastName < 'Zulu' || it.lastName > 'Alpha' }.
+ *     findAll{ it.age < 99 }.
  *     findAll{ it.age > 5 }.
- *     sort{ it.firstName }.reverse().
+ *     sort{ it.firstName }.
+ *     reverse().
  *     findAll{ it.firstName != 'Bert' }.
  *     sort{ it.age }
  * }
