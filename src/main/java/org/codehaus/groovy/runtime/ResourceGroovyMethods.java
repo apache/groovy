@@ -766,7 +766,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      * or with some help from <code>ExpandoMetaClass</code>, you could do something like:
      * <pre>
-     * myFile.metaClass.setText = { String s -> delegate.setText(s, 'UTF-8') }
+     * myFile.metaClass.setText = { String s {@code ->} delegate.setText(s, 'UTF-8') }
      * myfile.text = 'some text'
      * </pre>
      *
@@ -1285,8 +1285,8 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre>
      * def totalSize = 0
      * def count = 0
-     * def sortByTypeThenName = { a, b ->
-     *     a.isFile() != b.isFile() ? a.isFile() <=> b.isFile() : a.name <=> b.name
+     * def sortByTypeThenName = { a, b {@code ->}
+     *     a.isFile() != b.isFile() ? a.isFile() {@code <=>} b.isFile() : a.name {@code <=>} b.name
      * }
      * rootDir.traverse(
      *         type         : FILES,
@@ -1296,7 +1296,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      *                         totalSize = 0; count = 0 },
      *         postRoot     : true
      *         sort         : sortByTypeThenName
-     * ) {it -> totalSize += it.size(); count++ }
+     * ) {it {@code ->} totalSize += it.size(); count++ }
      * </pre>
      *
      * @param self    a File (that happens to be a folder/directory)
@@ -1511,14 +1511,14 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * // collect names of files in baseDir matching supplied regex pattern
      * import static groovy.io.FileType.*
      * def names = []
-     * baseDir.eachFileMatch FILES, ~/foo\d\.txt/, { names << it.name }
+     * baseDir.eachFileMatch FILES, ~/foo\d\.txt/, { names {@code <<} it.name }
      * assert names == ['foo1.txt', 'foo2.txt']
      *
      * // remove all *.bak files in baseDir
-     * baseDir.eachFileMatch FILES, ~/.*\.bak/, { File bak -> bak.delete() }
+     * baseDir.eachFileMatch FILES, ~/.*\.bak/, { File bak {@code ->} bak.delete() }
      *
-     * // print out files > 4K in size from baseDir
-     * baseDir.eachFileMatch FILES, { new File(baseDir, it).size() > 4096 }, { println "$it.name ${it.size()}" }
+     * // print out files &gt; 4K in size from baseDir
+     * baseDir.eachFileMatch FILES, { new File(baseDir, it).size() {@code >} 4096 }, { println "$it.name ${it.size()}" }
      * </pre>
      *
      * @param self       a File (that happens to be a folder/directory)

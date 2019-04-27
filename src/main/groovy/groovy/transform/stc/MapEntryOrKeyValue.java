@@ -37,9 +37,9 @@ import java.util.Map;
  * or on a key,value pair.</p>
  * <p>The result is a closure which can have the following forms:</p>
  * <ul>
- *     <li><code>{ key, value -> ...}</code> where key is the key of a map entry, and value the corresponding value</li>
- *     <li><code>{ entry -> ... }</code> where entry is a {@link java.util.Map.Entry} map entry</li>
- *     <li><code>{ ...}</code> where <i>it</i> is an implicit {@link java.util.Map.Entry} map entry</li>
+ *     <li><code>{ key, value {@code ->} ... }</code> where key is the key of a map entry, and value the corresponding value</li>
+ *     <li><code>{ entry {@code ->} ... }</code> where entry is a {@link java.util.Map.Entry} map entry</li>
+ *     <li><code>{ ... }</code> where <i>it</i> is an implicit {@link java.util.Map.Entry} map entry</li>
  * </ul>
  * <p>This hint handles all those cases by picking the generics from the first argument of the method (by default).</p>
  * <p>The options array is used to modify the behavior of this hint. Each string in the option array consists of

@@ -36,7 +36,7 @@ import java.io.Writer;
  * The following is an example usage. Note that within a "with" block you need to
  * specify a parameter name so that this.println is not called instead of IndentPrinter.println:
  * <pre>
- * new IndentPrinter(new PrintWriter(out)).with { p ->
+ * new IndentPrinter(new PrintWriter(out)).with { p {@code ->}
  *     p.printIndent()
  *     p.println('parent1')
  *     p.incrementIndent()

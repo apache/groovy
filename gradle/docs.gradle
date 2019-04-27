@@ -76,6 +76,10 @@ allprojects {
     groovydoc groovydocSpec
 }
 
+javadoc {
+    exclude '**/GroovyRecognizer.java' // generated file
+}
+
 evaluationDependsOn('groovy-jaxb')
 
 // Root project has an extra 'all' javadoc task
@@ -88,6 +92,7 @@ javadocAll {
         source += sp.javadoc.source
         classpath += sp.javadoc.classpath
     }
+    exclude '**/GroovyRecognizer.java' // generated file
 }
 javadocAll javadocSpec
 

@@ -49,7 +49,7 @@ import java.lang.annotation.Target;
  * <pre>
  * class MemoizedExample {
  * 
- *     private final Closure memoizedSum = { int n1, int n2 ->
+ *     private final Closure memoizedSum = { int n1, int n2 {@code ->}
  *         private$method$memoizedSum(n1,n2)
  *     }.memoize()
  * 
