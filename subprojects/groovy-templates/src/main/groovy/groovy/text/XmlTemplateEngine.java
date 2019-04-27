@@ -54,7 +54,7 @@ import java.util.Map;
  * <p>
  * Comments and processing instructions
  * will be removed as part of processing and special XML characters such as
- * &lt;, &gt;, &quot and &apos; will be escaped using the respective XML notation.
+ * &lt;, &gt;, &quot; and &apos; will be escaped using the respective XML notation.
  * The output will also be indented using standard XML pretty printing.
  * <p>
  * The xmlns namespace definition for <code>gsp:</code> tags will be removed
@@ -74,7 +74,7 @@ import java.util.Map;
  *   &lt;gsp:expression&gt;greeting&lt;/gsp:expression&gt;
  *   &lt;foo:to&gt;$firstname "$nickname" $lastname&lt;/foo:to&gt;
  *   How are you today?
- * &lt;/document>
+ * &lt;/document&gt;
  * '''
  * def template = engine.createTemplate(text).make(binding)
  * println template.toString()

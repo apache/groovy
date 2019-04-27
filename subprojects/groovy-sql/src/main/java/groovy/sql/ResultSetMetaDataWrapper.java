@@ -29,7 +29,7 @@ import java.sql.ResultSetMetaData;
  * This class defines a wrapper for accessing a specific column in <code>ResultSetMetaData</code>.
  * This allows iteration over columns using idiomatic Groovy, e.g.:
  * <pre>
- * meta.each {col ->
+ * meta.each {col {@code ->}
  *   println col.columnName
  * }
  * </pre>

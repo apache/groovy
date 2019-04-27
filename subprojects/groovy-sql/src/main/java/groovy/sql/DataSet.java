@@ -40,6 +40,7 @@ import java.util.Set;
  * and querying databases using POGO fields and operators rather than
  * JDBC-level API calls and RDBMS column names. So, instead of a query like:
  * <pre>
+ * {@code
  * def db = // an instance of groovy.sql.Sql
  * def sql = '''select * from Person
  *     where (purchaseCount > ? and birthMonth = ?)
@@ -48,9 +49,11 @@ import java.util.Set;
  *     order by firstName DESC, age'''
  * def params = [10, "January", "Zulu", "Alpha", 99, 5, "Bert"]
  * def sortedPeopleOfInterest = db.rows(sql, params)
+ * }
  * </pre>
  * You can write code like this:
  * <pre>
+ * @{code
  * def person = new DataSet(db, 'Person') // or db.dataSet('Person'), or db.dataSet(Person)
  * def janFrequentBuyers = person.findAll { it.purchaseCount > 10 && it.lastName == "January" }
  * def sortedPeopleOfInterest = janFrequentBuyers.
@@ -60,6 +63,7 @@ import java.util.Set;
  *     sort{ it.firstName }.reverse().
  *     findAll{ it.firstName != 'Bert' }.
  *     sort{ it.age }
+ * }
  * </pre>
  * Currently, the Groovy source code for any accessed POGO must be on the
  * classpath at runtime. Also, at the moment, the expressions (or nested expressions) can only contain
