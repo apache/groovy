@@ -27,8 +27,8 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * Represents a closure expression such as { statement }
- * or { i -> statement } or { i, x, String y ->  statement }
+ * Represents a closure expression such as <pre>{ statement }</pre>
+ * or { i {@code ->} statement } or { i, x, String y {@code ->}  statement }
  */
 public class ClosureExpression extends Expression {
     

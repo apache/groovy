@@ -36,7 +36,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
  * <ul>
  * <li>class header (class and superclass declaration)</li>
  * <li>arity of type parameters for fields, parameters, local variables</li>
- * <li>invalid diamond &;t;&gt; usage</li>
+ * <li>invalid diamond {@code <>} usage</li>
  * </ul>
  */
 public class GenericsVisitor extends ClassCodeVisitorSupport {

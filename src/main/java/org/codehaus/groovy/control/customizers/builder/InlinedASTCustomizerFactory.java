@@ -34,7 +34,7 @@ import java.util.Map;
  * <p>
  * Here is an example, which only logs the class name during compilation:
  * <pre>
- * inline(phase:'CONVERSION') { source, context, classNode ->
+ * inline(phase:'CONVERSION') { source, context, classNode {@code ->}
  *     println "visiting $classNode"
  * }
  * </pre>

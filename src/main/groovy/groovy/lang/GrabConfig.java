@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * <p>
  * An example involving databases:
  * <pre>
- * {@code @Grab}('mysql:mysql-connector-java:5.1.6'),
+ * {@code @Grab}('mysql:mysql-connector-java:5.1.6')
  * {@code @GrabConfig}(systemClassLoader=true)
  * import groovy.sql.Sql
  *
@@ -37,9 +37,10 @@ import java.lang.annotation.Target;
  * </pre>
  * Another example involving XStream:
  * <pre>
- * {@code @Grab}('com.thoughtworks.xstream:xstream:1.4.9'),
- * {@code @Grab}('xpp3:xpp3_min:1.1.4c'),
+ * {@code @Grab}('com.thoughtworks.xstream:xstream:1.4.9')
+ * {@code @Grab}('xpp3:xpp3_min:1.1.4c')
  * {@code @GrabConfig}(systemClassLoader=true, initContextClassLoader=true)
+ * {@code
  * import com.thoughtworks.xstream.*
  *
  * class Staff {
@@ -63,6 +64,7 @@ import java.lang.annotation.Target;
  * }
  *
  * println john2.dump()
+ * }
  * </pre>
  * <p>
  * Further information about customising grape behavior can be found on the Grape documentation page:

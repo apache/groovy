@@ -27,7 +27,7 @@ import groovy.lang.Closure;
  * Typical usages:
  * <pre class="groovyTestCase">
  * // normal usage
- * def unitAdder = { first, second, unit -> "${first + second} $unit" }
+ * def unitAdder = { first, second, unit {@code ->} "${first + second} $unit" }
  * assert unitAdder(10, 15, "minutes") == "25 minutes"
  * assert unitAdder.curry(60)(15, "minutes") == "75 minutes"
  * def minuteAdder = unitAdder.rcurry("minutes")

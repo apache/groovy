@@ -491,7 +491,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * <p>
      * Typical usage:
      * <pre class="groovyTestCase">
-     * def multiply = { a, b -> a * b }
+     * def multiply = { a, b {@code ->} a * b }
      * def doubler = multiply.curry(2)
      * assert doubler(4) == 8
      * </pre>
@@ -499,7 +499,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * If you curry a vararg parameter, you don't consume the entire vararg array
      * but instead the first parameter of the vararg array as the following example shows:
      * <pre class="groovyTestCase">
-     * def a = { one, two, Object[] others -> one + two + others.sum() }
+     * def a = { one, two, Object[] others {@code ->} one + two + others.sum() }
      * assert a.parameterTypes.name == ['java.lang.Object', 'java.lang.Object', '[Ljava.lang.Object;']
      * assert a(1,2,3,4) == 10
      * def b = a.curry(1)
@@ -541,7 +541,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Parameters are supplied on the right rather than left as per the normal curry() method.
      * Typical usage:
      * <pre class="groovyTestCase">
-     * def divide = { a, b -> a / b }
+     * def divide = { a, b {@code ->} a / b }
      * def halver = divide.rcurry(2)
      * assert halver(8) == 4
      * </pre>
@@ -574,20 +574,20 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Parameters are supplied from index position "n".
      * Typical usage:
      * <pre>
-     * def caseInsensitive = { a, b -> a.toLowerCase() <=> b.toLowerCase() } as Comparator
-     * def caseSensitive = { a, b -> a <=> b } as Comparator
+     * def caseInsensitive = { a, b {@code ->} a.toLowerCase() {@code <=>} b.toLowerCase() } as Comparator
+     * def caseSensitive = { a, b {@code ->} a {@code <=>} b } as Comparator
      * def animals1 = ['ant', 'dog', 'BEE']
      * def animals2 = animals1 + ['Cat']
      * // curry middle param of this utility method:
      * // Collections#binarySearch(List list, Object key, Comparator c)
-     * def catSearcher = Collections.&binarySearch.ncurry(1, "cat")
-     * [[animals1, animals2], [caseInsensitive, caseSensitive]].combinations().each{ a, c ->
+     * {@code def catSearcher = Collections.&binarySearch.ncurry(1, "cat")}
+     * [[animals1, animals2], [caseInsensitive, caseSensitive]].combinations().each{ a, c {@code ->}
      *   def idx = catSearcher(a.sort(c), c)
      *   print a.sort(c).toString().padRight(22)
-     *   if (idx < 0) println "Not found but would belong in position ${-idx - 1}"
+     *   {@code if (idx < 0) println "Not found but would belong in position ${-idx - 1}"}
      *   else println "Found at index $idx"
      * }
-     * // =>
+     * // {@code =>}
      * // [ant, BEE, dog]       Not found but would belong in position 2
      * // [ant, BEE, Cat, dog]  Found at index 2
      * // [BEE, ant, dog]       Not found but would belong in position 2
@@ -623,10 +623,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * <p>
      * Typical usage:
      * <pre class="groovyTestCase">
-     * def times2 = { a -> a * 2 }
-     * def add3 = { a -> a + 3 }
-     * def timesThenAdd = times2 >> add3
-     * // equivalent: timesThenAdd = { a -> add3(times2(a)) }
+     * def times2 = { a {@code ->} a * 2 }
+     * def add3 = { a {@code ->} a + 3 }
+     * def timesThenAdd = times2 {@code >>} add3
+     * // equivalent: timesThenAdd = { a {@code ->} add3(times2(a)) }
      * assert timesThenAdd(3) == 9
      * </pre>
      *
@@ -642,10 +642,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * <p>
      * Typical usage:
      * <pre class="groovyTestCase">
-     * def times2 = { a -> a * 2 }
-     * def add3 = { a -> a + 3 }
-     * def addThenTimes = times2 << add3
-     * // equivalent: addThenTimes = { a -> times2(add3(a)) }
+     * def times2 = { a {@code ->} a * 2 }
+     * def add3 = { a {@code ->} a + 3 }
+     * def addThenTimes = times2 {@code <<} add3
+     * // equivalent: addThenTimes = { a {@code ->} times2(add3(a)) }
      * assert addThenTimes(3) == 12
      * </pre>
      *
@@ -661,9 +661,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * <p>
      * Typical usage:
      * <pre class="groovyTestCase">
-     * def times2 = { a -> a * 2 }
-     * def add3 = { a -> a * 3 }
-     * assert add3 << times2 << 3 == 9
+     * def times2 = { a {@code ->} a * 2 }
+     * def add3 = { a {@code ->} a * 3 }
+     * assert add3 {@code <<} times2 {@code <<} 3 == 9
      * </pre>
      *
      * @param arg the argument to call the closure with
@@ -782,11 +782,11 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Here is an example:
      * <pre>
      * def fact
-     * fact = { n, total ->
+     * fact = { n, total {@code ->}
      *     n == 0 ? total : fact.trampoline(n - 1, n * total)
      * }.trampoline()
-     * def factorial = { n -> fact(n, 1G)}
-     * println factorial(20) // => 2432902008176640000
+     * def factorial = { n {@code ->} fact(n, 1G)}
+     * println factorial(20) // {@code =>} 2432902008176640000
      * </pre>
      *
      * @param args Parameters to the closure, so as the trampoline mechanism can call it

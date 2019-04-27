@@ -67,12 +67,12 @@ import java.util.Map;
  *     }
  *
  *     // apply CompileStatic AST annotation on files that do not contain a class named 'Baz'
- *     builder.source(unitValidator: { unit -> !unit.AST.classes.any { it.name == 'Baz' } }) {
+ *     builder.source(unitValidator: { unit {@code ->} !unit.AST.classes.any { it.name == 'Baz' } }) {
  *         ast(CompileStatic)
  *     }
  *
  *     // apply CompileStatic AST annotation on class nodes that end with 'CS'
- *     builder.source(classValidator: { cn -> cn.name.endsWith('CS') }) {
+ *     builder.source(classValidator: { cn {@code ->} cn.name.endsWith('CS') }) {
  *         ast(CompileStatic)
  *     }
  * </code></pre>
