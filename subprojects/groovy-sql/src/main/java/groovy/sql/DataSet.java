@@ -53,7 +53,7 @@ import java.util.Set;
  * </pre>
  * You can write code like this:
  * <pre>
- * @{code
+ * {@code
  * def person = new DataSet(db, 'Person') // or db.dataSet('Person'), or db.dataSet(Person)
  * def janFrequentBuyers = person.findAll { it.purchaseCount > 10 && it.lastName == "January" }
  * def sortedPeopleOfInterest = janFrequentBuyers.
