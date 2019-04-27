@@ -110,7 +110,7 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * Now try a query using <code>eachRow</code>:
  * <pre>
  * println 'Some GR8 projects:'
- * sql.eachRow('select * from PROJECT') { row ->
+ * sql.eachRow('select * from PROJECT') { row {@code ->}
  *     println "${row.name.padRight(10)} ($row.url)"
  * }
  * </pre>
@@ -135,7 +135,7 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * </pre>
  * Also, <code>eachRow</code> and <code>rows</code> support paging.  Here's an example: 
  * <pre>
- * sql.eachRow('select * from PROJECT', 2, 2) { row ->
+ * sql.eachRow('select * from PROJECT', 2, 2) { row {@code ->}
  *     println "${row.name.padRight(10)} ($row.url)"
  * }
  * </pre>
@@ -883,7 +883,7 @@ public class Sql implements AutoCloseable {
      * def fieldName = 'firstname'
      * def fieldOp = Sql.expand('like')
      * def fieldVal = '%a%'
-     * sql.query "select * from PERSON where ${Sql.expand(fieldName)} $fieldOp ${fieldVal}", { ResultSet rs ->
+     * sql.query "select * from PERSON where ${Sql.expand(fieldName)} $fieldOp ${fieldVal}", { ResultSet rs {@code ->}
      *     while (rs.next()) println rs.getString('firstname')
      * }
      * // query will be 'select * from PERSON where firstname like ?'
@@ -954,11 +954,11 @@ public class Sql implements AutoCloseable {
      * <p>
      * Example usages:
      * <pre>
-     * sql.query("select * from PERSON where firstname like 'S%'") { ResultSet rs ->
+     * sql.query("select * from PERSON where firstname like 'S%'") { ResultSet rs {@code ->}
      *     while (rs.next()) println rs.getString('firstname') + ' ' + rs.getString(3)
      * }
      *
-     * sql.query("call get_people_places()") { ResultSet rs ->
+     * sql.query("call get_people_places()") { ResultSet rs {@code ->}
      *     while (rs.next()) println rs.toRowResult().firstname
      * }
      * </pre>
@@ -994,7 +994,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Example usage:
      * <pre>
-     * sql.query('select * from PERSON where lastname like ?', ['%a%']) { ResultSet rs ->
+     * sql.query('select * from PERSON where lastname like ?', ['%a%']) { ResultSet rs {@code ->}
      *     while (rs.next()) println rs.getString('lastname')
      * }
      * </pre>
@@ -1069,7 +1069,7 @@ public class Sql implements AutoCloseable {
      * Example usage:
      * <pre>
      * def location = 25
-     * sql.query "select * from PERSON where location_id < $location", { ResultSet rs ->
+     * sql.query "select * from PERSON where location_id {@code <} $location", { ResultSet rs {@code ->}
      *     while (rs.next()) println rs.getString('firstname')
      * }
      * </pre>
@@ -1095,7 +1095,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Example usages:
      * <pre>
-     * sql.eachRow("select * from PERSON where firstname like 'S%'") { row ->
+     * sql.eachRow("select * from PERSON where firstname like 'S%'") { row {@code ->}
      *    println "$row.firstname ${row[2]}}"
      * }
      *
@@ -1152,13 +1152,13 @@ public class Sql implements AutoCloseable {
      * <p>
      * Example usage:
      * <pre>
-     * def printColNames = { meta ->
+     * def printColNames = { meta {@code ->}
      *     (1..meta.columnCount).each {
      *         print meta.getColumnLabel(it).padRight(20)
      *     }
      *     println()
      * }
-     * def printRow = { row ->
+     * def printRow = { row {@code ->}
      *     row.toRowResult().values().each{ print it.toString().padRight(20) }
      *     println()
      * }
@@ -1344,13 +1344,13 @@ public class Sql implements AutoCloseable {
      * <p>
      * Example usage:
      * <pre>
-     * def printColNames = { meta ->
+     * def printColNames = { meta {@code ->}
      *     (1..meta.columnCount).each {
      *         print meta.getColumnLabel(it).padRight(20)
      *     }
      *     println()
      * }
-     * def printRow = { row ->
+     * def printRow = { row {@code ->}
      *     row.toRowResult().values().each{ print it.toString().padRight(20) }
      *     println()
      * }
@@ -1416,7 +1416,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Example usage:
      * <pre>
-     * sql.eachRow("select * from PERSON where lastname like ?", ['%a%']) { row ->
+     * sql.eachRow("select * from PERSON where lastname like ?", ['%a%']) { row {@code ->}
      *     println "${row[1]} $row.lastname"
      * }
      * </pre>
@@ -1537,17 +1537,17 @@ public class Sql implements AutoCloseable {
      * Example usage:
      * <pre>
      * def location = 25
-     * def printColNames = { meta ->
+     * def printColNames = { meta {@code ->}
      *     (1..meta.columnCount).each {
      *         print meta.getColumnLabel(it).padRight(20)
      *     }
      *     println()
      * }
-     * def printRow = { row ->
+     * def printRow = { row {@code ->}
      *     row.toRowResult().values().each{ print it.toString().padRight(20) }
      *     println()
      * }
-     * sql.eachRow("select * from PERSON where location_id < $location", printColNames, printRow)
+     * sql.eachRow("select * from PERSON where location_id {@code <} $location", printColNames, printRow)
      * </pre>
      * <p>
      * Resource handling is performed automatically where appropriate.
@@ -1636,7 +1636,7 @@ public class Sql implements AutoCloseable {
      * Example usage:
      * <pre>
      * def location = 25
-     * sql.eachRow("select * from PERSON where location_id < $location") { row ->
+     * sql.eachRow("select * from PERSON where location_id {@code <} $location") { row {@code ->}
      *     println row.firstname
      * }
      * </pre>
@@ -1704,7 +1704,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Example usage:
      * <pre>
-     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
+     * def printNumCols = { meta {@code ->} println "Found $meta.columnCount columns" }
      * def ans = sql.rows("select * from PERSON", printNumCols)
      * println "Found ${ans.size()} rows"
      * </pre>
@@ -1906,7 +1906,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Example usage:
      * <pre>
-     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
+     * def printNumCols = { meta {@code ->} println "Found $meta.columnCount columns" }
      * def ans = sql.rows("select * from PERSON where lastname like ?", ['%a%'], printNumCols)
      * println "Found ${ans.size()} rows"
      * </pre>
@@ -1914,7 +1914,7 @@ public class Sql implements AutoCloseable {
      * This method supports named and named ordinal parameters by supplying such
      * parameters in the <code>params</code> list. Here is an example:
      * <pre>
-     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
+     * def printNumCols = { meta {@code ->} println "Found $meta.columnCount columns" }
      *
      * def mapParam = [foo: 'Smith']
      * def domainParam = new MyDomainClass(bar: 'John')
@@ -2083,7 +2083,7 @@ public class Sql implements AutoCloseable {
      * Example usage:
      * <pre>
      * def location = 25
-     * def ans = sql.rows("select * from PERSON where location_id < $location")
+     * def ans = sql.rows("select * from PERSON where location_id {@code <} $location")
      * println "Found ${ans.size()} rows"
      * </pre>
      * <p>
@@ -2107,8 +2107,8 @@ public class Sql implements AutoCloseable {
      * Example usage:
      * <pre>
      * def location = 25
-     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
-     * def ans = sql.rows("select * from PERSON where location_id < $location", printNumCols)
+     * def printNumCols = { meta {@code ->} println "Found $meta.columnCount columns" }
+     * def ans = sql.rows("select * from PERSON where location_id {@code <} $location", printNumCols)
      * println "Found ${ans.size()} rows"
      * </pre>
      * <p>
@@ -2195,7 +2195,7 @@ public class Sql implements AutoCloseable {
      * Example usage:
      * <pre>
      * def location = 25
-     * def ans = sql.firstRow("select * from PERSON where location_id < $location")
+     * def ans = sql.firstRow("select * from PERSON where location_id {@code <} $location")
      * println ans.firstname
      * </pre>
      * <p>
@@ -2344,12 +2344,12 @@ public class Sql implements AutoCloseable {
      * Example usages:
      * <pre>
      * boolean first = true
-     * sql.execute "{call FindAllByFirst('J')}", { isResultSet, result ->
+     * sql.execute "{call FindAllByFirst('J')}", { isResultSet, result {@code ->}
      *   if (first) {
      *     first = false
-     *     assert !isResultSet && result == 0
+     *     assert !isResultSet {@code &&} result == 0
      *   } else {
-     *     assert isResultSet && result == [[ID:1, FIRSTNAME:'James', LASTNAME:'Strachan'], [ID:4, FIRSTNAME:'Jean', LASTNAME:'Gabin']]
+     *     assert isResultSet {@code &&} result == [[ID:1, FIRSTNAME:'James', LASTNAME:'Strachan'], [ID:4, FIRSTNAME:'Jean', LASTNAME:'Gabin']]
      *   }
      * }
      * </pre>
@@ -3111,7 +3111,7 @@ public class Sql implements AutoCloseable {
      * </pre>
      * we can now call the stored procedure as follows:
      * <pre>
-     * sql.call '{call Hemisphere(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells ->
+     * sql.call '{call Hemisphere(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells {@code ->}
      *     println dwells
      * }
      * </pre>
@@ -3153,7 +3153,7 @@ public class Sql implements AutoCloseable {
      * </pre>
      * and here is how you access the stored function for all databases:
      * <pre>
-     * sql.call("{? = call FullName(?)}", [Sql.VARCHAR, 'Sam']) { name ->
+     * sql.call("{? = call FullName(?)}", [Sql.VARCHAR, 'Sam']) { name {@code ->}
      *     assert name == 'Sam Pullara'
      * }
      * </pre>
@@ -3179,7 +3179,7 @@ public class Sql implements AutoCloseable {
      * <pre>
      * def first = 'Scott'
      * def last = 'Davis'
-     * sql.call "{call Hemisphere($first, $last, ${Sql.VARCHAR})}", { dwells ->
+     * sql.call "{call Hemisphere($first, $last, ${Sql.VARCHAR})}", { dwells {@code ->}
      *     println dwells
      * }
      * </pre>
@@ -3189,7 +3189,7 @@ public class Sql implements AutoCloseable {
      * Once created, it can be called like this:
      * <pre>
      * def first = 'Sam'
-     * sql.call("{$Sql.VARCHAR = call FullName($first)}") { name ->
+     * sql.call("{$Sql.VARCHAR = call FullName($first)}") { name {@code ->}
      *     assert name == 'Sam Pullara'
      * }
      * </pre>
@@ -3220,7 +3220,7 @@ public class Sql implements AutoCloseable {
      * <pre>
      * def first = 'Jeff'
      * def last = 'Sheets'
-     * def rows = sql.callWithRows "{call Hemisphere2($first, $last, ${Sql.VARCHAR})}", { dwells ->
+     * def rows = sql.callWithRows "{call Hemisphere2($first, $last, ${Sql.VARCHAR})}", { dwells {@code ->}
      *     println dwells
      * }
      * </pre>
@@ -3249,7 +3249,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Once created, the stored procedure can be called like this:
      * <pre>
-     * def rows = sql.callWithRows '{call Hemisphere2(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells ->
+     * def rows = sql.callWithRows '{call Hemisphere2(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells {@code ->}
      *     println dwells
      * }
      * </pre>
@@ -3279,7 +3279,7 @@ public class Sql implements AutoCloseable {
      * <pre>
      * def first = 'Jeff'
      * def last = 'Sheets'
-     * def rowsList = sql.callWithAllRows "{call Hemisphere2($first, $last, ${Sql.VARCHAR})}", { dwells ->
+     * def rowsList = sql.callWithAllRows "{call Hemisphere2($first, $last, ${Sql.VARCHAR})}", { dwells {@code ->}
      *     println dwells
      * }
      * </pre>
@@ -3308,7 +3308,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Once created, the stored procedure can be called like this:
      * <pre>
-     * def rowsList = sql.callWithAllRows '{call Hemisphere2(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells ->
+     * def rowsList = sql.callWithAllRows '{call Hemisphere2(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells {@code ->}
      *     println dwells
      * }
      * </pre>
@@ -3501,7 +3501,7 @@ public class Sql implements AutoCloseable {
      * configured using this closure. The statement being configured is passed into the closure
      * as its single argument, e.g.:
      * <pre>
-     * sql.withStatement{ stmt -> stmt.maxRows = 10 }
+     * sql.withStatement{ stmt {@code ->} stmt.maxRows = 10 }
      * def firstTenRows = sql.rows("select * from table")
      * </pre>
      *
@@ -3624,7 +3624,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Use it like this:
      * <pre>
-     * def updateCounts = sql.withBatch { stmt ->
+     * def updateCounts = sql.withBatch { stmt {@code ->}
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
@@ -3668,7 +3668,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Use it like this for batchSize of 20:
      * <pre>
-     * def updateCounts = sql.withBatch(20) { stmt ->
+     * def updateCounts = sql.withBatch(20) { stmt {@code ->}
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
@@ -3732,7 +3732,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * An example:
      * <pre>
-     * def updateCounts = sql.withBatch('insert into TABLENAME(a, b, c) values (?, ?, ?)') { ps ->
+     * def updateCounts = sql.withBatch('insert into TABLENAME(a, b, c) values (?, ?, ?)') { ps {@code ->}
      *     ps.addBatch([10, 12, 5])
      *     ps.addBatch([7, 3, 98])
      *     ps.addBatch(22, 67, 11)
@@ -3782,7 +3782,7 @@ public class Sql implements AutoCloseable {
      * <p>
      * Below is an example using a batchSize of 20:
      * <pre>
-     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (?, ?, ?)') { ps ->
+     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (?, ?, ?)') { ps {@code ->}
      *     ps.addBatch(10, 12, 5)      // varargs style
      *     ps.addBatch([7, 3, 98])     // list
      *     ps.addBatch([22, 67, 11])
@@ -3791,7 +3791,7 @@ public class Sql implements AutoCloseable {
      * </pre>
      * Named parameters (into maps or domain objects) are also supported:
      * <pre>
-     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (:foo, :bar, :baz)') { ps ->
+     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (:foo, :bar, :baz)') { ps {@code ->}
      *     ps.addBatch([foo:10, bar:12, baz:5])  // map
      *     ps.addBatch(foo:7, bar:3, baz:98)     // Groovy named args allow outer brackets to be dropped
      *     ...
@@ -3799,7 +3799,7 @@ public class Sql implements AutoCloseable {
      * </pre>
      * Named ordinal parameters (into maps or domain objects) are also supported:
      * <pre>
-     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (?1.foo, ?2.bar, ?2.baz)') { ps ->
+     * def updateCounts = sql.withBatch(20, 'insert into TABLENAME(a, b, c) values (?1.foo, ?2.bar, ?2.baz)') { ps {@code ->}
      *     ps.addBatch([[foo:22], [bar:67, baz:11]])  // list of maps or domain objects
      *     ps.addBatch([foo:10], [bar:12, baz:5])     // varargs allows outer brackets to be dropped
      *     ps.addBatch([foo:7], [bar:3, baz:98])
@@ -3807,7 +3807,7 @@ public class Sql implements AutoCloseable {
      * }
      * // swap to batch size of 5 and illustrate simple and domain object cases ...
      * class Person { String first, last }
-     * def updateCounts2 = sql.withBatch(5, 'insert into PERSON(id, first, last) values (?1, ?2.first, ?2.last)') { ps ->
+     * def updateCounts2 = sql.withBatch(5, 'insert into PERSON(id, first, last) values (?1, ?2.first, ?2.last)') { ps {@code ->}
      *     ps.addBatch(1, new Person(first:'Peter', last:'Pan'))
      *     ps.addBatch(2, new Person(first:'Snow', last:'White'))
      *     ...

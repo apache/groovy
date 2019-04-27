@@ -26,7 +26,8 @@ import java.util.regex.Pattern
  * attribute assignment. Example:
  * <pre>&lt;pre class="groovyTestCase"&gt; assert "example".size() == 7 &lt;/pre&gt;</pre>
  * When extracting the code for the test, single-line snippets of code without braces within a {{@code @code} ...}
- * tag will have the javadoc {@code code} tag stripped.
+ * tag will have the javadoc {@code code} tag stripped. Similarly, html entities are converted back when extracting
+ * code, so {@code &lt;} and {@code &gt;} will be converted to {@code <} and {@code >}.
  */
 class JavadocAssertionTestBuilder {
     // TODO write tests for this classes functionality

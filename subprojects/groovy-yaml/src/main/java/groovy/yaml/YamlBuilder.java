@@ -126,7 +126,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * def authors = [new Author (name: "Guillaume"), new Author (name: "Jochen"), new Author (name: "Paul")]
      *
      * def yaml = new groovy.yaml.YamlBuilder()
-     * yaml authors, { Author author ->
+     * yaml authors, { Author author {@code ->}
      *      name author.name
      * }
      *
@@ -284,7 +284,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * yaml { temperature 37 }
      *
      * def out = new StringWriter()
-     * out << yaml
+     * out {@code <<} yaml
      *
      * assert out.toString() == '''---
      * temperature: 37
