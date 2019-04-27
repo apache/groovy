@@ -19,10 +19,10 @@
 package groovy
 
 class CompileOrderTest extends GroovyTestCase {
-   public void testCompileOrder() {
+   void testCompileOrder() {
       def interfaceFile = File.createTempFile("TestOrderInterface", ".groovy", new File("target"))
       def concreteFile = File.createTempFile("TestOrderConcrete", ".groovy", new File("target"))
-      def cl = new GroovyClassLoader(this.class.classLoader);
+      def cl = new GroovyClassLoader(this.class.classLoader)
       def currentDir = concreteFile.parentFile.absolutePath
       cl.addClasspath(currentDir)
       cl.shouldRecompile = true
@@ -48,7 +48,7 @@ class CompileOrderTest extends GroovyTestCase {
       }
    }
 
-    public void testCompileFileURI() {
+    void testCompileFileURI() {
         def interfaceFile = File.createTempFile("TestURLOrderInterface", ".groovy", new File("target"))
         def concreteFile = File.createTempFile("TestURLOrderConcrete", ".groovy", new File("target"))
 
