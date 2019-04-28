@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package gls.generics;
+package gls.annotations;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyClassLoader.InnerLoader;
@@ -28,12 +28,13 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
-public abstract class GenericsTestBase extends GroovyTestCase {
+public abstract class AnnotationsTestBase extends GroovyTestCase {
     MyLoader loader;
-    HashMap<String, String> signatures;
+    List<String> annotations;
+    String current = "";
 
     private class MyLoader extends GroovyClassLoader {
         MyLoader(ClassLoader classLoader) {
@@ -52,43 +53,76 @@ public abstract class GenericsTestBase extends GroovyTestCase {
 
         protected Class createClass(byte[] code, ClassNode classNode) {
             ClassReader cr = new ClassReader(code);
-            GenericsTester classVisitor = new GenericsTester(new org.objectweb.asm.tree.ClassNode());
+            AnnotationsTester classVisitor = new AnnotationsTester(new org.objectweb.asm.tree.ClassNode());
             cr.accept(classVisitor, ClassWriter.COMPUTE_MAXS);
             return super.createClass(code, classNode);
         }
     }
 
-    private class GenericsTester extends ClassVisitor {
-        GenericsTester(ClassVisitor cv) {
+    private class FieldAnnotationScanner extends FieldVisitor {
+        private final String field;
+
+        FieldAnnotationScanner(String field) {
+            super(CompilerConfiguration.ASM_API_VERSION);
+            this.field = field;
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+            annotations.add("visiting field " + field + ", found annotation: desc=" + desc + ", visible=" + visible);
+            return super.visitAnnotation(desc, visible);
+        }
+    }
+
+    private class MethodAnnotationScanner extends MethodVisitor {
+        private final String method;
+
+        MethodAnnotationScanner(String method) {
+            super(CompilerConfiguration.ASM_API_VERSION);
+            this.method = method;
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+            annotations.add("visiting method " + method + ", found annotation: desc=" + desc + ", visible=" + visible);
+            return super.visitAnnotation(desc, visible);
+        }
+    }
+
+    private class AnnotationsTester extends ClassVisitor {
+        AnnotationsTester(ClassVisitor cv) {
             super(CompilerConfiguration.ASM_API_VERSION, cv);
         }
 
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-            if (signature != null) signatures.put("class", signature);
+            current = name;
+        }
+
+        public AnnotationVisitor visitAnnotation(String desc, boolean visible){
+            annotations.add("visiting class " + current + " found annotation: desc=" + desc + ", visible=" + visible);
+            return super.visitAnnotation(desc,visible);
         }
 
         public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
-            if (signature != null) signatures.put(name, signature);
-            return super.visitField(access, name, desc, signature, value);
+            return new FieldAnnotationScanner(current + "#" + name);
         }
 
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-            if (signature != null) signatures.put(name + desc, signature);
-            return super.visitMethod(access, name, desc, signature, exceptions);
+            return new MethodAnnotationScanner(current + "#" + name);
         }
     }
 
     public void setUp() {
         loader = new MyLoader(this.getClass().getClassLoader());
-        signatures = new HashMap<>();
+        annotations = new ArrayList<>();
     }
 
     public void createClassInfo(String script) {
         loader.parseClass(script);
     }
 
-    public Map<String, String> getSignatures() {
-        return signatures;
+    public List<String> getAnnotations() {
+        return annotations;
     }
 
     protected void shouldNotCompile(String script) {
