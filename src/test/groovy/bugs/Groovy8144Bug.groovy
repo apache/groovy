@@ -36,7 +36,7 @@ class Groovy8144Bug extends AbstractBytecodeTestCase {
 
     @Override
     void setUp() {
-        CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
+        CompilerConfiguration config = new CompilerConfiguration()
         config.optimizationOptions.putAll(getOptions())
         shell = new GroovyShell(config)
     }
@@ -66,7 +66,11 @@ class Groovy8144Bug extends AbstractBytecodeTestCase {
         """
 
         def action = { SourceUnit unit ->
-            unit.getConfiguration().optimizationOptions.putAll(getOptions())
+            def config = unit.getConfiguration()
+            if (config.is(CompilerConfiguration.DEFAULT)) {
+                config = new CompilerConfiguration(config)
+            }
+            config.optimizationOptions.putAll(getOptions())
         }
 
         assert compile([conversionAction:action, method:'m'], code).hasSequence([

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control.io
 
+import org.codehaus.groovy.control.CompilerConfiguration
 
 class FileReaderTest extends GroovyTestCase {
 
@@ -34,9 +35,9 @@ class FileReaderTest extends GroovyTestCase {
         fos.flush()
         fos.close()
         
-        
-        def gcl = new GroovyClassLoader()
-        gcl.config.sourceEncoding = "UTF-8"
+        def config = new CompilerConfiguration()
+        config.sourceEncoding = "UTF-8"
+        def gcl = new GroovyClassLoader(this.class.classLoader, config)
         def clazz = gcl.parseClass(file)
         def result = clazz.newInstance().run()
         assert result == 1
