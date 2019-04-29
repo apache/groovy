@@ -584,4 +584,40 @@ class ThreadId {
             List<String> ss = new LinkedList<>()
         '''
     }
+
+    // GROOVY-8990
+    void testCompilationErrorForMismatchedGenericsWithMultipleBounds() {
+        shouldFailCompilationWithMessages '''
+            class C1<T> {}
+
+            interface I1 {}
+            class C2 implements I1 {}
+
+            class C3<T extends I1> {}
+
+            class C4 extends C1<String> {} // String matches T
+
+            class C5 extends C3<String> {} // String not an I1
+
+            class C6 extends C3<C2> {} // C2 is an I1
+
+            class C7<T extends Number & I1> {}
+
+            class C8 extends C7<C2> {} // C2 not a Number
+            class C9 extends C7<Integer> {} // Integer not an I1
+
+            class C10 extends Number implements I1 {}
+            class C11 extends C7<C10> {} // C10 is a Number and implements I1
+
+            interface I2<T extends Number> {}
+            class C12 implements I2<String> {} // String not a Number
+            class C13 implements I2<C10> {} // C10 is a Number
+        ''', [
+            'The type String is not a valid substitute for the bounded parameter <T extends I1>',
+            'The type C2 is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
+            'The type Integer is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
+            'The type String is not a valid substitute for the bounded parameter <T extends java.lang.Number>'
+        ]
+
+    }
 }
