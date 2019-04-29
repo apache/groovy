@@ -84,7 +84,9 @@ public class CompilerConfiguration {
     @Deprecated
     public static final String PRE_JDK5 = JDK4;
 
-    /** JDK version to bytecode version mapping */
+    /**
+     * JDK version to bytecode version mapping
+     */
     public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Maps.of(
             JDK4, Opcodes.V1_4,
             JDK5, Opcodes.V1_5,
@@ -115,7 +117,7 @@ public class CompilerConfiguration {
      *  A convenience for getting a default configuration.  Do not modify it!
      *  See {@link #CompilerConfiguration(Properties)} for an example on how to
      *  make a suitable copy to modify.  But if you're really starting from a
-     *  default context, then you probably just want <code>new CompilerConfiguration()</code>. 
+     *  default context, then you probably just want <code>new CompilerConfiguration()</code>.
      */
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration() {
         @Override
@@ -265,7 +267,6 @@ public class CompilerConfiguration {
     };
 
 
-
     /**
      * See {@link WarningMessage} for levels.
      */
@@ -277,9 +278,9 @@ public class CompilerConfiguration {
     private String sourceEncoding;
 
     /**
-      * The <code>PrintWriter</code> does nothing.
-      */
-     private PrintWriter output;
+     * The <code>PrintWriter</code> does nothing.
+     */
+    private PrintWriter output;
 
     /**
      * Directory into which to write classes
@@ -372,7 +373,31 @@ public class CompilerConfiguration {
     public static final int ASM_API_VERSION = Opcodes.ASM7;
 
     /**
-     * Sets the Flags to defaults.
+     * Sets the compiler flags/settings to default values.
+     *
+     * The following system properties are referenced when setting the configuration:
+     *
+     * <blockquote>
+     * <table summary="Groovy Compiler Configuration Properties">
+     *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
+     *   <tr><td><code>groovy.source.encoding</code> (defaulting to <code>file.encoding</code>)</td><td>{@link #getSourceEncoding}</td></tr>
+     *   <tr><td><code>groovy.target.bytecode</code></td><td>{@link #getTargetBytecode}</td></tr>
+     *   <tr><td><code>groovy.target.directory</code></td><td>{@link #getTargetDirectory}</td></tr>
+     *   <tr><td><code>groovy.parameters</code></td><td>{@link #getParameters()}</td></tr>
+     *   <tr><td><code>groovy.preview.features</code></td><td>{@link #isPreviewFeatures}</td></tr>
+     *   <tr><td><code>groovy.script.base</code></td><td>{@link #getScriptBaseClass}</td></tr>
+     *   <tr><td><code>groovy.default.scriptExtension</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
+     * </table>
+     * </blockquote>
+     *
+     * The following system properties are referenced when setting the configuration optimization options:
+     *
+     * <blockquote>
+     * <table summary="Groovy Compiler Optimization Options Configuration Properties">
+     *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
+     *   <tr><td><code>groovy.target.indy</code></td><td>{@link #getOptimizationOptions}</td></tr>
+     * </table>
+     * </blockquote>
      */
     public CompilerConfiguration() {
         // Set in safe defaults
@@ -410,24 +435,23 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Copy constructor.  Use this if you have a mostly correct configuration
+     * Copy constructor. Use this if you have a mostly correct configuration
      * for your compilation but you want to make a some changes programmatically.
      * An important reason to prefer this approach is that your code will most
      * likely be forward compatible with future changes to this configuration API.
      * <p>
      * An example of this copy constructor at work:
-     * <pre>
-     *    // In all likelihood there is already a configuration in your code's context
-     *    // for you to copy, but for the sake of this example we'll use the global default.
-     *    CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
-     *    myConfiguration.setDebug(true);
-     *</pre>
+     * <blockquote><pre>
+     * // In all likelihood there is already a configuration in your code's context
+     * // for you to copy, but for the sake of this example we'll use the global default.
+     * CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+     * myConfiguration.setDebug(true);
+     * </pre></blockquote>
      *
      * @param configuration The configuration to copy.
      */
     public CompilerConfiguration(CompilerConfiguration configuration) {
         setWarningLevel(configuration.getWarningLevel());
-        setOutput(configuration.getOutput());
         setTargetDirectory(configuration.getTargetDirectory());
         setClasspathList(new LinkedList<String>(configuration.getClasspath()));
         setVerbose(configuration.getVerbose());
@@ -441,68 +465,66 @@ public class CompilerConfiguration {
         setPreviewFeatures(configuration.isPreviewFeatures());
         setDefaultScriptExtension(configuration.getDefaultScriptExtension());
         setSourceEncoding(configuration.getSourceEncoding());
-        setTargetDirectory(configuration.getTargetDirectory());
         Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
         if (jointCompilationOptions != null) {
             jointCompilationOptions = new HashMap<String, Object>(jointCompilationOptions);
         }
         setJointCompilationOptions(jointCompilationOptions);
         setPluginFactory(configuration.getPluginFactory());
-        setScriptExtensions(configuration.getScriptExtensions());
+        setDisabledGlobalASTTransformations(configuration.getDisabledGlobalASTTransformations());
+        setScriptExtensions(new LinkedHashSet<String>(configuration.getScriptExtensions()));
         setOptimizationOptions(new HashMap<String, Boolean>(configuration.getOptimizationOptions()));
+        setBytecodePostprocessor(configuration.getBytecodePostprocessor());
     }
 
     /**
-     * Sets the Flags to the specified configuration, with defaults
-     * for those not supplied.
-     * Note that those "defaults" here do <em>not</em> include checking the
-     * settings in {@link System#getProperties()} in general, only {@code file.encoding},
-     * {@code groovy.target.directory} and {@code groovy.source.encoding} are checked.
-     * <p>
+     * Sets the configuration flags/settings according to values from the supplied {@code Properties} instance
+     * or if not found, supplying a default value.
+     *
+     * Note that unlike {@link #CompilerConfiguration()}, the "defaults" here do <em>not</em> in general
+     * include checking the settings in {@link System#getProperties()}.
      * If you want to set a few flags but keep Groovy's default
      * configuration behavior then be sure to make your settings in
      * a {@code Properties} object that is backed by <code>System.getProperties()</code> (which
      * is done using this constructor). That might be done like this:
-     * <pre>
+     * <blockquote><pre>
      * Properties myProperties = new Properties(System.getProperties());
      * myProperties.setProperty("groovy.output.debug", "true");
      * myConfiguration = new CompilerConfiguration(myProperties);
-     * </pre>
+     * </pre></blockquote>
      * And you also have to contend with a possible {@code SecurityException} when
-     * getting the system properties (See {@link java.lang.System#getProperties()}).
+     * getting the system properties (See {@link System#getProperties()}).
      * A safer approach would be to copy a default
      * {@code CompilerConfiguration} and make your changes there using the setter:
-     * <pre>
+     * <blockquote><pre>
      * // In all likelihood there is already a configuration for you to copy,
      * // but for the sake of this example we'll use the global default.
      * CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
      * myConfiguration.setDebug(true);
-     * </pre>
-     * <p>
+     * </pre></blockquote>
+     *
+     * The following properties are referenced when setting the configuration:
+     *
+     * <blockquote>
      * <table summary="Groovy Compiler Configuration Properties">
      *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
-     *   <tr><td><code>"groovy.warnings"</code></td><td>{@link #getWarningLevel}</td></tr>
-     *   <tr><td><code>"groovy.source.encoding"</code></td><td>{@link #getSourceEncoding}</td></tr>
-     *   <tr><td><code>"groovy.target.directory"</code></td><td>{@link #getTargetDirectory}</td></tr>
-     *   <tr><td><code>"groovy.target.bytecode"</code></td><td>{@link #getTargetBytecode}</td></tr>
-     *   <tr><td><code>"groovy.parameters"</code></td><td>{@link #getParameters()}</td></tr>
-     *   <tr><td><code>"groovy.preview.features"</code></td><td>{@link #isPreviewFeatures}</td></tr>
-     *   <tr><td><code>"groovy.classpath"</code></td><td>{@link #getClasspath}</td></tr>
-     *   <tr><td><code>"groovy.output.verbose"</code></td><td>{@link #getVerbose}</td></tr>
-     *   <tr><td><code>"groovy.output.debug"</code></td><td>{@link #getDebug}</td></tr>
-     *   <tr><td><code>"groovy.errors.tolerance"</code></td><td>{@link #getTolerance}</td></tr>
-     *   <tr><td><code>"groovy.script.extension"</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
-     *   <tr><td><code>"groovy.script.base"</code></td><td>{@link #getScriptBaseClass}</td></tr>
-     *   <tr><td><code>"groovy.recompile"</code></td><td>{@link #getRecompileGroovySource}</td></tr>
-     *   <tr><td><code>"groovy.recompile.minimumInterval"</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
-     *   <tr><td><code>"groovy.default.scriptExtension"</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
-     *   <tr><td><code>"groovy.disabled.global.ast.transformations"</code></td><td>{@link #getDisabledGlobalASTTransformations}</td></tr>
+     *   <tr><td><code>groovy.warnings</code></td><td>{@link #getWarningLevel}</td></tr>
+     *   <tr><td><code>groovy.source.encoding</code> (defaulting to <code>file.encoding</code>)</td><td>{@link #getSourceEncoding}</td></tr>
+     *   <tr><td><code>groovy.target.directory</code></td><td>{@link #getTargetDirectory}</td></tr>
+     *   <tr><td><code>groovy.target.bytecode</code></td><td>{@link #getTargetBytecode}</td></tr>
+     *   <tr><td><code>groovy.parameters</code></td><td>{@link #getParameters()}</td></tr>
+     *   <tr><td><code>groovy.preview.features</code></td><td>{@link #isPreviewFeatures}</td></tr>
+     *   <tr><td><code>groovy.classpath</code></td><td>{@link #getClasspath}</td></tr>
+     *   <tr><td><code>groovy.output.verbose</code></td><td>{@link #getVerbose}</td></tr>
+     *   <tr><td><code>groovy.output.debug</code></td><td>{@link #getDebug}</td></tr>
+     *   <tr><td><code>groovy.errors.tolerance</code></td><td>{@link #getTolerance}</td></tr>
+     *   <tr><td><code>groovy.default.scriptExtension</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
+     *   <tr><td><code>groovy.script.base</code></td><td>{@link #getScriptBaseClass}</td></tr>
+     *   <tr><td><code>groovy.recompile</code></td><td>{@link #getRecompileGroovySource}</td></tr>
+     *   <tr><td><code>groovy.recompile.minimumInterval</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
+     *   <tr><td><code>groovy.disabled.global.ast.transformations</code></td><td>{@link #getDisabledGlobalASTTransformations}</td></tr>
      * </table>
-     *
-     * <table summary="Groovy Compiler Optimization Options Configuration Properties">
-     *   <tr><th>Property Key</th><th>Get/Set Property Name</th></tr>
-     *   <tr><td><code>"groovy.target.indy"</code></td><td>{@link #getOptimizationOptions}</td></tr>
-     * </table>
+     * </blockquote>
      *
      * @param configuration The properties to get flag values from.
      */
@@ -557,123 +579,88 @@ public class CompilerConfiguration {
      * @param configuration The properties to get flag values from.
      */
     public void configure(Properties configuration) throws ConfigurationException {
-        String text = null;
-        int numeric = 0;
-
-        //
-        // Warning level
+        String text;
+        int numeric;
 
         numeric = getWarningLevel();
+        text = configuration.getProperty("groovy.warnings", "likely errors");
         try {
-            text = configuration.getProperty("groovy.warnings", "likely errors");
             numeric = Integer.parseInt(text);
         } catch (NumberFormatException e) {
             text = text.toLowerCase();
             if (text.equals("none")) {
                 numeric = WarningMessage.NONE;
-            }
-            else if (text.startsWith("likely")) {
+            } else if (text.startsWith("likely")) {
                 numeric = WarningMessage.LIKELY_ERRORS;
-            }
-            else if (text.startsWith("possible")) {
+            } else if (text.startsWith("possible")) {
                 numeric = WarningMessage.POSSIBLE_ERRORS;
-            }
-            else if (text.startsWith("paranoia")) {
+            } else if (text.startsWith("paranoia")) {
                 numeric = WarningMessage.PARANOIA;
-            }
-            else {
+            } else {
                 throw new ConfigurationException("unrecognized groovy.warnings: " + text);
             }
         }
         setWarningLevel(numeric);
 
-        //
-        // Source file encoding
-        //
         text = configuration.getProperty("groovy.source.encoding");
         if (text == null) {
             text = configuration.getProperty("file.encoding", DEFAULT_SOURCE_ENCODING);
         }
         setSourceEncoding(text);
 
-        //
-        // Target directory for classes
-        //
         text = configuration.getProperty("groovy.target.directory");
         if (text != null) setTargetDirectory(text);
 
         text = configuration.getProperty("groovy.target.bytecode");
         if (text != null) setTargetBytecode(text);
 
-        text = configuration.getProperty("groovy.preview.features");
-        if (text != null && text.equalsIgnoreCase("true")) setPreviewFeatures(true);
+        text = configuration.getProperty("groovy.parameters");
+        if (text != null) setParameters(text.equalsIgnoreCase("true"));
 
-        //
-        // Classpath
-        //
+        text = configuration.getProperty("groovy.preview.features");
+        if (text != null) setPreviewFeatures(text.equalsIgnoreCase("true"));
+
         text = configuration.getProperty("groovy.classpath");
         if (text != null) setClasspath(text);
 
-        //
-        // Verbosity
-        //
         text = configuration.getProperty("groovy.output.verbose");
-        if (text != null && text.equalsIgnoreCase("true")) setVerbose(true);
+        if (text != null) setVerbose(text.equalsIgnoreCase("true"));
 
-        //
-        // Debugging
-        //
         text = configuration.getProperty("groovy.output.debug");
-        if (text != null && text.equalsIgnoreCase("true")) setDebug(true);
+        if (text != null) setDebug(text.equalsIgnoreCase("true"));
 
-        //
-        // Parameters
-        //
-        setParameters(configuration.getProperty("groovy.parameters") != null);
-
-        //
-        // Tolerance
-        //
         numeric = 10;
+        text = configuration.getProperty("groovy.errors.tolerance", "10");
         try {
-            text = configuration.getProperty("groovy.errors.tolerance", "10");
             numeric = Integer.parseInt(text);
         } catch (NumberFormatException e) {
             throw new ConfigurationException(e);
         }
         setTolerance(numeric);
 
-        //
-        // Script Base Class
-        //
-        text = configuration.getProperty("groovy.script.base");
-        if (text!=null) setScriptBaseClass(text);
+        text = configuration.getProperty("groovy.default.scriptExtension");
+        if (text != null) setDefaultScriptExtension(text);
 
-        //
-        // recompilation options
-        //
+        text = configuration.getProperty("groovy.script.base");
+        if (text != null) setScriptBaseClass(text);
+
         text = configuration.getProperty("groovy.recompile");
-        if (text != null) {
-            setRecompileGroovySource(text.equalsIgnoreCase("true"));
-        }
+        if (text != null) setRecompileGroovySource(text.equalsIgnoreCase("true"));
 
         numeric = 100;
+        text = configuration.getProperty("groovy.recompile.minimumIntervall"); // legacy misspelling
         try {
-            text = configuration.getProperty("groovy.recompile.minimumIntervall");
-            if (text==null) text = configuration.getProperty("groovy.recompile.minimumInterval");
-            if (text!=null) {
+            if (text == null) text = configuration.getProperty("groovy.recompile.minimumInterval");
+            if (text != null) {
                 numeric = Integer.parseInt(text);
-            } else {
-                numeric = 100;
             }
         } catch (NumberFormatException e) {
             throw new ConfigurationException(e);
         }
         setMinimumRecompilationInterval(numeric);
 
-        // disabled global AST transformations
         text = configuration.getProperty("groovy.disabled.global.ast.transformations");
-        if (text!=null) {
+        if (text != null) {
             String[] classNames = text.split(",\\s*}");
             Set<String> blacklist = new HashSet<String>(Arrays.asList(classNames));
             setDisabledGlobalASTTransformations(blacklist);
