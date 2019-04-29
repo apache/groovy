@@ -2044,7 +2044,7 @@ public abstract class StaticTypeCheckingSupport {
         return gt;
     }
 
-    private static boolean isUnboundedWildcard(GenericsType gt) {
+    public static boolean isUnboundedWildcard(GenericsType gt) {
         if (gt.isWildcard() && gt.getLowerBound() == null) {
             ClassNode[] upperBounds = gt.getUpperBounds();
             return upperBounds == null ||

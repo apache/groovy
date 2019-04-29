@@ -30,6 +30,8 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnboundedWildcard;
+
 /**
  * Verify correct usage of generics.
  * This includes:
@@ -163,12 +165,29 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
             ClassNode cnType = cnTypes[i].getType();
             // check nested type parameters
             checkGenericsUsage(nType, nType.redirect());
-            // check bounds
-            if (!nType.isDerivedFrom(cnType)) {
-                if (cnType.isInterface() && nType.implementsInterface(cnType)) continue;
-                addError("The type " + nTypes[i].getName() +
-                        " is not a valid substitute for the bounded parameter <" +
-                        getPrintName(cnTypes[i]) + ">", n);
+            // check bounds: unbounded wildcard (aka "?") is universal substitute
+            if (!isUnboundedWildcard(nTypes[i])) {
+                // check upper bound(s)
+                ClassNode[] bounds = cnTypes[i].getUpperBounds();
+
+                // first can be class or interface
+                boolean valid = nType.isDerivedFrom(cnType) || (cnType.isInterface() && nType.implementsInterface(cnType));
+
+                // subsequent bounds if present can be interfaces
+                if (valid && bounds != null && bounds.length > 1) {
+                    for (int j = 1; j < bounds.length; j++) {
+                        ClassNode bound = bounds[j];
+                        if (!nType.implementsInterface(bound)) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (!valid) {
+                    addError("The type " + nTypes[i].getName() + " is not a valid substitute for the bounded parameter <" +
+                            getPrintName(cnTypes[i]) + ">", nTypes[i]);
+                }
             }
         }
     }
