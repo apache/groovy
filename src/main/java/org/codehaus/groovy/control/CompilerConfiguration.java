@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -38,7 +39,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 
 /**
@@ -110,7 +110,8 @@ public class CompilerConfiguration {
     );
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    /** An array of the valid targetBytecode values **/
+
+    /** An array of the valid targetBytecode values */
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(EMPTY_STRING_ARRAY);
 
     private static final String GROOVY_ANTLR4_OPT = "groovy.antlr4";
@@ -120,15 +121,159 @@ public class CompilerConfiguration {
      */
     public static final String DEFAULT_SOURCE_ENCODING = "UTF-8";
 
-    // Static initializers are executed in text order,
-    // therefore we must do this one last!
     /**
      *  A convenience for getting a default configuration.  Do not modify it!
      *  See {@link #CompilerConfiguration(Properties)} for an example on how to
      *  make a suitable copy to modify.  But if you're really starting from a
      *  default context, then you probably just want <code>new CompilerConfiguration()</code>. 
      */
-    public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
+    public static final CompilerConfiguration DEFAULT = new CompilerConfiguration() {
+        @Override
+        public List<String> getClasspath() {
+            return Collections.unmodifiableList(super.getClasspath());
+        }
+
+        @Override
+        public List<CompilationCustomizer> getCompilationCustomizers() {
+            return Collections.unmodifiableList(super.getCompilationCustomizers());
+        }
+
+        @Override
+        public Set<String> getDisabledGlobalASTTransformations() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public Map<String, Object> getJointCompilationOptions() {
+            return Collections.unmodifiableMap(super.getJointCompilationOptions());
+        }
+
+        @Override
+        public Map<String, Boolean> getOptimizationOptions() {
+            return Collections.unmodifiableMap(super.getOptimizationOptions());
+        }
+
+        @Override
+        public Set<String> getScriptExtensions() {
+            return Collections.unmodifiableSet(super.getScriptExtensions());
+        }
+
+        @Override
+        public void setBytecodePostprocessor(BytecodeProcessor bytecodePostprocessor) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setClasspath(String classpath) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setClasspathList(List<String> parts) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CompilerConfiguration addCompilationCustomizers(CompilationCustomizer... customizers) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setDebug(boolean debug) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setDefaultScriptExtension(String defaultScriptExtension) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setDisabledGlobalASTTransformations(Set<String> disabledGlobalASTTransformations) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setJointCompilationOptions(Map<String, Object> options) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setMinimumRecompilationInterval(int time) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setOptimizationOptions(Map<String, Boolean> options) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setOutput(PrintWriter output) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setParameters(boolean parameters) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setPluginFactory(ParserPluginFactory pluginFactory) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setRecompileGroovySource(boolean recompile) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setScriptBaseClass(String scriptBaseClass) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setScriptExtensions(Set<String> scriptExtensions) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setSourceEncoding(String encoding) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setTargetBytecode(String version) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setTargetDirectory(File directory) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setTargetDirectory(String directory) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setTolerance(int tolerance) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setVerbose(boolean verbose) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setWarningLevel(int level) {
+            throw new UnsupportedOperationException();
+        }
+    };
+
 
     /**
      * See {@link WarningMessage} for levels.
@@ -249,49 +394,31 @@ public class CompilerConfiguration {
      */
     public CompilerConfiguration() {
         // Set in safe defaults
+        warningLevel = WarningMessage.LIKELY_ERRORS;
+        classpath = new LinkedList<String>();
+        parameters = getSystemPropertySafe("groovy.parameters") != null;
+        tolerance = 10;
+        minimumRecompilationInterval = 100;
 
-        setWarningLevel(WarningMessage.LIKELY_ERRORS);
-        setOutput(null);
-        setTargetDirectory((File) null);
-        setClasspath("");
-        setVerbose(false);
-        setDebug(false);
-        setParameters(getSystemPropertySafe("groovy.parameters") != null);
-        setTolerance(10);
-        setScriptBaseClass(null);
-        setRecompileGroovySource(false);
-        setMinimumRecompilationInterval(100);
-        setTargetBytecode(getSystemPropertySafe("groovy.target.bytecode", getMinBytecodeVersion()));
-        setPreviewFeatures(getSystemPropertySafe("groovy.preview.features") != null);
-        setDefaultScriptExtension(getSystemPropertySafe("groovy.default.scriptExtension", ".groovy"));
+        setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", getMinBytecodeVersion()));
+
+        previewFeatures = getSystemPropertySafe("groovy.preview.features") != null;
+        defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         // Source file encoding
         String encoding = getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING);
         encoding = getSystemPropertySafe("groovy.source.encoding", encoding);
-        setSourceEncoding(encoding);
+        setSourceEncodingOrDefault(encoding);
 
-        try {
-            setOutput(new PrintWriter(System.err));
-        } catch (Exception e) {
-            // IGNORE
-        }
+        setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
 
+        optimizationOptions = new HashMap<>(4);
+        handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy");
+        handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
+        handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
 
-        String target = getSystemPropertySafe("groovy.target.directory");
-        if (target != null) {
-            setTargetDirectory(target);
-        }
-
-        Map<String, Boolean> options = new HashMap<>(4);
-
-        handleOptimizationOption(options, INVOKEDYNAMIC, "groovy.target.indy");
-        handleOptimizationOption(options, GROOVYDOC, "groovy.attach.groovydoc");
-        handleOptimizationOption(options, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
-        setOptimizationOptions(options);
-
-        Map<String, Object> jointCompilerOptions = new HashMap<>(4);
-        handleJointCompilationOption(jointCompilerOptions, MEM_STUB, "groovy.generate.stub.in.memory");
-        setJointCompilationOptions(jointCompilerOptions);
+        jointCompilationOptions = new HashMap<>(4);
+        handleJointCompilationOption(jointCompilationOptions, MEM_STUB, "groovy.generate.stub.in.memory");
 
         try {
             String groovyAntlr4Opt = getSystemPropertySafe(GROOVY_ANTLR4_OPT);
@@ -306,20 +433,22 @@ public class CompilerConfiguration {
     }
 
     private void handleOptimizationOption(Map<String, Boolean> options, String optionName, String sysOptionName) {
-        boolean optionEnabled = getBooleanSafe(sysOptionName);
-        if (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName))) {
-            optionEnabled = true;
-        }
+        String propValue = getSystemPropertySafe(sysOptionName);
+        boolean optionEnabled = propValue == null
+                ? (DEFAULT == null ? false : Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName)))
+                : Boolean.valueOf(propValue);
+
         if (optionEnabled) {
             options.put(optionName, Boolean.TRUE);
         }
     }
 
     private void handleJointCompilationOption(Map<String, Object> options, String optionName, String sysOptionName) {
-        boolean optionEnabled = getBooleanSafe(sysOptionName);
-        if (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getJointCompilationOptions().get(optionName))) {
-            optionEnabled = true;
-        }
+        String propValue = getSystemPropertySafe(sysOptionName);
+        boolean optionEnabled = propValue == null
+                ? (DEFAULT == null ? false : Boolean.TRUE.equals(DEFAULT.getJointCompilationOptions().get(optionName)))
+                : Boolean.valueOf(propValue);
+
         if (optionEnabled) {
             options.put(optionName, Boolean.TRUE);
         }
@@ -327,7 +456,7 @@ public class CompilerConfiguration {
 
     /**
      * Copy constructor.  Use this if you have a mostly correct configuration
-     * for your compilation but you want to make a some changes programatically.
+     * for your compilation but you want to make a some changes programmatically.
      * An important reason to prefer this approach is that your code will most
      * likely be forward compatible with future changes to this configuration API.
      * <p>
@@ -372,22 +501,22 @@ public class CompilerConfiguration {
      * Sets the Flags to the specified configuration, with defaults
      * for those not supplied.
      * Note that those "defaults" here do <em>not</em> include checking the
-     * settings in {@link System#getProperties()} in general, only file.encoding, 
-     * groovy.target.directory and groovy.source.encoding are.
+     * settings in {@link System#getProperties()} in general, only {@code file.encoding},
+     * {@code groovy.target.directory} and {@code groovy.source.encoding} are checked.
      * <p>
      * If you want to set a few flags but keep Groovy's default
      * configuration behavior then be sure to make your settings in
-     * a Properties that is backed by <code>System.getProperties()</code> (which
+     * a {@code Properties} object that is backed by <code>System.getProperties()</code> (which
      * is done using this constructor). That might be done like this:
      * <pre>
      * Properties myProperties = new Properties(System.getProperties());
      * myProperties.setProperty("groovy.output.debug", "true");
      * myConfiguration = new CompilerConfiguration(myProperties);
      * </pre>
-     * And you also have to contend with a possible SecurityException when
+     * And you also have to contend with a possible {@code SecurityException} when
      * getting the system properties (See {@link java.lang.System#getProperties()}).
      * A safer approach would be to copy a default
-     * CompilerConfiguration and make your changes there using the setter:
+     * {@code CompilerConfiguration} and make your changes there using the setter:
      * <pre>
      * // In all likelihood there is already a configuration for you to copy,
      * // but for the sake of this example we'll use the global default.
@@ -396,25 +525,28 @@ public class CompilerConfiguration {
      * </pre>
      * <p>
      * <table summary="Groovy Compiler Configuration Properties">
-     *   <tr>
-     *      <th>Property Key</th><th>Get/Set Property Name</th>
-     *   </tr>
-     *      <tr>
-     *      <td><code>"groovy.warnings"</code></td><td>{@link #getWarningLevel}</td></tr>
-     *      <tr><td><code>"groovy.source.encoding"</code></td><td>{@link #getSourceEncoding}</td></tr>
-     *      <tr><td><code>"groovy.target.directory"</code></td><td>{@link #getTargetDirectory}</td></tr>
-     *      <tr><td><code>"groovy.target.bytecode"</code></td><td>{@link #getTargetBytecode}</td></tr>
-     *      <tr><td><code>"groovy.preview.features"</code></td><td>{@link #isPreviewFeatures}</td></tr>
-     *      <tr><td><code>"groovy.classpath"</code></td><td>{@link #getClasspath}</td></tr>
-     *      <tr><td><code>"groovy.output.verbose"</code></td><td>{@link #getVerbose}</td></tr>
-     *      <tr><td><code>"groovy.output.debug"</code></td><td>{@link #getDebug}</td></tr>
-     *      <tr><td><code>"groovy.errors.tolerance"</code></td><td>{@link #getTolerance}</td></tr>
-     *      <tr><td><code>"groovy.script.extension"</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
-     *      <tr><td><code>"groovy.script.base"</code></td><td>{@link #getScriptBaseClass}</td></tr>
-     *      <tr><td><code>"groovy.recompile"</code></td><td>{@link #getRecompileGroovySource}</td></tr>
-     *      <tr><td><code>"groovy.recompile.minimumInterval"</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
-     *      <tr><td>
-     *   </tr>
+     *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
+     *   <tr><td><code>"groovy.warnings"</code></td><td>{@link #getWarningLevel}</td></tr>
+     *   <tr><td><code>"groovy.source.encoding"</code></td><td>{@link #getSourceEncoding}</td></tr>
+     *   <tr><td><code>"groovy.target.directory"</code></td><td>{@link #getTargetDirectory}</td></tr>
+     *   <tr><td><code>"groovy.target.bytecode"</code></td><td>{@link #getTargetBytecode}</td></tr>
+     *   <tr><td><code>"groovy.parameters"</code></td><td>{@link #getParameters()}</td></tr>
+     *   <tr><td><code>"groovy.preview.features"</code></td><td>{@link #isPreviewFeatures}</td></tr>
+     *   <tr><td><code>"groovy.classpath"</code></td><td>{@link #getClasspath}</td></tr>
+     *   <tr><td><code>"groovy.output.verbose"</code></td><td>{@link #getVerbose}</td></tr>
+     *   <tr><td><code>"groovy.output.debug"</code></td><td>{@link #getDebug}</td></tr>
+     *   <tr><td><code>"groovy.errors.tolerance"</code></td><td>{@link #getTolerance}</td></tr>
+     *   <tr><td><code>"groovy.script.extension"</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
+     *   <tr><td><code>"groovy.script.base"</code></td><td>{@link #getScriptBaseClass}</td></tr>
+     *   <tr><td><code>"groovy.recompile"</code></td><td>{@link #getRecompileGroovySource}</td></tr>
+     *   <tr><td><code>"groovy.recompile.minimumInterval"</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
+     *   <tr><td><code>"groovy.default.scriptExtension"</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
+     *   <tr><td><code>"groovy.disabled.global.ast.transformations"</code></td><td>{@link #getDisabledGlobalASTTransformations}</td></tr>
+     * </table>
+     *
+     * <table summary="Groovy Compiler Optimization Options Configuration Properties">
+     *   <tr><th>Property Key</th><th>Get/Set Property Name</th></tr>
+     *   <tr><td><code>"groovy.target.indy"</code></td><td>{@link #getOptimizationOptions}</td></tr>
      * </table>
      *
      * @param configuration The properties to get flag values from.
@@ -624,6 +756,10 @@ public class CompilerConfiguration {
      * Sets the encoding to be used when reading source files.
      */
     public void setSourceEncoding(String encoding) {
+        setSourceEncodingOrDefault(encoding);
+    }
+
+    private void setSourceEncodingOrDefault(String encoding) {
         if (encoding == null) encoding = DEFAULT_SOURCE_ENCODING;
         this.sourceEncoding = encoding;
     }
@@ -645,8 +781,7 @@ public class CompilerConfiguration {
     public void setOutput(PrintWriter output) {
         if (output == null) {
             this.output = new PrintWriter(NullWriter.DEFAULT);
-        }
-        else {
+        } else {
             this.output = output;
         }
     }
@@ -662,6 +797,10 @@ public class CompilerConfiguration {
      * Sets the target directory.
      */
     public void setTargetDirectory(String directory) {
+        setTargetDirectorySafe(directory);
+    }
+
+    private void setTargetDirectorySafe(String directory) {
         if (directory != null && directory.length() > 0) {
             this.targetDirectory = new File(directory);
         } else {
@@ -840,6 +979,10 @@ public class CompilerConfiguration {
      * @param version the bytecode compatibility level
      */
     public void setTargetBytecode(String version) {
+        setTargetBytecodeIfValid(version);
+    }
+
+    private void setTargetBytecodeIfValid(String version) {
         if (JDK_TO_BYTECODE_VERSION_MAP.keySet().contains(version)) {
             this.targetBytecode = version;
         }
@@ -912,7 +1055,7 @@ public class CompilerConfiguration {
      * @throws IllegalArgumentException if the options are null
      */
     public void setOptimizationOptions(Map<String, Boolean> options) {
-        if (options==null) throw new IllegalArgumentException("provided option map must not be null");
+        if (options == null) throw new IllegalArgumentException("provided option map must not be null");
         optimizationOptions = options;
     }
 
@@ -923,7 +1066,7 @@ public class CompilerConfiguration {
      * @return this configuration instance
      */
     public CompilerConfiguration addCompilationCustomizers(CompilationCustomizer... customizers) {
-        if (customizers==null) throw new IllegalArgumentException("provided customizers list must not be null");
+        if (customizers == null) throw new IllegalArgumentException("provided customizers list must not be null");
         compilationCustomizers.addAll(Arrays.asList(customizers));
         return this;
     }
@@ -945,14 +1088,15 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Disables the specified global AST transformations. In order to avoid class loading side effects, it is not recommended
-     * to use MyASTTransformation.class.getName() by directly use the class name as a string. Disabled AST transformations
-     * only apply to automatically loaded global AST transformations, that is to say transformations defined in a
+     * Disables the specified global AST transformations. In order to avoid class loading side effects,
+     * it is not recommended to use MyASTTransformation.class.getName() but instead directly use the class
+     * name as a string. Disabled AST transformations only apply to automatically loaded global AST
+     * transformations, that is to say transformations defined in a
      * META-INF/services/org.codehaus.groovy.transform.ASTTransformation file.
-     * If you explicitly add a global AST transformation
-     * in your compilation process, for example using the {@link org.codehaus.groovy.control.customizers.ASTTransformationCustomizer} or
-     * using a {@link org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation}, then nothing will prevent
-     * the transformation from being loaded.
+     * If you explicitly add a global AST transformation in your compilation process,
+     * for example using the {@link org.codehaus.groovy.control.customizers.ASTTransformationCustomizer} or
+     * using a {@link org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation},
+     * then nothing will prevent the transformation from being loaded.
      *
      * @param disabledGlobalASTTransformations a set of fully qualified class names of global AST transformations
      * which should not be loaded.

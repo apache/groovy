@@ -16,32 +16,42 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.lang;
+package groovy.lang
+
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CompileUnit
+import org.codehaus.groovy.ast.ConstructorNode
+import org.codehaus.groovy.ast.ModuleNode
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.objectweb.asm.Opcodes
 
 import java.security.CodeSource
-import org.codehaus.groovy.control.*
-import org.codehaus.groovy.ast.*
-import org.codehaus.groovy.classgen.*
-import org.objectweb.asm.Opcodes
 import java.util.concurrent.atomic.AtomicInteger
 
-public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
+class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
 
     private final GroovyClassLoader classLoader = new GroovyClassLoader()
 
-    private boolean contains(String[] paths, String eval) {
+    private static boolean contains(String[] paths, String eval) {
         try {
-            eval = (new File(eval)).toURI().toURL().getFile();
+            eval = (new File(eval)).toURI().toURL().getFile()
         } catch (MalformedURLException e) {
-            return false;
+            return false
         }
         for (it in paths) {
-            if (eval.equals(it)) return true;
+            if (eval.equals(it)) return true
         }
-        return false;
+        return false
     }
 
-    public void testAddsAClasspathEntryOnlyIfItHasNotAlreadyBeenAdded() {
+    void testAddsAClasspathEntryOnlyIfItHasNotAlreadyBeenAdded() {
         String newClasspathEntry = "/tmp"
         int initialNumberOfClasspathEntries = classLoader.getClassPath().length
 
@@ -49,17 +59,17 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         assert initialNumberOfClasspathEntries + 1 == classLoader.getClassPath().length
         assert contains(classLoader.getClassPath(), newClasspathEntry)
 
-        classLoader.addClasspath(newClasspathEntry);
+        classLoader.addClasspath(newClasspathEntry)
         assert initialNumberOfClasspathEntries + 1 == classLoader.getClassPath().length
         assert contains(classLoader.getClassPath(), newClasspathEntry)
     }
 
-    def getPaths(URLClassLoader ucl) {
+    static getPaths(URLClassLoader ucl) {
         def urls = ucl.getURLs()
         return urls.findAll {!it.file.endsWith(".jar")}
     }
 
-    def getPaths(String path) {
+    static getPaths(String path) {
         int start = 0, end = 0
         String sep = File.pathSeparator
         def ret = []
@@ -76,19 +86,18 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         return ret
     }
 
-
-    public void testParseThenLoadByName() {
+    void testParseThenLoadByName() {
         def loader = new GroovyClassLoader()
         def clazz = loader.parseClass("println 'howdy'")
         assert clazz == loader.loadClass(clazz.name)
     }
 
-    public void testParseThenLoadByNameWeak() {
+    void testParseThenLoadByNameWeak() {
         def loader = new GroovyClassLoader()
         assert null != loader.loadClass(loader.parseClass("println 'howdy'").name)
     }
 
-    public void testClassNotFoundIsNotHidden() {
+    void testClassNotFoundIsNotHidden() {
         def paths = []
         def loader = this.class.classLoader
         while (loader != null) {
@@ -103,7 +112,7 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         def file, tempFolder
         try {
             // On the latest update of the Mac JDK (as of 2009/06/24), the default placement of temp files seems problematic
-            // specifying explicitely a custom target directory seems to solve the build issue.
+            // specifying explicitly a custom target directory seems to solve the build issue.
             tempFolder = new File('./target/generated')
             tempFolder.mkdir()
             file = File.createTempFile("Foo", ".groovy", tempFolder)
@@ -124,7 +133,7 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
                 assert ncdfe.message.indexOf("TestCase") > 0 || ncdfe.message.indexOf("cobertura") > 0
             } catch (MultipleCompilationErrorsException mce) {
                 mce.errorCollector.errors.each { err ->
-                    assert err instanceof org.codehaus.groovy.control.messages.SyntaxErrorMessage
+                    assert err instanceof SyntaxErrorMessage
                     assert err.cause.message.indexOf("TestCase") > 0 || err.cause.message.indexOf("cobertura") > 0
                 }
             }
@@ -136,11 +145,11 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
                         tempFolder.delete()
                     }
                 }
-            } catch (Throwable t) { /*drop it*/ }
+            } catch (Throwable ignore) { /*drop it*/ }
         }
     }
 
-    public void testClassPathNotDerived() {
+    void testClassPathNotDerived() {
         def config = new CompilerConfiguration()
         def loader1 = new GroovyClassLoader(null, config)
         config = new CompilerConfiguration()
@@ -157,9 +166,9 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         assert urls.length == 0
     }
 
-    public void testMultithreading() {
+    void testMultithreading() {
         def config = new CompilerConfiguration()
-        config.recompileGroovySource = true;
+        config.recompileGroovySource = true
 
         def loader = new GroovyClassLoaderTestCustomGCL(config)
 
@@ -176,31 +185,31 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         assert GroovyClassLoaderTestFoo2 == loader.loadClass("Foox")
     }
 
-    public void testAdditionalPhaseOperation() {
+    void testAdditionalPhaseOperation() {
         def loader = new GroovyClassLoaderTestCustomPhaseOperation()
         def ret = loader.parseClass("""class Foo{}""")
         def field = ret.declaredFields.find {it.name == "id" && it.type == Long.TYPE}
         assert field != null
     }
 
-    public void testEncoding() {
+    void testEncoding() {
+        def config = new CompilerConfiguration()
+        config.sourceEncoding = "UTF-8"
         def encoding = System.getProperty("file.encoding")
         System.setProperty("file.encoding", "US-ASCII")
-        def gcl = new GroovyClassLoader()
-        gcl.config.sourceEncoding = "UTF-8"
+        def gcl = new GroovyClassLoader(this.class.classLoader, config)
         // 20AC should be the currency symbol for EURO
         def clazz = gcl.parseClass('return "\u20AC"')
         def result = clazz.newInstance().run()
         int i = result[0]
 
         try {
-            // 0xFFFD is used if the original chracter was not found,
+            // 0xFFFD is used if the original character was not found,
             // it is the famous ? that can often be seen. So if this here
             // fails, then the String conversion failed at one point
             assert i != 0xFFFD
         } finally {
             System.setProperty("file.encoding", encoding)
-            gcl.config.sourceEncoding = encoding
         }
     }
 
@@ -230,8 +239,8 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         verifyPackageDetails(clazz, "pkg3")
     }
     
-    void verifyPackageDetails(clazz, expectedPkgName) {
-        assert clazz.package instanceof java.lang.Package
+    static void verifyPackageDetails(clazz, expectedPkgName) {
+        assert clazz.package instanceof Package
         assert clazz.package.name == expectedPkgName
     }
 }
@@ -240,8 +249,8 @@ class GroovyClassLoaderTestFoo1 {}
 class GroovyClassLoaderTestFoo2 {}
 
 class GroovyClassLoaderTestCustomGCL extends GroovyClassLoader {
-    def GroovyClassLoaderTestCustomGCL(config) {
-        super(null, config);
+    GroovyClassLoaderTestCustomGCL(config) {
+        super(null, config)
     }
     def counter = new AtomicInteger(0)
     protected Class recompile(URL source, String name, Class oldClass) {
@@ -262,7 +271,7 @@ class GroovyClassLoaderTestCustomGCL extends GroovyClassLoader {
 
 class GroovyClassLoaderTestPropertyAdder extends CompilationUnit.PrimaryClassNodeOperation {
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-        classNode.addProperty("id", ClassNode.ACC_PUBLIC, ClassHelper.long_TYPE, null, null, null);
+        classNode.addProperty("id", ClassNode.ACC_PUBLIC, ClassHelper.long_TYPE, null, null, null)
     }
 }
 
