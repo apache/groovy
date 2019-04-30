@@ -411,7 +411,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         msg.append(" in ");
         msg.append(superMethod.getDeclaringClass().getName());
         msg.append("; attempting to assign weaker access privileges; was ");
-        msg.append(superMethod.isPublic() ? "public" : "protected");
+        msg.append(superMethod.isPublic() ? "public" : (superMethod.isProtected() ? "protected" : "package-private"));
         addError(msg.toString(), method);
     }
 
@@ -463,8 +463,9 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         for (MethodNode superMethod : cn.getSuperClass().getMethods(mn.getName())) {
             Parameter[] superParams = superMethod.getParameters();
             if (!hasEqualParameterTypes(params, superParams)) continue;
-            if ((mn.isPrivate() && !superMethod.isPrivate()) ||
-                    (mn.isProtected() && superMethod.isPublic())) {
+            if ((mn.isPrivate() && !superMethod.isPrivate())
+                    || (mn.isProtected() && !superMethod.isProtected() && !superMethod.isPrivate())
+                    || (!mn.isPrivate() && !mn.isProtected() && !mn.isPublic() && (superMethod.isPublic() || superMethod.isProtected()))) {
                 addWeakerAccessError(cn, mn, params, superMethod);
                 return;
             }
