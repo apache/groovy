@@ -1857,7 +1857,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (visitor != null) visitor.visitProperty(propertyNode);
         storeWithResolve(propertyNode.getOriginType(), receiver, propertyNode.getDeclaringClass(), propertyNode.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
-            delegationData = adjustData(delegationData, receiver, typeCheckingContext.delegationMetadata);
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
         return true;
@@ -3281,53 +3280,51 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private static boolean isTraitHelper(ClassNode node) {
-        return node instanceof InnerClassNode && Traits.isTrait(node.getOuterClass());
-    }
-
     protected void addReceivers(final List<Receiver<String>> receivers,
                                 final Collection<Receiver<String>> owners,
                                 final boolean implicitThis) {
-        if (typeCheckingContext.delegationMetadata == null || !implicitThis) {
+        if (!implicitThis || typeCheckingContext.delegationMetadata == null) {
             receivers.addAll(owners);
-            return;
-        }
-
-        DelegationMetadata dmd = typeCheckingContext.delegationMetadata;
-        StringBuilder path = new StringBuilder();
-        while (dmd != null) {
-            int strategy = dmd.getStrategy();
-            ClassNode delegate = dmd.getType();
-            dmd = dmd.getParent();
-            switch (strategy) {
-                case Closure.OWNER_FIRST:
-                    receivers.addAll(owners);
-                    path.append("delegate");
-                    doAddDelegateReceiver(receivers, path, delegate);
-                    break;
-                case Closure.DELEGATE_FIRST:
-                    path.append("delegate");
-                    doAddDelegateReceiver(receivers, path, delegate);
-                    receivers.addAll(owners);
-                    break;
-                case Closure.OWNER_ONLY:
-                    receivers.addAll(owners);
-                    dmd = null;
-                    break;
-                case Closure.DELEGATE_ONLY:
-                    path.append("delegate");
-                    doAddDelegateReceiver(receivers, path, delegate);
-                    dmd = null;
-                    break;
-            }
-            path.append('.');
+        } else {
+            addReceivers(receivers, owners, typeCheckingContext.delegationMetadata, "");
         }
     }
 
-    private static void doAddDelegateReceiver(final List<Receiver<String>> receivers, final StringBuilder path, final ClassNode delegate) {
-        receivers.add(new Receiver<String>(delegate, path.toString()));
-        if (isTraitHelper(delegate)) {
-            receivers.add(new Receiver<String>(delegate.getOuterClass(), path.toString()));
+    private static void addReceivers(final List<Receiver<String>> receivers,
+                                     final Collection<Receiver<String>> owners,
+                                     final DelegationMetadata dmd,
+                                     final String path) {
+        int strategy = dmd.getStrategy();
+        switch (strategy) {
+            case Closure.DELEGATE_ONLY:
+            case Closure.DELEGATE_FIRST:
+                addDelegateReceiver(receivers, dmd.getType(), path + "delegate");
+                if (strategy == Closure.DELEGATE_FIRST) {
+                    if (dmd.getParent() == null) {
+                        receivers.addAll(owners);
+                    } else {
+                        addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
+                    }
+                }
+                break;
+            case Closure.OWNER_ONLY:
+            case Closure.OWNER_FIRST:
+                if (dmd.getParent() == null) {
+                    receivers.addAll(owners);
+                } else {
+                    addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
+                }
+                if (strategy == Closure.OWNER_FIRST) {
+                    addDelegateReceiver(receivers, dmd.getType(), path + "delegate");
+                }
+                break;
+        }
+    }
+
+    private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
+        receivers.add(new Receiver<String>(delegate, path));
+        if (Traits.isTrait(delegate.getOuterClass())) {
+            receivers.add(new Receiver<String>(delegate.getOuterClass(), path));
         }
     }
 
@@ -3564,7 +3561,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             }
                             String data = chosenReceiver.getData();
                             if (data != null) {
-                                data = adjustData(data, chosenReceiver.getType(), typeCheckingContext.delegationMetadata);
                                 // the method which has been chosen is supposed to be a call on delegate or owner
                                 // so we store the information so that the static compiler may reuse it
                                 call.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, data);
@@ -3693,39 +3689,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             newParameters[j] = new Parameter(DYNAMIC_TYPE, "p" + System.nanoTime());
         }
         return newParameters;
-    }
-
-    // adjust data to handle cases like nested .with since we didn't have enough information earlier
-    // TODO see if we can make the earlier detection smarter and then remove this adjustment
-    private static String adjustData(String data, ClassNode type, DelegationMetadata dmd) {
-        StringBuilder path = new StringBuilder();
-        int i = 0;
-        String[] propertyPath = data.split("\\.");
-        while (dmd != null) {
-            int strategy = dmd.getStrategy();
-            ClassNode delegate = dmd.getType();
-            dmd = dmd.getParent();
-            switch (strategy) {
-                case Closure.DELEGATE_FIRST:
-                    if (!delegate.isDerivedFrom(CLOSURE_TYPE) && !delegate.isDerivedFrom(type)) {
-                        path.append("owner"); // must be non-delegate case
-                    } else {
-                        path.append("delegate");
-                    }
-                    break;
-                default:
-                    if (i >= propertyPath.length) return data;
-                    path.append(propertyPath[i]);
-            }
-            if (type.equals(delegate)) break;
-            i++;
-            if (dmd != null) path.append('.');
-        }
-        String result = path.toString();
-        if (!result.isEmpty()) {
-            return result;
-        }
-        return data;
     }
 
     /**
