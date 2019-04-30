@@ -16,11 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package gls.generics
 
 import gls.CompilableTestSupport
 
-class Groovy6167Bug extends CompilableTestSupport {
+// GROOVY-6167
+class GenericsUsageOrderingTest extends CompilableTestSupport {
     void testGroovy6167() {
         shouldCompile '''
         public class Foo<T extends List<X>, X extends Number> {}
@@ -61,7 +62,7 @@ class Groovy6167Bug extends CompilableTestSupport {
                 X x = t.get(0)
                 return x
             }
-            
+
             static void main(String[] args) {
                 def f = new Foo<ArrayList<Integer>, Integer>()
                 def list = new ArrayList<Integer>()
@@ -83,7 +84,7 @@ class Groovy6167Bug extends CompilableTestSupport {
                 X x = t.get(0)
                 return x
             }
-            
+
             static void main(String[] args) {
                 def f = new Foo<ArrayList<Integer>, Integer>()
                 assert 123 == f.getFirstElement()
@@ -97,18 +98,18 @@ class Groovy6167Bug extends CompilableTestSupport {
         @groovy.transform.CompileStatic
         public class Foo<T extends List<X>, X extends Number> {
             T t
-            
+
             {
                 def list = new ArrayList<Integer>()
                 list.add(123)
                 t = list
             }
-        
+
             X getFirstElement() {
                 X x = t.get(0)
                 return x
             }
-            
+
             static void main(String[] args) {
                 def f = new Foo<ArrayList<Integer>, Integer>()
                 assert 123 == f.getFirstElement()
@@ -123,16 +124,16 @@ class Groovy6167Bug extends CompilableTestSupport {
         public class Foo<T extends List<X>, X extends Number> {
             X getFirstElement(List<X> list) {
                 X x = list.get(0)
-                
+
                 assert Number == x.getClass().getGenericSuperclass()
-                
+
                 return x
             }
-            
+
             Number getFirstNumber(T t) {
                 return getFirstElement(t)
             }
-            
+
             static void main(String[] args) {
                 def f = new Foo<ArrayList<Integer>, Integer>()
                 def list = new ArrayList<Integer>()
@@ -151,7 +152,7 @@ class Groovy6167Bug extends CompilableTestSupport {
                 X x = t.get(0)
                 return x
             }
-            
+
             static void main(String[] args) {
                 def f = new Foo<ArrayList<Integer>, Integer>()
                 def list = new ArrayList<Integer>()
@@ -161,6 +162,5 @@ class Groovy6167Bug extends CompilableTestSupport {
         }
         '''
     }
-
 
 }

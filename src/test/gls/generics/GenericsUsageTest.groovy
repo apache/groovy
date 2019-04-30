@@ -18,215 +18,12 @@
  */
 package gls.generics
 
+import gls.CompilableTestSupport
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.ParserVersion
 
-class GenericsTest extends GenericsTestBase {
-
-    void testClassWithoutParameterExtendsClassWithFixedParameter() {
-        createClassInfo """
-            class B extends ArrayList<Long> {}
-        """
-        assert signatures == [
-                "class": "Ljava/util/ArrayList<Ljava/lang/Long;>;Lgroovy/lang/GroovyObject;",
-        ]
-    }
-
-    void testMultipleImplementsWithParameter() {
-        createClassInfo """
-            abstract class B<T> implements Runnable,List<T> {}
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/Runnable;Ljava/util/List<TT;>;Lgroovy/lang/GroovyObject;"]
-    }
-
-    void testImplementsWithParameter() {
-        createClassInfo """
-            abstract class B<T> implements List<T> {}
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/List<TT;>;Lgroovy/lang/GroovyObject;"]
-    }
-
-    void testExtendsWithParameter() {
-        createClassInfo """
-            class B<T> extends ArrayList<T> {}
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/util/ArrayList<TT;>;Lgroovy/lang/GroovyObject;"]
-    }
-
-    void testNestedExtendsWithParameter() {
-        createClassInfo """
-            class B<T> extends HashMap<T,List<T>> {}
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/util/HashMap<TT;Ljava/util/List<TT;>;>;Lgroovy/lang/GroovyObject;"]
-    }
-
-    void testBoundInterface() {
-        createClassInfo """
-            class B<T extends List> {}
-        """
-        assert signatures == ["class": "<T::Ljava/util/List;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;"]
-    }
-
-    void testNestedReuseOfParameter() {
-        createClassInfo """
-            class B<Y,T extends Map<String,Map<Y,Integer>>> {}
-        """
-        assert signatures == ["class": "<Y:Ljava/lang/Object;T::Ljava/util/Map<Ljava/lang/String;Ljava/util/Map<TY;Ljava/lang/Integer;>;>;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;"]
-    }
-
-    void testFieldWithParameter() {
-        createClassInfo """
-            class B { public Collection<Integer> books }
-        """
-        assert signatures == [books: "Ljava/util/Collection<Ljava/lang/Integer;>;"]
-    }
-
-    void testFieldReusedParameter() {
-        createClassInfo """
-            class B<T> { public Collection<T> collection }
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                collection: "Ljava/util/Collection<TT;>;"]
-    }
-
-    void testParameterAsReturnType() {
-        createClassInfo """
-            class B {
-                static <T> T foo() {return null}
-            }
-        """
-        assert signatures == ["foo()Ljava/lang/Object;": "<T:Ljava/lang/Object;>()TT;"]
-    }
-
-    void testParameterAsReturnTypeAndParameter() {
-        createClassInfo """
-            class B {
-                static <T> T foo(T t) {return null}
-            }
-        """
-        assert signatures == ["foo(Ljava/lang/Object;)Ljava/lang/Object;": "<T:Ljava/lang/Object;>(TT;)TT;"]
-    }
-
-    void testParameterAsMethodParameter() {
-        createClassInfo """
-            class B<T> {
-                void foo(T t){}
-            }
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                "foo(Ljava/lang/Object;)V": "(TT;)V"]
-    }
-
-    void testParameterAsNestedMethodParameter() {
-        createClassInfo """
-            class B<T> {
-                void foo(List<T> t){}
-            }
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                "foo(Ljava/util/List;)V": "(Ljava/util/List<TT;>;)V"]
-    }
-
-    void testParameterAsNestedMethodParameterReturningInterface() {
-        createClassInfo """
-            class B<T> {
-                Cloneable foo(List<T> t){}
-            }
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                "foo(Ljava/util/List;)Ljava/lang/Cloneable;": "(Ljava/util/List<TT;>;)Ljava/lang/Cloneable;"]
-    }
-
-    void testArray() {
-        createClassInfo """
-            class B<T> {
-                T[] get(T[] arr) {return null}
-            }
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                "get([Ljava/lang/Object;)[Ljava/lang/Object;": "([TT;)[TT;"]
-    }
-
-    void testMultipleBounds() {
-        createClassInfo """
-            class Pair<    A extends Comparable<A> & Cloneable , 
-                        B extends Cloneable & Comparable<B> > 
-            {
-                A foo(){}
-                B bar(){}
-            }
-        """
-        assert signatures ==
-                ["class": "<A::Ljava/lang/Comparable<TA;>;:Ljava/lang/Cloneable;B::Ljava/lang/Cloneable;:Ljava/lang/Comparable<TB;>;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                        "foo()Ljava/lang/Comparable;": "()TA;",
-                        "bar()Ljava/lang/Cloneable;": "()TB;"]
-    }
-
-    void testWildCard() {
-        createClassInfo """
-            class B {
-                private Collection<?> f1 
-                private List<? extends Number> f2 
-                private Comparator<? super String> f3 
-                private Map<String,?> f4  
-            }
-        """
-        assert signatures == [
-                f1: "Ljava/util/Collection<*>;",
-                f2: "Ljava/util/List<+Ljava/lang/Number;>;",
-                f3: "Ljava/util/Comparator<-Ljava/lang/String;>;",
-                f4: "Ljava/util/Map<Ljava/lang/String;*>;"
-        ]
-    }
-
-    void testwildcardWithBound() {
-        createClassInfo """
-            class Something<T extends Number> {
-                List<? super T> dependency
-            }
-        """
-        assert signatures == [
-                "class":    "<T:Ljava/lang/Number;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                dependency: "Ljava/util/List<-TT;>;",
-                "setDependency(Ljava/util/List;)V"  : "(Ljava/util/List<-TT;>;)V",
-                "getDependency()Ljava/util/List;"   : "()Ljava/util/List<-TT;>;",
-        ]
-    }
-
-    void testParameterAsParameterForReturnTypeAndFieldClass() {
-        createClassInfo """
-               class B<T> {
-                   private T owner;
-                   Class<T> getOwnerClass(){}
-   
-            } 
-        """
-        assert signatures == [
-                "class": "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;",
-                "owner": "TT;",
-                "getOwnerClass()Ljava/lang/Class;": "()Ljava/lang/Class<TT;>;"
-        ]
-    }
-
-    void testInterfaceWithParameter() {
-        createClassInfo """
-            interface B<T> {}
-        """
-        assert signatures == ["class": "<T:Ljava/lang/Object;>Ljava/lang/Object;"]
-    }
-
-
-    void testTypeParamAsBound() {
-        createClassInfo """
-    class Box<A> {
-      public <V extends A> void foo(V v) {
-      }
-
-    }
-        """
-        assert signatures == ["foo(Ljava/lang/Object;)V": "<V:TA;>(TV;)V", "class": "<A:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;"]
-    }
+class GenericsUsageTest extends CompilableTestSupport {
 
     void testInvalidParameterUsage() {
         shouldNotCompile """
@@ -246,45 +43,45 @@ class GenericsTest extends GenericsTestBase {
 
     void testCovariantReturn() {
         shouldNotCompile """
-          class A<T> {
-              T foo(T t) {1}
-           }
+            class A<T> {
+                T foo(T t) {1}
+            }
 
-          class B extends A<Long>{
-              String foo(Long l){"2"}
-          }
+            class B extends A<Long>{
+                String foo(Long l){"2"}
+            }
         """
 
         assertScript """
-          class A<T> {
-              T foo(T t) {1}
-           }
+            class A<T> {
+                T foo(T t) {1}
+            }
 
-          class B extends A<Long>{
-              Long foo(Long l){2}
-          }
-          def b = new B();
-          try {
-            b.foo(new Object())
-            assert false
-          } catch (ClassCastException cce) {
-            assert true
-          }
-          assert b.foo((Long) 1) == 2
+            class B extends A<Long>{
+                Long foo(Long l){2}
+            }
+            def b = new B();
+            try {
+                b.foo(new Object())
+                assert false
+            } catch (ClassCastException cce) {
+                assert true
+            }
+            assert b.foo((Long) 1) == 2
         """
     }
 
     void testCovariantReturnWithInterface() {
         assertScript """
-        import java.util.concurrent.*
+            import java.util.concurrent.*
 
-        class CallableTask implements Callable<String> {
-            String call() { "x" }
-        } 
-        
-        def task = new CallableTask()
-        assert task.call() == "x"
-      """
+            class CallableTask implements Callable<String> {
+                String call() { "x" }
+            }
+
+            def task = new CallableTask()
+            assert task.call() == "x"
+        """
     }
 
     void testCovariantReturnWithEmptyAbstractClassesInBetween() {
@@ -335,62 +132,62 @@ class GenericsTest extends GenericsTestBase {
         // "as ThreadLocal<Integer>\n" did not compile because the nls
         // was swallowed and could not be used to end the expression
         assertScript """
-import java.util.concurrent.atomic.AtomicInteger
+            import java.util.concurrent.atomic.AtomicInteger
 
-class ThreadId {
-    private static final AtomicInteger nextId = new AtomicInteger(0)
-    private static final ThreadLocal<Integer> threadId = [
-        initialValue: { return nextId.getAndIncrement() }
-    ] as ThreadLocal<Integer>
+            class ThreadId {
+                private static final AtomicInteger nextId = new AtomicInteger(0)
+                private static final ThreadLocal<Integer> threadId = [
+                    initialValue: { return nextId.getAndIncrement() }
+                ] as ThreadLocal<Integer>
 
-    static int get() {
-        println "Thread ID: " + threadId.get()
-        return threadId.get()
-    }
+                static int get() {
+                    println "Thread ID: " + threadId.get()
+                    return threadId.get()
+                }
 
- }
- // we do not actually want to execute something, just
- // ensure this compiles, so we do a dummy command here
- assert ThreadId != null
-       """
+            }
+            // we do not actually want to execute something, just
+            // ensure this compiles, so we do a dummy command here
+            assert ThreadId != null
+        """
     }
 
     void testCompilationWithMissingClosingBracketsInGenerics() {
         if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 def list1 = new ArrayList<Integer()
             """
 
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 List<Integer list2 = new ArrayList<Integer>()
             """
 
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 def c = []
                 for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
             """
 
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 def m(Class<Integer someParam) {}
             """
 
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
             """
 
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
             """
 
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
             """
 
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 def List<List<Integer> history = new ArrayList<List<Integer>>()
             """
 
-            shouldFailCompilationWithExpectedMessage """
+            shouldFailCompilationWithDefaultMessage """
                 def List<List<Integer>> history = new ArrayList<List<Integer>()
             """
         } else {
@@ -433,10 +230,9 @@ class ThreadId {
         }
     }
 
-    private void shouldFailCompilationWithExpectedMessage(scriptText) {
+    private void shouldFailCompilationWithDefaultMessage(scriptText) {
         shouldFailCompilationWithMessage scriptText, "Missing closing bracket '>' for generics types"
     }
-
 
     private void shouldFailCompilationWithMessage(scriptText, String errorMessage) {
         shouldFailCompilationWithMessages(scriptText, [errorMessage])
@@ -471,6 +267,7 @@ class ThreadId {
         }
     }
 
+    // GROOVY-3975
     void testGenericsInfoForClosureParameters() {
         def cl = { List<String> s -> }
         def type = cl.getClass().getMethod("call", List).genericParameterTypes[0]
@@ -501,14 +298,6 @@ class ThreadId {
                 }
             }
         '''
-    }
-
-    void "test method with generic return type defined at class level"() {
-        // class Bar should compile successfully
-
-        // the classes it references should be available as class files to check for ASM resolving
-        //  so they're defined in compiled GenericsTestData and not loaded from text in the test
-        createClassInfo 'class Bar extends gls.generics.GenericsTestData.Abstract<String> {}'
     }
 
     void testFriendlyErrorMessageForGenericsArityErrorsGroovy7865() {
@@ -613,11 +402,10 @@ class ThreadId {
             class C12 implements I2<String> {} // String not a Number
             class C13 implements I2<C10> {} // C10 is a Number
         ''', [
-            'The type String is not a valid substitute for the bounded parameter <T extends I1>',
-            'The type C2 is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
-            'The type Integer is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
-            'The type String is not a valid substitute for the bounded parameter <T extends java.lang.Number>'
+                'The type String is not a valid substitute for the bounded parameter <T extends I1>',
+                'The type C2 is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
+                'The type Integer is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
+                'The type String is not a valid substitute for the bounded parameter <T extends java.lang.Number>'
         ]
-
     }
 }
