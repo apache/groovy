@@ -16,30 +16,36 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package gls.ch08.s04
+package gls.classes.methods
 
 import gls.CompilableTestSupport
 
 class RepetitiveMethodTest extends CompilableTestSupport {
 
     void testRepetitiveMethod() {
-        def text = """
+        def message = shouldNotCompile('''
             class A  {
                 void foo() {}
                 void foo() {}
             }
-        """
-        shouldNotCompile(text)
+        ''')
+        assert message.contains('duplicates another method of the same signature')
     }
 
-    void testRepetitiveMethodsCreationForBooleanProperties() {
-        shouldCompile """
-            class BoolTest {
+    void testRepetitiveMethodsAllowedForProperties() {
+        shouldCompile '''
+            class PropertyOverride {
                 boolean success
+                int num
+
                 boolean isSuccess() {
-                    return success
+                    success
+                }
+
+                int getNum() {
+                    num
                 }
             }
-        """
+        '''
     }
 }
