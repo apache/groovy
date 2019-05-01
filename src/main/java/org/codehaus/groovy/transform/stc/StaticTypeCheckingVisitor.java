@@ -527,23 +527,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Given a field node, checks if we are accessing or setting a public or protected field from an inner class.
+     * Checks valid cases for accessing a field from an inner class.
      */
-    private String checkOrMarkInnerFieldAccess(Expression source, FieldNode fn, boolean lhsOfAssignment, String delegationData) {
-        if (fn == null || fn.isStatic()) return delegationData;
-        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        ClassNode declaringClass = fn.getDeclaringClass();
-        // private handled elsewhere
-        if ((fn.isPublic() || fn.isProtected()) &&
-                (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) &&
-                declaringClass.getModule() == enclosingClassNode.getModule() && !lhsOfAssignment && enclosingClassNode.isDerivedFrom(declaringClass)) {
-            if (source instanceof PropertyExpression) {
-                PropertyExpression pe = (PropertyExpression) source;
-                // this and attributes handled elsewhere
-                if ("this".equals(pe.getPropertyAsString()) || source instanceof AttributeExpression) return delegationData;
-                pe.getObjectExpression().putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, "owner");
+    private String checkOrMarkInnerPropertyOwnerAccess(Expression source, FieldNode fn, boolean lhsOfAssignment, String delegationData) {
+        if (fn == null || fn.isStatic() || fn.isPrivate() || "delegate".equals(delegationData)) return delegationData;
+        if (source instanceof PropertyExpression && typeCheckingContext.getEnclosingClosure() != null) {
+            PropertyExpression pe = (PropertyExpression) source;
+            boolean ownerProperty = !("this".equals(pe.getPropertyAsString()));
+            if (ownerProperty && pe.getObjectExpression() instanceof VariableExpression) {
+                Variable accessedVariable = ((VariableExpression) pe.getObjectExpression()).getAccessedVariable();
+                Variable declaredVariable = typeCheckingContext.getEnclosingClosure().getClosureExpression().getVariableScope().getDeclaredVariable(pe.getObjectExpression().getText());
+                if (accessedVariable != null && accessedVariable == declaredVariable) ownerProperty = false;
             }
-            return "owner";
+            if (ownerProperty) {
+                delegationData = "owner";
+                pe.getObjectExpression().putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
+            }
         }
         return delegationData;
     }
@@ -1846,7 +1845,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (visitor != null) visitor.visitField(field);
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
-        delegationData = checkOrMarkInnerFieldAccess(expressionToStoreOn, field, lhsOfAssignment, delegationData);
+        delegationData = checkOrMarkInnerPropertyOwnerAccess(expressionToStoreOn, field, lhsOfAssignment, delegationData);
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
