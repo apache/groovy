@@ -41,12 +41,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
+
 public class WriterController {
     private static final String GROOVY_LOG_CLASSGEN = "groovy.log.classgen";
-    private static final boolean LOG_CLASSGEN;
-    static {
-        LOG_CLASSGEN = Boolean.valueOf(System.getProperty(GROOVY_LOG_CLASSGEN));
-    }
+    private final boolean LOG_CLASSGEN = getBooleanSafe(GROOVY_LOG_CLASSGEN);
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
