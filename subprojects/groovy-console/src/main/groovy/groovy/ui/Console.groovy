@@ -739,9 +739,21 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void caretUpdate(CaretEvent e){
-        textSelectionStart = Math.min(e.dot,e.mark)
-        textSelectionEnd = Math.max(e.dot,e.mark)
+        textSelectionStart = Math.min(dot(e), mark(e))
+        textSelectionEnd = Math.max(dot(e), mark(e))
         setRowNumAndColNum()
+    }
+
+    // GROOVY-8339: to avoid illegal access to a non-visible implementation class - can be removed if a more general solution is found
+    @CompileStatic
+    int dot(CaretEvent e) {
+        e.dot
+    }
+
+    // GROOVY-8339: to avoid illegal access to a non-visible implementation class - can be removed if a more general solution is found
+    @CompileStatic
+    int mark(CaretEvent e) {
+        e.mark
     }
 
     void clearOutput(EventObject evt = null) {

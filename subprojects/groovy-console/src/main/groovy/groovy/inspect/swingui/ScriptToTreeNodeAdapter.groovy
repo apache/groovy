@@ -20,6 +20,7 @@ package groovy.inspect.swingui
 
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
+import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.GroovyBugError
@@ -230,9 +231,9 @@ class ScriptToTreeNodeAdapter {
                     // instead reference the value through the leftExpression property, which is the same
                     if (node instanceof DeclarationExpression &&
                             (name == 'variableExpression' || name == 'tupleExpression')) {
-                        value = node.leftExpression.toString()
+                        value = toString(node.leftExpression)
                     } else {
-                        value = it.getProperty(node).toString()
+                        value = toString(it.getProperty(node))
                     }
                 } catch (GroovyBugError reflectionArtefact) {
                     // compiler throws error if it thinks a field is being accessed
@@ -244,6 +245,12 @@ class ScriptToTreeNodeAdapter {
                 [name, value, type]
             }?.
             sort { it[0] }
+    }
+
+    // GROOVY-8339: to avoid illegal access to a non-visible implementation class - can be removed if a more general solution is found
+    @CompileStatic
+    String toString(Object o) {
+        o.toString()
     }
 
     /**

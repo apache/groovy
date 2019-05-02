@@ -140,12 +140,12 @@ FontMetrics fm = g.getFontMetrics(outputArea.font)
 
 outputArea.preferredSize = [
     prefs.getInt('outputAreaWidth', fm.charWidth(0x77) * 81),
-    prefs.getInt('outputAreaHeight', (fm.getHeight() + fm.leading) * 12)
+    prefs.getInt('outputAreaHeight', (fm.getHeight() + fm.getLeading()) * 12)
 ] as Dimension
 
 inputEditor.preferredSize = [
     prefs.getInt('inputAreaWidth', fm.charWidth(0x77) * 81),
-    prefs.getInt('inputAreaHeight', (fm.getHeight() + fm.leading) * 12)
+    prefs.getInt('inputAreaHeight', (fm.getHeight() + fm.getLeading()) * 12)
 ] as Dimension
 
 origDividerSize = -1
