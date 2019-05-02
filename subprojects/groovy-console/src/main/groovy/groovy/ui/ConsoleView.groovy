@@ -69,6 +69,21 @@ container(consoleFrame) {
     build(statusBarClass)
 }
 
+inputEditor.textEditor.componentPopupMenu = popupMenu {
+    menuItem(cutAction)
+    menuItem(copyAction)
+    menuItem(pasteAction)
+    menuItem(selectAllAction)
+    separator()
+    menuItem(undoAction)
+    menuItem(redoAction)
+}
+
+outputArea.componentPopupMenu = popupMenu {
+    menuItem(copyAction)
+    menuItem(selectAllAction)
+    menuItem(clearOutputAction)
+}
 
 controller.promptStyle = promptStyle
 controller.commandStyle = commandStyle

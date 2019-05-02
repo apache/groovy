@@ -1608,7 +1608,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void selectAll(EventObject evt = null) {
-        invokeTextAction(evt, { source -> source.selectAll() })
+        invokeTextAction(evt, { source -> source.selectAll() }, copyFromComponent ?: inputArea)
     }
 
     void setRowNumAndColNum() {
