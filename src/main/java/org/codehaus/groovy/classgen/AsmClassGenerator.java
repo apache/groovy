@@ -989,6 +989,7 @@ public class AsmClassGenerator extends ClassGenerator {
                                             new ClassExpression(outer),
                                             expression.getProperty()
                                     );
+                                    pexp.getObjectExpression().setSourcePosition(objectExpression);
                                     pexp.visit(controller.getAcg());
                                     return;
                                 }
