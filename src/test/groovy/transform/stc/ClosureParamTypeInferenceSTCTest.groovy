@@ -1325,4 +1325,19 @@ def method() {
 method()
 '''
     }
+
+    void testGroovy9058() {
+        assertScript '''
+            List<Object[]> bar() { [['fee', 'fi'] as Object[], ['fo', 'fum'] as Object[]] }
+
+            def foo() {
+                def result = []
+                List<Object[]> bar = bar()
+                bar.each { row -> result << row[0].toString().toUpperCase() }
+                result
+            }
+
+            assert foo() == ['FEE', 'FO']
+        '''
+    }
 }
