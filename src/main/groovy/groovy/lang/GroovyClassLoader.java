@@ -474,58 +474,168 @@ public class GroovyClassLoader extends URLClassLoader {
             timeStamp = System.currentTimeMillis();
         }
 
+        @Override
         public void addClasspath(String path) {
             delegate.addClasspath(path);
         }
 
+        @Override
         public void clearCache() {
             delegate.clearCache();
         }
 
+        @Override
         public URL findResource(String name) {
             return delegate.findResource(name);
         }
 
-        public Enumeration findResources(String name) throws IOException {
+        @Override
+        public Enumeration<URL> findResources(String name) throws IOException {
             return delegate.findResources(name);
         }
 
+        @Override
         public Class[] getLoadedClasses() {
             return delegate.getLoadedClasses();
         }
 
+        @Override
         public URL getResource(String name) {
             return delegate.getResource(name);
         }
 
+        @Override
         public InputStream getResourceAsStream(String name) {
             return delegate.getResourceAsStream(name);
         }
 
+        @Override
         public GroovyResourceLoader getResourceLoader() {
             return delegate.getResourceLoader();
         }
 
+        @Override
         public URL[] getURLs() {
             return delegate.getURLs();
         }
 
+        @Override
         public Class loadClass(String name, boolean lookupScriptFiles, boolean preferClassOverScript, boolean resolve) throws ClassNotFoundException, CompilationFailedException {
             Class c = findLoadedClass(name);
             if (c != null) return c;
             return delegate.loadClass(name, lookupScriptFiles, preferClassOverScript, resolve);
         }
 
+        @Override
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCache) throws CompilationFailedException {
             return delegate.parseClass(codeSource, shouldCache);
         }
 
+        @Override
         public void setResourceLoader(GroovyResourceLoader resourceLoader) {
             delegate.setResourceLoader(resourceLoader);
         }
 
+        @Override
         public void addURL(URL url) {
             delegate.addURL(url);
+        }
+
+        @Override
+        public Class defineClass(ClassNode classNode, String file, String newCodeBase) {
+            return delegate.defineClass(classNode, file, newCodeBase);
+        }
+
+        @Override
+        public Class parseClass(File file) throws CompilationFailedException, IOException {
+            return delegate.parseClass(file);
+        }
+
+        @Override
+        public Class parseClass(String text, String fileName) throws CompilationFailedException {
+            return delegate.parseClass(text, fileName);
+        }
+
+        @Override
+        public Class parseClass(String text) throws CompilationFailedException {
+            return delegate.parseClass(text);
+        }
+
+        @Override
+        public String generateScriptName() {
+            return delegate.generateScriptName();
+        }
+
+        @Override
+        public Class parseClass(Reader reader, String fileName) throws CompilationFailedException {
+            return delegate.parseClass(reader, fileName);
+        }
+
+        @Override
+        @Deprecated
+        public Class parseClass(InputStream in, String fileName) throws CompilationFailedException {
+            return delegate.parseClass(in, fileName);
+        }
+
+        @Override
+        public Class parseClass(GroovyCodeSource codeSource) throws CompilationFailedException {
+            return delegate.parseClass(codeSource);
+        }
+
+        @Override
+        public Class defineClass(String name, byte[] b) {
+            return delegate.defineClass(name, b);
+        }
+
+        @Override
+        public Class loadClass(String name, boolean lookupScriptFiles, boolean preferClassOverScript) throws ClassNotFoundException, CompilationFailedException {
+            return delegate.loadClass(name, lookupScriptFiles, preferClassOverScript);
+        }
+
+        @Override
+        public void setShouldRecompile(Boolean mode) {
+            delegate.setShouldRecompile(mode);
+        }
+
+        @Override
+        public Boolean isShouldRecompile() {
+            return delegate.isShouldRecompile();
+        }
+
+        @Override
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            return delegate.loadClass(name);
+        }
+
+        @Override
+        public Enumeration<URL> getResources(String name) throws IOException {
+            return delegate.getResources(name);
+        }
+
+        @Override
+        public void setDefaultAssertionStatus(boolean enabled) {
+            delegate.setDefaultAssertionStatus(enabled);
+        }
+
+        @Override
+        public void setPackageAssertionStatus(String packageName, boolean enabled) {
+            delegate.setPackageAssertionStatus(packageName, enabled);
+        }
+
+        @Override
+        public void setClassAssertionStatus(String className, boolean enabled) {
+            delegate.setClassAssertionStatus(className, enabled);
+        }
+
+        @Override
+        public void clearAssertionStatus() {
+            delegate.clearAssertionStatus();
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.close();
+            delegate.close();
         }
 
         public long getTimeStamp() {
