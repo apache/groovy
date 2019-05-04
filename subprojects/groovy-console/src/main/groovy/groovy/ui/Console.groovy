@@ -1269,7 +1269,7 @@ options:
     }
 
     void selectAll(EventObject evt = null) {
-        invokeTextAction(evt, { source -> source.selectAll() }, copyFromComponent ?: inputEditor.textEditor)
+        invokeTextAction(evt, { source -> source.selectAll() }, copyFromComponent ?: inputArea)
     }
 
     void setRowNumAndColNum() {
