@@ -45,9 +45,12 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Additional Java 9 based functions will be added here as needed.
@@ -182,30 +185,62 @@ public class Java9 extends Java8 {
         }
 
         Class<?> declaringClass = methodDeclaringClass.getTheClass();
-        Class theClass = metaClass.getTheClass();
+        Class<?> theClass = metaClass.getTheClass();
 
-        if (declaringClass == theClass) {
-            return metaMethod;
-        }
-
-        int modifiers = cachedMethod.getModifiers();
+        int methodModifiers = cachedMethod.getModifiers();
 
         // if caller can access the method,
         // no need to transform the meta method
-        if (checkAccessible(caller, declaringClass, modifiers, false)) {
+        if (checkAccessible(caller, declaringClass, methodModifiers, false)) {
+            return metaMethod;
+        }
+
+        if (declaringClass == theClass) {
+            // GROOVY-9081 "3) Access public members of private class", e.g. Collections.unmodifiableMap([:]).toString()
+            // try to find the visible method from its superclasses
+            List<Class<?>> superclassList = findSuperclasses(theClass);
+            List<Class<?>> classList = new LinkedList<>();
+            classList.add(theClass);
+            classList.addAll(superclassList);
+
+            for (Class<?> sc : classList) {
+                Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, sc);
+                if (optionalMetaMethod.isPresent()) {
+                    return optionalMetaMethod.get();
+                }
+            }
+
             return metaMethod;
         }
 
         // if caller can not access the method,
         // try to find the corresponding method in its derived class
+        // GROOVY-9081 Sub-class derives the protected members from public class, "Invoke the members on the sub class instances"
+        // e.g. StringBuilder sb = new StringBuilder(); sb.setLength(0);
+        // `setLength` is the method of `AbstractStringBuilder`, which is `package-private`
         if (declaringClass.isAssignableFrom(theClass)) {
-            Optional<Method> optionalMethod = ReflectionUtils.getMethod(theClass, metaMethod.getName(), params);
-            if (optionalMethod.isPresent()) {
-                return new CachedMethod(optionalMethod.get());
+            Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, theClass);
+            if (optionalMetaMethod.isPresent()) {
+                return optionalMetaMethod.get();
             }
         }
 
         return metaMethod;
+    }
+
+    private static Optional<MetaMethod> getAccessibleMetaMethod(MetaMethod metaMethod, Class<?>[] params, Class<?> caller, Class<?> sc) {
+        List<MetaMethod> metaMethodList = getMetaMethods(metaMethod, params, sc);
+        for (MetaMethod mm : metaMethodList) {
+            if (checkAccessible(caller, mm.getDeclaringClass().getTheClass(), mm.getModifiers(), false)) {
+                return Optional.of(mm);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static List<MetaMethod> getMetaMethods(MetaMethod metaMethod, Class<?>[] params, Class<?> sc) {
+        List<Method> optionalMethod = ReflectionUtils.getMethods(sc, metaMethod.getName(), params);
+        return optionalMethod.stream().map(CachedMethod::new).collect(Collectors.toList());
     }
 
     private static boolean checkAccessible(Class<?> caller, Class<?> declaringClass, int modifiers, boolean allowIllegalAccess) {
@@ -222,7 +257,7 @@ public class Java9 extends Java8 {
             // member is public
             if (Modifier.isPublic(modifiers)) {
                 if (toCheckIllegalAccess) {
-                    if (concealedPackageList(declaringModule).contains(pn)) return false;
+                    if (isExportedForIllegalAccess(declaringModule, pn)) return false;
                 }
 
                 return true;
@@ -233,7 +268,7 @@ public class Java9 extends Java8 {
                     && Modifier.isStatic(modifiers)
                     && isSubclassOf(caller, declaringClass)) {
                 if (toCheckIllegalAccess) {
-                    if (concealedPackageList(declaringModule).contains(pn)) return false;
+                    if (isExportedForIllegalAccess(declaringModule, pn)) return false;
                 }
 
                 return true;
@@ -243,14 +278,22 @@ public class Java9 extends Java8 {
         // package is open to caller
         if (declaringModule.isOpen(pn, callerModule)) {
             if (toCheckIllegalAccess) {
-                if (concealedPackageList(declaringModule).contains(pn)) return false;
-                if (exportedPackageList(declaringModule).contains(pn)) return false;
+                if (isOpenedForIllegalAccess(declaringModule, pn)) return false;
             }
 
             return true;
         }
 
         return false;
+    }
+
+    private static boolean isExportedForIllegalAccess(Module declaringModule, String pn) {
+        return concealedPackageList(declaringModule).contains(pn);
+    }
+
+    private static boolean isOpenedForIllegalAccess(Module declaringModule, String pn) {
+        if (isExportedForIllegalAccess(declaringModule, pn)) return true;
+        return exportedPackageList(declaringModule).contains(pn);
     }
 
     private static boolean isSubclassOf(Class<?> queryClass, Class<?> ofClass) {
@@ -263,14 +306,23 @@ public class Java9 extends Java8 {
         return false;
     }
 
-    private static Set<String> exportedPackageList(Module module) {
-        return EXPORTED_PACKAGES_TO_OPEN.computeIfAbsent(module.getName(), m -> new HashSet<>());
+    private static List<Class<?>> findSuperclasses(Class<?> clazz) {
+        List<Class<?>> result = new LinkedList<>();
+
+        for (Class<?> c = clazz.getSuperclass(); null != c; c = c.getSuperclass()) {
+            result.add(c);
+        }
+
+        return result;
     }
 
     private static Set<String> concealedPackageList(Module module) {
         return CONCEALED_PACKAGES_TO_OPEN.computeIfAbsent(module.getName(), m -> new HashSet<>());
     }
 
+    private static Set<String> exportedPackageList(Module module) {
+        return EXPORTED_PACKAGES_TO_OPEN.computeIfAbsent(module.getName(), m -> new HashSet<>());
+    }
 
     private static final Map<String, Set<String>> CONCEALED_PACKAGES_TO_OPEN;
     private static final Map<String, Set<String>> EXPORTED_PACKAGES_TO_OPEN;

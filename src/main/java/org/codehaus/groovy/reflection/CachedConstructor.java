@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 import static org.codehaus.groovy.reflection.ReflectionUtils.makeAccessibleInPrivilegedAction;
 
@@ -60,9 +61,14 @@ public class CachedConstructor extends ParameterTypes {
     }
 
     public Object invoke(Object[] argumentArray) {
+        Constructor constr = cachedConstructor;
+
+        if (isConstructorOfAbstractClass()) {
+            throw createException("failed to invoke constructor: ", constr, argumentArray, new InstantiationException(), true);
+        }
+
         makeAccessibleIfNecessary();
 
-        Constructor constr = cachedConstructor;
         try {
             return constr.newInstance(argumentArray);
         } catch (InvocationTargetException e) {
@@ -114,5 +120,9 @@ public class CachedConstructor extends ParameterTypes {
             makeAccessibleInPrivilegedAction(cachedConstructor);
             makeAccessibleDone = true;
         }
+    }
+
+    private boolean isConstructorOfAbstractClass() {
+        return Modifier.isAbstract(cachedConstructor.getDeclaringClass().getModifiers());
     }
 }
