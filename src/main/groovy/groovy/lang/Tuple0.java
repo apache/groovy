@@ -29,4 +29,8 @@ public final class Tuple0 extends Tuple {
 
     private Tuple0() {}
 
+    @Override
+    public Tuple0 clone() {
+        return INSTANCE;
+    }
 }

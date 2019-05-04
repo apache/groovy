@@ -80,4 +80,8 @@ public final class Tuple4<T1, T2, T3, T4> extends Tuple {
         return v4;
     }
 
+    @Override
+    public Tuple4<T1, T2, T3, T4> clone() {
+        return new Tuple4<>(this);
+    }
 }

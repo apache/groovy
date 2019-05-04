@@ -102,4 +102,9 @@ public final class Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> extends
     public T11 getV11() {
         return v11;
     }
+
+    @Override
+    public Tuple11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> clone() {
+        return new Tuple11<>(this);
+    }
 }

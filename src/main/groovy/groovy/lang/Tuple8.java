@@ -124,4 +124,8 @@ public final class Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> extends Tuple {
         return v8;
     }
 
+    @Override
+    public Tuple8<T1, T2, T3, T4, T5, T6, T7, T8> clone() {
+        return new Tuple8<>(this);
+    }
 }

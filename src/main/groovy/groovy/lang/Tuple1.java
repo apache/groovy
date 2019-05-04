@@ -45,4 +45,9 @@ public final class Tuple1<T1> extends Tuple {
     public T1 getV1() {
         return v1;
     }
+
+    @Override
+    public Tuple1<T1> clone() {
+        return new Tuple1<>(this);
+    }
 }

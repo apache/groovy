@@ -237,4 +237,8 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
         return new Tuple16<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16);
     }
 
+    @Override
+    public Tuple<E> clone() {
+        return new Tuple<>(this);
+    }
 }
