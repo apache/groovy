@@ -56,8 +56,9 @@ public class GenerateStubsTask extends CompileTaskSupport {
                     cu.addSource(file);
                 }
 
-                // Increment the count for each non/java src we found
-                if (includeName.endsWith(".groovy")) {
+                // Increment the count for each groovy src we found
+                // TODO support config.getScriptExtensions()?
+                if (includeName.endsWith(config.getDefaultScriptExtension())) {
                     count++;
                 }
             }
@@ -73,6 +74,7 @@ public class GenerateStubsTask extends CompileTaskSupport {
     }
 
     private boolean isSource(String includeName) {
-        return includeName.endsWith(".groovy") || includeName.endsWith(".java");
+        // TODO support config.getScriptExtensions()?
+        return includeName.endsWith(config.getDefaultScriptExtension()) || includeName.endsWith(".java");
     }
 }
