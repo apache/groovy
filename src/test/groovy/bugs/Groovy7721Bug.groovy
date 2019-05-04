@@ -41,10 +41,16 @@ class Groovy7721Bug extends GroovyTestCase {
                     }
 
                 '''
+
+            //    We should declare interface B as public, or B can not be accessed from outside package(Note: C is in the default package)
+            //
+            //    See the error message:
+            //    /tmp/groovyTest15544748311926307266330586729753/C.java:17: error: B is not public in pack; cannot be accessed from outside package
+            //    public static  java.lang.Object bar(pack.B b) { return null;}
             def b = new File(parentDir, 'B.java')
             b.write '''
                     package pack;
-                    interface B extends A {
+                    public interface B extends A {
                         @Override
                         String[] bar();
                     }
