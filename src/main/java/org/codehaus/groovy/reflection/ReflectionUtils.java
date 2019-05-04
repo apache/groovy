@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -132,7 +133,9 @@ public class ReflectionUtils {
         }
     }
 
-    public static Optional<Method> getMethod(Class type, String name, Class<?>... parameterTypes) {
+    public static List<Method> getMethods(Class type, String name, Class<?>... parameterTypes) {
+        List<Method> methodList = new LinkedList<>();
+
         out:
         for (Method m : type.getMethods()) {
             if (!m.getName().equals(name)) {
@@ -156,10 +159,10 @@ public class ReflectionUtils {
                 }
             }
 
-            return Optional.of(m);
+            methodList.add(m);
         }
 
-        return Optional.empty();
+        return methodList;
     }
 
     public static boolean checkCanSetAccessible(AccessibleObject accessibleObject,
