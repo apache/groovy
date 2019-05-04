@@ -21,6 +21,7 @@ package org.codehaus.groovy.ant;
 import groovy.lang.GroovyClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.tools.javac.JavaStubCompilationUnit;
 
 import java.io.File;
@@ -50,10 +51,13 @@ public class GenerateStubsTask extends CompileTaskSupport {
                 log.debug("    " + includeName);
 
                 File file = new File(srcDir, includeName);
-                cu.addSource(file);
+
+                if (isSource(includeName)) {
+                    cu.addSource(file);
+                }
 
                 // Increment the count for each non/java src we found
-                if (!includeName.endsWith(".java")) {
+                if (includeName.endsWith(".groovy")) {
                     count++;
                 }
             }
@@ -61,10 +65,14 @@ public class GenerateStubsTask extends CompileTaskSupport {
 
         if (count > 0) {
             log.info("Generating " + count + " Java stub" + (count > 1 ? "s" : "") + " to " + destdir);
-            cu.compile();
+            cu.compile(Phases.CONVERSION); // Generate the stubs
             log.info("Generated " + cu.getStubCount() + " Java stub(s)");
         } else {
             log.info("No sources found for stub generation");
         }
+    }
+
+    private boolean isSource(String includeName) {
+        return includeName.endsWith(".groovy") || includeName.endsWith(".java");
     }
 }
