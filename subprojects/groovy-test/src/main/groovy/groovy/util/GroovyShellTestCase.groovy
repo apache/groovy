@@ -26,13 +26,13 @@ class GroovyShellTestCase extends GroovyTestCase {
     @Delegate protected GroovyShell shell
 
     protected void setUp() {
-        super.setUp();
-        shell = createNewShell();
+        super.setUp()
+        shell = createNewShell()
     }
 
     protected void tearDown() {
-        shell = null;
-        super.tearDown();
+        shell = null
+        super.tearDown()
     }
 
     /**
