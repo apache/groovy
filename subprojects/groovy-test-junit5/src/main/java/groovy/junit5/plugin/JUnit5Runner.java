@@ -41,14 +41,16 @@ public class JUnit5Runner implements GroovyRunner {
      */
     @Override
     public boolean canRun(Class<?> scriptClass, GroovyClassLoader loader) {
+        if (!tryLoadClass("org.junit.jupiter.api.Test", loader)) {
+            return false;
+        }
         if (isJUnit5AnnotationPresent(scriptClass.getAnnotations(), loader)) {
             return true;
-        } else {
-            Method[] methods = scriptClass.getMethods();
-            for (Method method : methods) {
-                if (isJUnit5AnnotationPresent(method.getAnnotations(), loader)) {
-                    return true;
-                }
+        }
+        Method[] methods = scriptClass.getMethods();
+        for (Method method : methods) {
+            if (isJUnit5AnnotationPresent(method.getAnnotations(), loader)) {
+                return true;
             }
         }
         return false;
@@ -56,8 +58,21 @@ public class JUnit5Runner implements GroovyRunner {
 
     private boolean isJUnit5AnnotationPresent(Annotation[] annotations, GroovyClassLoader loader) {
         for (Annotation annotation : annotations) {
-            String name = annotation.annotationType().getName();
+            Class<? extends Annotation> type = annotation.annotationType();
+            String name = type.getName();
             if (name.startsWith("org.junit.jupiter.api.") && tryLoadClass(name, loader)) {
+                return true;
+            }
+            if (isJUnit5TestableMetaAnnotationPresent(type) && tryLoadClass(name, loader)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isJUnit5TestableMetaAnnotationPresent(Class<? extends Annotation> type) {
+        for (Annotation annotation : type.getAnnotations()) {
+            if ("org.junit.platform.commons.annotation.Testable".equals(annotation.annotationType().getName())) {
                 return true;
             }
         }
@@ -66,7 +81,7 @@ public class JUnit5Runner implements GroovyRunner {
 
     private boolean tryLoadClass(String name, GroovyClassLoader loader) {
         try {
-            loader.loadClass("org.junit.jupiter.api.Test");
+            loader.loadClass(name);
             return true;
         } catch (ClassNotFoundException ignore) {
             // fall through
