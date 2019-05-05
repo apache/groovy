@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.transform
+package org.codehaus.groovy.transform.packageScope
 
 import java.lang.reflect.Modifier
 
