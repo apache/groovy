@@ -19,12 +19,28 @@
 package groovy.bugs
 
 class Groovy9007Bug extends GroovyTestCase {
-    void testProtectedFieldInEnum() {
+    void testProtectedFieldInClosureInEnum() {
         assertScript '''
             @groovy.transform.CompileStatic
             enum E {
                 ONE(1), TWO(2)
                 protected final int n
+                E(int n) { this.n = n }
+                static E valueOf(int n) {
+                    values().find { it.n == n }
+                }
+            }
+
+            assert E.valueOf(2).name() == 'TWO'
+        '''
+    }
+
+    void testPrivateFieldInClosureInEnum() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            enum E {
+                ONE(1), TWO(2)
+                private final int n
                 E(int n) { this.n = n }
                 static E valueOf(int n) {
                     values().find { it.n == n }
