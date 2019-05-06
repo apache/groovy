@@ -175,6 +175,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMap;
@@ -4098,7 +4099,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (isArrayOp(op)) {
             // using getPNR() to ignore generics at this point
             // and a different binary expression not to pollute the AST
-            BinaryExpression newExpr = binX(expr.getLeftExpression(), expr.getOperation(), rightExpression);
+            BinaryExpression newExpr = binX(leftExpression, expr.getOperation(), rightExpression);
             newExpr.setSourcePosition(expr);
             MethodNode method = findMethodOrFail(newExpr, left.getPlainNodeReference(), "getAt", right.getPlainNodeReference());
             if (method != null && implementsInterfaceOrIsSubclassOf(right, RANGE_TYPE)) {
@@ -4247,7 +4248,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // GROOVY-5521
             // try to identify a getAt method
             typeCheckingContext.pushErrorCollector();
-            MethodCallExpression vcall = callX(varX("_hash_", containerType), "getAt", varX("_index_", indexType));
+            MethodCallExpression vcall = callX(localVarX("_hash_", containerType), "getAt", varX("_index_", indexType));
+            vcall.setImplicitThis(false); // GROOVY-8943
             try {
                 visitMethodCallExpression(vcall);
             } finally {
