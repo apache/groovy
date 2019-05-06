@@ -531,7 +531,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private String checkOrMarkInnerPropertyOwnerAccess(Expression source, FieldNode fn, boolean lhsOfAssignment, String delegationData) {
         if (fn == null || fn.isStatic() || fn.isPrivate() || "delegate".equals(delegationData)) return delegationData;
-        if (source instanceof PropertyExpression && typeCheckingContext.getEnclosingClosure() != null) {
+        if (source instanceof PropertyExpression && typeCheckingContext.getEnclosingClosureStack().size() == 1) {
             PropertyExpression pe = (PropertyExpression) source;
             boolean ownerProperty = !("this".equals(pe.getPropertyAsString()));
             if (ownerProperty && pe.getObjectExpression() instanceof VariableExpression) {
@@ -699,16 +699,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
         if (enclosingClosure != null) {
-            String name = vexp.getName();
-            if (name.equals("owner") || name.equals("thisObject")) {
-                storeType(vexp, typeCheckingContext.getEnclosingClassNode());
-                return;
-            } else if ("delegate".equals(name)) {
-                DelegationMetadata md = getDelegationMetadata(enclosingClosure.getClosureExpression());
-                ClassNode type = typeCheckingContext.getEnclosingClassNode();
-                if (md != null) type = md.getType();
-                storeType(vexp, type);
-                return;
+            switch (vexp.getName()) {
+                case "delegate":
+                    DelegationMetadata md = getDelegationMetadata(enclosingClosure.getClosureExpression());
+                    if (md != null) {
+                        storeType(vexp, md.getType());
+                        return;
+                    }
+                    // falls through
+                case "owner":
+                    if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
+                        storeType(vexp, CLOSURE_TYPE);
+                        return;
+                    }
+                    // falls through
+                case "thisObject":
+                    storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+                    return;
             }
         }
 
@@ -3299,6 +3306,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (dmd.getParent() == null) {
                         receivers.addAll(owners);
                     } else {
+                        //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
                         addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
                     }
                 }
@@ -3308,6 +3316,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (dmd.getParent() == null) {
                     receivers.addAll(owners);
                 } else {
+                    //receivers.add(new Receiver<String>(CLOSURE_TYPE, path + "owner"));
                     addReceivers(receivers, owners, dmd.getParent(), path + "owner.");
                 }
                 if (strategy == Closure.OWNER_FIRST) {
@@ -3807,6 +3816,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && objectExpression instanceof VariableExpression
                 && ((VariableExpression) objectExpression).getName().equals("it")) {
             owners.add(Receiver.<String>make(typeCheckingContext.lastImplicitItType));
+        }
+        if (typeCheckingContext.delegationMetadata != null
+                && objectExpression instanceof VariableExpression
+                && ((VariableExpression) objectExpression).getName().equals("owner")
+                && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
+            owners.clear();
+            List<Receiver<String>> enclosingClass = Collections.singletonList(
+                    Receiver.<String>make(typeCheckingContext.getEnclosingClassNode()));
+            addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
         }
         return owners;
     }
