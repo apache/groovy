@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -172,7 +173,7 @@ public class Java9 extends Java8 {
     }
 
     @Override
-    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Supplier<Class<?>[]> paramsSupplier, Class<?> caller) {
         if (!(metaMethod instanceof CachedMethod)) {
             return metaMethod;
         }
@@ -203,6 +204,7 @@ public class Java9 extends Java8 {
             classList.add(theClass);
             classList.addAll(superclassList);
 
+            Class<?>[] params = paramsSupplier.get();
             for (Class<?> sc : classList) {
                 Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, sc);
                 if (optionalMetaMethod.isPresent()) {
@@ -219,6 +221,7 @@ public class Java9 extends Java8 {
         // e.g. StringBuilder sb = new StringBuilder(); sb.setLength(0);
         // `setLength` is the method of `AbstractStringBuilder`, which is `package-private`
         if (declaringClass.isAssignableFrom(theClass)) {
+            Class<?>[] params = paramsSupplier.get();
             Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, theClass);
             if (optionalMetaMethod.isPresent()) {
                 return optionalMetaMethod.get();
