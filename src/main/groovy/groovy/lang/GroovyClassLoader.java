@@ -93,13 +93,13 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
-    protected final Map<String, Class> classCache = new UnlimitedConcurrentCache<String, Class>();
+    protected final EvictableCache<String, Class> classCache = new UnlimitedConcurrentCache<String, Class>();
 
     /**
      * This cache contains mappings of file name to class. It is used
      * to bypass compilation.
      */
-    protected final Map<String, Class> sourceCache = new StampedCommonCache<String, Class>();
+    protected final StampedCommonCache<String, Class> sourceCache = new StampedCommonCache<String, Class>();
 
     private final CompilerConfiguration config;
     private String sourceEncoding;
@@ -322,7 +322,7 @@ public class GroovyClassLoader extends URLClassLoader {
         // and avoid occupying Permanent Area/Metaspace repeatedly
         String cacheKey = genSourceCacheKey(codeSource);
 
-        return ((StampedCommonCache<String, Class>) sourceCache).getAndPut(
+        return sourceCache.getAndPut(
                 cacheKey,
                 new EvictableCache.ValueProvider<String, Class>() {
                     @Override
@@ -1157,7 +1157,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #removeClassCacheEntry(String)
      */
     public void clearCache() {
-        Map<String, Class> clearedClasses = ((EvictableCache<String, Class>)classCache).clearAll();
+        Map<String, Class> clearedClasses = classCache.clearAll();
 
         sourceCache.clear();
 
