@@ -1193,8 +1193,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     break;
                 case Closure.DELEGATE_FIRST:
                     Tuple2<Object, MetaMethod> tuple = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
-                    Object result = tuple.getFirst();
-                    method = tuple.getSecond();
+                    Object result = tuple.getV1();
+                    method = tuple.getV2();
                     if (InvokeMethodResult.NONE != result) {
                         return result;
                     }
@@ -1223,8 +1223,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     break;
                 default:
                     Tuple2<Object, MetaMethod> t = invokeMethod(method, delegate, closure, methodName, argClasses, originalArguments, owner);
-                    Object r = t.getFirst();
-                    method = t.getSecond();
+                    Object r = t.getV1();
+                    method = t.getV2();
                     if (InvokeMethodResult.NONE != r) {
                         return r;
                     }
@@ -1852,12 +1852,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, sender, name, useSuper, isStatic);
-        MetaMethod method = methodAndProperty.getFirst();
+        MetaMethod method = methodAndProperty.getV1();
 
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        MetaProperty mp = methodAndProperty.getSecond();
+        MetaProperty mp = methodAndProperty.getV2();
 
         //----------------------------------------------------------------------
         // field
@@ -1969,12 +1969,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, theClass, name, useSuper, isStatic);
-        MetaMethod method = methodAndProperty.getFirst();
+        MetaMethod method = methodAndProperty.getV1();
 
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        MetaProperty mp = methodAndProperty.getSecond();
+        MetaProperty mp = methodAndProperty.getV2();
 
         //----------------------------------------------------------------------
         // field

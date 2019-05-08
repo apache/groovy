@@ -737,7 +737,7 @@ public class Node implements Serializable, Cloneable {
         }
         while (!stack.isEmpty()) {
             Tuple2<Object, Integer> next = stack.pop();
-            callClosureForNode(c, next.getFirst(), next.getSecond());
+            callClosureForNode(c, next.getV1(), next.getV2());
         }
     }
 

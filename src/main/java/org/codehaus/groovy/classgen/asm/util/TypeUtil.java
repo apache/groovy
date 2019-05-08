@@ -114,7 +114,7 @@ public abstract class TypeUtil {
                 arrayDescription.append("[");
             }
 
-            ClassNode componentType = arrayInfo.getFirst();
+            ClassNode componentType = arrayInfo.getV1();
             return arrayDescription.append(getDescriptionByType(componentType)).toString();
         }
 

@@ -912,8 +912,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
                 String varName = ve.getName();
                 Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, varName);
-                name = classNameInfo.getFirst();
-                doInitialClassTest = classNameInfo.getSecond();
+                name = classNameInfo.getV1();
+                doInitialClassTest = classNameInfo.getV2();
 
                 break;
             }
@@ -929,8 +929,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     return null;
                 }
                 Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, propertyPart);
-                name = classNameInfo.getFirst();
-                doInitialClassTest = classNameInfo.getSecond();
+                name = classNameInfo.getV1();
+                doInitialClassTest = classNameInfo.getV2();
             }
         }
 
@@ -1655,14 +1655,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         for (Tuple2<ClassNode, ClassNode> tp : upperBoundsToResolve) {
-            ClassNode upperBound = tp.getFirst();
-            ClassNode classNode = tp.getSecond();
+            ClassNode upperBound = tp.getV1();
+            ClassNode classNode = tp.getV2();
             resolveOrFail(upperBound, classNode);
         }
 
         for (Tuple2<ClassNode, GenericsType> tp : upperBoundsWithGenerics) {
-            ClassNode upperBound = tp.getFirst();
-            GenericsType gt = tp.getSecond();
+            ClassNode upperBound = tp.getV1();
+            GenericsType gt = tp.getV2();
             resolveGenericsHeader(upperBound.getGenericsTypes(), 0 == level ? gt : rootType, level + 1);
         }
     }

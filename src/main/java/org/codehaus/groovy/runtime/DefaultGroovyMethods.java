@@ -8798,7 +8798,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Iterator<Tuple2<Integer, E>> indexed = indexed(self.iterator(), offset);
         while (indexed.hasNext()) {
             Tuple2<Integer, E> next = indexed.next();
-            result.put(next.getFirst(), next.getSecond());
+            result.put(next.getV1(), next.getV2());
         }
         return result;
     }
