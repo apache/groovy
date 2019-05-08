@@ -259,7 +259,7 @@ public class DefaultTypeTransformation {
                 // let's call the collections constructor
                 // passing in the list wrapper
                 try {
-                    answer = (Collection) type.newInstance();
+                    answer = (Collection) type.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     throw new GroovyCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
                 }

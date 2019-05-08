@@ -46,7 +46,7 @@ public class MethodTest extends TestSupport {
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
 
-        Object bean = fooClass.newInstance();
+        Object bean = fooClass.getDeclaredConstructor().newInstance();
         assertTrue("Created instance of class: " + bean, bean != null);
 
         assertCallMethod(bean, "a", "calledA");

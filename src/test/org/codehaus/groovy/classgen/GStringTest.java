@@ -78,7 +78,7 @@ public class GStringTest extends TestSupport {
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
 
-        Object bean = fooClass.newInstance();
+        Object bean = fooClass.getDeclaredConstructor().newInstance();
         assertTrue("Managed to create bean", bean != null);
 
         //Object[] array = { new Integer(1234), "abc", "def" };

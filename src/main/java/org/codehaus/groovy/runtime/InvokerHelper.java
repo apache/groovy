@@ -458,7 +458,7 @@ public class InvokerHelper {
                 if (Script.class.isAssignableFrom(scriptClass)) {
                     script = newScript(scriptClass, context);
                 } else {
-                    final GroovyObject object = (GroovyObject) scriptClass.newInstance();
+                    final GroovyObject object = (GroovyObject) scriptClass.getDeclaredConstructor().newInstance();
                     // it could just be a class, so let's wrap it in a Script
                     // wrapper; though the bindings will be ignored
                     script = new Script(context) {

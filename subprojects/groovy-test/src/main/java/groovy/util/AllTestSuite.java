@@ -92,8 +92,7 @@ public class AllTestSuite extends TestSuite {
     static { // this is only needed since the Groovy Build compiles *.groovy files after *.java files
         try {
             // TODO: dk: make FileNameFinder injectable
-            Class finderClass = Class.forName("groovy.util.FileNameFinder");
-            finder = (IFileNameFinder) finderClass.newInstance();
+            finder = (IFileNameFinder) Class.forName("groovy.util.FileNameFinder").getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Cannot find and instantiate class FileNameFinder", e);
         }

@@ -155,8 +155,8 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         }
 
         try {
-            return accessorClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return accessorClass.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             return DefaultPropertyAccessor.INSTANCE;
         }
     }

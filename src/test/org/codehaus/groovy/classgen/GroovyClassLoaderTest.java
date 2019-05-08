@@ -34,7 +34,7 @@ public class GroovyClassLoaderTest extends TestSupport {
 
         System.out.println("Invoking main...");
 
-        GroovyObject object = (GroovyObject) groovyClass.newInstance();
+        GroovyObject object = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
 
         assertTrue(object != null);
 

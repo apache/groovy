@@ -39,6 +39,7 @@ import org.codehaus.groovy.util.URLStreams;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -106,8 +107,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             final Map<Class<? extends ASTTransformation>, ASTTransformation> transformInstances = new HashMap<Class<? extends ASTTransformation>, ASTTransformation>();
             for (Class<? extends ASTTransformation> transformClass : baseTransforms.keySet()) {
                 try {
-                    transformInstances.put(transformClass, transformClass.newInstance());
-                } catch (InstantiationException | IllegalAccessException e) {
+                    transformInstances.put(transformClass, transformClass.getDeclaredConstructor().newInstance());
+                } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                     source.getErrorCollector().addError(
                             new SimpleMessage(
                                     "Could not instantiate Transformation Processor " + transformClass
@@ -309,7 +310,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                     continue;
                 }
                 if (ASTTransformation.class.isAssignableFrom(gTransClass)) {
-                    final ASTTransformation instance = (ASTTransformation)gTransClass.newInstance();
+                    final ASTTransformation instance = (ASTTransformation)gTransClass.getDeclaredConstructor().newInstance();
                     if (instance instanceof CompilationUnitAware) {
                         ((CompilationUnitAware)instance).setCompilationUnit(compilationUnit);
                     }

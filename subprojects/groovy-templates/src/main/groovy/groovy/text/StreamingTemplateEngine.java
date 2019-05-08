@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -609,11 +610,11 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
             Closure result;
             try {
-                final GroovyObject object = (GroovyObject) groovyClass.newInstance();
+                final GroovyObject object = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
                 Closure chicken = (Closure) object.invokeMethod("getTemplate", null);
                 //bind the two first parameters of the generated closure to this class and the sections list
                 result = chicken.curry(this, sections);
-            } catch (InstantiationException | IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new ClassNotFoundException(e.getMessage());
             }
 

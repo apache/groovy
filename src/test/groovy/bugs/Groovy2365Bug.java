@@ -49,7 +49,7 @@ public class Groovy2365Bug extends Groovy2365Base {
                     Thread thread1 = new Thread() {
                         public void run() {
                             try {
-                                Script script = (Script) script1Class.newInstance();
+                                Script script = (Script) script1Class.getDeclaredConstructor().newInstance();
                                 script.run();
                                 completed [0] = true;
                             } catch (Exception e) {
@@ -62,7 +62,7 @@ public class Groovy2365Bug extends Groovy2365Base {
                         public void run() {
                             try {
                                 Class cls = groovyLoader.loadClass("Script2", true, true);
-                                Script script = (Script) cls.newInstance();
+                                Script script = (Script) cls.getDeclaredConstructor().newInstance();
                                 script.run();
                                 completed [1] = true;
                             } catch (Exception e) {

@@ -112,6 +112,7 @@ import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2985,13 +2986,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassLoader transformLoader = getTransformLoader();
             @SuppressWarnings("unchecked")
             Class<? extends ClosureSignatureHint> hint = (Class<? extends ClosureSignatureHint>) transformLoader.loadClass(hintClass.getText());
-            ClosureSignatureHint hintInstance = hint.newInstance();
+            ClosureSignatureHint hintInstance = hint.getDeclaredConstructor().newInstance();
             closureSignatures = hintInstance.getClosureSignatures(
                     selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod,
                     typeCheckingContext.source,
                     typeCheckingContext.compilationUnit,
                     convertToStringArray(options), expression);
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GroovyBugError(e);
         }
         return closureSignatures;
@@ -3003,7 +3004,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassLoader transformLoader = getTransformLoader();
             @SuppressWarnings("unchecked")
             Class<? extends ClosureSignatureConflictResolver> resolver = (Class<? extends ClosureSignatureConflictResolver>) transformLoader.loadClass(resolverClass.getText());
-            ClosureSignatureConflictResolver resolverInstance = resolver.newInstance();
+            ClosureSignatureConflictResolver resolverInstance = resolver.getDeclaredConstructor().newInstance();
             return resolverInstance.resolve(
                     candidates,
                     receiver,
@@ -3013,7 +3014,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     typeCheckingContext.source,
                     typeCheckingContext.compilationUnit,
                     convertToStringArray(options));
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GroovyBugError(e);
         }
     }

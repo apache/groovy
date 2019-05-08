@@ -409,7 +409,7 @@ public class XmlUtil {
     private static String asString(GPathResult node) {
         // little bit of hackery to avoid Groovy dependency in this file
         try {
-            Object builder = ((Class) Class.forName("groovy.xml.StreamingMarkupBuilder")).newInstance();
+            Object builder = Class.forName("groovy.xml.StreamingMarkupBuilder").getDeclaredConstructor().newInstance();
             InvokerHelper.setProperty(builder, "encoding", "UTF-8");
             Writable w = (Writable) InvokerHelper.invokeMethod(builder, "bindNode", node);
             return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + w.toString();
