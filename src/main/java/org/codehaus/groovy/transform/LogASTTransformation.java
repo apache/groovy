@@ -223,7 +223,7 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
             if (AbstractLoggingStrategy.class.isAssignableFrom(strategyClass)) {
                 return DefaultGroovyMethods.newInstance(strategyClass, new Object[]{loader});
             } else {
-                return strategyClass.newInstance();
+                return strategyClass.getDeclaredConstructor().newInstance();
             }
         } catch (Exception e) {
             return null;

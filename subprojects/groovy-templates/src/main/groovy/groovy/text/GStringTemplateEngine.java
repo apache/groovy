@@ -30,6 +30,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -202,14 +203,14 @@ public class GStringTemplateEngine extends TemplateEngine {
             }
 
             try {
-                final GroovyObject script = (GroovyObject) groovyClass.newInstance();
+                final GroovyObject script = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
 
                 this.template = (Closure) script.invokeMethod("getTemplate", null);
                 // GROOVY-6521: must set strategy to DELEGATE_FIRST, otherwise writing
                 // books = 'foo' in a template would store 'books' in the binding of the template script itself ("script")
                 // instead of storing it in the delegate, which is a Binding too
                 this.template.setResolveStrategy(Closure.DELEGATE_FIRST);
-            } catch (InstantiationException | IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                 throw new ClassNotFoundException(e.getMessage());
             }
         }

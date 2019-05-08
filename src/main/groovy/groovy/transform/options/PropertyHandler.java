@@ -102,11 +102,7 @@ public abstract class PropertyHandler {
 
         String className = handlerClass.getName();
         try {
-            Object instance = loader.loadClass(className).newInstance();
-            if (instance == null) {
-                xform.addError("Can't load propertyHandler '" + className + "'", anno);
-                return null;
-            }
+            Object instance = loader.loadClass(className).getDeclaredConstructor().newInstance();
             if (!PropertyHandler.class.isAssignableFrom(instance.getClass())) {
                 xform.addError("The propertyHandler class '" + handlerClass.getName() + "' on " + xform.getAnnotationName() + " is not a propertyHandler", anno);
                 return null;

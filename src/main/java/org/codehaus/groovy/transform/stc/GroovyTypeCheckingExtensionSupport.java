@@ -129,7 +129,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         try {
             Class<?> clazz = transformLoader.loadClass(scriptPath, false, true);
             if (TypeCheckingDSL.class.isAssignableFrom(clazz)) {
-                script = (TypeCheckingDSL) clazz.newInstance();
+                script = (TypeCheckingDSL) clazz.getDeclaredConstructor().newInstance();
             } else if (TypeCheckingExtension.class.isAssignableFrom(clazz)) {
                 // since 2.4, we can also register precompiled type checking extensions which are not scripts
                 try {
@@ -147,9 +147,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                     );
                 }
             }
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
             // silent
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             addLoadingError(config);
         }
         if (script==null) {

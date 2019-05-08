@@ -48,7 +48,7 @@ public class PropertyTest extends TestSupport {
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
 
-        Object bean = fooClass.newInstance();
+        Object bean = fooClass.getDeclaredConstructor().newInstance();
         assertTrue("Managed to create bean", bean != null);
 
         assertField(fooClass, "bar", 0, ClassHelper.STRING_TYPE);
@@ -64,7 +64,7 @@ public class PropertyTest extends TestSupport {
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
 
-        Object bean = fooClass.newInstance();
+        Object bean = fooClass.getDeclaredConstructor().newInstance();
         assertTrue("Managed to create bean", bean != null);
 
         assertField(fooClass, "bar", 0, ClassHelper.STRING_TYPE);

@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime.m12n;
 
 import groovy.lang.GroovyRuntimeException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
 
 /**
@@ -38,11 +39,11 @@ public class StandardPropertiesModuleFactory extends PropertiesModuleFactory {
         if (factoryName!=null) {
             try {
                 Class<? extends PropertiesModuleFactory> factoryClass = (Class<? extends PropertiesModuleFactory>) classLoader.loadClass(factoryName);
-                PropertiesModuleFactory delegate = factoryClass.newInstance();
+                PropertiesModuleFactory delegate = factoryClass.getDeclaredConstructor().newInstance();
                 return delegate.newModule(properties, classLoader);
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException | NoSuchMethodException e) {
                 throw new GroovyRuntimeException("Unable to load module factory ["+factoryName+"]",e);
-            } catch (InstantiationException | IllegalAccessException e) {
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
                 throw new GroovyRuntimeException("Unable to instantiate module factory ["+factoryName+"]",e);
             }
         }

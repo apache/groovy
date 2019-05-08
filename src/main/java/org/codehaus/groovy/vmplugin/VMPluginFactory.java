@@ -54,7 +54,7 @@ public class VMPluginFactory {
         try {
             ClassLoader loader = VMPluginFactory.class.getClassLoader();
             loader.loadClass(classNameCheck);
-            return (VMPlugin) loader.loadClass(pluginName).newInstance();
+            return (VMPlugin) loader.loadClass(pluginName).getDeclaredConstructor().newInstance();
         } catch (Throwable ex) {
             return null;
         }

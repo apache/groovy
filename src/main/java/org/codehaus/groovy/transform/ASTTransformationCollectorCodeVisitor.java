@@ -39,6 +39,7 @@ import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -219,8 +220,8 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                     Class klass = loadTransformClass(className, aliasNode);
                     if (klass != null) {
                         try {
-                            act = (AnnotationCollectorTransform) klass.newInstance();
-                        } catch (InstantiationException | IllegalAccessException e) {
+                            act = (AnnotationCollectorTransform) klass.getDeclaredConstructor().newInstance();
+                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                             source.getErrorCollector().addErrorAndContinue(new ExceptionMessage(e, true, source));
                         }
                     }

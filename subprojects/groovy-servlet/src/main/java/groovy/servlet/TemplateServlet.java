@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Date;
 import java.util.Map;
@@ -385,12 +386,12 @@ public class TemplateServlet extends AbstractHttpServlet {
             return new SimpleTemplateEngine();
         }
         try {
-            return (TemplateEngine) Class.forName(name).newInstance();
-        } catch (InstantiationException e) {
+            return (TemplateEngine) Class.forName(name).getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | InvocationTargetException e) {
             log("Could not instantiate template engine: " + name, e);
         } catch (IllegalAccessException e) {
             log("Could not access template engine class: " + name, e);
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException e) {
             log("Could not find template engine class: " + name, e);
         }
         return null;
