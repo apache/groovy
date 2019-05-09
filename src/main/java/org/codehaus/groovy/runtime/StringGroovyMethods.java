@@ -209,15 +209,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #bitwiseNegate(CharSequence)
-     */
-    @Deprecated
-    public static Pattern bitwiseNegate(String self) {
-        return bitwiseNegate((CharSequence) self);
-    }
-
-    /**
      * Convenience method to uncapitalize the first letter of a CharSequence
      * (typically the first letter of a word). Example usage:
      * <pre class="groovyTestCase">
@@ -256,15 +247,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String capitalize(CharSequence self) {
         if (self.length() == 0) return "";
         return "" + Character.toUpperCase(self.charAt(0)) + self.subSequence(1, self.length());
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #capitalize(CharSequence)
-     */
-    @Deprecated
-    public static String capitalize(String self) {
-        return capitalize((CharSequence) self);
     }
 
     /**
@@ -329,24 +311,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #center(CharSequence, Number)
-     */
-    @Deprecated
-    public static String center(String self, Number numberOfChars) {
-        return center((CharSequence) self, numberOfChars);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #center(CharSequence, Number, CharSequence)
-     */
-    @Deprecated
-    public static String center(String self, Number numberOfChars, String padding) {
-        return center((CharSequence) self, numberOfChars, (CharSequence) padding);
-    }
-
-    /**
      * Provide an implementation of contains() like
      * {@link java.util.Collection#contains(Object)} to make CharSequences more polymorphic.
      *
@@ -358,15 +322,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static boolean contains(CharSequence self, CharSequence text) {
         int idx = self.toString().indexOf(text.toString());
         return idx >= 0;
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #contains(CharSequence, CharSequence)
-     */
-    @Deprecated
-    public static boolean contains(String self, String text) {
-        return contains((CharSequence) self, (CharSequence) text);
     }
 
     /**
@@ -387,15 +342,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             ++answer;
         }
         return answer;
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #contains(CharSequence, CharSequence)
-     */
-    @Deprecated
-    public static int count(String self, String text) {
-        return count((CharSequence) self, (CharSequence) text);
     }
 
     /**
@@ -463,15 +409,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         return sb.toString();
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #denormalize(CharSequence)
-     */
-    @Deprecated
-    public static String denormalize(final String self) {
-        return denormalize((CharSequence) self);
     }
 
     /**
@@ -674,24 +611,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #eachLine(CharSequence, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static <T> T eachLine(String self, @ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure) throws IOException {
-        return eachLine((CharSequence) self, closure);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #eachLine(CharSequence, int, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static <T> T eachLine(String self, int firstLine, @ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure) throws IOException {
-        return eachLine((CharSequence) self, firstLine, closure);
-    }
-
-    /**
      * Iterate through this String a character at a time collecting either the
      * original character or a transformed replacement String. The {@code transform}
      * Closure should return {@code null} to indicate that no transformation is
@@ -840,24 +759,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #expand(CharSequence)
-     */
-    @Deprecated
-    public static String expand(String self) {
-        return expand((CharSequence) self);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #expand(CharSequence, int)
-     */
-    @Deprecated
-    public static String expand(String self, int tabStop) {
-        return expand((CharSequence) self, tabStop);
-    }
-
-    /**
      * Expands all tabs into spaces. Assumes the CharSequence represents a single line of text.
      *
      * @param self A line to expand
@@ -876,15 +777,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             s = builder.toString();
         }
         return s;
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #expand(CharSequence, int)
-     */
-    @Deprecated
-    public static String expandLine(String self, int tabStop) {
-        return expandLine((CharSequence) self, tabStop);
     }
 
     /**
@@ -1038,42 +930,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #find(CharSequence, java.util.regex.Pattern)
-     */
-    @Deprecated
-    public static String find(String self, Pattern pattern) {
-        return find((CharSequence) self, pattern);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #find(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static String find(String self, Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure closure) {
-        return find((CharSequence) self, pattern, closure);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #find(CharSequence, CharSequence)
-     */
-    @Deprecated
-    public static String find(String self, String regex) {
-        return find((CharSequence) self, (CharSequence) regex);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #find(CharSequence, CharSequence, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static String find(String self, String regex, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure closure) {
-        return find((CharSequence) self, (CharSequence) regex, closure);
-    }
-
-    /**
      * Returns a (possibly empty) list of all occurrences of a regular expression (provided as a CharSequence) found within a CharSequence.
      * <p>
      * For example, if the regex doesn't match, it returns an empty list:
@@ -1192,42 +1048,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<T> findAll(CharSequence self, Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure<T> closure) {
         Matcher matcher = pattern.matcher(self.toString());
         return DefaultGroovyMethods.collect(matcher, closure);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #findAll(CharSequence, java.util.regex.Pattern)
-     */
-    @Deprecated
-    public static List<String> findAll(String self, Pattern pattern) {
-        return findAll((CharSequence) self, pattern);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #findAll(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static <T> List<T> findAll(String self, Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure<T> closure) {
-        return findAll((CharSequence) self, pattern, closure);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #findAll(CharSequence, CharSequence)
-     */
-    @Deprecated
-    public static List<String> findAll(String self, String regex) {
-        return findAll((CharSequence) self, (CharSequence) regex);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #findAll(CharSequence, CharSequence, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static <T> List<T> findAll(String self, String regex, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) Closure<T> closure) {
-        return findAll((CharSequence) self, (CharSequence) regex, closure);
     }
 
     // TODO expose this for stream based scenarios?
@@ -1471,24 +1291,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #getAt(CharSequence, java.util.Collection)
-     */
-    @Deprecated
-    public static String getAt(String self, Collection indices) {
-        return getAt((CharSequence) self, indices);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #getAt(CharSequence, groovy.lang.EmptyRange)
-     */
-    @Deprecated
-    public static String getAt(String text, EmptyRange range) {
-        return getAt((CharSequence) text, range);
-    }
-
-    /**
      * Support the subscript operator for String.
      *
      * @param text  a String
@@ -1539,15 +1341,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static char[] getChars(CharSequence self) {
         return self.toString().toCharArray();
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #getChars(CharSequence)
-     */
-    @Deprecated
-    public static char[] getChars(String self) {
-        return getChars((CharSequence) self);
     }
 
     /**
@@ -1632,15 +1425,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #isAllWhitespace(CharSequence)
-     */
-    @Deprecated
-    public static boolean isAllWhitespace(String self) {
-        return isAllWhitespace((CharSequence) self);
-    }
-
-    /**
      * Determine if a CharSequence can be parsed as a BigDecimal.
      *
      * @param self a CharSequence
@@ -1657,15 +1441,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #isBigDecimal(CharSequence)
-     */
-    @Deprecated
-    public static boolean isBigDecimal(String self) {
-        return isBigDecimal((CharSequence) self);
-    }
-
-    /**
      * Determine if a CharSequence can be parsed as a BigInteger.
      *
      * @param self a CharSequence
@@ -1679,15 +1454,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         } catch (NumberFormatException nfe) {
             return false;
         }
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #isBigInteger(CharSequence)
-     */
-    @Deprecated
-    public static boolean isBigInteger(String self) {
-        return isBigInteger((CharSequence) self);
     }
 
     /**
@@ -1713,15 +1479,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             return caseValue == null;
         }
         return caseValue.toString().equals(switchValue.toString());
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #isCase(CharSequence, Object)
-     */
-    @Deprecated
-    public static boolean isCase(GString caseValue, Object switchValue) {
-        return isCase((CharSequence) caseValue, switchValue);
     }
 
     /**
@@ -1755,15 +1512,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #isCase(CharSequence, Object)
-     */
-    @Deprecated
-    public static boolean isCase(String caseValue, Object switchValue) {
-        return isCase((CharSequence) caseValue, switchValue);
-    }
-
-    /**
      * Determine if a CharSequence can be parsed as a Double.
      *
      * @param self a CharSequence
@@ -1777,15 +1525,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         } catch (NumberFormatException nfe) {
             return false;
         }
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #isDouble(CharSequence)
-     */
-    @Deprecated
-    public static boolean isDouble(String self) {
-        return isDouble((CharSequence) self);
     }
 
     /**
@@ -1805,15 +1544,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #isFloat(CharSequence)
-     */
-    @Deprecated
-    public static boolean isFloat(String self) {
-        return isFloat((CharSequence) self);
-    }
-
-    /**
      * Determine if a CharSequence can be parsed as an Integer.
      *
      * @param self a CharSequence
@@ -1827,15 +1557,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         } catch (NumberFormatException nfe) {
             return false;
         }
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #isInteger(CharSequence)
-     */
-    @Deprecated
-    public static boolean isInteger(String self) {
-        return isInteger((CharSequence) self);
     }
 
     /**
@@ -1855,15 +1576,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #isLong(CharSequence)
-     */
-    @Deprecated
-    public static boolean isLong(String self) {
-        return isLong((CharSequence) self);
-    }
-
-    /**
      * Determine if a CharSequence can be parsed as a Number.
      * Synonym for 'isBigDecimal()'.
      *
@@ -1874,15 +1586,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean isNumber(CharSequence self) {
         return isBigDecimal(self);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #isNumber(CharSequence)
-     */
-    @Deprecated
-    public static boolean isNumber(String self) {
-        return isNumber((CharSequence) self);
     }
 
     /**
@@ -2009,15 +1712,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #matches(CharSequence, Pattern)
-     */
-    @Deprecated
-    public static boolean matches(String self, Pattern pattern) {
-        return matches((CharSequence) self, pattern);
-    }
-
-    /**
      * Remove a part of a CharSequence by replacing the first occurrence
      * of target within self with '' and returns the result.
      *
@@ -2052,24 +1746,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #minus(CharSequence, java.util.regex.Pattern)
-     */
-    @Deprecated
-    public static String minus(String self, Pattern pattern) {
-        return minus((CharSequence) self, pattern);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #minus(CharSequence, Object)
-     */
-    @Deprecated
-    public static String minus(String self, Object target) {
-        return minus((CharSequence) self, target);
-    }
-
-    /**
      * Repeat a CharSequence a certain number of times.
      *
      * @param self   a CharSequence to be repeated
@@ -2090,15 +1766,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.append(self);
         }
         return answer.toString();
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #multiply(CharSequence, Number)
-     */
-    @Deprecated
-    public static String multiply(String self, Number factor) {
-        return multiply((CharSequence) self, factor);
     }
 
     /**
@@ -2127,15 +1794,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return buffer.toString();
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #next(CharSequence)
-     */
-    @Deprecated
-    public static String next(String self) {
-        return next((CharSequence) self);
     }
 
     /**
@@ -2175,15 +1833,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         sb.append(s, i, len);
 
         return sb.toString();
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #normalize(CharSequence)
-     */
-    @Deprecated
-    public static String normalize(final String self) {
-        return normalize((CharSequence) self);
     }
 
     /**
@@ -2254,24 +1903,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #padLeft(CharSequence, Number)
-     */
-    @Deprecated
-    public static String padLeft(String self, Number numberOfChars) {
-        return padLeft((CharSequence) self, numberOfChars);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #padLeft(CharSequence, Number, CharSequence)
-     */
-    @Deprecated
-    public static String padLeft(String self, Number numberOfChars, String padding) {
-        return padLeft((CharSequence) self, numberOfChars, (CharSequence) padding);
-    }
-
-    /**
      * Pad a CharSequence to a minimum length specified by <tt>numberOfChars</tt> by adding the space
      * character to the right as many times as needed.
      *
@@ -2330,24 +1961,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #padRight(CharSequence, Number)
-     */
-    @Deprecated
-    public static String padRight(String self, Number numberOfChars) {
-        return padRight((CharSequence) self, numberOfChars, (CharSequence) " ");
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #padRight(CharSequence, Number, CharSequence)
-     */
-    @Deprecated
-    public static String padRight(String self, Number numberOfChars, String padding) {
-        return padRight((CharSequence) self, numberOfChars, (CharSequence) padding);
-    }
-
-    /**
      * Appends the String representation of the given operand to this CharSequence.
      *
      * @param left  a CharSequence
@@ -2369,15 +1982,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String plus(Number value, String right) {
         return DefaultGroovyMethods.toString(value) + right;
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #plus(CharSequence, Object)
-     */
-    @Deprecated
-    public static String plus(String left, Object value) {
-        return plus((CharSequence) left, value);
     }
 
     /**
@@ -2429,15 +2033,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #previous(CharSequence)
-     */
-    @Deprecated
-    public static String previous(String self) {
-        return previous((CharSequence) self);
-    }
-
-    /**
      * Support the range subscript operator for StringBuffer.
      *
      * @param self  a StringBuffer
@@ -2473,15 +2068,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List<String> readLines(CharSequence self) {
         return DefaultGroovyMethods.toList(new LineIterable(self));
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #readLines(CharSequence)
-     */
-    @Deprecated
-    public static List<String> readLines(String self) {
-        return readLines((CharSequence) self);
     }
 
     /**
@@ -2618,33 +2204,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #replaceAll(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static String replaceAll(final String self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        return replaceAll((CharSequence) self, pattern, closure);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #replaceAll(CharSequence, java.util.regex.Pattern, CharSequence)
-     */
-    @Deprecated
-    public static String replaceAll(String self, Pattern pattern, String replacement) {
-        return pattern.matcher(self).replaceAll(replacement);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #replaceAll(CharSequence, CharSequence, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static String replaceAll(final String self, final String regex, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        return replaceAll((CharSequence) self, (CharSequence) regex, closure);
-    }
-
-    /**
      * Replaces the first substring of this CharSequence that matches the given
      * regular expression with the given replacement.
      *
@@ -2738,33 +2297,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         } else {
             return s;
         }
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #replaceFirst(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static String replaceFirst(final String self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        return replaceFirst((CharSequence) self, pattern, closure);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #replaceFirst(CharSequence, java.util.regex.Pattern, CharSequence)
-     */
-    @Deprecated
-    public static String replaceFirst(String self, Pattern pattern, String replacement) {
-        return pattern.matcher(self).replaceFirst(replacement);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #replaceFirst(CharSequence, CharSequence, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static String replaceFirst(final String self, final String regex, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        return replaceFirst((CharSequence) self, (CharSequence) regex, closure);
     }
 
     /**
@@ -2917,15 +2449,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #reverse(CharSequence)
-     */
-    @Deprecated
-    public static String reverse(String self) {
-        return reverse((CharSequence) self);
-    }
-
-    /**
      * Set the position of the given Matcher to the given index.
      *
      * @param matcher a Matcher
@@ -3015,24 +2538,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #split(CharSequence)
-     */
-    @Deprecated
-    public static String[] split(GString self) {
-        return split((CharSequence) self);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #split(CharSequence)
-     */
-    @Deprecated
-    public static String[] split(String self) {
-        return split((CharSequence) self);
-    }
-
-    /**
      * Iterates through the given CharSequence line by line, splitting each line using
      * the given regex delimiter.  The list of tokens for each line is then passed to
      * the given closure.
@@ -3068,24 +2573,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             result = closure.call(vals);
         }
         return result;
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #splitEachLine(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static <T> T splitEachLine(String self, Pattern pattern, Closure<T> closure) throws IOException {
-        return splitEachLine((CharSequence) self, pattern, closure);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #splitEachLine(CharSequence, java.util.regex.Pattern, groovy.lang.Closure)
-     */
-    @Deprecated
-    public static <T> T splitEachLine(String self, String regex, Closure<T> closure) throws IOException {
-        return splitEachLine((CharSequence) self, (CharSequence) regex, closure);
     }
 
     /**
@@ -3142,24 +2629,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             builder.deleteCharAt(builder.length() - 1);
         }
         return builder.toString();
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #stripIndent(CharSequence)
-     */
-    @Deprecated
-    public static String stripIndent(String self) {
-        return stripIndent((CharSequence) self);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #stripIndent(CharSequence)
-     */
-    @Deprecated
-    public static String stripIndent(String self, int numChars) {
-        return stripIndent((CharSequence) self, numChars);
     }
 
     // TODO expose this for stream based stripping?
@@ -3228,33 +2697,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         if (mc.length() == 0) return stripMargin(self, '|');
         // TODO IllegalArgumentException for marginChar.length() > 1 ? Or support String as marker?
         return stripMargin(self, mc.charAt(0));
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #stripMargin(CharSequence)
-     */
-    @Deprecated
-    public static String stripMargin(String self) {
-        return stripMargin((CharSequence) self);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #stripMargin(CharSequence, char)
-     */
-    @Deprecated
-    public static String stripMargin(String self, char marginChar) {
-        return stripMargin((CharSequence) self, marginChar);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #stripMargin(CharSequence, char)
-     */
-    @Deprecated
-    public static String stripMargin(String self, String marginChar) {
-        return stripMargin((CharSequence) self, (CharSequence) marginChar);
     }
 
     // TODO expose this for other usage scenarios, e.g. stream based stripping?
@@ -3371,15 +2813,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #toBigDecimal(CharSequence)
-     */
-    @Deprecated
-    public static BigDecimal toBigDecimal(String self) {
-        return toBigDecimal((CharSequence) self);
-    }
-
-    /**
      * Parse a CharSequence into a BigInteger
      *
      * @param self a CharSequence
@@ -3388,15 +2821,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BigInteger toBigInteger(CharSequence self) {
         return new BigInteger(self.toString().trim());
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #toBigInteger(CharSequence)
-     */
-    @Deprecated
-    public static BigInteger toBigInteger(String self) {
-        return toBigInteger((CharSequence) self);
     }
 
     /**
@@ -3442,15 +2866,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #toDouble(CharSequence)
-     */
-    @Deprecated
-    public static Double toDouble(String self) {
-        return toDouble((CharSequence) self);
-    }
-
-    /**
      * Parse a CharSequence into a Float
      *
      * @param self a CharSequence
@@ -3462,15 +2877,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #toFloat(CharSequence)
-     */
-    @Deprecated
-    public static Float toFloat(String self) {
-        return toFloat((CharSequence) self);
-    }
-
-    /**
      * Parse a CharSequence into an Integer
      *
      * @param self a CharSequence
@@ -3479,15 +2885,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Integer toInteger(CharSequence self) {
         return Integer.valueOf(self.toString().trim());
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #toInteger(CharSequence)
-     */
-    @Deprecated
-    public static Integer toInteger(String self) {
-        return toInteger((CharSequence) self);
     }
 
     /**
@@ -3537,33 +2934,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #tokenize(CharSequence)
-     */
-    @Deprecated
-    public static List<String> tokenize(String self) {
-        return tokenize((CharSequence) self);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #tokenize(CharSequence, Character)
-     */
-    @Deprecated
-    public static List<String> tokenize(String self, Character delimiter) {
-        return tokenize((CharSequence) self, delimiter);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #tokenize(CharSequence, CharSequence)
-     */
-    @Deprecated
-    public static List<String> tokenize(String self, String delimiters) {
-        return tokenize((CharSequence) self, (CharSequence) delimiters);
-    }
-
-    /**
      * Converts the given CharSequence into a List of Strings of one character.
      *
      * @param self a CharSequence
@@ -3581,15 +2951,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #toList(CharSequence)
-     */
-    @Deprecated
-    public static List<String> toList(String self) {
-        return toList((CharSequence) self);
-    }
-
-    /**
      * Parse a CharSequence into a Long
      *
      * @param self a CharSequence
@@ -3598,15 +2959,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Long toLong(CharSequence self) {
         return Long.valueOf(self.toString().trim());
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #toLong(CharSequence)
-     */
-    @Deprecated
-    public static Long toLong(String self) {
-        return toLong((CharSequence) self);
     }
 
     /**
@@ -3621,15 +2973,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #toSet(CharSequence)
-     */
-    @Deprecated
-    public static Set<String> toSet(String self) {
-        return toSet((CharSequence) self);
-    }
-
-    /**
      * Parse a CharSequence into a Short
      *
      * @param self a CharSequence
@@ -3638,15 +2981,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Short toShort(CharSequence self) {
         return Short.valueOf(self.toString().trim());
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #toShort(CharSequence)
-     */
-    @Deprecated
-    public static Short toShort(String self) {
-        return toShort((CharSequence) self);
     }
 
     /**
@@ -3695,15 +3029,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #tr(CharSequence, CharSequence, CharSequence)
-     */
-    @Deprecated
-    public static String tr(final String self, String sourceSet, String replacementSet) throws ClassNotFoundException {
-        return tr((CharSequence) self, (CharSequence) sourceSet, (CharSequence) replacementSet);
-    }
-
-    /**
      * Replaces sequences of whitespaces with tabs using tabStops of size 8.
      *
      * @param self A CharSequence to unexpand
@@ -3737,24 +3062,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @deprecated Use the CharSequence version
-     * @see #unexpand(CharSequence)
-     */
-    @Deprecated
-    public static String unexpand(String self) {
-        return unexpand((CharSequence) self);
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #unexpand(CharSequence, int)
-     */
-    @Deprecated
-    public static String unexpand(String self, int tabStop) {
-        return unexpand((CharSequence) self, tabStop);
-    }
-
-    /**
      * Replaces sequences of whitespaces with tabs within a line.
      *
      * @param self A line to unexpand
@@ -3781,15 +3088,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 index = index + tabStop;
         }
         return builder.toString();
-    }
-
-    /**
-     * @deprecated Use the CharSequence version
-     * @see #tokenize(CharSequence)
-     */
-    @Deprecated
-    public static String unexpandLine(String self, int tabStop) {
-        return unexpandLine((CharSequence) self, tabStop);
     }
 
     /**
