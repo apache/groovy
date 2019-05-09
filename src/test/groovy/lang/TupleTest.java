@@ -22,10 +22,12 @@ import junit.framework.TestCase;
 
 import java.util.List;
 
+import static org.junit.Assert.assertNotEquals;
+
 public class TupleTest extends TestCase {
 
-    final Object[] data = {"a", "b", "c"};
-    final Tuple t = new Tuple(data);
+    private final Object[] data = {"a", "b", "c"};
+    final Tuple t = new Tuple<Object>(data);
 
     public void testSize() {
         assertEquals("Size of " + t, 3, t.size());
@@ -59,25 +61,25 @@ public class TupleTest extends TestCase {
 
     public void testSubList() {
         List s = t.subList(1, 2);
-
         assertTrue("is a Tuple", s instanceof Tuple);
-
         assertEquals("size", 1, s.size());
     }
 
     public void testSubTuple() {
         Tuple s = t.subTuple(1, 2);
-
-        assertTrue("is a Tuple", s instanceof Tuple);
-
+        assertTrue("is a Tuple", isTuple(s));
         assertEquals("size", 1, s.size());
     }
 
+    private boolean isTuple(Object s) {
+        return s instanceof Tuple;
+    }
+
     public void testHashCodeAndEquals() {
-        Tuple a = new Tuple(new Object[]{"a", "b", "c"});
-        Tuple b = new Tuple(new Object[]{"a", "b", "c"});
-        Tuple c = new Tuple(new Object[]{"d", "b", "c"});
-        Tuple d = new Tuple(new Object[]{"a", "b"});
+        Tuple a = new Tuple<Object>("a", "b", "c");
+        Tuple b = new Tuple<Object>("a", "b", "c");
+        Tuple c = new Tuple<Object>("d", "b", "c");
+        Tuple d = new Tuple<Object>("a", "b");
         Tuple2<String, String> e = new Tuple2<String, String>("a", "b");
         Tuple2<String, String> f = new Tuple2<String, String>("a", "c");
 
@@ -85,14 +87,14 @@ public class TupleTest extends TestCase {
         assertTrue("hashcode", a.hashCode() != c.hashCode());
 
         assertEquals("a and b", a, b);
-        assertFalse("a != c", a.equals(c));
+        assertNotEquals("a != c", a, c);
 
-        assertFalse("!a.equals(null)", a.equals(null));
+        assertNotEquals("!a.equals(null)", null, a);
 
-        assertTrue("d.equals(e)", d.equals(e));
-        assertTrue("e.equals(d)", e.equals(d));
-        assertFalse("!e.equals(f)", e.equals(f));
-        assertFalse("!f.equals(e)", f.equals(e));
+        assertEquals("d.equals(e)", d, e);
+        assertEquals("e.equals(d)", e, d);
+        assertNotEquals("!e.equals(f)", e, f);
+        assertNotEquals("!f.equals(e)", f, e);
     }
 
     public void testIterator() {
@@ -103,7 +105,7 @@ public class TupleTest extends TestCase {
 
         assertEquals(1, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
         assertEquals(t, t.subTuple(0, t.size()));
@@ -114,10 +116,10 @@ public class TupleTest extends TestCase {
 
         assertEquals(2, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
-        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(Integer.valueOf(2), t.getSecond());
         assertEquals(2, t.get(1));
 
         assertEquals(t, t.subTuple(0, t.size()));
@@ -128,13 +130,13 @@ public class TupleTest extends TestCase {
 
         assertEquals(3, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
-        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(Integer.valueOf(2), t.getSecond());
         assertEquals(2, t.get(1));
 
-        assertEquals(new Integer(3), t.getThird());
+        assertEquals(Integer.valueOf(3), t.getThird());
         assertEquals(3, t.get(2));
 
         assertEquals(t, t.subTuple(0, t.size()));
@@ -145,16 +147,16 @@ public class TupleTest extends TestCase {
 
         assertEquals(4, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
-        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(Integer.valueOf(2), t.getSecond());
         assertEquals(2, t.get(1));
 
-        assertEquals(new Integer(3), t.getThird());
+        assertEquals(Integer.valueOf(3), t.getThird());
         assertEquals(3, t.get(2));
 
-        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(Integer.valueOf(4), t.getFourth());
         assertEquals(4, t.get(3));
 
         assertEquals(t, t.subTuple(0, t.size()));
@@ -165,19 +167,19 @@ public class TupleTest extends TestCase {
 
         assertEquals(5, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
-        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(Integer.valueOf(2), t.getSecond());
         assertEquals(2, t.get(1));
 
-        assertEquals(new Integer(3), t.getThird());
+        assertEquals(Integer.valueOf(3), t.getThird());
         assertEquals(3, t.get(2));
 
-        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(Integer.valueOf(4), t.getFourth());
         assertEquals(4, t.get(3));
 
-        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(Integer.valueOf(5), t.getFifth());
         assertEquals(5, t.get(4));
 
         assertEquals(t, t.subTuple(0, t.size()));
@@ -188,22 +190,22 @@ public class TupleTest extends TestCase {
 
         assertEquals(6, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
-        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(Integer.valueOf(2), t.getSecond());
         assertEquals(2, t.get(1));
 
-        assertEquals(new Integer(3), t.getThird());
+        assertEquals(Integer.valueOf(3), t.getThird());
         assertEquals(3, t.get(2));
 
-        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(Integer.valueOf(4), t.getFourth());
         assertEquals(4, t.get(3));
 
-        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(Integer.valueOf(5), t.getFifth());
         assertEquals(5, t.get(4));
 
-        assertEquals(new Integer(6), t.getSixth());
+        assertEquals(Integer.valueOf(6), t.getSixth());
         assertEquals(6, t.get(5));
 
         assertEquals(t, t.subTuple(0, t.size()));
@@ -214,25 +216,25 @@ public class TupleTest extends TestCase {
 
         assertEquals(7, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
-        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(Integer.valueOf(2), t.getSecond());
         assertEquals(2, t.get(1));
 
-        assertEquals(new Integer(3), t.getThird());
+        assertEquals(Integer.valueOf(3), t.getThird());
         assertEquals(3, t.get(2));
 
-        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(Integer.valueOf(4), t.getFourth());
         assertEquals(4, t.get(3));
 
-        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(Integer.valueOf(5), t.getFifth());
         assertEquals(5, t.get(4));
 
-        assertEquals(new Integer(6), t.getSixth());
+        assertEquals(Integer.valueOf(6), t.getSixth());
         assertEquals(6, t.get(5));
 
-        assertEquals(new Integer(7), t.getSeventh());
+        assertEquals(Integer.valueOf(7), t.getSeventh());
         assertEquals(7, t.get(6));
 
         assertEquals(t, t.subTuple(0, t.size()));
@@ -243,28 +245,28 @@ public class TupleTest extends TestCase {
 
         assertEquals(8, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
-        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(Integer.valueOf(2), t.getSecond());
         assertEquals(2, t.get(1));
 
-        assertEquals(new Integer(3), t.getThird());
+        assertEquals(Integer.valueOf(3), t.getThird());
         assertEquals(3, t.get(2));
 
-        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(Integer.valueOf(4), t.getFourth());
         assertEquals(4, t.get(3));
 
-        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(Integer.valueOf(5), t.getFifth());
         assertEquals(5, t.get(4));
 
-        assertEquals(new Integer(6), t.getSixth());
+        assertEquals(Integer.valueOf(6), t.getSixth());
         assertEquals(6, t.get(5));
 
-        assertEquals(new Integer(7), t.getSeventh());
+        assertEquals(Integer.valueOf(7), t.getSeventh());
         assertEquals(7, t.get(6));
 
-        assertEquals(new Integer(8), t.getEighth());
+        assertEquals(Integer.valueOf(8), t.getEighth());
         assertEquals(8, t.get(7));
 
         assertEquals(t, t.subTuple(0, t.size()));
@@ -275,31 +277,31 @@ public class TupleTest extends TestCase {
 
         assertEquals(9, t.size());
 
-        assertEquals(new Integer(1), t.getFirst());
+        assertEquals(Integer.valueOf(1), t.getFirst());
         assertEquals(1, t.get(0));
 
-        assertEquals(new Integer(2), t.getSecond());
+        assertEquals(Integer.valueOf(2), t.getSecond());
         assertEquals(2, t.get(1));
 
-        assertEquals(new Integer(3), t.getThird());
+        assertEquals(Integer.valueOf(3), t.getThird());
         assertEquals(3, t.get(2));
 
-        assertEquals(new Integer(4), t.getFourth());
+        assertEquals(Integer.valueOf(4), t.getFourth());
         assertEquals(4, t.get(3));
 
-        assertEquals(new Integer(5), t.getFifth());
+        assertEquals(Integer.valueOf(5), t.getFifth());
         assertEquals(5, t.get(4));
 
-        assertEquals(new Integer(6), t.getSixth());
+        assertEquals(Integer.valueOf(6), t.getSixth());
         assertEquals(6, t.get(5));
 
-        assertEquals(new Integer(7), t.getSeventh());
+        assertEquals(Integer.valueOf(7), t.getSeventh());
         assertEquals(7, t.get(6));
 
-        assertEquals(new Integer(8), t.getEighth());
+        assertEquals(Integer.valueOf(8), t.getEighth());
         assertEquals(8, t.get(7));
 
-        assertEquals(new Integer(9), t.getNinth());
+        assertEquals(Integer.valueOf(9), t.getNinth());
         assertEquals(9, t.get(8));
 
         assertEquals(t, t.subTuple(0, t.size()));
