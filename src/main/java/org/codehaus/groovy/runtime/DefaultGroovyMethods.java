@@ -7579,10 +7579,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @return a new eager or lazy list of the values at the given indices
      */
+    @SuppressWarnings("unchecked")
     public static <T> List<T> getAt(ListWithDefault<T> self, Collection indices) {
         List<T> answer = ListWithDefault.newInstance(new ArrayList<T>(indices.size()), self.isLazyDefaultValues(), self.getInitClosure());
         for (Object value : indices) {
-            if (value instanceof Range || value instanceof Collection) {
+            if (value instanceof Collection) {
                 answer.addAll((List<T>) InvokerHelper.invokeMethod(self, "getAt", value));
             } else {
                 int idx = normaliseIndex(DefaultTypeTransformation.intUnbox(value), self.size());
@@ -7667,10 +7668,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new list of the values at the given indices
      * @since 1.0
      */
+    @SuppressWarnings("unchecked")
     public static <T> List<T> getAt(List<T> self, Collection indices) {
         List<T> answer = new ArrayList<T>(indices.size());
         for (Object value : indices) {
-            if (value instanceof Range || value instanceof Collection) {
+            if (value instanceof Collection) {
                 answer.addAll((List<T>)InvokerHelper.invokeMethod(self, "getAt", value));
             } else {
                 int idx = DefaultTypeTransformation.intUnbox(value);
