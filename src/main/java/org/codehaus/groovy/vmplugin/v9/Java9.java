@@ -252,32 +252,20 @@ public class Java9 extends Java8 {
         if (isClassPublic && declaringModule.isExported(pn, callerModule)) {
             // member is public
             if (Modifier.isPublic(modifiers)) {
-                if (toCheckIllegalAccess) {
-                    return !isExportedForIllegalAccess(declaringModule, pn);
-                }
-
-                return true;
+                return !(toCheckIllegalAccess && isExportedForIllegalAccess(declaringModule, pn));
             }
 
             // member is protected-static
             if (Modifier.isProtected(modifiers)
                     && Modifier.isStatic(modifiers)
                     && isSubclassOf(callerClass, declaringClass)) {
-                if (toCheckIllegalAccess) {
-                    return !isExportedForIllegalAccess(declaringModule, pn);
-                }
-
-                return true;
+                return !(toCheckIllegalAccess && isExportedForIllegalAccess(declaringModule, pn));
             }
         }
 
         // package is open to callerClass
         if (declaringModule.isOpen(pn, callerModule)) {
-            if (toCheckIllegalAccess) {
-                return !isOpenedForIllegalAccess(declaringModule, pn);
-            }
-
-            return true;
+            return !(toCheckIllegalAccess && isOpenedForIllegalAccess(declaringModule, pn));
         }
 
         return false;
