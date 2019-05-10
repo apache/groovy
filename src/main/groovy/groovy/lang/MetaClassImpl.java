@@ -1276,7 +1276,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            MetaMethod transformedMetaMethod = CallSiteHelper.transformMetaMethod(this, method, () -> MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            MetaMethod transformedMetaMethod = CallSiteHelper.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         } else {
             return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);

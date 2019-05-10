@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.CompileUnit;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
-import java.util.function.Supplier;
 
 /**
  * Interface to access VM version based actions.
@@ -89,11 +88,9 @@ public interface VMPlugin {
      *
      * @param metaClass meta class
      * @param metaMethod the original meta method
-     * @param paramsSupplier parameter types supplier
+     * @param params parameter types
      * @param caller caller type
      * @return the transformed meta method
      */
-    default MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Supplier<Class<?>[]> paramsSupplier, Class<?> caller) {
-        return metaMethod;
-    }
+    MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller);
 }
