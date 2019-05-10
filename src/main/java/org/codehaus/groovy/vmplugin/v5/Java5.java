@@ -547,12 +547,11 @@ public class Java5 implements VMPlugin {
      * 2) the accessible object is a Constructor object for the Class class
      *
      * @param accessibleObject the accessible object to check
-     * @param caller the caller to invoke {@code setAccessible}
+     * @param callerClass the callerClass to invoke {@code setAccessible}
      * @return the check result
      */
     @Override
-    public boolean checkCanSetAccessible(AccessibleObject accessibleObject,
-                                  Class<?> caller) {
+    public boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> callerClass) {
         SecurityManager sm = System.getSecurityManager();
         try {
             if (sm != null) {

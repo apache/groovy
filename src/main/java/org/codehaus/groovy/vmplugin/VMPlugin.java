@@ -67,10 +67,10 @@ public interface VMPlugin {
      * Check whether invoking {@link AccessibleObject#setAccessible(boolean)} on the accessible object will be completed successfully
      *
      * @param accessibleObject the accessible object to check
-     * @param caller the caller to invoke {@code setAccessible}
+     * @param callerClass the callerClass to invoke {@code setAccessible}
      * @return the check result
      */
-    boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> caller);
+    boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> callerClass);
 
     /**
      * Set the {@code accessible} flag for this reflected object to {@code true}

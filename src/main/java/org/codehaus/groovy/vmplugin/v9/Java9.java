@@ -130,15 +130,14 @@ public class Java9 extends Java8 {
      * 4) D is in a package that the module containing D opens to at least the module containing C. All packages in unnamed and open modules are open to all modules and so this method always succeeds when D is in an unnamed or open module.
      *
      * @param accessibleObject the accessible object to check
-     * @param caller           the caller to invoke {@code setAccessible}
+     * @param callerClass           the callerClass to invoke {@code setAccessible}
      * @return the check result
      */
-    public boolean checkCanSetAccessible(AccessibleObject accessibleObject,
-                                         Class<?> caller) {
+    public boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> callerClass) {
 
-        if (!super.checkCanSetAccessible(accessibleObject, caller)) return false;
+        if (!super.checkCanSetAccessible(accessibleObject, callerClass)) return false;
 
-        if (caller == MethodHandle.class) {
+        if (callerClass == MethodHandle.class) {
             throw new IllegalCallerException();   // should not happen
         }
 
@@ -148,21 +147,18 @@ public class Java9 extends Java8 {
 
         Class<?> declaringClass = ((Member) accessibleObject).getDeclaringClass();
 
-        Module callerModule = caller.getModule();
+        Module callerModule = callerClass.getModule();
         Module declaringModule = declaringClass.getModule();
 
         if (callerModule == declaringModule) return true;
         if (callerModule == Object.class.getModule()) return true;
         if (!declaringModule.isNamed()) return true;
 
-        int modifiers;
-        if (accessibleObject instanceof Executable) {
-            modifiers = ((Executable) accessibleObject).getModifiers();
-        } else {
-            modifiers = ((Field) accessibleObject).getModifiers();
-        }
+        int modifiers = accessibleObject instanceof Executable
+                            ? ((Executable) accessibleObject).getModifiers()
+                            : ((Field) accessibleObject).getModifiers();
 
-        return checkAccessible(caller, declaringClass, modifiers, true);
+        return checkAccessible(callerClass, declaringClass, modifiers, true);
     }
 
 
@@ -243,21 +239,21 @@ public class Java9 extends Java8 {
         return optionalMethod.stream().map(CachedMethod::new).collect(Collectors.toList());
     }
 
-    private static boolean checkAccessible(Class<?> caller, Class<?> declaringClass, int modifiers, boolean allowIllegalAccess) {
-        Module callerModule = caller.getModule();
+    private static boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int modifiers, boolean allowIllegalAccess) {
+        Module callerModule = callerClass.getModule();
         Module declaringModule = declaringClass.getModule();
         String pn = declaringClass.getPackageName();
 
         boolean unnamedModuleAccessNamedModule = !callerModule.isNamed() && declaringModule.isNamed();
         boolean toCheckIllegalAccess = !allowIllegalAccess && unnamedModuleAccessNamedModule;
 
-        // class is public and package is exported to caller
+        // class is public and package is exported to callerClass
         boolean isClassPublic = Modifier.isPublic(declaringClass.getModifiers());
         if (isClassPublic && declaringModule.isExported(pn, callerModule)) {
             // member is public
             if (Modifier.isPublic(modifiers)) {
                 if (toCheckIllegalAccess) {
-                    if (isExportedForIllegalAccess(declaringModule, pn)) return false;
+                    return !isExportedForIllegalAccess(declaringModule, pn);
                 }
 
                 return true;
@@ -266,19 +262,19 @@ public class Java9 extends Java8 {
             // member is protected-static
             if (Modifier.isProtected(modifiers)
                     && Modifier.isStatic(modifiers)
-                    && isSubclassOf(caller, declaringClass)) {
+                    && isSubclassOf(callerClass, declaringClass)) {
                 if (toCheckIllegalAccess) {
-                    if (isExportedForIllegalAccess(declaringModule, pn)) return false;
+                    return !isExportedForIllegalAccess(declaringModule, pn);
                 }
 
                 return true;
             }
         }
 
-        // package is open to caller
+        // package is open to callerClass
         if (declaringModule.isOpen(pn, callerModule)) {
             if (toCheckIllegalAccess) {
-                if (isOpenedForIllegalAccess(declaringModule, pn)) return false;
+                return !isOpenedForIllegalAccess(declaringModule, pn);
             }
 
             return true;
