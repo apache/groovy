@@ -23,11 +23,16 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.util.function.Supplier;
+
 public class CallSiteHelper {
     private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
     public static MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
-        return VM_PLUGIN.transformMetaMethod(metaClass, metaMethod, params, caller);
+        return transformMetaMethod(metaClass, metaMethod, () -> params, caller);
     }
 
+    public static MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Supplier<Class<?>[]> paramsSupplier, Class<?> caller) {
+        return VM_PLUGIN.transformMetaMethod(metaClass, metaMethod, paramsSupplier, caller);
+    }
 }

@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.vmplugin.v5;
 
-import groovy.lang.MetaClass;
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -582,11 +580,6 @@ public class Java5 implements VMPlugin {
         } catch (Throwable t) {
             return false;
         }
-    }
-
-    @Override
-    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
-        return metaMethod;
     }
 
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
