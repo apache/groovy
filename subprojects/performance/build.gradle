@@ -20,7 +20,7 @@
 import java.text.DecimalFormat
 
 plugins {
-    id "me.champeau.gradle.jmh" version "0.4.7"
+    id "me.champeau.gradle.jmh" version "0.4.8"
 }
 
 configurations {
