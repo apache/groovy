@@ -19,7 +19,7 @@
 import me.champeau.gradle.japicmp.JapicmpTask
 
 plugins {
-    id("me.champeau.gradle.japicmp") version "0.2.6"
+    id "me.champeau.gradle.japicmp" version "0.2.8"
 }
 
 def checkBinaryCompatibility = tasks.register("checkBinaryCompatibility") {
