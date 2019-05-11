@@ -1702,7 +1702,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
                         ClassNode cn = inferReturnTypeGenerics(dgmReceiver, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
                         storeInferredTypeForPropertyExpression(pexp, cn);
-                        storeTargetMethod(pexp, getter);
+                        if (readMode) storeTargetMethod(pexp, getter);
                         return true;
                     }
                 }
