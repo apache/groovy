@@ -115,11 +115,11 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
                 String methodName = getSetterName(prefix, fieldName);
                 Parameter parameter = param(field.getType(), fieldName);
                 addGeneratedMethod(buildee, methodName, Opcodes.ACC_PUBLIC, newClass(buildee), params(parameter), NO_EXCEPTIONS, block(
-                    stmt(useSetters && !field.isFinal()
-                        ? callThisX(getSetterName("set", fieldName), varX(parameter))
-                        : assignX(fieldX(field), varX(parameter))
-                    ),
-                    returnS(varX("this")))
+                        stmt(useSetters && !field.isFinal()
+                                ? callThisX(getSetterName("set", fieldName), varX(parameter))
+                                : assignX(fieldX(field), varX(parameter))
+                        ),
+                        returnS(varX("this")))
                 );
             }
         }
