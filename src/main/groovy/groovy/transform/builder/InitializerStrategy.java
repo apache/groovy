@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
@@ -303,7 +304,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     // no rename so delete and add
     private static void renameMethod(ClassNode buildee, MethodNode mNode, String newName) {
-        buildee.addMethod(newName, mNode.getModifiers(), mNode.getReturnType(), mNode.getParameters(), mNode.getExceptions(), mNode.getCode());
+        addGeneratedMethod(buildee, newName, mNode.getModifiers(), mNode.getReturnType(), mNode.getParameters(), mNode.getExceptions(), mNode.getCode());
         buildee.removeMethod(mNode);
     }
 
