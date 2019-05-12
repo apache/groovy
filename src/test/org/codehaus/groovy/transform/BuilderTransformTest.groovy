@@ -39,6 +39,10 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert person.firstName == "Robert"
             assert person.lastName == "Lewandowski"
             assert person.age == 21
+
+            def methods = Person.methods.findAll{ it.name.startsWith('set') && it.name.endsWith('e') }
+            assert methods*.name.toSet() == ['setLastName', 'setAge', 'setFirstName'] as Set
+            assert methods.every{ it.getAnnotation(groovy.transform.Generated) }
          """
     }
 
@@ -195,6 +199,9 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert person.firstName == "Robert"
             assert person.lastName == "Lewandowski"
             assert person.age == 21
+
+            def methods = Person.builder().getClass().methods.findAll{ it.name in ['firstName', 'lastName', 'age'] }
+            assert methods.every{ it.getAnnotation(groovy.transform.Generated) }
         """
     }
 
@@ -354,6 +361,9 @@ class BuilderTransformTest extends CompilableTestSupport {
             def person = new PersonBuilder().firstName("Robert").lastName("Lewandowski").build()
             assert person.firstName == "Robert"
             assert person.lastName == "Lewandowski"
+
+            def methods = PersonBuilder.methods.findAll{ it.name in ['firstName', 'lastName', 'age'] }
+            assert methods.every{ it.getAnnotation(groovy.transform.Generated) }
         """
     }
 
@@ -511,6 +521,9 @@ class BuilderTransformTest extends CompilableTestSupport {
             firstLastAge()
             // dynamic case
             assert new Person(Person.createInitializer().firstName("John").lastName("Smith").age(21)).toString() == 'Person(John, Smith, 21)'
+
+            def methods = Person.createInitializer().getClass().methods.findAll{ it.name in ['firstName', 'lastName', 'age'] }
+            assert methods.every{ it.getAnnotation(groovy.transform.Generated) }
         '''
         def message = shouldNotCompile '''
             import groovy.transform.builder.*

@@ -31,7 +31,6 @@ import org.codehaus.groovy.transform.BuilderASTTransformation;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -105,7 +104,6 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
             transform.addError("Error during " + MY_TYPE_NAME + " processing: 'forClass' must be specified for " + getClass().getName(), anno);
             return;
         }
-        markAsGenerated(buildee, builder);
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();
         includes.add(Undefined.STRING);

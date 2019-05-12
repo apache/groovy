@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedInnerClass;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -184,13 +184,12 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         }
         ClassNode buildee = mNode.getDeclaringClass();
         ClassNode builder = createBuilder(anno, buildee);
-        markAsGenerated(buildee, builder);
         createBuilderFactoryMethod(anno, buildee, builder);
         for (Parameter parameter : mNode.getParameters()) {
             builder.addField(createFieldCopy(buildee, parameter));
-            builder.addMethod(createBuilderMethodForProp(builder, new PropertyInfo(parameter.getName(), parameter.getType()), getPrefix(anno)));
+            addGeneratedMethod(builder, createBuilderMethodForProp(builder, new PropertyInfo(parameter.getName(), parameter.getType()), getPrefix(anno)));
         }
-        addGeneratedMethod(buildee, createBuildMethodForMethod(anno, buildee, mNode, mNode.getParameters()));
+        addGeneratedMethod(builder, createBuildMethodForMethod(anno, buildee, mNode, mNode.getParameters()));
     }
 
     public void buildClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
@@ -200,7 +199,6 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         if (!getIncludeExclude(transform, anno, buildee, excludes, includes)) return;
         if (includes.size() == 1 && Undefined.isUndefined(includes.get(0))) includes = null;
         ClassNode builder = createBuilder(anno, buildee);
-        markAsGenerated(buildee, builder);
         createBuilderFactoryMethod(anno, buildee, builder);
 //        List<FieldNode> fields = getFields(transform, anno, buildee);
         boolean allNames = transform.memberHasValue(anno, "allNames", true);
@@ -216,13 +214,13 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     }
 
     private static ClassNode getCorrectedType(ClassNode buildee, ClassNode fieldType, ClassNode declaringClass) {
-        Map<String,ClassNode> genericsSpec = createGenericsSpec(declaringClass);
+        Map<String, ClassNode> genericsSpec = createGenericsSpec(declaringClass);
         extractSuperClassGenerics(fieldType, buildee, genericsSpec);
         return correctToGenericsSpecRecurse(genericsSpec, fieldType);
     }
 
     private static void createBuilderFactoryMethod(AnnotationNode anno, ClassNode buildee, ClassNode builder) {
-        buildee.getModule().addClass(builder);
+        addGeneratedInnerClass(buildee, builder);
         addGeneratedMethod(buildee, createBuilderMethod(anno, builder));
     }
 
@@ -278,7 +276,7 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     }
 
     private static FieldNode createFieldCopy(ClassNode buildee, Parameter param) {
-        Map<String,ClassNode> genericsSpec = createGenericsSpec(buildee);
+        Map<String, ClassNode> genericsSpec = createGenericsSpec(buildee);
         extractSuperClassGenerics(param.getType(), buildee, genericsSpec);
         ClassNode correctedParamType = correctToGenericsSpecRecurse(genericsSpec, param.getType());
         return new FieldNode(param.getName(), ACC_PRIVATE, correctedParamType, buildee, param.getInitialExpression());
