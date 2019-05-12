@@ -31,6 +31,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
@@ -113,12 +114,12 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
             if (!AbstractASTTransformation.shouldSkipUndefinedAware(fieldName, excludes, includes, allNames)) {
                 String methodName = getSetterName(prefix, fieldName);
                 Parameter parameter = param(field.getType(), fieldName);
-                buildee.addMethod(methodName, Opcodes.ACC_PUBLIC, newClass(buildee), params(parameter), NO_EXCEPTIONS, block(
-                                stmt(useSetters && !field.isFinal()
-                                                ? callThisX(getSetterName("set", fieldName), varX(parameter))
-                                                : assignX(fieldX(field), varX(parameter))
-                                ),
-                                returnS(varX("this")))
+                addGeneratedMethod(buildee, methodName, Opcodes.ACC_PUBLIC, newClass(buildee), params(parameter), NO_EXCEPTIONS, block(
+                    stmt(useSetters && !field.isFinal()
+                        ? callThisX(getSetterName("set", fieldName), varX(parameter))
+                        : assignX(fieldX(field), varX(parameter))
+                    ),
+                    returnS(varX("this")))
                 );
             }
         }
