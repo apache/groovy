@@ -35,11 +35,12 @@ public class AnnotatedNodeUtils {
     private AnnotatedNodeUtils() {
     }
 
-    public static void markAsGenerated(ClassNode containingClass, AnnotatedNode nodeToMark) {
+    public static <T extends AnnotatedNode> T markAsGenerated(ClassNode containingClass, T nodeToMark) {
         boolean shouldAnnotate = containingClass.getModule() != null && containingClass.getModule().getContext() != null;
         if (shouldAnnotate && !hasAnnotation(nodeToMark, GENERATED_TYPE)) {
             nodeToMark.addAnnotation(new AnnotationNode(GENERATED_TYPE));
         }
+        return nodeToMark;
     }
 
     public static boolean hasAnnotation(AnnotatedNode node, ClassNode annotation) {
