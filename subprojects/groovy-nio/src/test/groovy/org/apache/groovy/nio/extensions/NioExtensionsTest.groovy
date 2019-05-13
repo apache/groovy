@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime
+package org.apache.groovy.nio.extensions
 
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -26,7 +26,7 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import spock.lang.Specification
 
-class NioGroovyMethodsTest extends Specification {
+class NioExtensionsTest extends Specification {
 
     @Rule
     TemporaryFolder temporaryFolder
@@ -121,7 +121,7 @@ class NioGroovyMethodsTest extends Specification {
         path.append(' ؁', encoding, true)
 
         then:
-        byte[] bytes = NioGroovyMethods.getBytes(path)
+        byte[] bytes = NioExtensions.getBytes(path)
         bytes[0] == -1 as byte
         bytes[1] == -2 as byte
         String string = path.getText(encoding)
@@ -138,7 +138,7 @@ class NioGroovyMethodsTest extends Specification {
         path.append(reader, encoding, true)
 
         then:
-        byte[] bytes = NioGroovyMethods.getBytes(path)
+        byte[] bytes = NioExtensions.getBytes(path)
         bytes[0] == -1 as byte
         bytes[1] == -2 as byte
         String string = path.getText(encoding)
@@ -157,7 +157,7 @@ class NioGroovyMethodsTest extends Specification {
         path.append(writer, encoding, true)
 
         then:
-        byte[] bytes = NioGroovyMethods.getBytes(path)
+        byte[] bytes = NioExtensions.getBytes(path)
         bytes[0] == -1 as byte
         bytes[1] == -2 as byte
         String string = path.getText(encoding)
@@ -513,7 +513,7 @@ class NioGroovyMethodsTest extends Specification {
         path.write(str, 'UTF-16LE', true)
 
         then:
-        assert NioGroovyMethods.getBytes(path) == [-1, -2, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33, 0] as byte[]
+        assert NioExtensions.getBytes(path) == [-1, -2, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33, 0] as byte[]
     }
 
     def testWriteUTF16BE() {
@@ -537,7 +537,7 @@ class NioGroovyMethodsTest extends Specification {
         path.write(str, 'UTF-16BE', true)
 
         then:
-        assert NioGroovyMethods.getBytes(path) == [-2, -1, 0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33] as byte[]
+        assert NioExtensions.getBytes(path) == [-2, -1, 0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 119, 0, 111, 0, 114, 0, 108, 0, 100, 0, 33] as byte[]
     }
 
 }

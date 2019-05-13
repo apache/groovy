@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.apache.groovy.nio.extensions;
 
 import groovy.io.FileType;
 import groovy.io.FileVisitResult;
@@ -28,6 +28,11 @@ import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
+import org.apache.groovy.nio.runtime.WritablePath;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+import org.codehaus.groovy.runtime.IOGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -80,8 +85,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
  * remove or move a method call in this file but would normally
  * aim to keep the method available from within Groovy.
  */
-
-public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
+public class NioExtensions extends DefaultGroovyMethodsSupport {
 
     /**
      * Provide the standard Groovy <code>size()</code> method for <code>Path</code>.
@@ -553,7 +557,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         try {
             OutputStream out = Files.newOutputStream(self);
             if (writeBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
+                writeUTF16BomIfRequired(out, charset);
             }
             writer = new OutputStreamWriter(out, Charset.forName(charset));
             writer.write(text);
@@ -697,7 +701,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
             boolean shouldWriteBom = writeBom && !self.toFile().exists();
             OutputStream out = Files.newOutputStream(self, CREATE, APPEND);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(out, resolvedCharset);
+                writeUTF16BomIfRequired(out, resolvedCharset);
             }
             writer = new OutputStreamWriter(out, resolvedCharset);
             InvokerHelper.write(writer, text);
@@ -815,7 +819,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
             boolean shouldWriteBom = writeBom && !file.toFile().exists();
             writer = newWriter(file, charset, true);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(writer, charset);
+                writeUTF16BomIfRequired(writer, charset);
             }
             InvokerHelper.write(writer, text);
             writer.flush();
@@ -985,7 +989,7 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      *                which can be used to control subsequent processing
      * @throws java.io.FileNotFoundException if the given directory does not exist
      * @throws IllegalArgumentException      if the provided Path object does not represent a directory or illegal filter combinations are supplied
-     * @see DefaultGroovyMethods#sort(java.util.Collection, groovy.lang.Closure)
+     * @see DefaultGroovyMethods#sort(java.lang.Iterable, groovy.lang.Closure)
      * @see groovy.io.FileVisitResult
      * @see groovy.io.FileType
      * @since 2.3.0
@@ -1482,7 +1486,8 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static Object withOutputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.OutputStream") Closure closure) throws IOException {
+    @SuppressWarnings("unchecked")
+    public static <T> T withOutputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.OutputStream") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newOutputStream(self), closure);
     }
 
@@ -1497,7 +1502,8 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.IOGroovyMethods#withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static Object withInputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.InputStream") Closure closure) throws IOException {
+    @SuppressWarnings("unchecked")
+    public static <T> T withInputStream(Path self, @ClosureParams(value = SimpleType.class, options = "java.io.InputStream") Closure<T> closure) throws IOException {
         return IOGroovyMethods.withStream(newInputStream(self), closure);
     }
 
@@ -1593,13 +1599,13 @@ public class NioGroovyMethods extends DefaultGroovyMethodsSupport {
         if (append) {
             BufferedWriter writer = Files.newBufferedWriter(self, Charset.forName(charset), CREATE, APPEND);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(writer, charset);
+                writeUTF16BomIfRequired(writer, charset);
             }
             return writer;
         } else {
             OutputStream out = Files.newOutputStream(self);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
+                writeUTF16BomIfRequired(out, charset);
             }
             return new BufferedWriter(new OutputStreamWriter(out, Charset.forName(charset)));
         }

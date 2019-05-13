@@ -855,7 +855,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         try {
             FileOutputStream out = new FileOutputStream(file);
             if (writeBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
+                writeUTF16BomIfRequired(out, charset);
             }
             writer = new OutputStreamWriter(out, charset);
             writer.write(text);
@@ -943,7 +943,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             boolean shouldWriteBom = writeBom && !file.exists();
             writer = newWriter(file, true);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(writer, Charset.defaultCharset().name());
+                writeUTF16BomIfRequired(writer, Charset.defaultCharset().name());
             }
             InvokerHelper.write(writer, text);
             writer.flush();
@@ -1032,7 +1032,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             boolean shouldWriteBom = writeBom && !file.exists();
             FileOutputStream out = new FileOutputStream(file, true);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(out, charset);
+                writeUTF16BomIfRequired(out, charset);
             }
             writer = new OutputStreamWriter(out, charset);
             InvokerHelper.write(writer, text);
@@ -1133,7 +1133,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             boolean shouldWriteBom = writeBom && !file.exists();
             writer = newWriter(file, charset, true);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(writer, charset);
+                writeUTF16BomIfRequired(writer, charset);
             }
             InvokerHelper.write(writer, text);
             writer.flush();
@@ -1947,13 +1947,13 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         if (append) {
             FileOutputStream stream = new FileOutputStream(file, append);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(stream, charset);
+                writeUTF16BomIfRequired(stream, charset);
             }
             return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
         } else {
             FileOutputStream stream = new FileOutputStream(file);
             if (shouldWriteBom) {
-                IOGroovyMethods.writeUTF16BomIfRequired(stream, charset);
+                writeUTF16BomIfRequired(stream, charset);
             }
             return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
         }

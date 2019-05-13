@@ -39,7 +39,7 @@ import java.util.Iterator;
 /**
  * A Writable Path.
  */
-
+@Deprecated
 public class WritablePath implements Path, Writable {
 
     private final String encoding;

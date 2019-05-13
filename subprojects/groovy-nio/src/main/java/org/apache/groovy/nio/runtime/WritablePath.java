@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.apache.groovy.nio.runtime;
 
 import groovy.lang.Writable;
 
@@ -39,7 +39,6 @@ import java.util.Iterator;
 /**
  * A Writable Path.
  */
-
 public class WritablePath implements Path, Writable {
 
     private final String encoding;
