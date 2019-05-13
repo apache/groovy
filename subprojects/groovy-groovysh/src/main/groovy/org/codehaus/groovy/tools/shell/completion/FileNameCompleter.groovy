@@ -41,6 +41,7 @@ import static jline.internal.Preconditions.checkNotNull
  *
  * @since 2.3
  */
+@Deprecated
 class FileNameCompleter extends jline.console.completer.FileNameCompleter {
     private static final boolean OS_IS_WINDOWS = Configuration.isWindows()
     private final GroovyShell gs = new GroovyShell()

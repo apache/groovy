@@ -28,6 +28,7 @@ import static org.fusesource.jansi.Ansi.ansi
 /**
  * A simple shell for invoking commands from a command-line.
  */
+@Deprecated
 class Shell
 {
     protected final Logger log = Logger.create(this.class)

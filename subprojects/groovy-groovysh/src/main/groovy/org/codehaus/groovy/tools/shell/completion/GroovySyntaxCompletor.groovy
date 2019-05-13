@@ -63,6 +63,7 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SPREAD_DOT
  * Implements the Completor interface to provide competions for
  * GroovyShell by tokenizing the buffer and invoking other classes depending on the tokens found.
  */
+@Deprecated
 class GroovySyntaxCompletor implements Completer {
 
     protected final static Logger LOG = Logger.create(GroovySyntaxCompletor)

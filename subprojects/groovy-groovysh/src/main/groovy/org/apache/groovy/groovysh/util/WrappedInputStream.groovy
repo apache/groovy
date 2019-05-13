@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
 
 /**
  * In order to modify JLine Behavior, we need to wrap the IO streams so we can hack into them

@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
 import org.codehaus.groovy.antlr.GroovySourceToken
 
 /**
- * Completor completing Groovy keywords and special functions
+ * Completer completing Groovy keywords and special functions
  */
-class KeywordSyntaxCompletor implements IdentifierCompletor {
+class KeywordSyntaxCompleter implements IdentifierCompleter {
 
     private static final String[] KEYWORDS = [
             'abstract',

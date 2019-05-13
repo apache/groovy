@@ -24,6 +24,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * The 'clear' command.
  */
+@Deprecated
 class ClearCommand
     extends CommandSupport
 {

@@ -27,7 +27,7 @@ if "%OS%"=="Windows_NT" setlocal
 set DIRNAME=%~dp0
 if "%DIRNAME%" == "" set DIRNAME=.\
 
-set CLASSNAME=org.codehaus.groovy.tools.shell.Main
+set CLASSNAME=org.apache.groovy.groovysh.Main
 
 "%DIRNAME%\startGroovy.bat" "%DIRNAME%" %CLASSNAME% %*
 

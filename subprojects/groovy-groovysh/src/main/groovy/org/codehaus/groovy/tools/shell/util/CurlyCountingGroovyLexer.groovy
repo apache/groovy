@@ -27,6 +27,7 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes
 /**
  * patching GroovyLexer to get access to Paren level
  */
+@Deprecated
 class CurlyCountingGroovyLexer extends GroovyLexer {
 
     private endReached = false

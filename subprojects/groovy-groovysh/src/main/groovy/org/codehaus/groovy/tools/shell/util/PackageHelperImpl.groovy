@@ -33,6 +33,7 @@ import java.util.zip.ZipException
  * Retrieves from those sources the list of subpackages and classes on demand.
  */
 @CompileStatic
+@Deprecated
 class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
 
     // Pattern for regular Classnames

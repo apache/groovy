@@ -16,13 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
 import jline.console.completer.Completer
 import jline.console.completer.NullCompleter
 import jline.console.completer.StringsCompleter
 import jline.console.history.FileHistory
-import org.codehaus.groovy.tools.shell.completion.StricterArgumentCompleter
+import org.apache.groovy.groovysh.completion.StricterArgumentCompleter
+import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 

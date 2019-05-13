@@ -21,6 +21,7 @@ package org.codehaus.groovy.tools.shell.util
 import groovy.transform.CompileStatic
 
 @CompileStatic
+@Deprecated
 class CommandArgumentParser {
 
     /**

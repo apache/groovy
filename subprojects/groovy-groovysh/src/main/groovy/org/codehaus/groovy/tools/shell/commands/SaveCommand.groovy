@@ -26,6 +26,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * The 'save' command.
  */
+@Deprecated
 class SaveCommand
     extends CommandSupport
 {

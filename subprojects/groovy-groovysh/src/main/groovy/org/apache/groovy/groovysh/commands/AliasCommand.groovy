@@ -16,13 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import jline.console.completer.Completer
-import org.codehaus.groovy.tools.shell.Command
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
+import org.apache.groovy.groovysh.Command
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.completion.CommandNameCompleter
 
 /**
  * The 'alias' command.
@@ -80,7 +80,7 @@ class AliasCommand
         // TODO: Should this be here... or should this be in the Shell's impl?
         //
 
-        // Try to install the completor
+        // Try to install the completer
         if (shell.runner) {
             shell.runner.completer.add(command)
         }

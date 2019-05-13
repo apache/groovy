@@ -26,6 +26,7 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 /**
  * The 'history' command.
  */
+@Deprecated
 class HistoryCommand
     extends ComplexCommandSupport
 {

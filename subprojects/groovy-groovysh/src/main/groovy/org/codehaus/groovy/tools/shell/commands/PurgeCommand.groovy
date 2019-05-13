@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 /**
  * The 'purge' command.
  */
+@Deprecated
 class PurgeCommand
     extends ComplexCommandSupport
 {

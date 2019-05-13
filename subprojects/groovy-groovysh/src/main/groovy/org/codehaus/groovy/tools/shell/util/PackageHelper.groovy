@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.shell.util
 
+@Deprecated
 interface PackageHelper {
 
     public static final String IMPORT_COMPLETION_PREFERENCE_KEY = 'disable-import-completion'

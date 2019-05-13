@@ -27,6 +27,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
  *
  * @since 2.2.0
  */
+@Deprecated
 class DocCommand extends CommandSupport {
 
     public static final String COMMAND_NAME = ':doc'

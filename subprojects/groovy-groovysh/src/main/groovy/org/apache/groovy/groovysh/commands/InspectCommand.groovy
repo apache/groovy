@@ -16,13 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import groovy.inspect.swingui.ObjectBrowser
 import jline.console.completer.Completer
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.util.SimpleCompleter
 
 import javax.swing.*
 import java.awt.*
@@ -31,9 +31,7 @@ import java.util.List
 /**
  * The 'inspect' command.
  */
-class InspectCommand
-    extends CommandSupport
-{
+class InspectCommand extends CommandSupport {
     public static final String COMMAND_NAME = ':inspect'
 
     InspectCommand(final Groovysh shell) {
@@ -46,8 +44,8 @@ class InspectCommand
     @Override
     protected List<Completer> createCompleters() {
         return [
-            new InspectCommandCompletor(binding),
-            null
+                new InspectCommandCompleter(binding),
+                null
         ]
     }
 
@@ -103,14 +101,12 @@ class InspectCommand
 }
 
 /**
- * Completor for the 'inspect' command.
+ * Completer for the 'inspect' command.
  */
-class InspectCommandCompletor
-    extends SimpleCompletor
-{
+class InspectCommandCompleter extends SimpleCompleter {
     private final Binding binding
 
-    InspectCommandCompletor(final Binding binding) {
+    InspectCommandCompleter(final Binding binding) {
         assert binding
         this.setWithBlank(false)
         this.binding = binding

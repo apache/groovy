@@ -90,6 +90,7 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STRING_LITERAL
  * Does not quite respect the contract of IdentifierCompletor, as last Token may be a dot or not,
  * thus also returns as int the cursor position.
  */
+@Deprecated
 class ReflectionCompletor {
 
     private static final NavigablePropertiesCompleter PROPERTIES_COMPLETER = new NavigablePropertiesCompleter()

@@ -16,38 +16,37 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
 
-import org.codehaus.groovy.tools.shell.Command
-import org.codehaus.groovy.tools.shell.Shell
-import org.codehaus.groovy.tools.shell.commands.AliasCommand
-import org.codehaus.groovy.tools.shell.commands.ClearCommand
-import org.codehaus.groovy.tools.shell.commands.DisplayCommand
-import org.codehaus.groovy.tools.shell.commands.DocCommand
-import org.codehaus.groovy.tools.shell.commands.EditCommand
-import org.codehaus.groovy.tools.shell.commands.ExitCommand
-import org.codehaus.groovy.tools.shell.commands.GrabCommand
-import org.codehaus.groovy.tools.shell.commands.HelpCommand
-import org.codehaus.groovy.tools.shell.commands.HistoryCommand
-import org.codehaus.groovy.tools.shell.commands.ImportCommand
-import org.codehaus.groovy.tools.shell.commands.InspectCommand
-import org.codehaus.groovy.tools.shell.commands.LoadCommand
-import org.codehaus.groovy.tools.shell.commands.PurgeCommand
-import org.codehaus.groovy.tools.shell.commands.RecordCommand
-import org.codehaus.groovy.tools.shell.commands.RegisterCommand
-import org.codehaus.groovy.tools.shell.commands.SaveCommand
-import org.codehaus.groovy.tools.shell.commands.SetCommand
-import org.codehaus.groovy.tools.shell.commands.ShowCommand
+import org.apache.groovy.groovysh.Command
+import org.apache.groovy.groovysh.Shell
+import org.apache.groovy.groovysh.commands.AliasCommand
+import org.apache.groovy.groovysh.commands.ClearCommand
+import org.apache.groovy.groovysh.commands.DisplayCommand
+import org.apache.groovy.groovysh.commands.DocCommand
+import org.apache.groovy.groovysh.commands.EditCommand
+import org.apache.groovy.groovysh.commands.ExitCommand
+import org.apache.groovy.groovysh.commands.GrabCommand
+import org.apache.groovy.groovysh.commands.HelpCommand
+import org.apache.groovy.groovysh.commands.HistoryCommand
+import org.apache.groovy.groovysh.commands.ImportCommand
+import org.apache.groovy.groovysh.commands.InspectCommand
+import org.apache.groovy.groovysh.commands.LoadCommand
+import org.apache.groovy.groovysh.commands.PurgeCommand
+import org.apache.groovy.groovysh.commands.RecordCommand
+import org.apache.groovy.groovysh.commands.RegisterCommand
+import org.apache.groovy.groovysh.commands.SaveCommand
+import org.apache.groovy.groovysh.commands.SetCommand
+import org.apache.groovy.groovysh.commands.ShowCommand
 
 /**
  * Registers {@link Command} classes from an XML file like:
  * <commands>
- *  <command>org.codehaus.groovy.tools.shell.commands.HelpCommand</command>
+ *  <command>org.apache.groovy.groovysh.commands.HelpCommand</command>
  * ...
  * </commands>
  */
-class DefaultCommandsRegistrar
-{
+class DefaultCommandsRegistrar {
 
     private final Shell shell
 

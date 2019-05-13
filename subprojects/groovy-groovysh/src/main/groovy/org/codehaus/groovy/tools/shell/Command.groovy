@@ -25,6 +25,7 @@ import jline.console.completer.Completer
  * Provides the interface required for command extensions.
  */
 @CompileStatic
+@Deprecated
 interface Command
 {
     String getName()

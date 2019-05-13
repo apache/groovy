@@ -22,6 +22,7 @@ package org.codehaus.groovy.tools.shell.util
  * In order to modify JLine Behavior, we need to wrap the IO streams so we can hack into them
  * This allows autoindent and redisplaying the chars typed so far after exceptions during completion
  */
+@Deprecated
 class WrappedInputStream extends InputStream implements Closeable {
 
     final InputStream wrapped

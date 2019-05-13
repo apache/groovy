@@ -16,17 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * The 'clear' command.
  */
-class ClearCommand
-    extends CommandSupport
-{
+class ClearCommand extends CommandSupport {
     public static final String COMMAND_NAME = ':clear'
 
     ClearCommand(final Groovysh shell) {

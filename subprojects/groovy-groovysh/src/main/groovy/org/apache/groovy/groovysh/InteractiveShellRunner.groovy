@@ -16,31 +16,28 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
 import jline.console.ConsoleReader
 import jline.console.completer.AggregateCompleter
 import jline.console.completer.CandidateListCompletionHandler
 import jline.console.completer.CompletionHandler
 import jline.console.history.FileHistory
-import org.codehaus.groovy.tools.shell.completion.CustomClassSyntaxCompletor
-import org.codehaus.groovy.tools.shell.completion.FileNameCompleter
-import org.codehaus.groovy.tools.shell.completion.GroovySyntaxCompletor
-import org.codehaus.groovy.tools.shell.completion.ImportsSyntaxCompletor
-import org.codehaus.groovy.tools.shell.completion.KeywordSyntaxCompletor
-import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
-import org.codehaus.groovy.tools.shell.completion.VariableSyntaxCompletor
+import org.apache.groovy.groovysh.completion.CustomClassSyntaxCompleter
+import org.apache.groovy.groovysh.completion.FileNameCompleter
+import org.apache.groovy.groovysh.completion.GroovySyntaxCompleter
+import org.apache.groovy.groovysh.completion.ImportsSyntaxCompleter
+import org.apache.groovy.groovysh.completion.KeywordSyntaxCompleter
+import org.apache.groovy.groovysh.completion.ReflectionCompleter
+import org.apache.groovy.groovysh.completion.VariableSyntaxCompleter
+import org.apache.groovy.groovysh.util.WrappedInputStream
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.codehaus.groovy.tools.shell.util.WrappedInputStream
 
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
  */
-class InteractiveShellRunner
-    extends ShellRunner
-    implements Runnable
-{
+class InteractiveShellRunner extends ShellRunner implements Runnable {
     ConsoleReader reader
 
     final Closure prompt
@@ -71,15 +68,15 @@ class InteractiveShellRunner
         this.completer = new CommandsMultiCompleter()
         reader.addCompleter(this.completer)
 
-        CustomClassSyntaxCompletor classnameCompletor = new CustomClassSyntaxCompletor(shell)
+        CustomClassSyntaxCompleter classnameCompleter = new CustomClassSyntaxCompleter(shell)
 
-        reader.addCompleter(new GroovySyntaxCompletor(shell,
-                new ReflectionCompletor(shell),
-                classnameCompletor,
-                [new KeywordSyntaxCompletor(),
-                        new VariableSyntaxCompletor(shell),
-                        classnameCompletor,
-                        new ImportsSyntaxCompletor(shell)],
+        reader.addCompleter(new GroovySyntaxCompleter(shell,
+                new ReflectionCompleter(shell),
+                classnameCompleter,
+                [new KeywordSyntaxCompleter(),
+                 new VariableSyntaxCompleter(shell),
+                 classnameCompleter,
+                 new ImportsSyntaxCompleter(shell)],
                 new FileNameCompleter(false)))
     }
 
@@ -135,7 +132,7 @@ class InteractiveShellRunner
 
     @Override
     protected boolean work() {
-        boolean result= super.work()
+        boolean result = super.work()
         adjustHistory()
 
         result
@@ -161,8 +158,7 @@ class InteractiveShellRunner
  * Completer for interactive shells.
  */
 class CommandsMultiCompleter
-    extends AggregateCompleter
-{
+        extends AggregateCompleter {
     protected final Logger log = Logger.create(this.class)
 
     List/*<Completer>*/ list = []

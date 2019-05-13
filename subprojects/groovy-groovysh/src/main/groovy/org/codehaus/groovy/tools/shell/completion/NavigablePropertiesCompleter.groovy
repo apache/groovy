@@ -20,6 +20,7 @@ package org.codehaus.groovy.tools.shell.completion
 
 import java.util.regex.Pattern
 
+@Deprecated
 class NavigablePropertiesCompleter {
 
     private static final Pattern NO_CONTROL_CHARS_PATTERN = ~'^[^\\p{Cntrl}]+$'

@@ -51,6 +51,7 @@ import org.codehaus.groovy.tools.shell.Shell
  * }
  * <pre>
  */
+@Deprecated
 class XmlCommandRegistrar {
     private final Logger log = Logger.create(this.class)
 

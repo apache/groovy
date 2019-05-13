@@ -16,36 +16,47 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
+import org.apache.groovy.groovysh.Groovysh
 import org.codehaus.groovy.antlr.GroovySourceToken
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.codehaus.groovy.runtime.MethodClosure
 
 /**
- * Completor completingclasses defined in the shell
+ * Completer completing variable and method names from known variables in the shell
  */
-class CustomClassSyntaxCompletor implements IdentifierCompletor {
+class VariableSyntaxCompleter implements IdentifierCompleter {
 
-    private final Groovysh shell
+    final Groovysh shell
 
-    CustomClassSyntaxCompletor(final Groovysh shell) {
+    VariableSyntaxCompleter(final Groovysh shell) {
         this.shell = shell
     }
 
     @Override
     boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
         String prefix = tokens.last().text
+        Map vars = shell.interp.context.variables
         boolean foundMatch = false
-        Class[] classes = shell.interp.classLoader.loadedClasses
-        if (classes.size() > 0) {
-            List<String> classnames = classes*.name
-            for (String varName in classnames) {
-                if (varName.startsWith(prefix)) {
-                    candidates << varName
-                    foundMatch = true
+        for (String varName in vars.keySet()) {
+            if (acceptName(varName, prefix)) {
+                if (vars.get(varName) instanceof MethodClosure) {
+                    if (((MethodClosure) vars.get(varName)).getMaximumNumberOfParameters() > 0) {
+                        varName += '('
+                    } else {
+                        varName += '()'
+                    }
                 }
+                foundMatch = true
+                candidates << varName
             }
         }
         return foundMatch
+    }
+
+
+    private static boolean acceptName(String name, String prefix) {
+        return (!prefix || name.startsWith(prefix)) &&
+                (!(name.contains('$')) && !(name.startsWith('_')))
     }
 }

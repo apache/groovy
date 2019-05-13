@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * Completor completing variable and method names from known variables in the shell
  */
+@Deprecated
 class VariableSyntaxCompletor implements IdentifierCompletor {
 
     final Groovysh shell

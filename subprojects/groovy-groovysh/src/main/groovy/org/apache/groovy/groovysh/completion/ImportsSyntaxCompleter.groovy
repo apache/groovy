@@ -16,28 +16,28 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
+import org.apache.groovy.groovysh.Groovysh
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.control.ResolveVisitor
-import org.codehaus.groovy.tools.shell.Groovysh
 
 /**
- * Completor completing imported classnames
+ * Completer completing imported classnames
  */
-class ImportsSyntaxCompletor implements IdentifierCompletor {
+class ImportsSyntaxCompleter implements IdentifierCompleter {
 
     final Groovysh shell
     // cache for all preimported classes
     List<String> preimportedClassNames
     // cache for all manually imported classes
-    final Map<String, Collection<String>> cachedImports = new HashMap<String, Collection<String>>().withDefault {String key ->
+    final Map<String, Collection<String>> cachedImports = new HashMap<String, Collection<String>>().withDefault { String key ->
         Collection<String> matchingImports = new TreeSet<String>()
         collectImportedSymbols(key, matchingImports)
         matchingImports
     }
 
-    ImportsSyntaxCompletor(final Groovysh shell) {
+    ImportsSyntaxCompleter(final Groovysh shell) {
         this.shell = shell
     }
 
@@ -53,8 +53,8 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
 
     boolean findMatchingImportedClassesCached(final String prefix, final String importSpec, final List<String> candidates) {
         candidates.addAll(cachedImports
-            .get(importSpec)
-            .findAll({String it -> it.startsWith(prefix)}))
+                .get(importSpec)
+                .findAll({ String it -> it.startsWith(prefix) }))
     }
 
     boolean findMatchingPreImportedClasses(final String prefix, final Collection<String> matches) {
@@ -64,7 +64,7 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
             for (packname in ResolveVisitor.DEFAULT_IMPORTS) {
                 Set<String> packnames = shell.packageHelper.getContents(packname[0..-2])
                 if (packnames) {
-                    preimportedClassNames.addAll(packnames.findAll({String it -> it[0] in 'A'..'Z'}))
+                    preimportedClassNames.addAll(packnames.findAll({ String it -> it[0] in 'A'..'Z' }))
                 }
             }
             preimportedClassNames.add('BigInteger')
@@ -104,7 +104,7 @@ class ImportsSyntaxCompletor implements IdentifierCompletor {
                 String className = importSpec.substring(staticPrefix.length(), lastDotIndex)
                 Class clazz = shell.interp.evaluate([className]) as Class
                 if (clazz != null) {
-                    Set<String> clazzSymbols = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')*.value
+                    Set<String> clazzSymbols = ReflectionCompleter.getPublicFieldsAndMethods(clazz, '')*.value
                     Collection<String> importedSymbols
                     if (symbolName == '*') {
                         importedSymbols = clazzSymbols

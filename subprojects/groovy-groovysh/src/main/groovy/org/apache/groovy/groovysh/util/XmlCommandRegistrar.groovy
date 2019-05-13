@@ -16,16 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
 
-import org.codehaus.groovy.tools.shell.Command
-import org.codehaus.groovy.tools.shell.Shell
+import org.apache.groovy.groovysh.Command
+import org.apache.groovy.groovysh.Shell
+import org.codehaus.groovy.tools.shell.util.Logger
 
 /**
  * Registers {@link Command} classes from an XML file like:
  *
- * <pre>
-  {@literal
+ * <pre>{@literal
  <commands>
    <!-- default commands -->
    <command>org.codehaus.groovy.tools.shell.commands.HelpCommand</command>
@@ -48,7 +48,7 @@ import org.codehaus.groovy.tools.shell.Shell
    <command>org.codehaus.groovy.tools.shell.commands.DocCommand</command>
    <!-- custom commands -->
  </commands>
- * }
+ *}
  * <pre>
  */
 class XmlCommandRegistrar {
@@ -73,10 +73,10 @@ class XmlCommandRegistrar {
             log.debug("Registering commands from: $url")
         }
 
-        url.withReader {Reader reader ->
+        url.withReader { Reader reader ->
             groovy.util.Node doc = new groovy.util.XmlParser().parse(reader)
 
-            doc.children().each {groovy.util.Node element ->
+            doc.children().each { groovy.util.Node element ->
                 String classname = element.text()
 
                 Class type = classLoader.loadClass(classname)

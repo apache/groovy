@@ -27,6 +27,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
  * Registers a class as a new groovysh command.
  * Requires the command to have matching constructors (shell) or (shell, name, alias).
  */
+@Deprecated
 class RegisterCommand
     extends CommandSupport
 {

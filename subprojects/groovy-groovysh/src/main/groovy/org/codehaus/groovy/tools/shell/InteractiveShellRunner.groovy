@@ -37,6 +37,7 @@ import org.codehaus.groovy.tools.shell.util.WrappedInputStream
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
  */
+@Deprecated
 class InteractiveShellRunner
     extends ShellRunner
     implements Runnable
@@ -160,6 +161,7 @@ class InteractiveShellRunner
 /**
  * Completer for interactive shells.
  */
+@Deprecated
 class CommandsMultiCompleter
     extends AggregateCompleter
 {

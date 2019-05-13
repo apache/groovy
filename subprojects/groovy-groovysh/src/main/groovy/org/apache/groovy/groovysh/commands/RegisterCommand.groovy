@@ -16,20 +16,18 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.Command
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.Command
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * The 'register' command.
  * Registers a class as a new groovysh command.
  * Requires the command to have matching constructors (shell) or (shell, name, alias).
  */
-class RegisterCommand
-    extends CommandSupport
-{
+class RegisterCommand extends CommandSupport {
     static final String COMMAND_NAME = ':register'
 
     RegisterCommand(final Groovysh shell) {
@@ -53,10 +51,10 @@ class RegisterCommand
         if (args.size() == 1) {                   // use default name
             command = type.newInstance(shell) as Command
         }
-        else if (args.size() == 2) {              // pass name to completor
+        else if (args.size() == 2) {              // pass name to completer
             command = type.newInstance(shell, args.get(1), null) as Command
         }
-        else if (args.size() == 3) {              // pass name, alias to completor
+        else if (args.size() == 3) {              // pass name, alias to completer
             command = type.newInstance(shell, args.get(1), args.get(2)) as Command
         }
 

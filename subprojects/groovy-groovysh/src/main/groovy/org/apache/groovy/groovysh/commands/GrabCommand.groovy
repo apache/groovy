@@ -16,13 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import groovy.grape.Grape
 import jline.console.completer.Completer
 import org.codehaus.groovy.tools.GrapeUtil
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * The 'grab' command.
@@ -31,7 +31,7 @@ class GrabCommand extends CommandSupport {
 
     public static final String COMMAND_NAME = ':grab'
 
-    public GrabCommand(Groovysh shell) {
+    GrabCommand(Groovysh shell) {
         super(shell, COMMAND_NAME, ':g')
     }
 

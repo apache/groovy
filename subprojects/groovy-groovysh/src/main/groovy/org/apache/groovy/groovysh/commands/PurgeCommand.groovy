@@ -16,18 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.ComplexCommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.ComplexCommandSupport
+import org.apache.groovy.groovysh.Groovysh
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * The 'purge' command.
  */
-class PurgeCommand
-    extends ComplexCommandSupport
-{
+class PurgeCommand extends ComplexCommandSupport {
     public static final String COMMAND_NAME = ':purge'
 
     PurgeCommand(final Groovysh shell) {

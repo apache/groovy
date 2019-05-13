@@ -16,17 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * The 'display' command. Displays the current buffer (e.g. while method declaration was not finished).
  */
-class DisplayCommand
-    extends CommandSupport
-{
+class DisplayCommand extends CommandSupport {
     public static final String COMMAND_NAME = ':display'
 
     DisplayCommand(final Groovysh shell) {
@@ -39,8 +37,7 @@ class DisplayCommand
 
         if (buffer.isEmpty()) {
             io.out.println('Buffer is empty') // TODO: i18n
-        }
-        else {
+        } else {
             shell.displayBuffer(buffer)
         }
     }

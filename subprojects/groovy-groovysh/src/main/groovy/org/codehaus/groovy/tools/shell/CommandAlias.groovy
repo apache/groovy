@@ -24,6 +24,7 @@ import jline.console.completer.Completer
 /**
  * Provides simple command aliasing.
  */
+@Deprecated
 class CommandAlias
     extends CommandSupport
 {

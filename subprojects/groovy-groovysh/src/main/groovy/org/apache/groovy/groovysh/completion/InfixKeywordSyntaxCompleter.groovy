@@ -16,23 +16,33 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
 import org.codehaus.groovy.antlr.GroovySourceToken
 
 /**
- * Interface for classes that complete identifier tokens within a groovy Statement
- * (Class, variable, keyword, method, ...)
- * Similar to JLine Completor, but adapted for usage in GroovySyntaxCompletor
+ * Completer completing groovy keywords that appear after identifiers
  */
-interface IdentifierCompletor {
+class InfixKeywordSyntaxCompleter implements IdentifierCompleter {
 
-    /**
-     *
-     * @param tokens List of tokens, non empty, last token is an identifier token, previous token is not a dot
-     * @param candidates
-     * @return
-     */
-    boolean complete(List<GroovySourceToken> tokens, List<CharSequence> candidates)
+    // INFIX keywords can only occur after identifiers
+    private static final String[] INFIX_KEYWORDS = [
+            'in',
+            'instanceof',
+            'extends',
+            'implements',
+            ]
 
+    @Override
+    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+        String prefix = tokens.last().text
+        boolean foundMatch = false
+        for (String varName in INFIX_KEYWORDS) {
+            if (varName.startsWith(prefix)) {
+                candidates << varName
+                foundMatch = true
+            }
+        }
+        return foundMatch
+    }
 }

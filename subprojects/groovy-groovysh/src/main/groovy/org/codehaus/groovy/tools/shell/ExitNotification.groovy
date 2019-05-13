@@ -21,6 +21,7 @@ package org.codehaus.groovy.tools.shell
 /**
  * Notification to signal the shell to exit.
  */
+@Deprecated
 class ExitNotification
     extends Error
 {

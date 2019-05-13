@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 /**
  * Support for simple completors.
  */
+@Deprecated
 class SimpleCompletor implements Completer {
 
     SortedSet<String> candidates

@@ -24,6 +24,7 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 /**
  * Support for more complex commands.
  */
+@Deprecated
 abstract class ComplexCommandSupport
     extends CommandSupport
 {

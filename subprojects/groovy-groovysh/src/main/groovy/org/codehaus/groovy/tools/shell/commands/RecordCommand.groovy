@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * The 'record' command.
  */
+@Deprecated
 class RecordCommand
     extends ComplexCommandSupport
 {

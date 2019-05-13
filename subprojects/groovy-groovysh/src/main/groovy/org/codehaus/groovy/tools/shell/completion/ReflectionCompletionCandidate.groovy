@@ -24,6 +24,7 @@ import groovy.transform.CompileStatic
  * A candidate as String with additional jansi formatting codes
  */
 @CompileStatic
+@Deprecated
 class ReflectionCompletionCandidate implements Comparable<ReflectionCompletionCandidate> {
 
     private final String value

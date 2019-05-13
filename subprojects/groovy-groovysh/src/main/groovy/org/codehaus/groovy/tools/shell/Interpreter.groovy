@@ -28,6 +28,7 @@ import java.lang.reflect.Method
 /**
  * Helper to interpret a source buffer.
  */
+@Deprecated
 class Interpreter implements Evaluator
 {
     static final String SCRIPT_FILENAME = 'groovysh_evaluate'
@@ -105,6 +106,7 @@ class Interpreter implements Evaluator
     }
 }
 
+@Deprecated
 interface Evaluator {
     def evaluate(final Collection<String> buffer)
 }

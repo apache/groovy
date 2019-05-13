@@ -46,6 +46,7 @@ import static org.apache.groovy.util.SystemUtil.setSystemPropertyFrom
  *
  * Main CLI entry-point for <tt>groovysh</tt>.
  */
+@Deprecated
 class Main {
     final Groovysh groovysh
 

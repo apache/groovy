@@ -16,18 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.tools.shell.ComplexCommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.ComplexCommandSupport
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * The 'record' command.
  */
-class RecordCommand
-    extends ComplexCommandSupport
-{
+class RecordCommand extends ComplexCommandSupport {
     public static final String COMMAND_NAME = ':record'
 
     RecordCommand(final Groovysh shell) {

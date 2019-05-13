@@ -27,6 +27,7 @@ import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
 /**
  * The 'alias' command.
  */
+@Deprecated
 class AliasCommand
     extends CommandSupport
 {

@@ -16,18 +16,18 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
 import antlr.TokenStreamException
 import groovy.transform.TupleConstructor
 import jline.console.completer.Completer
 import jline.internal.Configuration
+import org.apache.groovy.groovysh.CommandRegistry
+import org.apache.groovy.groovysh.Groovysh
 import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.antlr.SourceBuffer
 import org.codehaus.groovy.antlr.UnicodeEscapingReader
 import org.codehaus.groovy.antlr.parser.GroovyLexer
-import org.codehaus.groovy.tools.shell.CommandRegistry
-import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.Logger
 
 import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DOT
@@ -60,22 +60,22 @@ import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.OPTIONAL_DOT
 import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SPREAD_DOT
 
 /**
- * Implements the Completor interface to provide competions for
+ * Implements the Completer interface to provide completions for
  * GroovyShell by tokenizing the buffer and invoking other classes depending on the tokens found.
  */
-class GroovySyntaxCompletor implements Completer {
+class GroovySyntaxCompleter implements Completer {
 
-    protected final static Logger LOG = Logger.create(GroovySyntaxCompletor)
+    protected final static Logger LOG = Logger.create(GroovySyntaxCompleter)
 
     private final Groovysh shell
-    private final List<IdentifierCompletor> identifierCompletors
-    private final IdentifierCompletor classnameCompletor
-    private final ReflectionCompletor reflectionCompletor
-    private final InfixKeywordSyntaxCompletor infixCompletor
-    private final Completer defaultFilenameCompletor
-    private final Completer windowsFilenameCompletor
-    private final Completer instringFilenameCompletor
-    private final Completer backslashCompletor
+    private final List<IdentifierCompleter> identifierCompleters
+    private final IdentifierCompleter classnameCompleter
+    private final ReflectionCompleter reflectionCompleter
+    private final InfixKeywordSyntaxCompleter infixCompleter
+    private final Completer defaultFilenameCompleter
+    private final Completer windowsFilenameCompleter
+    private final Completer instringFilenameCompleter
+    private final Completer backslashCompleter
     private static final boolean isWin = Configuration.isWindows()
     private final GroovyShell gs = new GroovyShell()
 
@@ -90,20 +90,20 @@ class GroovySyntaxCompletor implements Completer {
         INSTANCEOF
     }
 
-    GroovySyntaxCompletor(final Groovysh shell,
-                          final ReflectionCompletor reflectionCompletor,
-                          IdentifierCompletor classnameCompletor,
-                          final List<IdentifierCompletor> identifierCompletors,
-                          final Completer filenameCompletor) {
+    GroovySyntaxCompleter(final Groovysh shell,
+                          final ReflectionCompleter reflectionCompleter,
+                          IdentifierCompleter classnameCompleter,
+                          final List<IdentifierCompleter> identifierCompleters,
+                          final Completer filenameCompleter) {
         this.shell = shell
-        this.classnameCompletor = classnameCompletor
-        this.identifierCompletors = identifierCompletors
-        infixCompletor = new InfixKeywordSyntaxCompletor()
-        backslashCompletor = new BackslashEscapeCompleter()
-        this.reflectionCompletor = reflectionCompletor
-        defaultFilenameCompletor = filenameCompletor
-        windowsFilenameCompletor = new FileNameCompleter(false, true, false)
-        instringFilenameCompletor = new FileNameCompleter(false, false, false)
+        this.classnameCompleter = classnameCompleter
+        this.identifierCompleters = identifierCompleters
+        infixCompleter = new InfixKeywordSyntaxCompleter()
+        backslashCompleter = new BackslashEscapeCompleter()
+        this.reflectionCompleter = reflectionCompleter
+        defaultFilenameCompleter = filenameCompleter
+        windowsFilenameCompleter = new FileNameCompleter(false, true, false)
+        instringFilenameCompleter = new FileNameCompleter(false, false, false)
     }
 
     @Override
@@ -124,10 +124,10 @@ class GroovySyntaxCompletor implements Completer {
         } catch (InStringException ise) {
             int completionStart = ise.column + ise.openDelim.size()
             def remainder = bufferLine.substring(completionStart)
-            def completer = instringFilenameCompletor
+            def completer = instringFilenameCompleter
             if (['"', "'", '"""', "'''"].contains(ise.openDelim)) {
                 if (isWin) {
-                    completer = windowsFilenameCompletor
+                    completer = windowsFilenameCompleter
                 }
                 // perhaps a backslash
                 if (remainder.contains("\\")) {
@@ -138,7 +138,7 @@ class GroovySyntaxCompletor implements Completer {
                             gs.evaluate("'${remainder.substring(0, remainder.size() - 1)}'")
                             // only get here if there is an unescaped backslash at the end of the buffer
                             // ignore the result since it is only informational
-                            return backslashCompletor.complete(remainder, cursor, candidates)
+                            return backslashCompleter.complete(remainder, cursor, candidates)
                         } catch (Exception ex2) {
                         }
                     }
@@ -156,13 +156,13 @@ class GroovySyntaxCompletor implements Completer {
             return -1
         }
         if (completionCase == CompletionCase.SECOND_IDENT) {
-            if (infixCompletor.complete(tokens, candidates)) {
+            if (infixCompleter.complete(tokens, candidates)) {
                 return tokens.last().column - 1
             }
             return -1
         }
         if (completionCase == CompletionCase.INSTANCEOF) {
-            if (classnameCompletor.complete(tokens, candidates)) {
+            if (classnameCompleter.complete(tokens, candidates)) {
                 return tokens.last().column - 1
             }
             return -1
@@ -178,7 +178,7 @@ class GroovySyntaxCompletor implements Completer {
             case CompletionCase.PREFIX_AFTER_DOT:
             case CompletionCase.SPREAD_DOT_LAST:
             case CompletionCase.PREFIX_AFTER_SPREAD_DOT:
-                result = reflectionCompletor.complete(tokens, candidates)
+                result = reflectionCompleter.complete(tokens, candidates)
                 break
             default:
                 // bug
@@ -214,7 +214,7 @@ class GroovySyntaxCompletor implements Completer {
             } else {
                 // no dot, so we complete a varname, classname, or similar
                 switch (previousToken.type) {
-                // if any of these is before, no useful completion possible in this completor
+                // if any of these is before, no useful completion possible in this completer
                     case LITERAL_import:
                     case LITERAL_class:
                     case LITERAL_interface:
@@ -269,8 +269,8 @@ class GroovySyntaxCompletor implements Completer {
 
     int completeIdentifier(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
         boolean foundMatches = false
-        for (IdentifierCompletor completor : identifierCompletors) {
-            foundMatches |= completor.complete(tokens, candidates)
+        for (IdentifierCompleter completer : identifierCompleters) {
+            foundMatches |= completer.complete(tokens, candidates)
         }
         if (foundMatches) {
             return tokens.last().column - 1

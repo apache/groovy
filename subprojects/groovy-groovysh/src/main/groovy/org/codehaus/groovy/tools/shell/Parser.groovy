@@ -33,6 +33,7 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 
 import java.util.regex.Pattern
 
+@Deprecated
 interface Parsing {
     ParseStatus parse(final Collection<String> buffer)
 }
@@ -40,6 +41,7 @@ interface Parsing {
 /**
  * Provides a facade over the parser to recognize valid Groovy syntax.
  */
+@Deprecated
 class Parser
 {
     static final String NEWLINE = System.getProperty('line.separator')

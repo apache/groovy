@@ -203,7 +203,7 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
 
 
     void testAfterSemi() {
-        // evaluation of all is dangerous, but the reflectionCompletor has to deal with this
+        // evaluation of all is dangerous, but the reflectionCompleter has to deal with this
         reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens*.text == ['deletehardDisk', '(', ')', ';', 'foo', '.', 'subs']); candidates << 'substring('; 22}
 
@@ -221,7 +221,7 @@ class GroovySyntaxCompletorTest extends CompletorTestSupport {
     }
 
     void testAfterOperator() {
-        // evaluation of all is dangerous, but the reflectionCompletor has to deal with this
+        // evaluation of all is dangerous, but the reflectionCompleter has to deal with this
         reflectionCompletorMocker.demand.complete(1) { tokens, candidates ->
             assert(tokens*.text == ['a', '=', 'foo', '.', 'subs']); candidates << 'substring('; 9}
 

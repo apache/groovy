@@ -32,6 +32,7 @@ import static jline.internal.Preconditions.checkNotNull
  * See https://github.com/jline/jline2/pull/202
  */
 @CompileStatic
+@Deprecated
 class StricterArgumentCompleter extends ArgumentCompleter {
 
     /**

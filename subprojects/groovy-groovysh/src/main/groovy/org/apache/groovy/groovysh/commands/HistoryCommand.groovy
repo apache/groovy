@@ -16,19 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import jline.console.history.History
-import org.codehaus.groovy.tools.shell.ComplexCommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+import org.apache.groovy.groovysh.ComplexCommandSupport
+import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.util.SimpleCompleter
 
 /**
  * The 'history' command.
  */
-class HistoryCommand
-    extends ComplexCommandSupport
-{
+class HistoryCommand extends ComplexCommandSupport {
 
     public static final String COMMAND_NAME = ':history'
 
@@ -45,10 +43,10 @@ class HistoryCommand
             return list
         }
 
-        SimpleCompletor subCommandsCompletor = new SimpleCompletor(loader)
-        subCommandsCompletor.setWithBlank(false)
+        SimpleCompleter subCommandsCompleter = new SimpleCompleter(loader)
+        subCommandsCompleter.setWithBlank(false)
         return [
-            subCommandsCompletor,
+            subCommandsCompleter,
             null
         ]
     }

@@ -27,6 +27,7 @@ import org.codehaus.groovy.tools.shell.completion.CommandNameCompleter
 /**
  * The 'help' command.
  */
+@Deprecated
 class HelpCommand
     extends CommandSupport
 {

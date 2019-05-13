@@ -16,18 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.ExitNotification
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.ExitNotification
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * The 'exit' command.
  */
-class ExitCommand
-    extends CommandSupport
-{
+class ExitCommand extends CommandSupport {
     public static final String COMMAND_NAME = ':exit'
 
     ExitCommand(final Groovysh shell) {

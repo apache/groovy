@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 /**
  * The 'edit' command. Opens Editor to write into the current Buffer.
  */
+@Deprecated
 class EditCommand
     extends CommandSupport
 {

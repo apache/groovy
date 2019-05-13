@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * The 'exit' command.
  */
+@Deprecated
 class ExitCommand
     extends CommandSupport
 {

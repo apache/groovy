@@ -52,6 +52,7 @@ import java.util.regex.Pattern
  *
  * See {@link XmlCommandRegistrar}
  */
+@Deprecated
 class Groovysh extends Shell {
 
 

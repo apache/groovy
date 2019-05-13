@@ -23,6 +23,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
 /**
  * Manages the shells buffers.
  */
+@Deprecated
 class BufferManager
 {
     protected final Logger log = Logger.create(this.class)

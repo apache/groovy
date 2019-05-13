@@ -16,28 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
 
 import java.security.Permission
 
 /**
  * Custom security manager to {@link System#exit} (and related) from being used.
  */
-public class NoExitSecurityManager
-    extends SecurityManager
-{
+class NoExitSecurityManager extends SecurityManager {
     private final SecurityManager parent
 
-    public NoExitSecurityManager(final SecurityManager parent) {
+    NoExitSecurityManager(final SecurityManager parent) {
         this.parent = parent
     }
 
-    public NoExitSecurityManager() {
+    NoExitSecurityManager() {
         this(System.getSecurityManager())
     }
 
     @Override
-    public void checkPermission(final Permission perm) {
+    void checkPermission(final Permission perm) {
         if (parent != null) {
             parent.checkPermission(perm)
         }
@@ -47,7 +45,7 @@ public class NoExitSecurityManager
      * Always throws {@link SecurityException}.
      */
     @Override
-    public void checkExit(final int code) {
+    void checkExit(final int code) {
         throw new SecurityException('Use of System.exit() is forbidden!')
     }
 

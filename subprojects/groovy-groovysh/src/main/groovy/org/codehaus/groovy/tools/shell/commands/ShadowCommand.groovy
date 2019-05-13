@@ -26,6 +26,7 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 /**
  * The 'shadow' command.
  */
+@Deprecated
 class ShadowCommand
     extends ComplexCommandSupport
 {

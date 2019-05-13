@@ -23,6 +23,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
 /**
  * Support for running a {@link Shell}.
  */
+@Deprecated
 abstract class ShellRunner
     implements Runnable
 {

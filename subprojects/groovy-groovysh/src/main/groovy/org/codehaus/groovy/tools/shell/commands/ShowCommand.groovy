@@ -27,6 +27,7 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 /**
  * The 'show' command.
  */
+@Deprecated
 class ShowCommand
     extends ComplexCommandSupport
 {

@@ -16,15 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
 
 import jline.console.completer.Completer
 import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
- * Support for simple completors.
+ * Support for simple completers.
  */
-class SimpleCompletor implements Completer {
+class SimpleCompleter implements Completer {
 
     SortedSet<String> candidates
 
@@ -36,15 +36,15 @@ class SimpleCompletor implements Completer {
     boolean withBlank = true
 
 
-    SimpleCompletor(final String[] candidates) {
+    SimpleCompleter(final String[] candidates) {
         setCandidateStrings(candidates)
     }
 
-    SimpleCompletor() {
+    SimpleCompleter() {
         this(new String[0])
     }
 
-    SimpleCompletor(final Closure loader) {
+    SimpleCompleter(final Closure loader) {
         this()
 
         assert loader != null

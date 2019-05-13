@@ -16,16 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
-import org.codehaus.groovy.tools.shell.Command
-import org.codehaus.groovy.tools.shell.CommandRegistry
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
+import org.apache.groovy.groovysh.Command
+import org.apache.groovy.groovysh.CommandRegistry
+import org.apache.groovy.groovysh.util.SimpleCompleter
 
 /**
- * Completor for the command.names
+ * Completer for the command.names
  */
-class CommandNameCompleter extends SimpleCompletor {
+class CommandNameCompleter extends SimpleCompleter {
     private final CommandRegistry registry
 
     CommandNameCompleter(final CommandRegistry registry, boolean withBlank) {

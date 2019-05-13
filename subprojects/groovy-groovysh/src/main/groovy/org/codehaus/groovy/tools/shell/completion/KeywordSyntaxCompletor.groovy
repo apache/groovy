@@ -23,6 +23,7 @@ import org.codehaus.groovy.antlr.GroovySourceToken
 /**
  * Completor completing Groovy keywords and special functions
  */
+@Deprecated
 class KeywordSyntaxCompletor implements IdentifierCompletor {
 
     private static final String[] KEYWORDS = [

@@ -29,6 +29,7 @@ import static jline.internal.Preconditions.checkNotNull
  *
  * @since 2.4.13
  */
+@Deprecated
 class BackslashEscapeCompleter implements Completer {
     private static final List<String> VALID_ESCAPEES = ['r (return)', 'n (newline)', 't (tab)',
                                                         '\\ (backslash)', "' (single quote)", '" (double quote)',

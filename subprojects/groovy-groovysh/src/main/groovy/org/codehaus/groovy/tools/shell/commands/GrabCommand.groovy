@@ -27,6 +27,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * The 'grab' command.
  */
+@Deprecated
 class GrabCommand extends CommandSupport {
 
     public static final String COMMAND_NAME = ':grab'

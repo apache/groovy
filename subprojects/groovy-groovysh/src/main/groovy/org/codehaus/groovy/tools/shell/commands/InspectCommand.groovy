@@ -31,6 +31,7 @@ import java.util.List
 /**
  * The 'inspect' command.
  */
+@Deprecated
 class InspectCommand
     extends CommandSupport
 {

@@ -28,6 +28,7 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 /**
  * The 'set' command, used to set preferences.
  */
+@Deprecated
 class SetCommand
     extends CommandSupport
 {

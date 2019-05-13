@@ -38,6 +38,7 @@ import java.security.CodeSource
  * Based on http://glaforge.appspot.com/article/knowing-which-variables-are-bound-or-not-in-a-groovy-script
  */
 @TypeChecked
+@Deprecated
 class ScriptVariableAnalyzer {
 
     /**

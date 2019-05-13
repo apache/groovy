@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * Completor completing imported classnames
  */
+@Deprecated
 class ImportsSyntaxCompletor implements IdentifierCompletor {
 
     final Groovysh shell

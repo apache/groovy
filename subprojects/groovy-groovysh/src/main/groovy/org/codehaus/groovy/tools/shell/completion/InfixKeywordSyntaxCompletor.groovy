@@ -23,6 +23,7 @@ import org.codehaus.groovy.antlr.GroovySourceToken
 /**
  * Completor completing groovy keywords that appear after identifiers
  */
+@Deprecated
 class InfixKeywordSyntaxCompletor implements IdentifierCompletor {
 
     // INFIX keywords can only occur after identifiers

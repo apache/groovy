@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 /**
  * Completor for the command.names
  */
+@Deprecated
 class CommandNameCompleter extends SimpleCompletor {
     private final CommandRegistry registry
 

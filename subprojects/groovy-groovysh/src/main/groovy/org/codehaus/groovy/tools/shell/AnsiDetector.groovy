@@ -24,6 +24,7 @@ import jline.TerminalFactory
 import java.util.concurrent.Callable
 
 @CompileStatic
+@Deprecated
 class AnsiDetector implements Callable<Boolean>
 {
     @Override

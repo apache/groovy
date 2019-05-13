@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
 import groovy.cli.picocli.CliBuilder
 import groovy.cli.picocli.OptionAccessor
@@ -25,9 +25,10 @@ import jline.UnixTerminal
 import jline.UnsupportedTerminal
 import jline.WindowsTerminal
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.codehaus.groovy.tools.shell.util.NoExitSecurityManager
+import org.apache.groovy.groovysh.util.NoExitSecurityManager
 import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.AnsiConsole
 

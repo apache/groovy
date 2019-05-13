@@ -46,6 +46,7 @@ import org.codehaus.groovy.tools.shell.commands.ShowCommand
  * ...
  * </commands>
  */
+@Deprecated
 class DefaultCommandsRegistrar
 {
 

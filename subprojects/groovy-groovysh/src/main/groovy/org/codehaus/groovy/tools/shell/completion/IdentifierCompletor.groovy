@@ -25,6 +25,7 @@ import org.codehaus.groovy.antlr.GroovySourceToken
  * (Class, variable, keyword, method, ...)
  * Similar to JLine Completor, but adapted for usage in GroovySyntaxCompletor
  */
+@Deprecated
 interface IdentifierCompletor {
 
     /**

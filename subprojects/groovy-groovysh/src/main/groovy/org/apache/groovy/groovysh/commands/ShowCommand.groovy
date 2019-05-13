@@ -16,31 +16,28 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
+import org.apache.groovy.groovysh.ComplexCommandSupport
+import org.apache.groovy.groovysh.Groovysh
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.MethodClosure
-import org.codehaus.groovy.tools.shell.ComplexCommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * The 'show' command.
  */
-class ShowCommand
-    extends ComplexCommandSupport
-{
+class ShowCommand extends ComplexCommandSupport {
     public static final String COMMAND_NAME = ':show'
 
     ShowCommand(final Groovysh shell) {
-        super(shell, COMMAND_NAME, ':S', [ 'variables', 'classes', 'imports', 'preferences', 'all' ])
+        super(shell, COMMAND_NAME, ':S', ['variables', 'classes', 'imports', 'preferences', 'all'])
     }
 
     def do_variables = {
         if (variables.isEmpty()) {
             io.out.println('No variables defined') // TODO: i18n
-        }
-        else {
+        } else {
             io.out.println('Variables:') // TODO: i18n
 
             variables.each { key, value ->
@@ -62,8 +59,7 @@ class ShowCommand
 
         if (classes.size() == 0) {
             io.out.println('No classes have been loaded') // TODO: i18n
-        }
-        else {
+        } else {
             io.out.println('Classes:') // TODO: i18n
 
             classes.each { Class classIt ->
@@ -75,11 +71,10 @@ class ShowCommand
     def do_imports = {
         if (imports.isEmpty()) {
             io.out.println('No custom imports have been defined') // TODO: i18n
-        }
-        else {
+        } else {
             io.out.println('Custom imports:') // TODO: i18n
 
-            imports.each {String importIt ->
+            imports.each { String importIt ->
                 io.out.println("  $importIt")
             }
         }
@@ -101,4 +96,3 @@ class ShowCommand
         return
     }
 }
-

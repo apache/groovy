@@ -16,12 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
+import org.apache.groovy.groovysh.Groovysh
 import org.codehaus.groovy.antlr.GroovySourceToken
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.tools.shell.Groovysh
 import org.codehaus.groovy.tools.shell.util.Preferences
 import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.AnsiRenderer
@@ -31,66 +32,12 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
 
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.ASSIGN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BAND
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BAND_ASSIGN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BNOT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BOR
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BOR_ASSIGN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BXOR
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.BXOR_ASSIGN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.COLON
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.COMMA
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.COMPARE_TO
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DIV
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DIV_ASSIGN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DOT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.EQUAL
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.GE
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.GT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.IDENT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LAND
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LBRACK
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LCURLY
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LE
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_false
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_in
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_instanceof
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_true
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LNOT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LOR
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LPAREN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.MEMBER_POINTER
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.MINUS
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.MINUS_ASSIGN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NOT_EQUAL
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_BIG_DECIMAL
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_BIG_INT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_DOUBLE
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_FLOAT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_INT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.NUM_LONG
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.OPTIONAL_DOT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.PLUS
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.PLUS_ASSIGN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.RANGE_EXCLUSIVE
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.RANGE_INCLUSIVE
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.RBRACK
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.RPAREN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SEMI
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SPREAD_DOT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STAR
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STAR_ASSIGN
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STRING_CTOR_START
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.STRING_LITERAL
-
 /**
  * Completes fields and methods of Classes or instances.
- * Does not quite respect the contract of IdentifierCompletor, as last Token may be a dot or not,
+ * Does not quite respect the contract of IdentifierCompleter, as last Token may be a dot or not,
  * thus also returns as int the cursor position.
  */
-class ReflectionCompletor {
+class ReflectionCompleter implements GroovyTokenTypes {
 
     private static final NavigablePropertiesCompleter PROPERTIES_COMPLETER = new NavigablePropertiesCompleter()
     private static final Pattern BEAN_ACCESSOR_PATTERN = ~'^(get|set|is)[A-Z].*'
@@ -102,7 +49,7 @@ class ReflectionCompletor {
      * @param shell
      * @param metaclass_completion_prefix_length how long the prefix must be to display candidates from metaclass
      */
-    ReflectionCompletor(final Groovysh shell) {
+    ReflectionCompleter(final Groovysh shell) {
         this.shell = shell
     }
 
@@ -154,10 +101,10 @@ class ReflectionCompletor {
     }
 
     private int completeInstanceMembers(final Object instanceOrClass,
-                                final String identifierPrefix,
-                                final List<CharSequence> candidates,
-                                final GroovySourceToken currentElementToken,
-                                final GroovySourceToken dotToken) {
+                                        final String identifierPrefix,
+                                        final List<CharSequence> candidates,
+                                        final GroovySourceToken currentElementToken,
+                                        final GroovySourceToken dotToken) {
         // look for public methods/fields that match the prefix
         Collection<ReflectionCompletionCandidate> myCandidates = getPublicFieldsAndMethods(instanceOrClass, identifierPrefix)
 
@@ -196,7 +143,7 @@ class ReflectionCompletor {
                 lastDot = currentElementToken.column - 1
             } else {
                 // Spread-dot has length 2!
-                lastDot = dotToken.column +(dotToken.getText().length() - 1)
+                lastDot = dotToken.column + (dotToken.getText().length() - 1)
             }
             return lastDot
         }
@@ -226,9 +173,9 @@ class ReflectionCompletor {
                 Object instance = shell.interp.evaluate([shell.getImportStatements()] + ['true'] + [instanceRefExpression])
                 return instance
             } catch (MissingPropertyException |
-                    MissingMethodException |
-                    MissingFieldException |
-                    MultipleCompilationErrorsException e) {
+            MissingMethodException |
+            MissingFieldException |
+            MultipleCompilationErrorsException e) {
 
             }
         }
@@ -285,8 +232,8 @@ class ReflectionCompletor {
                 case RPAREN:
                     expectedOpeners.push(LPAREN)
                     break
-                // tokens which indicate we have reached the beginning of a statement
-                // operator tokens (must not be evaluated, as they can have side effects via evil overriding
+            // tokens which indicate we have reached the beginning of a statement
+            // operator tokens (must not be evaluated, as they can have side effects via evil overriding
                 case COMPARE_TO:
                 case EQUAL:
                 case NOT_EQUAL:
@@ -319,25 +266,25 @@ class ReflectionCompletor {
                         break outerloop
                     }
                     break
-                // tokens which indicate we have reached the beginning of a statement
+            // tokens which indicate we have reached the beginning of a statement
                 case LCURLY:
                 case SEMI:
                 case STRING_CTOR_START:
                     break outerloop
-                // tokens we accept
+            // tokens we accept
                 case IDENT:
-                   if (lastToken) {
-                       if (lastToken.type == LPAREN) {
-                           //Method invocation,must be avoided
-                           return []
-                       }
-                       if (lastToken.type == IDENT) {
-                           // could be attempt to invoke closure like 'foo.each bar.baz'
-                           return []
-                       }
-                   }
+                    if (lastToken) {
+                        if (lastToken.type == LPAREN) {
+                            //Method invocation,must be avoided
+                            return []
+                        }
+                        if (lastToken.type == IDENT) {
+                            // could be attempt to invoke closure like 'foo.each bar.baz'
+                            return []
+                        }
+                    }
                     break
-                // may begin expression when outside brackets (from back)
+            // may begin expression when outside brackets (from back)
                 case RANGE_INCLUSIVE:
                 case RANGE_EXCLUSIVE:
                 case COLON:
@@ -345,7 +292,7 @@ class ReflectionCompletor {
                     if (expectedOpeners.empty()) {
                         break outerloop
                     }
-                // harmless literals
+            // harmless literals
                 case LITERAL_true:
                 case LITERAL_false:
                 case NUM_INT:
@@ -361,7 +308,7 @@ class ReflectionCompletor {
                 default:
                     return null
             } // end switch
-            validIndex --
+            validIndex--
             lastToken = loopToken
         } // end for
         return groovySourceTokens[(validIndex)..-1]
@@ -369,7 +316,7 @@ class ReflectionCompletor {
 
     static String tokenListToEvalString(final List<GroovySourceToken> groovySourceTokens) {
         StringBuilder builder = new StringBuilder()
-        for (GroovySourceToken token: groovySourceTokens) {
+        for (GroovySourceToken token : groovySourceTokens) {
             if (token.type == STRING_LITERAL) {
                 builder.append('\'').append(token.text).append('\'')
             } else {
@@ -418,7 +365,7 @@ class ReflectionCompletor {
 
         Class loopclazz = clazz
         // render immediate class members bold when completing an instance
-        boolean renderBold = ! isClass
+        boolean renderBold = !isClass
         // hide static members for instances unless user typed a prefix
         boolean showStatic = isClass || (prefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
         while (loopclazz != null && loopclazz != Object && loopclazz != GroovyObject) {
@@ -439,7 +386,7 @@ class ReflectionCompletor {
         if (!isClass) {
             Set<String> candidates = new HashSet<String>()
             PROPERTIES_COMPLETER.addCompletions(instance, prefix, candidates)
-            rv.addAll(candidates.collect({String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.MAGENTA.name())}))
+            rv.addAll(candidates.collect({ String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.MAGENTA.name()) }))
         }
 
         return rv.sort()
@@ -452,7 +399,7 @@ class ReflectionCompletor {
     static removeStandardMethods(final Collection<ReflectionCompletionCandidate> candidates) {
         for (String defaultMethod : [
                 'clone()', 'finalize()', 'getClass()',
-                'getMetaClass()', 'getProperty(',  'invokeMethod(', 'setMetaClass(', 'setProperty(',
+                'getMetaClass()', 'getProperty(', 'invokeMethod(', 'setMetaClass(', 'setProperty(',
                 'equals(', 'hashCode()', 'toString()',
                 'notify()', 'notifyAll()', 'wait(', 'wait()']) {
             for (ReflectionCompletionCandidate candidate : candidates) {
@@ -498,7 +445,7 @@ class ReflectionCompletor {
                     'toSet()',
                     'retainAll(', 'removeAll(',
                     'unique()', 'unique('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
             if (instance instanceof Collection) {
                 [
                         'grep('
@@ -510,7 +457,7 @@ class ReflectionCompletor {
                         'execute()', 'execute(',
                         'pop()',
                         'transpose()'
-                ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+                ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
             }
         }
         if (instance instanceof Map) {
@@ -531,7 +478,7 @@ class ReflectionCompletor {
                     'spread()',
                     'subMap(',
                     'take(', 'takeWhile('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
         }
         if (instance instanceof File) {
             [
@@ -546,7 +493,7 @@ class ReflectionCompletor {
                     'setBytes(', 'setText(', 'size()', 'splitEachLine(',
                     'traverse(',
                     'withInputStream(', 'withOutputStream(', 'withPrintWriter(', 'withReader(', 'withWriter(', 'withWriterAppend(', 'write('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
         }
         if (instance instanceof String) {
             [
@@ -555,14 +502,14 @@ class ReflectionCompletor {
                     'eachLine(', 'eachMatch(', 'execute()', 'execute(',
                     'find(', 'findAll(',
                     'isAllWhitespace()', 'isBigDecimal()', 'isBigInteger()', 'isDouble()', 'isFloat()', 'isInteger()', 'isLong()', 'isNumber()',
-                    'normalize()', 
+                    'normalize()',
                     'padLeft(', 'padRight(',
-                    'readLines()', 'reverse()', 
+                    'readLines()', 'reverse()',
                     'size()', 'splitEachLine(', 'stripIndent(', 'stripMargin(',
                     'toBigDecimal()', 'toBigInteger()', 'toBoolean()', 'toCharacter()', 'toDouble()', 'toFloat()', 'toInteger()',
                     'toList()', 'toLong()', 'toSet()', 'toShort()', 'toURI()', 'toURL()',
                     'tokenize(', 'tr('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
         }
         if (instance instanceof URL) {
             [
@@ -573,7 +520,7 @@ class ReflectionCompletor {
                     'readLines()', 'readLines(',
                     'splitEachLine(',
                     'withInputStream(', 'withReader('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
         }
         if (instance instanceof InputStream) {
             [
@@ -584,14 +531,14 @@ class ReflectionCompletor {
                     'readLines()', 'readLines(',
                     'splitEachLine(',
                     'withReader(', 'withStream('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
         }
         if (instance instanceof OutputStream) {
             [
                     'newPrintWriter()', 'newWriter()', 'newWriter(',
                     'setBytes(',
                     'withPrintWriter(', 'withStream(', 'withWriter('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
         }
         if (instance instanceof Number) {
             [
@@ -600,7 +547,7 @@ class ReflectionCompletor {
                     'times(',
                     'power(',
                     'upto('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
         }
         Class clazz = instance.getClass()
         if (clazz != null && clazz != Class && clazz.isArray()) {
@@ -623,19 +570,19 @@ class ReflectionCompletor {
                     'sort()',
                     'split(',
                     'take(', 'takeRight(', 'takeWhile('
-            ].findAll({it.startsWith(prefix)}).each({candidates.add(it)})
+            ].findAll({ it.startsWith(prefix) }).each({ candidates.add(it) })
         }
         return candidates
     }
 
     private static Collection<ReflectionCompletionCandidate> addClassFieldsAndMethods(final Class clazz,
-                                                                            final boolean includeStatic,
-                                                                            final boolean includeNonStatic,
-                                                                            final String prefix,
-                                                                            final Collection<ReflectionCompletionCandidate> rv,
-                                                                            final boolean renderBold) {
+                                                                                      final boolean includeStatic,
+                                                                                      final boolean includeNonStatic,
+                                                                                      final String prefix,
+                                                                                      final Collection<ReflectionCompletionCandidate> rv,
+                                                                                      final boolean renderBold) {
 
-        Field[] fields = (includeStatic && ! includeNonStatic) ? clazz.fields : clazz.getDeclaredFields()
+        Field[] fields = (includeStatic && !includeNonStatic) ? clazz.fields : clazz.getDeclaredFields()
         fields.each { Field fit ->
             if (acceptName(fit.name, prefix)) {
                 int modifiers = fit.getModifiers()
@@ -653,7 +600,7 @@ class ReflectionCompletor {
                 }
             }
         }
-        Method[] methods = (includeStatic && ! includeNonStatic) ? clazz.methods : clazz.getDeclaredMethods()
+        Method[] methods = (includeStatic && !includeNonStatic) ? clazz.methods : clazz.getDeclaredMethods()
         for (Method methIt : methods) {
             String name = methIt.getName()
             if (name.startsWith("super\$")) {
@@ -680,7 +627,7 @@ class ReflectionCompletor {
                         }
                     }
                 }
-                if (! fieldnameSuggested && acceptName(name, prefix)) {
+                if (!fieldnameSuggested && acceptName(name, prefix)) {
                     ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(name + (methIt.parameterTypes.length == 0 ? '()' : '('))
                     if (!Modifier.isStatic(modifiers) && renderBold) {
                         candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())

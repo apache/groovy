@@ -544,12 +544,12 @@ will register the `Stats` command:
 groovy:000> :register Stats
 ----
 
-where the `Stats` class is a class extending the `org.codehaus.groovy.tools.shell.CommandSupport` class. For example:
+where the `Stats` class is a class extending the `org.apache.groovy.groovysh.CommandSupport` class. For example:
 
 [source,groovy]
 ----
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
 
 class Stats extends CommandSupport {
     protected Stats(final Groovysh shell) {

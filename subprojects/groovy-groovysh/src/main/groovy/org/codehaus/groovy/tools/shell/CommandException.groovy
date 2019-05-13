@@ -24,6 +24,7 @@ import groovy.transform.CompileStatic
  * Thrown to indicate a problem with command execution.
  */
 @CompileStatic
+@Deprecated
 class CommandException
     extends Exception
 {

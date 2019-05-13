@@ -29,6 +29,7 @@ import org.codehaus.groovy.tools.shell.util.MessageSource
 /**
  * Support for {@link Command} instances.
  */
+@Deprecated
 abstract class CommandSupport
     implements Command
 {

@@ -24,6 +24,7 @@ import org.codehaus.groovy.tools.shell.Groovysh
 /**
  * Completor completingclasses defined in the shell
  */
+@Deprecated
 class CustomClassSyntaxCompletor implements IdentifierCompletor {
 
     private final Groovysh shell

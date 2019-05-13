@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
 import antlr.TokenStreamException
 import groovy.transform.CompileStatic
@@ -30,16 +30,17 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.Message
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
-import org.codehaus.groovy.tools.shell.commands.LoadCommand
-import org.codehaus.groovy.tools.shell.commands.RecordCommand
-import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
-import org.codehaus.groovy.tools.shell.util.DefaultCommandsRegistrar
+import org.apache.groovy.groovysh.commands.LoadCommand
+import org.apache.groovy.groovysh.commands.RecordCommand
+import org.apache.groovy.groovysh.util.CurlyCountingGroovyLexer
+import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
+import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.codehaus.groovy.tools.shell.util.PackageHelper
-import org.codehaus.groovy.tools.shell.util.PackageHelperImpl
+import org.apache.groovy.groovysh.util.PackageHelper
+import org.apache.groovy.groovysh.util.PackageHelperImpl
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.codehaus.groovy.tools.shell.util.ScriptVariableAnalyzer
-import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
+import org.apache.groovy.groovysh.util.ScriptVariableAnalyzer
+import org.apache.groovy.groovysh.util.XmlCommandRegistrar
 import org.fusesource.jansi.AnsiRenderer
 
 import java.util.regex.Pattern

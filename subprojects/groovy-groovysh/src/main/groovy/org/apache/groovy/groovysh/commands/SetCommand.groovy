@@ -16,21 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import jline.console.completer.Completer
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.util.PackageHelper
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.util.PackageHelper
+import org.apache.groovy.groovysh.util.SimpleCompleter
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.codehaus.groovy.tools.shell.util.SimpleCompletor
 
 /**
  * The 'set' command, used to set preferences.
  */
-class SetCommand
-    extends CommandSupport
-{
+class SetCommand extends CommandSupport {
     public static final String COMMAND_NAME = ':set'
 
     SetCommand(final Groovysh shell) {
@@ -61,8 +59,8 @@ class SetCommand
         }
 
         return [
-            new SimpleCompletor(loader),
-            null
+                new SimpleCompleter(loader),
+                null
         ]
     }
 
@@ -95,8 +93,7 @@ class SetCommand
 
         if (args.size() == 1) {
             value = true
-        }
-        else {
+        } else {
             value = args[1]
         }
 

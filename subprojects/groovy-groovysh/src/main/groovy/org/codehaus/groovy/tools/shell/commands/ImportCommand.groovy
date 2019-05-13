@@ -40,6 +40,7 @@ import java.util.regex.Pattern
 /**
  * The 'import' command.
  */
+@Deprecated
 class ImportCommand
     extends CommandSupport
 {

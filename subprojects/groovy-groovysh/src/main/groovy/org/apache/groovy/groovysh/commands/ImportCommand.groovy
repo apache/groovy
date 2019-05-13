@@ -16,33 +16,31 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import groovy.transform.CompileStatic
 import jline.console.completer.AggregateCompleter
 import jline.console.completer.Completer
 import jline.console.completer.NullCompleter
 import jline.console.completer.StringsCompleter
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Evaluator
+import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.Interpreter
+import org.apache.groovy.groovysh.completion.ReflectionCompleter
+import org.apache.groovy.groovysh.completion.ReflectionCompletionCandidate
+import org.apache.groovy.groovysh.completion.StricterArgumentCompleter
+import org.apache.groovy.groovysh.util.PackageHelper
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.ResolveVisitor
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Evaluator
-import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.Interpreter
-import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
-import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
-import org.codehaus.groovy.tools.shell.completion.StricterArgumentCompleter
 import org.codehaus.groovy.tools.shell.util.Logger
-import org.codehaus.groovy.tools.shell.util.PackageHelper
 
 import java.util.regex.Pattern
 
 /**
  * The 'import' command.
  */
-class ImportCommand
-    extends CommandSupport
-{
+class ImportCommand extends CommandSupport {
 
     /**
      * pattern used to validate the arguments to the import command,
@@ -97,7 +95,7 @@ class ImportCommand
         // "java.awt.TextField" so it is not implemented as such here.  Perhaps this could be made to be more
         // intelligent if someone could figure out why that is happening or could write a nicer batch of regex to
         // solve the problem
-        if (! (importSpec.matches(IMPORTED_ITEM_PATTERN))) {
+        if (!(importSpec.matches(IMPORTED_ITEM_PATTERN))) {
             def msg = "Invalid import definition: '${importSpec}'" // TODO: i18n
             log.debug(msg)
             fail(msg)
@@ -105,7 +103,7 @@ class ImportCommand
         // remove last semicolon
         importSpec = importSpec.replaceAll(';', '')
 
-        def buff = [ 'import ' + args.join(' ') ]
+        def buff = ['import ' + args.join(' ')]
         buff << 'def dummp = false'
 
         def type
@@ -174,11 +172,11 @@ class ImportCompleter implements Completer {
     int complete(final String buffer, final int cursor, final List<CharSequence> result) {
         String currentImportExpression = buffer ? buffer.substring(0, cursor) : ''
         if (staticImport) {
-            if (! (currentImportExpression.matches(PACK_OR_CLASS_OR_METHODNAME_PATTERN))) {
+            if (!(currentImportExpression.matches(PACK_OR_CLASS_OR_METHODNAME_PATTERN))) {
                 return -1
             }
         } else {
-            if (! (currentImportExpression.matches(PACK_OR_SIMPLE_CLASSNAME_PATTERN))) {
+            if (!(currentImportExpression.matches(PACK_OR_SIMPLE_CLASSNAME_PATTERN))) {
                 return -1
             }
         }
@@ -192,19 +190,19 @@ class ImportCompleter implements Completer {
                 Set<String> classnames = packageHelper.getContents(currentImportExpression[0..-2])
                 if (classnames) {
                     if (staticImport) {
-                        result.addAll(classnames.collect({ String it -> it + '.'}))
+                        result.addAll(classnames.collect({ String it -> it + '.' }))
                     } else {
                         result.addAll(classnames.collect({ String it -> addDotOrBlank(it) }))
                     }
                 }
-                if (! staticImport) {
+                if (!staticImport) {
                     result.add('* ')
                 }
                 return currentImportExpression.length()
             } else if (staticImport && currentImportExpression.matches(QUALIFIED_CLASS_DOT_PATTERN)) {
                 Class clazz = interpreter.evaluate([currentImportExpression[0..-2]]) as Class
                 if (clazz != null) {
-                    Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, '')
+                    Collection<ReflectionCompletionCandidate> members = ReflectionCompleter.getPublicFieldsAndMethods(clazz, '')
                     result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + ' ' }))
                 }
                 result.add('* ')
@@ -227,7 +225,7 @@ class ImportCompleter implements Completer {
             Set<String> candidates = packageHelper.getContents(baseString)
             if (candidates == null || candidates.size() == 0) {
                 // At least give standard package completion, else static keyword is highly annoying
-                Collection<String> standards = ResolveVisitor.DEFAULT_IMPORTS.findAll({ String it -> it.startsWith(currentImportExpression)})
+                Collection<String> standards = ResolveVisitor.DEFAULT_IMPORTS.findAll({ String it -> it.startsWith(currentImportExpression) })
                 if (standards) {
                     result.addAll(standards)
                     return 0
@@ -244,7 +242,7 @@ class ImportCompleter implements Completer {
         } else if (staticImport) {
             Class clazz = interpreter.evaluate([baseString]) as Class
             if (clazz != null) {
-                Collection<ReflectionCompletionCandidate> members = ReflectionCompletor.getPublicFieldsAndMethods(clazz, prefix)
+                Collection<ReflectionCompletionCandidate> members = ReflectionCompleter.getPublicFieldsAndMethods(clazz, prefix)
                 if (members) {
                     result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + ' ' }))
                     return lastDot <= 0 ? 0 : lastDot + 1
@@ -255,8 +253,8 @@ class ImportCompleter implements Completer {
     }
 
     private static String addDotOrBlank(final String it) {
-        if (it[0] in 'A' .. 'Z') {
-           return it + ' '
+        if (it[0] in 'A'..'Z') {
+            return it + ' '
         }
         return it + '.'
     }

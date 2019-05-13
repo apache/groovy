@@ -23,6 +23,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
 /**
  * A registry of shell {@link Command} instances which may be executed.
  */
+@Deprecated
 class CommandRegistry
 {
     protected final Logger log = Logger.create(CommandRegistry)
