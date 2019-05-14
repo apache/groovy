@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.transform;
+package org.apache.groovy.test.transform;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -31,6 +31,8 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.AbstractASTTransformation;
+import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
