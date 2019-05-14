@@ -36,10 +36,12 @@ import java.lang.annotation.Target;
  * The idea for this AST transformation originated in {@link groovy.util.GroovyTestCase#notYetImplemented()}.
  *
  * @since 2.0.0
+ * @deprecated use {@link groovy.test.transform.NotYetImplemented}
  */
+@Deprecated
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.NotYetImplementedASTTransformation")
+@GroovyASTTransformationClass("org.apache.groovy.test.transform.NotYetImplementedASTTransformation")
 public @interface NotYetImplemented {
 }

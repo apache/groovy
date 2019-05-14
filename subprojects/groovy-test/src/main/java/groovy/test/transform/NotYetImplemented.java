@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.transform;
+package groovy.test.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -35,11 +35,11 @@ import java.lang.annotation.Target;
  * <p>
  * The idea for this AST transformation originated in {@link groovy.util.GroovyTestCase#notYetImplemented()}.
  *
- * @since 2.0.0
+ * @since 3.0.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.NotYetImplementedASTTransformation")
+@GroovyASTTransformationClass("org.apache.groovy.test.transform.NotYetImplementedASTTransformation")
 public @interface NotYetImplemented {
 }

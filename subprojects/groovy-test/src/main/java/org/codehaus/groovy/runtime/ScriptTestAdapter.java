@@ -23,7 +23,10 @@ import junit.framework.TestResult;
 
 /**
  * An adapter to make any Groovy Script class an instance of a JUnit Test
+ *
+ * @deprecated use {@link org.apache.groovy.test.ScriptTestAdapter}
  */
+@Deprecated
 public class ScriptTestAdapter implements Test {
     private Class scriptClass;
     private String[] arguments;

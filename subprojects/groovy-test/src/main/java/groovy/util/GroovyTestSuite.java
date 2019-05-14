@@ -23,7 +23,7 @@ import groovy.lang.Script;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
-import org.codehaus.groovy.runtime.ScriptTestAdapter;
+import org.apache.groovy.test.ScriptTestAdapter;
 
 import java.io.File;
 import java.security.AccessController;

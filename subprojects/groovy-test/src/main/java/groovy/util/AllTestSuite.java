@@ -24,7 +24,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.runtime.ScriptTestAdapter;
+import org.apache.groovy.test.ScriptTestAdapter;
 
 import java.io.File;
 import java.io.IOException;

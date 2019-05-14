@@ -16,10 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.apache.groovy.test;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * An adapter to make any Groovy Script class an instance of a JUnit Test
