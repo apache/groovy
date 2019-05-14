@@ -23,7 +23,6 @@ import junit.framework.TestResult;
 
 /**
  * An adapter to make any Groovy Script class an instance of a JUnit Test
- *
  */
 public class ScriptTestAdapter implements Test {
     private Class scriptClass;
@@ -42,11 +41,10 @@ public class ScriptTestAdapter implements Test {
         try {
             result.startTest(this);
 
-            // lets run the script
+            // let's run the script
             InvokerHelper.runScript(scriptClass, arguments);
             result.endTest(this);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             result.addError(this, e);
         }
     }
