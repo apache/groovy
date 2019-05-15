@@ -16,8 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.ant;
 
+import groovy.util.BuilderSupport;
 import groovy.xml.QName;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.BuildLogger;

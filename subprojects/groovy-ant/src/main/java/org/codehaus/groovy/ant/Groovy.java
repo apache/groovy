@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.ant;
 
+import groovy.ant.AntBuilder;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
-import groovy.util.AntBuilder;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;

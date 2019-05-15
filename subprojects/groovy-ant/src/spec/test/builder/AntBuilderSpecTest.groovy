@@ -32,7 +32,7 @@ class AntBuilderSpecTest extends AntTestCase {
         // end::create_zip_builder[]
         */
         // tag::example_echo[]
-        def ant = new AntBuilder()          // <1>
+        def ant = new groovy.ant.AntBuilder()          // <1>
         ant.echo('hello from Ant!')         // <2>
         // end::example_echo[]
     }

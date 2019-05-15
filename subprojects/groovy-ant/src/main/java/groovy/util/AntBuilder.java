@@ -63,6 +63,7 @@ import java.util.logging.Logger;
  * your classpath - see the <a href="http://ant.apache.org/manual/install.html#librarydependencies">library
  * dependencies</a> for more details.
  */
+@Deprecated
 public class AntBuilder extends BuilderSupport {
 
     private final Logger log = Logger.getLogger(getClass().getName());
@@ -493,6 +494,7 @@ public class AntBuilder extends BuilderSupport {
  * Would be nice to retrieve location information (from AST?).
  * In a first time, without info
  */
+@Deprecated
 class AntBuilderLocator implements Locator {
     public int getColumnNumber() {
         return 0;

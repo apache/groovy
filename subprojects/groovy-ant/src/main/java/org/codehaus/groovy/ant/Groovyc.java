@@ -163,7 +163,7 @@ import java.util.StringTokenizer;
  * <p>
  * Based on the implementation of the Javac task in Apache Ant.
  * <p>
- * Can also be used from {@link groovy.util.AntBuilder} to allow the build file to be scripted in Groovy.
+ * Can also be used from {@link groovy.ant.AntBuilder} to allow the build file to be scripted in Groovy.
  */
 public class Groovyc extends MatchingTask {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
