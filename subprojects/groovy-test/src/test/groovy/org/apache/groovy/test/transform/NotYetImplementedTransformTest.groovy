@@ -24,7 +24,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testNotYetImplemented() {
         def output = evaluate("""
-              import groovy.transform.NotYetImplemented
+              import groovy.test.NotYetImplemented
 
               class MyTests extends GroovyTestCase {
                 @NotYetImplemented void testShouldNotFail()  {
@@ -41,7 +41,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testNotYetImplementedWithException() {
             def output = evaluate("""
-                  import groovy.transform.NotYetImplemented
+                  import groovy.test.NotYetImplemented
 
                   class MyTests extends GroovyTestCase {
                     @NotYetImplemented void testShouldNotFail()  {
@@ -58,7 +58,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testNotYetImplementedPassThrough() {
         def output = evaluate("""
-              import groovy.transform.NotYetImplemented
+              import groovy.test.NotYetImplemented
 
               class MyTests extends GroovyTestCase {
                 @NotYetImplemented void testShouldFail()  {
@@ -77,7 +77,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testEmptyTestMethod() {
         def output = evaluate("""
-              import groovy.transform.NotYetImplemented
+              import groovy.test.NotYetImplemented
 
               class MyTests extends GroovyTestCase {
                 @NotYetImplemented void testShouldNotFail()  {}
@@ -94,7 +94,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
     void testNotYetImplementedJUnit4()  {
 
         def output = evaluate("""
-        import groovy.transform.NotYetImplemented
+        import groovy.test.NotYetImplemented
         import org.junit.Test
         import org.junit.runner.JUnitCore
 
@@ -113,7 +113,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testNotYetImplementedPassThroughJUnit4() {
         def output = evaluate("""
-              import groovy.transform.NotYetImplemented
+              import groovy.test.NotYetImplemented
               import org.junit.Test
               import org.junit.runner.JUnitCore
 

@@ -69,7 +69,7 @@ class JavadocAssertionTestSuite extends TestSuite {
     public static final String SYSPROP_SRC_EXCLUDES_PATTERN = "javadocAssertion.src.excludesPattern";
     
     private static final JavadocAssertionTestBuilder testBuilder = new JavadocAssertionTestBuilder()
-    private static final IFileNameFinder finder = Class.forName('groovy.util.FileNameFinder',true,this.classLoader).newInstance()
+    private static final IFileNameFinder finder = Class.forName('groovy.ant.FileNameFinder',true,this.classLoader).newInstance()
     
     static Test suite() {
         String basedir = System.getProperty(SYSPROP_SRC_DIR, "./src/")

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.test.transform;
+package groovy.test;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 

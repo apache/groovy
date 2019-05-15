@@ -48,7 +48,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 /**
  * Handles generation of code for the {@code @NotYetImplemented} annotation.
  * 
- * @see groovy.transform.NotYetImplemented
+ * @see groovy.test.NotYetImplemented
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class NotYetImplementedASTTransformation extends AbstractASTTransformation {
