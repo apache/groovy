@@ -30,6 +30,7 @@ import java.awt.*;
 /**
  * Base class for console
  */
+@Deprecated
 public abstract class ConsoleSupport {
 
     Style promptStyle;

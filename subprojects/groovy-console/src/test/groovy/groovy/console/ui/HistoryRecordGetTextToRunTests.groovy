@@ -16,8 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui
+package groovy.console.ui
 
+import groovy.ui.HistoryRecord
 import junit.framework.TestCase
 
 class HistoryRecordGetTextToRunTests extends TestCase {

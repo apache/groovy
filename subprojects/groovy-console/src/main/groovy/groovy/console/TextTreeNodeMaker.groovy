@@ -19,9 +19,9 @@
 /**
  * A factory class for plain text nodes for use in the AST tree made by ASTBrowser 
  */
-package groovy.inspect
+package groovy.console
 
-import groovy.inspect.swingui.AstBrowserNodeMaker
+import groovy.console.ui.AstBrowserNodeMaker
 import groovy.transform.CompileStatic
 
 @CompileStatic

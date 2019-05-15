@@ -25,6 +25,7 @@ import org.codehaus.groovy.tools.shell.util.MessageSource
 import javax.swing.*
 import java.awt.*
 
+@Deprecated
 class ConsolePreferences {
 
     // Default maximum number of characters to show on console at any time

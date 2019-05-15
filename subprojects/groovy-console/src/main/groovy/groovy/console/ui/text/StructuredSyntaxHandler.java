@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui.text;
+package groovy.console.ui.text;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

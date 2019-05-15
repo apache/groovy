@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui.view
+package groovy.console.ui.view
 
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
@@ -24,7 +24,7 @@ import java.util.prefs.Preferences
 
 build(Defaults)
 
-def prefs = Preferences.userNodeForPackage(groovy.ui.Console)
+def prefs = Preferences.userNodeForPackage(groovy.console.ui.Console)
 def fontFamily = prefs.get("fontName", "Consolas")
 
 // change fonts for vista

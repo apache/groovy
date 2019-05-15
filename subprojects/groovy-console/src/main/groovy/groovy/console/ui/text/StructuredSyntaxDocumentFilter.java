@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui.text;
+package groovy.console.ui.text;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;

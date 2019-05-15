@@ -17,13 +17,14 @@
  * under the License.
  *
  */
-package groovy.inspect.swingui
+package groovy.console.ui
 
 import groovy.transform.CompileStatic
 
-import javax.swing.*
+import javax.swing.JComponent
+import javax.swing.JTable
 import javax.swing.table.DefaultTableCellRenderer
-import java.awt.*
+import java.awt.Component
 
 /**
  * A table cell renderer that will return a component instead of drawing it,

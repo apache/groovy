@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui;
+package groovy.console.ui;
 
-import groovy.ui.text.GroovyFilter;
-import groovy.ui.text.MatchingHighlighter;
-import groovy.ui.text.SmartDocumentFilter;
-import groovy.ui.text.StructuredSyntaxResources;
-import groovy.ui.text.TextEditor;
-import groovy.ui.text.TextUndoManager;
+import groovy.console.ui.text.GroovyFilter;
+import groovy.console.ui.text.MatchingHighlighter;
+import groovy.console.ui.text.SmartDocumentFilter;
+import groovy.console.ui.text.StructuredSyntaxResources;
+import groovy.console.ui.text.TextEditor;
+import groovy.console.ui.text.TextUndoManager;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import javax.swing.AbstractAction;

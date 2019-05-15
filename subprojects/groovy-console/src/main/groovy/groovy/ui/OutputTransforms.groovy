@@ -36,6 +36,7 @@ import java.awt.Window
 import java.awt.image.BufferedImage
 
 @CompileStatic
+@Deprecated
 class OutputTransforms {
 
     @Lazy static List<Closure> localTransforms = loadOutputTransforms()

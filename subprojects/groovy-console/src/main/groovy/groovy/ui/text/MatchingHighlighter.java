@@ -55,6 +55,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.RPAREN;
  *
  * @since 3.0.0
  */
+@Deprecated
 public class MatchingHighlighter implements CaretListener {
     private final SmartDocumentFilter smartDocumentFilter;
     private final JTextPane textEditor;

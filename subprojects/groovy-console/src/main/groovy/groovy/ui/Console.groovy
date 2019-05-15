@@ -91,6 +91,7 @@ import java.util.prefs.Preferences
  *
  * Allows user to interactively enter and execute Groovy.
  */
+@Deprecated
 class Console implements CaretListener, HyperlinkListener, ComponentListener, FocusListener {
 
     static final String DEFAULT_SCRIPT_NAME_START = 'ConsoleScript'

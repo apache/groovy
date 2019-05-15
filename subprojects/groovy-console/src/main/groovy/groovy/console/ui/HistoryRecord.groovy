@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui
+package groovy.console.ui
 
 import groovy.transform.CompileStatic
 
@@ -29,7 +29,7 @@ class HistoryRecord {
     Object result
     Throwable exception
 
-    public String getTextToRun(boolean useSelection) {
+    String getTextToRun(boolean useSelection) {
         if (useSelection && selectionStart != selectionEnd) {
             // Retrieve all the imports included in the script before the current selection
             def before = allText[0 ..< selectionStart].split("\n")
@@ -41,7 +41,7 @@ class HistoryRecord {
         return allText
     }
 
-    public Object getValue() {
+    Object getValue() {
         return exception ? exception : result
     }
 }

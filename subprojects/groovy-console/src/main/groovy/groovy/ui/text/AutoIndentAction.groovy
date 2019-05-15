@@ -26,6 +26,7 @@ import javax.swing.text.SimpleAttributeSet
 import java.awt.event.ActionEvent
 
 @CompileStatic
+@Deprecated
 class AutoIndentAction extends AbstractAction {
     AttributeSet simpleAttributeSet = new SimpleAttributeSet()
 

@@ -29,6 +29,7 @@ import org.apache.ivy.core.event.resolve.StartResolveEvent
  *
  * Adds Groovy Grape feedback (via an Ivy listener).
  */
+@Deprecated
 class ConsoleIvyPlugin {
     Console savedConsole
     Set<String> resolvedDependencies = []

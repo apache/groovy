@@ -111,6 +111,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.WHILE;
  *
  * @since 3.0.0
  */
+@Deprecated
 public class SmartDocumentFilter extends DocumentFilter {
     private static final String MONOSPACED = "Monospaced";
     private final DefaultStyledDocument styledDocument;

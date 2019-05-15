@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui
+package groovy.console.ui
 
 import groovy.grape.Grape
 import groovy.grape.GrapeIvy

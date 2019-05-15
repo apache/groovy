@@ -30,6 +30,7 @@ import java.beans.PropertyChangeListener;
  * and then create actions to call undo/redo as needed (checking can undo/redo
  * first, of course).
  */
+@Deprecated
 public class TextUndoManager extends UndoManager {
 
     private SwingPropertyChangeSupport propChangeSupport =

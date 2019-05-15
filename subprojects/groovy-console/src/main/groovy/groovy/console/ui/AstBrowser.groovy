@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.inspect.swingui
+package groovy.console.ui
 
 import groovy.lang.GroovyClassLoader.ClassCollector
 import groovy.swing.SwingBuilder
@@ -31,16 +31,21 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.util.ASMifier
 import org.objectweb.asm.util.TraceClassVisitor
 
-import javax.swing.*
+import javax.swing.Action
+import javax.swing.JFrame
+import javax.swing.JSplitPane
+import javax.swing.KeyStroke
+import javax.swing.UIManager
+import javax.swing.WindowConstants
 import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
-import java.awt.*
+import java.awt.Cursor
+import java.awt.Font
 import java.awt.event.KeyEvent
-import java.util.List
 import java.util.prefs.Preferences
 import java.util.regex.Pattern
 
@@ -54,10 +59,9 @@ import static java.awt.GridBagConstraints.WEST
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
  *
- * Usage: java groovy.inspect.swingui.AstBrowser [filename]
+ * Usage: java groovy.console.ui.AstBrowser [filename]
  *         where [filename] is an existing Groovy script. 
  */
-
 class AstBrowser {
 
     private static final String BYTECODE_MSG_SELECT_NODE = '// Please select a class node in the tree view.'
@@ -83,14 +87,14 @@ class AstBrowser {
     static void main(args) {
 
         if (!args) {
-            println 'Usage: java groovy.inspect.swingui.AstBrowser [filename]\nwhere [filename] is a Groovy script'
+            println 'Usage: java groovy.console.ui.AstBrowser [filename]\nwhere [filename] is a Groovy script'
         } else {
             def file = new File((String) args[0])
             if (!file.exists()) {
                 println "File $args[0] cannot be found."
             } else {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-                new AstBrowser(null, null, new GroovyClassLoader()).run({file.text}, file.path)
+                new AstBrowser(null, null, new GroovyClassLoader()).run({ file.text }, file.path)
             }
         }
     }
@@ -118,7 +122,7 @@ class AstBrowser {
         frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name" : ''),
                 location: prefs.frameLocation,
                 size: prefs.frameSize,
-                iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
+                iconImage: swing.imageIcon(Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
                 windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView, showIndyBytecode) }) {
 
@@ -146,8 +150,12 @@ class AstBrowser {
                     }
                 }
                 menu(text: 'View', mnemonic: 'V') {
-                    menuItem {action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))}
-                    menuItem {action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))}
+                    menuItem {
+                        action(name: 'Larger Font', closure: this.&largerFont, mnemonic: 'L', accelerator: shortcut('shift L'))
+                    }
+                    menuItem {
+                        action(name: 'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', accelerator: shortcut('shift S'))
+                    }
                     menuItem {
                         refreshAction = action(name: 'Refresh', closure: {
                             decompile(phasePicker.selectedItem.phaseId, script())
@@ -157,7 +165,7 @@ class AstBrowser {
                     }
                 }
                 menu(text: 'Help', mnemonic: 'H') {
-                    menuItem {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
+                    menuItem { action(name: 'About', closure: this.&showAbout, mnemonic: 'A') }
                 }
             }
             panel {
@@ -182,7 +190,7 @@ class AstBrowser {
                         },
                         constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
-                        visible: showTreeView, 
+                        visible: showTreeView,
                         leftComponent: scrollPane {
                             jTree = tree(
                                     name: 'AstTreeView', rowHeight: 0, /* force recalc */
@@ -197,16 +205,17 @@ class AstBrowser {
                                 }
                             }
                         }
-                ) { }
+                ) {}
                 mainSplitter = splitPane(
                         orientation: JSplitPane.VERTICAL_SPLIT,
                         topComponent: splitterPane,
                         bottomComponent: tabbedPane {
-                            widget(decompiledSource = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:'Source')
-                            widget(bytecodeView = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:getByteCodeTitle())
-                            widget(asmifierView = new groovy.ui.ConsoleTextEditor(editable: false, showLineNumbers: false), title:getASMifierTitle())
+                            widget(decompiledSource = new ConsoleTextEditor(editable: false, showLineNumbers: false), title: 'Source')
+                            widget(bytecodeView = new ConsoleTextEditor(editable: false, showLineNumbers: false), title: getByteCodeTitle())
+                            widget(asmifierView = new ConsoleTextEditor(editable: false, showLineNumbers: false), title: getASMifierTitle())
                         },
-                        constraints: gbc(gridx: 0, gridy: 2, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
+                        constraints: gbc(gridx: 0, gridy: 2, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) {
+                }
 
             }
         }
@@ -215,7 +224,7 @@ class AstBrowser {
 
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
-        jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH))
+        jTree.cellRenderer.setLeafIcon(swing.imageIcon(Console.NODE_ICON_PATH))
         jTree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
         jTree.addTreeSelectionListener({ TreeSelectionEvent e ->
 
@@ -224,38 +233,38 @@ class AstBrowser {
             propertyTable.columnModel.getColumn(1).cellEditor = new ButtonOrTextEditor()
             TreeNode node = jTree.lastSelectedPathComponent
             if (node instanceof TreeNodeWithProperties) {
-                def titleSuffix = node.properties.find{ it[0] == 'text' }?.get(1)
+                def titleSuffix = node.properties.find { it[0] == 'text' }?.get(1)
                 for (it in node.properties) {
                     def propList = it
                     if (propList[2] == "ListHashMap" && propList[1] != 'null' && propList[1] != '[:]') {
                         //If the class is a ListHashMap, make it accessible in a new frame through a button
                         def btnPanel = swing.button(
-                            text: "See key/value pairs",
-                            actionPerformed: {
-                                def mapTable
-                                String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
-                                def props = swing.frame(title: title, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
-                                        show: true, locationRelativeTo: null) {
-                                    lookAndFeel("system")
-                                    panel {
-                                        scrollPane() {
-                                            mapTable = swing.table() {
-                                                tableModel(list: [[:]]) {
-                                                    propertyColumn(header: 'Name', propertyName: 'name')
-                                                    propertyColumn(header: 'Value', propertyName: 'value')
+                                text: "See key/value pairs",
+                                actionPerformed: {
+                                    def mapTable
+                                    String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
+                                    def props = swing.frame(title: title, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
+                                            show: true, locationRelativeTo: null) {
+                                        lookAndFeel("system")
+                                        panel {
+                                            scrollPane {
+                                                mapTable = swing.table {
+                                                    tableModel(list: [[:]]) {
+                                                        propertyColumn(header: 'Name', propertyName: 'name')
+                                                        propertyColumn(header: 'Value', propertyName: 'value')
+                                                    }
                                                 }
                                             }
                                         }
                                     }
-                                }
-                                mapTable.model.rows.clear()
-                                propList[1].substring(1, propList[1].length() - 1).tokenize(',').each {
-                                    def kv = it.tokenize(':')
-                                    if (kv)
-                                        mapTable.model.rows << ["name": kv[0], "value": kv[1]]
-                                }
-                                props.pack()
-                            })
+                                    mapTable.model.rows.clear()
+                                    propList[1].substring(1, propList[1].length() - 1).tokenize(',').each {
+                                        def kv = it.tokenize(':')
+                                        if (kv)
+                                            mapTable.model.rows << ["name": kv[0], "value": kv[1]]
+                                    }
+                                    props.pack()
+                                })
                         propertyTable.model.rows << ["name": propList[0], "value": btnPanel, "type": propList[2]]
                         btnPanel.updateUI()
                     } else {
@@ -265,7 +274,9 @@ class AstBrowser {
 
                 if (inputArea && rootElement) {
                     // get the line / column information to select the text represented by the current selected node
-                    def lineInfo = node.properties.findAll { it[0] in ['lineNumber', 'columnNumber', 'lastLineNumber', 'lastColumnNumber'] }
+                    def lineInfo = node.properties.findAll {
+                        it[0] in ['lineNumber', 'columnNumber', 'lastLineNumber', 'lastColumnNumber']
+                    }
                     def lineInfoMap = lineInfo.inject([:]) { map, info -> map[(info[0])] = Integer.valueOf(info[1]); return map }
 
                     // when there are valid line / column information (ie. != -1), create a selection in the input area
@@ -295,11 +306,15 @@ class AstBrowser {
                             def methodDescriptor = node.getPropertyValue('descriptor')
                             boolean isMethodNameAndMethodDescriptorAvailable = methodName && methodDescriptor
 
-                            String bytecodeSource = generateSource(bytecode, {writer -> new TraceClassVisitor(new PrintWriter(writer))})
-                            showSource(bytecodeView, bytecodeSource, showOnlyMethodCode, isMethodNameAndMethodDescriptorAvailable, {"^.*\\n.*${Pattern.quote(methodName + methodDescriptor)}[\\s\\S]*?\\n[}|\\n]"})
+                            String bytecodeSource = generateSource(bytecode, { writer -> new TraceClassVisitor(new PrintWriter(writer)) })
+                            showSource(bytecodeView, bytecodeSource, showOnlyMethodCode, isMethodNameAndMethodDescriptorAvailable, {
+                                "^.*\\n.*${Pattern.quote(methodName + methodDescriptor)}[\\s\\S]*?\\n[}|\\n]"
+                            })
 
-                            String asmifierSource = generateSource(bytecode, {writer -> new TraceClassVisitor(null, new ASMifier(), new PrintWriter(writer))})
-                            showSource(asmifierView, asmifierSource, showOnlyMethodCode, isMethodNameAndMethodDescriptorAvailable, {"^.*\\n.*${Pattern.quote(methodName)}.*?${Pattern.quote(methodDescriptor)}[\\s\\S]*?\\n[}|\\n]"})
+                            String asmifierSource = generateSource(bytecode, { writer -> new TraceClassVisitor(null, new ASMifier(), new PrintWriter(writer)) })
+                            showSource(asmifierView, asmifierSource, showOnlyMethodCode, isMethodNameAndMethodDescriptorAvailable, {
+                                "^.*\\n.*${Pattern.quote(methodName)}.*?${Pattern.quote(methodDescriptor)}[\\s\\S]*?\\n[}|\\n]"
+                            })
                         } else {
                             swing.doLater {
                                 bytecodeView.textEditor.text = NO_BYTECODE_AVAILABLE_AT_THIS_PHASE
@@ -335,7 +350,8 @@ class AstBrowser {
 
     private static final int INITIAL_CAPACITY = 64 * 1024 // 64K
     private String generateSource(byte[] bytecode, getVisitor) {
-        def sw = new StringBuilderWriter(INITIAL_CAPACITY) // the generated code of `println 123` occupies about 618 bytes, so we should increase the initial capacity to 64K
+        def sw = new StringBuilderWriter(INITIAL_CAPACITY)
+        // the generated code of `println 123` occupies about 618 bytes, so we should increase the initial capacity to 64K
         new ClassReader(bytecode).accept(getVisitor(sw), 0)
         return sw.toString()
     }
@@ -400,7 +416,7 @@ class AstBrowser {
         showScriptClass = evt.source.selected
     }
 
-    void showClosureClasses(EventObject evt)  {
+    void showClosureClasses(EventObject evt) {
         showClosureClasses = evt.source.selected
     }
 
@@ -425,7 +441,7 @@ class AstBrowser {
         def tabPane = mainSplitter.bottomComponent
         int tabCount = tabPane.getTabCount()
         for (int i = 0; i < tabCount; i++) {
-            def component = tabPane.getComponentAt(i);
+            def component = tabPane.getComponentAt(i)
             if (bytecodeView.is(component)) {
                 tabPane.setTitleAt(i, getByteCodeTitle())
             } else if (asmifierView.is(component)) {
@@ -452,7 +468,7 @@ class AstBrowser {
 
                 String result = new AstNodeToScriptAdapter().compileToScript(source, phaseId, classLoader, showScriptFreeForm, showScriptClass, config)
                 swing.doLater {
-                    decompiledSource.textEditor.text = result 
+                    decompiledSource.textEditor.text = result
                     decompiledSource.textEditor.setCaretPosition(0)
                     decompiledSource.textEditor.setCursor(Cursor.defaultCursor)
                 }
@@ -537,7 +553,7 @@ class AstBrowserUiPreferences {
         }
     }
 
-    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView, showIndyBytecode=false) {
+    def save(frame, vSplitter, hSplitter, scriptFreeFormPref, scriptClassPref, closureClassesPref, CompilePhaseAdapter phase, showTreeView, showIndyBytecode = false) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt('decompiledFontSize', decompiledSourceFontSize as int)
         prefs.putInt('frameX', frame.location.x as int)
@@ -601,7 +617,7 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
         this.properties = properties
     }
 
-    String getPropertyValue(String name)  {
+    String getPropertyValue(String name) {
         def match = properties.find { n, v, t -> name == n }
         return match != null ? match[1] : null
     }
@@ -643,7 +659,7 @@ class BytecodeCollector extends ClassCollector {
 
     Map<String, byte[]> bytecode
 
-    BytecodeCollector(ClassCollector delegate, Map<String,byte[]> bytecode) {
+    BytecodeCollector(ClassCollector delegate, Map<String, byte[]> bytecode) {
         super(delegate.cl, delegate.unit, delegate.su)
         this.bytecode = bytecode
     }

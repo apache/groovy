@@ -19,7 +19,7 @@
 /**
  * Represents a plain text node for use in the AST tree made by ASTBrowser 
  */
-package groovy.inspect
+package groovy.console
 
 import groovy.transform.CompileStatic
 

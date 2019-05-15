@@ -16,12 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui.view
+package groovy.console.ui.view
 
-import groovy.ui.text.GroovyFilter
+import groovy.console.ui.text.GroovyFilter
 
 import javax.swing.text.StyleConstants
-import java.awt.*
+import java.awt.Color
 import java.util.prefs.Preferences
 
 build(Defaults)
@@ -30,7 +30,7 @@ build(Defaults)
 System.setProperty('apple.laf.useScreenMenuBar', 'true')
 System.setProperty('com.apple.mrj.application.apple.menu.about.name', 'GroovyConsole')
 
-def prefs = Preferences.userNodeForPackage(groovy.ui.Console)
+def prefs = Preferences.userNodeForPackage(groovy.console.ui.Console)
 def fontFamily = prefs.get("fontName", "Monaco")
 
 // redo output styles

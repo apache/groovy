@@ -27,6 +27,7 @@ import java.io.PrintStream;
 /**
  * Intercepts System.out/System.err. Implementation helper for Console.groovy.
  */
+@Deprecated
 public class SystemOutputInterceptor extends FilterOutputStream {
 
     private Closure callback;

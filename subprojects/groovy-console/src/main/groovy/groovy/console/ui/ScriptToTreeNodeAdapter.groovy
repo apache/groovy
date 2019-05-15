@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.inspect.swingui
+package groovy.console.ui
 
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template

@@ -16,19 +16,20 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui.view
+package groovy.console.ui.view
 
-import javax.swing.*
-import java.awt.*
+import javax.swing.SwingConstants
+import java.awt.BorderLayout
+import java.awt.GridBagConstraints
 
 statusPanel = panel(constraints: BorderLayout.SOUTH) {
     gridBagLayout()
-    separator(gridwidth:GridBagConstraints.REMAINDER, fill:GridBagConstraints.HORIZONTAL)
+    separator(gridwidth: GridBagConstraints.REMAINDER, fill: GridBagConstraints.HORIZONTAL)
     status = label("Welcome to Groovy ${GroovySystem.version}.",
-        weightx:1.0,
-        anchor:GridBagConstraints.WEST,
-        fill:GridBagConstraints.HORIZONTAL,
-        insets: [1,3,1,3])
-    separator(orientation:SwingConstants.VERTICAL, fill:GridBagConstraints.VERTICAL)
-    rowNumAndColNum = label('1:1', insets: [1,3,1,3])
+            weightx: 1.0,
+            anchor: GridBagConstraints.WEST,
+            fill: GridBagConstraints.HORIZONTAL,
+            insets: [1, 3, 1, 3])
+    separator(orientation: SwingConstants.VERTICAL, fill: GridBagConstraints.VERTICAL)
+    rowNumAndColNum = label('1:1', insets: [1, 3, 1, 3])
 }

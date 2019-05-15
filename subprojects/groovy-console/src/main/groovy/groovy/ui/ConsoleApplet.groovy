@@ -20,12 +20,13 @@ package groovy.ui
 
 import groovy.transform.CompileStatic
 
-import javax.swing.*
+import javax.swing.JApplet
 
 /**
  * ConsoleApplet
  */
 @CompileStatic
+@Deprecated
 class ConsoleApplet extends JApplet {
 
     Console console

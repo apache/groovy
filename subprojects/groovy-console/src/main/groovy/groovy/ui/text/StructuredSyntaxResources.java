@@ -25,6 +25,7 @@ import java.awt.datatransfer.Clipboard;
  * Contains all the basic resources and values used by the utility frame work
  * framework.
  */
+@Deprecated
 public final class StructuredSyntaxResources {
 
     // ==================================================

@@ -16,11 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui.view
+package groovy.console.ui.view
 
-import groovy.ui.Console
-import groovy.ui.ConsoleTextEditor
-import groovy.ui.text.SmartDocumentFilter
+import groovy.console.ui.Console
+import groovy.console.ui.ConsoleTextEditor
+import groovy.console.ui.text.SmartDocumentFilter
 
 import javax.swing.JSplitPane
 import javax.swing.WindowConstants
@@ -43,7 +43,7 @@ import static javax.swing.JSplitPane.VERTICAL_SPLIT
 
 Preferences prefs = Preferences.userNodeForPackage(Console)
 def detachedOutputFlag = prefs.getBoolean('detachedOutput', false)
-outputWindow = frame(visible:false, defaultCloseOperation: WindowConstants.HIDE_ON_CLOSE) {
+outputWindow = frame(visible: false, defaultCloseOperation: WindowConstants.HIDE_ON_CLOSE) {
     blank = glue()
     blank.preferredSize = [0, 0] as Dimension
 }
@@ -54,7 +54,7 @@ splitPane = splitPane(resizeWeight: 0.5, orientation:
     if (smartHighlighterEnabled) {
         editor.enableHighLighter(SmartDocumentFilter)
     }
-    inputEditor = widget(editor, border:emptyBorder(0))
+    inputEditor = widget(editor, border: emptyBorder(0))
     buildOutputArea(prefs)
 }
 
@@ -76,7 +76,7 @@ inputArea = inputEditor.textEditor
 // attach ctrl-enter to input area
 // need to wrap in actions to keep it from being added as a component
 actions {
-    container(inputArea, name: 'inputArea', font:new Font('Monospaced', Font.PLAIN, prefs.getInt('fontSize', 12)), border:emptyBorder(4)) {
+    container(inputArea, name: 'inputArea', font: new Font('Monospaced', Font.PLAIN, prefs.getInt('fontSize', 12)), border: emptyBorder(4)) {
         action(runAction)
         action(runSelectionAction)
         action(showOutputWindowAction)
@@ -95,7 +95,7 @@ StyledDocument doc = outputArea.styledDocument
 
 Style defStyle = StyleContext.defaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
 
-def applyStyle = {Style style, values -> values.each{k, v -> style.addAttribute(k, v)}}
+def applyStyle = { Style style, values -> values.each { k, v -> style.addAttribute(k, v) } }
 
 Style regular = doc.addStyle('regular', defStyle)
 applyStyle(regular, styles.regular)
@@ -121,7 +121,7 @@ applyStyle(hyperlinkStyle, styles.hyperlink)
 // redo styles for editor
 doc = inputArea.styledDocument
 StyleContext styleContext = StyleContext.defaultStyleContext
-styles.each {styleName, defs ->
+styles.each { styleName, defs ->
     Style style = styleContext.getStyle(styleName)
     if (style) {
         applyStyle(style, defs)
@@ -135,17 +135,17 @@ styles.each {styleName, defs ->
 
 // set the preferred size of the input and output areas
 // this is a good enough solution, there are margins and scrollbars and such to worry about for 80x12x2
-Graphics g = GraphicsEnvironment.localGraphicsEnvironment.createGraphics (new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB))
+Graphics g = GraphicsEnvironment.localGraphicsEnvironment.createGraphics(new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB))
 FontMetrics fm = g.getFontMetrics(outputArea.font)
 
 outputArea.preferredSize = [
-    prefs.getInt('outputAreaWidth', fm.charWidth(0x77) * 81),
-    prefs.getInt('outputAreaHeight', (fm.getHeight() + fm.getLeading()) * 12)
+        prefs.getInt('outputAreaWidth', fm.charWidth(0x77) * 81),
+        prefs.getInt('outputAreaHeight', (fm.getHeight() + fm.getLeading()) * 12)
 ] as Dimension
 
 inputEditor.preferredSize = [
-    prefs.getInt('inputAreaWidth', fm.charWidth(0x77) * 81),
-    prefs.getInt('inputAreaHeight', (fm.getHeight() + fm.getLeading()) * 12)
+        prefs.getInt('inputAreaWidth', fm.charWidth(0x77) * 81),
+        prefs.getInt('inputAreaHeight', (fm.getHeight() + fm.getLeading()) * 12)
 ] as Dimension
 
 origDividerSize = -1

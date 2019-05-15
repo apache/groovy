@@ -16,21 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui
+package groovy.console.ui
 
 import groovy.beans.Bindable
 import groovy.swing.SwingBuilder
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
-import javax.swing.*
-import java.awt.*
+import javax.swing.JDialog
+import javax.swing.JFileChooser
+import java.awt.Dimension
 
 class ConsolePreferences {
 
     // Default maximum number of characters to show on console at any time
     static int DEFAULT_MAX_OUTPUT_CHARS = 20000
 
-    @Bindable int maxOutputChars
+    @Bindable
+    int maxOutputChars
 
     private final console
     private final MessageSource T
@@ -150,7 +152,7 @@ class ConsolePreferences {
         javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName())
         def c = new Expando().with {
             swing = new SwingBuilder()
-            frame = swing.frame(title: 'foo', size:[800, 800])
+            frame = swing.frame(title: 'foo', size: [800, 800])
             DEFAULT_MAX_OUTPUT_CHARS = 25000
             maxOutputChars = 25000
             loadMaxOutputChars = { 20000 }

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui.view
+package groovy.console.ui.view
 
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 
@@ -34,7 +34,7 @@ handler.setQuitHandler(controller.&exitDesktop)
 handler.setPreferencesHandler(controller.&preferences)
 handler
 """ : """
-package groovy.ui
+package groovy.console.ui
 
 import com.apple.mrj.*
 
@@ -146,4 +146,3 @@ menuBar {
         menuItem(inspectTokensAction, icon:null)
     }
 }
-

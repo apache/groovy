@@ -16,11 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui.text
+package groovy.console.ui.text
 
 import groovy.transform.CompileStatic
 
-import javax.swing.*
+import javax.swing.AbstractAction
+import javax.swing.JTextPane
 import javax.swing.text.AttributeSet
 import javax.swing.text.SimpleAttributeSet
 import java.awt.event.ActionEvent

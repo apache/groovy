@@ -17,13 +17,17 @@
  * under the License.
  *
  */
-package groovy.inspect.swingui
+package groovy.console.ui
 
 import groovy.transform.CompileStatic
 
-import javax.swing.*
+import javax.swing.AbstractCellEditor
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JTable
+import javax.swing.JTextArea
 import javax.swing.table.TableCellEditor
-import java.awt.*
+import java.awt.Component
 import java.awt.event.ActionListener
 import java.awt.event.FocusListener
 
@@ -58,4 +62,3 @@ class ButtonOrTextEditor extends AbstractCellEditor implements TableCellEditor {
         editorComponent
     }
 }
-

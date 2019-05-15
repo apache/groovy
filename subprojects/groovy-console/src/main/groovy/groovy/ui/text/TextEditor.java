@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 /**
  * A simple text pane that is printable and wrapping is optional.
  */
+@Deprecated
 public class TextEditor extends JTextPane implements Pageable, Printable {
 
     public static final String FIND = "Find...";

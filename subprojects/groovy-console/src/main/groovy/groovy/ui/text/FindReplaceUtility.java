@@ -35,6 +35,7 @@ import java.awt.event.TextEvent;
 import java.awt.event.TextListener;
 import java.util.EventListener;
 
+@Deprecated
 public final class FindReplaceUtility {
 
     public static final String FIND_ACTION_COMMAND = "Find";

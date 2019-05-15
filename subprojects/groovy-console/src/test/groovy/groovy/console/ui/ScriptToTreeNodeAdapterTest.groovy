@@ -16,8 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.inspect.swingui
+package groovy.console.ui
 
+import groovy.inspect.swingui.ScriptToTreeNodeAdapter
+import groovy.inspect.swingui.SwingTreeNodeMaker
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.Phases
 

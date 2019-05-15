@@ -21,6 +21,7 @@ package groovy.ui
 import groovy.transform.CompileStatic
 
 @CompileStatic
+@Deprecated
 class HistoryRecord {
     String allText
     int selectionStart

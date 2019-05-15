@@ -18,10 +18,10 @@
  */
 package groovy.swing
 
-import groovy.ui.Console
-import groovy.ui.ConsoleActions
-import groovy.ui.view.BasicMenuBar
-import groovy.ui.view.MacOSXMenuBar
+import groovy.console.ui.Console
+import groovy.console.ui.ConsoleActions
+import groovy.console.ui.view.BasicMenuBar
+import groovy.console.ui.view.MacOSXMenuBar
 import org.codehaus.groovy.control.CompilerConfiguration
 
 import javax.swing.JTextPane
@@ -193,7 +193,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     void testImageIcon() {
         testInEDT {
             def swing = new SwingBuilder()
-            final String ICON_PATH = '/groovy/ui/ConsoleIcon.png'
+            final String ICON_PATH = '/groovy/console/ui/ConsoleIcon.png'
             String baseDir = new File('src/main/resources').absolutePath
 
             String resource = ICON_PATH

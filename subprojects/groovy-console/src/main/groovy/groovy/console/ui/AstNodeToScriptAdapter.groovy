@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.inspect.swingui
+package groovy.console.ui
 
 import groovy.transform.CompileStatic
 import org.apache.groovy.io.StringBuilderWriter
@@ -199,7 +199,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     boolean showScriptClass
     boolean scriptHasBeenVisited
 
-    def AstNodeToScriptVisitor(Writer writer, boolean showScriptFreeForm = true, boolean showScriptClass = true) {
+    AstNodeToScriptVisitor(Writer writer, boolean showScriptFreeForm = true, boolean showScriptClass = true) {
         this._out = writer
         this.showScriptFreeForm = showScriptFreeForm
         this.showScriptClass = showScriptClass

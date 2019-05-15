@@ -16,13 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.inspect.swingui
+package groovy.console.ui
 
 import groovy.inspect.Inspector
+import groovy.inspect.swingui.TableSorter
 import groovy.swing.SwingBuilder
 
-import javax.swing.*
-import java.awt.*
+import javax.swing.WindowConstants
+import java.awt.FlowLayout
 
 import static groovy.inspect.Inspector.MEMBER_DECLARER_IDX
 import static groovy.inspect.Inspector.MEMBER_EXCEPTIONS_IDX
@@ -61,7 +62,7 @@ class ObjectBrowser {
 
         frame = swing.frame(title: 'Groovy Object Browser', location: [200, 200],
                 size: [800, 600], pack: true, show: true,
-                iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
+                iconImage: swing.imageIcon(Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE) {
 
             menuBar {
