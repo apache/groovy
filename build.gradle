@@ -386,7 +386,7 @@ allprojects {
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
         options.incremental = true
-        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        //options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 
         if (classpath) {
             classpath = classpath + files(dgmConverter.outputDir)
@@ -407,7 +407,7 @@ allprojects {
     tasks.withType(GroovyCompile) {
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
         groovyOptions.encoding = 'UTF-8'
-        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        //options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         groovyClasspath = files(
                 rootProject.compileJava.classpath,
                 files(project==rootProject?rootProject.bootstrapJar:rootProject.jar)
