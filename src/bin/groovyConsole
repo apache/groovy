@@ -43,4 +43,4 @@ DIRNAME="$(dirname "$PRG")"
 
 . "$DIRNAME/startGroovy"
 
-startGroovy groovy.ui.Console "$@"
+startGroovy groovy.console.ui.Console "$@"
