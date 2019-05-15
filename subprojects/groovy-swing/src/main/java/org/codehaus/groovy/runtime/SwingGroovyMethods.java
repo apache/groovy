@@ -39,6 +39,7 @@ import java.util.Iterator;
  * the normal JDK Swing classes when inside the Groovy environment.
  * Static methods are used with the first parameter the destination class.
  */
+@Deprecated
 public class SwingGroovyMethods {
 
     /**
@@ -48,6 +49,7 @@ public class SwingGroovyMethods {
      * @return the component count of the container
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(Container self) {
         return self.getComponentCount();
     }
@@ -60,6 +62,7 @@ public class SwingGroovyMethods {
      * @return the component at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static Component getAt(Container self, int index) {
         return self.getComponent(index);
     }
@@ -73,6 +76,7 @@ public class SwingGroovyMethods {
      * @return same container, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static Container leftShift(Container self, Component c) {
         self.add(c);
         return self;
@@ -85,6 +89,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a Container
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator<Component> iterator(Container self) {
         return DefaultGroovyMethods.iterator(self.getComponents());
     }
@@ -95,6 +100,7 @@ public class SwingGroovyMethods {
      * @param self a Container
      * @since 1.6.4
      */
+    @Deprecated
     public static void clear(Container self) {
         self.removeAll();
     }
@@ -106,6 +112,7 @@ public class SwingGroovyMethods {
      * @return the button count of the buttonGroup
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(ButtonGroup self) {
         return self.getButtonCount();
     }
@@ -118,6 +125,7 @@ public class SwingGroovyMethods {
      * @return the button at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static AbstractButton getAt(ButtonGroup self, int index) {
         int size = self.getButtonCount();
         if (index < 0 || index >= size) return null;
@@ -138,6 +146,7 @@ public class SwingGroovyMethods {
      * @return same buttonGroup, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static ButtonGroup leftShift(ButtonGroup self, AbstractButton b) {
         self.add(b);
         return self;
@@ -150,6 +159,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a ButtonGroup
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator<AbstractButton> iterator(ButtonGroup self) {
         return DefaultGroovyMethods.iterator(self.getElements());
     }
@@ -161,6 +171,7 @@ public class SwingGroovyMethods {
      * @return the size of the ListModel
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(ListModel self) {
         return self.getSize();
     }
@@ -173,6 +184,7 @@ public class SwingGroovyMethods {
      * @return the element at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static Object getAt(ListModel self, int index) {
         return self.getElementAt(index);
     }
@@ -184,6 +196,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a ListModel
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator iterator(final ListModel self) {
         return new Iterator() {
             private int index = 0;
@@ -211,6 +224,7 @@ public class SwingGroovyMethods {
      * @return same listModel, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static DefaultListModel leftShift(DefaultListModel self, Object e) {
         self.addElement(e);
         return self;
@@ -227,6 +241,7 @@ public class SwingGroovyMethods {
      * @param e     the element to insert at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static void putAt(DefaultListModel self, int index, Object e) {
         self.set(index, e);
     }
@@ -237,6 +252,7 @@ public class SwingGroovyMethods {
      * @param self a DefaultListModel
      * @since 1.6.4
      */
+    @Deprecated
     public static void clear(DefaultListModel self) {
         self.removeAllElements();
     }
@@ -248,6 +264,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a DefaultListModel
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator iterator(final DefaultListModel self) {
         return new Iterator() {
             private int index = 0;
@@ -273,6 +290,7 @@ public class SwingGroovyMethods {
      * @return the item count of the comboBox
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(JComboBox self) {
         return self.getItemCount();
     }
@@ -285,6 +303,7 @@ public class SwingGroovyMethods {
      * @return the tem at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static Object getAt(JComboBox self, int index) {
         return self.getItemAt(index);
     }
@@ -298,6 +317,7 @@ public class SwingGroovyMethods {
      * @return same comboBox, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JComboBox leftShift(JComboBox self, Object i) {
         self.addItem(i);
         return self;
@@ -309,6 +329,7 @@ public class SwingGroovyMethods {
      * @param self a JComboBox
      * @since 1.6.4
      */
+    @Deprecated
     public static void clear(JComboBox self) {
         self.removeAllItems();
     }
@@ -320,6 +341,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a ComboBox
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator iterator(JComboBox self) {
         return iterator(self.getModel());
     }
@@ -333,6 +355,7 @@ public class SwingGroovyMethods {
      * @return same model, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static MutableComboBoxModel leftShift(MutableComboBoxModel self, Object i) {
         self.addElement(i);
         return self;
@@ -349,6 +372,7 @@ public class SwingGroovyMethods {
      * @param i     the item to insert at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static void putAt(MutableComboBoxModel self, int index, Object i) {
         self.insertElementAt(i, index);
     }
@@ -360,6 +384,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a MutableComboBoxModel
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator iterator(final MutableComboBoxModel self) {
         return new Iterator() {
             private int index = 0;
@@ -384,6 +409,7 @@ public class SwingGroovyMethods {
      * @param self a DefaultComboBoxModel
      * @since 1.7.3
      */
+    @Deprecated
     public static void clear(DefaultComboBoxModel self) {
         self.removeAllElements();
     }
@@ -395,6 +421,7 @@ public class SwingGroovyMethods {
      * @return the row count of the TableModel
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(TableModel self) {
         return self.getRowCount();
     }
@@ -407,6 +434,7 @@ public class SwingGroovyMethods {
      * @return the row at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static Object[] getAt(TableModel self, int index) {
         int cols = self.getColumnCount();
         Object[] rowData = new Object[cols];
@@ -423,6 +451,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a TableModel
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator iterator(final TableModel self) {
         return new Iterator() {
             private int row = 0;
@@ -459,6 +488,7 @@ public class SwingGroovyMethods {
      * @return same model, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static DefaultTableModel leftShift(DefaultTableModel self, Object row) {
         if (row == null) {
             // adds an empty row
@@ -483,6 +513,7 @@ public class SwingGroovyMethods {
      * @param row   the row to insert at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static void putAt(DefaultTableModel self, int index, Object row) {
         if (row == null) {
             // adds an empty row
@@ -509,6 +540,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a DefaultTableModel
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator iterator(final DefaultTableModel self) {
         return new Iterator() {
             private int row = 0;
@@ -540,6 +572,7 @@ public class SwingGroovyMethods {
      * @return the column count of the TableColumnModel
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(TableColumnModel self) {
         return self.getColumnCount();
     }
@@ -552,6 +585,7 @@ public class SwingGroovyMethods {
      * @return the column at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static TableColumn getAt(TableColumnModel self, int index) {
         return self.getColumn(index);
     }
@@ -563,6 +597,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a TableColumnModel
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator<TableColumn> iterator(final TableColumnModel self) {
         return new Iterator<TableColumn>() {
             private int index = 0;
@@ -590,6 +625,7 @@ public class SwingGroovyMethods {
      * @return same model, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static TableColumnModel leftShift(TableColumnModel self, TableColumn column) {
         self.addColumn(column);
         return self;
@@ -602,6 +638,7 @@ public class SwingGroovyMethods {
      * @return the path count of the treePath
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(TreePath self) {
         return self.getPathCount();
     }
@@ -614,6 +651,7 @@ public class SwingGroovyMethods {
      * @return the path at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static Object getAt(TreePath self, int index) {
         return self.getPath()[index];
     }
@@ -628,6 +666,7 @@ public class SwingGroovyMethods {
      * @return same treePath, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static TreePath leftShift(TreePath self, Object p) {
         return self.pathByAddingChild(p);
     }
@@ -639,6 +678,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a TreePath
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator iterator(TreePath self) {
         return DefaultGroovyMethods.iterator(self.getPath());
     }
@@ -650,6 +690,7 @@ public class SwingGroovyMethods {
      * @return the child count of the treeNode
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(TreeNode self) {
         return self.getChildCount();
     }
@@ -662,6 +703,7 @@ public class SwingGroovyMethods {
      * @return the child node at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static TreeNode getAt(TreeNode self, int index) {
         return self.getChildAt(index);
     }
@@ -674,6 +716,7 @@ public class SwingGroovyMethods {
      * @since 1.6.4
      */
     @SuppressWarnings("unchecked")
+    @Deprecated
     public static Iterator<TreeNode> iterator(TreeNode self) {
         return (Iterator<TreeNode>) DefaultGroovyMethods.iterator(self.children());
     }
@@ -687,6 +730,7 @@ public class SwingGroovyMethods {
      * @return same treeNode, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static MutableTreeNode leftShift(MutableTreeNode self, MutableTreeNode node) {
         self.insert(node, self.getChildCount());
         return self;
@@ -703,6 +747,7 @@ public class SwingGroovyMethods {
      * @param node  the node to insert at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static void putAt(MutableTreeNode self, int index, MutableTreeNode node) {
         self.insert(node, index);
     }
@@ -716,6 +761,7 @@ public class SwingGroovyMethods {
      * @return same treeNode, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static DefaultMutableTreeNode leftShift(DefaultMutableTreeNode self, DefaultMutableTreeNode node) {
         self.add(node);
         return self;
@@ -728,6 +774,7 @@ public class SwingGroovyMethods {
      * @param self a DefaultMutableTreeNode
      * @since 1.6.4
      */
+    @Deprecated
     public static void clear(DefaultMutableTreeNode self) {
         self.removeAllChildren();
     }
@@ -739,6 +786,7 @@ public class SwingGroovyMethods {
      * @return the menu component count of the menu
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(JMenu self) {
         return self.getMenuComponentCount();
     }
@@ -751,6 +799,7 @@ public class SwingGroovyMethods {
      * @return the menu component at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static Component getAt(JMenu self, int index) {
         return self.getMenuComponent(index);
     }
@@ -764,6 +813,7 @@ public class SwingGroovyMethods {
      * @return same menu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JMenu leftShift(JMenu self, Action action) {
         self.add(action);
         return self;
@@ -778,6 +828,7 @@ public class SwingGroovyMethods {
      * @return same menu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JMenu leftShift(JMenu self, Component component) {
         self.add(component);
         return self;
@@ -792,6 +843,7 @@ public class SwingGroovyMethods {
      * @return same menu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JMenu leftShift(JMenu self, JMenuItem item) {
         self.add(item);
         return self;
@@ -806,6 +858,7 @@ public class SwingGroovyMethods {
      * @return same menu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JMenu leftShift(JMenu self, String str) {
         self.add(str);
         return self;
@@ -820,6 +873,7 @@ public class SwingGroovyMethods {
      * @return same menu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JMenu leftShift(JMenu self, GString gstr) {
         self.add(gstr.toString());
         return self;
@@ -832,6 +886,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a JMenu
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator/*<MenuElement>*/ iterator(JMenu self) {
         return DefaultGroovyMethods.iterator(self.getMenuComponents());
     }
@@ -843,6 +898,7 @@ public class SwingGroovyMethods {
      * @return the menu count of the menuBar
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(JMenuBar self) {
         return self.getMenuCount();
     }
@@ -855,6 +911,7 @@ public class SwingGroovyMethods {
      * @return the menu at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static JMenu getAt(JMenuBar self, int index) {
         return self.getMenu(index);
     }
@@ -868,6 +925,7 @@ public class SwingGroovyMethods {
      * @return same menuBar, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JMenuBar leftShift(JMenuBar self, JMenu menu) {
         self.add(menu);
         return self;
@@ -880,6 +938,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a JMenuBar
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator/*<JMenu>*/ iterator(JMenuBar self) {
         return DefaultGroovyMethods.iterator(self.getSubElements());
     }
@@ -893,6 +952,7 @@ public class SwingGroovyMethods {
      * @return same popupMenu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JPopupMenu leftShift(JPopupMenu self, Action action) {
         self.add(action);
         return self;
@@ -907,6 +967,7 @@ public class SwingGroovyMethods {
      * @return same popupMenu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JPopupMenu leftShift(JPopupMenu self, Component component) {
         self.add(component);
         return self;
@@ -921,6 +982,7 @@ public class SwingGroovyMethods {
      * @return same popupMenu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JPopupMenu leftShift(JPopupMenu self, JMenuItem item) {
         self.add(item);
         return self;
@@ -935,6 +997,7 @@ public class SwingGroovyMethods {
      * @return same popupMenu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JPopupMenu leftShift(JPopupMenu self, String str) {
         self.add(str);
         return self;
@@ -949,6 +1012,7 @@ public class SwingGroovyMethods {
      * @return same popupMenu, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JPopupMenu leftShift(JPopupMenu self, GString gstr) {
         self.add(gstr.toString());
         return self;
@@ -961,6 +1025,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a JPopupMenu
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator<MenuElement> iterator(JPopupMenu self) {
         return DefaultGroovyMethods.iterator(self.getSubElements());
     }
@@ -972,6 +1037,7 @@ public class SwingGroovyMethods {
      * @return the tab count of the tabbedPane
      * @since 1.6.4
      */
+    @Deprecated
     public static int size(JTabbedPane self) {
         return self.getTabCount();
     }
@@ -982,6 +1048,7 @@ public class SwingGroovyMethods {
      * @param self a JTabbedPane
      * @since 1.6.4
      */
+    @Deprecated
     public static void clear(JTabbedPane self) {
         self.removeAll();
     }
@@ -994,6 +1061,7 @@ public class SwingGroovyMethods {
      * @return the component at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static Component getAt(JTabbedPane self, int index) {
         return self.getComponentAt(index);
     }
@@ -1005,6 +1073,7 @@ public class SwingGroovyMethods {
      * @return an Iterator for a JTabbedPane
      * @since 1.6.4
      */
+    @Deprecated
     public static Iterator<Component> iterator(final JTabbedPane self) {
         return new Iterator<Component>() {
             private int index = 0;
@@ -1032,6 +1101,7 @@ public class SwingGroovyMethods {
      * @return same toolBar, after the value was added to it.
      * @since 1.6.4
      */
+    @Deprecated
     public static JToolBar leftShift(JToolBar self, Action action) {
         self.add(action);
         return self;
@@ -1045,6 +1115,7 @@ public class SwingGroovyMethods {
      * @return the tab component at the given index
      * @since 1.6.4
      */
+    @Deprecated
     public static Component getAt(JToolBar self, int index) {
         return self.getComponentAtIndex(index);
     }
@@ -1055,6 +1126,7 @@ public class SwingGroovyMethods {
      * @param mnemonic the String
      * @since 2.3.7
      */
+    @Deprecated
     public static void setMnemonic(AbstractButton button, String mnemonic) {
         char c = ShortTypeHandling.castToChar(mnemonic);
         button.setMnemonic(c);

@@ -16,9 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.apache.groovy.swing.extensions;
 
 import groovy.lang.GString;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
 import javax.swing.*;
@@ -39,7 +40,7 @@ import java.util.Iterator;
  * the normal JDK Swing classes when inside the Groovy environment.
  * Static methods are used with the first parameter the destination class.
  */
-public class SwingGroovyMethods {
+public class SwingExtensions {
 
     /**
      * Provide the standard Groovy <code>size()</code> method for <code>Container</code>.
