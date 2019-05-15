@@ -16,26 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.ui
 
-import groovy.transform.CompileStatic
+These icons are from the famfamfam.com silk icons set
+http://www.famfamfam.com/lab/icons/silk/
 
-import javax.swing.*
-
-/**
- * ConsoleApplet
- */
-@CompileStatic
-class ConsoleApplet extends JApplet {
-
-    Console console
-
-    void start() {
-        console = new Console()
-        console.run this
-    }
-
-    void stop() {
-        console.exit()
-    }
-}
+Licensed under the Creative Commons Attribution Licence v2.5
+http://creativecommons.org/licenses/by/2.5/
