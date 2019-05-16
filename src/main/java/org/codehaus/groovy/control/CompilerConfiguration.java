@@ -261,6 +261,16 @@ public class CompilerConfiguration {
         }
 
         @Override
+        public void setParserVersion(ParserVersion parserVersion) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setPreviewFeatures(boolean previewFeatures) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setWarningLevel(int level) {
             throw new UnsupportedOperationException();
         }
@@ -805,17 +815,17 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Returns true if parameter metadata generation has been enabled.
-     */
-    public boolean getParameters() {
-        return this.parameters;
-    }
-
-    /**
      * Turns debugging operation on or off.
      */
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    /**
+     * Returns true if parameter metadata generation has been enabled.
+     */
+    public boolean getParameters() {
+        return this.parameters;
     }
 
     /**
