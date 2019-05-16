@@ -55,7 +55,7 @@ public class CompilerConfiguration {
     /** This (<code>"runtimeGroovydoc"</code>) is the Optimization Option value for enabling attaching {@link groovy.lang.Groovydoc} annotation*/
     public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
-    /** This (<code>"memStub"</code>) is the Optimization Option value for enabling generating stubs in memory*/
+    /** This (<code>"memStub"</code>) is the Joint Compilation Option value for enabling generating stubs in memory*/
     public static final String MEM_STUB = "memStub";
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
