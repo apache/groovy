@@ -34,6 +34,7 @@ import java.util.logging.Logger;
  *
  * @see groovy.test.GroovyAssert
  */
+@Deprecated
 public class GroovyTestCase extends TestCase {
 
     protected static Logger log = Logger.getLogger(GroovyTestCase.class.getName());

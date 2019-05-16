@@ -29,6 +29,7 @@ import java.util.regex.Pattern
  * tag will have the javadoc {@code code} tag stripped. Similarly, html entities are converted back when extracting
  * code, so {@code &lt;} and {@code &gt;} will be converted to {@code <} and {@code >}.
  */
+@Deprecated
 class JavadocAssertionTestBuilder {
     // TODO write tests for this classes functionality
     private static final Pattern javadocPattern =

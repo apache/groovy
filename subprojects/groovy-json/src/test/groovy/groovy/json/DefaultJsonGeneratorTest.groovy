@@ -18,6 +18,8 @@
  */
 package groovy.json
 
+import groovy.test.GroovyTestCase
+
 class DefaultJsonGeneratorTest extends GroovyTestCase {
 
     void testExcludesNullValues() {

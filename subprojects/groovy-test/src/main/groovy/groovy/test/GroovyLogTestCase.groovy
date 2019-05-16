@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.lang
+package groovy.test
 
 import java.util.logging.Handler
 import java.util.logging.Level
@@ -31,16 +31,14 @@ import java.util.logging.StreamHandler
  * do some proper logging.
  * As a measure of last resort, it can be used on MetaClass to spoof
  * it's log entries on 'invokeMethod'.
- *
- * @see GroovyLogTestCaseTest
  */
 class GroovyLogTestCase extends GroovyTestCase {
 
     /**
-     *      Execute the given Closure with the according level for the Logger that
-     *      is qualified by the qualifier and return the log output as a String.
-     *      Qualifiers are usually package or class names.
-     *      Existing log level and handlers are restored after execution.
+     * Execute the given Closure with the according level for the Logger that
+     * is qualified by the qualifier and return the log output as a String.
+     * Qualifiers are usually package or class names.
+     * Existing log level and handlers are restored after execution.
      */
     static String stringLog(Level level, String qualifier, Closure yield) {
         // store old values

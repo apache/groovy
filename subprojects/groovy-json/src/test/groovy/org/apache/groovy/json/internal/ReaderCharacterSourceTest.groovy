@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.json.internal
 
+import groovy.test.GroovyTestCase
 import org.apache.groovy.json.internal.Exceptions.JsonInternalException
 
 class ReaderCharacterSourceTest extends GroovyTestCase {

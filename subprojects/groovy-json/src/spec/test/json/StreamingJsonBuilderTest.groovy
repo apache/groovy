@@ -18,6 +18,8 @@
  */
 package json
 
+import groovy.test.GroovyTestCase
+
 class StreamingJsonBuilderTest extends GroovyTestCase {
 
     void testStreamingJsonBuilder() {

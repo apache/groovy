@@ -34,6 +34,7 @@ import java.util.logging.StreamHandler
  *
  * @see GroovyLogTestCaseTest
  */
+@Deprecated
 class GroovyLogTestCase extends GroovyTestCase {
 
     /**

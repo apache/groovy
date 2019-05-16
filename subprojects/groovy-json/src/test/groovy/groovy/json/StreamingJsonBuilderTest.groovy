@@ -18,6 +18,7 @@
  */
 package groovy.json
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 
 class StreamingJsonBuilderTest extends GroovyTestCase {

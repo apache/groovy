@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.json.internal
 
+import groovy.test.GroovyTestCase
+
 class CharScannerTest extends GroovyTestCase {
 
     void testParseInt() {

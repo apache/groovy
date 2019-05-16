@@ -20,6 +20,7 @@ package groovy.util
 
 import org.junit.Assert
 
+@Deprecated
 class StringTestUtil {
     static void assertMultilineStringsEqual(String a, String b) {
         def aLines = a.trim().replaceAll('\r','').split('\n')

@@ -18,9 +18,19 @@
  */
 package groovy.json
 
-import static groovy.json.JsonTokenType.*
-
 import groovy.io.LineColumnReader
+import groovy.test.GroovyTestCase
+
+import static groovy.json.JsonTokenType.CLOSE_BRACKET
+import static groovy.json.JsonTokenType.CLOSE_CURLY
+import static groovy.json.JsonTokenType.COLON
+import static groovy.json.JsonTokenType.COMMA
+import static groovy.json.JsonTokenType.FALSE
+import static groovy.json.JsonTokenType.NULL
+import static groovy.json.JsonTokenType.NUMBER
+import static groovy.json.JsonTokenType.OPEN_BRACKET
+import static groovy.json.JsonTokenType.OPEN_CURLY
+import static groovy.json.JsonTokenType.TRUE
 
 class JsonLexerTest extends GroovyTestCase {
 

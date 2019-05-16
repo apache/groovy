@@ -18,9 +18,10 @@
  */
 package groovy.json
 
-import static groovy.json.JsonOutput.toJson
-
+import groovy.test.GroovyTestCase
 import groovy.transform.Canonical
+
+import static groovy.json.JsonOutput.toJson
 
 class JsonOutputTest extends GroovyTestCase {
 

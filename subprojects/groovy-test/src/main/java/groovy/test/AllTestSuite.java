@@ -16,10 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.test;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.Script;
+import groovy.util.IFileNameFinder;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

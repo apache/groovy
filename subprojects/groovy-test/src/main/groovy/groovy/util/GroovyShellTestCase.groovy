@@ -21,6 +21,8 @@ package groovy.util
 /**
  * Groovy test case, which recreates internal GroovyShell in each setUp()
  */
+
+@Deprecated
 class GroovyShellTestCase extends GroovyTestCase {
 
     @Delegate protected GroovyShell shell

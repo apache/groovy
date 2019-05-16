@@ -20,6 +20,8 @@ package org.apache.groovy.json.internal
 
 import static org.apache.groovy.json.internal.Chr.*
 
+import groovy.test.GroovyTestCase
+
 class ChrTest extends GroovyTestCase {
 
     void testLpad() {

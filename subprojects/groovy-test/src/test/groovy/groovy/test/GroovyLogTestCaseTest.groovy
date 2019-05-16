@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.lang
+package groovy.test
 
 import java.util.logging.Level
 import java.util.logging.Logger

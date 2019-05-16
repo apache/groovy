@@ -21,6 +21,7 @@ package json
 import groovy.json.JsonOutput
 import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
+import groovy.test.GroovyTestCase
 
 class JsonTest extends GroovyTestCase {
 

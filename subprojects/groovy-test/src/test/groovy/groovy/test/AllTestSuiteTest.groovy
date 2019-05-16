@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util
+package groovy.test
 
 import java.util.logging.Level
 
@@ -36,8 +36,8 @@ class AllTestSuiteTest extends GroovyLogTestCase {
     }
 
     void testSuiteForThisFileOnly() {
-        def result = stringLog(Level.FINEST, 'groovy.util.AllTestSuite') {
-            withProps('src/test/groovy/groovy/util', 'AllTestSuiteTest.groovy') {
+        def result = stringLog(Level.FINEST, 'groovy.test.AllTestSuite') {
+            withProps('src/test/groovy/groovy/test', 'AllTestSuiteTest.groovy') {
                 suite = AllTestSuite.suite()
             }
         }
@@ -48,7 +48,7 @@ class AllTestSuiteTest extends GroovyLogTestCase {
     }
 
     void testAddingScriptsThatDoNotInheritFromTestCase() {
-        withProps('src/test/groovy/groovy/util', 'suite/*.groovy') {
+        withProps('src/test/groovy/groovy/test', 'suite/*.groovy') {
             suite = AllTestSuite.suite()
         }
         assert suite

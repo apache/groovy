@@ -29,7 +29,6 @@ import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
  * either as a unit test case or as an application.
@@ -46,6 +45,7 @@ import java.security.PrivilegedAction;
  * -Dtest=src/test/Foo.groovy
  * </code>
  */
+@Deprecated
 public class GroovyTestSuite extends TestSuite {
 
     protected static String file = null;

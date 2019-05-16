@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.json
 
+import groovy.test.GroovyTestCase
+
 class DefaultFastStringServiceTest extends GroovyTestCase {
 
     FastStringService service = new DefaultFastStringServiceFactory().service

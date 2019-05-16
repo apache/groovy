@@ -18,6 +18,8 @@
  */
 package groovy.json
 
+import groovy.test.GroovyTestCase
+
 class RealJsonPayloadsTest extends GroovyTestCase {
 
     def parser = new JsonSlurper()

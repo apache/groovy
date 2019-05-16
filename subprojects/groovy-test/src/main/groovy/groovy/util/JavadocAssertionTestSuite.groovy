@@ -44,6 +44,7 @@ import junit.textui.TestRunner
  *
  * <b>Note: this class requires the Ant module at runtime.</b>
  */
+@Deprecated
 class JavadocAssertionTestSuite extends TestSuite {
     /** The System Property to set as base directory for collection of Classes.
      * The pattern will be used as an Ant fileset include basedir.

@@ -18,6 +18,7 @@
  */
 package groovy.json
 
+import groovy.test.GroovyTestCase
 import org.apache.groovy.json.internal.CharBuf
 import org.apache.groovy.json.internal.IO
 

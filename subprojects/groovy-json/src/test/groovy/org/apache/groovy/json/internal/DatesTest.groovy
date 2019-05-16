@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.json.internal
 
+import groovy.test.GroovyTestCase
+
 class DatesTest extends GroovyTestCase{
 
     // GROOVY-7462

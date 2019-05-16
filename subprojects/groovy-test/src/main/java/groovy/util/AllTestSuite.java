@@ -46,6 +46,7 @@ import java.util.logging.Logger;
  * <p>
  * See also groovy.util.AllTestSuiteTest.groovy
  */
+@Deprecated
 public class AllTestSuite extends TestSuite {
 
     /**
