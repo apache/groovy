@@ -16,11 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.xml
-
 /**
  * Tests for the Groovy Xml user guide related to XmlSlurper.
  */
+import groovy.xml.StreamingMarkupBuilder
+import groovy.xml.XmlSlurper
+import groovy.test.GroovyTestCase
+
 class UserGuideXmlSlurperTest extends GroovyTestCase {
 
     // tag::books[]
@@ -62,7 +64,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
 
         def list = new XmlSlurper().parseText(text) // <1>
 
-        assert list instanceof groovy.util.slurpersupport.GPathResult // <2>
+        assert list instanceof groovy.xml.slurpersupport.GPathResult // <2>
         assert list.technology.name == 'Groovy' // <3>
         // end::testParseText[]
     }

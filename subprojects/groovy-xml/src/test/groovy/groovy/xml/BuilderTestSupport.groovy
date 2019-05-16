@@ -18,8 +18,9 @@
  */
 package groovy.xml
 
-import org.custommonkey.xmlunit.XMLUnit
+import groovy.test.GroovyTestCase
 import org.custommonkey.xmlunit.Diff
+import org.custommonkey.xmlunit.XMLUnit
 
 /**
  * Common test cases for StreamingMarkupBuilder and MarkupBuilder.

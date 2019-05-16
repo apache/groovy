@@ -44,7 +44,9 @@ import java.util.Map;
  *
  * @see groovy.util.NodePrinter
  * @see groovy.xml.XmlUtil#serialize(Node)
+ * @deprecated use {@link groovy.xml.XmlNodePrinter}
  */
+@Deprecated
 public class XmlNodePrinter {
 
     protected final IndentPrinter out;

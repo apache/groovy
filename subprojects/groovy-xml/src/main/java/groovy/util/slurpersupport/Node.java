@@ -36,6 +36,7 @@ import java.util.Stack;
 /**
  * Represents a node.
  */
+@Deprecated
 public class Node implements Writable {
     private final String name;
     private final Map attributes;

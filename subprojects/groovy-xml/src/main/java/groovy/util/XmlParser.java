@@ -65,7 +65,10 @@ import java.util.Map;
  * assert rootNode.two.text() == 'Some text!'
  * rootNode.children().each { assert it.name() in ['one','two'] }
  * </pre>
+ *
+ * @deprecated use {@link groovy.xml.XmlParser}
  */
+@Deprecated
 public class XmlParser implements ContentHandler {
 
     private StringBuilder bodyText = new StringBuilder();

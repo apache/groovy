@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util.slurpersupport;
+package groovy.xml.slurpersupport;
 
 import groovy.xml.QName;
 

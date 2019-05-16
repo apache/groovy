@@ -16,10 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package groovy.xml
+
 // used by MarkupWithWriterTest.testWriterUseInScriptFile
 
-writer = new java.io.StringWriter()
-b = new groovy.xml.MarkupBuilder(writer)
+writer = new StringWriter()
+b = new MarkupBuilder(writer)
 
 b.root1(a:5)
 println writer.toString()

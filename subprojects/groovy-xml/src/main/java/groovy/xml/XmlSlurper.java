@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.xml;
 
-import groovy.util.slurpersupport.GPathResult;
-import groovy.util.slurpersupport.NamespaceAwareHashMap;
-import groovy.util.slurpersupport.Node;
-import groovy.util.slurpersupport.NodeChild;
-import groovy.xml.FactorySupport;
-import groovy.xml.QName;
+import groovy.xml.slurpersupport.GPathResult;
+import groovy.xml.slurpersupport.NamespaceAwareHashMap;
+import groovy.xml.slurpersupport.Node;
+import groovy.xml.slurpersupport.NodeChild;
 import org.xml.sax.Attributes;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.EntityResolver;

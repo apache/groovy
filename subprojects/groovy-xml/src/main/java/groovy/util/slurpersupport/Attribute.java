@@ -31,6 +31,7 @@ import java.util.Map;
 /**
  * Lazy evaluated representation of a node attribute.
  */
+@Deprecated
 public class Attribute extends GPathResult {
     private final String value;
 

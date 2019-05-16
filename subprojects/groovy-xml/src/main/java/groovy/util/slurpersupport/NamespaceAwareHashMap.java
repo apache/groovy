@@ -23,6 +23,7 @@ import groovy.xml.QName;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated
 public class NamespaceAwareHashMap extends HashMap<String, String> {
     public void setNamespaceTagHints(Map namespaceTagHints) {
         this.namespaceTagHints = namespaceTagHints;

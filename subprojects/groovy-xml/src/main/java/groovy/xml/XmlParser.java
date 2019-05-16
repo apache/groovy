@@ -16,10 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.xml;
 
-import groovy.xml.FactorySupport;
-import groovy.xml.QName;
+import groovy.util.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;

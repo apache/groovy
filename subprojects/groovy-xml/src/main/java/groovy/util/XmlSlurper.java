@@ -77,7 +77,9 @@ import java.util.Stack;
  * </pre>
  *
  * @see GPathResult
+ * @deprecated use {@link groovy.xml.XmlSlurper}
  */
+@Deprecated
 public class XmlSlurper extends DefaultHandler {
     private final XMLReader reader;
     private Node currentNode = null;

@@ -16,9 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.xml;
 
-import groovy.xml.QName;
+import groovy.util.IndentPrinter;
+import groovy.util.Node;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.OutputStreamWriter;

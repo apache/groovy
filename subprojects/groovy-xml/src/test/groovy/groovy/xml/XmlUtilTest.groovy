@@ -18,15 +18,16 @@
  */
 package groovy.xml
 
+import groovy.test.GroovyTestCase
 import org.xml.sax.ErrorHandler
 import org.xml.sax.InputSource
 
 import javax.xml.transform.stream.StreamSource
 
 import static groovy.xml.XmlAssert.assertXmlEquals
-import static groovy.xml.XmlUtil.newSAXParser
 import static groovy.xml.XmlUtil.escapeControlCharacters
 import static groovy.xml.XmlUtil.escapeXml
+import static groovy.xml.XmlUtil.newSAXParser
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI
 
 class XmlUtilTest extends GroovyTestCase {

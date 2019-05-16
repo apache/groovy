@@ -32,6 +32,7 @@ import java.util.Map;
 /**
  * Lazy evaluated representation of a child node.
  */
+@Deprecated
 public class NodeChild extends GPathResult {
     private final Node node;
 

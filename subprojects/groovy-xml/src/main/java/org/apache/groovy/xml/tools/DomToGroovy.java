@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.xml;
+package org.apache.groovy.xml.tools;
 
 import groovy.util.IndentPrinter;
 import org.codehaus.groovy.syntax.Types;

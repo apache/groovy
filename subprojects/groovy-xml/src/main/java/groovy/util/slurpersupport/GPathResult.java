@@ -48,6 +48,7 @@ import java.util.Stack;
 /**
  * Base class for representing lazy evaluated GPath expressions.
  */
+@Deprecated
 public abstract class GPathResult extends GroovyObjectSupport implements Writable, Buildable, Iterable {
     protected final GPathResult parent;
     protected final String name;

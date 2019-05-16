@@ -24,6 +24,7 @@ import java.util.Map;
 /**
 * Lazy evaluated representation of parent nodes without duplicates
 */
+@Deprecated
 public class NodeParents extends NodeChildren {
     
     /**

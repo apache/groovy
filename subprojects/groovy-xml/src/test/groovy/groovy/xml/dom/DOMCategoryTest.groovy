@@ -18,13 +18,17 @@
  */
 package groovy.xml.dom
 
+import groovy.test.GroovyTestCase
 import groovy.xml.DOMBuilder
 import groovy.xml.GpathSyntaxTestSupport
 import groovy.xml.MixedMarkupTestSupport
 import groovy.xml.TraversalTestSupport
 import groovy.xml.XmlUtil
 
-import static javax.xml.xpath.XPathConstants.*
+import static javax.xml.xpath.XPathConstants.BOOLEAN
+import static javax.xml.xpath.XPathConstants.NODE
+import static javax.xml.xpath.XPathConstants.NODESET
+import static javax.xml.xpath.XPathConstants.NUMBER
 
 class DOMCategoryTest extends GroovyTestCase {
 

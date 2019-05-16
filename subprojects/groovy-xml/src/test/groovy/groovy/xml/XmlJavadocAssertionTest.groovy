@@ -20,6 +20,7 @@ package groovy.xml
 
 import org.junit.runners.Suite
 import org.junit.runner.RunWith
+import groovy.test.JavadocAssertionTestSuite
 
 @RunWith(Suite)
 @Suite.SuiteClasses(JavadocAssertionTestSuite)

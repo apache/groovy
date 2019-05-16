@@ -18,7 +18,7 @@
  */
 package groovy.xml;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 public class XmlTest extends GroovyTestCase {
 
@@ -28,7 +28,7 @@ public class XmlTest extends GroovyTestCase {
 //        script.invokeMethod("testXsdSchemaWithBuilderHavingAutoPrefix", null);
 //    }
 
-    public void testQName() throws Exception {
+    public void testQName() {
         QName qname = new QName("urn:mynamespace", "localPart", "x");
         assertTrue(qname.equals(new QName("urn:mynamespace", "localPart")));
         assertTrue(qname.equals("urn:mynamespace:localPart"));

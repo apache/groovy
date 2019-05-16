@@ -18,6 +18,7 @@
  */
 package groovy.xml.dom
 
+import groovy.test.GroovyTestCase
 import groovy.xml.DOMBuilder
 import groovy.xml.StreamingDOMBuilder
 
