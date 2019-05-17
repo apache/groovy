@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs;
+package groovy.xml.bugs;
 
 import groovy.lang.GroovyShell;
 import org.codehaus.groovy.classgen.TestSupport;

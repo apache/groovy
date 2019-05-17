@@ -20,7 +20,7 @@ package org.codehaus.groovy.antlr.treewalker;
 
 import junit.framework.TestCase;
 
-import static groovy.xml.XmlAssert.assertXmlEquals;
+import static groovy.util.XmlAssert.assertXmlEquals;
 
 /**
  * Testcases for the antlr AST visitor that prints groovy source code nodes as HTML.

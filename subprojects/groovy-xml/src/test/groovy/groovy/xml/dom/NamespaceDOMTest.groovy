@@ -24,7 +24,7 @@ import groovy.xml.NamespaceBuilder
 import groovy.xml.TestXmlSupport
 import groovy.xml.XmlUtil
 
-import static groovy.xml.XmlAssert.assertXmlEquals
+import static groovy.util.XmlAssert.assertXmlEquals
 
 class NamespaceDOMTest extends TestXmlSupport {
 

@@ -18,8 +18,12 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.*;
-import groovy.util.GroovyTestCase;
+import groovy.lang.Binding;
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
+import groovy.lang.GroovyObject;
+import groovy.lang.Script;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.FieldNode;
