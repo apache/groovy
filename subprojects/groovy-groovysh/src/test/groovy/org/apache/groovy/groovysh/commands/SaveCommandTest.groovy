@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 /**
  * Tests for the {@link SaveCommand} class.
  */
-class SaveCommandTest
-    extends CommandTestSupport
-{
+class SaveCommandTest extends CommandTestSupport {
     void testSave() {
         shell.execute(SaveCommand.COMMAND_NAME)
     }

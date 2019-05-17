@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 /**
  * Tests for the {@link InspectCommand} class.
  */
-class InspectCommandTest
-    extends CommandTestSupport
-{
+class InspectCommandTest extends CommandTestSupport {
     void testInspect() {
         shell.execute(InspectCommand.COMMAND_NAME)
     }

@@ -16,12 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.swing
+package groovy.console
 
 import groovy.console.ui.Console
 import groovy.console.ui.ConsoleActions
 import groovy.console.ui.view.BasicMenuBar
 import groovy.console.ui.view.MacOSXMenuBar
+import groovy.swing.GroovySwingTestCase
+import groovy.swing.SwingBuilder
 import org.codehaus.groovy.control.CompilerConfiguration
 
 import javax.swing.JTextPane

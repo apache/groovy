@@ -16,8 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.inspect.swingui
+package groovy.console.ui
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.VariableScope
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement

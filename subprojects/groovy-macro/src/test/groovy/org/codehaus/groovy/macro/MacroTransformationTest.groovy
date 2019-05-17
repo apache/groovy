@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.macro
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 
 @CompileStatic

@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 /**
  * Tests for the {@link PurgeCommand} class.
  */
-class PurgeCommandTest
-    extends CommandTestSupport
-{
+class PurgeCommandTest extends CommandTestSupport {
     void testPurgeVariables() {
         shell.execute(PurgeCommand.COMMAND_NAME + ' variables')
     }

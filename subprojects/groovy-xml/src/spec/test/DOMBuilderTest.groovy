@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import groovy.test.GroovyTestCase
+
 class DOMBuilderTest extends GroovyTestCase {
 
     void testParse() {

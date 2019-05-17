@@ -16,15 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
 import groovy.mock.interceptor.MockFor
-import org.codehaus.groovy.tools.shell.completion.IdentifierCompletor
-import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
-import org.codehaus.groovy.tools.shell.util.PackageHelper
-import org.codehaus.groovy.tools.shell.util.PackageHelperImpl
+import groovy.test.GroovyTestCase
+import org.codehaus.groovy.tools.shell.IO
+import org.apache.groovy.groovysh.completion.IdentifierCompleter
+import org.apache.groovy.groovysh.completion.ReflectionCompleter
+import org.apache.groovy.groovysh.util.PackageHelper
+import org.apache.groovy.groovysh.util.PackageHelperImpl
 
-abstract class CompletorTestSupport extends GroovyTestCase {
+abstract class CompleterTestSupport extends GroovyTestCase {
 
     BufferManager bufferManager = new BufferManager()
     IO testio
@@ -33,25 +35,17 @@ abstract class CompletorTestSupport extends GroovyTestCase {
     MockFor groovyshMocker
     MockFor packageHelperMocker
     PackageHelper mockPackageHelper
-
-    MockFor reflectionCompletorMocker
-
-    MockFor idCompletorMocker
+    MockFor reflectionCompleterMocker
+    MockFor idCompleterMocker
 
     @Override
     void setUp() {
         super.setUp()
         mockOut = new ByteArrayOutputStream()
-
         mockErr = new ByteArrayOutputStream()
-
-        testio = new IO(
-                new ByteArrayInputStream(),
-                mockOut,
-                mockErr)
-        reflectionCompletorMocker = new MockFor(ReflectionCompletor)
-
-        idCompletorMocker = new MockFor(IdentifierCompletor)
+        testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
+        reflectionCompleterMocker = new MockFor(ReflectionCompleter)
+        idCompleterMocker = new MockFor(IdentifierCompleter)
 
         groovyshMocker = new MockFor(Groovysh)
         groovyshMocker.demand.getClass(0..1) { Groovysh }
@@ -68,6 +62,6 @@ abstract class CompletorTestSupport extends GroovyTestCase {
             groovyshMocker.demand.getIo(0..1) { testio }
         }
         groovyshMocker.demand.getRegistry(0..1) { registry }
-        groovyshMocker.demand.getBuffers(0..2) {bufferManager}
+        groovyshMocker.demand.getBuffers(0..2) { bufferManager }
     }
 }

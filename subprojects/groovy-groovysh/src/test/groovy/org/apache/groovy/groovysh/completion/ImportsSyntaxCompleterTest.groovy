@@ -16,31 +16,31 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
-import org.codehaus.groovy.tools.shell.CompletorTestSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.CompleterTestSupport
+import org.apache.groovy.groovysh.Groovysh
 
-import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokenList
+import static org.apache.groovy.groovysh.completion.TokenUtilTest.tokenList
 
-class ImportsSyntaxCompletorTest extends CompletorTestSupport {
+class ImportsSyntaxCompleterTest extends CompleterTestSupport {
 
     void testPackagePattern() {
-        assert 'static java.lang.Math'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assert 'static java.lang.Math.max'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assert 'static java.lang.Math.max2'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assert 'static java.lang.Math.*'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assert 'static org.w3c.Math.*'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN)
-        assert !('static java lang'.matches(ImportsSyntaxCompletor.STATIC_IMPORT_PATTERN))
+        assert 'static java.lang.Math'.matches(ImportsSyntaxCompleter.STATIC_IMPORT_PATTERN)
+        assert 'static java.lang.Math.max'.matches(ImportsSyntaxCompleter.STATIC_IMPORT_PATTERN)
+        assert 'static java.lang.Math.max2'.matches(ImportsSyntaxCompleter.STATIC_IMPORT_PATTERN)
+        assert 'static java.lang.Math.*'.matches(ImportsSyntaxCompleter.STATIC_IMPORT_PATTERN)
+        assert 'static org.w3c.Math.*'.matches(ImportsSyntaxCompleter.STATIC_IMPORT_PATTERN)
+        assert !('static java lang'.matches(ImportsSyntaxCompleter.STATIC_IMPORT_PATTERN))
     }
 
     void testPreImported() {
         groovyshMocker.demand.getPackageHelper(6) { [getContents: {['Foo']}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            assert completor.findMatchingPreImportedClasses('Foo', candidates)
+            assert completer.findMatchingPreImportedClasses('Foo', candidates)
             // once for each standard package
             assert ['prefill', 'Foo', 'Foo', 'Foo', 'Foo', 'Foo', 'Foo'] == candidates
         }
@@ -50,12 +50,12 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getPackageHelper(6) { [getContents: {[]}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            assert completor.findMatchingPreImportedClasses('Big', candidates)
+            assert completer.findMatchingPreImportedClasses('Big', candidates)
             assert ['prefill', 'BigInteger', 'BigDecimal'] == candidates
             // test again without invoking pakage Helper
-            assert completor.findMatchingPreImportedClasses('Big', candidates)
+            assert completer.findMatchingPreImportedClasses('Big', candidates)
             assert ['prefill', 'BigInteger', 'BigDecimal', 'BigInteger', 'BigDecimal'] == candidates
         }
     }
@@ -63,9 +63,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
     void testImportedNone() {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('A', 'foo.lang.Bbb', candidates)
+            completer.findMatchingImportedClassesCached('A', 'foo.lang.Bbb', candidates)
             assert ['prefill'] == candidates
         }
     }
@@ -73,9 +73,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
     void testImported() {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('A', 'foo.lang.Abcdef', candidates)
+            completer.findMatchingImportedClassesCached('A', 'foo.lang.Abcdef', candidates)
             assert ['prefill', 'Abcdef'] == candidates
         }
     }
@@ -83,9 +83,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
     void testImportedAs() {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.collectImportedSymbols('foo.lang.Xxxxx as Abcdef', candidates)
+            completer.collectImportedSymbols('foo.lang.Xxxxx as Abcdef', candidates)
             assert ['prefill', 'Abcdef'] == candidates
         }
     }
@@ -95,12 +95,12 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getPackageHelper(1) { [getContents: {['Bbbb', 'Abcdef']}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('A', 'foo.lang.*', candidates)
+            completer.findMatchingImportedClassesCached('A', 'foo.lang.*', candidates)
             assert ['prefill', 'Abcdef'] == candidates
             // test again without invoking packageHelper
-            completor.findMatchingImportedClassesCached('A', 'foo.lang.*', candidates)
+            completer.findMatchingImportedClassesCached('A', 'foo.lang.*', candidates)
             assert ['prefill', 'Abcdef', 'Abcdef'] == candidates
         }
     }
@@ -109,9 +109,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getInterp(1) { [evaluate: {expr -> assert (expr == ['foo.lang.Math']); Math}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('log', 'static foo.lang.Math.log', candidates)
+            completer.findMatchingImportedClassesCached('log', 'static foo.lang.Math.log', candidates)
             assert ['prefill', 'log('] == candidates
         }
     }
@@ -120,9 +120,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getInterp(1) { [evaluate: {expr -> assert (expr == ['foo.lang.Math']); Math}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('log', 'static foo.lang.Math.*', candidates)
+            completer.findMatchingImportedClassesCached('log', 'static foo.lang.Math.*', candidates)
             assert ['prefill', 'log(', 'log10(', 'log1p('] == candidates
         }
     }
@@ -130,9 +130,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
     void testImportedAsCachedOther() {
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('Y', 'foo.lang.Abcdef as Xxxxxx', candidates)
+            completer.findMatchingImportedClassesCached('Y', 'foo.lang.Abcdef as Xxxxxx', candidates)
             assert ['prefill'] == candidates
         }
     }
@@ -141,9 +141,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getInterp(1) { [evaluate: {expr -> assert (expr == ['foo.lang.Math']); Math}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('log', 'static foo.lang.Math.log', candidates)
+            completer.findMatchingImportedClassesCached('log', 'static foo.lang.Math.log', candidates)
             assert ['prefill', 'log('] == candidates
         }
     }
@@ -152,11 +152,11 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getPackageHelper(1) { [getContents: {['Bbbb']}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('A', 'foo.lang.*', candidates)
+            completer.findMatchingImportedClassesCached('A', 'foo.lang.*', candidates)
             assert ['prefill'] == candidates
-            completor.findMatchingImportedClassesCached('B', 'foo.lang.*', candidates)
+            completer.findMatchingImportedClassesCached('B', 'foo.lang.*', candidates)
             assert ['prefill', 'Bbbb'] == candidates
         }
     }
@@ -165,12 +165,12 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getPackageHelper(1) { [getContents: {['Bbbb', 'Abcdef']}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            completor.findMatchingImportedClassesCached('A','foo.lang.*', candidates)
+            completer.findMatchingImportedClassesCached('A','foo.lang.*', candidates)
             assert ['prefill', 'Abcdef'] == candidates
             // test again without invoking packageHelper
-            completor.findMatchingImportedClassesCached('A', 'foo.lang.*', candidates)
+            completer.findMatchingImportedClassesCached('A', 'foo.lang.*', candidates)
             assert ['prefill', 'Abcdef', 'Abcdef'] == candidates
         }
     }
@@ -181,9 +181,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getImports(1) { [] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            assert !completor.complete(tokenList('xyz'), candidates)
+            assert !completer.complete(tokenList('xyz'), candidates)
             assert ['prefill'] == candidates
         }
     }
@@ -197,14 +197,14 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getImports(2) { ['xyzabc.*', 'xxxx.*'] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            assert completor.complete(tokenList('Xyz'), candidates)
+            assert completer.complete(tokenList('Xyz'), candidates)
             // try again to check cache is used
             assert ['prefill', 'Xyzabc', 'Xyz123'] == candidates
-            assert completor.complete(tokenList('Xyz1'), candidates)
+            assert completer.complete(tokenList('Xyz1'), candidates)
             assert ['prefill', 'Xyzabc', 'Xyz123', 'Xyz123'] == candidates
-            assert completor.complete(tokenList('Xyz'), candidates)
+            assert completer.complete(tokenList('Xyz'), candidates)
             assert ['prefill', 'Xyzabc', 'Xyz123', 'Xyz123', 'Xyzabc', 'Xyz123'] == candidates
         }
     }
@@ -214,9 +214,9 @@ class ImportsSyntaxCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getImports(1) { ['xxxx'] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            ImportsSyntaxCompletor completor = new ImportsSyntaxCompletor(groovyshMock)
+            ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
-            assert ! completor.complete(tokenList('xyz'), candidates)
+            assert ! completer.complete(tokenList('xyz'), candidates)
             assert ['prefill'] == candidates
         }
     }

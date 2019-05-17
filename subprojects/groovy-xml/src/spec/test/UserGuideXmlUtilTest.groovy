@@ -18,6 +18,8 @@
  */
 package groovy.xml
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests for the Groovy Xml user guide related to XmlUtil.
  */

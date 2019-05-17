@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 /**
  * Tests for the {@link ClearCommand} class.
  */
-class ClearCommandTest
-    extends CommandTestSupport
-{
+class ClearCommandTest extends CommandTestSupport {
     void testClear() {
         shell.execute(ClearCommand.COMMAND_NAME)
     }

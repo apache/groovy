@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
+import groovy.test.GroovyTestCase
+
 class SimpleGroovyRootDocTests extends GroovyTestCase {
 
     // GROOVY-6017

@@ -16,22 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.jsr223.vm6
+package org.apache.groovy.groovysh.completion
 
-import javax.script.ScriptEngineManager
+import org.apache.groovy.groovysh.CompleterTestSupport
+import org.apache.groovy.groovysh.Groovysh
 
-class JavascriptTest extends GroovyTestCase {
-    void testIntegrationWithBuiltinJavaScript() {
-        def binding = new Binding()
-        binding.x = 10
-        binding.y = 5
-        def js = ScriptEngineManager.javascript
-        if (!js) System.err.println("Warning: JavaScript not available on this JVM - test ignored")
-        else {
-            def eval = js.&eval.rcurry(binding)
-            assert eval('2 * x + y') == 25
-            eval 'z = x + y'
-            assert binding.z == 15
+import static org.apache.groovy.groovysh.completion.TokenUtilTest.tokenList
+
+class CustomClassCompleterTest extends CompleterTestSupport {
+
+    void testKnownClass() {
+        groovyshMocker.demand.getInterp(1) { [classLoader: [loadedClasses: [String]]] }
+        groovyshMocker.use {
+            Groovysh groovyshMock = new Groovysh()
+            CustomClassSyntaxCompleter completer = new CustomClassSyntaxCompleter(groovyshMock)
+            def candidates = []
+            // in the shell, only Classes in the default package occur,but well...
+            assert completer.complete(tokenList('jav'), candidates)
+            assert ['java.lang.String'] == candidates
         }
     }
 }

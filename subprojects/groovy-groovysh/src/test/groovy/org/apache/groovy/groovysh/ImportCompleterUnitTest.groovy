@@ -16,33 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
+
 import groovy.mock.interceptor.MockFor
-import jline.console.completer.ArgumentCompleter
-import jline.console.completer.Completer
-import jline.console.completer.NullCompleter
-import jline.console.completer.StringsCompleter
-import org.codehaus.groovy.tools.shell.commands.ImportCommand
-import org.codehaus.groovy.tools.shell.commands.ImportCompleter
-import org.codehaus.groovy.tools.shell.util.PackageHelper
+import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.commands.ImportCompleter
+import org.apache.groovy.groovysh.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
-/**
- * as opposed to MockFor, traditional custom mocking allows @CompileStatic for the class under Test
- */
-class MockPackageHelper implements PackageHelper {
-    Set<String> mockContents
-    MockPackageHelper(Collection<String> mockContents) {
-        this.mockContents = new HashSet<String>(mockContents)
-    }
-
-    @Override
-    Set<String> getContents(String packagename) {
-        return mockContents
-    }
-
-    @Override
-    void reset() { }
-}
 
 class ImportCompleterUnitTest extends GroovyTestCase {
 
@@ -274,104 +254,6 @@ class ImportCompleterUnitTest extends GroovyTestCase {
             String buffer = 'java.util.zip.Test.ma'
             assert 19 == compl.complete(buffer, buffer.length(), candidates)
             assert ['max '] == candidates.sort()
-        }
-    }
-}
-
-class ImportCompleterTest extends CompletorTestSupport {
-
-    void testEmpty() {
-        mockPackageHelper = new MockPackageHelper(['java', 'test'])
-        groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
-        groovyshMocker.demand.getInterp(1) {}
-        groovyshMocker.use {
-            Groovysh groovyshMock = new Groovysh()
-            ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.completer
-            def candidates = []
-            assert 0 == completer.complete('', 0, candidates)
-            // order changed by sort
-            assert [':i ', ':i ', 'import ', 'import '] == candidates.sort()
-        }
-    }
-
-    void testUnknownVar() {
-        mockPackageHelper = new MockPackageHelper(['java', 'test'])
-        groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
-        groovyshMocker.demand.getInterp(1) {}
-        groovyshMocker.use {
-            Groovysh groovyshMock = new Groovysh()
-            ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.completer
-            def candidates = []
-            assert 7 == completer.complete('import ', 'import '.length(), candidates)
-            // order changed by sort, needed to make tests run on different JDks
-            assert ['java.', 'static ', 'test.'] == candidates.sort()
-        }
-    }
-
-    void testJ() {
-        mockPackageHelper = new MockPackageHelper(['java', 'test'])
-        groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
-        groovyshMocker.demand.getInterp(1) {}
-        groovyshMocker.use {
-            Groovysh groovyshMock = new Groovysh()
-            ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.completer
-            def candidates = []
-            // argument completer completes after 'import '
-            assert 7 == completer.complete('import j', 'import j'.length(), candidates)
-            assert ['java.'] == candidates
-        }
-    }
-
-    void testJavaDot() {
-        mockPackageHelper = new MockPackageHelper(['java', 'test'])
-        groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
-        groovyshMocker.demand.getInterp(1) {}
-        groovyshMocker.use {
-            Groovysh groovyshMock = new Groovysh()
-            ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.completer
-            def candidates = []
-            // argument completer completes after 'import '
-            String buffer = 'import java.'
-            assert buffer.length() == completer.complete(buffer, buffer.length(), candidates)
-            // order changed by sort, needed to run tests on different JDKs
-            assert ['* ', 'java.', 'test.'] == candidates.sort()
-        }
-    }
-
-    void testJavaLangDot() {
-        mockPackageHelper = new MockPackageHelper(['java', 'test'])
-        groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
-        groovyshMocker.demand.getInterp(1) {}
-        groovyshMocker.use {
-            Groovysh groovyshMock = new Groovysh()
-            ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.completer
-            def candidates = []
-            // argument completer completes after 'import '
-            String buffer = 'import java.lang.'
-            assert buffer.length() == completer.complete(buffer, buffer.length(), candidates)
-            // order changed by sort, needed to make tests run on different JDks
-            assert ['* ', 'java.', 'test.'] == candidates.sort()
-        }
-    }
-
-    void testAs() {
-        mockPackageHelper = new MockPackageHelper(['java', 'Test'])
-        groovyshMocker.demand.getPackageHelper(1) { mockPackageHelper }
-        groovyshMocker.demand.getInterp(1) {}
-        groovyshMocker.use {
-            Groovysh groovyshMock = new Groovysh()
-            ImportCommand iCom = new ImportCommand(groovyshMock)
-            Completer completer = iCom.completer
-            def candidates = []
-            // mock package
-            String buffer = 'import java.Test '
-            assert buffer.length() == completer.complete(buffer, buffer.length(), candidates)
-            assert ['as '] == candidates
         }
     }
 }

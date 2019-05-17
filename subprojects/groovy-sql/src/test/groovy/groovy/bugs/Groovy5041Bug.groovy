@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5041Bug extends GroovyTestCase {
     void testAICParameter() {
         // GROOVY-5041

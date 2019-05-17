@@ -16,57 +16,59 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
-import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokenList
+import groovy.test.GroovyTestCase
 
-class KeywordCompletorTest extends GroovyTestCase {
+import static org.apache.groovy.groovysh.completion.TokenUtilTest.tokenList
+
+class KeywordCompleterTest extends GroovyTestCase {
 
     void testKeywordModifier() {
-        KeywordSyntaxCompletor completor = new KeywordSyntaxCompletor()
+        KeywordSyntaxCompleter completer = new KeywordSyntaxCompleter()
         def candidates = []
         String buffer = 'pub'
-        assert completor.complete(tokenList(buffer), candidates)
+        assert completer.complete(tokenList(buffer), candidates)
         assert ['public '] == candidates
     }
 
     void testInfixKeywordNotCompleted() {
         // extends, implements, instanceof are not to kbe completed when at start of line
-        KeywordSyntaxCompletor completor = new KeywordSyntaxCompletor()
+        KeywordSyntaxCompleter completer = new KeywordSyntaxCompleter()
         def candidates = []
         String buffer = 'ext'
-        assert !completor.complete(tokenList(buffer), candidates)
+        assert !completer.complete(tokenList(buffer), candidates)
         buffer = 'imple'
-        assert !completor.complete(tokenList(buffer), candidates)
+        assert !completer.complete(tokenList(buffer), candidates)
         buffer = 'inst'
-        assert !completor.complete(tokenList(buffer), candidates)
+        assert !completer.complete(tokenList(buffer), candidates)
     }
 
     void testKeywordModifierSecond() {
-        KeywordSyntaxCompletor completor = new KeywordSyntaxCompletor()
+        KeywordSyntaxCompleter completer = new KeywordSyntaxCompleter()
         def candidates = []
         String buffer = 'public sta'
-        assert completor.complete(tokenList(buffer), candidates)
+        assert completer.complete(tokenList(buffer), candidates)
         assert ['static '] == candidates
         candidates = []
         buffer = 'public swi' // don't suggest switch keyword here
-        assert completor.complete(tokenList(buffer), candidates)
+        assert completer.complete(tokenList(buffer), candidates)
         assert ['switch ('] == candidates
     }
 
     void testKeywordModifierThird() {
-        KeywordSyntaxCompletor completor = new KeywordSyntaxCompletor()
+        KeywordSyntaxCompleter completer = new KeywordSyntaxCompleter()
         def candidates = []
         String buffer = 'public static inter'
-        assert completor.complete(tokenList(buffer), candidates)
+        assert completer.complete(tokenList(buffer), candidates)
         assert ['interface '] == candidates
     }
 
     void testKeywordModifierFor() {
-        KeywordSyntaxCompletor completor = new KeywordSyntaxCompletor()
+        KeywordSyntaxCompleter completer = new KeywordSyntaxCompleter()
         def candidates = []
         String buffer = 'fo'
-        assert completor.complete(tokenList(buffer), candidates)
+        assert completer.complete(tokenList(buffer), candidates)
         assert ['for ('] == candidates
     }
 }

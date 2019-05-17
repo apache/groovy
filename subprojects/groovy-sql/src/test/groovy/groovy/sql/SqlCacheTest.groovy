@@ -18,12 +18,18 @@
  */
 package groovy.sql
 
-import java.sql.SQLException
-import javax.sql.DataSource
-import java.sql.Connection
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.InvokerHelper
 
-import static groovy.sql.SqlTestConstants.*
+import javax.sql.DataSource
+import java.sql.Connection
+import java.sql.SQLException
+
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_DS_KEY
+import static groovy.sql.SqlTestConstants.DB_PASSWORD
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.DB_USER
 
 /**
  * Unit test of Sql cache feature 

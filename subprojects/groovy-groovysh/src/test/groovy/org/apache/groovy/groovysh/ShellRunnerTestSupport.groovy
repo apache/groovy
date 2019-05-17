@@ -16,11 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
 import groovy.mock.interceptor.MockFor
 import groovy.mock.interceptor.StubFor
+import groovy.test.GroovyTestCase
 import jline.console.ConsoleReader
+import org.codehaus.groovy.tools.shell.IO
 
 /**
  * Support for testing {@link Command} instances.

@@ -18,6 +18,7 @@
  */
 package groovy.xml
 
+import groovy.test.GroovyTestCase
 import groovy.xml.dom.DOMCategory
 
 /**

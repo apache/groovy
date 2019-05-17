@@ -16,15 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
+
+import groovy.test.GroovyTestCase
 
 /**
  * Unit tests for the {@link WrappedInputStream} class.
- *
  */
-class WrappedInputStreamTest
-    extends GroovyTestCase
-{
+class WrappedInputStreamTest extends GroovyTestCase {
     void testWrapEmpty() {
         ByteArrayInputStream mockStream = new ByteArrayInputStream()
         WrappedInputStream stream = new WrappedInputStream(mockStream)

@@ -18,6 +18,8 @@
  */
 package groovy.jmx.builder
 
+import groovy.test.GroovyTestCase
+
 class JmxBeansFactoryTest extends GroovyTestCase {
     def builder
 

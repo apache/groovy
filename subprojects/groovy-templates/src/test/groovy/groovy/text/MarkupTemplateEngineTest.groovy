@@ -18,6 +18,7 @@
  */
 package groovy.text
 
+import groovy.test.GroovyTestCase
 import groovy.text.markup.BaseTemplate
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TagLibAdapter

@@ -20,6 +20,8 @@ package org.apache.groovy.jaxb.extensions
 
 import javax.xml.bind.JAXBContext
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test cases for {@link JaxbExtensions}
  */

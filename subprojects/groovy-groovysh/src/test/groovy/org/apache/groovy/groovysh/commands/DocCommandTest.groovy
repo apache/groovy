@@ -16,15 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * Tests for the {@link DocCommand} class.
  */
-class DocCommandTest extends CommandTestSupport
-{
+class DocCommandTest extends CommandTestSupport {
     void testInitializeAWTDesktopPlatformSupportFlag() {
         def desktopClass = Class.forName('java.awt.Desktop')
         boolean hasSupport =

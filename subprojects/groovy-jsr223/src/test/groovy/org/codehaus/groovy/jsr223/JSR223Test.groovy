@@ -18,13 +18,14 @@
  */
 package org.codehaus.groovy.jsr223
 
+import groovy.test.GroovyTestCase
+
 import javax.script.Invocable
 import javax.script.ScriptContext
-import javax.script.ScriptEngineManager
 import javax.script.ScriptEngine
 import javax.script.ScriptEngineFactory
+import javax.script.ScriptEngineManager
 import javax.script.ScriptException
-
 import javax.script.SimpleScriptContext
 
 /**

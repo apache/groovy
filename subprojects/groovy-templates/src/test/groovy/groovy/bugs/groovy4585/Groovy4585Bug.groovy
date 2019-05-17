@@ -18,6 +18,8 @@
  */
 package groovy.bugs.groovy4585
 
+import groovy.test.GroovyTestCase
+
 class Groovy4585Bug extends GroovyTestCase {
     void test() {
         def engineForBuildXml = new groovy.text.SimpleTemplateEngine(false)

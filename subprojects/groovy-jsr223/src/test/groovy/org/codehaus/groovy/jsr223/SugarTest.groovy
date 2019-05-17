@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.jsr223
 
+import groovy.test.GroovyTestCase
+
 import javax.script.ScriptEngineManager
 
 class SugarTest extends GroovyTestCase {

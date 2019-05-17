@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 /**
  * Tests for the {@link ImportCommand} class.
  */
-class ImportCommandTest
-    extends CommandTestSupport
-{
+class ImportCommandTest extends CommandTestSupport {
     void testPatternClassOrMethodName() {
         assert 'java.util.*'.matches(ImportCommand.IMPORTED_ITEM_PATTERN)
         assert 'java.util.Pattern'.matches(ImportCommand.IMPORTED_ITEM_PATTERN)

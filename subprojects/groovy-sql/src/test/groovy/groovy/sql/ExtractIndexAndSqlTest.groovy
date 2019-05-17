@@ -18,6 +18,8 @@
  */
 package groovy.sql
 
+import groovy.test.GroovyTestCase
+
 class ExtractIndexAndSqlTest extends GroovyTestCase {
 
     void testDetectsNamedParameters() {

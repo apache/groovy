@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 import java.util.ArrayList;
 

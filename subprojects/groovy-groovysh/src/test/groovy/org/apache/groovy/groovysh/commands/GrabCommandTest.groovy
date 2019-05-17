@@ -16,12 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import groovy.grape.Grape
 import groovy.mock.interceptor.StubFor
-import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.util.PackageHelperImpl
+import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.util.PackageHelperImpl
 
 /**
  * Tests for the {@link GrabCommand} class.

@@ -16,23 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
-import org.codehaus.groovy.tools.shell.commands.*
+import org.apache.groovy.groovysh.commands.AliasCommand
+import org.apache.groovy.groovysh.commands.ClearCommand
+import org.apache.groovy.groovysh.commands.SaveCommand
+import org.apache.groovy.groovysh.commands.SetCommand
+import org.apache.groovy.groovysh.commands.ShowCommand
 import org.codehaus.groovy.tools.shell.util.Preferences
 
-class CommandCompletorTest
-extends CompletorTestSupport {
+class CommandCompleterTest extends CompleterTestSupport {
 
     void testEmpty() {
-        CommandsMultiCompleter completor = new CommandsMultiCompleter()
-        assert -1 == completor.complete('', 0, [])
-        assert -1 == completor.complete('i', 2, [])
-        assert -1 == completor.complete('imp', 4, [])
+        CommandsMultiCompleter completer = new CommandsMultiCompleter()
+        assert -1 == completer.complete('', 0, [])
+        assert -1 == completer.complete('i', 2, [])
+        assert -1 == completer.complete('imp', 4, [])
     }
 
     void testAlias() {
-        CommandsMultiCompleter completor = new CommandsMultiCompleter()
+        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         CommandRegistry registry = new CommandRegistry()
         groovyshMocker.use {
@@ -41,19 +44,19 @@ extends CompletorTestSupport {
             registry.register(new SetCommand(groovyshMock))
             registry.register(new ShowCommand(groovyshMock))
             aliasCommand.registry = registry
-            completor.add(aliasCommand)
-            completor.refresh()
+            completer.add(aliasCommand)
+            completer.refresh()
 
-            assert 0 == completor.complete(':a', ':a'.length(), candidates)
+            assert 0 == completer.complete(':a', ':a'.length(), candidates)
             assert [':a ', AliasCommand.COMMAND_NAME + ' '] == candidates
             candidates = []
-            assert 3 == completor.complete(':a ', ':a '.length(), candidates)
+            assert 3 == completer.complete(':a ', ':a '.length(), candidates)
             assert [':= ', ':S ', SetCommand.COMMAND_NAME + ' ', ShowCommand.COMMAND_NAME + ' '] == candidates
         }
     }
 
     void testSet() {
-        CommandsMultiCompleter completor = new CommandsMultiCompleter()
+        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         groovyshMocker.demand.getINTERPRETER_MODE_PREFERENCE_KEY(1){'interpreterMode'}
         groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){'autoindent'}
@@ -61,14 +64,14 @@ extends CompletorTestSupport {
         groovyshMocker.demand.getMETACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY(1){'meta-completion-prefix-length'}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            completor.add(new SetCommand(groovyshMock))
-            completor.refresh()
+            completer.add(new SetCommand(groovyshMock))
+            completer.refresh()
 
-            assert 0 == completor.complete(':s', ':s'.length(), candidates)
+            assert 0 == completer.complete(':s', ':s'.length(), candidates)
             String buffer = SetCommand.COMMAND_NAME + ' '
             assert [buffer] == candidates
             candidates = []
-            assert 5 == completor.complete(buffer, buffer.length(), candidates)
+            assert 5 == completer.complete(buffer, buffer.length(), candidates)
         }
         assert Groovysh.AUTOINDENT_PREFERENCE_KEY + ' ' in candidates
         assert Groovysh.COLORS_PREFERENCE_KEY + ' ' in candidates
@@ -82,34 +85,34 @@ extends CompletorTestSupport {
     }
 
     void testSave() {
-        CommandsMultiCompleter completor = new CommandsMultiCompleter()
+        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            completor.add(new SaveCommand(groovyshMock))
-            completor.refresh()
+            completer.add(new SaveCommand(groovyshMock))
+            completer.refresh()
 
-            assert 0 == completor.complete(':s', ':s'.length(), candidates)
+            assert 0 == completer.complete(':s', ':s'.length(), candidates)
             assert [':s ', SaveCommand.COMMAND_NAME + ' '] == candidates
             candidates = []
             String buffer = SaveCommand.COMMAND_NAME + ' '
-            assert 6 == completor.complete(buffer, buffer.length(), candidates)
+            assert 6 == completer.complete(buffer, buffer.length(), candidates)
             assert candidates.size() > 0 // completes filenames from testing dir
         }
     }
 
     void testClear() {
-        CommandsMultiCompleter completor = new CommandsMultiCompleter()
+        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            completor.add(new ClearCommand(groovyshMock))
-            completor.refresh()
+            completer.add(new ClearCommand(groovyshMock))
+            completer.refresh()
 
-            assert 0 == completor.complete(':c', ':c'.length(), candidates)
+            assert 0 == completer.complete(':c', ':c'.length(), candidates)
             assert [':c', ClearCommand.COMMAND_NAME] == candidates
             candidates = []
-            assert -1 == completor.complete(':c ', ':c '.length(), candidates)
+            assert -1 == completer.complete(':c ', ':c '.length(), candidates)
             assert [] == candidates
 
         }
@@ -117,7 +120,7 @@ extends CompletorTestSupport {
     }
 
     void testSaveSetShow() {
-        CommandsMultiCompleter completor = new CommandsMultiCompleter()
+        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         groovyshMocker.demand.getINTERPRETER_MODE_PREFERENCE_KEY(1){'interpreterMode'}
         groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){'autoindent'}
@@ -126,19 +129,19 @@ extends CompletorTestSupport {
         groovyshMocker.demand.getIo(1){testio}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            completor.add(new SaveCommand(groovyshMock))
-            completor.add(new SetCommand(groovyshMock))
-            completor.add(new ShowCommand(groovyshMock))
-            completor.refresh()
+            completer.add(new SaveCommand(groovyshMock))
+            completer.add(new SetCommand(groovyshMock))
+            completer.add(new ShowCommand(groovyshMock))
+            completer.refresh()
 
-            assert 0 == completor.complete(':s', ':s'.length(), candidates)
+            assert 0 == completer.complete(':s', ':s'.length(), candidates)
             assert [':s ', SaveCommand.COMMAND_NAME + ' ', SetCommand.COMMAND_NAME + ' ', ShowCommand.COMMAND_NAME + ' '] == candidates
             candidates = []
             String buffer = SaveCommand.COMMAND_NAME + ' '
-            assert 6 == completor.complete(buffer, buffer.length(), candidates)
+            assert 6 == completer.complete(buffer, buffer.length(), candidates)
             assert ! candidates.contains('all')
             candidates = []
-            assert 3 == completor.complete(':s ', ':s '.length(), candidates)
+            assert 3 == completer.complete(':s ', ':s '.length(), candidates)
             assert ! candidates.contains('all')
 
         }

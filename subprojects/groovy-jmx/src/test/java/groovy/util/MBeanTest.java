@@ -18,6 +18,8 @@
  */
 package groovy.util;
 
+import groovy.test.GroovyTestCase;
+
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;

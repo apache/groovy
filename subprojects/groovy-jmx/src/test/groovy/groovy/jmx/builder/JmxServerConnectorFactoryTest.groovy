@@ -18,6 +18,8 @@
  */
 package groovy.jmx.builder
 
+import groovy.test.GroovyTestCase
+
 import javax.management.remote.JMXServiceURL
 import javax.management.remote.rmi.RMIConnectorServer
 

@@ -16,8 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
+import groovy.test.GroovyTestCase
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
@@ -45,7 +46,7 @@ class FileNameCompleterTest extends GroovyTestCase {
             testFolder = new TemporaryFolder();
             testFolder.create()
 
-            FileNameCompleter completor = new FileNameCompleter() {
+            FileNameCompleter completer = new FileNameCompleter() {
                 @Override
                 protected File getUserDir() {
                     return testFolder.getRoot()
@@ -53,7 +54,7 @@ class FileNameCompleterTest extends GroovyTestCase {
             }
             def candidates = []
             String buffer = ''
-            assert 0 == completor.complete(buffer, 0, candidates)
+            assert 0 == completer.complete(buffer, 0, candidates)
             assert [] == candidates
         } finally {
             if (testFolder != null) {

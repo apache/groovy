@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 /**
  * Tests for the {@link AliasCommand} class.
  */
-class AliasCommandTest
-    extends CommandTestSupport
-{
+class AliasCommandTest extends CommandTestSupport {
     void testAlias() {
         shell.execute(AliasCommand.COMMAND_NAME)
         shell.execute(AliasCommand.COMMAND_NAME + ' foo bar')

@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * This is helpful for tests that don't currently work but should work one day,
  * when the tested functionality has been implemented.
  * <p>
- * The idea for this AST transformation originated in {@link groovy.util.GroovyTestCase#notYetImplemented()}.
+ * The idea for this AST transformation originated in {@link groovy.test.GroovyTestCase#notYetImplemented()}.
  *
  * @since 2.0.0
  * @deprecated use {@link groovy.test.transform.NotYetImplemented}

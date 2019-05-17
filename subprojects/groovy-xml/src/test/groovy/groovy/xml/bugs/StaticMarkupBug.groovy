@@ -18,6 +18,7 @@
  */
 package groovy.xml.bugs
 
+import groovy.test.GroovyTestCase
 import groovy.xml.MarkupBuilder
 
 class StaticMarkupBug extends GroovyTestCase {

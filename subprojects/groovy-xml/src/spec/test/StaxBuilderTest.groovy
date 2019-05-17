@@ -17,6 +17,8 @@
  *  under the License.
  */
 
+import groovy.test.GroovyTestCase
+
 class StaxBuilderTest extends GroovyTestCase {
 
     void testStaxBuilder() {

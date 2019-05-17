@@ -18,6 +18,7 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
 

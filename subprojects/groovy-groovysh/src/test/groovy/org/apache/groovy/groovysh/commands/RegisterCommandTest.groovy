@@ -16,29 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.CommandSupport
-import org.codehaus.groovy.tools.shell.Shell
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Shell
 
 /**
  * Tests for the {@link RegisterCommand} class.
  */
-class RegisterCommandTest
-    extends CommandTestSupport
-{
+class RegisterCommandTest extends CommandTestSupport {
     void testRegister() {
-        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand')
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.apache.groovy.groovysh.commands.EchoCommand')
     }
 
     void testRegisterDupes() {
-        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand')
-        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand echo2 \\e2')
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.apache.groovy.groovysh.commands.EchoCommand')
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.apache.groovy.groovysh.commands.EchoCommand echo2 \\e2')
     }
 
     void testRegisterDupesFail() {
-        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand')
-        shell.execute(RegisterCommand.COMMAND_NAME + ' org.codehaus.groovy.tools.shell.commands.EchoCommand')
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.apache.groovy.groovysh.commands.EchoCommand')
+        shell.execute(RegisterCommand.COMMAND_NAME + ' org.apache.groovy.groovysh.commands.EchoCommand')
     }
 
     void testRegisterFail() {
@@ -46,9 +44,7 @@ class RegisterCommandTest
         }
 }
 
-class EchoCommand
-    extends CommandSupport
-{
+class EchoCommand extends CommandSupport {
     EchoCommand(final Shell shell, final String name, final String alias) {
         super(shell, name, alias)
     }
@@ -61,5 +57,3 @@ class EchoCommand
         io.out.println(args.join(' ')) //  TODO: i18n
     }
 }
-
-

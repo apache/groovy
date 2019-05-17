@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
+
+import groovy.test.GroovyTestCase
 
 /**
  * Unit tests for the {@link CurlyCountingGroovyLexer} class.
  */
-class CurlyCountingGroovyLexerTest
-    extends GroovyTestCase
-{
+class CurlyCountingGroovyLexerTest extends GroovyTestCase {
    void testLexerEmpty() {
        CurlyCountingGroovyLexer it = CurlyCountingGroovyLexer.createGroovyLexer('')
        assert 0 == it.parenLevel

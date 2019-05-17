@@ -18,7 +18,14 @@
  */
 package groovy.sql
 
-import static groovy.sql.SqlTestConstants.*
+import groovy.test.GroovyTestCase
+
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_DS_KEY
+import static groovy.sql.SqlTestConstants.DB_PASSWORD
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.DB_URL_SUFFIX
+import static groovy.sql.SqlTestConstants.DB_USER
 
 class SqlHelperTestCase extends GroovyTestCase {
     SqlHelperTestCase() {

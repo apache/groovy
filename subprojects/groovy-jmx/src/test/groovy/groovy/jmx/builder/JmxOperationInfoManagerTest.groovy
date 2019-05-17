@@ -18,6 +18,8 @@
  */
 package groovy.jmx.builder
 
+import groovy.test.GroovyTestCase
+
 import javax.management.Descriptor
 import javax.management.MBeanParameterInfo
 import javax.management.modelmbean.ModelMBeanConstructorInfo

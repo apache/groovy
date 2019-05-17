@@ -18,6 +18,7 @@
  */
 package groovy.text.markup
 
+import groovy.test.GroovyTestCase
 import groovy.text.markup.MarkupTemplateEngine.TemplateResource;
 
 class TemplateResourceTest extends GroovyTestCase {

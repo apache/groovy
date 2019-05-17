@@ -16,21 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
-import org.codehaus.groovy.tools.shell.CompletorTestSupport
-import org.codehaus.groovy.tools.shell.Groovysh
-import static org.codehaus.groovy.tools.shell.completion.TokenUtilTest.tokenList
+import org.apache.groovy.groovysh.CompleterTestSupport
+import org.apache.groovy.groovysh.Groovysh
+import static org.apache.groovy.groovysh.completion.TokenUtilTest.tokenList
 
-class VariableCompletorTest extends CompletorTestSupport {
+class VariableCompleterTest extends CompleterTestSupport {
 
     void testKnownVar() {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [xyzabc: '']]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            VariableSyntaxCompletor completor = new VariableSyntaxCompletor(groovyshMock)
+            VariableSyntaxCompleter completer = new VariableSyntaxCompleter(groovyshMock)
             def candidates = []
-            assert completor.complete(tokenList('xyz'), candidates)
+            assert completer.complete(tokenList('xyz'), candidates)
             assert ['xyzabc'] == candidates
         }
     }
@@ -39,9 +39,9 @@ class VariableCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [bad: '', xyzabc: '', xyzfff: '', nope: '']]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            VariableSyntaxCompletor completor = new VariableSyntaxCompletor(groovyshMock)
+            VariableSyntaxCompleter completer = new VariableSyntaxCompleter(groovyshMock)
             def candidates = []
-            assert completor.complete(tokenList('xyz'), candidates)
+            assert completer.complete(tokenList('xyz'), candidates)
             assert ['xyzabc', 'xyzfff'] == candidates
         }
     }
@@ -50,10 +50,10 @@ class VariableCompletorTest extends CompletorTestSupport {
         groovyshMocker.demand.getInterp(1) { [context: [variables: [:]]] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            VariableSyntaxCompletor completor = new VariableSyntaxCompletor(groovyshMock)
+            VariableSyntaxCompleter completer = new VariableSyntaxCompleter(groovyshMock)
             def candidates = []
             assert [] == candidates
-            assert !completor.complete(tokenList('xyz'), candidates)
+            assert !completer.complete(tokenList('xyz'), candidates)
         }
     }
 }

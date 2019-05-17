@@ -16,17 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import jline.console.history.FileHistory
-import org.codehaus.groovy.tools.shell.CompletorTestSupport
-import org.codehaus.groovy.tools.shell.Groovysh
+import org.apache.groovy.groovysh.CompleterTestSupport
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * Tests for the {@link HistoryCommand} class.
  */
-class HistoryCommandTest extends CommandTestSupport
-{
+class HistoryCommandTest extends CommandTestSupport {
     void testHistory() {
         shell.execute(HistoryCommand.COMMAND_NAME + ' nocommandhere')
     }
@@ -36,8 +35,7 @@ class HistoryCommandTest extends CommandTestSupport
     }
 }
 
-class HistoryCommandIntegrationTest extends CompletorTestSupport
-{
+class HistoryCommandIntegrationTest extends CompleterTestSupport {
     private File filemock
 
     @Override

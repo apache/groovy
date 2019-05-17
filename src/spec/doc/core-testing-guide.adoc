@@ -388,7 +388,7 @@ make certain types of tests easier to write.
 
 
 In this section, we will have a look at some of the methods provided by `GroovyTestCase`. A full list of these can be
-found in the JavaDoc documentation for gapi:groovy.util.GroovyTestCase[] ,
+found in the JavaDoc documentation for gapi:groovy.test.GroovyTestCase[] ,
 don't forget it is inherited from `junit.framework.TestCase` which inherits all the `assert*` methods.
 
 ==== Assertion Methods

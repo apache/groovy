@@ -18,6 +18,8 @@
  */
 package groovy.yaml
 
+import groovy.test.GroovyTestCase
+
 class YamlParserTest extends GroovyTestCase {
 
     void testParse() {

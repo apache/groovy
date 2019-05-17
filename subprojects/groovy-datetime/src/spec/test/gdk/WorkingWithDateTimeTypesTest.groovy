@@ -18,6 +18,8 @@
  */
 package gdk
 
+import groovy.test.GroovyTestCase
+
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate

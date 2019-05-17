@@ -16,16 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.ExitNotification
+import org.apache.groovy.groovysh.ExitNotification
 
 /**
  * Tests for the {@link ExitCommand} class.
  */
-class ExitCommandTest
-    extends CommandTestSupport
-{
+class ExitCommandTest extends CommandTestSupport {
     void testWithNoArgs() {
         try {
             shell.execute(ExitCommand.COMMAND_NAME)

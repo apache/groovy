@@ -17,6 +17,8 @@
  *  under the License.
  */
 
+import groovy.test.GroovyTestCase
+
 class SaxBuilderTest extends GroovyTestCase {
 
     // tag::sax_builder_handler[]

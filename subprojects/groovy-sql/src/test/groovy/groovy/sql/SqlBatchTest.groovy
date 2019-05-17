@@ -19,10 +19,15 @@
 package groovy.sql
 
 import groovy.test.GroovyAssert
+import groovy.test.GroovyTestCase
 
 import javax.sql.DataSource
 
-import static groovy.sql.SqlTestConstants.*
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_DS_KEY
+import static groovy.sql.SqlTestConstants.DB_PASSWORD
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.DB_USER
 
 /**
  * Test Sql batch features

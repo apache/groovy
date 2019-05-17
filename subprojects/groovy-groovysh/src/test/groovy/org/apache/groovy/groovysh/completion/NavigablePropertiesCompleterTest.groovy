@@ -16,8 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
+import groovy.test.GroovyTestCase
 
 /**
  * Defines method tokenList for other Unit tests and tests it

@@ -17,6 +17,8 @@
  *  under the License.
  */
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests for groovy.sql.Sql.
  */

@@ -18,6 +18,8 @@
  */
 package groovy.xml
 
+import groovy.test.GroovyTestCase
+
 class XmlNodePrinterTest extends GroovyTestCase {
 
     StringWriter writer

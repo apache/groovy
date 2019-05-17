@@ -16,18 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import jline.console.completer.Completer
-import org.codehaus.groovy.tools.shell.CommandException
-import org.codehaus.groovy.tools.shell.ComplexCommandSupport
+import org.apache.groovy.groovysh.CommandException
+import org.apache.groovy.groovysh.ComplexCommandSupport
 
 /**
  * Tests for the {@link ComplexCommandSupport} class.
  */
-class ComplexCommandSupportTest
-    extends CommandTestSupport
-{
+class ComplexCommandSupportTest extends CommandTestSupport {
     void testNew() {
         ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', null) {}
         assert 'fcom' == com.name
@@ -63,19 +61,19 @@ class ComplexCommandSupportTest
 
     void testCreateCompleters() {
         ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo', 'bar', 'baz']) {}
-        List<Completer> completors = com.createCompleters()
-        assert 2 == completors.size()
-        assert null == completors[-1]
+        List<Completer> completers = com.createCompleters()
+        assert 2 == completers.size()
+        assert null == completers[-1]
 
     }
 
-    void testCompletor() {
+    void testCompleter() {
         ComplexCommandSupport com = new ComplexCommandSupport(shell, 'fcom', 'f', ['foo', 'bar', 'baz']) {}
         def candidates = []
-        Completer completor = com.completer
-        assert 5 == completor.complete('fcom ba', 'fcom ba'.length(), candidates)
+        Completer completer = com.completer
+        assert 5 == completer.complete('fcom ba', 'fcom ba'.length(), candidates)
         assert ['bar', 'baz'] == candidates
-        assert -1 == completor.complete('fcom bar ba', 'fcom bar ba'.length(), candidates)
+        assert -1 == completer.complete('fcom bar ba', 'fcom bar ba'.length(), candidates)
     }
 
     void testDoAll() {

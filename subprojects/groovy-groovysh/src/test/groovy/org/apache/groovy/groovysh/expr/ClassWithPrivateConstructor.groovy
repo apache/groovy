@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.expr
+package org.apache.groovy.groovysh.expr
 
 /**
  * Tests for classes defined which have private constructors.
  */
-class ClassWithPrivateConstructor
-    extends ExprTestSupport
-{
+class ClassWithPrivateConstructor extends ExprTestSupport {
     void testClass() {
         shell.execute('class K { private K(){} }')
     }

@@ -18,6 +18,7 @@
  */
 package groovy.xml
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.tools.xml.DomToGroovy
 
 /**

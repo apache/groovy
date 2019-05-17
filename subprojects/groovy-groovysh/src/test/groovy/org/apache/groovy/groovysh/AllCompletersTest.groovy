@@ -16,24 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
+import groovy.test.GroovyTestCase
 import jline.console.completer.Completer
 import jline.console.history.FileHistory
-import org.codehaus.groovy.tools.shell.commands.DocCommand
-import org.codehaus.groovy.tools.shell.commands.EditCommand
-import org.codehaus.groovy.tools.shell.commands.ExitCommand
-import org.codehaus.groovy.tools.shell.commands.HelpCommand
-import org.codehaus.groovy.tools.shell.commands.InspectCommand
-import org.codehaus.groovy.tools.shell.commands.PurgeCommand
-import org.codehaus.groovy.tools.shell.commands.SetCommand
-import org.codehaus.groovy.tools.shell.commands.ShowCommand
-
+import org.codehaus.groovy.tools.shell.IO
+import org.apache.groovy.groovysh.commands.DocCommand
+import org.apache.groovy.groovysh.commands.EditCommand
+import org.apache.groovy.groovysh.commands.ExitCommand
+import org.apache.groovy.groovysh.commands.HelpCommand
+import org.apache.groovy.groovysh.commands.InspectCommand
+import org.apache.groovy.groovysh.commands.PurgeCommand
+import org.apache.groovy.groovysh.commands.SetCommand
+import org.apache.groovy.groovysh.commands.ShowCommand
 
 /**
  * Test the combination of multiple completers via JLine ConsoleReader
  */
-class AllCompletorsTest extends GroovyTestCase {
+class AllCompletersTest extends GroovyTestCase {
 
     private IO testio
     private BufferedOutputStream mockOut

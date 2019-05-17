@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
+
+import groovy.test.GroovyTestCase
 
 /**
  * Unit tests for the {@link PackageHelperImpl} class.
  */
-class PackageHelperImplTest
-    extends GroovyTestCase
-{
+class PackageHelperImplTest extends GroovyTestCase {
 
     void testLoadAndGetPackagesEmpty() {
         PackageHelperImpl helper = new PackageHelperImpl(null)

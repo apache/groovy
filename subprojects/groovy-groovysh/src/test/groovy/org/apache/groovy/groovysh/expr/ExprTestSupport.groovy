@@ -16,16 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.expr
+package org.apache.groovy.groovysh.expr
 
-import org.codehaus.groovy.tools.shell.Groovysh
+import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * Support for expression tests.
  */
-abstract class ExprTestSupport
-    extends GroovyTestCase
-{
+abstract class ExprTestSupport extends GroovyTestCase {
     Groovysh shell
 
     Object lastResult

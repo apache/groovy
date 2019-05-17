@@ -18,6 +18,8 @@
  */
 package groovy.sql
 
+import groovy.test.GroovyTestCase
+
 import java.sql.Connection
 import java.sql.SQLException
 

@@ -16,16 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 /**
  * Tests for the {@link EditCommand} class.
  */
-class EditCommandTest
-    extends CommandTestSupport
-{
+class EditCommandTest extends CommandTestSupport {
     void testProcessBuilderInit() {
         def mockEdit = new EditCommand(shell)
         ProcessBuilder pb = mockEdit.getEditorProcessBuilder('/usr/bin/vim',

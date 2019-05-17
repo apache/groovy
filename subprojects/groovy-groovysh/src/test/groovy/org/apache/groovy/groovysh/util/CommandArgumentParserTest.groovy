@@ -16,8 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.util
+package org.apache.groovy.groovysh.util
 
+import groovy.test.GroovyTestCase
 
 class CommandArgumentParserTest extends GroovyTestCase {
 

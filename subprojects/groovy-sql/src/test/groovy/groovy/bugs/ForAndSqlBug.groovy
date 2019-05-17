@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import groovy.sql.SqlHelperTestCase
+import groovy.test.GroovyTestCase
 
 class ForAndSqlBug extends GroovyTestCase {
 

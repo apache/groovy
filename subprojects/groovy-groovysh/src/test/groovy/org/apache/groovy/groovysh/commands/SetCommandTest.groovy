@@ -16,19 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 import jline.console.completer.Completer
-import org.codehaus.groovy.tools.shell.Groovysh
-import org.codehaus.groovy.tools.shell.util.PackageHelper
+import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.util.PackageHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * Tests for the {@link SetCommand} class.
  */
-class SetCommandTest
-    extends CommandTestSupport
-{
+class SetCommandTest extends CommandTestSupport {
     void testSet() {
         shell.execute(SetCommand.COMMAND_NAME)
     }
@@ -37,9 +35,9 @@ class SetCommandTest
 
         List<String> candidates = []
         SetCommand command = new SetCommand(shell)
-        List<Completer> completors = command.createCompleters()
-        assert 2 == completors.size()
-        assert 0 == completors[0].complete('', 0, candidates)
+        List<Completer> completers = command.createCompleters()
+        assert 2 == completers.size()
+        assert 0 == completers[0].complete('', 0, candidates)
         assert Groovysh.AUTOINDENT_PREFERENCE_KEY + ' ' in candidates
         assert PackageHelper.IMPORT_COMPLETION_PREFERENCE_KEY + ' ' in candidates
         assert Preferences.EDITOR_KEY + ' ' in candidates

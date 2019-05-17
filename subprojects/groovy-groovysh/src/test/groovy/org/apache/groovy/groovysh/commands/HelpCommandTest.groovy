@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 /**
  * Tests for the {@link HelpCommand} class.
  */
-class HelpCommandTest
-    extends CommandTestSupport
-{
+class HelpCommandTest extends CommandTestSupport {
     void testList() {
         shell.execute(HelpCommand.COMMAND_NAME)
     }

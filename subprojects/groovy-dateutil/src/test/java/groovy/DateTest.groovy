@@ -18,10 +18,19 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 
-import static java.util.Calendar.*
+import static java.util.Calendar.DATE
+import static java.util.Calendar.DAY_OF_WEEK
+import static java.util.Calendar.FEBRUARY
+import static java.util.Calendar.HOUR_OF_DAY
+import static java.util.Calendar.MONTH
+import static java.util.Calendar.SATURDAY
+import static java.util.Calendar.YEAR
+import static java.util.Calendar.getInstance
 
 class DateTest extends GroovyTestCase {
     void testCalendarNextPrevious() {

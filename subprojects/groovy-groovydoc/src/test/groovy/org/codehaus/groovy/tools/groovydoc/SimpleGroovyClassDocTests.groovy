@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
+import groovy.test.GroovyTestCase
+
 class SimpleGroovyClassDocTests extends GroovyTestCase {
 
     void testReplaceTags_link() {

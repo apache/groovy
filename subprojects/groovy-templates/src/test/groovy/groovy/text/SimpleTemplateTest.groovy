@@ -18,6 +18,8 @@
  */
 package groovy.text
 
+import groovy.test.GroovyTestCase
+
 class SimpleTemplateTest extends GroovyTestCase {
 
     void testSimpleCallFromGroovyEmpty() {

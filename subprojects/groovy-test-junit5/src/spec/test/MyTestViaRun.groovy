@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import groovy.test.GroovyTestCase
+
 class MyTestViaRun extends GroovyTestCase {
   void testJunit5ViaRun() {
     new GroovyShell().run '''

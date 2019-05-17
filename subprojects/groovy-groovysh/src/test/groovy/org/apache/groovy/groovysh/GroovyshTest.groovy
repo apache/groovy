@@ -16,14 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
+import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.completion.ReflectionCompleter
+import org.apache.groovy.groovysh.completion.ReflectionCompletionCandidate
+import org.apache.groovy.groovysh.completion.TokenUtilTest
 import org.codehaus.groovy.GroovyException
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.tools.shell.completion.ReflectionCompletionCandidate
-import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
-import org.codehaus.groovy.tools.shell.completion.TokenUtilTest
-import org.codehaus.groovy.tools.shell.util.Preferences
+import org.codehaus.groovy.tools.shell.IO
 import org.fusesource.jansi.AnsiOutputStream
 
 class GroovyshTest extends GroovyTestCase {
@@ -153,7 +154,7 @@ class GroovyshTest extends GroovyTestCase {
                     new StackTraceElement(Interpreter.SCRIPT_FILENAME, 'run', 'scriptFile', 42)]
         })
         assert '' == mockOut.toString()
-        assert mockErr.toString().contains('org.codehaus.groovy.tools.shell.GroovyshTest$')
+        assert mockErr.toString().contains('org.apache.groovy.groovysh.GroovyshTest$')
         assert mockErr.toString().contains('fooClass')
         assert mockErr.toString().contains('foo')
         assert ! mockErr.toString().contains(Interpreter.SCRIPT_FILENAME)
@@ -377,7 +378,7 @@ class GroovyshInterpreterModeTest extends GroovyshTest {
 }
 
 
-class GroovyshCompletorTest extends GroovyTestCase {
+class GroovyshCompleterTest extends GroovyTestCase {
 
     void testIOMock() {
         IO testio
@@ -385,10 +386,7 @@ class GroovyshCompletorTest extends GroovyTestCase {
         ByteArrayOutputStream mockErr
         mockOut = new ByteArrayOutputStream()
         mockErr = new ByteArrayOutputStream()
-        testio = new IO(
-                new ByteArrayInputStream(),
-                mockOut,
-                mockErr)
+        testio = new IO(new ByteArrayInputStream(), mockOut, mockErr)
         testio.out.println('mockResult')
         assertTrue('stdout=' + mockOut.toString() + '\nstderr=' + mockErr.toString(), mockOut.toString().contains('mockResult'))
         testio.err.println('mockErrResult')
@@ -407,7 +405,7 @@ class GroovyshCompletorTest extends GroovyTestCase {
         Groovysh groovysh = new Groovysh(testio)
         List<ReflectionCompletionCandidate> candResult = (List<ReflectionCompletionCandidate>) groovysh.interp.evaluate([
                 """\
-import ${ReflectionCompletor.getCanonicalName()}
+import ${ReflectionCompleter.getCanonicalName()}
 class Foo extends HashSet implements Comparable {
   int compareTo(Object) {0};
   int priv;
@@ -420,7 +418,7 @@ class Foo extends HashSet implements Comparable {
   private int getPriv4(){4};
   int getPriv5(){5};
 }
-ReflectionCompletor.getPublicFieldsAndMethods(Foo, '')
+ReflectionCompleter.getPublicFieldsAndMethods(Foo, '')
 """])
         assert candResult
         assert candResult.size() > 0
@@ -451,7 +449,7 @@ ReflectionCompletor.getPublicFieldsAndMethods(Foo, '')
         Groovysh groovysh = new Groovysh(testio)
         List<ReflectionCompletionCandidate> candResult = (List<ReflectionCompletionCandidate>) groovysh.interp.evaluate([
                 """\
-import ${ReflectionCompletor.getCanonicalName()}
+import ${ReflectionCompleter.getCanonicalName()}
 class Foo extends HashSet implements Comparable {
   int compareTo(Object) {0};
   int priv;
@@ -464,7 +462,7 @@ class Foo extends HashSet implements Comparable {
   private int getPriv4(){4};
   int getPriv5(){5};
 }
-ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
+ReflectionCompleter.getPublicFieldsAndMethods(new Foo(), '')
 """])
         assertNotNull(candResult)
         assert candResult.size() > 0
@@ -488,7 +486,7 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
         Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
         def result = groovysh.execute('import ' + GroovyException.name)
         assert result == GroovyException.canonicalName
-        ReflectionCompletor compl = new ReflectionCompletor(groovysh)
+        ReflectionCompleter compl = new ReflectionCompleter(groovysh)
         def candidates = []
 
         compl.complete(TokenUtilTest.tokenList('GroovyException.'), candidates)
@@ -501,7 +499,7 @@ ReflectionCompletor.getPublicFieldsAndMethods(new Foo(), '')
         // tests that import are taken into account when evaluating for completion
         IO testio = new IO()
         Groovysh groovysh = new Groovysh(new URLClassLoader(), new Binding(), testio)
-        ReflectionCompletor compl = new ReflectionCompletor(groovysh)
+        ReflectionCompleter compl = new ReflectionCompleter(groovysh)
         def candidates = []
         compl.complete(TokenUtilTest.tokenList(/['a':3, 'b':4]./), candidates)
         assert candidates.size() > 1

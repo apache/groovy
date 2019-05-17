@@ -16,11 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell
+package org.apache.groovy.groovysh
 
 import groovy.mock.interceptor.MockFor
+import groovy.test.GroovyTestCase
 import jline.console.ConsoleReader
 import jline.console.completer.CandidateListCompletionHandler
+import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Preferences
 
 class ShellRunnerTest extends GroovyTestCase {

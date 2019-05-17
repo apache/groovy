@@ -16,18 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy
+package org.apache.groovy.groovysh
 
-import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.util.PackageHelper
 
-class SimpleTemplateEngineTest extends GroovyTestCase {
-
-    void testBindingWithDefault() {
-      def binding = [ firstname : "Grace", lastname  : "Hopper" ]
-      def engine = new groovy.text.SimpleTemplateEngine()
-      def text = '''$salutation <%= firstname %> $lastname'''
-      def template = engine.createTemplate(text).make(binding.withDefault{ '' })
-      assert template.toString() == ''' Grace Hopper'''
+/**
+ * as opposed to MockFor, traditional custom mocking allows @CompileStatic for the class under Test
+ */
+class MockPackageHelper implements PackageHelper {
+    Set<String> mockContents
+    MockPackageHelper(Collection<String> mockContents) {
+        this.mockContents = new HashSet<String>(mockContents)
     }
 
+    @Override
+    Set<String> getContents(String packagename) {
+        return mockContents
+    }
+
+    @Override
+    void reset() { }
 }

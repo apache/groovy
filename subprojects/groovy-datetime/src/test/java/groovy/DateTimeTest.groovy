@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 import java.text.SimpleDateFormat
 import java.time.Duration
 import java.time.Instant

@@ -16,11 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
+import groovy.test.GroovyTestCase
 import groovy.text.Template
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
-
-import java.nio.charset.Charset
 
 class MarkupTemplateEngineSpecTest extends GroovyTestCase {
     private MarkupTemplateEngine engine

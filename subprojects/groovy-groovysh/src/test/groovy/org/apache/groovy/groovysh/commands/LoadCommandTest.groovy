@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
 /**
  * Tests for the {@link LoadCommand} class.
  */
-class LoadCommandTest
-    extends CommandTestSupport
-{
+class LoadCommandTest extends CommandTestSupport {
     void testLoad() {
         shell.execute(LoadCommand.COMMAND_NAME)
     }

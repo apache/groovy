@@ -18,12 +18,14 @@
  */
 package groovy.servlet
 
+import groovy.test.GroovyTestCase
+import groovy.xml.MarkupBuilder
+
 import javax.servlet.ServletContext
 import javax.servlet.ServletOutputStream
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
-import groovy.xml.MarkupBuilder
 
 /**
  * This test case tests the ServletBinding class.

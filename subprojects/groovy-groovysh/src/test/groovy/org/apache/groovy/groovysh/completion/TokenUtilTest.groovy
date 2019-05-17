@@ -16,10 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.completion
+package org.apache.groovy.groovysh.completion
 
+import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.util.CurlyCountingGroovyLexer
 import org.codehaus.groovy.antlr.GroovySourceToken
-import org.codehaus.groovy.tools.shell.util.CurlyCountingGroovyLexer
 
 /**
  * Defines method tokenList for other Unit tests and tests it

@@ -18,10 +18,16 @@
  */
 package groovy.sql
 
+import groovy.test.GroovyTestCase
+
 import javax.sql.DataSource
 import java.sql.CallableStatement
 
-import static groovy.sql.SqlTestConstants.*
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_DS_KEY
+import static groovy.sql.SqlTestConstants.DB_PASSWORD
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.DB_USER
 
 /**
  * Test Sql transaction features using a Sql built from a connection

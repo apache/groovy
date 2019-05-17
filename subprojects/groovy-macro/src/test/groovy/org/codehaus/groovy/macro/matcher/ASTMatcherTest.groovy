@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.macro.matcher
 
+import groovy.test.GroovyTestCase
+
 class ASTMatcherTest extends GroovyTestCase {
     void testMatchesSimpleVar() {
         assertScript '''

@@ -16,16 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.commands
+package org.apache.groovy.groovysh.commands
 
-import org.codehaus.groovy.tools.shell.Groovysh
+import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.Groovysh
 
 /**
  * Support for testing {@link Command} instances.
  */
-abstract class CommandTestSupport
-    extends GroovyTestCase
-{
+abstract class CommandTestSupport extends GroovyTestCase {
     protected Groovysh shell
 
     protected Object lastResult

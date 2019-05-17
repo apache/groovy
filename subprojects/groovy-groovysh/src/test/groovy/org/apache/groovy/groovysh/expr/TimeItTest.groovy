@@ -16,14 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.shell.expr
+package org.apache.groovy.groovysh.expr
 
 /**
  * Tests for <tt>time = { it() }</tt> expressions.
  */
-class TimeItTest
-    extends ExprTestSupport
-{
+class TimeItTest extends ExprTestSupport {
     void testSingleLine() {
         def result = shell.execute('time = { it() }')
         assert result != null

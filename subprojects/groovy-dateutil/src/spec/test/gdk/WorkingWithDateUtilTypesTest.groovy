@@ -18,6 +18,8 @@
  */
 package gdk
 
+import groovy.test.GroovyTestCase
+
 class WorkingWithDateUtilTypesTest extends GroovyTestCase {
 
     void testGetAt() {
