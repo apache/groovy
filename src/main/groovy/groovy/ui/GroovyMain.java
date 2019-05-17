@@ -281,7 +281,7 @@ public class GroovyMain {
             }
 
             if (indy) {
-                CompilerConfiguration.DEFAULT.getOptimizationOptions().put("indy", true);
+                System.setProperty("groovy.target.indy", "true");
                 main.conf.getOptimizationOptions().put("indy", true);
             }
 
