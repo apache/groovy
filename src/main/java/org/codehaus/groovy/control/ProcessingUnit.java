@@ -32,9 +32,10 @@ public abstract class ProcessingUnit {
     /**
      * The current phase
      */
-    protected int phase;
+    protected int phase = Phases.INITIALIZATION;
+
     /**
-     * Set true if phase is finished
+     * True if phase is finished
      */
     protected boolean phaseComplete;
 
@@ -55,10 +56,9 @@ public abstract class ProcessingUnit {
 
 
     /**
-     * Initialize the ProcessingUnit to the empty state.
+     * Initializes the ProcessingUnit to the empty state.
      */
     public ProcessingUnit(final CompilerConfiguration configuration, final GroovyClassLoader classLoader, final ErrorCollector errorCollector) {
-        this.phase = Phases.INITIALIZATION;
         setClassLoader(classLoader);
         configure(configuration != null ? configuration : CompilerConfiguration.DEFAULT);
         this.errorCollector = errorCollector != null ? errorCollector : new ErrorCollector(getConfiguration());
@@ -95,25 +95,31 @@ public abstract class ProcessingUnit {
      */
 
     public void setClassLoader(final GroovyClassLoader loader) {
-        // Classloaders should only be created inside doPrivileged block
-        // This code creates a classloader, which needs permission if a security manage is installed.
-        // If this code might be invoked by code that does not have security permissions, then the classloader creation needs to occur inside a doPrivileged block.
-        this.classLoader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+        // ClassLoaders should only be created inside a doPrivileged block in case
+        // this method is invoked by code that does not have security permissions.
+        this.classLoader = loader != null ? loader : AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
             public GroovyClassLoader run() {
                 ClassLoader parent = Thread.currentThread().getContextClassLoader();
                 if (parent == null) parent = ProcessingUnit.class.getClassLoader();
-                return loader == null ? new GroovyClassLoader(parent, configuration) : loader;
+                return new GroovyClassLoader(parent, getConfiguration());
             }
         });
     }
 
 
     /**
+     * Errors found during the compilation should be reported through the ErrorCollector.
+     */
+    public ErrorCollector getErrorCollector() {
+        return errorCollector;
+    }
+
+    /**
      * Returns the current phase.
      */
 
     public int getPhase() {
-        return this.phase;
+        return phase;
     }
 
 
@@ -122,25 +128,15 @@ public abstract class ProcessingUnit {
      */
 
     public String getPhaseDescription() {
-        return Phases.getDescription(this.phase);
+        return Phases.getDescription(phase);
+    }
+
+    public boolean isPhaseComplete() {
+        return phaseComplete;
     }
 
     /**
-     * Errors found during the compilation should be reported through the ErrorCollector.
-     *
-     * @return the ErrorCollector for this ProcessingUnit
-     */
-    public ErrorCollector getErrorCollector() {
-        return errorCollector;
-    }
-
-    //---------------------------------------------------------------------------
-    // PROCESSING
-
-
-    /**
-     * Marks the current phase complete and processes any
-     * errors.
+     * Marks the current phase complete and processes any errors.
      */
 
     public void completePhase() throws CompilationFailedException {
@@ -150,24 +146,21 @@ public abstract class ProcessingUnit {
 
 
     /**
-     * A synonym for <code>gotoPhase( phase + 1 )</code>.
+     * A synonym for <code>gotoPhase(getPhase() + 1)</code>.
      */
     public void nextPhase() throws CompilationFailedException {
-        gotoPhase(this.phase + 1);
+        gotoPhase(phase + 1);
     }
 
 
     /**
-     * Wraps up any pending operations for the current phase
-     * and switches to the next phase.
+     * Wraps up any pending operations for the current phase and switches to the given phase.
      */
     public void gotoPhase(int phase) throws CompilationFailedException {
-        if (!this.phaseComplete) {
+        if (!phaseComplete) {
             completePhase();
         }
-
         this.phase = phase;
-        this.phaseComplete = false;
+        phaseComplete = false;
     }
-
 }
