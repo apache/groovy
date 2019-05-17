@@ -342,18 +342,7 @@ public class CompilationUnit extends ProcessingUnit {
     public void configure(CompilerConfiguration configuration) {
         super.configure(configuration);
         this.debug = configuration.getDebug();
-
-        if (!this.configured && this.classLoader instanceof GroovyClassLoader) {
-            appendCompilerConfigurationClasspathToClassLoader(configuration, (GroovyClassLoader) this.classLoader);
-        }
-
         this.configured = true;
-    }
-
-    private void appendCompilerConfigurationClasspathToClassLoader(CompilerConfiguration configuration, GroovyClassLoader classLoader) {
-        /*for (Iterator iterator = configuration.getClasspath().iterator(); iterator.hasNext(); ) {
-            classLoader.addClasspath((String) iterator.next());
-        }*/
     }
 
     /**
