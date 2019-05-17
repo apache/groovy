@@ -18,6 +18,7 @@
  */
 package groovy.xml;
 
+import groovy.namespace.QName;
 import groovy.util.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;

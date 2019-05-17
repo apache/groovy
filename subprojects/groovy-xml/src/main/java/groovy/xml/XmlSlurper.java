@@ -18,6 +18,7 @@
  */
 package groovy.xml;
 
+import groovy.namespace.QName;
 import groovy.xml.slurpersupport.GPathResult;
 import groovy.xml.slurpersupport.NamespaceAwareHashMap;
 import groovy.xml.slurpersupport.Node;

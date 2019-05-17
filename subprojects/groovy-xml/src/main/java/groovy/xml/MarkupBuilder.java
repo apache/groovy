@@ -19,6 +19,7 @@
 package groovy.xml;
 
 import groovy.lang.Closure;
+import groovy.namespace.QName;
 import groovy.util.BuilderSupport;
 import groovy.util.IndentPrinter;
 import org.codehaus.groovy.runtime.StringGroovyMethods;

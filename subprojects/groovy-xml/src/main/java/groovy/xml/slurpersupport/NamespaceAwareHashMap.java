@@ -18,7 +18,7 @@
  */
 package groovy.xml.slurpersupport;
 
-import groovy.xml.QName;
+import groovy.namespace.QName;
 
 import java.util.HashMap;
 import java.util.Map;

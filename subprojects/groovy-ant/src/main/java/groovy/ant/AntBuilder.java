@@ -19,7 +19,7 @@
 package groovy.ant;
 
 import groovy.util.BuilderSupport;
-import groovy.xml.QName;
+import groovy.namespace.QName;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.BuildLogger;
 import org.apache.tools.ant.DemuxInputStream;

@@ -19,6 +19,7 @@
 package groovy.xml;
 
 import groovy.lang.Tuple3;
+import groovy.namespace.QName;
 import groovy.util.BuilderSupport;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;

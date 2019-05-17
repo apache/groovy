@@ -18,6 +18,8 @@
  */
 package groovy.xml
 
+import groovy.namespace.QName
+
 /**
  * Test the building of namespaced XML using GroovyMarkup
  */

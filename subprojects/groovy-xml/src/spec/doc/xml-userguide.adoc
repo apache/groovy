@@ -28,8 +28,8 @@
 The most commonly used approach for parsing XML with Groovy is to use
 one of:
 
-* `groovy.util.XmlParser`
-* `groovy.util.XmlSlurper`
+* `groovy.xml.XmlParser`
+* `groovy.xml.XmlSlurper`
 
 Both have the same approach to parse an xml. Both come with a bunch of
 overloaded parse methods plus some special methods such as `parseText`,
@@ -511,7 +511,7 @@ The `createNode()` method receives the following parameters:
 * parent node (could be null)
 * The qualified name for the tag (In this case we only use the local
   part without any namespace). We're using an instance of
-  `groovy.xml.QName`
+  `groovy.namespace.QName`
 * A map with the tag's attributes (None in this particular case)
 
 Anyway you won't normally be creating a node from the parser instance

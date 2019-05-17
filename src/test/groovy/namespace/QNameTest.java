@@ -16,17 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.xml;
+package groovy.namespace;
 
 import groovy.test.GroovyTestCase;
 
-public class XmlTest extends GroovyTestCase {
-
-//    public void testTree() throws Exception {
-//        Script script = new GroovyShell().parse(new File("src/test/groovy/xml/dom/NamespaceDOMTest.groovy"));
-////        GroovyObject object = compile("src/test/groovy/xml/dom/NamespaceDOMTest.groovy");
-//        script.invokeMethod("testXsdSchemaWithBuilderHavingAutoPrefix", null);
-//    }
+public class QNameTest extends GroovyTestCase {
 
     public void testQName() {
         QName qname = new QName("urn:mynamespace", "localPart", "x");

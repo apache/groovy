@@ -23,7 +23,7 @@ import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
-import groovy.xml.QName;
+import groovy.namespace.QName;
 
 import java.util.ArrayList;
 import java.util.Collection;

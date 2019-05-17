@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.xml;
+package groovy.namespace;
 
 import java.io.Serializable;
 
@@ -29,7 +29,6 @@ import java.io.Serializable;
  * The localPart provides the local part of the qualified name. The
  * namespaceURI is a URI reference identifying the namespace.
  */
-@Deprecated
 public class QName implements Serializable {
     private static final long serialVersionUID = -9029109610006696081L;
 
@@ -285,4 +284,4 @@ public class QName implements Serializable {
         result = 29 * result + localPart.hashCode();
         return result;
     }
-}
+} 

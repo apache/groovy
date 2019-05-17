@@ -18,6 +18,7 @@
  */
 package groovy.xml;
 
+import groovy.namespace.QName;
 import groovy.util.IndentPrinter;
 import groovy.util.Node;
 import org.codehaus.groovy.runtime.InvokerHelper;

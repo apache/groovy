@@ -18,6 +18,7 @@
  */
 package groovy.xml;
 
+import groovy.namespace.QName;
 import groovy.util.BuilderSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

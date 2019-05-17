@@ -18,6 +18,7 @@
  */
 package groovy.xml;
 
+import groovy.namespace.QName;
 import groovy.util.BuilderSupport;
 import groovy.util.NodeBuilder;
 import org.codehaus.groovy.runtime.InvokerHelper;

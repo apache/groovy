@@ -18,7 +18,7 @@
  */
 package groovy.util
 
-import groovy.xml.QName
+import groovy.namespace.QName
 
 /**
  * Tests the use of the structured Attribute type

@@ -18,6 +18,8 @@
  */
 package groovy.xml;
 
+import groovy.namespace.QName;
+
 /**
  * A simple helper class which acts as a factory of {@link QName} instances.
  * 

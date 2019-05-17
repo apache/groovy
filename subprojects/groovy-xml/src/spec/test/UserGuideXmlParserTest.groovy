@@ -18,6 +18,7 @@
  */
 package groovy.xml
 
+import groovy.namespace.QName
 import groovy.test.GroovyTestCase
 
 /**

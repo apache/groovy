@@ -21,7 +21,7 @@ package groovy.xml.slurpersupport;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
-import groovy.xml.QName;
+import groovy.namespace.QName;
 
 import java.io.IOException;
 import java.io.Writer;
