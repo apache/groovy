@@ -19,7 +19,7 @@
 package groovy.console.ui
 
 import groovy.inspect.Inspector
-import groovy.inspect.swingui.TableSorter
+import groovy.swing.table.TableSorter
 import groovy.swing.SwingBuilder
 
 import javax.swing.WindowConstants

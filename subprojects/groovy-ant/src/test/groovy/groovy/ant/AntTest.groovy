@@ -18,10 +18,11 @@
  */
 package groovy.ant
 
+import groovy.test.GroovyTestCase
+import groovy.xml.NamespaceBuilder
 import org.apache.tools.ant.BuildEvent
 import org.apache.tools.ant.Project
 import org.apache.tools.ant.ProjectHelper
-import groovy.xml.NamespaceBuilder
 import org.apache.tools.ant.UnknownElement
 import org.junit.Assert
 

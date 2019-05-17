@@ -20,6 +20,7 @@ package groovy.cli.picocli
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.test.GroovyTestCase
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
 import picocli.CommandLine.DuplicateOptionAnnotationsException

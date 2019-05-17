@@ -18,12 +18,18 @@
  */
 package org.codehaus.groovy.ant;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.regex.Pattern;
 
 /**

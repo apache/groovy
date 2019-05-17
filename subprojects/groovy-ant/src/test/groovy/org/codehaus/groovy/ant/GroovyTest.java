@@ -19,7 +19,7 @@
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyRuntimeException;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import org.apache.groovy.io.StringBuilderWriter;

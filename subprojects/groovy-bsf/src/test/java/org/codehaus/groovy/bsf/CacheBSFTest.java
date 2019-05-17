@@ -90,14 +90,14 @@ public class CacheBSFTest extends TestCase {
     }
 
     public void testVariables() throws Exception {
-        manager.registerBean("x", new Integer(4));
+        manager.registerBean("x", 4);
         Object dontcare = manager.eval("groovy", "Test1.groovy", 0, 0,
                 "valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
         // nothing to really test here...just looking for debug that says it
         // used cache version
         Object answer = manager.eval("groovy", "Test2.groovy", 0, 0,
                 "valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
-        assertEquals("Incorrect return", new Integer(5), answer);
+        assertEquals("Incorrect return", 5, answer);
     }
 
     public void testClassLoaderSet() throws BSFException {
@@ -109,11 +109,11 @@ public class CacheBSFTest extends TestCase {
     }
 
     public void testDeclaredVariables() throws Exception {
-        manager.declareBean("foo", new Integer(5), Integer.class);
+        manager.declareBean("foo", 5, Integer.class);
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "valueOfFoo = foo; return valueOfFoo");
-        assertEquals(new Integer(5), answer);
-        manager.declareBean("foo", new Integer(6), Integer.class);
+        assertEquals(5, answer);
+        manager.declareBean("foo", 6, Integer.class);
         answer = manager.eval("groovy", "Test2.groovy", 0, 0, "valueOfFoo = foo; return valueOfFoo");
-        assertEquals(new Integer(6), answer);
+        assertEquals(6, answer);
     }
 }

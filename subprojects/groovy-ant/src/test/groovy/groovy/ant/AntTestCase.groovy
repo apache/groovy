@@ -18,6 +18,8 @@
  */
 package groovy.ant
 
+import groovy.test.GroovyTestCase
+
 abstract class AntTestCase extends GroovyTestCase {
     protected void doInTmpDir(Closure cl) {
         // tag::create_zip_builder[]

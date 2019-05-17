@@ -18,6 +18,8 @@
  */
 package groovy.ant
 
+import groovy.test.GroovyLogTestCase
+
 /**
  * Make sure FileNameFinder uses Ant filesets correctly.
  */
