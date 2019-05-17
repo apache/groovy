@@ -16,24 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package groovy.swing;
 
-import javax.swing.JButton
-import javax.swing.JPanel
+import java.util.EventListener;
+import java.beans.PropertyChangeEvent;
 
-/**
- */
-class PropertyBug extends GroovySwingTestCase {
+public interface StrangeEventListener extends EventListener {
 
-    void testBug() {
-        testInEDT {
-            def panel = new JPanel()
-            def bean = new JButton()
-
-            panel.add(bean)
-
-            def value = bean.parent
-            assert value != null
-        }
-    }
+    /*
+     * According to section 6.4.1 of the JavaBeans spec this is legal, but not
+     * good practice.  We need to test what can be done not what should be done
+     */
+    void somethingStrangeHappened(String what, String where);
+    
+    void somethingChanged(PropertyChangeEvent changeEvent);
+    
 }

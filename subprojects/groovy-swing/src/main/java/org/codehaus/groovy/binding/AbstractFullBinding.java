@@ -23,6 +23,7 @@ import groovy.lang.Closure;
 /**
  * @since Groovy 1.1
  */
+@Deprecated
 public abstract class AbstractFullBinding  implements FullBinding {
 
     protected SourceBinding sourceBinding;

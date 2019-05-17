@@ -16,19 +16,29 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy;
+package groovy.swing
 
-import java.util.EventListener;
-import java.beans.PropertyChangeEvent;
+import groovy.test.GroovyTestCase
 
-public interface StrangeEventListener extends EventListener {
+import javax.swing.SwingUtilities
 
-    /*
-     * According to section 6.4.1 of the JavaBeans spec this is legal, but not
-     * good practice.  We need to test what can be done not what should be done
-     */
-    void somethingStrangeHappened(String what, String where);
-    
-    void somethingChanged(PropertyChangeEvent changeEvent);
-    
+abstract class GroovySwingTestCase extends GroovyTestCase {
+
+    static void testInEDT(Closure test) {
+        Throwable exception = null
+        if (HeadlessTestSupport.headless) {
+            return
+        }
+        SwingUtilities.invokeAndWait {
+            try {
+                test()
+            } catch (Throwable t) {
+                exception = t
+            }
+        }
+        if (exception != null) {
+            throw exception;
+        }
+    }
+
 }

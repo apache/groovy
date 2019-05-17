@@ -20,16 +20,21 @@ package groovy.swing
 
 import groovy.beans.Bindable
 import groovy.beans.Vetoable
+
+import javax.swing.DefaultBoundedRangeModel
+import javax.swing.DefaultButtonModel
+import javax.swing.DefaultListModel
+import javax.swing.ListSelectionModel
+import javax.swing.SpinnerNumberModel
+import javax.swing.text.PlainDocument
 import java.awt.event.ActionEvent
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyVetoException
 import java.text.SimpleDateFormat
-import javax.swing.text.PlainDocument
-import javax.swing.*
 
-public class SwingBuilderBindingsTest extends GroovySwingTestCase {
+class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
-    public void testSliderValueBinding() {
+    void testSliderValueBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -67,7 +72,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testSpinnerValueBinding() {
+    void testSpinnerValueBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -105,7 +110,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testScrollBarValueBinding() {
+    void testScrollBarValueBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
             swing.actions {
@@ -142,7 +147,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testTextFieldTextBinding() {
+    void testTextFieldTextBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
             swing.actions {
@@ -178,7 +183,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testCheckboxSelectedBinding() {
+    void testCheckboxSelectedBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
             swing.actions {
@@ -214,7 +219,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testComboBoxBindSyntheticProperties() {
+    void testComboBoxBindSyntheticProperties() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
             def comboData = ['Alpha', 'Bravo', 'Charlie', 'Delta']
@@ -327,7 +332,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testListBindSyntheticProperties() {
+    void testListBindSyntheticProperties() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
             def listModel = new DefaultListModel()
@@ -426,7 +431,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testEventBinding() {
+    void testEventBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
             def capture
@@ -449,7 +454,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testPropertyBinding() {
+    void testPropertyBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -485,7 +490,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testBindGroup() {
+    void testBindGroup() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -557,7 +562,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testPropertyEventBinding() {
+    void testPropertyEventBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -604,7 +609,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testBindNodeValue() {
+    void testBindNodeValue() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -627,7 +632,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testReversePropertyBinding() {
+    void testReversePropertyBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -663,7 +668,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testValueNodeBinding() {
+    void testValueNodeBinding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -700,7 +705,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testReversePropertyPropertites() {
+    void testReversePropertyPropertites() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -714,7 +719,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testConverters() {
+    void testConverters() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -755,7 +760,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testDateConverters() {
+    void testDateConverters() {
         testInEDT {
             BindableBean model = new BindableBean()
             model.date = new Date()
@@ -794,7 +799,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testPropertyValuePassthrough() {
+    void testPropertyValuePassthrough() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -826,11 +831,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testModel() {
+    void testModel() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
-            def bean = new org.codehaus.groovy.runtime.DummyBean()
+            def bean = new DummyBean()
 
             swing.bindProxy(bean, id: 'dummyBean')
 
@@ -843,7 +848,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
             assert swing.textField.text != bean.name
 
             // test for no update on bean change
-            bean = new org.codehaus.groovy.runtime.DummyBean()
+            bean = new DummyBean()
             bean.name = 'Alex'
             swing.dummyBean.setModel(bean)
             assert swing.textField.text != bean.name
@@ -860,11 +865,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testModelUpdate() {
+    void testModelUpdate() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
-            def bean = new org.codehaus.groovy.runtime.DummyBean()
+            def bean = new DummyBean()
 
             swing.bindProxy(bean, id: 'dummyBean', bind: true)
 
@@ -874,7 +879,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
             assert swing.textField.text == bean.name
 
             // test for update on bean change
-            bean = new org.codehaus.groovy.runtime.DummyBean()
+            bean = new DummyBean()
             bean.name = 'Alex'
 
             swing.dummyBean.setModel(bean)
@@ -890,7 +895,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
             bean.name = 'Guillaume'
             assert swing.textField.text != bean.name
 
-            bean = new org.codehaus.groovy.runtime.DummyBean()
+            bean = new DummyBean()
             bean.name = 'Andres'
 
             swing.dummyBean.setModel(bean)
@@ -959,7 +964,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert source[sourceProperty] == target[targetProperty]
     }
 
-    public void testMutualPropertyBinding() {
+    void testMutualPropertyBinding() {
         testInEDT {
             ['full', 'source', 'target'].each { mode -> // contextual bind mode
                 ['prop', 'synth'].each { target -> // target binding
@@ -1101,7 +1106,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testConverter() {
+    void testConverter() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
             def model = new BindableBean()
@@ -1126,7 +1131,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testValidator() {
+    void testValidator() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
             def model = new BindableBean()
@@ -1156,7 +1161,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testBindableVetoable() {
+    void testBindableVetoable() {
         testInEDT {
             def bbean = new BindableBean()
             bbean.vetoableChange = { PropertyChangeEvent pce ->
@@ -1176,7 +1181,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testGroovy4627_source_binding() {
+    void testGroovy4627_source_binding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 
@@ -1211,7 +1216,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
     }
 
-    public void testGroovy4627_target_binding() {
+    void testGroovy4627_target_binding() {
         testInEDT {
             SwingBuilder swing = new SwingBuilder()
 

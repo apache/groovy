@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.inspect.swingui;
+package groovy.swing.table;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;

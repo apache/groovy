@@ -20,21 +20,21 @@ package groovy.swing.binding
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
-import javax.swing.*
+import javax.swing.JTable
 import javax.swing.table.TableColumn
 import javax.swing.table.TableColumnModel
 import javax.swing.table.TableModel
 
 class JTableMetaMethods {
 
-    public static void enhanceMetaClass(table) {
+    static void enhanceMetaClass(table) {
         AbstractSyntheticMetaMethods.enhance(table, [
 
             getElements:{->
                 def model = delegate.model;
                 if (model instanceof javax.swing.table.DefaultTableModel) {
                     return Collections.unmodifiableList(model.getDataVector())
-                } else if (model instanceof groovy.model.DefaultTableModel) {
+                } else if (model instanceof groovy.swing.model.DefaultTableModel) {
                     return Collections.unmodifiableList(model.rows)
                 }
             },
@@ -45,12 +45,12 @@ class JTableMetaMethods {
                 def myTable = delegate
                 return myTable.getSelectedRows().collect { getElement(myTable, it) }
             }
-        ]);
+        ])
     }
 
-    public static Object getElement(JTable table, int row) {
+    static Object getElement(JTable table, int row) {
         if (row == -1) {
-            return null;
+            return null
         }
         TableModel model = table.model
         if (model instanceof javax.swing.table.DefaultTableModel) {
@@ -63,10 +63,10 @@ class JTableMetaMethods {
                     table.getValueAt(row, c.getModelIndex()))
             }
             return value;
-        } else if (model instanceof groovy.model.DefaultTableModel) {
+        } else if (model instanceof groovy.swing.model.DefaultTableModel) {
             Object rowValue = model.getRowsModel().value
             if (rowValue == null) {
-                return null;
+                return null
             }
             return InvokerHelper.asList(rowValue)[row]
         }

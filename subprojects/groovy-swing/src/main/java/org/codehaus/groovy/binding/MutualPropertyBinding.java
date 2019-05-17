@@ -24,6 +24,7 @@ import groovy.lang.Closure;
  * @since Groovy 1.6
  */
 
+@Deprecated
 public class MutualPropertyBinding implements FullBinding {
 
     boolean bound;

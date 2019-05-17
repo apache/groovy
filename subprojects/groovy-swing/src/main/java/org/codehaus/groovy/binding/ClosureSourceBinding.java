@@ -23,6 +23,7 @@ import groovy.lang.Closure;
 /**
  * @since Groovy 1.1
  */
+@Deprecated
 public class ClosureSourceBinding implements SourceBinding {
 
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];

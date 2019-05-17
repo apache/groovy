@@ -18,45 +18,45 @@
  */
 package groovy.swing.factory
 
-import groovy.model.DefaultTableModel
-import groovy.model.ValueHolder
-import groovy.model.ValueModel
+import groovy.swing.model.DefaultTableModel
+import groovy.swing.model.ValueHolder
+import groovy.swing.model.ValueModel
 
-import javax.swing.*
+import javax.swing.JTable
 import javax.swing.table.TableModel
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 
-public class TableModelFactory extends AbstractFactory {
+class TableModelFactory extends AbstractFactory {
     
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (FactoryBuilderSupport.checkValueIsType(value, name, TableModel)) {
-            return value;
+            return value
         } else if (attributes.get(name) instanceof TableModel) {
-            return attributes.remove(name);
+            return attributes.remove(name)
         } else {
-            ValueModel model = (ValueModel) attributes.remove("model");
+            ValueModel model = (ValueModel) attributes.remove("model")
             if (model == null) {
-                Object list = attributes.remove("list");
+                Object list = attributes.remove("list")
                 if (list == null) {
-                    list = new ArrayList();
+                    list = new ArrayList()
                 }
-                model = new ValueHolder(list);
+                model = new ValueHolder(list)
             }
-            return new DefaultTableModel(model);
+            return new DefaultTableModel(model)
         }
     }
 
-    public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
+    void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if ((node.columnCount > 0) && (parent instanceof JTable)) {
-            parent.autoCreateColumnsFromModel = false;
+            parent.autoCreateColumnsFromModel = false
             PropertyChangeListener listener = {e ->
                     if ((e.propertyName == 'model') && e.newValue instanceof DefaultTableModel) {
                         e.source.columnModel = e.newValue.columnModel
                         e.source.revalidate()
                         e.source.repaint()
                     }
-                } as PropertyChangeListener;
+                } as PropertyChangeListener
 
             parent.addPropertyChangeListener('model', listener)
             builder.addDisposalClosure( {parent.removePropertyChangeListener('model', listener)})
@@ -67,59 +67,59 @@ public class TableModelFactory extends AbstractFactory {
     }
 }
 
-public class PropertyColumnFactory extends AbstractFactory {
+class PropertyColumnFactory extends AbstractFactory {
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        FactoryBuilderSupport.checkValueIsNull(value, name);
-        Object current = builder.getCurrent();
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+        FactoryBuilderSupport.checkValueIsNull(value, name)
+        Object current = builder.getCurrent()
         if (current instanceof DefaultTableModel) {
-            DefaultTableModel model = (DefaultTableModel) current;
-            String property = (String) attributes.remove("propertyName");
+            DefaultTableModel model = (DefaultTableModel) current
+            String property = (String) attributes.remove("propertyName")
             if (property == null) {
-                throw new IllegalArgumentException("Must specify a property for a propertyColumn");
+                throw new IllegalArgumentException("Must specify a property for a propertyColumn")
             }
-            Object header = attributes.remove("header");
+            Object header = attributes.remove("header")
             if (header == null) {
-                header = "";
+                header = ""
             }
-            Class type = (Class) attributes.remove("type");
+            Class type = (Class) attributes.remove("type")
             if (type == null) {
-                type = Object;
+                type = Object
             }
-            Boolean editable = (Boolean) attributes.remove("editable");
+            Boolean editable = (Boolean) attributes.remove("editable")
             if (editable == null) {
-                editable = Boolean.TRUE;
+                editable = Boolean.TRUE
             }
-            return model.addPropertyColumn(header, property, type, editable.booleanValue());
+            return model.addPropertyColumn(header, property, type, editable.booleanValue())
         } else {
-            throw new RuntimeException("propertyColumn must be a child of a tableModel");
+            throw new RuntimeException("propertyColumn must be a child of a tableModel")
         }
     }
 }
 
-public class ClosureColumnFactory extends AbstractFactory {
+class ClosureColumnFactory extends AbstractFactory {
 
-    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        FactoryBuilderSupport.checkValueIsNull(value, name);
-        Object current = builder.getCurrent();
+    Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+        FactoryBuilderSupport.checkValueIsNull(value, name)
+        Object current = builder.getCurrent()
         if (current instanceof DefaultTableModel) {
-            DefaultTableModel model = (DefaultTableModel) current;
-            Object header = attributes.remove("header");
+            DefaultTableModel model = (DefaultTableModel) current
+            Object header = attributes.remove("header")
             if (header == null) {
-                header = "";
+                header = ""
             }
-            Closure readClosure = (Closure) attributes.remove("read");
+            Closure readClosure = (Closure) attributes.remove("read")
             if (readClosure == null) {
-                throw new IllegalArgumentException("Must specify 'read' Closure property for a closureColumn");
+                throw new IllegalArgumentException("Must specify 'read' Closure property for a closureColumn")
             }
-            Closure writeClosure = (Closure) attributes.remove("write");
-            Class type = (Class) attributes.remove("type");
+            Closure writeClosure = (Closure) attributes.remove("write")
+            Class type = (Class) attributes.remove("type")
             if (type == null) {
-                type = Object;
+                type = Object
             }
-            return model.addClosureColumn(header, readClosure, writeClosure, type);
+            return model.addClosureColumn(header, readClosure, writeClosure, type)
         } else {
-            throw new RuntimeException("closureColumn must be a child of a tableModel");
+            throw new RuntimeException("closureColumn must be a child of a tableModel")
         }
     }
 }

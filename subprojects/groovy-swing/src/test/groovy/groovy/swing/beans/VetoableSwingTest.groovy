@@ -16,34 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.beans
+package groovy.swing.beans
 
-class BindableSwingTest extends GroovySwingTestCase {
-    public void testExtendsComponent() {
+import groovy.swing.GroovySwingTestCase
+
+class VetoableSwingTest extends GroovySwingTestCase {
+    void testExtendsComponent() {
         testInEDT {
             GroovyShell shell = new GroovyShell()
             shell.evaluate("""
-                import groovy.beans.Bindable
+                import groovy.beans.Vetoable
+                import javax.swing.JPanel
 
-                class BindableTestBean6 extends javax.swing.JPanel {
-                    @Bindable String testField
-                    
-                    /*
-                    // if the following stub added, the illegal access warnings can be fixed
-                    // java.awt.Component.firePropertyChange(java.lang.String,java.lang.Object,java.lang.Object)
-                    // should we add this kind of stubs automatically?
-                    void firePropertyChange(String propertyName,
-                                      Object oldValue, Object newValue) {
-                    
-                        super.firePropertyChange(propertyName, oldValue, newValue)                  
-                    }
-                    */
+                class VetoableTestBean7 extends JPanel {
+                    @Vetoable String testField
                 }
 
-                sb = new BindableTestBean6()
+                sb = new VetoableTestBean7()
                 sb.testField = "bar"
                 changed = false
-                sb.propertyChange = {changed = true}
+                sb.vetoableChange = {changed = true}
                 sb.testField = "foo"
                 assert changed
             """)

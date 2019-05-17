@@ -23,6 +23,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+@Deprecated
 public class PropertyChangeProxyTargetBinding implements TargetBinding {
     Object proxyObject;
     String propertyName;

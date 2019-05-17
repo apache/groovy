@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.model;
+package groovy.swing.model;
 
 import java.util.HashMap;
 import java.util.Map;

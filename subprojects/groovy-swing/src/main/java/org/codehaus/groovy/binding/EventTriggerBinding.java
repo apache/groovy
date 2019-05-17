@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * @since Groovy 1.1
  */
+@Deprecated
 public class EventTriggerBinding implements TriggerBinding {
 
     Object triggerBean;

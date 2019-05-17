@@ -32,6 +32,7 @@ import javax.swing.table.TableModel;
  * a TableMap which has not been subclassed into a chain of table filters
  * should have no effect.
  */
+@Deprecated
 public class TableMap extends AbstractTableModel implements TableModelListener {
     protected TableModel model;
 

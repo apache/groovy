@@ -23,6 +23,7 @@ import javax.swing.table.TableColumn;
 /** 
  * Represents a column using a ValueModel to extract the value.
  */
+@Deprecated
 public class DefaultTableColumn extends TableColumn {
 
     private ValueModel valueModel;    

@@ -16,12 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy
+package groovy.swing
 
 import javax.swing.JButton
 
-/**
- */
 class ClosureSwingListenerTest extends GroovySwingTestCase {
 
     void testAddingAndRemovingAClosureListener() {

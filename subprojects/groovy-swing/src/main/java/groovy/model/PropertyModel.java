@@ -23,6 +23,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * Represents a property of a value as a model.
  */
+@Deprecated
 public class PropertyModel implements ValueModel, NestedValueModel {
 
     private ValueModel sourceModel;

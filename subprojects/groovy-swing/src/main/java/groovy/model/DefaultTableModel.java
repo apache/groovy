@@ -31,6 +31,7 @@ import java.util.List;
 /**
  * A default table model made up of PropertyModels on a Value model.
  */
+@Deprecated
 public class DefaultTableModel extends AbstractTableModel {
 
     private ValueModel rowModel;

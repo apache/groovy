@@ -18,11 +18,11 @@
  */
 package groovy.swing
 
-import groovy.model.DefaultTableColumn
-import groovy.model.DefaultTableModel
-import groovy.model.PropertyModel
-import groovy.model.ValueHolder
-import groovy.inspect.swingui.TableSorter
+import groovy.swing.model.DefaultTableColumn
+import groovy.swing.model.DefaultTableModel
+import groovy.swing.model.PropertyModel
+import groovy.swing.model.ValueHolder
+import groovy.swing.table.TableSorter
 
 class SwingBuilderTableTest extends GroovySwingTestCase {
 
@@ -95,7 +95,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
                 tableModel {
                     closureColumn(read: closure, write: closure, header: 'header')
                 }
-                tableModel(model: new groovy.model.ValueHolder('foo')) {
+                tableModel(model: new groovy.swing.model.ValueHolder('foo')) {
                     closureColumn(read: closure, type: String)
                 }
                 tableModel(list: ['a', 'b']) {
@@ -103,7 +103,7 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
                 }
             }
 
-            assert table.columnModel.class.name == 'groovy.model.DefaultTableModel$MyTableColumnModel'
+            assert table.columnModel.class.name == 'groovy.swing.model.DefaultTableModel$MyTableColumnModel'
         }
     }
 

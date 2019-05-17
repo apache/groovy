@@ -42,6 +42,7 @@ import java.util.Vector;
  * which means that it does not move around rows when its comparison
  * function returns 0 to denote that they are equivalent.
  */
+@Deprecated
 public class TableSorter extends TableMap {
     private static final int[] EMPTY_INT_ARRAY = new int[0];
     int indexes[];

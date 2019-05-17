@@ -25,6 +25,7 @@ import java.awt.event.ActionListener;
 /**
  * @since Groovy 1.1
  */
+@Deprecated
 public class SwingTimerTriggerBinding implements TriggerBinding {
     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
         return new SwingTimerFullBinding((ClosureSourceBinding) source, target);
@@ -34,6 +35,7 @@ public class SwingTimerTriggerBinding implements TriggerBinding {
 /**
  * @since Groovy 1.1
  */
+@Deprecated
 class SwingTimerFullBinding extends AbstractFullBinding implements ActionListener {
     Timer timer;
     long startTime;

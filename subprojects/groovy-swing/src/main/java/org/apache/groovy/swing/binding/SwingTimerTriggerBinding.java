@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.binding;
+package org.apache.groovy.swing.binding;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

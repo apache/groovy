@@ -18,7 +18,8 @@
  */
 package groovy.swing.binding
 
-import javax.swing.*
+import javax.swing.JList
+import javax.swing.ListModel
 
 /**
  * @since 1.7.5
@@ -27,7 +28,7 @@ class JListMetaMethods {
     static void enhanceMetaClass(JList list) {
         AbstractSyntheticMetaMethods.enhance(list, [
                 getElements        : { ->
-                    ListModel model = delegate.model;
+                    ListModel model = delegate.model
                     def results = []
                     int size = model.size
                     for (int i = 0; i < size; i++) {

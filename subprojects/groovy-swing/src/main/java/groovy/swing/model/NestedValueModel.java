@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.model;
+package groovy.swing.model;
 
 /**
  * Represents a nested value model such as a PropertyModel

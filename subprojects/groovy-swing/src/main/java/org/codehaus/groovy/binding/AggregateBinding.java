@@ -26,6 +26,7 @@ import java.util.Set;
  *
  * @since Groovy 1.6
  */
+@Deprecated
 public class AggregateBinding implements BindingUpdatable {
 
     protected  boolean bound;

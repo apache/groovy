@@ -48,6 +48,7 @@ import java.util.logging.Logger;
 /**
  * @since Groovy 1.1
  */
+@Deprecated
 public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBinding {
     private static final ExecutorService DEFAULT_EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     private static final Logger LOG = Logger.getLogger(PropertyBinding.class.getName());

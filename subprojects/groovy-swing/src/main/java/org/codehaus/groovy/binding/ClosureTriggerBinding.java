@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
     private static final BindPath[] EMPTY_BINDPATH_ARRAY = new BindPath[0];
     Map<String, TriggerBinding> syntheticBindings;
@@ -133,10 +134,12 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
     }
 }
 
+@Deprecated
 class DeadEndException extends RuntimeException {
     DeadEndException(String message) { super(message); }
 }
 
+@Deprecated
 class DeadEndObject {
     public Object getProperty(String property) {
         throw new DeadEndException("Cannot bind to a property on the return value of a method call");
@@ -146,6 +149,7 @@ class DeadEndObject {
     }
 }
 
+@Deprecated
 class BindPathSnooper extends GroovyObjectSupport {
     static final DeadEndObject DEAD_END = new DeadEndObject();
 

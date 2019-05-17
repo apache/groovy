@@ -18,7 +18,8 @@
  */
 package groovy.swing.binding
 
-import javax.swing.*
+import javax.swing.ComboBoxModel
+import javax.swing.JComboBox
 
 class JComboBoxMetaMethods {
 
@@ -26,7 +27,7 @@ class JComboBoxMetaMethods {
         AbstractSyntheticMetaMethods.enhance(comboBox, [
 
                 getElements       : { ->
-                    ComboBoxModel model = delegate.model;
+                    ComboBoxModel model = delegate.model
                     def results = []
                     int size = model.size
                     for (int i = 0; i < size; i++) {

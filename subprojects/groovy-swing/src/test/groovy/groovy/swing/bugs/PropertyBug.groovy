@@ -16,26 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.beans
+package groovy.swing.bugs
 
-class VetoableSwingTest extends GroovySwingTestCase {
-    public void testExtendsComponent() {
+import javax.swing.JButton
+import javax.swing.JPanel
+import groovy.swing.GroovySwingTestCase
+
+class PropertyBug extends GroovySwingTestCase {
+
+    void testBug() {
         testInEDT {
-            GroovyShell shell = new GroovyShell()
-            shell.evaluate("""
-                import groovy.beans.Vetoable
+            def panel = new JPanel()
+            def bean = new JButton()
 
-                class VetoableTestBean7 extends javax.swing.JPanel {
-                    @Vetoable String testField
-                }
+            panel.add(bean)
 
-                sb = new VetoableTestBean7()
-                sb.testField = "bar"
-                changed = false
-                sb.vetoableChange = {changed = true}
-                sb.testField = "foo"
-                assert changed
-            """)
+            def value = bean.parent
+            assert value != null
         }
     }
 }

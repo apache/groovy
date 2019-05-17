@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.binding;
+package org.apache.groovy.swing.binding;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

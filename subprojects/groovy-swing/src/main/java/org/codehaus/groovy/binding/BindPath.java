@@ -32,6 +32,7 @@ import java.util.TreeMap;
  * The bind path object.  This class represents one "step" in the bind path.
  */
 @SuppressWarnings({"unchecked"}) // all are of type Object, so generics are useless
+@Deprecated
 public class BindPath {
 
     /**

@@ -21,6 +21,7 @@ package org.codehaus.groovy.binding;
 /**
  * @since Groovy 1.1
  */
+@Deprecated
 public interface BindingUpdatable {
 
     /**

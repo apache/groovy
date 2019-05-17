@@ -16,18 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package groovy.swing.bugs
 
-import java.awt.*
-import java.awt.event.*
-import javax.swing.*
+import groovy.swing.GroovySwingTestCase
+
+import javax.swing.JButton
+import javax.swing.JFrame
+import javax.swing.JPanel
+import java.awt.BorderLayout
+import java.awt.event.ActionEvent
+import java.awt.event.ActionListener
 
 class Groovy303_Bug extends GroovySwingTestCase {
     void testBug() {
-      testInEDT {
-        def scholastic = new Scholastic()
-        scholastic.createUI()
-      }
+        testInEDT {
+            def scholastic = new Scholastic()
+            scholastic.createUI()
+        }
     }
 }
 

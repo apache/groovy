@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy;
+package groovy.swing;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

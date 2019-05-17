@@ -37,6 +37,7 @@ import java.util.Map;
  *
  * @since Groovy 1.5
  */
+@Deprecated
 public class BindingProxy extends GroovyObjectSupport implements BindingUpdatable {
 
     Object model;

@@ -25,6 +25,7 @@ import groovy.lang.Closure;
  * the value from some source model and an optional write closure
  * for updating the value.
  */
+@Deprecated
 public class ClosureModel implements ValueModel, NestedValueModel {
 
     private final ValueModel sourceModel;

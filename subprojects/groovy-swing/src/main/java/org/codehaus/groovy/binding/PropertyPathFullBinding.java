@@ -26,6 +26,7 @@ import java.util.Set;
 /**
  * A property path full binding
  */
+@Deprecated
 public class PropertyPathFullBinding extends AbstractFullBinding implements PropertyChangeListener {
 
     /**

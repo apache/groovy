@@ -16,9 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package groovy.swing;
 
-import java.awt.*;
+import java.awt.Point;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.HashMap;
@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public class DummyBean {
     private String name = "James";
-    private Integer i = new Integer(123);
+    private Integer i = 123;
     private Map dynamicProperties = new HashMap();
     private Point point;
     private PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
