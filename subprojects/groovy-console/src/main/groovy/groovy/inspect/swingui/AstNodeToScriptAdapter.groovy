@@ -110,6 +110,7 @@ import java.security.CodeSource
  * the command line.
  */
 @CompileStatic
+@Deprecated
 class AstNodeToScriptAdapter {
 
     /**
@@ -189,6 +190,7 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
  * An adapter from ASTNode tree to source code.
  */
 @CompileStatic
+@Deprecated
 class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements GroovyCodeVisitor, GroovyClassVisitor {
 
     private final Writer _out

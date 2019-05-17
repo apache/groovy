@@ -1704,6 +1704,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 }
 
 @CompileStatic
+@Deprecated
 class GroovyFileFilter extends FileFilter {
     private static final List GROOVY_SOURCE_EXTENSIONS = ['*.groovy', '*.gvy', '*.gy', '*.gsh', '*.story', '*.gpp', '*.grunit']
     private static final GROOVY_SOURCE_EXT_DESC = GROOVY_SOURCE_EXTENSIONS.join(',')

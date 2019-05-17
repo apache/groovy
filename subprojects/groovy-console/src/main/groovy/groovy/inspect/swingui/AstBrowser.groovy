@@ -57,7 +57,7 @@ import static java.awt.GridBagConstraints.WEST
  * Usage: java groovy.inspect.swingui.AstBrowser [filename]
  *         where [filename] is an existing Groovy script. 
  */
-
+@Deprecated
 class AstBrowser {
 
     private static final String BYTECODE_MSG_SELECT_NODE = '// Please select a class node in the tree view.'
@@ -500,6 +500,7 @@ class AstBrowser {
 /**
  * This class sets and restores control positions in the browser.
  */
+@Deprecated
 class AstBrowserUiPreferences {
 
     final frameLocation
@@ -559,6 +560,7 @@ class AstBrowserUiPreferences {
  * An adapter for the CompilePhase enum that can be entered into a Swing combobox.
  */
 @CompileStatic
+@Deprecated
 enum CompilePhaseAdapter {
     INITIALIZATION(Phases.INITIALIZATION, 'Initialization'),
     PARSING(Phases.PARSING, 'Parsing'),
@@ -587,6 +589,7 @@ enum CompilePhaseAdapter {
  * This class is a TreeNode and you can store additional properties on it.
  */
 @CompileStatic
+@Deprecated
 class TreeNodeWithProperties extends DefaultMutableTreeNode {
 
     List<List<String>> properties
@@ -619,6 +622,7 @@ class TreeNodeWithProperties extends DefaultMutableTreeNode {
  * This interface is used to create tree nodes of various types 
  */
 @CompileStatic
+@Deprecated
 interface AstBrowserNodeMaker<T> {
     T makeNode(Object userObject)
 
@@ -629,6 +633,7 @@ interface AstBrowserNodeMaker<T> {
  * Creates tree nodes for swing UI  
  */
 @CompileStatic
+@Deprecated
 class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> {
     DefaultMutableTreeNode makeNode(Object userObject) {
         new DefaultMutableTreeNode(userObject)
@@ -639,6 +644,7 @@ class SwingTreeNodeMaker implements AstBrowserNodeMaker<DefaultMutableTreeNode> 
     }
 }
 
+@Deprecated
 class BytecodeCollector extends ClassCollector {
 
     Map<String, byte[]> bytecode
@@ -657,6 +663,7 @@ class BytecodeCollector extends ClassCollector {
 }
 
 @CompileStatic
+@Deprecated
 class GeneratedBytecodeAwareGroovyClassLoader extends GroovyClassLoader {
 
     private final Map<String, byte[]> bytecode = new HashMap<String, byte[]>()

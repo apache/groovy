@@ -24,6 +24,7 @@ package groovy.inspect
 import groovy.transform.CompileStatic
 
 @CompileStatic
+@Deprecated
 class TextNode {
     Object userObject
     List<List<String>> properties

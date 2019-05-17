@@ -41,6 +41,7 @@ import static groovy.inspect.Inspector.MEMBER_VALUE_IDX
  * ObjectBrowser.inspect(myObject)
  * </code>.
  */
+@Deprecated
 class ObjectBrowser {
 
     def inspector

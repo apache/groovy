@@ -25,6 +25,7 @@ import groovy.inspect.swingui.AstBrowserNodeMaker
 import groovy.transform.CompileStatic
 
 @CompileStatic
+@Deprecated
 class TextTreeNodeMaker implements AstBrowserNodeMaker<TextNode> {
     TextNode makeNode(Object userObject) {
         new TextNode(userObject)

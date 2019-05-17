@@ -114,6 +114,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * The String label of a tree node is defined by classname in AstBrowserProperties.properties.
  */
+@Deprecated
 class ScriptToTreeNodeAdapter {
 
     static Properties classNameToStringForm
@@ -274,6 +275,7 @@ class ScriptToTreeNodeAdapter {
 /**
  * This Node Operation builds up a root tree node for the viewer.
  */
+@Deprecated
 class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
     final root
@@ -465,6 +467,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 * This AST visitor builds up a TreeNode.
 */
 @PackageScope
+@Deprecated
 class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     def currentNode

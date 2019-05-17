@@ -31,6 +31,7 @@ import java.awt.*
  * This hack allows to render a button shape in a table cell.
  */
 @CompileStatic
+@Deprecated
 class ButtonOrDefaultRenderer extends DefaultTableCellRenderer {
     Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof JComponent) {

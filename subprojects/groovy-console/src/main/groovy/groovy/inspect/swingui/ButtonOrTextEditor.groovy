@@ -33,6 +33,7 @@ import java.awt.event.FocusListener
  * This hack allows to interact with buttons in a cell.
  */
 @CompileStatic
+@Deprecated
 class ButtonOrTextEditor extends AbstractCellEditor implements TableCellEditor {
     /** The Swing component being edited. */
     protected JComponent editorComponent
