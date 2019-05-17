@@ -261,11 +261,6 @@ public class CompilerConfiguration {
         }
 
         @Override
-        public void setParserVersion(ParserVersion parserVersion) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void setPreviewFeatures(boolean previewFeatures) {
             throw new UnsupportedOperationException();
         }
