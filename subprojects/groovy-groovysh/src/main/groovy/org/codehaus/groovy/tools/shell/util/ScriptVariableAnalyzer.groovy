@@ -44,6 +44,7 @@ class ScriptVariableAnalyzer {
     /**
      * define a visitor that visits all variable expressions
      */
+    @Deprecated
     static class VariableVisitor extends ClassCodeVisitorSupport implements GroovyClassVisitor {
         Set<String> bound = new HashSet<String>()
         Set<String> unbound = new HashSet<String>()
@@ -73,6 +74,7 @@ class ScriptVariableAnalyzer {
      * custom PrimaryClassNodeOperation
      * to be able to hook our code visitor
      */
+    @Deprecated
     static class VisitorSourceOperation extends CompilationUnit.PrimaryClassNodeOperation {
 
         final GroovyClassVisitor visitor
@@ -91,6 +93,7 @@ class ScriptVariableAnalyzer {
     /**
      * class loader to add our phase operation
      */
+    @Deprecated
     static class VisitorClassLoader extends GroovyClassLoader {
         final GroovyClassVisitor visitor
 

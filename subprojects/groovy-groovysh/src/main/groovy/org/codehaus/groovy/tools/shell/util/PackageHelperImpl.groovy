@@ -472,6 +472,7 @@ Files.walkFileTree(fs.getPath('modules'),
 }
 
 @CompileStatic
+@Deprecated
 class CachedPackage {
     String name
     boolean containsClasses

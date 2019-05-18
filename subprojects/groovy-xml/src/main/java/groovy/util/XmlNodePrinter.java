@@ -415,6 +415,7 @@ public class XmlNodePrinter {
         }
     }
 
+    @Deprecated
     protected static class NamespaceContext {
         private final Map<String, String> namespaceMap;
 

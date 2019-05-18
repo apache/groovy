@@ -79,8 +79,8 @@ class Parser
 /**
  * A relaxed parser, which tends to allow more, but won't really catch valid syntax errors.
  */
-final class RelaxedParser implements Parsing
-{
+@Deprecated
+final class RelaxedParser implements Parsing {
     private final Logger log = Logger.create(this.class)
 
     private SourceBuffer sourceBuffer
@@ -136,8 +136,8 @@ final class RelaxedParser implements Parsing
 /**
  * A more rigid parser which catches more syntax errors, but also tends to barf on stuff that is really valid from time to time.
  */
-final class RigidParser implements Parsing
-{
+@Deprecated
+final class RigidParser implements Parsing {
     private static final Pattern ANNOTATION_PATTERN = Pattern.compile('^@[a-zA-Z_][a-zA-Z_0-9]*(.*)$')
     static final String SCRIPT_FILENAME = 'groovysh_parse'
 
@@ -240,8 +240,8 @@ final class RigidParser implements Parsing
 /**
  * Container for the parse code.
  */
-final class ParseCode
-{
+@Deprecated
+final class ParseCode {
     static final ParseCode COMPLETE = new ParseCode(0)
 
     static final ParseCode INCOMPLETE = new ParseCode(1)
@@ -263,8 +263,8 @@ final class ParseCode
 /**
  * Container for parse status details.
  */
-final class ParseStatus
-{
+@Deprecated
+final class ParseStatus {
     final ParseCode code
 
     final Throwable cause
