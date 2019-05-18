@@ -18,6 +18,8 @@
  */
 package groovy.jmx.builder
 
+import groovy.jmx.GroovyMBean
+
 import javax.management.DynamicMBean
 import javax.management.MBeanServerConnection
 import javax.management.MBeanServerFactory

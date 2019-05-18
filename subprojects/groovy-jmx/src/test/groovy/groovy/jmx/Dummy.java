@@ -16,9 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.jmx;
 
-public class Dummy implements DummyMBean {
+public class Dummy implements groovy.jmx.DummyMBean {
 
     private String name = "James";
     private String location = "London";

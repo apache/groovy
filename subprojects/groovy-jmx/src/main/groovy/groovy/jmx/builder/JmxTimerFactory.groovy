@@ -18,6 +18,8 @@
  */
 package groovy.jmx.builder
 
+import groovy.jmx.GroovyMBean
+
 import javax.management.MBeanServer
 import javax.management.NotificationFilter
 import javax.management.NotificationFilterSupport

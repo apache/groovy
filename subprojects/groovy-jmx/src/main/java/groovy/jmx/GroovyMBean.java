@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.jmx;
 
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
