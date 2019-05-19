@@ -36,7 +36,7 @@ class PropertyUsageFromJavaTest extends StubTestCase {
 
     @Before
     void setUp() {
-        assumeNotOnTravisCIAndNotJava6()
+//        assumeNotOnTravisCIAndNotJava6()
         super.setUp()
     }
 
