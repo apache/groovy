@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util
+package groovy.test
 
 import junit.framework.TestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException

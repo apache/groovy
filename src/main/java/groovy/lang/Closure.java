@@ -662,7 +662,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Typical usage:
      * <pre class="groovyTestCase">
      * def times2 = { a {@code ->} a * 2 }
-     * def add3 = { a {@code ->} a * 3 }
+     * def add3 = { a {@code ->} a + 3 }
      * assert add3 {@code <<} times2 {@code <<} 3 == 9
      * </pre>
      *

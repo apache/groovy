@@ -43,8 +43,8 @@ import java.lang.annotation.Target;
  *          class Foo {
  *              Integer a, b
  *          }
- *          assert Foo.class.annotations.size()==3 
- *          assert new Foo(1,2).toString() == "Foo(2)"
+ *          assert Foo.class.annotations.size() == 3
+ *          assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
  * </pre>
  * In the example above we have Alias as the alias annotation and an argument
  * excludes which will be mapped to ToString and EqualsAndHashCode. Immutable 
@@ -62,8 +62,8 @@ import java.lang.annotation.Target;
  * class Foo {
  *     Integer a, b
  * }
- * assert Foo.class.annotations.size()==3
- * assert new Foo(1,2).toString() == "Foo(2)"
+ * assert Foo.class.annotations.size() == 3
+ * assert new Foo(a: 1, b: 2).toString() == "Foo(2)"
  * </pre>
  * In the example above we have again Alias as the alias annotation, but
  * this time the argument is part of the alias. Instead of mapping excludes to

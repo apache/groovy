@@ -18,6 +18,8 @@
  */
 package groovy.json
 
+import groovy.test.JavadocAssertionTestSuite
+
 import org.junit.runners.Suite
 import org.junit.runner.RunWith
 

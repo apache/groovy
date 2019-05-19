@@ -34,6 +34,7 @@ allprojects {
         if (headless == 'true') {
             systemProperties 'java.awt.headless': 'true'
         }
+        systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main'
 
         forkEvery = 50
         maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
@@ -84,7 +85,6 @@ tasks.withType(Test) {
     if (testdb) {
         systemProperties 'groovy.testdb.props': testdb
     }
-    systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main/java'
     systemProperties 'gradle.home': gradle.gradleHomeDir // this is needed by the security.policy
 
     classpath = files('src/test') + classpath

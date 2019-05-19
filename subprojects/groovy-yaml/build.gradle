@@ -28,4 +28,5 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksondatabindVersion"
     compile project(':groovy-json')
     testCompile project(':groovy-test')
+    testRuntime project(':groovy-ant') // for JavadocAssertionTests
 }

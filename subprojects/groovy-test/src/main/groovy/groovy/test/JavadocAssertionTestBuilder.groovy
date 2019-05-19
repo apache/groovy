@@ -90,14 +90,13 @@ class JavadocAssertionTestBuilder {
     
     private String getAssertion(String tag) {
         String tagInner = tag.substring(tag.indexOf(">")+1, tag.lastIndexOf("<"))
-        String htmlAssertion = tagInner.replaceAll("(?m)^\\s*\\*", "")
+        String htmlAssertion = tagInner.replaceAll("(?m)^\\s*\\*\\s?", "")
         String assertion = htmlAssertion
         // TODO improve on this
         [nbsp:' ', gt:'>', lt:'<', quot:'"', apos:"'", at:'@', '#64':'@', ndash:'-', amp:'&'].each { key, value ->
             assertion = assertion.replaceAll("(?i)&$key;", value)
         }
         assertion = assertion.replaceAll(/(?i)\{@code ([^}]*)\}/, '$1')
-
         return assertion
     }
     
@@ -132,7 +131,7 @@ class JavadocAssertionTestBuilder {
     private String getTestCode(String testName, List testMethods) {
         return """
             class $testName extends junit.framework.TestCase {
-                """+testMethods.join("\r\n")+"""
+                """+testMethods.join("\n")+"""
             }
         """
     }

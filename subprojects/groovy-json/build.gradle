@@ -19,6 +19,6 @@
 dependencies {
     compile rootProject
     testCompile project(':groovy-test')
-    testRuntime project(':groovy-ant')
+    testRuntime project(':groovy-ant') // for JavadocAssertionTests
     testCompile project(':groovy-dateutil')
 }

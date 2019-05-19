@@ -39,7 +39,7 @@ import junit.textui.TestRunner
  * are on the classpath). As an example:
  * <p>
  * <code>
- * java groovy.util.JavadocAssertionTestSuite src/main
+ * java groovy.test.JavadocAssertionTestSuite src/main
  * </code>
  *
  * <b>Note: this class requires the Ant module at runtime.</b>
