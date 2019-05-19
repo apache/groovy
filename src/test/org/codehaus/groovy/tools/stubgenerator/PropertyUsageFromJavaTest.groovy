@@ -36,16 +36,7 @@ class PropertyUsageFromJavaTest extends StubTestCase {
 
     @Before
     void setUp() {
-//        assumeNotOnTravisCIAndNotJava6()
         super.setUp()
-    }
-
-    private assumeNotOnTravisCIAndNotJava6() {
-        boolean travisCI = new File('.').absolutePath =~ /travis/
-        boolean java6 = System.getProperty('java.version').startsWith('1.6')
-
-        assumeFalse('''Test always fails with "java.lang.IllegalArgumentException: URI is not hierarchical"
-            on open jdk used by travis.''', travisCI && java6)
     }
 
     @Test
