@@ -229,8 +229,6 @@ ext.generatedDirectory = "${buildDir}/generated/sources"
 sourceSets {
     main {
         java {
-            // the only reason we add src/main/groovy here is for the bootstrap compiler
-            srcDir 'src/main/groovy'
             srcDir "$generatedDirectory/antlr2/src/main"
             if (!JavaVersion.current().isJava8Compatible()) {
                 exclude '**/v8/*'
