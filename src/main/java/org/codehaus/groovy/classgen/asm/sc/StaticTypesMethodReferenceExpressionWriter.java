@@ -240,28 +240,28 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         List<MethodNode> candidates = new LinkedList<>();
         for (MethodNode mn : filterMethodsByVisibility(methodNodeList, classNode)) {
-            if (mn.isStatic()) {
-                if (ParameterUtils.parametersCompatible(abstractMethodParameters, mn.getParameters())) {
-                    candidates.add(mn);
-                }
-            } else {
+            Parameter[] parameters = abstractMethodParameters;
+            if (!mn.isStatic() && isClassExpr(typeOrTargetRef)) { // class::instanceMethod
                 if (0 == abstractMethodParameters.length) {
-                    break;
+                    continue;
                 }
 
-                Parameter[] parameters;
-                if (isClassExpr(typeOrTargetRef)) {
-                    parameters =
-                            new ArrayList<>(Arrays.asList(abstractMethodParameters))
-                                    .subList(1, abstractMethodParameters.length)
-                                    .toArray(Parameter.EMPTY_ARRAY);
-                } else {
-                    parameters = abstractMethodParameters;
+                Parameter firstParameter = abstractMethodParameters[0];
+                Class<?> typeOrTargetClass = typeOrTargetRef.getType().getTypeClass();
+                Class<?> firstParameterClass = firstParameter.getType().getTypeClass();
+                if (!typeOrTargetClass.isAssignableFrom(firstParameterClass)) {
+                    continue;
                 }
 
-                if (ParameterUtils.parametersCompatible(parameters, mn.getParameters())) {
-                    candidates.add(mn);
-                }
+                parameters =
+                        new ArrayList<>(Arrays.asList(abstractMethodParameters))
+                                .subList(1, abstractMethodParameters.length)
+                                .toArray(Parameter.EMPTY_ARRAY);
+
+            }
+
+            if (ParameterUtils.parametersCompatible(parameters, mn.getParameters())) {
+                candidates.add(mn);
             }
         }
 

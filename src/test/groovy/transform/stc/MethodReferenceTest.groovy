@@ -395,4 +395,22 @@ class MethodReferenceTest extends GroovyTestCase {
 
         assert errMsg.contains('Failed to find the expected method[addx(java.math.BigDecimal,java.math.BigDecimal)] in the type[java.math.BigDecimal]')
     }
+
+    // class::instanceMethod
+    void testFunctionCI_WRONGTYPE() {
+        def errMsg = shouldFail '''
+            import java.util.stream.Collectors
+            
+            @groovy.transform.CompileStatic
+            void p() {
+                def result = [1, 2, 3].stream().map(String::toString).collect(Collectors.toList())
+                assert 3 == result.size()
+                assert ['1', '2', '3'] == result
+            }
+            
+            p()
+        '''
+
+        assert errMsg.contains('Failed to find the expected method[toString(java.lang.Integer)] in the type[java.lang.String]')
+    }
 }
