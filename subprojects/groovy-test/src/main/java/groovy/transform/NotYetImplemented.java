@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
  * The idea for this AST transformation originated in {@link groovy.test.GroovyTestCase#notYetImplemented()}.
  *
  * @since 2.0.0
- * @deprecated use {@link groovy.test.transform.NotYetImplemented}
+ * @deprecated use {@link groovy.test.NotYetImplemented}
  */
 @Deprecated
 @java.lang.annotation.Documented
