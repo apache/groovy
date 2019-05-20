@@ -16,13 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-assert null == null?[1];
-assert null == null?[1]?[1, 2];
-assert null == null?[1]?[1, 2]?[1, 2, 3];
+assert null == null?[1]
+assert null == null?[1]?[1, 2]
+assert null == null?[1]?[1, 2]?[1, 2, 3]
 
-def a = null;
-assert null == a?[1, 2];
+def a = null
+assert null == a?[1, 2]
 
 def f() {return null}
-assert null == f()?[1];
+assert null == f()?[1]
 
