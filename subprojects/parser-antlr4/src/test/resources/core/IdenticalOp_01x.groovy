@@ -21,7 +21,9 @@ def y = []
 assert y !== x
 
 assert 'a' === 'a'
-assert 'a' !== new String('a')
+def otherA = new String('a')
+assert 'a' == otherA && 'a'.equals(otherA)
+assert 'a' !== otherA && !'a'.is(otherA)
 assert null === null
 assert true === true
 assert false === false
