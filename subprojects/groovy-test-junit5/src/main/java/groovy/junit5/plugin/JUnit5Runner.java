@@ -25,6 +25,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Integration code for running JUnit5 tests in Groovy.
@@ -63,17 +65,29 @@ public class JUnit5Runner implements GroovyRunner {
             if (name.startsWith("org.junit.jupiter.api.") && tryLoadClass(name, loader)) {
                 return true;
             }
-            if (isJUnit5TestableMetaAnnotationPresent(type) && tryLoadClass(name, loader)) {
+            // it might directly annotate a class, e.g. Specification in Spock 2
+            if (name.equals("org.junit.platform.commons.annotation.Testable") && tryLoadClass(name, loader)) {
+                return true;
+            }
+            if (isJUnit5TestableMetaAnnotationPresent(type, new HashSet<>()) && tryLoadClass(name, loader)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean isJUnit5TestableMetaAnnotationPresent(Class<? extends Annotation> type) {
+    private boolean isJUnit5TestableMetaAnnotationPresent(Class<? extends Annotation> type, Set<String> seen) {
         for (Annotation annotation : type.getAnnotations()) {
+            // It might annotate an annotation, e.g. jqwik @Property
             if ("org.junit.platform.commons.annotation.Testable".equals(annotation.annotationType().getName())) {
                 return true;
+            }
+            // perhaps it's a meta-annotation, e.g. jqwik @Example is annotated with @Property
+            if (!seen.contains(annotation.annotationType().getName())) {
+                seen.add(annotation.annotationType().getName());
+                if (isJUnit5TestableMetaAnnotationPresent(annotation.annotationType(), seen)) {
+                    return true;
+                }
             }
         }
         return false;
