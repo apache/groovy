@@ -16,52 +16,85 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-//most of this is just a "hack" to break the circular dependencies between projects
-//which exist because Eclipse does not distinguish between build phases (e.g. compile, test, runtime)
 allprojects {
     apply plugin: 'eclipse'
-    
-    eclipse.jdt {
-        sourceCompatibility = 1.7
-        targetCompatibility = 1.7
-    }
-    
-    eclipse.classpath.file {
-        whenMerged { classpath ->
-            classpath.entries.removeAll{ entry -> entry.path == '/groovy-groovydoc' }
-            classpath.entries.removeAll{ entry -> entry.path =~ /groovy-ant/ }
-            classpath.entries.removeAll{ entry -> entry.path =~ /target/ }
-            classpath.entries.unique(true){ entry -> entry.path }
+
+    eclipse.classpath.file.whenMerged {
+        entries.removeAll { entry -> entry.path =~ '/target/' } // affects: cli-commons, cli-picocli, console, groovydoc, macro, servlet, swing, templates, xml
+        entries.unique(true) { entry -> entry.path } // affects: console, groovydoc, macro, servlet, swing, templates, xml
+        entries.sort(true) { entry -> "${entry.kind}:${entry.path}".toString() }
+
+        // set "test" attribute based on gradle scopes
+        entries.findAll { entry ->
+            entry.class.name in [
+                'org.gradle.plugins.ide.eclipse.model.Library',
+                'org.gradle.plugins.ide.eclipse.model.SourceFolder'
+            ]
+        }.each { entry ->
+            if (entry.entryAttributes['gradle_used_by_scope'] == 'test') {
+                entry.entryAttributes['test'] = 'true'
+            }
         }
-        withXml {
-            def node = it.asNode()
-            node.appendNode('classpathentry', [kind: 'lib', path: "${rootProject.jar.archivePath}"])
+        // set "test" attribute based on configuration
+        entries.findAll { entry ->
+            entry.class.name in [
+                'org.gradle.plugins.ide.eclipse.model.ProjectDependency'
+            ]
+        }.each { entry ->
+            if (entry.path.substring(1) in project.configurations.testCompile.dependencies*.name) {
+                entry.entryAttributes['test'] = 'true'
+            }
         }
     }
-    
+
     project.tasks.eclipse.doLast {
-        File groovyPrefs = file("${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs")
-        if (!groovyPrefs.exists()) {
-            groovyPrefs.append('groovy.compiler.level=-1\n')
+        file("${project.projectDir}/.settings/org.eclipse.jdt.groovy.core.prefs").with { prefs ->
+            if (!prefs.exists()) {
+                append('''\
+                    eclipse.preferences.version=1
+                    groovy.compiler.level=30
+                    '''.stripIndent()
+                )
+            }
+        }
+
+        file("${project.projectDir}/.settings/org.eclipse.core.resources.prefs").with { prefs ->
+            if (!prefs.exists()) {
+                append('''\
+                    eclipse.preferences.version=1
+                    encoding/<project>=UTF-8
+                    '''.stripIndent()
+                )
+            }
+        }
+
+        file("${project.projectDir}/.settings/org.eclipse.core.runtime.prefs").with { prefs ->
+            if (!prefs.exists()) {
+                append('''\
+                    eclipse.preferences.version=1
+                    line.separator=\\n
+                    '''.stripIndent()
+                )
+            }
+        }
+
+        file("${project.projectDir}/.settings/org.eclipse.jdt.ui.prefs").with { prefs ->
+            if (!prefs.exists()) {
+                append('''\
+                    eclipse.preferences.version=1
+                    org.eclipse.jdt.ui.ignorelowercasenames=true
+                    org.eclipse.jdt.ui.importorder=;javax;java;\\#;
+                    org.eclipse.jdt.ui.ondemandthreshold=99
+                    org.eclipse.jdt.ui.staticondemandthreshold=99
+                    '''.stripIndent()
+                )
+            }
         }
     }
 }
 
-eclipse.classpath.file {
-    whenMerged { classpath ->
-        classpath.entries.find { entry -> entry.path =~ /src\/main/ }.path = '/groovy/src/main'
-        classpath.entries.find { entry -> entry.path =~ /src\/main/ }.includes = []
-        classpath.entries.each { entry -> if(entry.path == 'src/test'){ entry.excludes = ['groovy/PropertyTest.groovy'] as List } }
-        classpath.entries.removeAll{ entry -> entry.path == '/groovy-test' }
-        classpath.entries.removeAll{ entry -> entry.path =~ /subprojects/ }
-        classpath.entries.removeAll{ entry -> entry.path =~ /examples/ }
-    }
-    withXml {
-        def node = it.asNode()
-        ['groovy-test', 'groovy-groovydoc', 'groovy-jmx', 'groovy-xml', 'groovy-ant'].each{
-            node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/groovy"])
-            node.appendNode('classpathentry', [kind: 'src', path: "/groovy/subprojects/$it/src/main/java"])
-        }
-        node.appendNode('classpathentry', [kind: 'src', path: '/groovy/subprojects/groovy-templates/src/main/groovy'])
-    }
+eclipse.classpath.file.whenMerged {
+    entries.removeAll { entry -> entry.path == '/groovy-groovydoc' }
 }
+
+// TODO: Create tasks for cleaning the .settings files created above

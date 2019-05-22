@@ -23,3 +23,7 @@ dependencies {
     testCompile project(':groovy-test')
     compile "com.thoughtworks.qdox:qdox:$qdoxVersion"
 }
+
+eclipse.classpath.file.whenMerged {
+    entries.removeAll { entry -> entry.path == '/groovy-xml' }
+}
