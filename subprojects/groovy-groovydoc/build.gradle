@@ -31,3 +31,7 @@ compileJava {
         mkdir "$sourceSets.main.java.outputDir/META-INF"
     }
 }
+
+eclipse.classpath.file.whenMerged {
+    entries.removeAll { entry -> entry.path == '/groovy-xml' }
+}
