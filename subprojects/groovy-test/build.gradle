@@ -26,4 +26,8 @@ dependencies {
     testRuntime "org.apache.ant:ant-launcher:$antVersion"
 }
 
+eclipse.classpath.file.whenMerged {
+    entries.removeAll { entry -> entry.path == '/groovy-ant' }
+}
+
 apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"

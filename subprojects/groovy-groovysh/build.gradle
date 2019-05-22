@@ -25,3 +25,7 @@ dependencies {
         exclude(group: 'junit', module: 'junit')
     }
 }
+
+eclipse.classpath.file.whenMerged {
+    entries.removeAll { entry -> entry.path in ['/groovy-xml', '/groovy-swing', '/groovy-templates'] }
+}

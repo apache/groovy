@@ -33,5 +33,9 @@ dependencies {
     testCompile rootProject.sourceSets.test.runtimeClasspath
     testCompile project(':groovy-test')
     // for compilation, dependency is not necessary because the classes are loaded using Class.forName
-    testCompile project(':groovy-json')
+    testRuntime project(':groovy-json')
+}
+
+eclipse.classpath.file.whenMerged {
+    entries.removeAll { entry -> entry.path == '/groovy-json' }
 }

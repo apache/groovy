@@ -19,6 +19,10 @@
 dependencies {
     compile rootProject
     testCompile project(':groovy-test')
-    testRuntime project(':groovy-ant')
     testCompile project(':groovy-dateutil')
+    testRuntime project(':groovy-ant') // for JavadocAssertionTests
+}
+
+eclipse.classpath.file.whenMerged {
+    entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
 }

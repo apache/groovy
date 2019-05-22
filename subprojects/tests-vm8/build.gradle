@@ -52,3 +52,7 @@ sourceSets {
         }
     }
 }
+
+eclipse.classpath.file.whenMerged {
+    entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
+}
