@@ -366,6 +366,23 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_pointer_dis
 <4> using the method pointer with a `String` calls the `String` version of `doSomething`
 <5> using the method pointer with an `Integer` calls the `Integer` version of `doSomething`
 
+To align with Java 8 method reference expectations, in Groovy 3 and above, you can use `new` as the
+method name to obtain a method pointer to the constructor:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_pointer_new,indent=0]
+----
+
+Also in Groovy 3 and above, you can obtain a method pointer to an instance method of a class.
+This method pointer takes an additional parameter being the receiver instance to
+invoke the method on:
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=method_pointer_class_instance,indent=0]
+----
+For backwards compatibility, any static methods that happen to have the correct
+parameters for the call will be given precedence over instance methods for this case.
+
 [[method-reference-operator]]
 === Method reference operator
 

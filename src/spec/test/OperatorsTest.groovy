@@ -280,6 +280,21 @@ assert user.@name == 'Bob'                   // <1>
             assert reference(123)   == 246                       // <5>
             // end::method_pointer_dispatch[]
         '''
+
+        assertScript '''
+            // tag::method_pointer_new[]
+            def foo  = BigInteger.&new
+            def fortyTwo = foo('42')
+            assert fortyTwo == 42G
+            // end::method_pointer_new[]
+        '''
+
+        assertScript '''
+            // tag::method_pointer_class_instance[]
+            def instanceMethod = String.&toUpperCase
+            assert instanceMethod('foo') == 'FOO'
+            // end::method_pointer_class_instance[]
+        '''
     }
 
     void testMethodReference() {
