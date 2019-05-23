@@ -225,6 +225,14 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
+     * Retrieve configuration used by this class loader.
+     * @return CompilerConfiguration used by this classloader
+     */
+    public CompilerConfiguration getCompilerConfiguration() {
+      return config;
+    }
+
+    /**
      * Parses the given file into a Java class capable of being run
      *
      * @param file the file name to parse
@@ -280,7 +288,7 @@ public class GroovyClassLoader extends URLClassLoader {
         });
         return parseClass(gcs);
     }
-    
+
     /**
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      * Use {@link #parseClass(Reader, String) parseClass} instead
@@ -922,7 +930,7 @@ public class GroovyClassLoader extends URLClassLoader {
     private static File fileReallyExists(URL ret, String fileWithoutPackage) {
         File path;
         try {
-            /* fix for GROOVY-5809 */ 
+            /* fix for GROOVY-5809 */
             path = new File(ret.toURI());
         } catch(URISyntaxException e) {
             path = new File(decodeFileName(ret.getFile()));
