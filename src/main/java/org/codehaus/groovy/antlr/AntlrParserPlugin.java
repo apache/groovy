@@ -901,7 +901,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ClassNode[] exceptions = ClassNode.EMPTY_ARRAY;
 
         if (classNode == null || !classNode.isAnnotationDefinition()) {
-
             assertNodeType(PARAMETERS, node);
             parameters = parameters(node);
             if (parameters == null) parameters = Parameter.EMPTY_ARRAY;
@@ -922,16 +921,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         modifiers &= ~Opcodes.ACC_SYNTHETIC;
         methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         if ((modifiers & Opcodes.ACC_ABSTRACT) == 0) {
-            if (node == null) {
+            if (node != null) {
+                assertNodeType(SLIST, node);
+                code = statementList(node);
+            } else {
                 throw new ASTRuntimeException(methodDef, "You defined a method without body. Try adding a body, or declare it abstract.");
             }
-            assertNodeType(SLIST, node);
-            code = statementList(node);
-        } else if (node != null && classNode.isAnnotationDefinition()) {
-            code = statement(node);
-            hasAnnotationDefault = true;
-        } else if ((modifiers & Opcodes.ACC_ABSTRACT) > 0) {
-            if (node != null) {
+        } else if (node != null) {
+            if (classNode != null && classNode.isAnnotationDefinition()) {
+                code = statement(node);
+                hasAnnotationDefault = true;
+            } else {
                 throw new ASTRuntimeException(methodDef, "Abstract methods do not define a body.");
             }
         }
