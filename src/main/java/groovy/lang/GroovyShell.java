@@ -95,7 +95,9 @@ public class GroovyShell extends GroovyObjectSupport {
             throw new IllegalArgumentException("Compiler configuration must not be null.");
         }
         final ClassLoader parentLoader = (parent!=null)?parent:GroovyShell.class.getClassLoader();
-        if (parentLoader instanceof GroovyClassLoader) {
+
+        if (parentLoader instanceof GroovyClassLoader
+            && ((GroovyClassLoader) parentLoader).getCompilerConfiguration() == config) {
           this.loader = (GroovyClassLoader) parentLoader;
         } else {
           this.loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
