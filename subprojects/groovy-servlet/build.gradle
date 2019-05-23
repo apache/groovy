@@ -24,18 +24,15 @@ dependencies {
         provided dep
         exclude(group: 'javax.servlet', module: 'servlet-api')
     }
-    compile rootProject
     testCompile "jmock:jmock:$jmockVersion"
+
+    compile rootProject
     // needed for MarkupBuilder
     compile project(':groovy-xml')
     // needed by TemplateServlet
     compile project(':groovy-templates')
-    testCompile rootProject.sourceSets.test.runtimeClasspath
-    testCompile project(':groovy-test')
-    // for compilation, dependency is not necessary because the classes are loaded using Class.forName
-    testRuntime project(':groovy-json')
-}
 
-eclipse.classpath.file.whenMerged {
-    entries.removeAll { entry -> entry.path == '/groovy-json' }
+    testCompile rootProject.sourceSets.test.runtimeClasspath
+    testCompile project(':groovy-json')
+    testCompile project(':groovy-test')
 }
