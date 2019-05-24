@@ -110,6 +110,15 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                             .map(e -> e.getType().getName())
                             .collect(Collectors.joining(","))
                     + ")] in the type[" + typeOrTargetRefType.getName() + "]", methodReferenceExpression);
+        } else {
+            if (parametersWithExactType.length > 0 && isTypeReferingInstanceMethod(typeOrTargetRef, methodRefMethod)) {
+                Parameter firstParameter = parametersWithExactType[0];
+                Class<?> typeOrTargetClass = typeOrTargetRef.getType().getTypeClass();
+                Class<?> firstParameterClass = firstParameter.getType().getTypeClass();
+                if (!typeOrTargetClass.isAssignableFrom(firstParameterClass)) {
+                    throw new RuntimeParserException("Invalid receiver type: " + firstParameterClass + " is not compatible with " + typeOrTargetClass, typeOrTargetRef);
+                }
+            }
         }
 
         methodRefMethod.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
@@ -241,15 +250,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         List<MethodNode> candidates = new LinkedList<>();
         for (MethodNode mn : filterMethodsByVisibility(methodNodeList, classNode)) {
             Parameter[] parameters = abstractMethodParameters;
-            if (!mn.isStatic() && isClassExpr(typeOrTargetRef)) { // class::instanceMethod
+            if (isTypeReferingInstanceMethod(typeOrTargetRef, mn)) {
                 if (0 == abstractMethodParameters.length) {
-                    continue;
-                }
-
-                Parameter firstParameter = abstractMethodParameters[0];
-                Class<?> typeOrTargetClass = typeOrTargetRef.getType().getTypeClass();
-                Class<?> firstParameterClass = firstParameter.getType().getTypeClass();
-                if (!typeOrTargetClass.isAssignableFrom(firstParameterClass)) {
                     continue;
                 }
 
@@ -266,6 +268,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
 
         return chooseMethodRefMethodCandidate(typeOrTargetRef, candidates);
+    }
+
+    private static boolean isTypeReferingInstanceMethod(Expression typeOrTargetRef, MethodNode mn) {  // class::instanceMethod
+        return !mn.isStatic() && isClassExpr(typeOrTargetRef);
     }
 
     /**

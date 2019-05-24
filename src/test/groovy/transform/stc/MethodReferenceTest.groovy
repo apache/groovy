@@ -411,6 +411,6 @@ class MethodReferenceTest extends GroovyTestCase {
             p()
         '''
 
-        assert errMsg.contains('Failed to find the expected method[toString(java.lang.Integer)] in the type[java.lang.String]')
+        assert errMsg.contains('Invalid receiver type: class java.lang.Integer is not compatible with class java.lang.String')
     }
 }
