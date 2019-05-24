@@ -20,27 +20,39 @@ package groovy.bugs
 
 import gls.CompilableTestSupport
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.CompilerConfiguration
+
+import static org.codehaus.groovy.control.ParserVersion.V_2
 
 @CompileStatic
 final class Groovy9141 extends CompilableTestSupport {
+    private static final String METHOD_DEF = '''
+        abstract meth() {
+            println 42
+        }
+    '''
 
-    void testAbstractMethodWithBody1() {
-        def err = shouldNotCompile '''\
-            abstract def meth() {
-              println 42
-            }
-            '''.stripIndent()
-        assert err =~ / You can not define a abstract method\[meth\]  in the script. Try removing the 'abstract' /
+    void testAbstractMethodWithBodyInScript() {
+        def err = shouldNotCompile METHOD_DEF
+        assert err =~ / You cannot define an abstract method\[meth\] in the script. Try removing the 'abstract' /
     }
 
-    void testAbstractMethodWithBody2() {
-        def err = shouldNotCompile '''\
+    void testAbstractMethodWithBodyInClass() {
+        def err = shouldNotCompile """
             class Main {
-              abstract def meth() {
-                println 42
-              }
+                $METHOD_DEF
             }
-            '''.stripIndent()
+        """
+        // not a language requirement but class level check takes precedence in current implementation
         assert err =~ / Can't have an abstract method in a non-abstract class. /
     }
+
+    void testAbstractMethodWithBodyInScript_oldParser() {
+        def cc = new CompilerConfiguration(parserVersion: V_2)
+        def err = shouldFail {
+            new GroovyShell(cc).evaluate METHOD_DEF
+        }
+        assert err =~ / Abstract methods do not define a body/
+    }
+
 }
