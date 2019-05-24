@@ -18,8 +18,8 @@
  */
 
 ext {
-    jacksondataformatyamlVersion = '2.9.8'
-    jacksondatabindVersion = '2.9.8'
+    jacksondataformatyamlVersion = '2.9.9'
+    jacksondatabindVersion = '2.9.9'
 }
 
 dependencies {
