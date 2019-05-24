@@ -23,24 +23,23 @@ import groovy.transform.CompileStatic
 
 @CompileStatic
 final class Groovy9141 extends CompilableTestSupport {
+    private static final String METHOD_DEF = '''
+        abstract meth() {
+            println 42
+        }
+    '''
 
-    void testAbstractMethodWithBody1() {
-        def err = shouldNotCompile '''\
-            abstract def meth() {
-              println 42
-            }
-            '''.stripIndent()
-        assert err =~ / You can not define a abstract method\[meth\]  in the script. Try removing the 'abstract' /
+    void testAbstractMethodWithBodyInScript() {
+        def err = shouldNotCompile METHOD_DEF
+        assert err =~ / Abstract methods do not define a body. /
     }
 
-    void testAbstractMethodWithBody2() {
-        def err = shouldNotCompile '''\
+    void testAbstractMethodWithBodyInClass() {
+        def err = shouldNotCompile """
             class Main {
-              abstract def meth() {
-                println 42
-              }
+                $METHOD_DEF
             }
-            '''.stripIndent()
-        assert err =~ / Can't have an abstract method in a non-abstract class. /
+        """
+        assert err =~ / Abstract methods do not define a body. /
     }
 }
