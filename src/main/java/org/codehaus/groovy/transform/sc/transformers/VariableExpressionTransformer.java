@@ -46,13 +46,13 @@ public class VariableExpressionTransformer {
 
     private static Expression tryTransformDelegateToProperty(VariableExpression expr) {
         // we need to transform variable expressions that go to a delegate
-        // to a property expression, as ACG would loose the information
-        // in processClassVariable before it reaches any makeCall, that could
-        // handle it
+        // to a property expression, as ACG would lose the information in
+        // processClassVariable before it reaches any makeCall, that could handle it
         Object val = expr.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         if (val == null) return null;
         // TODO handle the owner and delegate cases better for nested scenarios and potentially remove the need for the implicit this case
         VariableExpression receiver = new VariableExpression("owner".equals(val) ? (String) val : "delegate".equals(val) ? (String) val : "this");
+        receiver.setSourcePosition(expr);
         PropertyExpression pexp = new PropertyExpression(receiver, expr.getName());
         pexp.copyNodeMetaData(expr);
         pexp.setImplicitThis(true);
