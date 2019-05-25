@@ -102,7 +102,6 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
-import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.Traits;
@@ -199,7 +198,6 @@ import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_IDENTICAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
-import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IDENTICAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
 import static org.codehaus.groovy.syntax.Types.DIVIDE;
 import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
@@ -520,14 +518,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * Checks valid cases for accessing a field from an inner class.
      */
     private String checkOrMarkInnerPropertyOwnerAccess(Expression source, FieldNode fn, boolean lhsOfAssignment, String delegationData) {
-        if (fn == null || fn.isStatic() || fn.isPrivate() || "delegate".equals(delegationData)) return delegationData;
-        if (source instanceof PropertyExpression && typeCheckingContext.getEnclosingClosureStack().size() == 1) {
+        if (fn != null && !fn.isStatic() && !fn.isPrivate() && !"delegate".equals(delegationData) &&
+                source instanceof PropertyExpression && typeCheckingContext.getEnclosingClosureStack().size() == 1) {
             PropertyExpression pe = (PropertyExpression) source;
             boolean ownerProperty = !("this".equals(pe.getPropertyAsString()));
+            // check for reference to method, closure, for loop or catch block parameter
             if (ownerProperty && pe.getObjectExpression() instanceof VariableExpression) {
-                Variable accessedVariable = ((VariableExpression) pe.getObjectExpression()).getAccessedVariable();
-                Variable declaredVariable = typeCheckingContext.getEnclosingClosure().getClosureExpression().getVariableScope().getDeclaredVariable(pe.getObjectExpression().getText());
-                if (accessedVariable != null && accessedVariable == declaredVariable) ownerProperty = false;
+                ownerProperty = !(((VariableExpression) pe.getObjectExpression()).getAccessedVariable() instanceof Parameter);
             }
             if (ownerProperty) {
                 delegationData = "owner";
@@ -811,7 +808,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitBinaryExpression(BinaryExpression expression) {
         int op = expression.getOperation().getType();
-        if (op == COMPARE_IDENTICAL || op == COMPARE_NOT_IDENTICAL) {
+        if (op == COMPARE_IDENTICAL) {
             return; // we'll report those as errors later
         }
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
@@ -3779,7 +3776,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         BinaryExpression instanceOfExpression = (BinaryExpression) expression;
         int op = instanceOfExpression.getOperation().getType();
-        if (op != Types.KEYWORD_INSTANCEOF) {
+        if (op != KEYWORD_INSTANCEOF) {
             return null;
         }
         Statement block = ifElse.getIfBlock();
