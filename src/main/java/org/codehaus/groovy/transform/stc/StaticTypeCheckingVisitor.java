@@ -529,18 +529,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     /**
      * Checks valid cases for accessing a field from an inner class.
      */
-    private String checkOrMarkInnerPropertyOwnerAccess(Expression source, FieldNode fn, boolean lhsOfAssignment, String delegationData) {
-        if (fn != null && !fn.isStatic() && !fn.isPrivate() && !"delegate".equals(delegationData) &&
-                source instanceof PropertyExpression && typeCheckingContext.getEnclosingClosureStack().size() == 1) {
-            PropertyExpression pe = (PropertyExpression) source;
-            boolean ownerProperty = !("this".equals(pe.getPropertyAsString()));
-            // check for reference to method, closure, for loop or catch block parameter
-            if (ownerProperty && pe.getObjectExpression() instanceof VariableExpression) {
-                ownerProperty = !(((VariableExpression) pe.getObjectExpression()).getAccessedVariable() instanceof Parameter);
-            }
-            if (ownerProperty) {
+    private String checkOrMarkInnerPropertyOwnerAccess(PropertyExpression source, boolean lhsOfAssignment, String delegationData) {
+        // check for reference to method, closure, for loop, try with, or catch block parameter from a non-nested closure
+        if (typeCheckingContext.getEnclosingClosureStack().size() == 1 && !"this".equals(source.getPropertyAsString())) {
+            if (!(source.getObjectExpression() instanceof VariableExpression &&
+                    ((VariableExpression) source.getObjectExpression()).getAccessedVariable() instanceof Parameter)) {
                 delegationData = "owner";
-                pe.getObjectExpression().putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
+                source.getObjectExpression().putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
             }
         }
         return delegationData;
@@ -1851,7 +1846,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (visitor != null) visitor.visitField(field);
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
-        delegationData = checkOrMarkInnerPropertyOwnerAccess(expressionToStoreOn, field, lhsOfAssignment, delegationData);
+        if (field != null && !field.isStatic() && !field.isPrivate() && !"delegate".equals(delegationData)) {
+            delegationData = checkOrMarkInnerPropertyOwnerAccess(expressionToStoreOn, lhsOfAssignment, delegationData);
+        }
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
