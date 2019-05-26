@@ -24,13 +24,18 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 /**
  * This class defines all the new static groovy methods which appear on normal
@@ -96,6 +101,20 @@ public class DefaultGroovyStaticMethods {
         if (daemon) thread.setDaemon(true);
         thread.start();
         return thread;
+    }
+
+    /**
+     * Dump the thread dump of all threads
+     *
+     * @param self    placeholder variable used by Groovy categories; ignored for default static methods
+     * @return the thread dump of all threads
+     * @since 3.0.0
+     */
+    public static String dumpAll(Thread self){
+        ThreadMXBean threadMxBean = ManagementFactory.getThreadMXBean();
+        return Arrays.stream(threadMxBean.dumpAllThreads(true, true))
+                .map(ThreadInfo::toString)
+                .collect(Collectors.joining(""));
     }
 
     /**
@@ -262,5 +281,4 @@ public class DefaultGroovyStaticMethods {
     public static long currentTimeSeconds(System self){
     return System.currentTimeMillis() / 1000;
   }
-
 }
