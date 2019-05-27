@@ -157,11 +157,8 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
         final Method reflect;
 
         public PogoCachedMethodSite(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params) {
-            super(site, metaClass, metaMethod, params);
-            reflect = metaMethod.setAccessible();
-
-//            super(site, metaClass, CallSiteHelper.transformMetaMethod(metaClass, metaMethod, params, site), params);
-//            reflect = ((CachedMethod) super.metaMethod).setAccessible();
+            super(site, metaClass, CallSiteHelper.transformMetaMethod(metaClass, metaMethod, params, site.getArray().owner), params);
+            reflect = ((CachedMethod) super.metaMethod).setAccessible();
         }
 
         public Object invoke(Object receiver, Object[] args) throws Throwable {

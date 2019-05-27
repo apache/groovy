@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.apache.groovy.internal.util.UncheckedThrow;
 import org.apache.groovy.util.BeanUtils;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -2192,10 +2193,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 MetaBeanProperty mp = (MetaBeanProperty) element;
                 boolean setter = true;
                 boolean getter = true;
-                if (mp.getGetter() == null || mp.getGetter() instanceof GeneratedMetaMethod || mp.getGetter() instanceof NewInstanceMetaMethod) {
+                MetaMethod getterMetaMethod = mp.getGetter();
+                if (getterMetaMethod == null || getterMetaMethod instanceof GeneratedMetaMethod || getterMetaMethod instanceof NewInstanceMetaMethod) {
                     getter = false;
                 }
-                if (mp.getSetter() == null || mp.getSetter() instanceof GeneratedMetaMethod || mp.getSetter() instanceof NewInstanceMetaMethod) {
+                MetaMethod setterMetaMethod = mp.getSetter();
+                if (setterMetaMethod == null || setterMetaMethod instanceof GeneratedMetaMethod || setterMetaMethod instanceof NewInstanceMetaMethod) {
                     setter = false;
                 }
                 if (!setter && !getter) continue;
@@ -2207,9 +2210,32 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 //                    element = new MetaBeanProperty(mp.getName(), mp.getType(), null, mp.getSetter());
 //                }
             }
+
+            if (!ALLOW_ILLEGAL_ACCESS_PROPERTIES) {
+                if (element instanceof MetaBeanProperty) {
+                    MetaBeanProperty mbp = (MetaBeanProperty) element;
+                    boolean getterAccessible = canAccessLegally(mbp.getGetter());
+                    boolean setterAccessible = canAccessLegally(mbp.getSetter());
+
+                    if (!(getterAccessible && setterAccessible)) continue;
+                }
+            }
+
             ret.add(element);
         }
         return ret;
+    }
+
+    private static final boolean ALLOW_ILLEGAL_ACCESS_PROPERTIES = SystemUtil.getBooleanSafe("groovy.allow.illegal.access.properties");
+
+    private static boolean canAccessLegally(MetaMethod accessor) {
+        boolean accessible = true;
+        if (accessor instanceof CachedMethod) {
+            CachedMethod cm = (CachedMethod) accessor;
+            accessible = cm.canAccessLegally(MetaClassImpl.class);
+        }
+
+        return accessible;
     }
 
     /**

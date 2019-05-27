@@ -42,6 +42,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -192,6 +193,11 @@ public class Java9 extends Java8 {
         }
 
         if (declaringClass == theClass) {
+            MetaMethod bigIntegerMetaMethod = transformBigIntegerMetaMethod(metaMethod, params, theClass);
+            if (bigIntegerMetaMethod != metaMethod) {
+                return bigIntegerMetaMethod;
+            }
+
             // GROOVY-9081 "3) Access public members of private class", e.g. Collections.unmodifiableMap([:]).toString()
             // try to find the visible method from its superclasses
             List<Class<?>> superclassList = findSuperclasses(theClass);
@@ -224,7 +230,24 @@ public class Java9 extends Java8 {
         return metaMethod;
     }
 
-    private static Optional<MetaMethod> getAccessibleMetaMethod(MetaMethod metaMethod, Class<?>[] params, Class<?> caller, Class<?> sc) {
+    private static MetaMethod transformBigIntegerMetaMethod(MetaMethod metaMethod, Class<?>[] params, Class<?> theClass) {
+        if (BigInteger.class != theClass) {
+            return metaMethod;
+        }
+
+        if (MULTIPLY.equals(metaMethod.getName())
+                && (1 == params.length && (Integer.class == params[0] || Long.class == params[0] || Short.class == params[0]))) {
+            try {
+                return new CachedMethod(BigInteger.class.getDeclaredMethod(MULTIPLY, BigInteger.class));
+            } catch (NoSuchMethodException e) {
+                throw new GroovyBugError("Failed to transform " + MULTIPLY + " method of BigInteger", e);
+            }
+        }
+
+        return metaMethod;
+    }
+
+    private Optional<MetaMethod> getAccessibleMetaMethod(MetaMethod metaMethod, Class<?>[] params, Class<?> caller, Class<?> sc) {
         List<MetaMethod> metaMethodList = getMetaMethods(metaMethod, params, sc);
         for (MetaMethod mm : metaMethodList) {
             if (checkAccessible(caller, mm.getDeclaringClass().getTheClass(), mm.getModifiers(), false)) {
@@ -239,7 +262,8 @@ public class Java9 extends Java8 {
         return optionalMethod.stream().map(CachedMethod::new).collect(Collectors.toList());
     }
 
-    private static boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int modifiers, boolean allowIllegalAccess) {
+    @Override
+    public boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int memberModifiers, boolean allowIllegalAccess) {
         Module callerModule = callerClass.getModule();
         Module declaringModule = declaringClass.getModule();
         String pn = declaringClass.getPackageName();
@@ -251,13 +275,13 @@ public class Java9 extends Java8 {
         boolean isClassPublic = Modifier.isPublic(declaringClass.getModifiers());
         if (isClassPublic && declaringModule.isExported(pn, callerModule)) {
             // member is public
-            if (Modifier.isPublic(modifiers)) {
+            if (Modifier.isPublic(memberModifiers)) {
                 return !(toCheckIllegalAccess && isExportedForIllegalAccess(declaringModule, pn));
             }
 
             // member is protected-static
-            if (Modifier.isProtected(modifiers)
-                    && Modifier.isStatic(modifiers)
+            if (Modifier.isProtected(memberModifiers)
+                    && Modifier.isStatic(memberModifiers)
                     && isSubclassOf(callerClass, declaringClass)) {
                 return !(toCheckIllegalAccess && isExportedForIllegalAccess(declaringModule, pn));
             }
@@ -357,6 +381,8 @@ public class Java9 extends Java8 {
                 .stream()
                 .anyMatch(e -> e.source().equals(pn) && !e.isQualified());
     }
+
+    private static final String MULTIPLY = "multiply";
 
     private static String[] JAVA8_PACKAGES() {
         return new String[] {

@@ -572,6 +572,11 @@ public class Java5 implements VMPlugin {
     }
 
     @Override
+    public boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int memberModifiers, boolean allowIllegalAccess) {
+        return true;
+    }
+
+    @Override
     public boolean trySetAccessible(AccessibleObject ao) {
         try {
             ao.setAccessible(true);

@@ -165,9 +165,12 @@ public class ReflectionUtils {
         return methodList;
     }
 
-    public static boolean checkCanSetAccessible(AccessibleObject accessibleObject,
-                                         Class<?> caller) {
+    public static boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> caller) {
         return VM_PLUGIN.checkCanSetAccessible(accessibleObject, caller);
+    }
+
+    public static boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int memberModifiers, boolean allowIllegalAccess) {
+        return VM_PLUGIN.checkAccessible(callerClass, declaringClass, memberModifiers, allowIllegalAccess);
     }
 
     public static boolean trySetAccessible(AccessibleObject ao) {
