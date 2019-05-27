@@ -97,7 +97,7 @@ public class GroovyShell extends GroovyObjectSupport {
         final ClassLoader parentLoader = (parent!=null)?parent:GroovyShell.class.getClassLoader();
 
         if (parentLoader instanceof GroovyClassLoader
-            && ((GroovyClassLoader) parentLoader).getCompilerConfiguration() == config) {
+            && ((GroovyClassLoader) parentLoader).hasCompatibleConfiguration(config)) {
           this.loader = (GroovyClassLoader) parentLoader;
         } else {
           this.loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
