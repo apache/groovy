@@ -120,6 +120,7 @@ menuBar {
         checkBoxMenuItem(showToolbarAction, selected: controller.showToolbar)
         checkBoxMenuItem(detachedOutputAction, selected: controller.detachedOutput)
         checkBoxMenuItem(autoClearOutputAction, selected: controller.autoClearOutput)
+        checkBoxMenuItem(orientationVerticalAction, selected: controller.orientationVertical)
     }
 
     menu(text: 'History', mnemonic: 'I') {
