@@ -78,6 +78,7 @@ menuBar {
 
     menu(text: 'Script', mnemonic: 'S') {
         menuItem(runAction)
+        checkBoxMenuItem(loopModeAction, selected: controller.loopMode)
         checkBoxMenuItem(saveOnRunAction, selected: controller.saveOnRun)
         menuItem(runSelectionAction)
         checkBoxMenuItem(threadInterruptAction, selected: controller.threadInterrupt)

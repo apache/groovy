@@ -57,6 +57,7 @@ import javax.swing.JSplitPane
 import javax.swing.JTextPane
 import javax.swing.RootPaneContainer
 import javax.swing.SwingUtilities
+import javax.swing.Timer
 import javax.swing.UIManager
 import javax.swing.event.CaretEvent
 import javax.swing.event.CaretListener
@@ -142,8 +143,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     boolean threadInterrupt = prefs.getBoolean('threadInterrupt', false)
     Action threadInterruptAction
 
-    boolean saveOnRun = prefs.getBoolean('saveOnRun', false)
     Action saveOnRunAction
+    boolean saveOnRun = prefs.getBoolean('saveOnRun', false)
+
+    Action loopModeAction
+    boolean loopMode = prefs.getBoolean('loopMode', false)
+    int inputAreaContentHash
 
     boolean indy = prefs.getBoolean('indy', false)
     Action indyAction
@@ -1117,8 +1122,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     // actually run the script
-
     void runScript(EventObject evt = null) {
+        saveInputAreaContentHash()
         if (saveOnRun && scriptFile != null) {
             if (fileSave(evt)) runScriptImpl(false)
         } else {
@@ -1129,6 +1134,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     void saveOnRun(EventObject evt = null) {
         saveOnRun = evt.source.selected
         prefs.putBoolean('saveOnRun', saveOnRun)
+    }
+
+    void loopMode(EventObject evt = null) {
+        loopMode = evt.source.selected
+        prefs.putBoolean('loopMode', loopMode)
     }
 
     void indy(EventObject evt = null) {
@@ -1156,6 +1166,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void runSelectedScript(EventObject evt = null) {
+        saveInputAreaContentHash()
         runScriptImpl(true)
     }
 
@@ -1219,6 +1230,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         newScript(null, binding)
         // reload output transforms
         binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()
+    }
+
+    private void saveInputAreaContentHash() {
+        inputAreaContentHash = inputArea.getText().hashCode()
     }
 
     private void runScriptImpl(boolean selected) {
@@ -1285,6 +1300,15 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 scriptRunning = false
                 interruptAction.enabled = false
                 systemOutInterceptor.removeConsoleId()
+                if( loopMode ) {
+                    Timer timer = new Timer(1000, {
+                        if( inputAreaContentHash == inputArea.getText().hashCode() ) {
+                            runScriptImpl(selected)
+                        }
+                    })
+                    timer.repeats = false
+                    timer.start()
+                }
             }
         }
     }

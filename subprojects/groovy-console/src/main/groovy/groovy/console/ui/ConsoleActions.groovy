@@ -204,6 +204,13 @@ runAction = action(
         shortDescription: 'Execute Groovy Script'
 )
 
+loopModeAction = action(
+        name: 'Loop Mode',
+        closure: controller.&loopMode,
+        mnemonic: 'p',
+        shortDescription: 'Run script continuously in a loop when run is envoked. Uncheck to stop loop'
+)
+
 runSelectionAction = action(
         name: 'Run Selection',
         closure: controller.&runSelectedScript,
