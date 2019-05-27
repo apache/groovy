@@ -225,11 +225,14 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * Retrieve configuration used by this class loader.
-     * @return CompilerConfiguration used by this classloader
+     * Check if this class loader has compatible {@link CompilerConfiguration}
+     * with the provided one.
+     * @param config the compiler configuration to test for compatibility
+     * @return {@code true} if the provided config is exactly the same instance
+     * of {@link CompilerConfiguration} as this loader has
      */
-    public CompilerConfiguration getCompilerConfiguration() {
-      return config;
+    public boolean hasCompatibleConfiguration(CompilerConfiguration config) {
+      return this.config == config;
     }
 
     /**
