@@ -370,6 +370,10 @@ public class CachedMethod extends MetaMethod implements Comparable {
         return cachedMethod;
     }
 
+    public boolean canAccessLegally(Class<?> callerClass) {
+        return ReflectionUtils.checkAccessible(callerClass, cachedMethod.getDeclaringClass(), cachedMethod.getModifiers(), false);
+    }
+
     private boolean makeAccessibleDone = false;
     private void makeAccessibleIfNecessary() {
         if (!makeAccessibleDone) {

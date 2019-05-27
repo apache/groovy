@@ -73,6 +73,16 @@ public interface VMPlugin {
     boolean checkCanSetAccessible(AccessibleObject accessibleObject, Class<?> callerClass);
 
     /**
+     * check whether the member can be accessed or not
+     * @param callerClass callerClass the callerClass to invoke {@code setAccessible}
+     * @param declaringClass the type of member owner
+     * @param memberModifiers modifiers of member
+     * @param allowIllegalAccess whether to allow illegal access
+     * @return the result of checking
+     */
+    boolean checkAccessible(Class<?> callerClass, Class<?> declaringClass, int memberModifiers, boolean allowIllegalAccess);
+
+    /**
      * Set the {@code accessible} flag for this reflected object to {@code true}
      * if possible.
      *
