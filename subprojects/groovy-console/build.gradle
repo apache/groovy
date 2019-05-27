@@ -30,6 +30,6 @@ dependencies {
 task console(type: JavaExec, dependsOn:classes) {
     jvmArgs += ["-Dgroovy.attach.groovydoc=true"]
 
-    main = 'groovy.ui.Console'
+    main = 'groovy.console.ui.Console'
     classpath = sourceSets.main.runtimeClasspath
 }
