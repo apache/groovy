@@ -72,6 +72,7 @@ import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.Style
 import javax.swing.text.StyleConstants
 import javax.swing.text.html.HTML
+
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -266,7 +267,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         //when starting via main set the look and feel to system
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
-        def baseConfig = new CompilerConfiguration()
+        def baseConfig = new CompilerConfiguration(System.getProperties())
         String starterConfigScripts = System.getProperty("groovy.starter.configscripts", null)
         if (options.configscript || (starterConfigScripts != null && !starterConfigScripts.isEmpty())) {
             List<String> configScripts = new ArrayList<String>()
@@ -285,7 +286,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             enableIndy(baseConfig)
         }
 
-        def console = new Console(Console.class.classLoader?.getRootLoader(), new Binding(), baseConfig)
+        def console = new Console(Thread.currentThread().contextClassLoader, new Binding(), baseConfig)
         console.useScriptClassLoaderForScriptExecution = true
         console.run()
         def remaining = options.arguments()
@@ -334,23 +335,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
     }
 
-    Console() {
-        this(new Binding())
-    }
-
-    Console(Binding binding) {
+    Console(Binding binding = new Binding()) {
         this(null, binding)
     }
 
-    Console(ClassLoader parent) {
-        this(parent, new Binding())
-    }
-
-    Console(ClassLoader parent, Binding binding) {
-        this(parent, binding, new CompilerConfiguration())
-    }
-
-    Console(ClassLoader parent, Binding binding, CompilerConfiguration baseConfig) {
+    Console(ClassLoader parent, Binding binding = new Binding(), CompilerConfiguration baseConfig = new CompilerConfiguration(System.getProperties())) {
         this.baseConfig = baseConfig
         this.maxOutputChars = loadMaxOutputChars()
         indy = indy || isIndyEnabled(baseConfig)
