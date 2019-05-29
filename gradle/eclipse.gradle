@@ -22,7 +22,7 @@ allprojects {
     eclipse.classpath.file.whenMerged {
         entries.removeAll { entry -> entry.path =~ '/target/' } // affects: cli-commons, cli-picocli, console, groovydoc, macro, servlet, swing, templates, xml
         entries.unique(true) { entry -> entry.path } // affects: console, groovydoc, macro, servlet, swing, templates, xml
-        entries.sort(true) { entry -> "${entry.kind}:${entry.path}".toString() }
+        entries.sort(true) { entry -> "${entry.kind}:${entry.path.split('/')[-1].toLowerCase()}".toString() }
 
         // set "test" attribute based on gradle scopes
         entries.findAll { entry ->
