@@ -479,7 +479,7 @@ public class GroovyMain {
      * Process the input files.
      */
     private void processFiles() throws CompilationFailedException, IOException, URISyntaxException {
-        GroovyShell groovy = new GroovyShell(conf);
+        GroovyShell groovy = new GroovyShell(Thread.currentThread().getContextClassLoader(), conf);
         setupContextClassLoader(groovy);
 
         Script s = groovy.parse(getScriptSource(isScriptFile, script));
@@ -587,7 +587,7 @@ public class GroovyMain {
      * Process the standard, single script with args.
      */
     private void processOnce() throws CompilationFailedException, IOException, URISyntaxException {
-        GroovyShell groovy = new GroovyShell(conf);
+        GroovyShell groovy = new GroovyShell(Thread.currentThread().getContextClassLoader(), conf);
         setupContextClassLoader(groovy);
         groovy.run(getScriptSource(isScriptFile, script), args);
     }

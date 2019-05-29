@@ -24,11 +24,11 @@ import jline.TerminalFactory
 import jline.UnixTerminal
 import jline.UnsupportedTerminal
 import jline.WindowsTerminal
+import org.apache.groovy.groovysh.util.NoExitSecurityManager
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.apache.groovy.groovysh.util.NoExitSecurityManager
 import org.fusesource.jansi.Ansi
 import org.fusesource.jansi.AnsiConsole
 
@@ -64,10 +64,6 @@ class Main {
     Main(IO io, CompilerConfiguration configuration) {
         Logger.io = io
         groovysh = new Groovysh(io, configuration)
-    }
-
-    Groovysh getGroovysh() {
-        return groovysh
     }
 
     /**
@@ -152,7 +148,7 @@ class Main {
         if (options.e) {
             evalString = options.getOptionValue('e')
         }
-        def configuration = new CompilerConfiguration()
+        def configuration = new CompilerConfiguration(System.getProperties())
         configuration.setParameters((boolean) options.hasOption("pa"))
 
         List<String> filenames = options.arguments()
