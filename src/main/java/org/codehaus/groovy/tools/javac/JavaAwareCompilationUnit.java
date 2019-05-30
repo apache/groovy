@@ -41,13 +41,17 @@ import java.util.Map;
  * Compilation Unit capable of compiling Java source files.
  */
 public class JavaAwareCompilationUnit extends CompilationUnit {
-    private final List<String> javaSources;
+
     private final JavaStubGenerator stubGenerator;
+    private final List<String> javaSources = new LinkedList<String>();
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
     private final File generationGoal;
     private final boolean keepStubs;
-    private final CompilerConfiguration configuration;
     private final boolean memStubEnabled;
+
+    public JavaAwareCompilationUnit() {
+        this(null, null, null);
+    }
 
     public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
         this(configuration, null, null);
@@ -60,18 +64,19 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader,
                                     GroovyClassLoader transformClassLoader) {
         super(configuration, null, groovyClassLoader, transformClassLoader);
-        this.configuration = configuration;
-        this.memStubEnabled = configuration.isMemStubEnabled();
-        this.javaSources = new LinkedList<String>();
-        Map options = configuration.getJointCompilationOptions();
+
+        this.memStubEnabled = this.configuration.isMemStubEnabled();
+        Map<String, Object> options = this.configuration.getJointCompilationOptions();
         this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
-        boolean useJava5 = CompilerConfiguration.isPostJDK5(configuration.getTargetBytecode());
-		String encoding = configuration.getSourceEncoding();
+
+        boolean useJava5 = CompilerConfiguration.isPostJDK5(this.configuration.getTargetBytecode());
+        String encoding = this.configuration.getSourceEncoding();
 
         this.stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5, encoding);
         this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
                 if (!javaSources.isEmpty()) {
                     VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
@@ -83,6 +88,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             }
         }, Phases.CONVERSION);
         addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
+            @Override
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
                 ASTTransformationCollectorCodeVisitor collector =
                         new ASTTransformationCollectorCodeVisitor(source, JavaAwareCompilationUnit.this.getTransformLoader());
@@ -91,6 +97,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }, Phases.CONVERSION);
 
         addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
                 try {
                     if (!javaSources.isEmpty()) stubGenerator.generateClass(classNode);
@@ -101,6 +108,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }, Phases.CONVERSION);
     }
 
+    @Override
     public void gotoPhase(int phase) throws CompilationFailedException {
         super.gotoPhase(phase);
         // compile Java and clean up
@@ -109,9 +117,8 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 module.setImportsResolved(false);
             }
             try {
-                this.addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
-
-                JavaCompiler compiler = compilerFactory.createCompiler(getConfiguration());
+                addJavaCompilationUnits(stubGenerator.getJavaStubCompilationUnitSet()); // add java stubs
+                JavaCompiler compiler = compilerFactory.createCompiler(configuration);
                 compiler.compile(javaSources, this);
             } finally {
                 if (!keepStubs) stubGenerator.clean();
@@ -120,10 +127,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }
     }
 
+    @Override
     public void configure(CompilerConfiguration configuration) {
         super.configure(configuration);
         // GroovyClassLoader should be able to find classes compiled from java sources
-        File targetDir = configuration.getTargetDirectory();
+        File targetDir = this.configuration.getTargetDirectory();
         if (targetDir != null) {
             final String classOutput = targetDir.getAbsolutePath();
             getClassLoader().addClasspath(classOutput);
@@ -139,12 +147,14 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         javaSources.add(path);
     }
 
+    @Override
     public void addSources(String[] paths) {
         for (String path : paths) {
             addJavaOrGroovySource(new File(path));
         }
     }
 
+    @Override
     public void addSources(File[] files) {
         for (File file : files) {
             addJavaOrGroovySource(file);
@@ -152,10 +162,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     private void addJavaOrGroovySource(File file) {
-        if (file.getName().endsWith(".java"))
+        if (file.getName().endsWith(".java")) {
             addJavaSource(file);
-        else
+        } else {
             addSource(file);
+        }
     }
 
     public JavaCompilerFactory getCompilerFactory() {
