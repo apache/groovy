@@ -43,6 +43,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreeSelectionModel
+import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.Font
 import java.awt.event.KeyEvent
@@ -245,8 +246,10 @@ class AstBrowser {
                                     String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
                                     def props = swing.frame(title: title, defaultCloseOperation: JFrame.DISPOSE_ON_CLOSE,
                                             show: true, locationRelativeTo: null) {
-                                        lookAndFeel("system")
-                                        panel {
+                                        lookAndFeel 'system'
+                                        borderLayout(vgap: 5)
+                                        panel(constraints: BorderLayout.CENTER) {
+                                            borderLayout()
                                             scrollPane {
                                                 mapTable = swing.table {
                                                     tableModel(list: [[:]]) {
