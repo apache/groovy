@@ -239,7 +239,7 @@ class AstBrowser {
                     if (propList[2] == "ListHashMap" && propList[1] != 'null' && propList[1] != '[:]') {
                         //If the class is a ListHashMap, make it accessible in a new frame through a button
                         def btnPanel = swing.button(
-                                text: "See key/value pairs",
+                                text: "Key/value pairs: " + propList[1].tokenize(',').get(0).substring(1, 25) + "...",
                                 actionPerformed: {
                                     def mapTable
                                     String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
