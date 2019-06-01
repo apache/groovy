@@ -191,4 +191,21 @@ public class AnnotationNode extends ASTNode {
                 return "unknown target";
         }
     }
+
+    @Override
+    public String getText() {
+        String memberText = "";
+        if (members != null) {
+            boolean first = true;
+            for (Map.Entry<String, Expression> next : members.entrySet()) {
+                if (first) {
+                    first = false;
+                } else {
+                    memberText += ", ";
+                }
+                memberText += next.getKey() + ": " + next.getValue().getText();
+            }
+        }
+        return "@" + classNode.getText() + "(" + memberText + ")";
+    }
 }
