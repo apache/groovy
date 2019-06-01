@@ -1191,13 +1191,13 @@ enumConstantsStart
 enumConstants
     :
         enumConstant
-        (    options {generateAmbigWarnings=false;} :
-            (nls (SEMI! | RCURLY | classField)) => { break; /* leave ()* loop */ }
-        |   nls! COMMA!
-            (
+        ( options {generateAmbigWarnings=false;} :
+            (nls ( options {generateAmbigWarnings=false;} : SEMI! | RCURLY | declarationStart | constructorStart)) => {break;}
+        |
+            nls! COMMA! (
                 (nls annotationsOpt IDENT) => nls! enumConstant
             |
-                (nls (SEMI! | RCURLY | classField)) => { break; /* leave ()* loop */ }
+                (nls (RCURLY | classField)) => {break;}
             )
         )*
     ;
