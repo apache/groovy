@@ -43,17 +43,9 @@ import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
-import org.codehaus.groovy.runtime.m12n.ExtensionModule;
-import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner;
-import org.codehaus.groovy.runtime.m12n.MetaInfExtensionModule;
-import org.codehaus.groovy.runtime.memoize.EvictableCache;
-import org.codehaus.groovy.runtime.memoize.StampedCommonCache;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.InvocationTargetException;
@@ -71,7 +63,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 
 import static java.lang.Math.min;
@@ -169,7 +160,7 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ClassNode Deprecated_TYPE = makeWithoutCaching(Deprecated.class);
     protected static final ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
-    protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = new ExtensionMethodCache();
+    protected static final AbstractExtensionMethodCache EXTENSION_METHOD_CACHE = ExtensionMethodCache.INSTANCE;
     protected static final Map<ClassNode, Integer> NUMBER_TYPES = Collections.unmodifiableMap(
             new HashMap<ClassNode, Integer>() {
                 private static final long serialVersionUID = 8841951852732042766L;
@@ -320,7 +311,7 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     protected static void findDGMMethodsForClassNode(final ClassLoader loader, ClassNode clazz, String name, TreeSet<MethodNode> accumulator) {
-        List<MethodNode> fromDGM = EXTENSION_METHOD_CACHE.getExtensionMethods(loader).get(clazz.getName());
+        List<MethodNode> fromDGM = EXTENSION_METHOD_CACHE.get(loader).get(clazz.getName());
         if (fromDGM != null) {
             for (MethodNode node : fromDGM) {
                 if (node.getName().equals(name)) accumulator.add(node);
@@ -2284,123 +2275,6 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
-
-    /**
-     * This class is used to make extension methods lookup faster. Basically, it will only
-     * collect the list of extension methods (see {@link ExtensionModule} if the list of
-     * extension modules has changed. It avoids recomputing the whole list each time we perform
-     * a method lookup.
-     */
-    private static class ExtensionMethodCache {
-        private final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<ClassLoader, Map<String, List<MethodNode>>>(new WeakHashMap<ClassLoader, Map<String, List<MethodNode>>>());
-
-        public Map<String, List<MethodNode>> getExtensionMethods(ClassLoader loader) {
-            return cache.getAndPut(
-                    loader,
-                    new EvictableCache.ValueProvider<ClassLoader, Map<String, List<MethodNode>>>() {
-                        @Override
-                        public Map<String, List<MethodNode>> provide(final ClassLoader key) {
-                            final List<ExtensionModule> modules = new LinkedList<ExtensionModule>();
-                            ExtensionModuleScanner scanner =
-                                    new ExtensionModuleScanner(
-                                            new ExtensionModuleScanner.ExtensionModuleListener() {
-                                                public void onModule(final ExtensionModule module) {
-                                                    boolean skip = false;
-                                                    for (ExtensionModule extensionModule : modules) {
-                                                        if (extensionModule.getName().equals(module.getName())) {
-                                                            skip = true;
-                                                            break;
-                                                        }
-                                                    }
-                                                    if (!skip) modules.add(module);
-                                                }
-                                            },
-                                            key
-                                    );
-                            scanner.scanClasspathModules();
-
-                            return Collections.unmodifiableMap(getDGMMethods(modules));
-                        }
-                    });
-        }
-
-        /**
-         * Returns a map which contains, as the key, the name of a class. The value
-         * consists of a list of MethodNode, one for each default groovy method found
-         * which is applicable for this class.
-         *
-         * @param modules
-         * @return
-         */
-        private static Map<String, List<MethodNode>> getDGMMethods(List<ExtensionModule> modules) {
-            Set<Class> instanceExtClasses = new LinkedHashSet<Class>();
-            Set<Class> staticExtClasses = new LinkedHashSet<Class>();
-            for (ExtensionModule module : modules) {
-                if (module instanceof MetaInfExtensionModule) {
-                    MetaInfExtensionModule extensionModule = (MetaInfExtensionModule) module;
-                    instanceExtClasses.addAll(extensionModule.getInstanceMethodsExtensionClasses());
-                    staticExtClasses.addAll(extensionModule.getStaticMethodsExtensionClasses());
-                }
-            }
-            Map<String, List<MethodNode>> methods = new HashMap<String, List<MethodNode>>();
-            Collections.addAll(instanceExtClasses, DefaultGroovyMethods.DGM_LIKE_CLASSES);
-            Collections.addAll(instanceExtClasses, DefaultGroovyMethods.ADDITIONAL_CLASSES);
-            staticExtClasses.add(DefaultGroovyStaticMethods.class);
-
-            instanceExtClasses.add(ObjectArrayStaticTypesHelper.class);
-            instanceExtClasses.add(BooleanArrayStaticTypesHelper.class);
-            instanceExtClasses.add(CharArrayStaticTypesHelper.class);
-            instanceExtClasses.add(ByteArrayStaticTypesHelper.class);
-            instanceExtClasses.add(ShortArrayStaticTypesHelper.class);
-            instanceExtClasses.add(IntArrayStaticTypesHelper.class);
-            instanceExtClasses.add(LongArrayStaticTypesHelper.class);
-            instanceExtClasses.add(FloatArrayStaticTypesHelper.class);
-            instanceExtClasses.add(DoubleArrayStaticTypesHelper.class);
-
-            Collections.addAll(instanceExtClasses, VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods());
-            Collections.addAll(staticExtClasses, VMPluginFactory.getPlugin().getPluginStaticGroovyMethods());
-
-            scanClassesForDGMMethods(methods, staticExtClasses, true);
-            scanClassesForDGMMethods(methods, instanceExtClasses, false);
-
-            return methods;
-        }
-
-        private static void scanClassesForDGMMethods(Map<String, List<MethodNode>> accumulator,
-                                                     Iterable<Class> allClasses, boolean isStatic) {
-            for (Class dgmLikeClass : allClasses) {
-                ClassNode cn = makeWithoutCaching(dgmLikeClass, true);
-                for (MethodNode metaMethod : cn.getMethods()) {
-                    Parameter[] types = metaMethod.getParameters();
-                    if (metaMethod.isStatic() && metaMethod.isPublic() && types.length > 0
-                            && metaMethod.getAnnotations(Deprecated_TYPE).isEmpty()) {
-                        Parameter[] parameters = new Parameter[types.length - 1];
-                        System.arraycopy(types, 1, parameters, 0, parameters.length);
-                        ExtensionMethodNode node = new ExtensionMethodNode(
-                                metaMethod,
-                                metaMethod.getName(),
-                                metaMethod.getModifiers(),
-                                metaMethod.getReturnType(),
-                                parameters,
-                                ClassNode.EMPTY_ARRAY, null,
-                                isStatic);
-                        node.setGenericsTypes(metaMethod.getGenericsTypes());
-                        ClassNode declaringClass = types[0].getType();
-                        String declaringClassName = declaringClass.getName();
-                        node.setDeclaringClass(declaringClass);
-
-                        List<MethodNode> nodes = accumulator.get(declaringClassName);
-                        if (nodes == null) {
-                            nodes = new LinkedList<MethodNode>();
-                            accumulator.put(declaringClassName, nodes);
-                        }
-                        nodes.add(node);
-                    }
-                }
-            }
-        }
-
-    }
 
     /**
      * @return true if the class node is either a GString or the LUB of String and GString.
