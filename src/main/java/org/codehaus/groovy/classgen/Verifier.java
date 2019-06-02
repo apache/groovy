@@ -1358,7 +1358,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (equalReturnType && normalEqualParameters) return null;
 
-        if ((oldMethod.getModifiers() & ACC_FINAL) != 0) {
+        if (oldMethod.isFinal()) {
             throw new RuntimeParserException(
                     "Cannot override final method " +
                             oldMethod.getTypeDescriptor() +
@@ -1391,6 +1391,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 " in " + oldMethod.getDeclaringClass().getName() +
                                 message,
                         overridingMethod);
+            }
+            // GROOVY-8955 -- allow "def" as universal non-primitive return type
+            if (overridingMethod.isDynamicReturnType() && normalEqualParameters) {
+                overridingMethod.setReturnType(cleanType(omr));
+                return null;
             }
         }
 
