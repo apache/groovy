@@ -32,11 +32,11 @@ import picocli.CommandLine.Unmatched
 @SuppressWarnings('Println')
 @Command(name = 'grape', description = 'Allows for the inspection and management of the local grape cache.',
         subcommands = [
-                Install,
-                Uninstall,
-                ListCommand,
-                Resolve,
-                picocli.CommandLine.HelpCommand])
+                GrapeMain.Install,
+                GrapeMain.Uninstall,
+                GrapeMain.ListCommand,
+                GrapeMain.Resolve,
+                CommandLine.HelpCommand])
 class GrapeMain implements Runnable {
     @Option(names = ['-D', '--define'], description = 'define a system property', paramLabel = '<name=value>')
     private final Map<String, String> properties = new LinkedHashMap<String, String>()

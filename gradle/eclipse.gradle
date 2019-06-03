@@ -126,4 +126,9 @@ allprojects {
 
 eclipse.classpath.file.whenMerged {
     entries.removeAll { entry -> entry.path == '/groovy-groovydoc' }
+
+    entries.findAll { entry -> entry.path =~ '^target/generated/sources/antlr' }.each { entry ->
+        entry.entryAttributes['ignore_optional_problems'] = 'true'
+        entry.entryAttributes['optional'] = 'true'
+    }
 }
