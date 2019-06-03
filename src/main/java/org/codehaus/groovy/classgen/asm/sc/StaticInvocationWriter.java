@@ -281,7 +281,7 @@ public class StaticInvocationWriter extends InvocationWriter {
 
             if (emn.isStaticExtension()) {
                 // it's a static extension method
-                argumentList.add(0, ConstantExpression.NULL);
+                argumentList.add(0, new ConstantExpression(null));
             } else {
                 ClassNode classNode = controller.getClassNode();
                 boolean isThisOrSuper = false;
