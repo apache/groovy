@@ -18,20 +18,23 @@
  */
 package org.codehaus.groovy.transform.packageScope
 
+import groovy.transform.CompileStatic
+
 import java.lang.reflect.Modifier
 
-class PackageScopeTransformTest extends GroovyShellTestCase {
+@CompileStatic
+final class PackageScopeTransformTest extends GroovyShellTestCase {
+
     // GROOVY-9043
-    void testPackagePrivateAccessFromInnerClassCS() {
+    void testStaticFieldAccessFromInnerClassCS() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.PackageScope
             @CompileStatic
             class Test {
-                @PackageScope
-                static final String S = 'S'
-                static private final String T = 'T'
-                static protected final String U = 'U'
+                @PackageScope static final String S = 'S'
+                protected static final String T = 'T'
+                private static final String U = 'U'
                 static class Inner {
                     String method() {
                         S + T + U
@@ -44,7 +47,7 @@ class PackageScopeTransformTest extends GroovyShellTestCase {
     }
 
     void testImmutable() {
-        def objects = evaluate("""
+        def objects = evaluate '''
             import groovy.transform.PackageScope
             import static groovy.transform.PackageScopeTarget.FIELDS
             class Control {
@@ -66,9 +69,9 @@ class PackageScopeTransformTest extends GroovyShellTestCase {
                 def method() {}
             }
             [new Control(), new Foo(), new Bar(), new Baz()]
-        """)
-        objects*.class.each { c ->
-            def methodNames = c.methods.name
+        '''
+        objects*.class.each { Class c ->
+            def methodNames = c.methods*.name
             if (c.name == 'Control' || c.name == 'Baz') {
                 assert methodNames.contains('getX')
                 assert methodNames.contains('setX')
