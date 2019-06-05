@@ -126,6 +126,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -181,6 +182,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
@@ -1599,15 +1601,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 FieldNode field = current.getDeclaredField(propertyName);
                 field = allowStaticAccessToMember(field, staticOnly);
-                if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData(), !readMode))
+                if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData(), !readMode)) {
+                    pexp.removeNodeMetaData(StaticTypesMarker.READONLY_PROPERTY);
                     return true;
+                }
 
-                boolean isThisExpression = objectExpression instanceof VariableExpression
-                        && ((VariableExpression) objectExpression).isThisExpression()
-                        && objectExpressionType.equals(current);
+                boolean isThisExpression = objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isThisExpression()
+                        && (objectExpressionType.equals(current) || (objectExpressionType.isDerivedFrom(current) && hasAccessToField(field, objectExpressionType)));
 
-                if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData(), !readMode))
+                if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData(), !readMode)) {
+                    pexp.removeNodeMetaData(StaticTypesMarker.READONLY_PROPERTY);
                     return true;
+                }
 
                 MethodNode getter = findGetter(current, "get" + capName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
@@ -1721,6 +1726,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return true;
         }
         return foundGetterOrSetter;
+    }
+
+    private static boolean hasAccessToField(FieldNode field, ClassNode objectExpressionType) {
+        if (field != null) {
+            if (field.isPublic() || field.isProtected()) {
+                return true;
+            }
+            if (!field.isPrivate() && Objects.equals(objectExpressionType.getPackageName(), field.getDeclaringClass().getPackageName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private MethodNode findGetter(ClassNode current, String name, boolean searchOuterClasses) {
@@ -2755,7 +2772,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void checkNamedParamsAnnotation(Parameter param, MapExpression args) {
-        if (!param.getType().isDerivedFrom(ClassHelper.MAP_TYPE)) return;
+        if (!isOrImplements(param.getType(), ClassHelper.MAP_TYPE)) return;
         List<MapEntryExpression> entryExpressions = args.getMapEntryExpressions();
         Map<Object, Expression> entries = new LinkedHashMap<Object, Expression>();
         for (MapEntryExpression entry : entryExpressions) {
