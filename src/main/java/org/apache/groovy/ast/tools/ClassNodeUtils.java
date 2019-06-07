@@ -78,7 +78,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add a method that is marked as @Generated.
+     * Return an existing method if one exists or else create a new method and mark it as {@code @Generated}.
      *
      * @see ClassNode#addMethod(String, int, ClassNode, Parameter[], ClassNode[], Statement)
      */
@@ -88,13 +88,15 @@ public class ClassNodeUtils {
                                 Parameter[] parameters,
                                 ClassNode[] exceptions,
                                 Statement code) {
-        MethodNode result = cNode.addMethod(name, modifiers, returnType, parameters, exceptions, code);
-        markAsGenerated(cNode, result);
+        MethodNode existing = cNode.getDeclaredMethod(name, parameters);
+        if (existing != null) return existing;
+        MethodNode result = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
+        addGeneratedMethod(cNode, result);
         return result;
     }
 
     /**
-     * Add a method that is marked as @Generated.
+     * Add a method and mark it as {@code @Generated}.
      *
      * @see ClassNode#addMethod(MethodNode)
      */
@@ -104,7 +106,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add an inner class that is marked as @Generated.
+     * Add an inner class that is marked as {@code @Generated}.
      *
      * @see org.codehaus.groovy.ast.ModuleNode#addClass(ClassNode)
      */
@@ -114,7 +116,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add a method that is marked as @Generated.
+     * Add a method that is marked as {@code @Generated}.
      *
      * @see ClassNode#addConstructor(int, Parameter[], ClassNode[], Statement)
      */
@@ -125,7 +127,7 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add a method that is marked as @Generated.
+     * Add a method that is marked as {@code @Generated}.
      *
      * @see ClassNode#addConstructor(ConstructorNode)
      */
