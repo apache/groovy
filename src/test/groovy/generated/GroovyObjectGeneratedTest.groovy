@@ -3,13 +3,9 @@ package groovy.generated
 import groovy.transform.CompileStatic
 import org.junit.Test
 
-/**
- * @author Dmitry Vyazelenko
- * @author Andres Almiray
- */
 @CompileStatic
 class GroovyObjectGeneratedTest extends AbstractGeneratedAstTestCase {
-    final Class<?> classUnderTest = new GroovyClassLoader().parseClass('class MyClass { }')
+    final Class<?> classUnderTest = parseClass('class MyClass { }')
 
     @Test
     void test_invokeMethod_is_annotated() {

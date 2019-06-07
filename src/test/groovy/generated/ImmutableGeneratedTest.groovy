@@ -3,26 +3,22 @@ package groovy.generated
 import groovy.transform.CompileStatic
 import org.junit.Test
 
-/**
- * @author Dmitry Vyazelenko
- * @author Andres Almiray
- */
 @CompileStatic
 class ImmutableGeneratedTest extends AbstractGeneratedAstTestCase {
-    final Class<?> implicitImmutable = new GroovyClassLoader().parseClass('''@groovy.transform.Immutable
+    final Class<?> implicitImmutable = parseClass('''@groovy.transform.Immutable
        |class ClassUnderTest { 
        | String name
        | int age
-       |}'''.stripMargin())
+       |}''')
 
-    final Class<?> explicitImmutable = new GroovyClassLoader().parseClass('''@groovy.transform.Immutable
+    final Class<?> explicitImmutable = parseClass('''@groovy.transform.Immutable
        |class ClassUnderTest { 
        | String name
        | int age
        | boolean equals(Object o) { false }
        | int hashCode() { 42 }
        | String toString() { '' }
-       |}'''.stripMargin())
+       |}''')
 
     @Test
     void test_noArg_constructor_is_annotated() {
