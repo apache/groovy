@@ -4,20 +4,16 @@ import groovy.transform.CompileStatic
 import org.junit.Ignore
 import org.junit.Test
 
-/**
- * @author Dmitry Vyazelenko
- * @author Andres Almiray
- */
 @CompileStatic
 class AutoCloneGeneratedTest extends AbstractGeneratedAstTestCase {
-    final Class<?> implicitAutoClone = new GroovyClassLoader().parseClass('''@groovy.transform.AutoClone
+    final Class<?> implicitAutoClone = parseClass('''@groovy.transform.AutoClone
        |class ClassUnderTest {
-       |}'''.stripMargin())
+       |}''')
 
-    final Class<?> explicitAutoClone = new GroovyClassLoader().parseClass('''@groovy.transform.AutoClone
+    final Class<?> explicitAutoClone = parseClass('''@groovy.transform.AutoClone
        |class ClassUnderTest {
        | Object clone() throws java.lang.CloneNotSupportedException { null }
-       |}'''.stripMargin())
+       |}''')
 
     @Test
     void test_clone_is_annotated() {

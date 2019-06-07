@@ -3,21 +3,17 @@ package groovy.generated
 import groovy.transform.CompileStatic
 import org.junit.Test
 
-/**
- * @author Dmitry Vyazelenko
- * @author Andres Almiray
- */
 @CompileStatic
 class PropertiesGeneratedTest extends AbstractGeneratedAstTestCase {
-    final Class<?> withProps = new GroovyClassLoader().parseClass('''class WithProps { 
+    final Class<?> withProps = parseClass('''class WithProps {
        | String name
-       |}'''.stripMargin())
+       |}''')
 
-    final Class<?> withExplicitProps = new GroovyClassLoader().parseClass('''class WithExplicitProps { 
+    final Class<?> withExplicitProps = parseClass('''class WithExplicitProps {
        | private String name
        | String getName() { name }
        | void setName(String n) { name = n }
-       |}'''.stripMargin())
+       |}''')
 
     @Test
     void test_implicit_getName_is_annotated() {

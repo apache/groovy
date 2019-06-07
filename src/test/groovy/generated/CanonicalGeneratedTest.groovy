@@ -3,19 +3,15 @@ package groovy.generated
 import groovy.transform.CompileStatic
 import org.junit.Test
 
-/**
- * @author Dmitry Vyazelenko
- * @author Andres Almiray
- */
 @CompileStatic
 class CanonicalGeneratedTest extends AbstractGeneratedAstTestCase {
-    final Class<?> implicitCanonical = new GroovyClassLoader().parseClass('''@groovy.transform.Canonical
+    final Class<?> implicitCanonical = parseClass('''@groovy.transform.Canonical
        |class ClassUnderTest { 
        | String name
        | int age
-       |}'''.stripMargin())
+       |}''')
 
-    final Class<?> explicitCanonical = new GroovyClassLoader().parseClass('''@groovy.transform.Canonical
+    final Class<?> explicitCanonical = parseClass('''@groovy.transform.Canonical
        |class ClassUnderTest { 
        | String name
        | int age
@@ -23,7 +19,7 @@ class CanonicalGeneratedTest extends AbstractGeneratedAstTestCase {
        | boolean equals(Object o) { false }
        | int hashCode() { 42 }
        | String toString() { '' }
-       |}'''.stripMargin())
+       |}''')
 
     @Test
     void test_noArg_constructor_is_annotated() {

@@ -4,25 +4,21 @@ import groovy.transform.CompileStatic
 import org.junit.Ignore
 import org.junit.Test
 
-/**
- * @author Dmitry Vyazelenko
- * @author Andres Almiray
- */
 @CompileStatic
 class SortableGeneratedTest extends AbstractGeneratedAstTestCase {
-    final Class<?> implicitSortable = new GroovyClassLoader().parseClass('''@groovy.transform.Sortable
+    final Class<?> implicitSortable = parseClass('''@groovy.transform.Sortable
       |class ClassUnderTest { 
        | String name
        | int age
-       |}'''.stripMargin())
+       |}''')
 
-    final Class<?> explicitSortable = new GroovyClassLoader().parseClass('''@groovy.transform.Sortable
+    final Class<?> explicitSortable = parseClass('''@groovy.transform.Sortable
       |class ClassUnderTest { 
        | String name
        | int age
        | int compareTo(Object o) { 42 }
        | int compareTo(ClassUnderTest o) { 42 }
-       |}'''.stripMargin())
+       |}''')
 
     @Test
     void test_compareTo_is_annotated() {

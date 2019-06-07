@@ -298,6 +298,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 email 'aalmiray@users.sourceforge.net'
                 roles {
                     role 'Developer'
+                    role 'Despot'
                 }
             }
             developer {
@@ -346,7 +347,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 email 'cedric.champeau@gmail.com'
                 roles {
                     role 'Developer'
-                    role 'Despot'
                 }
             }
             developer {
@@ -823,6 +823,9 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             }
             contributor {
                 name 'Sean Timm'
+            }
+            contributor {
+                name 'Dmitry Vyazelenko'
             }
         }
         mailingLists {

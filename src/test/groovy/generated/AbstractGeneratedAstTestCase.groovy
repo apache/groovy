@@ -6,12 +6,12 @@ import groovy.transform.Generated
 import java.lang.reflect.Constructor
 import java.lang.reflect.Method
 
-/**
- * @author Dmitry Vyazelenko
- * @author Andres Almiray
- */
 @CompileStatic
 abstract class AbstractGeneratedAstTestCase {
+    protected final Class<?> parseClass(String str) {
+        new GroovyClassLoader().parseClass(str.stripMargin())
+    }
+
     protected final void assertConstructorIsAnnotated(Class<?> classUnderTest, Class... paramTypes) {
         assert findConstructor(classUnderTest, paramTypes).getAnnotation(Generated)
     }
