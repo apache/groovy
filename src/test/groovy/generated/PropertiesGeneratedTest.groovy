@@ -6,14 +6,14 @@ import org.junit.Test
 @CompileStatic
 class PropertiesGeneratedTest extends AbstractGeneratedAstTestCase {
     final Class<?> withProps = parseClass('''class WithProps {
-       | String name
-       |}''')
+           String name
+       }''')
 
     final Class<?> withExplicitProps = parseClass('''class WithExplicitProps {
-       | private String name
-       | String getName() { name }
-       | void setName(String n) { name = n }
-       |}''')
+           private String name
+           String getName() { name }
+           void setName(String n) { name = n }
+       }''')
 
     @Test
     void test_implicit_getName_is_annotated() {

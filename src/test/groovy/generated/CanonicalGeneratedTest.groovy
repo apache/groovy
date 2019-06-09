@@ -6,20 +6,20 @@ import org.junit.Test
 @CompileStatic
 class CanonicalGeneratedTest extends AbstractGeneratedAstTestCase {
     final Class<?> implicitCanonical = parseClass('''@groovy.transform.Canonical
-       |class ClassUnderTest { 
-       | String name
-       | int age
-       |}''')
+       class ClassUnderTest {
+           String name
+           int age
+       }''')
 
     final Class<?> explicitCanonical = parseClass('''@groovy.transform.Canonical
-       |class ClassUnderTest { 
-       | String name
-       | int age
-       | ClassUnderTest(String n, int a) { }
-       | boolean equals(Object o) { false }
-       | int hashCode() { 42 }
-       | String toString() { '' }
-       |}''')
+       class ClassUnderTest {
+           String name
+           int age
+           ClassUnderTest(String n, int a) { }
+           boolean equals(Object o) { false }
+           int hashCode() { 42 }
+           String toString() { '' }
+       }''')
 
     @Test
     void test_noArg_constructor_is_annotated() {

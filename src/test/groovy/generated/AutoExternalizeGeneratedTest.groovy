@@ -7,14 +7,14 @@ import org.junit.Test
 @CompileStatic
 class AutoExternalizeGeneratedTest extends AbstractGeneratedAstTestCase {
     final Class<?> implicitAutoExternalize = parseClass('''@groovy.transform.AutoExternalize
-       |class ClassUnderTest {
-       |}''')
+       class ClassUnderTest {
+       }''')
 
     final Class<?> explicitAutoExternalize = parseClass('''@groovy.transform.AutoExternalize
-       |class ClassUnderTest {
-       | void writeExternal(ObjectOutput out) throws IOException { }
-       | void readExternal(ObjectInput oin) { }
-       |}''')
+       class ClassUnderTest {
+           void writeExternal(ObjectOutput out) throws IOException { }
+           void readExternal(ObjectInput oin) { }
+       }''')
 
     @Test
     void test_writeExternal_is_annotated() {

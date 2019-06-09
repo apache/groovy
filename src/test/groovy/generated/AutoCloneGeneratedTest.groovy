@@ -7,13 +7,13 @@ import org.junit.Test
 @CompileStatic
 class AutoCloneGeneratedTest extends AbstractGeneratedAstTestCase {
     final Class<?> implicitAutoClone = parseClass('''@groovy.transform.AutoClone
-       |class ClassUnderTest {
-       |}''')
+       class ClassUnderTest {
+       }''')
 
     final Class<?> explicitAutoClone = parseClass('''@groovy.transform.AutoClone
-       |class ClassUnderTest {
-       | Object clone() throws java.lang.CloneNotSupportedException { null }
-       |}''')
+       class ClassUnderTest {
+           Object clone() throws java.lang.CloneNotSupportedException { null }
+       }''')
 
     @Test
     void test_clone_is_annotated() {

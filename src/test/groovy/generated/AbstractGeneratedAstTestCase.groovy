@@ -9,7 +9,7 @@ import java.lang.reflect.Method
 @CompileStatic
 abstract class AbstractGeneratedAstTestCase {
     protected final Class<?> parseClass(String str) {
-        new GroovyClassLoader().parseClass(str.stripMargin())
+        new GroovyClassLoader().parseClass(str)
     }
 
     protected final void assertConstructorIsAnnotated(Class<?> classUnderTest, Class... paramTypes) {

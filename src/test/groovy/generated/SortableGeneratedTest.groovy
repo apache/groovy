@@ -7,18 +7,18 @@ import org.junit.Test
 @CompileStatic
 class SortableGeneratedTest extends AbstractGeneratedAstTestCase {
     final Class<?> implicitSortable = parseClass('''@groovy.transform.Sortable
-      |class ClassUnderTest { 
-       | String name
-       | int age
-       |}''')
+      class ClassUnderTest {
+          String name
+          int age
+      }''')
 
     final Class<?> explicitSortable = parseClass('''@groovy.transform.Sortable
-      |class ClassUnderTest { 
-       | String name
-       | int age
-       | int compareTo(Object o) { 42 }
-       | int compareTo(ClassUnderTest o) { 42 }
-       |}''')
+      class ClassUnderTest {
+          String name
+          int age
+          int compareTo(Object o) { 42 }
+          int compareTo(ClassUnderTest o) { 42 }
+      }''')
 
     @Test
     void test_compareTo_is_annotated() {
