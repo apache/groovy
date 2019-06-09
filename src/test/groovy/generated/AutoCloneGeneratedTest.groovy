@@ -1,7 +1,6 @@
 package groovy.generated
 
 import groovy.transform.CompileStatic
-import org.junit.Ignore
 import org.junit.Test
 
 @CompileStatic
@@ -25,7 +24,6 @@ class AutoCloneGeneratedTest extends AbstractGeneratedAstTestCase {
         assertExactMethodIsAnnotated(implicitAutoClone, 'clone', implicitAutoClone)
     }
 
-    @Ignore('https://issues.apache.org/jira/browse/GROOVY-9162')
     @Test
     void test_clone_is_not_annotated() {
         assertExactMethodIsNotAnnotated(explicitAutoClone, 'clone', Object)

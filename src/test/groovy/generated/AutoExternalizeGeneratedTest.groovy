@@ -1,7 +1,6 @@
 package groovy.generated
 
 import groovy.transform.CompileStatic
-import org.junit.Ignore
 import org.junit.Test
 
 @CompileStatic
@@ -26,13 +25,11 @@ class AutoExternalizeGeneratedTest extends AbstractGeneratedAstTestCase {
         assertMethodIsAnnotated(implicitAutoExternalize, 'readExternal', ObjectInput)
     }
 
-    @Ignore('https://issues.apache.org/jira/browse/GROOVY-9163')
     @Test
     void test_writeExternal_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitAutoExternalize, 'writeExternal', ObjectOutput)
     }
 
-    @Ignore('https://issues.apache.org/jira/browse/GROOVY-9163')
     @Test
     void test_readExternal_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitAutoExternalize, 'readExternal', ObjectInput)
