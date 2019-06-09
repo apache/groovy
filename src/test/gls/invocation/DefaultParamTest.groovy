@@ -18,27 +18,28 @@
  */
 package gls.invocation
 
-import gls.CompilableTestSupport
+import groovy.transform.CompileStatic
 
-class DefaultParamTest extends CompilableTestSupport {
+@CompileStatic
+final class DefaultParamTest extends GroovyTestCase {
 
     void testDefaultParameterCausingDoubledMethod() {
         //GROOVY-2191
-        shouldNotCompile '''
+        shouldFail '''
             def foo(String one, String two = "two") {"$one $two"}
             def foo(String one, String two = "two", String three = "three") {"$one $two $three"}
         '''
 
-        shouldNotCompile '''
+        shouldFail '''
             def foo(String one, String two = "two", String three = "three") {"$one $two $three"}
             def foo(String one, String two = "two") {"$one $two"}
         '''
-            
-        shouldNotCompile '''
+
+        shouldFail '''
             def meth(Closure cl = null) {meth([:], cl)}
             def meth(Map args = [:], Closure cl = null) {}
         '''
-    } 
+    }
 
     void testDefaultParameters() {
         assertScript '''
@@ -49,18 +50,17 @@ class DefaultParamTest extends CompilableTestSupport {
             assert "X-Y-defC" == doSomething("X", "Y")
             assert "X-defB-defC" == doSomething("X")
         '''
-        shouldFail {
-            assertScript '''
-                def doSomething(a, b = 'defB', c = 'defC') {
-                    return a + "-" + b + "-" + c
-                }
-                doSomething()        
-            '''
-        }
+
+        shouldFail '''
+            def doSomething(a, b = 'defB', c = 'defC') {
+                return a + "-" + b + "-" + c
+            }
+            doSomething()
+        '''
     }
 
     void testDefaultTypedParameters() {
-        assertScript """
+        assertScript '''
             String doTypedSomething(String a = 'defA', String b = 'defB', String c = 'defC') {
                 a + "-" + b + "-" + c
             }
@@ -68,30 +68,29 @@ class DefaultParamTest extends CompilableTestSupport {
             assert "X-Y-defC" == doTypedSomething("X", "Y")
             assert "X-defB-defC" == doTypedSomething("X")
             assert "defA-defB-defC" == doTypedSomething()
-        """
+        '''
     }
 
     void testDefaultTypedParametersAnother() {
-        assertScript """
+        assertScript '''
             String doTypedSomethingAnother(String a = 'defA', String b = 'defB', String c) {
                 return a + "-" + b + "-" + c
             }
             assert "X-Y-Z" == doTypedSomethingAnother("X", "Y", "Z")
             assert "X-defB-Z" == doTypedSomethingAnother("X", "Z")
-            assert "defA-defB-Z" == doTypedSomethingAnother("Z")            
-        """
-        shouldFail {
-            assertScript """
-                String doTypedSomethingAnother(String a = 'defA', String b = 'defB', String c) {
-                    return a + "-" + b + "-" + c
-                }
-                doTypedSomethingAnother()
-            """
-        }
+            assert "defA-defB-Z" == doTypedSomethingAnother("Z")
+        '''
+
+        shouldFail '''
+            String doTypedSomethingAnother(String a = 'defA', String b = 'defB', String c) {
+                return a + "-" + b + "-" + c
+            }
+            doTypedSomethingAnother()
+        '''
     }
-    
+
     void testConstructor() {
-        assertScript """
+        assertScript '''
             class DefaultParamTestTestClass {
                 def j
                 DefaultParamTestTestClass(int i = 1){j=i}
@@ -100,24 +99,24 @@ class DefaultParamTest extends CompilableTestSupport {
             def foo = new DefaultParamTestTestClass()
             assert foo.j == 1
             foo = new DefaultParamTestTestClass(2)
-            assert foo.j == 2        
-        """
+            assert foo.j == 2
+        '''
     }
-    
+
     void testPrecendence() {
         // def meth(Closure cl = null) will produce a call meth(null)
         // since interfaces are prefered over normal classes and since
         // def meth(Map args, Closure cl = null) will produce a method
         // meth(Map) a simple call with meth(null) would normally call
-        // meth(Map). To ensure this will not happen the call has to 
-        // use a cast in the automatically created method. 
-        assertScript """
+        // meth(Map). To ensure this will not happen the call has to
+        // use a cast in the automatically created method.
+        assertScript '''
             def meth(Closure cl = null) {
               return '1' +meth([:], cl)
             }
 
             def meth(Map args, Closure cl = null) {
-                if(args==null) return "2" 
+                if(args==null) return "2"
                 return '2'+args.size()
             }
 
@@ -126,70 +125,111 @@ class DefaultParamTest extends CompilableTestSupport {
             assert meth {} == "120"
             assert meth(a:1) == "21"
             assert meth(a:1) {} == "21"
-        """
+        '''
     }
 
-    void testClosureSharedVariableRefersToDefaultParameter() {
-        assertScript """
-                def f1( int x = 3, fn={ -> x } ) {
-                    return fn()
+    // GROOVY-9151
+    void testMethodWithAllParametersDefaulted() {
+        assertScript '''
+            String greet(Object o = 'world', String s = o.toString()) {
+                "hello $s"
+            }
+            assert greet() == 'hello world'
+        '''
+    }
+
+    // GROOVY-9151
+    void _FIXME_testConstructorWithAllParametersDefaulted() {
+        assertScript '''
+            class Greeting {
+                Greeting(Object o = 'world', String s = o.toString()) {
+                    this.text = "hello $s"
                 }
+                String text
+            }
+            assert new Greeting().text == 'hello world'
+        '''
+    }
 
-                assert 3 == f1()
-                assert 42 == f1(42)
-            """
+    // GROOVY-5632
+    void testClosureSharedVariableRefersToDefaultParameter1() {
+        assertScript '''
+            def f1( int x = 3, fn={ -> x } ) {
+                return fn()
+            }
 
-        assertScript """
-               def f2( int x = 3, fn={ -> def c2 = { -> x }; c2.call() } ) {
-                   return fn()
-               }
+            assert 3 == f1()
+            assert 42 == f1(42)
+        '''
+    }
 
-               assert 42 == f2(42)
-               assert 42 == f2(42)
-               assert 84 == f2(42) { 84 }
-            """
+    // GROOVY-5632
+    void testClosureSharedVariableRefersToDefaultParameter2() {
+        assertScript '''
+           def f2( int x = 3, fn={ -> def c2 = { -> x }; c2.call() } ) {
+               return fn()
+           }
 
-        assertScript """
-               def f3(fn={ -> 42 }, fn2={ -> def c2 = { -> fn() }; c2.call() } ) {
-                   return fn2()
-               }
+           assert 42 == f2(42)
+           assert 42 == f2(42)
+           assert 84 == f2(42) { 84 }
+        '''
+    }
 
-               assert 42 == f3()
-               assert 84 == f3({ -> 84 })
-            """
+    // GROOVY-5632
+    void testClosureSharedVariableRefersToDefaultParameter3() {
+        assertScript '''
+           def f3(fn={ -> 42 }, fn2={ -> def c2 = { -> fn() }; c2.call() } ) {
+               return fn2()
+           }
 
-        assertScript """
-               def f4(def s = [1,2,3], fn = { -> s.size() }) {
-                   fn()
-               }
+           assert 42 == f3()
+           assert 84 == f3({ -> 84 })
+        '''
+    }
 
-               assert 3 == f4()
-            """
+    // GROOVY-5632
+    void testClosureSharedVariableRefersToDefaultParameter4() {
+        assertScript '''
+           def f4(def s = [1,2,3], fn = { -> s.size() }) {
+               fn()
+           }
 
-        assertScript """
+           assert 3 == f4()
+        '''
+    }
+
+    // GROOVY-5632
+    void testClosureSharedVariableRefersToDefaultParameter5() {
+        assertScript '''
            static <T extends Number> Integer f5(List<T> s = [1,2,3], fn = { -> (s*.intValue()).sum() }) {
                fn()
            }
 
            assert 6 == f5()
            assert 6 == f5([1.1, 2.1, 3.1])
-        """
+        '''
+    }
 
-        assertScript """
+    // GROOVY-5632
+    void testClosureSharedVariableRefersToDefaultParameter6() {
+        assertScript '''
            def f6(def s = [1,2,3], fn = { -> s.size() }, fn2 = { fn() + s.size() }) {
                fn2()
            }
 
            assert 6 == f6()
-        """
+        '''
+    }
 
-        assertScript """
+    // GROOVY-5632
+    void testClosureSharedVariableRefersToDefaultParameter7() {
+        assertScript '''
             def f7( int x = 3, int y = 39, fn={ -> x + y } ) {
                 return fn()
             }
 
             assert 42 == f7()
-        """
+        '''
     }
 }
-

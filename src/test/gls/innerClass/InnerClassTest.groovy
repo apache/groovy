@@ -114,13 +114,13 @@ class InnerClassTest extends CompilableTestSupport {
     void testStaticInnerClass() {
         assertScript """
             import java.lang.reflect.Modifier
-        
+
             class A {
                 static class B{}
             }
             def x = new A.B()
             assert x != null
-            
+
             def mods = A.B.modifiers
             assert Modifier.isPublic(mods)
         """
@@ -386,8 +386,8 @@ class InnerClassTest extends CompilableTestSupport {
     void testClassOutputOrdering() {
         // this does actually not do much, but before this
         // change the inner class was tried to be executed
-        // because a class ordering bug. The main method 
-        // makes the Foo class executeable, but Foo$Bar is 
+        // because a class ordering bug. The main method
+        // makes the Foo class executeable, but Foo$Bar is
         // not. So if Foo$Bar is returned, asserScript will
         // fail. If Foo is returned, asserScript will not
         // fail.
@@ -473,7 +473,7 @@ class A {
     void testReferencedVariableInAIC() {
         assertScript """
             interface X{}
-            
+
             final double delta = 0.1
             (0 ..< 1).collect { n ->
                 new X () {
@@ -485,7 +485,7 @@ class A {
         """
         assertScript """
             interface X{}
-            
+
             final double delta1 = 0.1
             final double delta2 = 0.1
             (0 ..< 1).collect { n ->
@@ -511,51 +511,116 @@ class A {
         '''
     }
 
-    // GROOVY-5679
-    // GROOVY-5681
+    // GROOVY-5679, GROOVY-5681
     void testEnclosingMethodIsSet() {
-        new GroovyShell().evaluate '''import groovy.transform.ASTTest
-        import static org.codehaus.groovy.control.CompilePhase.*
-        import org.codehaus.groovy.ast.InnerClassNode
-        import org.codehaus.groovy.ast.expr.ConstructorCallExpression
-import org.codehaus.groovy.classgen.Verifier
+        assertScript '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.InnerClassNode
+            import org.codehaus.groovy.ast.expr.ConstructorCallExpression
+            import static org.codehaus.groovy.classgen.Verifier.*
+            import static org.codehaus.groovy.control.CompilePhase.*
 
-        class A {
-            int x
+            class A {
+                int x
 
-            /*@ASTTest(phase=SEMANTIC_ANALYSIS, value={
-                def cce = lookup('inner')[0].expression
-                def icn = cce.type
-                assert icn instanceof InnerClassNode
-                assert icn.enclosingMethod == node
-            })
-            A() { inner: new Runnable() { void run() {} } }
+                /*@ASTTest(phase=SEMANTIC_ANALYSIS, value={
+                    def cce = lookup('inner')[0].expression
+                    def icn = cce.type
+                    assert icn instanceof InnerClassNode
+                    assert icn.enclosingMethod == node
+                })
+                A() { inner: new Runnable() { void run() {} } }
 
-            @ASTTest(phase=SEMANTIC_ANALYSIS, value={
-                def cce = lookup('inner')[0].expression
-                def icn = cce.type
-                assert icn instanceof InnerClassNode
-                assert icn.enclosingMethod == node
-            })
-            void foo() { inner: new Runnable() { void run() {} } }*/
+                @ASTTest(phase=SEMANTIC_ANALYSIS, value={
+                    def cce = lookup('inner')[0].expression
+                    def icn = cce.type
+                    assert icn instanceof InnerClassNode
+                    assert icn.enclosingMethod == node
+                })
+                void foo() { inner: new Runnable() { void run() {} } }*/
+
+                @ASTTest(phase=CLASS_GENERATION, value={
+                    def initialExpression = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
+                    assert initialExpression instanceof ConstructorCallExpression
+                    def icn = initialExpression.type
+                    assert icn instanceof InnerClassNode
+                    assert icn.enclosingMethod != null
+                    assert icn.enclosingMethod.name == 'bar'
+                    assert icn.enclosingMethod.parameters.length == 0 // ensure the enclosing method is bar(), not bar(Object)
+                })
+                void bar(action = new Runnable() { void run() { x = 123 }}) {
+                    action.run()
+                }
+            }
+            def a = new A()
+            a.bar()
+            assert a.x == 123
+        '''
+    }
+
+    // GROOVY-5681, GROOVY-9151
+    void testEnclosingMethodIsSet2() {
+        assertScript '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.expr.*
+            import static org.codehaus.groovy.classgen.Verifier.*
+            import static org.codehaus.groovy.control.CompilePhase.*
 
             @ASTTest(phase=CLASS_GENERATION, value={
-                def initialExpression = node.parameters[0].getNodeMetaData(Verifier.INITIAL_EXPRESSION)
-                assert initialExpression instanceof ConstructorCallExpression
-                def icn = initialExpression.type
-                assert icn instanceof InnerClassNode
-                assert icn.enclosingMethod != null
-                assert icn.enclosingMethod.name == 'bar'
-                assert icn.enclosingMethod.parameters.length == 0 // ensure the enclosing method is bar(), not bar(Object)
+                def init = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
+                assert init instanceof MapExpression
+                assert init.mapEntryExpressions[0].valueExpression instanceof ConstructorCallExpression
+                def type = init.mapEntryExpressions[0].valueExpression.type
+
+                assert type.enclosingMethod != null
+                assert type.enclosingMethod.name == 'bar'
+                assert type.enclosingMethod.parameters.length == 0 // ensure the enclosing method is bar(), not bar(Map)
             })
-            void bar(action=new Runnable() { void run() { x = 123 }}) {
-                action.run()
+            void bar(Map args = [action: new Runnable() { void run() { result = 123 }}]) {
+                args.action.run()
             }
 
-        }
-        def a = new A()
-        a.bar()
-        assert a.x == 123
+            bar()
+        '''
+    }
+
+    // GROOVY-5681, GROOVY-9151
+    void testEnclosingMethodIsSet3() {
+        assertScript '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.ast.expr.*
+            import org.codehaus.groovy.ast.stmt.*
+            import static org.codehaus.groovy.classgen.Verifier.*
+            import static org.codehaus.groovy.control.CompilePhase.*
+
+            @ASTTest(phase=CLASS_GENERATION, value={
+                def init = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
+                assert init instanceof ConstructorCallExpression
+                assert init.type.enclosingMethod != null
+                assert init.type.enclosingMethod.name == 'bar'
+                assert init.type.enclosingMethod.parameters.length == 0 // ensure the enclosing method is bar(), not bar(Runnable)
+
+                assert init.type.getMethods('run')[0].code instanceof BlockStatement
+                assert init.type.getMethods('run')[0].code.statements[0] instanceof ExpressionStatement
+                assert init.type.getMethods('run')[0].code.statements[0].expression instanceof DeclarationExpression
+
+                init = init.type.getMethods('run')[0].code.statements[0].expression.rightExpression
+                assert init instanceof ConstructorCallExpression
+                assert init.isUsingAnonymousInnerClass()
+                assert init.type.enclosingMethod != null
+                assert init.type.enclosingMethod.name == 'run'
+                assert init.type.enclosingMethod.parameters.length == 0
+            })
+            void bar(Runnable runner = new Runnable() {
+                @Override void run() {
+                    def comparator = new Comparator<int>() {
+                        int compare(int one, int two) {
+                        }
+                    }
+                }
+            }) {
+                args.action.run()
+            }
         '''
     }
 
