@@ -1378,7 +1378,7 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9151
+    @Test // GROOVY-9151
     void testEnclosingMethodIsSet2() {
         assertScript '''
             import groovy.transform.ASTTest
