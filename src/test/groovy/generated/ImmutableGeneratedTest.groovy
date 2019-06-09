@@ -6,19 +6,19 @@ import org.junit.Test
 @CompileStatic
 class ImmutableGeneratedTest extends AbstractGeneratedAstTestCase {
     final Class<?> implicitImmutable = parseClass('''@groovy.transform.Immutable
-       |class ClassUnderTest { 
-       | String name
-       | int age
-       |}''')
+       class ClassUnderTest {
+           String name
+           int age
+       }''')
 
     final Class<?> explicitImmutable = parseClass('''@groovy.transform.Immutable
-       |class ClassUnderTest { 
-       | String name
-       | int age
-       | boolean equals(Object o) { false }
-       | int hashCode() { 42 }
-       | String toString() { '' }
-       |}''')
+       class ClassUnderTest {
+           String name
+           int age
+           boolean equals(Object o) { false }
+           int hashCode() { 42 }
+           String toString() { '' }
+       }''')
 
     @Test
     void test_noArg_constructor_is_annotated() {
