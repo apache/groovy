@@ -1,7 +1,6 @@
 package groovy.generated
 
 import groovy.transform.CompileStatic
-import org.junit.Ignore
 import org.junit.Test
 
 @CompileStatic
@@ -46,7 +45,6 @@ class SortableGeneratedTest extends AbstractGeneratedAstTestCase {
         assertMethodIsNotAnnotated(explicitSortable, 'compareTo', Object)
     }
 
-    @Ignore('https://issues.apache.org/jira/browse/GROOVY-9161')
     @Test
     void test_explicit_compareTo_with_exact_type_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitSortable, 'compareTo', explicitSortable)
