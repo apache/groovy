@@ -1301,7 +1301,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 interruptAction.enabled = false
                 systemOutInterceptor.removeConsoleId()
                 if( loopMode ) {
-                    Timer timer = new Timer(1000, {
+                    int delay = prefs.getInt('loopModeLength', ConsolePreferences.DEFAULT_LOOP_MODE_LENGTH_MILLIS)
+                    Timer timer = new Timer(delay, {
                         if( inputAreaContentHash == inputArea.getText().hashCode() ) {
                             runScriptImpl(selected)
                         }
