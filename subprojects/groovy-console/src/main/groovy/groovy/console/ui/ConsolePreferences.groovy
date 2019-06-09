@@ -30,9 +30,13 @@ class ConsolePreferences {
 
     // Default maximum number of characters to show on console at any time
     static int DEFAULT_MAX_OUTPUT_CHARS = 20000
+    static int DEFAULT_LOOP_MODE_LENGTH_MILLIS = 1000
 
     @Bindable
     int maxOutputChars
+
+    @Bindable
+    int loopModeLength
 
     private final console
     private final MessageSource T
@@ -45,6 +49,7 @@ class ConsolePreferences {
         T = new MessageSource(Console)
 
         maxOutputChars = console.loadMaxOutputChars()
+        loopModeLength = console.prefs.getInt('loopModeLength', DEFAULT_LOOP_MODE_LENGTH_MILLIS)
         console.maxOutputChars = maxOutputChars
     }
 
@@ -75,6 +80,16 @@ class ConsolePreferences {
                                         bind(target: this, targetProperty: 'maxOutputChars',
                                                 validator: this.&isInteger, converter: Integer.&parseInt),
                                 columns: 6
+                    }
+
+                    hbox {
+                        label "${T['prefs.loop.mode.title']}:"
+
+                        formattedTextField value: loopModeLength, id: 'txtLoopModeLength',
+                                text:
+                        bind(target: this, targetProperty: 'loopModeLength',
+                                validator: this.&isInteger, converter: Integer.&parseInt),
+                        columns: 8
                     }
 
                     hbox {
@@ -119,10 +134,12 @@ class ConsolePreferences {
 
     private void onReset(EventObject event) {
         console.swing.txtMaxOutputChars.text = DEFAULT_MAX_OUTPUT_CHARS
+        console.swing.txtLoopModeLength.text = DEFAULT_LOOP_MODE_LENGTH_MILLIS
     }
 
     private void onClose(EventObject event) {
         console.prefs.putInt('maxOutputChars', maxOutputChars)
+        console.prefs.putInt('loopModeLength', loopModeLength)
         // For backwards compatibility 'maxOutputChars' remains defined in the Console class
         // and so we update the value to keep it in sync.
         if (maxOutputChars != console.maxOutputChars) {
