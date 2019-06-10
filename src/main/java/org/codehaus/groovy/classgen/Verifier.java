@@ -86,6 +86,7 @@ import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
+import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
@@ -923,6 +924,42 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     protected void addDefaultParameterConstructors(ClassNode type) {
         List<ConstructorNode> constructors = new ArrayList<>(type.getDeclaredConstructors());
         addDefaultParameters(constructors, (arguments, params, method) -> {
+            // GROOVY-9151: check for references to parameters that have been removed
+            for (ListIterator<Expression> it = arguments.getExpressions().listIterator(); it.hasNext();) {
+                Expression argument = it.next();
+                if (argument instanceof CastExpression) {
+                    argument = ((CastExpression) argument).getExpression();
+                }
+                if (argument instanceof VariableExpression) {
+                    VariableExpression v = (VariableExpression) argument;
+                    if (v.getAccessedVariable() instanceof Parameter) {
+                        Parameter p = (Parameter) v.getAccessedVariable();
+                        if (p.hasInitialExpression() && !Arrays.asList(params).contains(p)
+                                && p.getInitialExpression() instanceof ConstantExpression) {
+                            // replace argument "(Type) param" with "(Type) <param's default>" for simple default value
+                            it.set(castX(method.getParameters()[it.nextIndex() - 1].getType(), p.getInitialExpression()));
+                        }
+                    }
+                }
+            }
+            GroovyCodeVisitor visitor = new CodeVisitorSupport() {
+                @Override
+                public void visitVariableExpression(VariableExpression e) {
+                    if (e.getAccessedVariable() instanceof Parameter) {
+                        Parameter p = (Parameter) e.getAccessedVariable();
+                        if (p.hasInitialExpression() && !Arrays.asList(params).contains(p)) {
+                            String error = String.format(
+                                    "The generated constructor \"%s(%s)\" references parameter '%s' which has been replaced by a default value expression.",
+                                    type.getNameWithoutPackage(),
+                                    Arrays.stream(params).map(Parameter::getType).map(ClassNodeUtils::formatTypeName).collect(joining(",")),
+                                    p.getName());
+                            throw new RuntimeParserException(error, method);
+                        }
+                    }
+                }
+            };
+            visitor.visitArgumentlistExpression(arguments);
+
             // delegate to original constructor using arguments derived from defaults
             Statement code = new ExpressionStatement(new ConstructorCallExpression(ClassNode.THIS, arguments));
             addConstructor(params, (ConstructorNode) method, code, type);

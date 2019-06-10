@@ -139,8 +139,21 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-9151
-    void _FIXME_testConstructorWithAllParametersDefaulted() {
+    void testConstructorWithAllParametersDefaulted() {
         assertScript '''
+            class Greeting {
+                Greeting(Object o = 'world', String s = o) {
+                    this.text = "hello $s"
+                }
+                String text
+            }
+            assert new Greeting().text == 'hello world'
+        '''
+    }
+
+    // GROOVY-9151
+    void testConstructorWithAllParametersDefaulted2() {
+        def err = shouldFail '''
             class Greeting {
                 Greeting(Object o = 'world', String s = o.toString()) {
                     this.text = "hello $s"
@@ -149,6 +162,8 @@ final class DefaultParamTest extends GroovyTestCase {
             }
             assert new Greeting().text == 'hello world'
         '''
+
+        assert err =~ /The generated constructor "Greeting\(\)" references parameter 'o' which has been replaced by a default value expression./
     }
 
     // GROOVY-5632
