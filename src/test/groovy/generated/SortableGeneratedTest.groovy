@@ -39,7 +39,6 @@ class SortableGeneratedTest extends AbstractGeneratedAstTestCase {
         assertMethodIsAnnotated(implicitSortable, 'comparatorByAge')
     }
 
-
     @Test
     void test_explicit_compareTo_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitSortable, 'compareTo', Object)
