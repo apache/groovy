@@ -12,6 +12,14 @@ abstract class AbstractGeneratedAstTestCase {
         new GroovyClassLoader().parseClass(str)
     }
 
+    protected final void assertClassIsAnnotated(Class<?> classUnderTest) {
+        assert classUnderTest.getAnnotation(Generated)
+    }
+
+    protected final void assertClassIsNotAnnotated(Class<?> classUnderTest) {
+        assert !classUnderTest.getAnnotation(Generated)
+    }
+
     protected final void assertConstructorIsAnnotated(Class<?> classUnderTest, Class... paramTypes) {
         assert findConstructor(classUnderTest, paramTypes).getAnnotation(Generated)
     }
