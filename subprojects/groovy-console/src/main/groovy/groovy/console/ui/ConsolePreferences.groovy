@@ -30,13 +30,13 @@ class ConsolePreferences {
 
     // Default maximum number of characters to show on console at any time
     static int DEFAULT_MAX_OUTPUT_CHARS = 20000
-    static int DEFAULT_LOOP_MODE_LENGTH_MILLIS = 1000
+    static int DEFAULT_LOOP_MODE_DELAY_MILLIS = 1000
 
     @Bindable
     int maxOutputChars
 
     @Bindable
-    int loopModeLength
+    int loopModeDelay
 
     private final console
     private final MessageSource T
@@ -49,7 +49,7 @@ class ConsolePreferences {
         T = new MessageSource(Console)
 
         maxOutputChars = console.loadMaxOutputChars()
-        loopModeLength = console.prefs.getInt('loopModeLength', DEFAULT_LOOP_MODE_LENGTH_MILLIS)
+        loopModeDelay = console.prefs.getInt('loopModeDelay', DEFAULT_LOOP_MODE_DELAY_MILLIS)
         console.maxOutputChars = maxOutputChars
     }
 
@@ -85,9 +85,9 @@ class ConsolePreferences {
                     hbox {
                         label "${T['prefs.loop.mode.title']}:"
 
-                        formattedTextField value: loopModeLength, id: 'txtLoopModeLength',
+                        formattedTextField value: loopModeDelay, id: 'txtLoopModeDelay',
                                 text:
-                        bind(target: this, targetProperty: 'loopModeLength',
+                        bind(target: this, targetProperty: 'loopModeDelay',
                                 validator: this.&isInteger, converter: Integer.&parseInt),
                         columns: 8
                     }
@@ -134,12 +134,12 @@ class ConsolePreferences {
 
     private void onReset(EventObject event) {
         console.swing.txtMaxOutputChars.text = DEFAULT_MAX_OUTPUT_CHARS
-        console.swing.txtLoopModeLength.text = DEFAULT_LOOP_MODE_LENGTH_MILLIS
+        console.swing.txtLoopModeDelay.text = DEFAULT_LOOP_MODE_DELAY_MILLIS
     }
 
     private void onClose(EventObject event) {
         console.prefs.putInt('maxOutputChars', maxOutputChars)
-        console.prefs.putInt('loopModeLength', loopModeLength)
+        console.prefs.putInt('loopModeDelay', loopModeDelay)
         // For backwards compatibility 'maxOutputChars' remains defined in the Console class
         // and so we update the value to keep it in sync.
         if (maxOutputChars != console.maxOutputChars) {
