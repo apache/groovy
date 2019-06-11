@@ -62,37 +62,37 @@ class BindableGeneratedTest extends AbstractGeneratedAstTestCase {
     }
 
     @Test
-    void test_explicit_addPropertyChangeListener_is_annotated() {
+    void test_explicit_addPropertyChangeListener_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitBindable, 'addPropertyChangeListener', PropertyChangeListener)
     }
 
     @Test
-    void test_explicit_addPropertyChangeListener2_is_annotated() {
+    void test_explicit_addPropertyChangeListener2_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitBindable, 'addPropertyChangeListener', String, PropertyChangeListener)
     }
 
     @Test
-    void test_explicit_removePropertyChangeListener_is_annotated() {
+    void test_explicit_removePropertyChangeListener_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitBindable, 'removePropertyChangeListener', PropertyChangeListener)
     }
 
     @Test
-    void test_explicit_removePropertyChangeListener2_is_annotated() {
+    void test_explicit_removePropertyChangeListener2_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitBindable, 'removePropertyChangeListener', String, PropertyChangeListener)
     }
 
     @Test
-    void test_explicit_firePropertyChange_is_annotated() {
+    void test_explicit_firePropertyChange_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitBindable, 'firePropertyChange', String, Object, Object)
     }
 
     @Test
-    void test_explicit_getPropertyChangeListeners_is_annotated() {
+    void test_explicit_getPropertyChangeListeners_is_not_annotated() {
         assertExactMethodIsNotAnnotated(explicitBindable, 'getPropertyChangeListeners', PropertyChangeListener[].class)
     }
 
     @Test
-    void test_explicit_getPropertyChangeListeners2_is_annotated() {
+    void test_explicit_getPropertyChangeListeners2_is_not_annotated() {
         assertExactMethodIsNotAnnotated(explicitBindable, 'getPropertyChangeListeners', PropertyChangeListener[].class, String)
     }
 }
