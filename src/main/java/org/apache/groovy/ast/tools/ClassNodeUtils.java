@@ -151,39 +151,35 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Add in methods from all interfaces. Existing entries in the methods map take precedence.
-     * Methods from interfaces visited early take precedence over later ones.
+     * Adds methods from all interfaces. Existing entries in the methods map
+     * take precedence. Methods from interfaces visited early take precedence
+     * over later ones.
      *
      * @param cNode The ClassNode
      * @param methodsMap A map of existing methods to alter
      */
     public static void addDeclaredMethodsFromInterfaces(ClassNode cNode, Map<String, MethodNode> methodsMap) {
-        // add in unimplemented abstract methods from the interfaces
         for (ClassNode iface : cNode.getInterfaces()) {
-            Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
-            for (Map.Entry<String, MethodNode> entry : ifaceMethodsMap.entrySet()) {
-                String methSig = entry.getKey();
-                if (!methodsMap.containsKey(methSig)) {
-                    methodsMap.put(methSig, entry.getValue());
+            Map<String, MethodNode> declaredMethods = iface.getDeclaredMethodsMap();
+            for (Map.Entry<String, MethodNode> entry : declaredMethods.entrySet()) {
+                if (entry.getValue().getDeclaringClass().isInterface()) {
+                    methodsMap.putIfAbsent(entry.getKey(), entry.getValue());
                 }
             }
         }
     }
 
     /**
-     * Get methods from all interfaces.
-     * Methods from interfaces visited early will be overwritten by later ones.
+     * Gets methods from all interfaces. Methods from interfaces visited early
+     * take precedence over later ones.
      *
      * @param cNode The ClassNode
      * @return A map of methods
      */
     public static Map<String, MethodNode> getDeclaredMethodsFromInterfaces(ClassNode cNode) {
-        Map<String, MethodNode> result = new HashMap<String, MethodNode>();
-        ClassNode[] interfaces = cNode.getInterfaces();
-        for (ClassNode iface : interfaces) {
-            result.putAll(iface.getDeclaredMethodsMap());
-        }
-        return result;
+        Map<String, MethodNode> methodsMap = new HashMap<>();
+        addDeclaredMethodsFromInterfaces(cNode, methodsMap);
+        return methodsMap;
     }
 
     /**
