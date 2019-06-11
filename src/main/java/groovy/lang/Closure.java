@@ -657,6 +657,66 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
+     * Alias for {@link #rightShift(Closure)}
+     *
+     * @return the newly composed closure
+     */
+    public <W> Closure<W> andThen(final Closure<W> other) {
+        return rightShift(other);
+    }
+
+    /**
+     * Call {@link #andThen(Closure)} on {@code this}.
+     *
+     * @return the newly composed closure
+     */
+    public Closure<V> andThenSelf() {
+        return andThen(this);
+    }
+
+    /**
+     * Call {@link #andThen(Closure)} on {@code this} exactly {@code times} times.
+     *
+     * @param times the number of times to reverse compose the closure with itself
+     * @return the newly composed closure
+     */
+    public Closure<V> andThenSelf(int times) {
+        if (times == 0) return this;
+        if (times == 1) return andThen(this);
+        return andThen(andThenSelf(times - 1));
+    }
+
+    /**
+     * Alias for {@link #leftShift(Closure)}
+     *
+     * @return the newly composed closure
+     */
+    public Closure<V> compose(final Closure other) {
+        return leftShift(other);
+    }
+
+    /**
+     * Call {@link #compose(Closure)} on {@code this}.
+     *
+     * @return the newly composed closure
+     */
+    public Closure<V> composeSelf() {
+        return compose(this);
+    }
+
+    /**
+     * Call {@link #compose(Closure)} on {@code this} exactly {@code times} times.
+     *
+     * @param times the number of times to compose the closure with itself
+     * @return the newly composed closure
+     */
+    public Closure<V> composeSelf(int times) {
+        if (times == 0) return this;
+        if (times == 1) return compose(this);
+        return compose(composeSelf(times - 1));
+    }
+
+    /**
      * Alias for calling a Closure for non-closure arguments.
      * <p>
      * Typical usage:
