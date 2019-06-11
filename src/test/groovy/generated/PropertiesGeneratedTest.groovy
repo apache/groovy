@@ -26,12 +26,12 @@ class PropertiesGeneratedTest extends AbstractGeneratedAstTestCase {
     }
 
     @Test
-    void test_explicit_getName_is_annotated() {
+    void test_explicit_getName_is_not_annotated() {
         assertMethodIsNotAnnotated(withExplicitProps, 'getName')
     }
 
     @Test
-    void test_explicit_setName_is_annotated() {
+    void test_explicit_setName_is_not_annotated() {
         assertMethodIsNotAnnotated(withExplicitProps, 'setName', String)
     }
 }

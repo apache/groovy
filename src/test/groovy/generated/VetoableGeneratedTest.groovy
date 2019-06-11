@@ -62,37 +62,37 @@ class VetoableGeneratedTest extends AbstractGeneratedAstTestCase {
     }
 
     @Test
-    void test_explicit_addVetoableChangeListener_is_annotated() {
+    void test_explicit_addVetoableChangeListener_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitVetoable, 'addVetoableChangeListener', VetoableChangeListener)
     }
 
     @Test
-    void test_explicit_addVetoableChangeListener2_is_annotated() {
+    void test_explicit_addVetoableChangeListener2_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitVetoable, 'addVetoableChangeListener', String, VetoableChangeListener)
     }
 
     @Test
-    void test_explicit_removeVetoableChangeListener_is_annotated() {
+    void test_explicit_removeVetoableChangeListener_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitVetoable, 'removeVetoableChangeListener', VetoableChangeListener)
     }
 
     @Test
-    void test_explicit_removeVetoableChangeListener2_is_annotated() {
+    void test_explicit_removeVetoableChangeListener2_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitVetoable, 'removeVetoableChangeListener', String, VetoableChangeListener)
     }
 
     @Test
-    void test_explicit_fireVetoableChange_is_annotated() {
+    void test_explicit_fireVetoableChange_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitVetoable, 'fireVetoableChange', String, Object, Object)
     }
 
     @Test
-    void test_explicit_getVetoableChangeListeners_is_annotated() {
+    void test_explicit_getVetoableChangeListeners_is_not_annotated() {
         assertExactMethodIsNotAnnotated(explicitVetoable, 'getVetoableChangeListeners', VetoableChangeListener[].class)
     }
 
     @Test
-    void test_explicit_getVetoableChangeListeners2_is_annotated() {
+    void test_explicit_getVetoableChangeListeners2_is_not_annotated() {
         assertExactMethodIsNotAnnotated(explicitVetoable, 'getVetoableChangeListeners', VetoableChangeListener[].class, String)
     }
 }

@@ -46,22 +46,22 @@ class IndexedPropertyGeneratedTest extends AbstractGeneratedAstTestCase {
     }
 
     @Test
-    void test_explicit_getNames_is_annotated() {
+    void test_explicit_getNames_is_not_annotated() {
         assertExactMethodIsNotAnnotated(explicitIndex, 'getNames', String, int.class)
     }
 
     @Test
-    void test_explicit_getAges_is_annotated() {
+    void test_explicit_getAges_is_not_annotated() {
         assertExactMethodIsNotAnnotated(explicitIndex, 'getAges', Object, int.class)
     }
 
     @Test
-    void test_explicit_setNames_is_annotated() {
+    void test_explicit_setNames_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitIndex, 'setNames', int.class, String)
     }
 
     @Test
-    void test_explicit_setAges_is_annotated() {
+    void test_explicit_setAges_is_not_annotated() {
         assertMethodIsNotAnnotated(explicitIndex, 'setAges', int.class, Object)
     }
 }
