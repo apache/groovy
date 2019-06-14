@@ -35,6 +35,8 @@ import org.codehaus.groovy.runtime.memoize.Memoize;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents any closure object in Groovy.
@@ -59,7 +61,7 @@ import java.io.Writer;
  * assert c.call() == 1
  * </pre>
  */
-public abstract class Closure<V> extends GroovyObjectSupport implements Cloneable, Runnable, GroovyCallable<V>, Serializable {
+public abstract class Closure<V> extends GroovyObjectSupport implements Cloneable, Runnable, GroovyCallable<V>, Serializable, Supplier<V>, Function<Object, V> {
 
     /**
      * With this resolveStrategy set the closure will attempt to resolve property references and methods to the
@@ -419,6 +421,27 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      */
     public V call(final Object arguments) {
         return call(new Object[]{arguments});
+    }
+
+    /**
+     * Returns the result
+     *
+     * @return the result
+     * @since 3.0.0
+     */
+    public V get() {
+        return call();
+    }
+
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param t the argument
+     * @return the result
+     * @since 3.0.0
+     */
+    public V apply(Object t) {
+        return call(t);
     }
 
     protected static Object throwRuntimeException(Throwable throwable) {

@@ -537,6 +537,26 @@ class ClosureTest extends GroovyTestCase {
             }
         '''
     }
+
+    void testSupplier() {
+        assertScript '''
+            import java.util.function.*
+            
+            Supplier<StringBuilder> sb = () -> new StringBuilder()
+            assert sb instanceof Closure  // no dynamic proxy created
+            assert sb instanceof Supplier
+        '''
+    }
+
+    void testFunction() {
+        assertScript '''
+            import java.util.function.*
+            
+            Function<Integer, String> mapper = (Integer i) -> String.valueOf(i)
+            assert mapper instanceof Closure  // no dynamic proxy created
+            assert mapper instanceof Function
+        '''
+    }
 }
 
 public class TinyAgent {
