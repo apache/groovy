@@ -280,7 +280,7 @@ public class SmartDocumentFilter extends DocumentFilter {
             return tokenList.subList(startTokenIndex, stopTokenIndex);
         }
 
-        return Collections.emptyList();
+        return tokenList; // should never reach here. If unexpected error occurred, it's better to render all tokens
     }
 
     private Style findStyleByTokenType(int tokenType) {
