@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
@@ -35,18 +36,22 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
+import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
@@ -95,37 +100,35 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         Parameter[] parametersWithExactType = createParametersWithExactType(abstractMethodNode, methodReferenceParamTypes);
 
         boolean isConstructorReference = isConstructorReference(methodRefName);
+
+        MethodNode methodRefMethod;
         if (isConstructorReference) {
-            methodRefName = createSyntheticMethodForConstructorReference();
-            addSyntheticMethodForConstructorReference(methodRefName, typeOrTargetRefType, parametersWithExactType);
+            methodRefName = genSyntheticMethodNameForConstructorReference();
+            methodRefMethod = addSyntheticMethodForConstructorReference(methodRefName, typeOrTargetRefType, parametersWithExactType);
+        } else {
+            // TODO move the `findMethodRefMethod` and checking to `StaticTypeCheckingVisitor`
+            methodRefMethod = findMethodRefMethod(methodRefName, parametersWithExactType, typeOrTargetRef);
         }
 
-        // TODO move the `findMethodRefMethod` and checking to `StaticTypeCheckingVisitor`
-        MethodNode methodRefMethod = findMethodRefMethod(methodRefName, parametersWithExactType, typeOrTargetRef, isConstructorReference);
+        validate(methodReferenceExpression, typeOrTargetRef, typeOrTargetRefType, methodRefName, parametersWithExactType, methodRefMethod);
 
-        if (null == methodRefMethod) {
-            throw new RuntimeParserException("Failed to find the expected method["
-                    + methodRefName + "("
-                    + Arrays.stream(parametersWithExactType)
-                            .map(e -> e.getType().getName())
-                            .collect(Collectors.joining(","))
-                    + ")] in the type[" + typeOrTargetRefType.getName() + "]", methodReferenceExpression);
-        } else {
-            if (parametersWithExactType.length > 0 && isTypeReferingInstanceMethod(typeOrTargetRef, methodRefMethod)) {
-                Parameter firstParameter = parametersWithExactType[0];
-                Class<?> typeOrTargetClass = typeOrTargetRef.getType().getTypeClass();
-                Class<?> firstParameterClass = firstParameter.getType().getTypeClass();
-                if (!typeOrTargetClass.isAssignableFrom(firstParameterClass)) {
-                    throw new RuntimeParserException("Invalid receiver type: " + firstParameterClass + " is not compatible with " + typeOrTargetClass, typeOrTargetRef);
-                }
+        if (isExtensionMethod(methodRefMethod)) {
+            ExtensionMethodNode extensionMethodNode = (ExtensionMethodNode) methodRefMethod;
+            methodRefMethod = extensionMethodNode.getExtensionMethodNode();
+            if (extensionMethodNode.isStaticExtension()) {
+                methodRefMethod = addSyntheticMethodForDGSM(methodRefMethod);
             }
+
+            ClassExpression classExpression = new ClassExpression(methodRefMethod.getDeclaringClass());
+            classExpression.setSourcePosition(typeOrTargetRef);
+            typeOrTargetRef = classExpression;
+            typeOrTargetRefType = typeOrTargetRef.getType();
         }
 
         methodRefMethod.putNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE, parametersWithExactType);
         MethodVisitor mv = controller.getMethodVisitor();
 
         boolean isClassExpr = isClassExpr(typeOrTargetRef);
-
         if (!isClassExpr) {
             if (isConstructorReference) {
                 // TODO move the checking code to the Parrot parser
@@ -162,10 +165,53 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
     }
 
-    private void addSyntheticMethodForConstructorReference(String syntheticMethodName, ClassNode returnType, Parameter[] parametersWithExactType) {
+    private void validate(MethodReferenceExpression methodReferenceExpression, Expression typeOrTargetRef, ClassNode typeOrTargetRefType, String methodRefName, Parameter[] parametersWithExactType, MethodNode methodRefMethod) {
+        if (null == methodRefMethod) {
+            throw new RuntimeParserException("Failed to find the expected method["
+                    + methodRefName + "("
+                    + Arrays.stream(parametersWithExactType)
+                            .map(e -> e.getType().getName())
+                            .collect(Collectors.joining(","))
+                    + ")] in the type[" + typeOrTargetRefType.getName() + "]", methodReferenceExpression);
+        }
+
+        if (parametersWithExactType.length > 0 && isTypeReferingInstanceMethod(typeOrTargetRef, methodRefMethod)) {
+            Parameter firstParameter = parametersWithExactType[0];
+            Class<?> typeOrTargetClass = typeOrTargetRef.getType().getTypeClass();
+            Class<?> firstParameterClass = firstParameter.getType().getTypeClass();
+            if (!typeOrTargetClass.isAssignableFrom(firstParameterClass)) {
+                throw new RuntimeParserException("Invalid receiver type: " + firstParameterClass + " is not compatible with " + typeOrTargetClass, typeOrTargetRef);
+            }
+        }
+    }
+
+    private static boolean isExtensionMethod(MethodNode methodRefMethod) {
+        return methodRefMethod instanceof ExtensionMethodNode;
+    }
+
+    private MethodNode addSyntheticMethodForDGSM(MethodNode mn) {
+        Parameter[] parameters = removeFirstParameter(mn.getParameters());
+        ArgumentListExpression args = args(parameters);
+        args.getExpressions().add(0, ConstantExpression.NULL);
+
+        return controller.getClassNode().addSyntheticMethod(
+                "dgsm$" + mn.getParameters()[0].getType().getName().replace(".", "_") + "$" + mn.getName(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_SYNTHETIC,
+                mn.getReturnType(),
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                block(
+                        returnS(
+                                callX(new ClassExpression(mn.getDeclaringClass()), mn.getName(), args)
+                        )
+                )
+        );
+    }
+
+    private MethodNode addSyntheticMethodForConstructorReference(String syntheticMethodName, ClassNode returnType, Parameter[] parametersWithExactType) {
         ArgumentListExpression ctorArgs = args(parametersWithExactType);
 
-        controller.getClassNode().addSyntheticMethod(
+        return controller.getClassNode().addSyntheticMethod(
                 syntheticMethodName,
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_SYNTHETIC,
                 returnType,
@@ -188,7 +234,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     }
 
-    private String createSyntheticMethodForConstructorReference() {
+    private String genSyntheticMethodNameForConstructorReference() {
         return controller.getContext().getNextConstructorReferenceSyntheticMethodName(controller.getMethodNode());
     }
 
@@ -238,31 +284,35 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         return parameters;
     }
 
-    private MethodNode findMethodRefMethod(String methodRefName, Parameter[] abstractMethodParameters, Expression typeOrTargetRef, boolean isConstructorReference) {
-        if (isConstructorReference) {
-            return controller.getClassNode().getMethod(methodRefName, abstractMethodParameters);
-        }
-
+    private MethodNode findMethodRefMethod(String methodRefName, Parameter[] abstractMethodParameters, Expression typeOrTargetRef) {
         ClassNode typeOrTargetRefType = typeOrTargetRef.getType();
         List<MethodNode> methodNodeList = typeOrTargetRefType.getMethods(methodRefName);
+        Set<MethodNode> dgmMethodNodeSet = StaticTypeCheckingSupport.findDGMMethodsForClassNode(MetaClassRegistryImpl.class.getClassLoader(), typeOrTargetRefType, methodRefName);
+
+        List<MethodNode> allMethodNodeList = new LinkedList<>(methodNodeList);
+        allMethodNodeList.addAll(dgmMethodNodeSet);
+
         ClassNode classNode = controller.getClassNode();
 
         List<MethodNode> candidates = new LinkedList<>();
-        for (MethodNode mn : filterMethodsByVisibility(methodNodeList, classNode)) {
+        for (MethodNode mn : filterMethodsByVisibility(allMethodNodeList, classNode)) {
             Parameter[] parameters = abstractMethodParameters;
             if (isTypeReferingInstanceMethod(typeOrTargetRef, mn)) {
                 if (0 == abstractMethodParameters.length) {
                     continue;
                 }
 
-                parameters =
-                        new ArrayList<>(Arrays.asList(abstractMethodParameters))
-                                .subList(1, abstractMethodParameters.length)
-                                .toArray(Parameter.EMPTY_ARRAY);
-
+                parameters = removeFirstParameter(abstractMethodParameters);
             }
 
-            if (ParameterUtils.parametersCompatible(parameters, mn.getParameters())) {
+            Parameter[] methodParameters;
+            if (isExtensionMethod(mn)) {
+                methodParameters = removeFirstParameter(((ExtensionMethodNode) mn).getExtensionMethodNode().getParameters());
+            } else {
+                methodParameters = mn.getParameters();
+            }
+
+            if (ParameterUtils.parametersCompatible(parameters, methodParameters)) {
                 candidates.add(mn);
             }
         }
@@ -270,8 +320,13 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         return chooseMethodRefMethodCandidate(typeOrTargetRef, candidates);
     }
 
+    private static Parameter[] removeFirstParameter(Parameter[] parameters) {
+        return Arrays.stream(parameters).skip(1).toArray(Parameter[]::new);
+    }
+
     private static boolean isTypeReferingInstanceMethod(Expression typeOrTargetRef, MethodNode mn) {  // class::instanceMethod
-        return !mn.isStatic() && isClassExpr(typeOrTargetRef);
+        return (!mn.isStatic() || (isExtensionMethod(mn) && !((ExtensionMethodNode) mn).isStaticExtension()))
+                && isClassExpr(typeOrTargetRef);
     }
 
     /**
@@ -304,6 +359,10 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
         if (isClassExpr && isStaticMethod || !isClassExpr && !isStaticMethod) {
             score += 9;
+        }
+
+        if (isExtensionMethod(mn)) {
+            score -= 100;
         }
 
         return score;

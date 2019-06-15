@@ -295,7 +295,7 @@ public abstract class StaticTypeCheckingSupport {
         return findDGMMethodsForClassNode(MetaClassRegistryImpl.class.getClassLoader(), clazz, name);
     }
 
-    protected static Set<MethodNode> findDGMMethodsForClassNode(final ClassLoader loader, ClassNode clazz, String name) {
+    public static Set<MethodNode> findDGMMethodsForClassNode(final ClassLoader loader, ClassNode clazz, String name) {
         TreeSet<MethodNode> accumulator = new TreeSet<MethodNode>(DGM_METHOD_NODE_COMPARATOR);
         findDGMMethodsForClassNode(loader, clazz, name, accumulator);
         return accumulator;
