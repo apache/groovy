@@ -20,6 +20,8 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
+import groovy.transform.Generated;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -194,7 +196,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         ArgumentListExpression args = args(parameters);
         args.getExpressions().add(0, ConstantExpression.NULL);
 
-        return controller.getClassNode().addSyntheticMethod(
+        MethodNode syntheticMethodNode = controller.getClassNode().addSyntheticMethod(
                 "dgsm$$" + mn.getParameters()[0].getType().getName().replace(".", "$") + "$$" + mn.getName(),
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_SYNTHETIC,
                 mn.getReturnType(),
@@ -206,12 +208,16 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                         )
                 )
         );
+
+        syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(Generated.class)));
+
+        return syntheticMethodNode;
     }
 
     private MethodNode addSyntheticMethodForConstructorReference(String syntheticMethodName, ClassNode returnType, Parameter[] parametersWithExactType) {
         ArgumentListExpression ctorArgs = args(parametersWithExactType);
 
-        return controller.getClassNode().addSyntheticMethod(
+        MethodNode syntheticMethodNode = controller.getClassNode().addSyntheticMethod(
                 syntheticMethodName,
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_SYNTHETIC,
                 returnType,
@@ -232,6 +238,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 )
         );
 
+        syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(Generated.class)));
+
+        return syntheticMethodNode;
     }
 
     private String genSyntheticMethodNameForConstructorReference() {
