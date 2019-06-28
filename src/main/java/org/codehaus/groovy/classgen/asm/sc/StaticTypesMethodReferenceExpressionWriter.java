@@ -362,7 +362,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
 
         if (isExtensionMethod(mn)) {
-            score -= 100;
+            score += 100;
         }
 
         return score;

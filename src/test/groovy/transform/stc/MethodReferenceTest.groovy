@@ -444,6 +444,22 @@ class MethodReferenceTest extends GroovyTestCase {
         '''
     }
 
+    // class::instanceMethod
+    void testFunctionCI_SHADOW_DGM() {
+        assertScript '''
+            import java.util.stream.Collectors
+            
+            @groovy.transform.CompileStatic
+            void p() {
+                def result = [[a:1], [b:2], [c:3]].stream().map(Object::toString).collect(Collectors.toList())
+                assert 3 == result.size()
+                assert ['[a:1]', '[b:2]', '[c:3]'] == result
+            }
+            
+            p()
+        '''
+    }
+
     // class::staticMethod
     void testFunctionCS_MULTI_DGSM() {
         assertScript '''
