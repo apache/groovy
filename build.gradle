@@ -149,7 +149,7 @@ ext {
     commonsCliVersion = '1.4'
     gparsVersion = '1.2.1'
     ivyVersion = '2.5.0-rc1'
-    jansiVersion = '1.17.1'
+    jansiVersion = '1.18'
     jarjarVersion = '1.7.2'
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
