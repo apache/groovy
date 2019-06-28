@@ -443,4 +443,22 @@ class MethodReferenceTest extends GroovyTestCase {
             p()
         '''
     }
+
+    // class::staticMethod
+    void testFunctionCS_MULTI_DGSM() {
+        assertScript '''
+            import java.util.stream.Collectors
+            
+            @groovy.transform.CompileStatic
+            void p() {
+                def result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
+                assert result.every(e -> e instanceof Thread)
+                
+                result = [{}, {}, {}].stream().map(Thread::startDaemon).collect(Collectors.toList())
+                assert result.every(e -> e instanceof Thread)
+            }
+            
+            p()
+        '''
+    }
 }

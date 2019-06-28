@@ -195,7 +195,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         args.getExpressions().add(0, ConstantExpression.NULL);
 
         return controller.getClassNode().addSyntheticMethod(
-                "dgsm$" + mn.getParameters()[0].getType().getName().replace(".", "_") + "$" + mn.getName(),
+                "dgsm$$" + mn.getParameters()[0].getType().getName().replace(".", "$") + "$$" + mn.getName(),
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_SYNTHETIC,
                 mn.getReturnType(),
                 parameters,
