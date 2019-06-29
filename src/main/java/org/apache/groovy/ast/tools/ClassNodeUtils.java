@@ -163,7 +163,9 @@ public class ClassNodeUtils {
             Map<String, MethodNode> declaredMethods = iface.getDeclaredMethodsMap();
             for (Map.Entry<String, MethodNode> entry : declaredMethods.entrySet()) {
                 if (entry.getValue().getDeclaringClass().isInterface()) {
-                    methodsMap.putIfAbsent(entry.getKey(), entry.getValue());
+                    if (null == methodsMap.get(entry.getKey())) {
+                        methodsMap.put(entry.getKey(), entry.getValue());
+                    }
                 }
             }
         }
