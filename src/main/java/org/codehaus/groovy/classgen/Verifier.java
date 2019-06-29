@@ -1428,7 +1428,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             boolean oldM = ClassHelper.isPrimitiveType(oldMethod.getReturnType());
             boolean newM = ClassHelper.isPrimitiveType(overridingMethod.getReturnType());
             if (oldM || newM) {
-                String message = "";
+                String message;
                 if (oldM && newM) {
                     message = " with old and new method having different primitive return types";
                 } else if (newM) {
