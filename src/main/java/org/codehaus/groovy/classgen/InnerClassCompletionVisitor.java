@@ -160,7 +160,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
     private void getThis(MethodVisitor mv, String classInternalName, String outerClassDescriptor, String innerClassInternalName) {
         mv.visitVarInsn(ALOAD, 0);
-        if (CLOSURE_TYPE.equals(thisField.getType())) {
+        if (thisField != null && CLOSURE_TYPE.equals(thisField.getType())) {
             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", CLOSURE_DESCRIPTOR);
             mv.visitMethodInsn(INVOKEVIRTUAL, CLOSURE_INTERNAL_NAME, "getThisObject", "()Ljava/lang/Object;", false);
             mv.visitTypeInsn(CHECKCAST, innerClassInternalName);

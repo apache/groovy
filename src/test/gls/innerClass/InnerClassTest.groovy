@@ -68,9 +68,9 @@ class InnerClassTest extends CompilableTestSupport {
     void testExtendsObjectAndReferenceAMethodParameterWithinAGString() {
         assertScript """
             Object makeObj0(String name) {
-                 new Object() {
+                new Object() {
                     String toString() { "My name is \${name}" }
-                 }
+                }
             }
 
             assert makeObj0("Guillaume").toString() == "My name is Guillaume"
@@ -731,8 +731,8 @@ import org.codehaus.groovy.classgen.Verifier
         '''
     }
 
+    // GROOVY-4896, GROOVY-6810
     void testThisReferenceForAICInOpenBlock() {
-        // GROOVY-6810
         assertScript '''
             import java.security.AccessController
             import java.security.PrivilegedAction
@@ -764,7 +764,6 @@ import org.codehaus.groovy.classgen.Verifier
             injectVariables(t, ['p': 'q'])
         '''
 
-        //GROOVY-4896
         assertScript '''
             def doSomethingUsingLocal(){
                 logExceptions {
@@ -828,8 +827,8 @@ import org.codehaus.groovy.classgen.Verifier
         '''
     }
 
+    // GROOVY-5582
     void testAICextendingAbstractInnerClass() {
-        //GROOVY-5582
         assertScript '''
             class Outer {
                 int outer() { 1 }
@@ -847,8 +846,8 @@ import org.codehaus.groovy.classgen.Verifier
         '''
     }
 
+    // GROOVY-6831
     void testNestedPropertyHandling() {
-        // GROOVY-6831
         assertScript '''
             class Outer {
                 private static List items = []
@@ -870,8 +869,8 @@ import org.codehaus.groovy.classgen.Verifier
         '''
     }
 
+    // GROOVY-7312
     void testInnerClassOfInterfaceIsStatic() {
-        //GROOVY-7312
         assertScript '''
             import java.lang.reflect.Modifier
             interface Baz {
@@ -882,8 +881,8 @@ import org.codehaus.groovy.classgen.Verifier
         '''
     }
 
-    void testInnerClassOfInterfaceIsStaticVariant() {
-        //GROOVY-7312
+    // GROOVY-7312
+    void testInnerClassOfInterfaceIsStatic2() {
         assertScript '''
             import java.lang.reflect.Modifier
             import groovy.transform.ASTTest
@@ -900,7 +899,7 @@ import org.codehaus.groovy.classgen.Verifier
         '''
     }
 
-    //GROOVY-8914
+    // GROOVY-8914
     void testNestedClassInheritingFromNestedClass() {
         // control
         assert new Outer8914.Nested()
@@ -910,6 +909,180 @@ import org.codehaus.groovy.classgen.Verifier
                 static class Nested extends gls.innerClass.Parent8914.Nested {}
             }
             assert new OuterReferencingPrecompiled.Nested()
+        '''
+    }
+
+    // GROOVY-6809
+    void _FIXME_testReferenceToUninitializedThis() {
+        assertScript '''
+            class Test {
+                static main(args) {
+                    def a = new A()
+                }
+
+                static class A {
+                    A() {
+                        def b = new B()
+                    }
+
+                    void sayA() {
+                        println 'saying A'
+                    }
+
+                    class B extends A {
+                        B() {
+                            super(A.this) // does not exist
+                            sayA()
+                        }
+                    }
+                }
+            }
+        '''
+    }
+
+    // GROOVY-6809
+    void testReferenceToUninitializedThis2() {
+        assertScript '''
+            class A {
+                A() {
+                    this(new Runnable() {
+                        @Override
+                        void run() {
+                        }
+                    })
+                }
+
+                private A(Runnable action) {
+                }
+            }
+
+            new A()
+        '''
+    }
+
+    // GROOVY-6809
+    void testReferenceToUninitializedThis3() {
+        assertScript '''
+            class A {
+                A(x) {
+                }
+            }
+            class B extends A {
+              B() {
+                super(new Object() {})
+              }
+            }
+
+            new B()
+        '''
+    }
+
+    // GROOVY-7609
+    void _FIXME_testReferenceToUninitializedThis4() {
+        assertScript '''
+            class Login {
+                Login() {
+                    def navBar = new LoginNavigationBar()
+                }
+
+                class LoginNavigationBar {
+                    ExploreDestinationsDropdown exploreDestinationsDropdown
+
+                    LoginNavigationBar() {
+                        exploreDestinationsDropdown = new ExploreDestinationsDropdown()
+                    }
+
+                    class ExploreDestinationsDropdown /*extends NavigationBarDropdown<ExploreDestinationsDropdown>*/ {
+                        ExploreDestinationsDropdown() {
+                            //super(Login.this.sw, 0)
+                            Login.this.sw
+                        }
+                    }
+                }
+
+                static main(args) {
+                    new Login()
+                }
+            }
+        '''
+    }
+
+    // GROOVY-9168
+    void _FIXME_testReferenceToUninitializedThis5() {
+        assertScript '''
+            class Outer {
+              class Inner {
+              }
+              Outer(Inner inner = new Inner()) {
+              }
+            }
+            new Outer()
+        '''
+    }
+
+    // GROOVY-9168
+    void testReferenceToUninitializedThis6() {
+        assertScript '''
+            import groovy.transform.ASTTest
+            import java.util.concurrent.Callable
+            import org.codehaus.groovy.ast.expr.*
+            import static org.codehaus.groovy.classgen.Verifier.*
+            import static org.codehaus.groovy.control.CompilePhase.*
+
+            class A {
+                @ASTTest(phase=CLASS_GENERATION, value={
+                    def init = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
+                    assert init instanceof ConstructorCallExpression
+                    assert init.isUsingAnonymousInnerClass()
+                    assert init.type.enclosingMethod != null
+                    assert init.type.enclosingMethod.name == '<init>'
+                    assert init.type.enclosingMethod.parameters.length == 0 // ensure the enclosing method is A(), not A(Runnable)
+                })
+                A(Callable action = new Callable() { def call() { return 42 }}) {
+                    this.action = action
+                }
+                Callable action
+            }
+
+            def a = new A()
+            assert a.action.call() == 42
+        '''
+    }
+
+    // GROOVY-9168
+    void _FIXME_testReferenceToUninitializedThis7() {
+        assertScript '''
+            class A {
+                //                  AIC in this position can use static properties:
+                A(Runnable action = new Runnable() { void run() { answer = 42 }}) {
+                    this.action = action
+                }
+                Runnable   action
+                static int answer
+            }
+
+            def a = new A()
+            a.action.run();
+            assert a.answer == 42
+        '''
+    }
+
+    // GROOVY-9168
+    void _FIXME_testReferenceToUninitializedThis8() {
+        assertScript '''
+            class A {
+                //                  AIC in this position can use static methods:
+                A(Runnable action = new Runnable() { void run() { setAnswer(42) }}) {
+                    this.action = action
+                }
+                Runnable action
+                protected static int answer
+                static void setAnswer(int value) { answer = value }
+            }
+
+            def a = new A()
+            a.action.run();
+            assert a.answer == 42
         '''
     }
 }

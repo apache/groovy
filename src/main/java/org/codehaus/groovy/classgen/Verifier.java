@@ -893,9 +893,22 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         });
     }
 
-    protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
-        ConstructorNode genConstructor = node.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
-        markAsGenerated(node, genConstructor);
+    protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode type) {
+        final ConstructorNode newConstructor = type.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
+        newConstructor.putNodeMetaData(DEFAULT_PARAMETER_GENERATED, Boolean.TRUE);
+        markAsGenerated(type, newConstructor);
+        // TODO: Copy annotations, etc.?
+
+        // set anon. inner enclosing method reference
+        code.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitConstructorCallExpression(ConstructorCallExpression call) {
+                if (call.isUsingAnonymousInnerClass()) {
+                    call.getType().setEnclosingMethod(newConstructor);
+                }
+                super.visitConstructorCallExpression(call);
+            }
+        });
     }
 
     /**
