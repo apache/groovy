@@ -971,6 +971,17 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         newConstructor.putNodeMetaData(DEFAULT_PARAMETER_GENERATED, Boolean.TRUE);
         markAsGenerated(type, newConstructor);
         // TODO: Copy annotations, etc.?
+
+        // set anon. inner enclosing method reference
+        code.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitConstructorCallExpression(ConstructorCallExpression call) {
+                if (call.isUsingAnonymousInnerClass()) {
+                    call.getType().setEnclosingMethod(newConstructor);
+                }
+                super.visitConstructorCallExpression(call);
+            }
+        });
     }
 
     /**
