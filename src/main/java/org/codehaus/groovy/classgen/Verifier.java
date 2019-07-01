@@ -25,6 +25,7 @@ import groovy.transform.Generated;
 import groovy.transform.Internal;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -91,9 +92,11 @@ import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
 
 /**
  * Verifies the AST node and adds any default AST code before bytecode generation occurs.
@@ -292,10 +295,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (descriptors.contains(mySig)) {
                 if (mn.isScriptBody() || mySig.equals(scriptBodySignatureWithoutReturnType(cn))) {
                     throw new RuntimeParserException("The method " + mn.getText() +
-                            " is a duplicate of the one declared for this script's body code", mn);
+                            " is a duplicate of the one declared for this script's body code", sourceOf(mn));
                 } else {
                     throw new RuntimeParserException("The method " + mn.getText() +
-                            " duplicates another method of the same signature", mn);
+                            " duplicates another method of the same signature", sourceOf(mn));
                 }
             }
             descriptors.add(mySig);
@@ -712,7 +715,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         String getterName = "get" + capitalize(name);
         String setterName = "set" + capitalize(name);
 
-        int accessorModifiers = PropertyNodeUtils.adjustPropertyModifiersForMethod(node);
+        int accessorModifiers = adjustPropertyModifiersForMethod(node);
 
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {
@@ -869,7 +872,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             "The method with default parameters \"" + method.getTypeDescriptor() +
                                     "\" defines a method \"" + newMethod.getTypeDescriptor() +
                                     "\" that is already defined.",
-                            method);
+                            sourceOf(method));
                 }
                 addPropertyMethod(newMethod);
                 newMethod.setGenericsTypes(method.getGenericsTypes());
@@ -1264,7 +1267,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     && !m.isPublic() && !m.isStaticConstructor()) {
                 throw new RuntimeParserException("The method " + m.getName() +
                         " should be public as it implements the corresponding method from interface " +
-                        intfMethod.getDeclaringClass(), m);
+                        intfMethod.getDeclaringClass(), sourceOf(m));
 
             }
         }
@@ -1354,7 +1357,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             " in " + overridingMethod.getDeclaringClass().getName() +
                             " is incompatible with " + testmr.getName() +
                             " in " + oldMethod.getDeclaringClass().getName(),
-                    overridingMethod);
+                    sourceOf(overridingMethod));
         }
 
         if (equalReturnType && normalEqualParameters) return null;
@@ -1364,7 +1367,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     "Cannot override final method " +
                             oldMethod.getTypeDescriptor() +
                             " in " + oldMethod.getDeclaringClass().getName(),
-                    overridingMethod);
+                    sourceOf(overridingMethod));
         }
         if (oldMethod.isStatic() != overridingMethod.isStatic()) {
             throw new RuntimeParserException(
@@ -1372,7 +1375,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             oldMethod.getTypeDescriptor() +
                             " in " + oldMethod.getDeclaringClass().getName() +
                             " with disparate static modifier",
-                    overridingMethod);
+                    sourceOf(overridingMethod));
         }
         if (!equalReturnType) {
             boolean oldM = ClassHelper.isPrimitiveType(oldMethod.getReturnType());
@@ -1391,7 +1394,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 oldMethod.getTypeDescriptor() +
                                 " in " + oldMethod.getDeclaringClass().getName() +
                                 message,
-                        overridingMethod);
+                        sourceOf(overridingMethod));
             }
         }
 
@@ -1535,6 +1538,23 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         return swapInitRequired;
+    }
+
+    private static ASTNode sourceOf(MethodNode methodNode) {
+        if (methodNode.getLineNumber() < 1) {
+            ClassNode declaringClass = methodNode.getDeclaringClass();
+            if (methodNode.isSynthetic()) {
+                String propertyName = getPropertyName(methodNode);
+                if (propertyName != null) {
+                    PropertyNode propertyNode = declaringClass.getProperty(propertyName);
+                    if (propertyNode != null && propertyNode.getLineNumber() > 0) {
+                        return propertyNode;
+                    }
+                }
+            }
+            return declaringClass;
+        }
+        return methodNode;
     }
 
     /**
