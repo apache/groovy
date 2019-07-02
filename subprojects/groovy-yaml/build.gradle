@@ -18,14 +18,14 @@
  */
 
 ext {
-    jacksondataformatyamlVersion = '2.9.9'
-    jacksondatabindVersion = '2.9.9'
+    jacksonVersion = '2.9.9'
 }
 
 dependencies {
     compile rootProject
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksondataformatyamlVersion"
-    compile "com.fasterxml.jackson.core:jackson-databind:$jacksondatabindVersion"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+    compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    testRuntime "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     compile project(':groovy-json')
     testCompile project(':groovy-test')
     testRuntime project(':groovy-ant') // for JavadocAssertionTests
