@@ -28,13 +28,13 @@ import static org.codehaus.groovy.control.ParserPluginFactory.antlr2
 
 @CompileStatic
 @RunWith(JUnit4)
-final class Groovy4438 {
+final class Groovy9184 {
 
     @Test(timeout=1500L)
     void testEnumWithinEnum() {
         def config = new CompilerConfiguration(pluginFactory: antlr2())
 
-        new GroovyShell(config).evaluate('''\
+        new GroovyShell(config).evaluate('''
             enum Outer {
                 A, B
                 enum Inner {
