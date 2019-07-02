@@ -24,15 +24,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-import static org.codehaus.groovy.control.ParserPluginFactory.antlr2
-
 @CompileStatic
 @RunWith(JUnit4)
 final class Groovy9184 {
 
     @Test(timeout=1500L)
     void testEnumWithinEnum() {
-        def config = new CompilerConfiguration(pluginFactory: antlr2())
+        def config = new CompilerConfiguration()
 
         new GroovyShell(config).evaluate('''
             enum Outer {
