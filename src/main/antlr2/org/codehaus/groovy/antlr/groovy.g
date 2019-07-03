@@ -1197,7 +1197,7 @@ enumConstants
             nls! COMMA! (
                 (nls annotationsOpt IDENT) => nls! enumConstant
             |
-                (nls (RCURLY | classField)) => {break;}
+                (nls (SEMI! | RCURLY | classField)) => {break;}
             )
         )*
     ;
