@@ -142,6 +142,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     };
     private static final MetaMethod[] EMPTY = MetaMethod.EMPTY_ARRAY;
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
+    private static final boolean PERMISSIVE_PROPERTY_ACCESS = SystemUtil.getBooleanSafe("groovy.permissive.property.access");
 
     protected final Class theClass;
     protected final CachedClass theCachedClass;
@@ -173,6 +174,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private MetaMethod propertyMissingSet;
     private MetaMethod methodMissing;
     private MetaMethodIndex.Header mainClassMethodHeader;
+    private boolean permissivePropertyAccess = PERMISSIVE_PROPERTY_ACCESS;
 
      /**
       * Constructor
@@ -2211,7 +2213,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 //                }
             }
 
-            if (!ALLOW_ILLEGAL_ACCESS_PROPERTIES) {
+            if (!permissivePropertyAccess) {
                 if (element instanceof MetaBeanProperty) {
                     MetaBeanProperty mbp = (MetaBeanProperty) element;
                     boolean getterAccessible = canAccessLegally(mbp.getGetter());
@@ -2225,8 +2227,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         return ret;
     }
-
-    private static final boolean ALLOW_ILLEGAL_ACCESS_PROPERTIES = SystemUtil.getBooleanSafe("groovy.allow.illegal.access.properties");
 
     private static boolean canAccessLegally(MetaMethod accessor) {
         boolean accessible = true;
@@ -4083,5 +4083,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private enum InvokeMethodResult {
         NONE
+    }
+
+    public boolean isPermissivePropertyAccess() {
+        return permissivePropertyAccess;
+    }
+
+    public void setPermissivePropertyAccess(boolean permissivePropertyAccess) {
+        this.permissivePropertyAccess = permissivePropertyAccess;
     }
 }
