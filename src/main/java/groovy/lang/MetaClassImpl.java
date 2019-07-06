@@ -1059,7 +1059,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // To conform to "Least Surprise" principle, try to invoke method with original arguments first, which can match most of use cases
         try {
             return ownerMetaClass.invokeMethod(ownerClass, owner, methodName, arguments, false, false);
-        } catch (MissingMethodExceptionNoStack e) {
+        } catch (MissingMethodExceptionNoStack | InvokerInvocationException e) {
             // CONSTRUCTOR REFERENCE
             if (owner instanceof Class && MethodClosure.NEW.equals(methodName)) {
                 if (ownerClass.isArray()) {
@@ -1105,7 +1105,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 throw e;
             }
 
-            if (arguments.length <= 0) {
+            if (arguments.length <= 0 || !(arguments[0].getClass().equals(ownerClass))) {
                 return invokeMissingMethod(object, methodName, arguments);
             }
 

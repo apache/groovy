@@ -88,4 +88,33 @@ class ClosureMethodCallTest extends GroovyTestCase {
             assert Foo.bar() {} == 2
         '''
     }
+
+    //GROOVY-9140
+    void testCorrectErrorForClassInstanceMethodReference() {
+        assertScript '''
+            class Y {
+                def m() {1}
+            }
+            
+            ref = Y.&m
+            assert ref(new Y()) == 1
+        '''
+        shouldFail MissingMethodException, '''
+            class Y {
+                def m() {1}
+            }
+
+            ref = Y.&m
+            assert ref(new Y()) == 1
+            assert ref() == 1
+        '''
+        shouldFail MissingMethodException, '''
+            class Y {
+                def m() {1}
+            }
+
+            ref = Y.&m
+            assert ref(1) == 1
+        '''
+    }
 }
