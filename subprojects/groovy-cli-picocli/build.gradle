@@ -18,7 +18,7 @@
  */
 dependencies {
     compile rootProject
-    provided "info.picocli:picocli:$picocliVersion"
+    compileOnly "info.picocli:picocli:$picocliVersion"
     testCompile rootProject.sourceSets.test.output
     testCompile project(':groovy-test')
     testCompile project(':groovy-dateutil')
