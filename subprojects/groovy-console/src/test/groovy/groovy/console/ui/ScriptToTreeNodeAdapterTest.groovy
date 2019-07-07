@@ -30,17 +30,17 @@ import javax.swing.tree.TreeNode
  *
  * The assertions in this test case often assert against the toString() representation of
  * an object. Normally, this is bad form. However, the class under test is meant to display
- * toString() forms in a user interface. So in this case it is appropriate. 
+ * toString() forms in a user interface. So in this case it is appropriate.
  */
 class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
      private final classLoader = new GroovyClassLoader()
-     
+
      private createAdapter(showScriptFreeForm, showScriptClass, showClosureClasses) {
         def nodeMaker = new SwingTreeNodeMaker()
         new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker)
      }
-     
+
     /**
      * Asserts that a given script produces the expected tree like
      * structure.
@@ -49,7 +49,7 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
          ScriptToTreeNodeAdapter adapter = createAdapter(true, true, true)
          assertTreeStructure(script, specification, adapter)
      }
-     
+
      private assertTreeStructure(String script, List<Closure> specification, ScriptToTreeNodeAdapter adapter) {
          assertTreeStructure(script, CompilePhase.SEMANTIC_ANALYSIS, specification, adapter)
      }
@@ -128,7 +128,6 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testHelloWorld() {
-
         assertTreeStructure(
                 '"Hello World"',
                 [
@@ -139,7 +138,6 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testSimpleClass() {
-
         assertTreeStructure(
                 ' class Foo { public aField } ',
                 [
@@ -151,7 +149,6 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testMethodWithParameter() {
-
         assertTreeStructure(
                 ' def foo(String bar) { println bar } ',
                 [
@@ -164,7 +161,6 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testMethodWithParameterAndInitialValue() {
-
         assertTreeStructure(
                 ' def foo(String bar = "some_value") { println bar } ',
                 [
@@ -178,13 +174,12 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testClosureParameters() {
-
         assertTreeStructure(
                 ' def x = { parm1 ->  println parm1 } ',
                 [
                         eq('BlockStatement - (1)'),
                         startsWith('ExpressionStatement'),
-                        startsWith('Declaration - (x ='),
+                        startsWith('Declaration - def x ='),
                         startsWith('ClosureExpression'),
                         startsWith('Parameter - parm1'),
                 ]
@@ -192,13 +187,12 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testClosureParametersWithInitialValue() {
-
         assertTreeStructure(
                 ' def x = { parm1 = "some_value" ->  println parm1 } ',
                 [
                         eq('BlockStatement - (1)'),
                         startsWith('ExpressionStatement'),
-                        startsWith('Declaration - (x ='),
+                        startsWith('Declaration - def x ='),
                         eq('ClosureExpression'),
                         startsWith('Parameter - parm1'),
                         startsWith('Constant - some_value : java.lang.String'),
@@ -232,7 +226,6 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     void testDynamicVariable() {
-
         assertTreeStructure(
                 " foo = 'bar' ",
                 [
@@ -265,7 +258,7 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 [
                         startsWith('BlockStatement'),
                         startsWith('ExpressionStatement'),
-                        eq('Declaration - ((x, y) = [1, 2])'),
+                        eq('Declaration - def (x, y) = [1, 2]'),
                         eq('ArgumentList - (x, y)'),
                 ]
         )
@@ -412,7 +405,7 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                     adapter
                 )
         }
-        
+
         // since script class is being loaded, it should go through
         assertTreeStructure(
                 'def foo(String bar) {}',
