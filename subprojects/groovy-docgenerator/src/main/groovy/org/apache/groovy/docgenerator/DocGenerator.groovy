@@ -23,7 +23,7 @@ import com.thoughtworks.qdox.model.JavaClass
 import com.thoughtworks.qdox.model.JavaMethod
 import com.thoughtworks.qdox.model.JavaParameter
 import com.thoughtworks.qdox.model.Type
-import groovy.cli.picocli.CliBuilder
+import groovy.cli.internal.CliBuilderInternal
 import groovy.text.SimpleTemplateEngine
 import groovy.text.Template
 import groovy.text.TemplateEngine
@@ -207,7 +207,7 @@ class DocGenerator {
      * Main entry point.
      */
     static void main(String... args) {
-        def cli = new CliBuilder(usage : 'DocGenerator [options] [sourcefiles]', posix:false)
+        def cli = new CliBuilderInternal(usage : 'DocGenerator [options] [sourcefiles]', posix:false)
         cli.help(longOpt: 'help', messages['cli.option.help.description'])
         cli._(longOpt: 'version', messages['cli.option.version.description'])
         cli.o(longOpt: 'outputDir', args:1, argName: 'path', messages['cli.option.output.dir.description'])

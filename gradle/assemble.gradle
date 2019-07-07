@@ -368,7 +368,8 @@ ext.distSpec = copySpec {
                 it.file.name.startsWith('openbeans-') ||
                         it.file.name.startsWith('asm-') ||
                         it.file.name.startsWith('antlr-') ||
-                        it.file.name.startsWith('antlr4-')
+                        it.file.name.startsWith('antlr4-') ||
+                        it.file.name.startsWith('picocli-')
             }
         }
         from('src/bin/groovy.icns')
@@ -382,7 +383,8 @@ ext.distSpec = copySpec {
                             it.file.name.startsWith('asm-') ||
                             it.file.name.startsWith('antlr-') ||
                             it.file.name.startsWith('antlr4-') ||
-                            it.file.name.startsWith('openbeans-')
+                            it.file.name.startsWith('openbeans-') ||
+                            it.file.name.startsWith('picocli-')
                 }
             }
         }

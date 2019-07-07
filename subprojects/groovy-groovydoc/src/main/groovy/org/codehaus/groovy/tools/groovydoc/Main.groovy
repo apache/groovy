@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
-import groovy.cli.picocli.CliBuilder
+import groovy.cli.internal.CliBuilderInternal
 import groovy.io.FileType
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo
 import org.codehaus.groovy.tools.shell.IO
@@ -58,7 +58,7 @@ class Main {
         IO io = new IO()
         Logger.io = io
 
-        def cli = new CliBuilder(usage: 'groovydoc [options] [packagenames] [sourcefiles]', writer: io.out, posix: false,
+        def cli = new CliBuilderInternal(usage: 'groovydoc [options] [packagenames] [sourcefiles]', writer: io.out, posix: false,
                 header: messages['cli.option.header'])
 
         cli._(names: ['-h', '-help', '--help'], messages['cli.option.help.description'])

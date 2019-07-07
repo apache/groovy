@@ -126,12 +126,12 @@ task docProjectVersionInfo(type: Copy) {
 
 task docGDK {
     outputs.cacheIf { true }
-    dependsOn([project(':groovy-groovydoc'), project(':groovy-docgenerator'), project(':groovy-cli-picocli')]*.classes)
+    dependsOn([project(':groovy-groovydoc'), project(':groovy-docgenerator')]*.classes)
     dependsOn docProjectVersionInfo
     ext.destinationDir = "$buildDir/html/groovy-jdk"
     inputs.files sourceSets.main.runtimeClasspath + configurations.tools + files(docProjectVersionInfo.destinationDir)
     outputs.dir destinationDir
-    def docGeneratorPath = files(project(':groovy-docgenerator').sourceSets.main.output.classesDirs) + files(project(':groovy-cli-picocli').sourceSets.main.output.classesDirs)
+    def docGeneratorPath = files(project(':groovy-docgenerator').sourceSets.main.output.classesDirs)
     doLast { task ->
         try {
             ant {

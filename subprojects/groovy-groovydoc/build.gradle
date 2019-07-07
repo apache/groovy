@@ -19,7 +19,6 @@
 dependencies {
     compile rootProject
     testCompile rootProject.sourceSets.test.runtimeClasspath
-    compile project(':groovy-cli-picocli')
     compile project(':groovy-templates')
     runtime project(':groovy-docgenerator')
     testCompile project(':groovy-test')

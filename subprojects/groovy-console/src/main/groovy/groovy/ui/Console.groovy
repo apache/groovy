@@ -18,8 +18,8 @@
  */
 package groovy.ui
 
-import groovy.cli.picocli.CliBuilder
-import groovy.cli.picocli.OptionAccessor
+import groovy.cli.internal.CliBuilderInternal
+import groovy.cli.internal.OptionAccessor
 import groovy.inspect.swingui.AstBrowser
 import groovy.inspect.swingui.ObjectBrowser
 import groovy.swing.SwingBuilder
@@ -229,7 +229,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     static void main(args) {
         MessageSource messages = new MessageSource(Console)
-        CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false,
+        def cli = new CliBuilderInternal(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false,
                 header: messages['cli.option.header'])
         cli.with {
             _(names: ['-cp', '-classpath', '--classpath'], messages['cli.option.classpath.description'])

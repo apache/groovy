@@ -18,8 +18,8 @@
  */
 package org.apache.groovy.groovysh
 
-import groovy.cli.picocli.CliBuilder
-import groovy.cli.picocli.OptionAccessor
+import groovy.cli.internal.CliBuilderInternal
+import groovy.cli.internal.OptionAccessor
 import jline.TerminalFactory
 import jline.UnixTerminal
 import jline.UnsupportedTerminal
@@ -72,7 +72,7 @@ class Main {
      */
     static void main(final String[] args) {
         MessageSource messages = new MessageSource(Main)
-        CliBuilder cli = new CliBuilder(usage: 'groovysh [options] [...]', stopAtNonOption: false,
+        def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
                 header: messages['cli.option.header'])
         cli.with {
             _(names: ['-cp', '-classpath', '--classpath'], messages['cli.option.classpath.description'])

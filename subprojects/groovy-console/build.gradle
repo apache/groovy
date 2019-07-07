@@ -20,7 +20,6 @@ evaluationDependsOn(':groovy-swing')
 
 dependencies {
     compile rootProject
-    compile project(':groovy-cli-picocli')
     compile project(':groovy-swing')
     compile project(':groovy-templates')
     testCompile project(':groovy-test')
