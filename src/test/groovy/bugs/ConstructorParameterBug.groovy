@@ -18,37 +18,42 @@
  */
 package groovy.bugs
 
-import gls.CompilableTestSupport
+import org.junit.Test
 
-class ConstructorParameterBug extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class ConstructorParameterBug {
+
+    @Test
     void testParamWithDefaultCallingStaticMethod() {
         assertScript '''
-        class StaticDefault {
-            def name
-            StaticDefault(name = baz()) {
-                this.name = name
+            class StaticDefault {
+                def name
+                StaticDefault(name = baz()) {
+                    this.name = name
+                }
+                private static baz() {
+                    'baz'
+                }
             }
-            private static baz() {
-                'baz'
-            }
-        }
-        assert 'baz' == new StaticDefault().name
+            assert 'baz' == new StaticDefault().name
         '''
     }
 
+    @Test
     void testParamWithDefaultCallingInstanceMethod() {
-        def msg = shouldFail '''
-        class InstanceDefault {
-            def name
-            InstanceDefault(name = baz()) {
-                this.name = name
+        def err = shouldFail '''
+            class InstanceDefault {
+                def name
+                InstanceDefault(name = baz()) {
+                    this.name = name
+                }
+                private baz() {
+                    'baz'
+                }
             }
-            private baz() {
-                'baz'
-            }
-        }
         '''
-        assert msg.contains("Can't access instance method 'baz' for a constructor parameter default value")
+        assert err.message.contains("Can't access instance method 'baz' for a constructor parameter default value")
     }
 }

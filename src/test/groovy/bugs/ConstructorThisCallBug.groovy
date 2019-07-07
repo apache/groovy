@@ -18,21 +18,28 @@
  */
 package groovy.bugs
 
-class ConstructorThisCallBug extends GroovyTestCase {
-    // GROOVY-7014
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class ConstructorThisCallBug {
+
+    @Test // GROOVY-7014
     void testThisCallingInstanceMethod() {
-        def msg = shouldFail '''
+        def err = shouldFail '''
             class Base {
                 String getData() { return "ABCD" }
                 Base() { this(getData()) }
                 Base(String arg) {}
             }
         '''
-        assert msg.contains("Can't access instance method 'getData' before the class is constructed")
+        assert err.message.contains("Can't access instance method 'getData' before the class is constructed")
     }
 
+    @Test
     void testNestedClassThisCallingInstanceMethod() {
-        def msg = shouldFail '''
+        def err = shouldFail '''
             class Base {
                 static class Nested {
                     String getData() { return "ABCD" }
@@ -41,9 +48,10 @@ class ConstructorThisCallBug extends GroovyTestCase {
                 }
             }
         '''
-        assert msg.contains("Can't access instance method 'getData' before the class is constructed")
+        assert err.message.contains("Can't access instance method 'getData' before the class is constructed")
     }
 
+    @Test
     void testThisCallingStaticMethod() {
         assertScript '''
             class Base {
@@ -57,6 +65,7 @@ class ConstructorThisCallBug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNestedThisCallingStaticMethod() {
         assertScript '''
             class Base {
@@ -72,6 +81,7 @@ class ConstructorThisCallBug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testInnerClassSuperCallingInstanceMethod() {
         assertScript '''
             class Parent {
@@ -94,6 +104,7 @@ class ConstructorThisCallBug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testInnerClassSuperCallingStaticProperty() {
         assertScript '''
             class Parent {
@@ -115,7 +126,7 @@ class ConstructorThisCallBug extends GroovyTestCase {
         '''
     }
 
-    // GROOVY-994
+    @Test // GROOVY-994
     void testCallA() {
         assert new ConstructorCallA("foo").toString() == 'foo'
         assert new ConstructorCallA(9).toString() == '81'
