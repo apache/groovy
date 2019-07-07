@@ -20,7 +20,6 @@ package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -28,40 +27,29 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
-import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 
 /**
- * Verifier to check non-static access in static contexts
+ * Checks for non-static access in static contexts.
  */
 public class StaticVerifier extends ClassCodeVisitorSupport {
-    private boolean inSpecialConstructorCall;
-    private boolean inPropertyExpression; // TODO use it or lose it
-    private boolean inClosure;
+    private boolean inClosure, inSpecialConstructorCall;
     private MethodNode currentMethod;
     private SourceUnit source;
 
-    public void visitClass(ClassNode node, SourceUnit source) {
-        this.source = source;
-        super.visitClass(node);
+    @Override
+    protected SourceUnit getSourceUnit() {
+        return source;
     }
 
-    @Override
-    public void visitVariableExpression(VariableExpression ve) {
-        Variable v = ve.getAccessedVariable();
-        if (v instanceof DynamicVariable) {
-            if (!inPropertyExpression || inSpecialConstructorCall) addStaticVariableError(ve);
-        }
+    public void visitClass(ClassNode node, SourceUnit unit) {
+        source = unit;
+        visitClass(node);
     }
 
     @Override
@@ -75,7 +63,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression cce) {
         boolean oldIsSpecialConstructorCall = inSpecialConstructorCall;
-        inSpecialConstructorCall = cce.isSpecialCall();
+        inSpecialConstructorCall |= cce.isSpecialCall();
         super.visitConstructorCallExpression(cce);
         inSpecialConstructorCall = oldIsSpecialConstructorCall;
     }
@@ -86,37 +74,13 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         currentMethod = node;
         super.visitConstructorOrMethod(node, isConstructor);
         if (isConstructor) {
-            final Set<String> exceptions = new HashSet<String>();
-            for (final Parameter param : node.getParameters()) {
-                exceptions.add(param.getName());
+            for (Parameter param : node.getParameters()) {
                 if (param.hasInitialExpression()) {
-                    param.getInitialExpression().visit(new CodeVisitorSupport() {
-                        @Override
-                        public void visitVariableExpression(VariableExpression ve) {
-                            if (exceptions.contains(ve.getName())) return;
-                            if (ve.getAccessedVariable() instanceof DynamicVariable || !ve.isInStaticContext()) {
-                                addVariableError(ve);
-                            }
-                        }
-
-                        @Override
-                        public void visitMethodCallExpression(MethodCallExpression call) {
-                            Expression objectExpression = call.getObjectExpression();
-                            if (objectExpression instanceof VariableExpression) {
-                                VariableExpression ve = (VariableExpression) objectExpression;
-                                if (ve.isThisExpression()) {
-                                    addError("Can't access instance method '" + call.getMethodAsString() + "' for a constructor parameter default value", param);
-                                    return;
-                                }
-                            }
-                            super.visitMethodCallExpression(call);
-                        }
-
-                        @Override
-                        public void visitClosureExpression(ClosureExpression expression) {
-                            //skip contents, because of dynamic scope
-                        }
-                    });
+                    // initial expression will be argument to special constructor call
+                    boolean oldIsSpecialConstructorCall = inSpecialConstructorCall;
+                    inSpecialConstructorCall = true;
+                    param.getInitialExpression().visit(this);
+                    inSpecialConstructorCall = oldIsSpecialConstructorCall;
                 }
             }
         }
@@ -124,54 +88,27 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
     }
 
     @Override
-    public void visitMethodCallExpression(MethodCallExpression mce) {
-        if (inSpecialConstructorCall && !isInnerClass(currentMethod.getDeclaringClass())) {
-            Expression objectExpression = mce.getObjectExpression();
-            if (objectExpression instanceof VariableExpression) {
-                VariableExpression ve = (VariableExpression) objectExpression;
-                if (ve.isThisExpression()) {
-                    addError("Can't access instance method '" + mce.getMethodAsString() + "' before the class is constructed", mce);
-                    return;
+    public void visitVariableExpression(VariableExpression ve) {
+        Variable variable = ve.getAccessedVariable();
+        if (variable instanceof DynamicVariable) {
+            if (inSpecialConstructorCall || (!inClosure && ve.isInStaticContext())) {
+                if (currentMethod != null && currentMethod.isStatic()) {
+                    FieldNode fieldNode = getDeclaredOrInheritedField(currentMethod.getDeclaringClass(), ve.getName());
+                    if (fieldNode != null && fieldNode.isStatic()) return;
                 }
+                addVariableError(ve);
+            }
+        } else if (inSpecialConstructorCall) {
+            if (ve.isThisExpression() || ve.isSuperExpression()) {
+                addError("Cannot reference '" + ve.getName() + "' before supertype constructor has been called. Possible causes:\n" +
+                        "You attempted to access an instance field, method or property.\n" +
+                        "You attempted to construct a non-static inner class.",
+                        ve);
+            } else if (!inClosure && !Modifier.isStatic(variable.getModifiers())
+                    && Arrays.stream(currentMethod.getParameters()).noneMatch(p -> p.getName().equals(ve.getName()))) {
+                addVariableError(ve); // only params and static or outer members may be accessed from special ctor call
             }
         }
-        super.visitMethodCallExpression(mce);
-    }
-
-    @Override
-    public void visitPropertyExpression(PropertyExpression pe) {
-        if (!inSpecialConstructorCall) checkStaticScope(pe);
-    }
-
-    @Override
-    protected SourceUnit getSourceUnit() {
-        return source;
-    }
-
-
-    private void checkStaticScope(PropertyExpression pe) {
-        if (inClosure) return;
-        for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
-            if (it instanceof PropertyExpression) continue;
-            if (it instanceof VariableExpression) {
-                addStaticVariableError((VariableExpression) it);
-            }
-            return;
-        }
-    }
-
-    private void addStaticVariableError(VariableExpression ve) {
-        // closures are always dynamic
-        // propertyExpressions will handle the error a bit differently
-        if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
-        if (ve.isThisExpression() || ve.isSuperExpression()) return;
-        Variable v = ve.getAccessedVariable();
-        if (currentMethod != null && currentMethod.isStatic()) {
-            FieldNode fieldNode = getDeclaredOrInheritedField(currentMethod.getDeclaringClass(), ve.getName());
-            if (fieldNode != null && fieldNode.isStatic()) return;
-        }
-        if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
-        addVariableError(ve);
     }
 
     private void addVariableError(VariableExpression ve) {
@@ -188,7 +125,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);
             if (fn != null) return fn;
-            List<ClassNode> interfacesToCheck = new ArrayList<ClassNode>(Arrays.asList(node.getInterfaces()));
+            List<ClassNode> interfacesToCheck = new ArrayList<>(Arrays.asList(node.getInterfaces()));
             while (!interfacesToCheck.isEmpty()) {
                 ClassNode nextInterface = interfacesToCheck.remove(0);
                 fn = nextInterface.getDeclaredField(fieldName);
@@ -199,5 +136,4 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         }
         return null;
     }
-
 }

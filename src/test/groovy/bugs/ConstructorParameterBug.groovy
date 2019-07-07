@@ -54,6 +54,6 @@ final class ConstructorParameterBug {
                 }
             }
         '''
-        assert err.message.contains("Can't access instance method 'baz' for a constructor parameter default value")
+        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 }

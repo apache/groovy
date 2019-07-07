@@ -34,7 +34,7 @@ final class ConstructorThisCallBug {
                 Base(String arg) {}
             }
         '''
-        assert err.message.contains("Can't access instance method 'getData' before the class is constructed")
+        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
     @Test
@@ -48,7 +48,7 @@ final class ConstructorThisCallBug {
                 }
             }
         '''
-        assert err.message.contains("Can't access instance method 'getData' before the class is constructed")
+        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
     @Test

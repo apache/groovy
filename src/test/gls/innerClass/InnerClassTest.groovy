@@ -847,9 +847,9 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-6809
+    @Test // GROOVY-6809
     void testReferenceToUninitializedThis() {
-        assertScript '''
+        def err = shouldFail '''
             class Test {
                 static main(args) {
                     def a = new A()
@@ -860,19 +860,16 @@ final class InnerClassTest {
                         def b = new B()
                     }
 
-                    void sayA() {
-                        println 'saying A'
-                    }
-
                     class B extends A {
                         B() {
-                            super(A.this) // does not exist
-                            sayA()
+                            super(A.this)
                         }
                     }
                 }
             }
         '''
+
+        assert err =~ / Could not find matching constructor for: Test.A\(Test.A\)/
     }
 
     @Test // GROOVY-6809
@@ -942,9 +939,27 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9168
+    @Test // GROOVY-9168
     void testReferenceToUninitializedThis5() {
-        assertScript '''
+        def err = shouldFail '''
+            class Outer {
+              class Inner {
+              }
+              Outer(Inner inner) {
+              }
+              Outer() {
+                  this(new Inner())
+              }
+            }
+            new Outer()
+        '''
+
+        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
+    }
+
+    @Test // GROOVY-9168
+    void testReferenceToUninitializedThis6() {
+        def err = shouldFail '''
             class Outer {
               class Inner {
               }
@@ -953,10 +968,12 @@ final class InnerClassTest {
             }
             new Outer()
         '''
+
+        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
     @Test // GROOVY-9168
-    void testReferenceToUninitializedThis6() {
+    void testReferenceToUninitializedThis7() {
         assertScript '''
             import groovy.transform.ASTTest
             import java.util.concurrent.Callable
@@ -985,7 +1002,7 @@ final class InnerClassTest {
     }
 
     @Test @NotYetImplemented // GROOVY-9168
-    void testReferenceToUninitializedThis7() {
+    void testReferenceToUninitializedThis8() {
         assertScript '''
             class A {
                 //                  AIC in this position can use static properties:
@@ -1003,7 +1020,7 @@ final class InnerClassTest {
     }
 
     @Test @NotYetImplemented // GROOVY-9168
-    void testReferenceToUninitializedThis8() {
+    void testReferenceToUninitializedThis9() {
         assertScript '''
             class A {
                 //                  AIC in this position can use static methods:
