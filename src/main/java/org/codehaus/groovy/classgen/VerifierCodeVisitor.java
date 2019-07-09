@@ -29,19 +29,18 @@ import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.syntax.RuntimeParserException;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Performs various checks on code inside methods and constructors
  * including checking for valid field, variables names etc. that
  * would otherwise lead to invalid code.
  */
-public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
+public class VerifierCodeVisitor extends CodeVisitorSupport {
 
-    private final Verifier verifier;
+    private final ClassNode classNode;
 
-    VerifierCodeVisitor(Verifier verifier) {
-        this.verifier = verifier;
+    public VerifierCodeVisitor(ClassNode classNode) {
+        this.classNode = classNode;
     }
 
     public void visitForLoop(ForStatement expression) {
@@ -72,7 +71,7 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
 
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         ClassNode callType = call.getType();
-        if (callType.isEnum() && !callType.equals(verifier.getClassNode())) {
+        if (callType.isEnum() && !callType.equals(classNode)) {
             throw new RuntimeParserException("Enum constructor calls are only allowed inside the enum class", call);
         }
     }

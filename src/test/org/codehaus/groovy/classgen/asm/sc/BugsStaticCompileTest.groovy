@@ -1196,7 +1196,7 @@ println someInt
 '''
     }
 
-    void _FIXME_testAccessOuterClassMethodFromInnerClassConstructor() {
+    void testAccessOuterClassMethodFromInnerClassConstructor() {
         assertScript '''
             class Parent {
                 String str

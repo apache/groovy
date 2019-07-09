@@ -54,6 +54,6 @@ final class ConstructorParameterBug {
                 }
             }
         '''
-        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
+        assert err =~ / Cannot reference 'baz' before supertype constructor has been called. /
     }
 }

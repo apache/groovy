@@ -25,32 +25,6 @@ import static groovy.test.GroovyAssert.shouldFail
 
 final class ConstructorThisCallBug {
 
-    @Test // GROOVY-7014
-    void testThisCallingInstanceMethod() {
-        def err = shouldFail '''
-            class Base {
-                String getData() { return "ABCD" }
-                Base() { this(getData()) }
-                Base(String arg) {}
-            }
-        '''
-        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
-    }
-
-    @Test
-    void testNestedClassThisCallingInstanceMethod() {
-        def err = shouldFail '''
-            class Base {
-                static class Nested {
-                    String getData() { return "ABCD" }
-                    Nested() { this(getData()) }
-                    Nested(String arg) {}
-                }
-            }
-        '''
-        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
-    }
-
     @Test
     void testThisCallingStaticMethod() {
         assertScript '''
@@ -66,7 +40,7 @@ final class ConstructorThisCallBug {
     }
 
     @Test
-    void testNestedThisCallingStaticMethod() {
+    void testNestedClassThisCallingStaticMethod() {
         assertScript '''
             class Base {
                 static class Nested {
@@ -82,30 +56,7 @@ final class ConstructorThisCallBug {
     }
 
     @Test
-    void testInnerClassSuperCallingInstanceMethod() {
-        assertScript '''
-            class Parent {
-                String str
-                Parent(String s) { str = s }
-            }
-            class Outer {
-                static String a
-
-                private class Inner extends Parent {
-                   Inner() { super(myA()) }
-                }
-
-                String test() { new Inner().str }
-                String myA() { a }
-            }
-            def o = new Outer()
-            Outer.a = 'ok'
-            assert o.test() == 'ok'
-        '''
-    }
-
-    @Test
-    void testInnerClassSuperCallingStaticProperty() {
+    void testNestedClassSuperCallingStaticMethod() {
         assertScript '''
             class Parent {
                 String str
@@ -125,6 +76,60 @@ final class ConstructorThisCallBug {
             assert o.test() == 'ok'
         '''
     }
+
+    //
+
+    @Test // GROOVY-7014
+    void testThisCallingInstanceMethod() {
+        def err = shouldFail '''
+            class Base {
+                String getData() { return "ABCD" }
+                Base() { this(getData()) }
+                Base(String arg) {}
+            }
+        '''
+        assert err =~ / Cannot reference 'getData' before supertype constructor has been called. /
+    }
+
+    @Test
+    void testNestedClassThisCallingInstanceMethod() {
+        def err = shouldFail '''
+            class Base {
+                static class Nested {
+                    String getData() { return "ABCD" }
+                    Nested() { this(getData()) }
+                    Nested(String arg) {}
+                }
+            }
+        '''
+        assert err =~ / Cannot reference 'getData' before supertype constructor has been called. /
+    }
+
+    @Test
+    void testNestedClassSuperCallingInstanceMethod() {
+        def err = shouldFail '''
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                static String a
+
+                private class Inner extends Parent {
+                   Inner() { super(myA()) }
+                }
+
+                String test() { new Inner().str }
+                String myA() { a }
+            }
+            def o = new Outer()
+            Outer.a = 'ok'
+            assert o.test() == 'ok'
+        '''
+        assert err =~ / Cannot reference 'myA' before supertype constructor has been called. /
+    }
+
+    //
 
     @Test // GROOVY-994
     void testCallA() {
