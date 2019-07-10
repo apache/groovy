@@ -51,13 +51,13 @@ import org.codehaus.groovy.syntax.Types;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getPropNameForAccessor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasPossibleStaticProperty;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasStaticProperty;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
@@ -214,8 +214,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 ClassNode declaringClass = fn.getDeclaringClass();
                 if (fn.isStatic() && currentClass.isDerivedFrom(declaringClass)) {
                     Expression result = new PropertyExpression(new ClassExpression(declaringClass), v.getName());
-                    result.setSourcePosition(ve);
-
+                    setSourcePosition(result, ve);
                     return result;
                 }
             }
