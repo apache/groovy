@@ -48,9 +48,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.nonGeneric;
-
 public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcodes {
 
     private ClassNode classNode;
@@ -74,7 +71,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         InnerClassNode innerClass = null;
         if (!node.isEnum() && !node.isInterface() && node instanceof InnerClassNode) {
             innerClass = (InnerClassNode) node;
-            if (!isStatic(innerClass) && innerClass.getVariableScope() == null) {
+            if (innerClass.getVariableScope() == null && (innerClass.getModifiers() & ACC_STATIC) == 0) {
                 innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, node.getOuterClass().getPlainNodeReference(), null);
             }
         }
@@ -197,9 +194,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
             // "this" reference is saved in a field named "this$0"
             FieldNode thisField = innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, enclosingType, null);
             addFieldInit(thisParameter, thisField, block);
-        }/* else {
-            innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, nonGeneric(ClassHelper.CLASS_Type), classX(outerClass));
-        }*/
+        }
 
         // for each shared variable, add a Reference field
         for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext();) {

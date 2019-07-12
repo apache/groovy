@@ -24,12 +24,10 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -45,7 +43,12 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
+
     protected static void setPropertyGetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
         List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
         gStringStrings.add(new ConstantExpression(""));
@@ -102,9 +105,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     }
 
     protected static boolean isStatic(InnerClassNode node) {
-        VariableScope scope = node.getVariableScope();
-        if (scope != null) return scope.getParent().isInStaticContext();
-        return (node.getModifiers() & Opcodes.ACC_STATIC) != 0;
+        return node.getDeclaredField("this$0") == null;
     }
 
     protected static ClassNode getClassNode(ClassNode node, boolean isStatic) {
@@ -122,11 +123,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     }
 
     protected static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block) {
-        VariableExpression ve = new VariableExpression(p);
-        FieldExpression fe = new FieldExpression(fn);
-        block.addStatement(new ExpressionStatement(
-                new BinaryExpression(fe, Token.newSymbol(Types.ASSIGN, -1, -1), ve)
-        ));
+        block.addStatement(assignS(fieldX(fn), varX(p)));
     }
 
     protected static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {

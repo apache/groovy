@@ -333,7 +333,7 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9168
+    @Test // GROOVY-9168
     void testUsageOfOuterField6() {
         assertScript '''
             class A {
@@ -461,7 +461,7 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9168
+    @Test // GROOVY-9168
     void testUsageOfOuterMethod5() {
         assertScript '''
             class A {
