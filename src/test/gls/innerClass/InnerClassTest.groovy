@@ -310,6 +310,47 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-9189
+    void testUsageOfOuterField5() {
+        assertScript '''
+            interface Run {
+                def run()
+            }
+            class Foo {
+                private static x = 1
+
+                static foo(def runner = new Run() {
+                    def run() { return x }
+                }) {
+                    runner.run()
+                }
+
+                static x(y) { x = y }
+            }
+            assert Foo.foo() == 1
+            Foo.x(2)
+            assert Foo.foo() == 2
+        '''
+    }
+
+    @Test @NotYetImplemented // GROOVY-9168
+    void testUsageOfOuterField6() {
+        assertScript '''
+            class A {
+                //                  AIC in this position can use static properties:
+                A(Runnable action = new Runnable() { void run() { answer = 42 }}) {
+                    this.action = action
+                }
+                Runnable   action
+                static int answer
+            }
+
+            def a = new A()
+            a.action.run();
+            assert a.answer == 42
+        '''
+    }
+
     @Test @NotYetImplemented
     void testUsageOfOuterFieldOverridden() {
         assertScript '''
@@ -345,7 +386,8 @@ final class InnerClassTest {
                 def run()
             }
             class Foo {
-                private x(){1}
+                private x() { return 1 }
+
                 def foo() {
                     def runner = new Run(){
                         def run() { return x() }
@@ -365,7 +407,7 @@ final class InnerClassTest {
                 def run()
             }
             class Foo {
-                private static x() {1}
+                private static x() { return 1 }
 
                 def foo() {
                     def runner = new Run() {
@@ -380,22 +422,81 @@ final class InnerClassTest {
     }
 
     @Test
-    void testUsageOfOuterMethodoverridden() {
+    void testUsageOfOuterMethod3() {
         assertScript '''
             interface Run {
                 def run()
             }
             class Foo {
-                private x(){1}
+                private static x() { return 1 }
+
+                def foo(def runner = new Run() {
+                    def run() { return x() }
+                }) {
+                    runner.run()
+                }
+            }
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
+    @Test // GROOVY-9189
+    void testUsageOfOuterMethod4() {
+        assertScript '''
+            interface Run {
+                def run()
+            }
+            class Foo {
+                private static x() { return 1 }
+
+                static def foo(def runner = new Run() {
+                    def run() { return x() }
+                }) {
+                    runner.run()
+                }
+            }
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
+    @Test @NotYetImplemented // GROOVY-9168
+    void testUsageOfOuterMethod5() {
+        assertScript '''
+            class A {
+                //                  AIC in this position can use static methods:
+                A(Runnable action = new Runnable() { void run() { setAnswer(42) }}) {
+                    this.action = action
+                }
+                Runnable action
+                static int answer
+            }
+
+            def a = new A()
+            a.action.run();
+            assert a.answer == 42
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterMethodOverridden() {
+        assertScript '''
+            interface Run {
+                def run()
+            }
+            class Foo {
+                private x() { return 1 }
+
                 def foo() {
-                    def runner = new Run(){
+                    def runner = new Run() {
                         def run() { return x() }
                     }
                     runner.run()
                 }
             }
-            class Bar extends Foo{
-                def x() { 2 }
+            class Bar extends Foo {
+                def x() { return 2 }
             }
             def bar = new Bar()
             assert bar.foo() == 1
@@ -403,13 +504,13 @@ final class InnerClassTest {
     }
 
     @Test
-    void testUsageOfOuterMethodoverridden2() {
+    void testUsageOfOuterMethodOverridden2() {
         assertScript '''
             interface Run {
                 def run()
             }
             class Foo {
-                private static x() { 1 }
+                private static x() { return 1 }
 
                 static foo() {
                     def runner = new Run() {
@@ -419,7 +520,7 @@ final class InnerClassTest {
                 }
             }
             class Bar extends Foo {
-                static x() { 2 }
+                static x() { return 2 }
             }
             def bar = new Bar()
             assert bar.foo() == 1
@@ -763,7 +864,7 @@ final class InnerClassTest {
     }
 
     @Test // GROOVY-5582
-    void testAICextendingAbstractInnerClass() {
+    void testAICExtendingAbstractInnerClass() {
         assertScript '''
             class Outer {
                 int outer() { 1 }
@@ -998,43 +1099,6 @@ final class InnerClassTest {
 
             def a = new A()
             assert a.action.call() == 42
-        '''
-    }
-
-    @Test @NotYetImplemented // GROOVY-9168
-    void testReferenceToUninitializedThis8() {
-        assertScript '''
-            class A {
-                //                  AIC in this position can use static properties:
-                A(Runnable action = new Runnable() { void run() { answer = 42 }}) {
-                    this.action = action
-                }
-                Runnable   action
-                static int answer
-            }
-
-            def a = new A()
-            a.action.run();
-            assert a.answer == 42
-        '''
-    }
-
-    @Test @NotYetImplemented // GROOVY-9168
-    void testReferenceToUninitializedThis9() {
-        assertScript '''
-            class A {
-                //                  AIC in this position can use static methods:
-                A(Runnable action = new Runnable() { void run() { setAnswer(42) }}) {
-                    this.action = action
-                }
-                Runnable action
-                protected static int answer
-                static void setAnswer(int value) { answer = value }
-            }
-
-            def a = new A()
-            a.action.run();
-            assert a.answer == 42
         '''
     }
 }
