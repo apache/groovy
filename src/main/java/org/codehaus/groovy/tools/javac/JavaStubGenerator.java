@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.FinalVariableAnalyzer;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.classgen.VerifierCodeVisitor;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.Utilities;
@@ -55,6 +56,7 @@ import org.objectweb.asm.Opcodes;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -181,8 +183,11 @@ public class JavaStubGenerator {
                 }
 
                 @Override
-                protected FinalVariableAnalyzer.VariableNotFinalCallback getFinalVariablesCallback() {
-                    return null;
+                public void visitConstructor(ConstructorNode node) {
+                    Statement stmt = node.getCode();
+                    if (stmt != null) {
+                        stmt.visit(new VerifierCodeVisitor(getClassNode()));
+                    }
                 }
 
                 @Override
@@ -242,6 +247,11 @@ public class JavaStubGenerator {
                 @Override
                 protected void addDefaultConstructor(ClassNode node) {
                     // not required for stub generation
+                }
+
+                @Override
+                protected FinalVariableAnalyzer.VariableNotFinalCallback getFinalVariablesCallback() {
+                    return null;
                 }
             };
             int origNumConstructors = classNode.getDeclaredConstructors().size();
@@ -581,7 +591,7 @@ public class JavaStubGenerator {
             for (ClassNode stub:stubExceptions) {
                 if (stub.isDerivedFrom(superExc)) continue outer;
             }
-            // not found 
+            // not found
             return false;
         }
 

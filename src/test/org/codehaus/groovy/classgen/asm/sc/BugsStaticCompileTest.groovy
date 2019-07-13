@@ -1198,83 +1198,83 @@ println someInt
 
     void testAccessOuterClassMethodFromInnerClassConstructor() {
         assertScript '''
-    class Parent {
-        String str
-        Parent(String s) { str = s }
-    }
-    class Outer {
-        String a
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                String a
 
-        private class Inner extends Parent {
-           Inner() { super(getA()) }
-        }
+                private class Inner extends Parent {
+                   Inner() { super(getA()) }
+                }
 
-        String test() { new Inner().str }
-    }
-    def o = new Outer(a:'ok')
-    assert o.test() == 'ok'
-    '''
+                String test() { new Inner().str }
+            }
+            def o = new Outer(a:'ok')
+            assert o.test() == 'ok'
+        '''
     }
 
     void testAccessOuterClassMethodFromInnerClassConstructorUsingExplicitOuterThis() {
         assertScript '''
-    class Parent {
-        String str
-        Parent(String s) { str = s }
-    }
-    class Outer {
-        String a
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                String a
 
-        private class Inner extends Parent {
-           Inner() { super(Outer.this.getA()) }
-        }
+                private class Inner extends Parent {
+                   Inner() { super(Outer.this.getA()) }
+                }
 
-        String test() { new Inner().str }
-    }
-    def o = new Outer(a:'ok')
-    assert o.test() == 'ok'
-    '''
+                String test() { new Inner().str }
+            }
+            def o = new Outer(a:'ok')
+            assert o.test() == 'ok'
+        '''
     }
 
     void testAccessOuterClassMethodFromInnerClassConstructorUsingExplicitOuterThisAndProperty() {
         assertScript '''
-    class Parent {
-        String str
-        Parent(String s) { str = s }
-    }
-    class Outer {
-        String a
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                String a
 
-        private class Inner extends Parent {
-           Inner() { super(Outer.this.a) }
-        }
+                private class Inner extends Parent {
+                   Inner() { super(Outer.this.a) }
+                }
 
-        String test() { new Inner().str }
-    }
-    def o = new Outer(a:'ok')
-    assert o.test() == 'ok'
-    '''
+                String test() { new Inner().str }
+            }
+            def o = new Outer(a:'ok')
+            assert o.test() == 'ok'
+        '''
     }
 
     void testAccessOuterClassStaticMethodFromInnerClassConstructor() {
         assertScript '''
-    class Parent {
-        String str
-        Parent(String s) { str = s }
-    }
-    class Outer {
-        static String a
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                static String a
 
-        private class Inner extends Parent {
-           Inner() { super(getA()) }
-        }
+                private class Inner extends Parent {
+                   Inner() { super(getA()) }
+                }
 
-        String test() { new Inner().str }
-    }
-    def o = new Outer()
-    Outer.a = 'ok'
-    assert o.test() == 'ok'
-    '''
+                String test() { new Inner().str }
+            }
+            def o = new Outer()
+            Outer.a = 'ok'
+            assert o.test() == 'ok'
+        '''
     }
 
     void testStaticMethodFromInnerClassConstructor() {

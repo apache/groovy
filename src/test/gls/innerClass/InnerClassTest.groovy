@@ -18,12 +18,18 @@
  */
 package gls.innerClass
 
-import gls.CompilableTestSupport
+import groovy.transform.NotYetImplemented
+import org.codehaus.groovy.control.CompilationFailedException
+import org.junit.Test
 
-class InnerClassTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class InnerClassTest {
+
+    @Test
     void testTimerAIC() {
-        assertScript """
+        assertScript '''
             import java.util.concurrent.CountDownLatch
             import java.util.concurrent.TimeUnit
 
@@ -37,11 +43,12 @@ class InnerClassTest extends CompilableTestSupport {
             }, 0)
 
             assert called.await(10, TimeUnit.SECONDS)
-        """
+        '''
     }
 
+    @Test
     void testAICReferenceInClosure() {
-        assertScript """
+        assertScript '''
             def y = [true]
             def o = new Object() {
               def foo() {
@@ -52,21 +59,23 @@ class InnerClassTest extends CompilableTestSupport {
               }
             }
             o.foo()
-        """
+        '''
     }
 
+    @Test
     void testExtendsObjectAndAccessAFinalVariableInScope() {
-        assertScript """
+        assertScript '''
             final String objName = "My name is Guillaume"
 
             assert new Object() {
                 String toString() { objName }
             }.toString() == objName
-        """
+        '''
     }
 
+    @Test
     void testExtendsObjectAndReferenceAMethodParameterWithinAGString() {
-        assertScript """
+        assertScript '''
             Object makeObj0(String name) {
                 new Object() {
                     String toString() { "My name is \${name}" }
@@ -74,11 +83,12 @@ class InnerClassTest extends CompilableTestSupport {
             }
 
             assert makeObj0("Guillaume").toString() == "My name is Guillaume"
-        """
+        '''
     }
 
+    @Test
     void testExtendsObjectAndReferenceAGStringPropertyDependingOnAMethodParameter() {
-        assertScript """
+        assertScript '''
             Object makeObj1(String name) {
                  new Object() {
                     String objName = "My name is \${name}"
@@ -88,11 +98,12 @@ class InnerClassTest extends CompilableTestSupport {
             }
 
             assert makeObj1("Guillaume").toString() == "My name is Guillaume"
-        """
+        '''
     }
 
+    @Test
     void testUsageOfInitializerBlockWithinAnAIC() {
-        assertScript """
+        assertScript '''
             Object makeObj2(String name) {
                  new Object() {
                     String objName
@@ -108,11 +119,12 @@ class InnerClassTest extends CompilableTestSupport {
             }
 
             assert makeObj2("Guillaume").toString() == "My name is Guillaume"
-        """
+        '''
     }
 
+    @Test
     void testStaticInnerClass() {
-        assertScript """
+        assertScript '''
             import java.lang.reflect.Modifier
 
             class A {
@@ -123,41 +135,58 @@ class InnerClassTest extends CompilableTestSupport {
 
             def mods = A.B.modifiers
             assert Modifier.isPublic(mods)
-        """
+        '''
+    }
 
-        assertScript """
+    @Test
+    void testStaticInnerClass2() {
+        assertScript '''
             class A {
                 static class B{}
             }
             assert A.declaredClasses.length==1
             assert A.declaredClasses[0]==A.B
-        """
+        '''
     }
 
-    void testNonStaticInnerClass_FAILS() {
-        if (notYetImplemented()) return
+    @Test
+    void testNonStaticInnerClass() {
+        assertScript '''
+            class A {
+                class B {
+                    final String foo = 'foo'
+                }
+            }
+            def b = new A.B(new A())
+            assert b.foo == 'foo'
+        '''
+    }
 
-        shouldNotCompile """
+    @Test @NotYetImplemented
+    void testNonStaticInnerClass2() {
+        shouldFail CompilationFailedException, '''
             class A {
                 class B {}
             }
-            def x = new A.B()
-        """
+            def x = new A.B() // requires reference to A
+        '''
     }
 
+    @Test
     void testAnonymousInnerClass() {
-        assertScript """
+        assertScript '''
             class Foo {}
 
             def x = new Foo(){
                 def bar() { 1 }
             }
             assert x.bar() == 1
-        """
+        '''
     }
 
+    @Test
     void testLocalVariable() {
-        assertScript """
+        assertScript '''
             class Foo {}
             final val = 2
             def x = new Foo() {
@@ -165,20 +194,22 @@ class InnerClassTest extends CompilableTestSupport {
             }
             assert x.bar() == val
             assert x.bar() == 2
-        """
+        '''
     }
 
+    @Test
     void testConstructor() {
-        shouldNotCompile """
+        shouldFail CompilationFailedException, '''
             class Foo {}
             def x = new Foo() {
                 Foo() {}
             }
-        """
+        '''
     }
 
+    @Test
     void testUsageOfOuterField() {
-        assertScript """
+        assertScript '''
             interface Run {
                 def run()
             }
@@ -198,9 +229,12 @@ class InnerClassTest extends CompilableTestSupport {
             assert foo.foo() == 1
             foo.x(2)
             assert foo.foo() == 2
-        """
+        '''
+    }
 
-        assertScript """
+    @Test
+    void testUsageOfOuterField2() {
+        assertScript '''
             interface Run {
                 def run()
             }
@@ -219,9 +253,12 @@ class InnerClassTest extends CompilableTestSupport {
             assert Foo.foo() == 1
             Foo.x(2)
             assert Foo.foo() == 2
-        """
+        '''
+    }
 
-        assertScript """
+    @Test
+    void testUsageOfOuterField3() {
+        assertScript '''
             interface X {
                 def m()
             }
@@ -240,9 +277,11 @@ class InnerClassTest extends CompilableTestSupport {
             }
             def a = new A()
             assert "pm" == a.foo()
-        """
+        '''
+    }
 
-        //GROOVY-6141
+    @Test // GROOVY-6141
+    void testUsageOfOuterField4() {
         assertScript '''
             class A {
                 def x = 1
@@ -271,45 +310,84 @@ class InnerClassTest extends CompilableTestSupport {
         '''
     }
 
-    void testUsageOfOuterFieldOverridden_FAILS() {
-        if (notYetImplemented()) return
+    @Test // GROOVY-9189
+    void testUsageOfOuterField5() {
+        assertScript '''
+            interface Run {
+                def run()
+            }
+            class Foo {
+                private static x = 1
 
-        assertScript """
+                static foo(def runner = new Run() {
+                    def run() { return x }
+                }) {
+                    runner.run()
+                }
+
+                static x(y) { x = y }
+            }
+            assert Foo.foo() == 1
+            Foo.x(2)
+            assert Foo.foo() == 2
+        '''
+    }
+
+    @Test // GROOVY-9168
+    void testUsageOfOuterField6() {
+        assertScript '''
+            class A {
+                //                  AIC in this position can use static properties:
+                A(Runnable action = new Runnable() { void run() { answer = 42 }}) {
+                    this.action = action
+                }
+                Runnable   action
+                static int answer
+            }
+
+            def a = new A()
+            a.action.run();
+            assert a.answer == 42
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterFieldOverridden() {
+        assertScript '''
             interface Run {
                 def run()
             }
             class Foo {
                 private x = 1
+
                 def foo() {
-                    def runner = new Run(){
-                        def run() { return x }
+                    def runner = new Run() {
+                        def run() { return x } // <-- dynamic variable
                     }
                     runner.run()
                 }
-                void setX(y) { x=y }
+
+                void setX(val) { x = val }
             }
             class Bar extends Foo {
-                def x = "string"
+                def x = 'string' // hides 'foo.@x' and overrides 'foo.setX(val)'
             }
             def bar = new Bar()
-            assert bar.foo() == 1
-            bar.x(2)
-            assert bar.foo() == 2
-            bar.x = "new string"
-            assert bar.foo() == 2
-        """
-
-        //TODO: static part
-
+            assert bar.foo() == 'string'
+            bar.x = 'new string'
+            assert bar.foo() == 'new string'
+        '''
     }
 
+    @Test
     void testUsageOfOuterMethod() {
-        assertScript """
+        assertScript '''
             interface Run {
                 def run()
             }
             class Foo {
-                private x(){1}
+                private x() { return 1 }
+
                 def foo() {
                     def runner = new Run(){
                         def run() { return x() }
@@ -319,14 +397,17 @@ class InnerClassTest extends CompilableTestSupport {
             }
             def foo = new Foo()
             assert foo.foo() == 1
-        """
+        '''
+    }
 
-        assertScript """
+    @Test
+    void testUsageOfOuterMethod2() {
+        assertScript '''
             interface Run {
                 def run()
             }
             class Foo {
-                private static x() {1}
+                private static x() { return 1 }
 
                 def foo() {
                     def runner = new Run() {
@@ -337,36 +418,99 @@ class InnerClassTest extends CompilableTestSupport {
             }
             def foo = new Foo()
             assert foo.foo() == 1
-        """
+        '''
     }
 
-    void testUsageOfOuterMethodoverridden() {
-        assertScript """
+    @Test
+    void testUsageOfOuterMethod3() {
+        assertScript '''
             interface Run {
                 def run()
             }
             class Foo {
-                private x(){1}
+                private static x() { return 1 }
+
+                def foo(def runner = new Run() {
+                    def run() { return x() }
+                }) {
+                    runner.run()
+                }
+            }
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
+    @Test // GROOVY-9189
+    void testUsageOfOuterMethod4() {
+        assertScript '''
+            interface Run {
+                def run()
+            }
+            class Foo {
+                private static x() { return 1 }
+
+                static def foo(def runner = new Run() {
+                    def run() { return x() }
+                }) {
+                    runner.run()
+                }
+            }
+            def foo = new Foo()
+            assert foo.foo() == 1
+        '''
+    }
+
+    @Test // GROOVY-9168
+    void testUsageOfOuterMethod5() {
+        assertScript '''
+            class A {
+                //                  AIC in this position can use static methods:
+                A(Runnable action = new Runnable() { void run() { setAnswer(42) }}) {
+                    this.action = action
+                }
+                Runnable action
+                static int answer
+            }
+
+            def a = new A()
+            a.action.run();
+            assert a.answer == 42
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterMethodOverridden() {
+        assertScript '''
+            interface Run {
+                def run()
+            }
+            class Foo {
+                private x() { return 1 }
+
                 def foo() {
-                    def runner = new Run(){
+                    def runner = new Run() {
                         def run() { return x() }
                     }
                     runner.run()
                 }
             }
-            class Bar extends Foo{
-                def x() { 2 }
+            class Bar extends Foo {
+                def x() { return 2 }
             }
             def bar = new Bar()
             assert bar.foo() == 1
-        """
+        '''
+    }
 
-        assertScript """
+    @Test
+    void testUsageOfOuterMethodOverridden2() {
+        assertScript '''
             interface Run {
                 def run()
             }
             class Foo {
-                private static x() { 1 }
+                private static x() { return 1 }
 
                 static foo() {
                     def runner = new Run() {
@@ -376,13 +520,14 @@ class InnerClassTest extends CompilableTestSupport {
                 }
             }
             class Bar extends Foo {
-                static x() { 2 }
+                static x() { return 2 }
             }
             def bar = new Bar()
             assert bar.foo() == 1
-        """
+        '''
     }
 
+    @Test
     void testClassOutputOrdering() {
         // this does actually not do much, but before this
         // change the inner class was tried to be executed
@@ -391,16 +536,17 @@ class InnerClassTest extends CompilableTestSupport {
         // not. So if Foo$Bar is returned, asserScript will
         // fail. If Foo is returned, asserScript will not
         // fail.
-        assertScript """
+        assertScript '''
             class Foo {
                 static class Bar{}
                 static main(args){}
             }
-        """
+        '''
     }
 
+    @Test
     void testInnerClassDotThisUsage() {
-        assertScript """
+        assertScript '''
             class A{
                 int x = 0;
                 class B{
@@ -419,9 +565,12 @@ class InnerClassTest extends CompilableTestSupport {
             c.foo()
             assert a.x == 1
             assert b.y == 4
-        """
+        '''
+    }
 
-        assertScript """
+    @Test
+    void testInnerClassDotThisUsage2() {
+        assertScript '''
             interface X {
                 def m()
             }
@@ -439,40 +588,45 @@ class InnerClassTest extends CompilableTestSupport {
             class B extends A {}
             def b = new B()
             assert b.foo() instanceof B
-        """
+        '''
     }
 
+    @Test
     void testImplicitThisPassingWithNamedArguments() {
         def oc = new MyOuterClass4028()
         assert oc.foo().propMap.size() == 2
     }
 
+    @Test
     void testThis0() {
-        assertScript """
-class A {
-   static def field = 10
-   void main (a) {
-     new C ().r ()
-   }
+        assertScript '''
+            class A {
+                static def field = 10
+                void main (a) {
+                    new C ().r ()
+                }
 
-   class C {
-      def r () {
-        4.times {
-          new B(it).u (it)
-        }
-      }
-   }
+                class C {
+                    def r () {
+                        4.times {
+                            new B(it).u (it)
+                        }
+                    }
+                }
 
-   class B {
-     def s
-     B (s) { this.s = s}
-     def u (i) { println i + s + field }
-   }}"""
+                class B {
+                    def s
+                    B (s) { this.s = s}
+                    def u (i) { println i + s + field }
+                }
+            }
+        '''
     }
 
+    @Test
     void testReferencedVariableInAIC() {
-        assertScript """
-            interface X{}
+        assertScript '''
+            interface X {}
 
             final double delta = 0.1
             (0 ..< 1).collect { n ->
@@ -482,9 +636,13 @@ class A {
                     }
                 }
             }
-        """
-        assertScript """
-            interface X{}
+        '''
+    }
+
+    @Test
+    void testReferencedVariableInAIC2() {
+        assertScript '''
+            interface X {}
 
             final double delta1 = 0.1
             final double delta2 = 0.1
@@ -495,10 +653,10 @@ class A {
                     }
                 }
             }
-        """
+        '''
     }
 
-    // GROOVY-5989
+    @Test // GROOVY-5989
     void testReferenceToOuterClassNestedInterface() {
         assertScript '''
             interface Koo { class Inner { } }
@@ -511,39 +669,20 @@ class A {
         '''
     }
 
-    // GROOVY-5679, GROOVY-5681
+    @Test // GROOVY-5679, GROOVY-5681
     void testEnclosingMethodIsSet() {
         assertScript '''
             import groovy.transform.ASTTest
-            import org.codehaus.groovy.ast.InnerClassNode
-            import org.codehaus.groovy.ast.expr.ConstructorCallExpression
+            import org.codehaus.groovy.ast.expr.*
             import static org.codehaus.groovy.classgen.Verifier.*
             import static org.codehaus.groovy.control.CompilePhase.*
 
             class A {
-                int x
-
-                /*@ASTTest(phase=SEMANTIC_ANALYSIS, value={
-                    def cce = lookup('inner')[0].expression
-                    def icn = cce.type
-                    assert icn instanceof InnerClassNode
-                    assert icn.enclosingMethod == node
-                })
-                A() { inner: new Runnable() { void run() {} } }
-
-                @ASTTest(phase=SEMANTIC_ANALYSIS, value={
-                    def cce = lookup('inner')[0].expression
-                    def icn = cce.type
-                    assert icn instanceof InnerClassNode
-                    assert icn.enclosingMethod == node
-                })
-                void foo() { inner: new Runnable() { void run() {} } }*/
-
                 @ASTTest(phase=CLASS_GENERATION, value={
                     def initialExpression = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
                     assert initialExpression instanceof ConstructorCallExpression
                     def icn = initialExpression.type
-                    assert icn instanceof InnerClassNode
+                    assert icn instanceof org.codehaus.groovy.ast.InnerClassNode
                     assert icn.enclosingMethod != null
                     assert icn.enclosingMethod.name == 'bar'
                     assert icn.enclosingMethod.parameters.length == 0 // ensure the enclosing method is bar(), not bar(Object)
@@ -551,6 +690,7 @@ class A {
                 void bar(action = new Runnable() { void run() { x = 123 }}) {
                     action.run()
                 }
+                int x
             }
             def a = new A()
             a.bar()
@@ -558,7 +698,7 @@ class A {
         '''
     }
 
-    // GROOVY-5681, GROOVY-9151
+    @Test // GROOVY-5681, GROOVY-9151
     void testEnclosingMethodIsSet2() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -584,7 +724,7 @@ class A {
         '''
     }
 
-    // GROOVY-5681, GROOVY-9151
+    @Test // GROOVY-5681, GROOVY-9151
     void testEnclosingMethodIsSet3() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -624,7 +764,7 @@ class A {
         '''
     }
 
-    // GROOVY-4896, GROOVY-6810
+    @Test // GROOVY-6810
     void testThisReferenceForAICInOpenBlock() {
         assertScript '''
             import java.security.AccessController
@@ -656,7 +796,10 @@ class A {
             def t = new Test()
             injectVariables(t, ['p': 'q'])
         '''
+    }
 
+    @Test // GROOVY-4896
+    void testThisReferenceForAICInOpenBlock2() {
         assertScript '''
             def doSomethingUsingLocal(){
                 logExceptions {
@@ -720,8 +863,8 @@ class A {
         '''
     }
 
-    // GROOVY-5582
-    void testAICextendingAbstractInnerClass() {
+    @Test // GROOVY-5582
+    void testAICExtendingAbstractInnerClass() {
         assertScript '''
             class Outer {
                 int outer() { 1 }
@@ -739,7 +882,7 @@ class A {
         '''
     }
 
-    // GROOVY-6831
+    @Test // GROOVY-6831
     void testNestedPropertyHandling() {
         assertScript '''
             class Outer {
@@ -762,7 +905,7 @@ class A {
         '''
     }
 
-    // GROOVY-7312
+    @Test // GROOVY-7312
     void testInnerClassOfInterfaceIsStatic() {
         assertScript '''
             import java.lang.reflect.Modifier
@@ -774,7 +917,7 @@ class A {
         '''
     }
 
-    // GROOVY-7312
+    @Test // GROOVY-7312
     void testInnerClassOfInterfaceIsStatic2() {
         assertScript '''
             import java.lang.reflect.Modifier
@@ -792,7 +935,7 @@ class A {
         '''
     }
 
-    // GROOVY-8914
+    @Test // GROOVY-8914
     void testNestedClassInheritingFromNestedClass() {
         // control
         assert new Outer8914.Nested()
@@ -805,9 +948,9 @@ class A {
         '''
     }
 
-    // GROOVY-6809
-    void _FIXME_testReferenceToUninitializedThis() {
-        assertScript '''
+    @Test // GROOVY-6809
+    void testReferenceToUninitializedThis() {
+        def err = shouldFail '''
             class Test {
                 static main(args) {
                     def a = new A()
@@ -818,22 +961,19 @@ class A {
                         def b = new B()
                     }
 
-                    void sayA() {
-                        println 'saying A'
-                    }
-
                     class B extends A {
                         B() {
-                            super(A.this) // does not exist
-                            sayA()
+                            super(A.this)
                         }
                     }
                 }
             }
         '''
+
+        assert err =~ / Could not find matching constructor for: Test.A\(Test.A\)/
     }
 
-    // GROOVY-6809
+    @Test // GROOVY-6809
     void testReferenceToUninitializedThis2() {
         assertScript '''
             class A {
@@ -853,7 +993,7 @@ class A {
         '''
     }
 
-    // GROOVY-6809
+    @Test // GROOVY-6809
     void testReferenceToUninitializedThis3() {
         assertScript '''
             class A {
@@ -870,39 +1010,27 @@ class A {
         '''
     }
 
-    // GROOVY-7609
-    void _FIXME_testReferenceToUninitializedThis4() {
-        assertScript '''
-            class Login {
-                Login() {
-                    def navBar = new LoginNavigationBar()
-                }
-
-                class LoginNavigationBar {
-                    ExploreDestinationsDropdown exploreDestinationsDropdown
-
-                    LoginNavigationBar() {
-                        exploreDestinationsDropdown = new ExploreDestinationsDropdown()
-                    }
-
-                    class ExploreDestinationsDropdown /*extends NavigationBarDropdown<ExploreDestinationsDropdown>*/ {
-                        ExploreDestinationsDropdown() {
-                            //super(Login.this.sw, 0)
-                            Login.this.sw
-                        }
-                    }
-                }
-
-                static main(args) {
-                    new Login()
-                }
+    @Test // GROOVY-9168
+    void testReferenceToUninitializedThis4() {
+        def err = shouldFail '''
+            class Outer {
+              class Inner {
+              }
+              Outer(Inner inner) {
+              }
+              Outer() {
+                  this(new Inner())
+              }
             }
+            new Outer()
         '''
+
+        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
-    // GROOVY-9168
-    void _FIXME_testReferenceToUninitializedThis5() {
-        assertScript '''
+    @Test // GROOVY-9168
+    void testReferenceToUninitializedThis5() {
+        def err = shouldFail '''
             class Outer {
               class Inner {
               }
@@ -911,9 +1039,11 @@ class A {
             }
             new Outer()
         '''
+
+        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
-    // GROOVY-9168
+    @Test // GROOVY-9168
     void testReferenceToUninitializedThis6() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -941,44 +1071,9 @@ class A {
             assert a.action.call() == 42
         '''
     }
-
-    // GROOVY-9168
-    void _FIXME_testReferenceToUninitializedThis7() {
-        assertScript '''
-            class A {
-                //                  AIC in this position can use static properties:
-                A(Runnable action = new Runnable() { void run() { answer = 42 }}) {
-                    this.action = action
-                }
-                Runnable   action
-                static int answer
-            }
-
-            def a = new A()
-            a.action.run();
-            assert a.answer == 42
-        '''
-    }
-
-    // GROOVY-9168
-    void _FIXME_testReferenceToUninitializedThis8() {
-        assertScript '''
-            class A {
-                //                  AIC in this position can use static methods:
-                A(Runnable action = new Runnable() { void run() { setAnswer(42) }}) {
-                    this.action = action
-                }
-                Runnable action
-                protected static int answer
-                static void setAnswer(int value) { answer = value }
-            }
-
-            def a = new A()
-            a.action.run();
-            assert a.answer == 42
-        '''
-    }
 }
+
+//------------------------------------------------------------------------------
 
 class Parent8914 {
     static class Nested {}

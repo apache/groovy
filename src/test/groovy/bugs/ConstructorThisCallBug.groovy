@@ -18,32 +18,14 @@
  */
 package groovy.bugs
 
-class ConstructorThisCallBug extends GroovyTestCase {
-    // GROOVY-7014
-    void testThisCallingInstanceMethod() {
-        def msg = shouldFail '''
-            class Base {
-                String getData() { return "ABCD" }
-                Base() { this(getData()) }
-                Base(String arg) {}
-            }
-        '''
-        assert msg.contains("Can't access instance method 'getData' before the class is constructed")
-    }
+import org.junit.Test
 
-    void testNestedClassThisCallingInstanceMethod() {
-        def msg = shouldFail '''
-            class Base {
-                static class Nested {
-                    String getData() { return "ABCD" }
-                    Nested() { this(getData()) }
-                    Nested(String arg) {}
-                }
-            }
-        '''
-        assert msg.contains("Can't access instance method 'getData' before the class is constructed")
-    }
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class ConstructorThisCallBug {
+
+    @Test
     void testThisCallingStaticMethod() {
         assertScript '''
             class Base {
@@ -57,7 +39,8 @@ class ConstructorThisCallBug extends GroovyTestCase {
         '''
     }
 
-    void testNestedThisCallingStaticMethod() {
+    @Test
+    void testNestedClassThisCallingStaticMethod() {
         assertScript '''
             class Base {
                 static class Nested {
@@ -72,29 +55,8 @@ class ConstructorThisCallBug extends GroovyTestCase {
         '''
     }
 
-    void testInnerClassSuperCallingInstanceMethod() {
-        assertScript '''
-            class Parent {
-                String str
-                Parent(String s) { str = s }
-            }
-            class Outer {
-                static String a
-
-                private class Inner extends Parent {
-                   Inner() { super(myA()) }
-                }
-
-                String test() { new Inner().str }
-                String myA() { a }
-            }
-            def o = new Outer()
-            Outer.a = 'ok'
-            assert o.test() == 'ok'
-        '''
-    }
-
-    void testInnerClassSuperCallingStaticProperty() {
+    @Test
+    void testNestedClassSuperCallingStaticMethod() {
         assertScript '''
             class Parent {
                 String str
@@ -115,7 +77,61 @@ class ConstructorThisCallBug extends GroovyTestCase {
         '''
     }
 
-    // GROOVY-994
+    //
+
+    @Test // GROOVY-7014
+    void testThisCallingInstanceMethod() {
+        def err = shouldFail '''
+            class Base {
+                String getData() { return "ABCD" }
+                Base() { this(getData()) }
+                Base(String arg) {}
+            }
+        '''
+        assert err =~ / Cannot reference 'getData' before supertype constructor has been called. /
+    }
+
+    @Test
+    void testNestedClassThisCallingInstanceMethod() {
+        def err = shouldFail '''
+            class Base {
+                static class Nested {
+                    String getData() { return "ABCD" }
+                    Nested() { this(getData()) }
+                    Nested(String arg) {}
+                }
+            }
+        '''
+        assert err =~ / Cannot reference 'getData' before supertype constructor has been called. /
+    }
+
+    @Test
+    void testNestedClassSuperCallingInstanceMethod() {
+        def err = shouldFail '''
+            class Parent {
+                String str
+                Parent(String s) { str = s }
+            }
+            class Outer {
+                static String a
+
+                private class Inner extends Parent {
+                   Inner() { super(myA()) }
+                }
+
+                String test() { new Inner().str }
+                String myA() { a }
+            }
+            def o = new Outer()
+            Outer.a = 'ok'
+            assert o.test() == 'ok'
+        '''
+        assert err =~ / Cannot reference 'myA' before supertype constructor has been called. /
+    }
+
+    //
+
+    @Test // GROOVY-994
     void testCallA() {
         assert new ConstructorCallA("foo").toString() == 'foo'
         assert new ConstructorCallA(9).toString() == '81'
