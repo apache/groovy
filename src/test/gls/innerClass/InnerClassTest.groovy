@@ -351,7 +351,7 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test
     void testUsageOfOuterFieldOverridden() {
         assertScript '''
             interface Run {
@@ -359,23 +359,23 @@ final class InnerClassTest {
             }
             class Foo {
                 private x = 1
+
                 def foo() {
                     def runner = new Run() {
-                        def run() { return x }
+                        def run() { return x } // <-- dynamic variable
                     }
                     runner.run()
                 }
-                void setX(y) { x = y }
+
+                void setX(val) { x = val }
             }
             class Bar extends Foo {
-                def x = "string"
+                def x = 'string' // hides 'foo.@x' and overrides 'foo.setX(val)'
             }
             def bar = new Bar()
-            assert bar.foo() == 1
-            bar.x(2)
-            assert bar.foo() == 2
-            bar.x = "new string"
-            assert bar.foo() == 2
+            assert bar.foo() == 'string'
+            bar.x = 'new string'
+            assert bar.foo() == 'new string'
         '''
     }
 
@@ -1010,38 +1010,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-7609
-    void testReferenceToUninitializedThis4() {
-        assertScript '''
-            class Login {
-                Login() {
-                    def navBar = new LoginNavigationBar()
-                }
-
-                class LoginNavigationBar {
-                    ExploreDestinationsDropdown exploreDestinationsDropdown
-
-                    LoginNavigationBar() {
-                        exploreDestinationsDropdown = new ExploreDestinationsDropdown()
-                    }
-
-                    class ExploreDestinationsDropdown /*extends NavigationBarDropdown<ExploreDestinationsDropdown>*/ {
-                        ExploreDestinationsDropdown() {
-                            //super(Login.this.sw, 0)
-                            Login.this.sw
-                        }
-                    }
-                }
-
-                static main(args) {
-                    new Login()
-                }
-            }
-        '''
-    }
-
     @Test // GROOVY-9168
-    void testReferenceToUninitializedThis5() {
+    void testReferenceToUninitializedThis4() {
         def err = shouldFail '''
             class Outer {
               class Inner {
@@ -1059,7 +1029,7 @@ final class InnerClassTest {
     }
 
     @Test // GROOVY-9168
-    void testReferenceToUninitializedThis6() {
+    void testReferenceToUninitializedThis5() {
         def err = shouldFail '''
             class Outer {
               class Inner {
@@ -1074,7 +1044,7 @@ final class InnerClassTest {
     }
 
     @Test // GROOVY-9168
-    void testReferenceToUninitializedThis7() {
+    void testReferenceToUninitializedThis6() {
         assertScript '''
             import groovy.transform.ASTTest
             import java.util.concurrent.Callable
