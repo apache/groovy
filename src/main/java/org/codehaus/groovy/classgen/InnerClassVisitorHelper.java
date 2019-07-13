@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -43,6 +42,10 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 
@@ -120,11 +123,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     }
 
     protected static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block) {
-        VariableExpression ve = new VariableExpression(p);
-        FieldExpression fe = new FieldExpression(fn);
-        block.addStatement(new ExpressionStatement(
-                new BinaryExpression(fe, Token.newSymbol(Types.ASSIGN, -1, -1), ve)
-        ));
+        block.addStatement(assignS(fieldX(fn), varX(p)));
     }
 
     protected static boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {

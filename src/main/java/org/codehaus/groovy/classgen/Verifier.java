@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.transform.Generated;
 import groovy.transform.Internal;
@@ -31,6 +32,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
@@ -47,7 +49,6 @@ import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -56,7 +57,6 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
@@ -93,13 +93,16 @@ import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
 
 /**
  * Verifies the AST node and adds any default AST code before bytecode generation occurs.
- *
+ * <p>
  * Checks include:
  * <ul>
  *     <li>Methods with duplicate signatures</li>
@@ -168,6 +171,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         metaClassField =
                 node.addField("metaClass", ACC_PRIVATE | ACC_TRANSIENT | ACC_SYNTHETIC, ClassHelper.METACLASS_TYPE,
                         new BytecodeExpression(ClassHelper.METACLASS_TYPE) {
+                            @Override
                             public void visit(MethodVisitor mv) {
                                 mv.visitVarInsn(ALOAD, 0);
                                 mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "$getStaticMetaClass", "()Lgroovy/lang/MetaClass;", false);
@@ -200,11 +204,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return null;
     }
 
-    /**
-     * walk the class
-     *
-     * @param node the node to visit
-     */
+    @Override
     public void visitClass(final ClassNode node) {
         this.classNode = node;
 
@@ -362,6 +362,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 Parameter.EMPTY_ARRAY,
                 ClassNode.EMPTY_ARRAY,
                 new BytecodeSequence(new BytecodeInstruction() {
+                    @Override
                     public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
@@ -419,6 +420,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     Parameter.EMPTY_ARRAY,
                     ClassNode.EMPTY_ARRAY,
                     new BytecodeSequence(new BytecodeInstruction() {
+                        @Override
                         public void visit(MethodVisitor mv) {
                             Label nullLabel = new Label();
                             /*
@@ -468,6 +470,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             } else {
                 List list = new ArrayList();
                 list.add(new BytecodeInstruction() {
+                    @Override
                     public void visit(MethodVisitor mv) {
                         /*
                          * the code is (meta class is stored in 1):
@@ -508,6 +511,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
                     ClassNode.EMPTY_ARRAY,
                     new BytecodeSequence(new BytecodeInstruction() {
+                        @Override
                         public void visit(MethodVisitor mv) {
                             mv.visitVarInsn(ALOAD, 0);
                             mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
@@ -533,6 +537,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     GET_PROPERTY_PARAMS,
                     ClassNode.EMPTY_ARRAY,
                     new BytecodeSequence(new BytecodeInstruction() {
+                        @Override
                         public void visit(MethodVisitor mv) {
                             mv.visitVarInsn(ALOAD, 0);
                             mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
@@ -557,6 +562,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     SET_PROPERTY_PARAMS,
                     ClassNode.EMPTY_ARRAY,
                     new BytecodeSequence(new BytecodeInstruction() {
+                        @Override
                         public void visit(MethodVisitor mv) {
                             mv.visitVarInsn(ALOAD, 0);
                             mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
@@ -600,73 +606,118 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private static void checkReturnInObjectInitializer(List<Statement> init) {
-        CodeVisitorSupport cvs = new CodeVisitorSupport() {
+        GroovyCodeVisitor visitor = new CodeVisitorSupport() {
             @Override
             public void visitClosureExpression(ClosureExpression expression) {
                 // return is OK in closures in object initializers
             }
-
+            @Override
             public void visitReturnStatement(ReturnStatement statement) {
                 throw new RuntimeParserException("'return' is not allowed in object initializer", statement);
             }
         };
-        for (Statement stm : init) {
-            stm.visit(cvs);
+        for (Statement stmt : init) {
+            stmt.visit(visitor);
         }
     }
 
-    public void visitConstructor(ConstructorNode node) {
-        CodeVisitorSupport checkSuper = new CodeVisitorSupport() {
-            boolean firstMethodCall = true;
-            String type = null;
+    @Override
+    public void visitConstructor(final ConstructorNode node) {
+        Statement stmt = node.getCode();
+        if (stmt != null) {
+            stmt.visit(new VerifierCodeVisitor(getClassNode()));
+            // check for uninitialized-this references
+            stmt.visit(new CodeVisitorSupport() {
+                @Override
+                public void visitClosureExpression(ClosureExpression ce) {
+                    boolean oldInClosure = inClosure;
+                    inClosure = true;
+                    super.visitClosureExpression(ce);
+                    inClosure = oldInClosure;
+                }
 
-            public void visitMethodCallExpression(MethodCallExpression call) {
-                if (!firstMethodCall) return;
-                firstMethodCall = false;
-                String name = call.getMethodAsString();
-                // the name might be null if the method name is a GString for example
-                if (name == null) return;
-                if (!name.equals("super") && !name.equals("this")) return;
-                type = name;
-                call.getArguments().visit(this);
-                type = null;
-            }
+                @Override
+                public void visitConstructorCallExpression(ConstructorCallExpression cce) {
+                    boolean oldIsSpecialConstructorCall = inSpecialConstructorCall;
+                    inSpecialConstructorCall |= cce.isSpecialCall();
+                    super.visitConstructorCallExpression(cce);
+                    inSpecialConstructorCall = oldIsSpecialConstructorCall;
+                }
 
-            public void visitConstructorCallExpression(ConstructorCallExpression call) {
-                if (!call.isSpecialCall()) return;
-                type = call.getText();
-                call.getArguments().visit(this);
-                type = null;
-            }
+                @Override
+                public void visitMethodCallExpression(MethodCallExpression mce) {
+                    if (inSpecialConstructorCall && isThisObjectExpression(mce)) {
+                        MethodNode methodTarget = mce.getMethodTarget();
+                        if (methodTarget == null || !(methodTarget.isStatic() || classNode.getOuterClasses().contains(methodTarget.getDeclaringClass()))) {
+                            if (!mce.isImplicitThis()) {
+                                throw newVariableError(mce.getObjectExpression().getText(), mce.getObjectExpression());
+                            } else {
+                                throw newVariableError(mce.getMethodAsString(), mce.getMethod());
+                            }
+                        }
+                        mce.getMethod().visit(this);
+                        mce.getArguments().visit(this);
+                    } else {
+                        super.visitMethodCallExpression(mce);
+                    }
+                }
 
-            public void visitVariableExpression(VariableExpression expression) {
-                if (type == null) return;
-                String name = expression.getName();
-                if (!name.equals("this") && !name.equals("super")) return;
-                throw new RuntimeParserException("cannot reference " + name + " inside of " + type + "(....) before supertype constructor has been called", expression);
-            }
-        };
-        Statement s = node.getCode();
-        if (s == null) {
-            return;
-        } else {
-            s.visit(new VerifierCodeVisitor(this));
+                @Override
+                public void visitVariableExpression(VariableExpression ve) {
+                    // before this/super ctor call completes, only params and static or outer members are accessible
+                    if (inSpecialConstructorCall && (ve.isThisExpression() || ve.isSuperExpression() || isNonStaticMemberAccess(ve))) {
+                        throw newVariableError(ve.getName(), ve.getLineNumber() > 0 ? ve : node); // TODO: context for default argument
+                    }
+                }
+
+                //
+
+                private boolean inClosure, inSpecialConstructorCall;
+
+                private boolean isNonStaticMemberAccess(VariableExpression ve) {
+                    Variable variable = ve.getAccessedVariable();
+                    return !inClosure && variable != null && !isStatic(variable.getModifiers())
+                        && !(variable instanceof DynamicVariable) && !(variable instanceof Parameter);
+                }
+
+                private boolean isThisObjectExpression(MethodCallExpression mce) {
+                    if (mce.isImplicitThis()) {
+                        return true;
+                    } else if (mce.getObjectExpression() instanceof VariableExpression) {
+                        VariableExpression var = (VariableExpression) mce.getObjectExpression();
+                        return var.isThisExpression() || var.isSuperExpression();
+                    } else {
+                        return false;
+                    }
+                }
+
+                private GroovyRuntimeException newVariableError(String name, ASTNode node) {
+                    RuntimeParserException rpe = new RuntimeParserException("Cannot reference '" + name +
+                            "' before supertype constructor has been called. Possible causes:\n" +
+                            "You attempted to access an instance field, method, or property.\n" +
+                            "You attempted to construct a non-static inner class.", node);
+                    rpe.setModule(getClassNode().getModule());
+                    return rpe;
+                }
+            });
         }
-        s.visit(checkSuper);
     }
 
+    @Override
     public void visitMethod(MethodNode node) {
-        //GROOVY-3712 - if it's an MOP method, it's an error as they aren't supposed to exist before ACG is invoked
+        // GROOVY-3712 - if it's an MOP method, it's an error as they aren't supposed to exist before ACG is invoked
         if (MopWriter.isMopMethod(node.getName())) {
-            throw new RuntimeParserException("Found unexpected MOP methods in the class node for " + classNode.getName() +
-                    "(" + node.getName() + ")", classNode);
+            throw new RuntimeParserException("Found unexpected MOP methods in the class node for " + classNode.getName() + "(" + node.getName() + ")", classNode);
         }
-        this.methodNode = node;
+
         adjustTypesIfStaticMainMethod(node);
+        this.methodNode = node;
         addReturnIfNeeded(node);
-        Statement statement;
-        statement = node.getCode();
-        if (statement != null) statement.visit(new VerifierCodeVisitor(this));
+
+        Statement stmt = node.getCode();
+        if (stmt != null) {
+            stmt.visit(new VerifierCodeVisitor(getClassNode()));
+        }
     }
 
     private static void adjustTypesIfStaticMainMethod(MethodNode node) {
@@ -690,6 +741,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         adder.visitMethod(node);
     }
 
+    @Override
     public void visitField(FieldNode node) {
     }
 
@@ -703,6 +755,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return true;
     }
 
+    @Override
     public void visitProperty(PropertyNode node) {
         String name = node.getName();
         FieldNode field = node.getField();
@@ -796,7 +849,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     /**
-     * Creates a new helper method for each combination of default parameter expressions
+     * Creates a new method for each combination of default parameter expressions.
      */
     protected void addDefaultParameterMethods(final ClassNode node) {
         List methods = new ArrayList(node.getMethods());
@@ -822,20 +875,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     if (argument instanceof ClosureExpression) {
                         final List<Parameter> newMethodNodeParameters = Arrays.asList(newParams);
 
-                        CodeVisitorSupport visitor = new CodeVisitorSupport() {
+                        GroovyCodeVisitor visitor = new CodeVisitorSupport() {
                             @Override
                             public void visitVariableExpression(VariableExpression expression) {
                                 Variable v = expression.getAccessedVariable();
                                 if (!(v instanceof Parameter)) return;
 
                                 Parameter param = (Parameter) v;
-                                if (param.hasInitialExpression() && code.getVariableScope().getDeclaredVariable(param.getName()) == null && !newMethodNodeParameters.contains(param)) {
-
+                                VariableScope variableScope = code.getVariableScope();
+                                if (param.hasInitialExpression() && variableScope.getDeclaredVariable(param.getName()) == null && !newMethodNodeParameters.contains(param)) {
                                     VariableExpression localVariable = new VariableExpression(param.getName(), ClassHelper.makeReference());
-                                    DeclarationExpression declarationExpression = new DeclarationExpression(localVariable, Token.newSymbol(Types.EQUAL, -1, -1), new ConstructorCallExpression(ClassHelper.makeReference(), param.getInitialExpression()));
+                                    localVariable.setInStaticContext(variableScope.isInStaticContext());
+                                    variableScope.putDeclaredVariable(localVariable);
 
-                                    code.addStatement(new ExpressionStatement(declarationExpression));
-                                    code.getVariableScope().putDeclaredVariable(localVariable);
+                                    code.addStatement(declS(localVariable, ctorX(localVariable.getType(), param.getInitialExpression())));
                                 }
                             }
                         };
@@ -873,6 +926,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         });
     }
 
+    /**
+     * Creates a new constructor for each combination of default parameter expressions.
+     */
     protected void addDefaultParameterConstructors(final ClassNode node) {
         List methods = new ArrayList(node.getDeclaredConstructors());
         addDefaultParameters(methods, new DefaultArgsAction() {
@@ -904,11 +960,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     /**
-     * Creates a new helper method for each combination of default parameter expressions
+     * Creates a new helper method for each combination of default parameter expressions.
      */
     protected void addDefaultParameters(Iterable<? extends MethodNode> methods, DefaultArgsAction action) {
-        for (Object next : methods) {
-            MethodNode method = (MethodNode) next;
+        for (MethodNode method : methods) {
             if (method.hasDefaultValue()) {
                 addDefaultParameters(action, method);
             }
@@ -1097,9 +1152,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     /*
-    *  when InnerClassVisitor adds this.this$0 = $p$n, it adds it as a BlockStatement having that
-    *  ExpressionStatement
-    */
+     * When InnerClassVisitor adds <code>this.this$0 = $p$n</code>, it adds it
+     * as a BlockStatement having that ExpressionStatement.
+     */
     private Statement getImplicitThis$0StmtIfInnerClass(List<Statement> otherStatements) {
         if (!(classNode instanceof InnerClassNode)) return null;
         for (Statement stmt : otherStatements) {
@@ -1154,7 +1209,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 if (expr.getOperation().getType() == Types.ASSIGN
                         && expr.getLeftExpression() instanceof FieldExpression
                         && expr.getLeftExpression().getType().equals(ClassHelper.REFERENCE_TYPE)
-                        && (((FieldExpression) expr.getLeftExpression()).getField().getModifiers() & Opcodes.ACC_SYNTHETIC) != 0
+                        && (((FieldExpression) expr.getLeftExpression()).getField().getModifiers() & ACC_SYNTHETIC) != 0
                         /* also could check if the right expression is a variable expression that references ctor parameter */) {
                     localVariableReferences.add(stmt);
                     it.remove();
@@ -1169,7 +1224,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Expression expression = fieldNode.getInitialExpression();
         if (expression != null) {
             final FieldExpression fe = new FieldExpression(fieldNode);
-            if (fieldNode.getType().equals(ClassHelper.REFERENCE_TYPE) && ((fieldNode.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0)) {
+            if (fieldNode.getType().equals(ClassHelper.REFERENCE_TYPE) && ((fieldNode.getModifiers() & ACC_SYNTHETIC) != 0)) {
                 fe.setUseReferenceDirectly(true);
             }
             ExpressionStatement statement =
@@ -1210,7 +1265,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     /**
-     * Capitalizes the start of the given bean property name
+     * Capitalizes the start of the given bean property name.
      */
     public static String capitalize(String name) {
         return MetaClassHelper.capitalize(name);
@@ -1232,6 +1287,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     protected Statement createSetterBlock(PropertyNode propertyNode, final FieldNode field) {
         return new BytecodeSequence(new BytecodeInstruction() {
+            @Override
             public void visit(MethodVisitor mv) {
                 if (field.isStatic()) {
                     BytecodeHelper.load(mv, field.getType(), 0);
@@ -1247,7 +1303,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     public void visitGenericType(GenericsType genericsType) {
-
     }
 
     public static Long getTimestampFromFieldName(String fieldName) {
@@ -1374,7 +1429,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (!equalParameters && !equalParametersWithGenerics(overridingMethod, oldMethod, genericsSpec)) return null;
 
         // correct to method level generics for the overriding method
-        genericsSpec = GenericsUtils.addMethodGenerics(overridingMethod, genericsSpec);
+        genericsSpec = addMethodGenerics(overridingMethod, genericsSpec);
 
         // return type
         ClassNode mr = overridingMethod.getReturnType();
@@ -1444,6 +1499,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         List instructions = new ArrayList(1);
         instructions.add(
                 new BytecodeInstruction() {
+                    @Override
                     public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
                         Parameter[] para = oldMethod.getParameters();
@@ -1540,7 +1596,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private static boolean moveOptimizedConstantsInitialization(final ClassNode node) {
         if (node.isInterface() && !Traits.isTrait(node)) return false;
 
-        final int mods = Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PUBLIC;
+        final int mods = ACC_STATIC | ACC_SYNTHETIC | ACC_PUBLIC;
         String name = SWAP_INIT;
         BlockStatement methodCode = new BlockStatement();
 

@@ -1066,20 +1066,21 @@ final class InnerClassTest {
     }
 
     @Test // GROOVY-5989
-    void testReferenceToOuterClassNestedInterface() {
+    void testResolveInnerOfSuperType1() {
         assertScript '''
-            interface Koo { class Inner { } }
+            interface I { class C { } }
 
-            class Usage implements Koo {
-                static class MyInner extends Inner { }
+            class Outer implements I {
+                static class Inner extends C { }
             }
 
-            assert new Usage() != null
+            new Outer()
+            new Outer.Inner()
         '''
     }
 
     @Test // GROOVY-5754
-    void testResolveInnerOfSuperType1() {
+    void testResolveInnerOfSuperType2() {
         assertScript '''
             interface I { class C { } }
 
@@ -1091,8 +1092,177 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-8364
+    void testResolveInnerOfSuperType3() {
+        assertScript '''
+            abstract class A { static class C { } }
+
+            class B extends A {
+                static m() {
+                    C
+                }
+            }
+
+            assert B.m() == A.C
+        '''
+    }
+
+    @Test // GROOVY-8364
+    void testResolveInnerOfSuperType4() {
+        assertScript '''
+            abstract class A { interface I { } }
+
+            class B extends A {
+                static m() {
+                    I
+                }
+            }
+
+            assert B.m() == A.I
+        '''
+    }
+
+    @CompileDynamic @Test // GROOVY-8364
+    void testResolveInnerOfSuperType5() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [stubDir: File.createTempDir()]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+            new File(parentDir, 'q').mkdir()
+
+            def a = new File(parentDir, 'p/A.Java')
+            a.write '''
+                package p;
+                public abstract class A {
+                    public interface I { }
+                }
+            '''
+            def b = new File(parentDir, 'q/B.groovy')
+            b.write '''
+                package q
+                import p.A
+                class B extends A {
+                    static m() {
+                        I
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            assert loader.loadClass('q.B').m() instanceof Class
+        } finally {
+            config.jointCompilationOptions.stubDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
+    }
+
+    @CompileDynamic @Test // GROOVY-8359
+    void testResolveInnerOfSuperType6() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [stubDir: File.createTempDir()]
+        )
+        def parentDir = File.createTempDir()
+        try {
+            new File(parentDir, 'p').mkdir()
+            new File(parentDir, 'q').mkdir()
+
+            def a = new File(parentDir, 'p/A.Java')
+            a.write '''
+                package p;
+                public abstract class A {
+                    public interface I { }
+                }
+            '''
+            def b = new File(parentDir, 'q/B.groovy')
+            b.write '''
+                package q
+                import p.A
+                class B extends A {
+                    static m() {
+                        I
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a)
+            cu.compile()
+
+            loader = new GroovyClassLoader(this.class.classLoader)
+            cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(b)
+            cu.compile()
+
+            assert loader.loadClass('q.B').m() instanceof Class
+        } finally {
+            config.jointCompilationOptions.stubDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
+    }
+
+    @Test // GROOVY-8358
+    void testResolveInnerOfSuperType7() {
+        assertScript '''
+            class Outer implements I {
+                static class Inner extends C {
+                    static usage() {
+                        new T() // whoami?
+                    }
+                }
+            }
+
+            class C implements H { }
+
+            interface H {
+                static class T {}
+            }
+
+            interface I {
+                static class T {}
+            }
+
+            assert Outer.Inner.usage() instanceof H.T
+        '''
+    }
+
+    @Test // GROOVY-8358
+    void testResolveInnerOfSuperType8() {
+        assertScript '''
+            class C implements H { } // moved ahead of Outer
+
+            class Outer implements I {
+                static class Inner extends C {
+                    static usage() {
+                        new T() // whoami?
+                    }
+                }
+            }
+
+            interface H {
+                static class T {}
+            }
+
+            interface I {
+                static class T {}
+            }
+
+            assert Outer.Inner.usage() instanceof H.T
+        '''
+    }
+
     @Test // GROOVY-9642
-    void testResolveInnerOfSuperType2() {
+    void testResolveInnerOfSuperType9() {
         assertScript '''
             class C {
                 interface I {}
@@ -1112,7 +1282,7 @@ final class InnerClassTest {
     }
 
     @Test
-    void testResolveInnerOfSuperType3() {
+    void testResolveInnerOfSuperType10() {
         assertScript '''
             abstract class A {
                 static class B {}
@@ -1127,7 +1297,7 @@ final class InnerClassTest {
     }
 
     @Test
-    void testResolveInnerOfSuperType4() {
+    void testResolveInnerOfSuperType10a() {
         assertScript '''
             abstract class A {
                 static class B {}
@@ -1142,7 +1312,7 @@ final class InnerClassTest {
     }
 
     @CompileDynamic @Test // GROOVY-8715
-    void testResolveInnerOfSuperType5() {
+    void testResolveInnerOfSuperType10b() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [stubDir: File.createTempDir()]
@@ -1186,7 +1356,6 @@ final class InnerClassTest {
             import groovy.transform.ASTTest
             import org.codehaus.groovy.ast.expr.*
             import static org.codehaus.groovy.classgen.Verifier.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             class A {
                 @ASTTest(phase=CLASS_GENERATION, value={
@@ -1451,9 +1620,7 @@ final class InnerClassTest {
     @Test // GROOVY-7312
     void testInnerClassOfInterfaceIsStatic2() {
         assertScript '''
-            import java.lang.reflect.Modifier
             import groovy.transform.ASTTest
-            import org.codehaus.groovy.control.CompilePhase
             import org.objectweb.asm.Opcodes
 
             @ASTTest(phase = CLASS_GENERATION, value = {
@@ -1541,7 +1708,7 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9168
+    @Test // GROOVY-9168
     void testReferenceToUninitializedThis4() {
         def err = shouldFail '''
             class Outer {
@@ -1559,7 +1726,7 @@ final class InnerClassTest {
         assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
-    @Test @NotYetImplemented // GROOVY-9168
+    @Test // GROOVY-9168
     void testReferenceToUninitializedThis5() {
         def err = shouldFail '''
             class Outer {
@@ -1581,7 +1748,6 @@ final class InnerClassTest {
             import java.util.concurrent.Callable
             import org.codehaus.groovy.ast.expr.*
             import static org.codehaus.groovy.classgen.Verifier.*
-            import static org.codehaus.groovy.control.CompilePhase.*
 
             class A {
                 @ASTTest(phase=CLASS_GENERATION, value={

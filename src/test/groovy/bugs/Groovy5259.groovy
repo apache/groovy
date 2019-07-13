@@ -18,9 +18,15 @@
  */
 package groovy.bugs
 
-class Groovy5259Bug extends GroovyTestCase {
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy5259 {
+
+    @Test
     void testInnerClassAccessingOuterClassConstant() {
-        // using a script because the bug is a compiler error
         assertScript '''
             class InnerAccessOuter {
                 static final String OUTER_CONSTANT = 'Constant Value'
@@ -41,13 +47,11 @@ class Groovy5259Bug extends GroovyTestCase {
             }
             new InnerAccessOuter().testInnerClassAccessOuter()
         '''
-
     }
 
+    @Test
     void testInnerClassWithWrongCallToSuperAccessingOuterClassConstant() {
-        // using a script because the bug is a compiler error
-        shouldFail {
-            assertScript '''
+        shouldFail '''
             class InnerAccessOuter {
                 protected static final String OUTER_CONSTANT = 'Constant Value'
 
@@ -69,11 +73,10 @@ class Groovy5259Bug extends GroovyTestCase {
             }
             new InnerAccessOuter().testInnerClassAccessOuter()
         '''
-        }
     }
 
+    @Test
     void testInnerClassWithSuperClassAccessingOuterClassConstant() {
-        // using a script because the bug is a compiler error
         assertScript '''
             class Base {
                 Base(String str) {}
@@ -96,11 +99,10 @@ class Groovy5259Bug extends GroovyTestCase {
             }
             new InnerAccessOuter().testInnerClassAccessOuter()
         '''
-
     }
 
+    @Test
     void testInnerClassWithSuperClassAccessingSuperOuterClassConstant() {
-        // using a script because the bug is a compiler error
         assertScript '''
             class Base {
                 Base(String str) {}
@@ -125,6 +127,5 @@ class Groovy5259Bug extends GroovyTestCase {
             }
             new InnerAccessOuter().testInnerClassAccessOuter()
         '''
-
     }
 }
