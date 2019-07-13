@@ -36,7 +36,7 @@ before_script:
 script:
   - ./gradlew -version
   - travis_wait 60 ./gradlew test
-  - travis_wait 60 ./gradlew testWithIndy
+#  - travis_wait 60 ./gradlew testWithIndy
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
