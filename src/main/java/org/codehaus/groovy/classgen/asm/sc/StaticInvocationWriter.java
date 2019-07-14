@@ -665,7 +665,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 if (pname!=null && callSiteWriter instanceof StaticTypesCallSiteWriter) {
                     StaticTypesCallSiteWriter stcsw = (StaticTypesCallSiteWriter) callSiteWriter;
                     TypeChooser typeChooser = controller.getTypeChooser();
-                    if (stcsw.makeGetField(receiver, typeChooser.resolveType(receiver, controller.getClassNode()), pname, safe, false, true)) {
+                    if (stcsw.makeGetField(receiver, typeChooser.resolveType(receiver, controller.getClassNode()), pname, safe, false)) {
                         return;
                     }
                 }
