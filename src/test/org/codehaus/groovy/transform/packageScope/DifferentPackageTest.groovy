@@ -18,10 +18,14 @@
  */
 package org.codehaus.groovy.transform.packageScope
 
+import groovy.transform.NotYetImplemented
 import org.codehaus.groovy.control.*
 import org.codehaus.groovy.tools.GroovyClass
+import org.junit.Test
 
-final class DifferentPackageTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+final class DifferentPackageTest {
 
     /** Class in package {@code p} with package-private fields {@code value} and {@code CONST}. */
     private static final String P_DOT_ONE = '''
@@ -50,6 +54,7 @@ final class DifferentPackageTest extends GroovyTestCase {
 
     //--------------------------------------------------------------------------
 
+    @Test
     void testSamePackageShouldSeeInstanceProps1() {
         def loader = addSources(
             One: P_DOT_ONE,
@@ -67,6 +72,7 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert loader.loadClass('p.Two').newInstance().valueSize() == 5
     }
 
+    @Test
     void testSamePackageShouldSeeInstanceProps2() {
         def loader = addSources(
             One: P_DOT_ONE,
@@ -84,6 +90,7 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert loader.loadClass('p.Peer').newInstance().valueSize() == 5
     }
 
+    @Test
     void testSamePackageShouldSeeStaticProps1() {
         def loader = addSources(
             One: P_DOT_ONE,
@@ -101,6 +108,7 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert loader.loadClass('p.Two').half() == 21
     }
 
+    @Test
     void testSamePackageShouldSeeStaticProps2() {
         def loader = addSources(
             One: P_DOT_ONE,
@@ -118,6 +126,7 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert loader.loadClass('p.Two').newInstance().half() == 21
     }
 
+    @Test
     void testSamePackageShouldSeeStaticProps3() {
         def loader = addSources(
             One: P_DOT_ONE,
@@ -135,6 +144,7 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert loader.loadClass('p.Peer').half() == 21
     }
 
+    @Test
     void testSamePackageShouldSeeStaticProps4() {
         def loader = addSources(
             One: P_DOT_ONE,
@@ -152,8 +162,8 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert loader.loadClass('p.Peer').newInstance().half() == 21
     }
 
-    // GROOVY-9106
-    void _FIXME_testSamePackageShouldSeeStaticProps5() {
+    @Test // GROOVY-9106
+    void testSamePackageShouldSeeStaticProps5() {
         def loader = addSources(
             One: P_DOT_ONE,
             Two: '''
@@ -163,7 +173,7 @@ final class DifferentPackageTest extends GroovyTestCase {
                 class Two extends p.One {
                 }
             ''',
-            Peer: '''\
+            Peer: '''
                 package p
 
                 @groovy.transform.CompileStatic
@@ -177,8 +187,8 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert loader.loadClass('p.Peer').half() == 21
     }
 
-    // GROOVY-9093
-    void _FIXME_testDifferentPackageShouldNotSeeInstanceProps() {
+    @Test @NotYetImplemented // GROOVY-9093
+    void testDifferentPackageShouldNotSeeInstanceProps() {
         def err = shouldFail CompilationFailedException, {
             def loader = addSources(
                 One: P_DOT_ONE,
@@ -199,8 +209,8 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert err =~ / Access to ... value is forbidden /
     }
 
-    // GROOVY-9093
-    void _FIXME_testDifferentPackageShouldNotSeeStaticProps1() {
+    @Test @NotYetImplemented // GROOVY-9093
+    void testDifferentPackageShouldNotSeeStaticProps1() {
         def err = shouldFail CompilationFailedException, {
             def loader = addSources(
                 One: P_DOT_ONE,
@@ -221,6 +231,7 @@ final class DifferentPackageTest extends GroovyTestCase {
         assert err =~ / Access to p.One#CONST is forbidden /
     }
 
+    @Test
     void testDifferentPackageShouldNotSeeStaticProps2() {
         def err = shouldFail CompilationFailedException, {
             addSources(
