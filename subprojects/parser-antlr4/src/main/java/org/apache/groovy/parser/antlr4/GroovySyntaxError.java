@@ -21,9 +21,7 @@ package org.apache.groovy.parser.antlr4;
 /**
  * Represents a syntax error of groovy program
  */
-public class GroovySyntaxError extends AssertionError {
-    public static final int LEXER = 0;
-    public static final int PARSER = 1;
+public class GroovySyntaxError extends AssertionError implements GroovySyntaxThrowable {
     private int source;
     private int line;
     private int column;
@@ -40,13 +38,17 @@ public class GroovySyntaxError extends AssertionError {
         this.column = column;
     }
 
+    @Override
     public int getSource() {
         return source;
     }
+
+    @Override
     public int getLine() {
         return line;
     }
 
+    @Override
     public int getColumn() {
         return column;
     }

@@ -185,7 +185,7 @@ options {
 
     @Override
     public int getSyntaxErrorSource() {
-        return GroovySyntaxError.LEXER;
+        return GroovySyntaxThrowable.LEXER;
     }
 
     @Override
@@ -196,6 +196,17 @@ options {
     @Override
     public int getErrorColumn() {
         return getCharPositionInLine() + 1;
+    }
+
+    private boolean errorRecovery;
+
+    @Override
+    public boolean isErrorRecovery() {
+        return errorRecovery;
+    }
+
+    public void setErrorRecovery(boolean errorRecovery) {
+        this.errorRecovery = errorRecovery;
     }
 }
 

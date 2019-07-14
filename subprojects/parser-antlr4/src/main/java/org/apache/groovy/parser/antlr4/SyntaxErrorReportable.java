@@ -41,7 +41,17 @@ public interface SyntaxErrorReportable {
 
     default void throwSyntaxError(String msg, int offset, boolean toAttachPositionInfo) {
         PositionInfo positionInfo = this.genPositionInfo(offset);
-        throw new GroovySyntaxError(msg + (toAttachPositionInfo ? positionInfo.toString() : ""),
+
+        String message = msg + (toAttachPositionInfo ? positionInfo.toString() : "");
+        if (isErrorRecovery()) {
+            throw new GroovySyntaxException(message,
+                    this.getSyntaxErrorSource(),
+                    positionInfo.getLine(),
+                    positionInfo.getColumn()
+            );
+        }
+
+        throw new GroovySyntaxError(message,
                 this.getSyntaxErrorSource(),
                 positionInfo.getLine(),
                 positionInfo.getColumn()
@@ -55,4 +65,5 @@ public interface SyntaxErrorReportable {
 
     int getErrorLine();
     int getErrorColumn();
+    boolean isErrorRecovery();
 }

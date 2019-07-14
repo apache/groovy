@@ -69,7 +69,7 @@ options {
 
     @Override
     public int getSyntaxErrorSource() {
-        return GroovySyntaxError.PARSER;
+        return GroovySyntaxThrowable.PARSER;
     }
 
     @Override
@@ -92,6 +92,17 @@ options {
         }
 
         return token.getCharPositionInLine() + 1 + token.getText().length();
+    }
+
+    private boolean errorRecovery;
+
+    @Override
+    public boolean isErrorRecovery() {
+        return errorRecovery;
+    }
+
+    public void setErrorRecovery(boolean errorRecovery) {
+        this.errorRecovery = errorRecovery;
     }
 }
 
