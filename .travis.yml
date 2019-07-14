@@ -23,11 +23,35 @@ install: true
 
 matrix:
   include:
-    - jdk: openjdk12
-    - jdk: openjdk11
-    - jdk: openjdk10
-    - jdk: oraclejdk9
-    - jdk: oraclejdk8
+    - env: BC='legacy'
+      jdk: openjdk12
+
+    - env: BC='legacy'
+      jdk: openjdk11
+
+    - env: BC='legacy'
+      jdk: openjdk10
+
+    - env: BC='legacy'
+      jdk: oraclejdk9
+
+    - env: BC='legacy'
+      jdk: oraclejdk8
+
+    - env: BC='indy'
+      jdk: openjdk12
+
+    - env: BC='indy'
+      jdk: openjdk11
+
+    - env: BC='indy'
+      jdk: openjdk10
+
+    - env: BC='indy'
+      jdk: oraclejdk9
+
+    - env: BC='indy'
+      jdk: oraclejdk8
 
 before_script:
   - |
@@ -35,8 +59,7 @@ before_script:
 
 script:
   - ./gradlew -version
-  - travis_wait 60 ./gradlew test
-#  - travis_wait 60 ./gradlew testWithIndy
+  - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test; else travis_wait 60 ./gradlew testWithIndy; fi
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
