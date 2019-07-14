@@ -18,20 +18,183 @@
  */
 package org.codehaus.groovy.transform.packageScope
 
-import java.lang.reflect.Modifier
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-class PackageScopeTransformTest extends GroovyShellTestCase {
-    // GROOVY-9043
-    void testPackagePrivateAccessFromInnerClassCS() {
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class PackageScopeTransformTest {
+
+    @Test
+    void testPackageScope1() {
+        assertScript '''
+            import groovy.transform.PackageScope
+            import static java.lang.reflect.Modifier.*
+
+            class A {
+                String x
+            }
+            @PackageScope class B {
+                String x
+            }
+
+            assert isPublic(A.modifiers)
+            assert !isPublic(B.modifiers) && !isPrivate(B.modifiers) && !isProtected(B.modifiers)
+
+            assert isPublic(A.getDeclaredConstructor().modifiers)
+            assert isPublic(B.getDeclaredConstructor().modifiers)
+
+            assert isPrivate(A.getDeclaredField('x').modifiers)
+            assert isPrivate(A.getDeclaredField('x').modifiers)
+
+            assert isPublic(A.getDeclaredMethod('getX').modifiers)
+            assert isPublic(B.getDeclaredMethod('getX').modifiers)
+
+            assert isPublic(A.getDeclaredMethod('setX', String).modifiers)
+            assert isPublic(B.getDeclaredMethod('setX', String).modifiers)
+        '''
+    }
+
+    @Test
+    void testPackageScope2() {
+        assertScript '''
+            import groovy.transform.PackageScope
+            import static java.lang.reflect.Modifier.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            class C {
+                @PackageScope C() {}
+                @PackageScope String x
+                @PackageScope def method() {}
+            }
+
+            boolean isPackagePrivate(modifiers) {
+                !isPublic(modifiers) && !isPrivate(modifiers) && !isProtected(modifiers)
+            }
+
+            assert isPublic(C.modifiers)
+
+            assert isPackagePrivate(C.getDeclaredConstructor().modifiers)
+
+            assert isPackagePrivate(C.getDeclaredField('x').modifiers)
+
+            assert isPackagePrivate(C.getDeclaredMethod('method').modifiers)
+
+            shouldFail(NoSuchMethodException) {
+                C.getDeclaredMethod('getX')
+                C.getDeclaredMethod('setX', String)
+            }
+        '''
+    }
+
+    @Test
+    void testPackageScope3() {
+        assertScript '''
+            import groovy.transform.PackageScope
+            import static java.lang.reflect.Modifier.*
+            import static groovy.test.GroovyAssert.shouldFail
+            import static groovy.transform.PackageScopeTarget.*
+
+            @PackageScope(FIELDS) class C {
+                C() {}
+                String x
+                def method() {}
+            }
+
+            boolean isPackagePrivate(modifiers) {
+                !isPublic(modifiers) && !isPrivate(modifiers) && !isProtected(modifiers)
+            }
+
+            assert isPublic(C.modifiers)
+
+            assert isPublic(C.getDeclaredConstructor().modifiers)
+
+            assert isPackagePrivate(C.getDeclaredField('x').modifiers)
+
+            assert isPublic(C.getDeclaredMethod('method').modifiers)
+
+            shouldFail(NoSuchMethodException) {
+                C.getDeclaredMethod('getX')
+                C.getDeclaredMethod('setX', String)
+            }
+        '''
+    }
+
+    @Test
+    void testPackageScope4() {
+        assertScript '''
+            import groovy.transform.PackageScope
+            import static java.lang.reflect.Modifier.*
+            import static groovy.test.GroovyAssert.shouldFail
+            import static groovy.transform.PackageScopeTarget.*
+
+            @PackageScope(METHODS) class C {
+                C() {}
+                String x
+                def method() {}
+            }
+
+            boolean isPackagePrivate(modifiers) {
+                !isPublic(modifiers) && !isPrivate(modifiers) && !isProtected(modifiers)
+            }
+
+            assert isPublic(C.modifiers)
+
+            assert isPublic(C.getDeclaredConstructor().modifiers)
+
+            assert isPrivate(C.getDeclaredField('x').modifiers)
+            assert isPublic(C.getDeclaredMethod('getX').modifiers)
+            assert isPublic(C.getDeclaredMethod('setX', String).modifiers)
+
+            assert isPackagePrivate(C.getDeclaredMethod('method').modifiers)
+        '''
+    }
+
+    @Test
+    void testPackageScope5() {
+        assertScript '''
+            import groovy.transform.PackageScope
+            import static java.lang.reflect.Modifier.*
+            import static groovy.test.GroovyAssert.shouldFail
+            import static groovy.transform.PackageScopeTarget.*
+
+            @PackageScope([CLASS, CONSTRUCTORS, METHODS]) class C {
+                C() {}
+                String x
+                def method() {}
+                static class D {}
+            }
+
+            boolean isPackagePrivate(modifiers) {
+                !isPublic(modifiers) && !isPrivate(modifiers) && !isProtected(modifiers)
+            }
+
+            assert isPackagePrivate(C.modifiers)
+
+            assert isPackagePrivate(C.getDeclaredConstructor().modifiers)
+
+            assert isPrivate(C.getDeclaredField('x').modifiers)
+            assert isPublic(C.getDeclaredMethod('getX').modifiers)
+            assert isPublic(C.getDeclaredMethod('setX', String).modifiers)
+
+            assert isPackagePrivate(C.getDeclaredMethod('method').modifiers)
+
+            assert isPublic(C.getDeclaredClasses()[0].modifiers) // not transitive
+        '''
+    }
+
+    @Test // GROOVY-9043
+    void testStaticFieldAccessFromInnerClassCS() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.PackageScope
+
             @CompileStatic
             class Test {
-                @PackageScope
-                static final String S = 'S'
-                static private final String T = 'T'
-                static protected final String U = 'U'
+                @PackageScope static final String S = 'S'
+                protected static final String T = 'T'
+                private static final String U = 'U'
                 static class Inner {
                     String method() {
                         S + T + U
@@ -41,84 +204,5 @@ class PackageScopeTransformTest extends GroovyShellTestCase {
 
             assert new Test.Inner().method() == 'STU'
         '''
-    }
-
-    void testImmutable() {
-        def objects = evaluate("""
-            import groovy.transform.PackageScope
-            import static groovy.transform.PackageScopeTarget.FIELDS
-            class Control {
-                String x
-                def method() {}
-            }
-            @PackageScope(FIELDS) class Foo {
-                String x
-                def method() {}
-            }
-            class Bar {
-                Bar() {}
-                @PackageScope Bar(String x) { this.x = x }
-                @PackageScope String x
-                @PackageScope def method() {}
-            }
-            @PackageScope class Baz {
-                String x
-                def method() {}
-            }
-            [new Control(), new Foo(), new Bar(), new Baz()]
-        """)
-        objects*.class.each { c ->
-            def methodNames = c.methods.name
-            if (c.name == 'Control' || c.name == 'Baz') {
-                assert methodNames.contains('getX')
-                assert methodNames.contains('setX')
-            } else {
-                assert !methodNames.contains('getX')
-                assert !methodNames.contains('setX')
-            }
-            def xField = c.declaredFields.find{ it.name == 'x' }
-            assert xField
-            if (c.name == 'Control' || c.name == 'Baz') {
-                assert Modifier.isPrivate(xField.modifiers)
-            } else {
-                assert !Modifier.isPrivate(xField.modifiers)
-                assert !Modifier.isPublic(xField.modifiers)
-                assert !Modifier.isProtected(xField.modifiers)
-            }
-            def method = c.declaredMethods.find{ it.name == 'method' }
-            assert method
-            if (c.name == 'Bar') {
-                assert !Modifier.isPrivate(method.modifiers)
-                assert !Modifier.isPublic(method.modifiers)
-                assert !Modifier.isProtected(method.modifiers)
-            } else {
-                assert Modifier.isPublic(method.modifiers)
-            }
-            if (c.name == 'Baz') {
-                assert !Modifier.isPrivate(c.modifiers)
-                assert !Modifier.isPublic(c.modifiers)
-                assert !Modifier.isProtected(c.modifiers)
-            } else {
-                assert Modifier.isPublic(c.modifiers)
-            }
-            def cons = c.declaredConstructors
-            if (c.name == 'Bar') {
-                assert cons.size() == 2
-                cons.each { con ->
-                    if (con.parameterTypes*.name == []) {
-                        assert Modifier.isPublic(con.modifiers)
-                    } else {
-                        assert con.parameterTypes*.name == ['java.lang.String']
-                        assert !Modifier.isPrivate(con.modifiers)
-                        assert !Modifier.isPublic(con.modifiers)
-                        assert !Modifier.isProtected(con.modifiers)
-                    }
-
-                }
-            } else {
-                assert cons.size() == 1
-                assert Modifier.isPublic(cons[0].modifiers)
-            }
-        }
     }
 }
