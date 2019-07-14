@@ -18,72 +18,227 @@
  */
 package org.codehaus.groovy.transform.packageScope
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.*
+import org.codehaus.groovy.tools.GroovyClass
 
-class DifferentPackageTest extends GroovyTestCase {
-    void _FIXME_testSamePackageShouldSeeInstanceProps() {
-        assertScript '''
-            package org.codehaus.groovy.transform.packageScope.p
+final class DifferentPackageTest extends GroovyTestCase {
 
-            @groovy.transform.CompileStatic
-            class Two extends One {
-                void valSize() {
-                    value.size()
-                }
+    /** Class in package {@code p} with package-private fields {@code value} and {@code CONST}. */
+    private static final String P_DOT_ONE = '''
+        package p
+
+        @groovy.transform.CompileStatic
+        class One {
+            @groovy.transform.PackageScope
+            String value = 'value'
+            @groovy.transform.PackageScope
+            static final int CONST = 42
+        }
+    '''
+
+    private ClassLoader addSources(Map<String, String> sources) {
+        new CompilationUnit().with {
+            sources.each { name, text -> addSource(name + '.groovy', text) }
+            compile(Phases.CLASS_GENERATION)
+
+            classes.each { GroovyClass groovyClass ->
+                classLoader.defineClass(groovyClass.name, groovyClass.bytes)
             }
-
-            assert new Two().valSize() == 3
-        '''
+            return classLoader
+        }
     }
 
-    void _FIXME_testSamePackageShouldSeeStaticProps() {
-        assertScript '''
-            package org.codehaus.groovy.transform.packageScope.p
+    //--------------------------------------------------------------------------
 
-            @groovy.transform.CompileStatic
-            class Three {
-                static void halfNum() {
-                    One.NUM / 2
+    void testSamePackageShouldSeeInstanceProps1() {
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Two: '''
+                package p
+
+                @groovy.transform.CompileStatic
+                class Two extends One {
+                    int valueSize() {
+                        value.size()
+                    }
                 }
-            }
+            ''')
 
-            assert Three.halfNum() == 21
-        '''
+        assert loader.loadClass('p.Two').newInstance().valueSize() == 5
     }
 
+    void testSamePackageShouldSeeInstanceProps2() {
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Peer: '''
+                package p
+
+                @groovy.transform.CompileStatic
+                class Peer {
+                    int valueSize() {
+                        new One().value.size()
+                    }
+                }
+            ''')
+
+        assert loader.loadClass('p.Peer').newInstance().valueSize() == 5
+    }
+
+    void testSamePackageShouldSeeStaticProps1() {
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Two: '''
+                package p
+
+                @groovy.transform.CompileStatic
+                class Two extends One {
+                    static def half() {
+                        CONST / 2
+                    }
+                }
+            ''')
+
+        assert loader.loadClass('p.Two').half() == 21
+    }
+
+    void testSamePackageShouldSeeStaticProps2() {
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Two: '''
+                package p
+
+                @groovy.transform.CompileStatic
+                class Two extends One {
+                    def half() {
+                        CONST / 2
+                    }
+                }
+            ''')
+
+        assert loader.loadClass('p.Two').newInstance().half() == 21
+    }
+
+    void testSamePackageShouldSeeStaticProps3() {
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Peer: '''
+                package p
+
+                @groovy.transform.CompileStatic
+                class Peer {
+                    static def half() {
+                        One.CONST / 2
+                    }
+                }
+            ''')
+
+        assert loader.loadClass('p.Peer').half() == 21
+    }
+
+    void testSamePackageShouldSeeStaticProps4() {
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Peer: '''
+                package p
+
+                @groovy.transform.CompileStatic
+                class Peer {
+                    def half() {
+                        One.CONST / 2
+                    }
+                }
+            ''')
+
+        assert loader.loadClass('p.Peer').newInstance().half() == 21
+    }
+
+    // GROOVY-9106
+    void _FIXME_testSamePackageShouldSeeStaticProps5() {
+        def loader = addSources(
+            One: P_DOT_ONE,
+            Two: '''
+                package q
+
+                @groovy.transform.CompileStatic
+                class Two extends p.One {
+                }
+            ''',
+            Peer: '''\
+                package p
+
+                @groovy.transform.CompileStatic
+                class Peer {
+                    static def half() {
+                        (q.Two.CONST / 2) // indirect access
+                    }
+                }
+            ''')
+
+        assert loader.loadClass('p.Peer').half() == 21
+    }
+
+    // GROOVY-9093
     void _FIXME_testDifferentPackageShouldNotSeeInstanceProps() {
-        def message = shouldFail(MultipleCompilationErrorsException, '''
-            package org.codehaus.groovy.transform.packageScope.q
+        def err = shouldFail CompilationFailedException, {
+            def loader = addSources(
+                One: P_DOT_ONE,
+                Two: '''
+                    package q
 
-            import org.codehaus.groovy.transform.packageScope.p.One
+                    @groovy.transform.CompileStatic
+                    class Two extends p.One {
+                        int valueSize() {
+                            value.size() // not visible
+                        }
+                    }
+                ''')
+            // TODO: Don't need this once compiler errors
+            assert loader.loadClass('q.Two').newInstance().valueSize() == 5
+        }
 
-            @groovy.transform.CompileStatic
-            class Two extends One {
-                void valSize() {
-                    value.size()
-                }
-            }
-
-            assert new Two().valSize() == 3
-        ''')
-        assert message.matches('(?s).*Access to .*value is forbidden.*')
+        assert err =~ / Access to ... value is forbidden /
     }
 
-    void testDifferentPackageShouldNotSeeStaticProps() {
-        def message = shouldFail(MultipleCompilationErrorsException, '''
-            package org.codehaus.groovy.transform.packageScope.q
+    // GROOVY-9093
+    void _FIXME_testDifferentPackageShouldNotSeeStaticProps1() {
+        def err = shouldFail CompilationFailedException, {
+            def loader = addSources(
+                One: P_DOT_ONE,
+                Two: '''
+                    package q
 
-            import org.codehaus.groovy.transform.packageScope.p.One
+                    @groovy.transform.CompileStatic
+                    class Two extends p.One {
+                        static def half() {
+                            (CONST / 2) // not visible
+                        }
+                    }
+                ''')
+            // TODO: Don't need this once compiler errors
+            assert loader.loadClass('q.Two').half() == 21
+        }
 
-            @groovy.transform.CompileStatic
-            class Three {
-                static void halfNum() {
-                    One.NUM / 2
-                }
-            }
+        assert err =~ / Access to p.One#CONST is forbidden /
+    }
 
-            assert Three.halfNum() == 21
-        ''')
-        assert message.matches('(?s).*Access to .*One#NUM is forbidden.*')
+    void testDifferentPackageShouldNotSeeStaticProps2() {
+        def err = shouldFail CompilationFailedException, {
+            addSources(
+                One: P_DOT_ONE,
+                Other: '''
+                    package q
+
+                    import p.One
+
+                    @groovy.transform.CompileStatic
+                    class Other {
+                        static def half() {
+                            (One.CONST / 2) // not visible
+                        }
+                    }
+                ''')
+        }
+
+        assert err =~ / Access to p.One#CONST is forbidden /
     }
 }
