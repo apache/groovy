@@ -244,7 +244,7 @@ public class ClassInfo implements Finalizable {
         strongMetaClass = null;
         ManagedReference<MetaClass> newRef = null;
         if (answer != null) {
-            newRef = new ManagedReference<MetaClass> (softBundle,answer);
+            newRef = new ManagedReference<MetaClass> (weakBundle,answer);
         }
         replaceWeakMetaClassRef(newRef);
     }
