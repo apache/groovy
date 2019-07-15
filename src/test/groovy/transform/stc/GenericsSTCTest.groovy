@@ -19,7 +19,7 @@
 package groovy.transform.stc
 
 import groovy.transform.NotYetImplemented
-import org.codehaus.groovy.control.ParserVersion
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 
 /**
  * Unit tests for static type checking : generics.
@@ -465,7 +465,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             new Test()
         '''
 
-        if (ParserVersion.V_2 == config.parserVersion) {
+        if (config.pluginFactory instanceof AntlrParserPluginFactory) {
             shouldFailWithMessages code, 'Cannot find matching method java.lang.Object#getAt(int)'
         } else {
             shouldFailWithMessages code,
@@ -500,6 +500,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         new ClassB()
         '''
     }
+
     // GROOVY-5415
     void testShouldUseMethodGenericType2() {
         shouldFailWithMessages '''import groovy.transform.stc.GenericsSTCTest.ClassA
@@ -1314,7 +1315,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             bar()
         ''', '[Static type checking] - Cannot find matching method Foo#<init>(java.lang.String, int)'
     }
-    
+
     // Groovy-5742
     void testNestedGenerics() {
         assertScript '''
@@ -1347,7 +1348,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             true
         '''
     }
-        
+
     // Groovy-5610
     void testMethodWithDefaultArgument() {
         assertScript '''
@@ -1371,7 +1372,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         '#foo(java.util.List <A extends A>) with arguments [java.util.ArrayList <java.lang.Object>]'
     }
-    
+
     void testMethodLevelGenericsForMethodCall() {
         // Groovy-5891
         assertScript '''
@@ -1425,7 +1426,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         "Cannot call <T> GoodCodeRed <Long>#attach(GoodCodeRed <Long>) with arguments [GoodCodeRed <Integer>]"
     }
-    
+
     void testHiddenGenerics() {
         // Groovy-6237
         assertScript '''
@@ -1438,7 +1439,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class MyList extends LinkedList<Object> {}
             List<Blah> o = new MyList()
         ''','Incompatible generic argument types. Cannot assign MyList to: java.util.List <Blah>'
-        
+
         // Groovy-5873
         assertScript """
             abstract class Parent<T> {
@@ -1448,7 +1449,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Impl impl = new Impl()
             Integer i = impl.value
         """
-        
+
         // GROOVY-5920
         assertScript """
             class Data<T> {
@@ -1496,7 +1497,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             promise.get()
         '''
     }
-    
+
     // GROOVY-6455
     void testDelegateWithGenerics() {
         assertScript '''
@@ -1540,7 +1541,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6760
     void testGenericsAtMethodLevelWithGenericsInTypeOfGenericType() {
         assertScript '''
-            @Grab(group='com.netflix.rxjava', module='rxjava-core', version='0.18.1') 
+            @Grab(group='com.netflix.rxjava', module='rxjava-core', version='0.18.1')
             import rx.Observable
             import java.util.concurrent.Callable
 
@@ -1590,22 +1591,22 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             }
             Test1.pair2(1,2) // the call does not really matter
         '''
-        
+
         assertScript '''
             class Foo {
                 String method() {
                     return callT('abc')
                 }
-            
+
                 private <T> T callT(T t) {
                     return callV(t)
                 }
-            
+
                 private <V> V callV(V v) {
                     return v
                 }
             }
-            
+
             println new Foo().method()
         '''
     }
@@ -1635,7 +1636,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             User.main()
         '''
     }
-    
+
     void testConcreteTypeInsteadOfGenerifiedInterface() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -1655,7 +1656,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                }
             }
             class IntToFloatConverter implements Converter<Integer,Float> {
-                public Float convertC(Integer from) { from.floatValue() } 
+                public Float convertC(Integer from) { from.floatValue() }
             }
             void foo() {
                 @ASTTest(phase=INSTRUCTION_SELECTION,value={
@@ -1667,7 +1668,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             foo()
         '''
     }
-    
+
     // GROOVY-6748
     void testCleanGenerics() {
         assertScript '''
@@ -1683,7 +1684,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             new Class1().method3(["a"],["b"])
         '''
     }
-    
+
     // GROOVY-6761
     void testInVariantAndContraVariantGenerics() {
         assertScript '''

@@ -18,13 +18,14 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.control.ParserVersion
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
  * Unit tests for static type checking : method calls.
  */
 class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
+
     @Override
     protected void configure() {
         final ImportCustomizer ic = new ImportCustomizer()
@@ -427,7 +428,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
                 1.with { obj ->
                     if (obj instanceof String) {
-                        obj.toUpperCase() 
+                        obj.toUpperCase()
                     }
                 }
             '''
@@ -438,11 +439,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             public interface SAM {
                 boolean run(String var1, Thread th);
             }
-            
+
             static boolean foo(SAM sam) {
                sam.run("foo",  new Thread())
             }
-            
+
             static def callSAM() {
                 foo { str, th ->
                     str.toUpperCase().equals(th.getName())
@@ -454,11 +455,11 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     void testGroovy8241() {
         assertScript '''
             import java.util.function.Predicate
-            
+
             static boolean foo(Predicate<? super String> p) {
                 p.test("foo")
             }
-            
+
             static def testPredicate() {
                 foo { it ->
                     it.toUpperCase()
@@ -485,9 +486,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     filter { s -> s.length() < 10 }.
                     toArray()
             }
-            
-            final words = ["orange", "sit", "test", "flabbergasted", "honorific"] 
-            
+
+            final words = ["orange", "sit", "test", "flabbergasted", "honorific"]
+
             println doIt(words)
             '''
     }
@@ -536,7 +537,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 }
             '''
     }
-    
+
     void testOneDefaultParam() {
         assertScript '''
             String m(String val = 'hello') {
@@ -574,7 +575,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             m('test', new Object())
         ''', 'm(java.lang.String, java.lang.Object)'
     }
-    
+
     void testMultipleDefaultArgs() {
         assertScript '''
             String m(String first = 'first', String second, String third = 'third') {
@@ -910,7 +911,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             closure(*strings)
         '''
 
-        if (ParserVersion.V_2 == config.parserVersion) {
+        if (config.pluginFactory instanceof AntlrParserPluginFactory) {
             shouldFailWithMessages code, 'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
         } else {
             shouldFailWithMessages code,
@@ -1107,7 +1108,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert b.overload('a','b') == 2
         '''
     }
-    
+
     // GROOVY-5883 and GROOVY-6270
     void testClosureUpperBound() {
         assertScript '''
@@ -1140,7 +1141,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             String.doSomething()
         ''', 'Cannot find matching method java.lang.String#doSomething()'
     }
-    
+
     // GROOVY-6646
     void testNPlusVargsCallInOverloadSituation() {
         assertScript '''
@@ -1158,7 +1159,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert foo("2","1") == "Strings"
         '''
     }
-    
+
     //GROOVY-6776
     void testPrimtiveParameterAndNullArgument() {
         shouldFailWithMessages '''
@@ -1242,13 +1243,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         import groovy.transform.CompileStatic
         import java.util.stream.Collectors
         import java.util.stream.Stream
-        
+
         @CompileStatic
         public class Test1 {
             public static void main(String[] args) {
                 p();
             }
-            
+
             public static void p() {
                 assert 13 == [1, 2, 3].stream().reduce(7, {Integer r, Integer e -> r + e});
             }

@@ -18,50 +18,54 @@
  */
 package groovy.bugs.groovy9081
 
-import gls.CompilableTestSupport
 import groovy.bugs.groovy9081.somepkg.ProtectedConstructor
-import org.codehaus.groovy.control.ParserVersion
+import org.junit.Ignore
+import org.junit.Test
 
 import java.awt.Font
+import java.lang.annotation.RetentionPolicy
 
 // TODO add JVM option `--illegal-access=deny` when all warnings fixed
-class Groovy9081Bug extends CompilableTestSupport {
+final class Groovy9081 {
+
+    @Test
     void testAccessPublicMemberOfPrivateClass() {
         def m = Collections.unmodifiableMap([:])
         assert null != m.toString()
         assert null == m.get(0)
     }
 
+    @Test
     void testFavorMethodWithExactParameterType() {
-        def em1 = new EnumMap(ParserVersion.class)
-        def em2 = new EnumMap(ParserVersion.class)
+        def em1 = new EnumMap(RetentionPolicy.class)
+        def em2 = new EnumMap(RetentionPolicy.class)
 
         assert em2 == em1
     }
 
-    // Regression test
+    @Test
     void testShouldChoosePublicGetterInsteadOfPrivateField1() {
         def f = Integer.class.getDeclaredField("MIN_VALUE")
         assert 0 != f.modifiers
     }
 
+    @Test
     void testShouldChoosePublicGetterInsteadOfPrivateField2() {
         def f = new Font("Monospaced", Font.PLAIN, 12)
         assert f.name
     }
 
-
+    @Test @Ignore
     void testGetPropertiesOfObjects() {
-        if (true) return
-
         assert null != ''.properties
     }
 
+    @Test
     void testAsType1() {
         [run: {}] as TimerTask
     }
 
-    // Regression test
+    @Test
     void testAsType2() {
         [run: {}] as ProtectedConstructor
     }

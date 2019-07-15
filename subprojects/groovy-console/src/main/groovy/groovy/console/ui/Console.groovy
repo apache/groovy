@@ -34,7 +34,6 @@ import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.ParserVersion
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.messages.ExceptionMessage
 import org.codehaus.groovy.control.messages.SimpleMessage
@@ -1042,10 +1041,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void inspectTokens(EventObject evt = null) {
         def content = inputArea.getText()
-        def lf =
-                ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion ?
-                        LexerFrame.groovyScriptFactory(content) :
-                        new LexerFrame(GroovyLangLexer, org.apache.groovy.parser.antlr4.GroovyLexer, new StringReader(content))
+        def lf = (CompilerConfiguration.DEFAULT.pluginFactory instanceof org.codehaus.groovy.antlr.AntlrParserPluginFactory
+                ? LexerFrame.groovyScriptFactory(content) : new LexerFrame(GroovyLangLexer, org.apache.groovy.parser.antlr4.GroovyLexer, new StringReader(content)))
 
         lf.visible = true
     }

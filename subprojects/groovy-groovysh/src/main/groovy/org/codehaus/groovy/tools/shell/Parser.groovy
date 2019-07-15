@@ -26,7 +26,7 @@ import org.codehaus.groovy.antlr.UnicodeEscapingReader
 import org.codehaus.groovy.antlr.parser.GroovyLexer
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer
 import org.codehaus.groovy.control.CompilationFailedException
-import org.codehaus.groovy.control.ParserVersion
+import org.codehaus.groovy.control.ParserPluginFactory
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
@@ -156,7 +156,7 @@ final class RigidParser implements Parsing {
 
         try {
             parser = SourceUnit.create(SCRIPT_FILENAME, source, /*tolerance*/ 1)
-            parser.getConfiguration().setParserVersion(ParserVersion.V_2) // We have to stick to the old parser before GROOVY-8279 is fixed
+            parser.getConfiguration().setPluginFactory(ParserPluginFactory.antlr2()) // We have to stick to the old parser before GROOVY-8279 is fixed
             parser.parse()
 
             log.debug('Parse complete')
