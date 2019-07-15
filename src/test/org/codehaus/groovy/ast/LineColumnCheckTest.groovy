@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast
 
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ArrayExpression
 import org.codehaus.groovy.ast.expr.AttributeExpression
@@ -54,7 +55,6 @@ import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.ParserVersion
 import org.codehaus.groovy.control.SourceUnit
 import org.junit.Before
 import org.junit.Test
@@ -66,28 +66,28 @@ import org.junit.runners.Parameterized
  * The base version contains tests that should work with both the antlr2 and antlr4 parser.
  * The suffixed versions work with just the respective parser. In general, the antlr4 parser
  * has more accurate line/column information in a number of situations.
- * 
+ *
  * The file in the specified path should look like:
- * 
+ *
  * ###<testname>:::
  * <source code from which the AST will be built>
  * :::<expected AST output>
- * 
+ *
  * The section above can be repeated for every new TestCase
- * 
+ *
  * The AST output from the visitor is quite big. Also for small source code snippets. Therefore
  * it is possible to only specify the nodes that you want to check and separate them with a semicolon.
  * A semicolon is also needed when you begin with a new line.
- * Example: 
+ * Example:
  * [TryCatchStatement,(1:1),(9:2)][BlockStatement,(1:5),(3:3)];
  * [CatchStatement,(3:3),(5:3)][BlockStatement,(3:12),(5:3)];
  * [CatchStatement,(5:3),(7:3)][BlockStatement,(5:12),(7:3)];
  * [BlockStatement,(7:3),(9:2)][BlockStatement,(7:11),(9:2)]
- * 
+ *
  * [<NodeType>,(<line>:<column>),(<lastLine>:<lastColumn>)]
  */
 @RunWith(Parameterized)
-class LineColumnCheckTest extends ASTTest {
+final class LineColumnCheckTest extends ASTTest {
 
     static final String TEST_FILE_PREFIX = './src/test/org/codehaus/groovy/ast/LineColumnCheck'
 
@@ -101,7 +101,7 @@ class LineColumnCheckTest extends ASTTest {
         List testdata = extractData("${TEST_FILE_PREFIX}.txt")
         //flip if condition as per below and swap antlr2/4 ordering once antlr4 is the default
         //if (System.getProperty('groovy.antlr4') != 'false') {
-        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
+        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
             testdata += extractData("${TEST_FILE_PREFIX}_antlr2.txt")
         } else {
             testdata += extractData("${TEST_FILE_PREFIX}_antlr4.txt")

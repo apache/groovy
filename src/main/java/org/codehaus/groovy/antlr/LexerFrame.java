@@ -25,7 +25,6 @@ import org.codehaus.groovy.antlr.java.JavaTokenTypes;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.ParserVersion;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
@@ -49,6 +48,7 @@ import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.text.BadLocationException;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -320,7 +320,7 @@ public class LexerFrame extends JFrame implements ActionListener {
             // Ignore
         }
         LexerFrame lexerFrame = null;
-        boolean oldParserEnabled = ParserVersion.V_2 == CompilerConfiguration.DEFAULT.getParserVersion();
+        boolean oldParserEnabled = CompilerConfiguration.DEFAULT.getPluginFactory() instanceof AntlrParserPluginFactory;
 
         if (args.length == 0) {
             lexerFrame =

@@ -19,11 +19,11 @@
 package gls.generics
 
 import gls.CompilableTestSupport
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.codehaus.groovy.control.ParserVersion
 
-class GenericsUsageTest extends CompilableTestSupport {
+final class GenericsUsageTest extends CompilableTestSupport {
 
     void testInvalidParameterUsage() {
         shouldNotCompile """
@@ -153,7 +153,7 @@ class GenericsUsageTest extends CompilableTestSupport {
     }
 
     void testCompilationWithMissingClosingBracketsInGenerics() {
-        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
+        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
             shouldFailCompilationWithDefaultMessage """
                 def list1 = new ArrayList<Integer()
             """
@@ -305,7 +305,7 @@ class GenericsUsageTest extends CompilableTestSupport {
             class MyList extends ArrayList<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
 
-        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
+        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
             shouldFailCompilationWithMessages '''
                 class MyList extends ArrayList<> {}
             ''', ['(supplied with 0 type parameters)', 'which takes 1 parameter', 'invalid Diamond <> usage?']
@@ -322,7 +322,7 @@ class GenericsUsageTest extends CompilableTestSupport {
             class MyList implements List<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
 
-        if (ParserVersion.V_2 == CompilerConfiguration.DEFAULT.parserVersion) {
+        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
             shouldFailCompilationWithMessages '''
                 class MyList implements Map<> {}
             ''', ['(supplied with 0 type parameters)', 'which takes 2 parameters', 'invalid Diamond <> usage?']

@@ -16,35 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.control;
+package groovy.bugs
 
-/**
- * Represents the version of a parser
- *
- * @since 2.6.0
- */
-public enum ParserVersion {
-    /**
-     * Before Groovy 2.6.0(including 2.6.0), the default version of parser is v2
-     */
-    V_2,
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.Test
 
-    /**
-     * After Groovy 3.0.0(including 3.0.0), the default version of parser is v4(i.e. the new parser Parrot)
-     */
-    V_4("Parrot");
+import static groovy.test.GroovyAssert.shouldFail
 
-    private String name;
+final class Groovy5318 {
 
-    ParserVersion() {
-        this(null);
-    }
+    @Test
+    void testTypeArgumentsOnlyOnTheLastComponent() {
+        def err = shouldFail '''
+            def a = new java.util<Integer>.ArrayList<ArrayList<Integer>>()
+        '''
 
-    ParserVersion(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
+        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
+            assert err =~ 'Unexpected type arguments found prior to: ArrayList'
+        } else {
+            assert err =~ 'Unexpected input: \'.\''
+        }
     }
 }
