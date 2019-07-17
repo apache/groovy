@@ -135,6 +135,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -11827,6 +11828,178 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         ", Reason: " + cause.getMessage());
             }
         }
+    }
+
+    /**
+     * Randomly reorders the elements of the specified list.
+     * <pre class="groovyTestCase">
+     * def list = ["a", 4, false]
+     * def origSize = list.size()
+     * def origCopy = new ArrayList(list)
+     * list.shuffle()
+     * assert list.size() == origSize
+     * assert origCopy.every{ list.contains(it) }
+     * </pre>
+     *
+     * @param self a List
+     * @see Collections#shuffle(List)
+     * @since 3.0.0-beta-3
+     */
+    public static void shuffle(List<?> self) {
+        Collections.shuffle(self);
+    }
+
+    /**
+     * Randomly reorders the elements of the specified list using the
+     * specified random instance as the source of randomness.
+     * <pre class="groovyTestCase">
+     * def r = new Random()
+     * def list = ["a", 4, false]
+     * def origSize = list.size()
+     * def origCopy = new ArrayList(list)
+     * list.shuffle(r)
+     * assert list.size() == origSize
+     * assert origCopy.every{ list.contains(it) }
+     * </pre>
+     *
+     * @param self a List
+     * @see Collections#shuffle(List)
+     * @since 3.0.0-beta-3
+     */
+    public static void shuffle(List<?> self, Random rnd) {
+        Collections.shuffle(self, rnd);
+    }
+
+    /**
+     * Creates a new list containing the elements of the specified list
+     * but in a random order.
+     * <pre class="groovyTestCase">
+     * def orig = ["a", 4, false]
+     * def shuffled = orig.shuffled()
+     * assert orig.size() == shuffled.size()
+     * assert orig.every{ shuffled.contains(it) }
+     * </pre>
+     *
+     * @param self a List
+     * @see Collections#shuffle(List)
+     * @since 3.0.0-beta-3
+     */
+    public static <T> List<T> shuffled(List<T> self) {
+        List<T> copy = new ArrayList(self);
+        Collections.shuffle(self);
+        return copy;
+    }
+
+    /**
+     * Creates a new list containing the elements of the specified list but in a random
+     * order using the specified random instance as the source of randomness.
+     * <pre class="groovyTestCase">
+     * def r = new Random()
+     * def orig = ["a", 4, false]
+     * def shuffled = orig.shuffled(r)
+     * assert orig.size() == shuffled.size()
+     * assert orig.every{ shuffled.contains(it) }
+     * </pre>
+     *
+     * @param self a List
+     * @see Collections#shuffle(List)
+     * @since 3.0.0-beta-3
+     */
+    public static <T> List<T> shuffled(List<T> self, Random rnd) {
+        List<T> copy = new ArrayList(self);
+        Collections.shuffle(self, rnd);
+        return copy;
+    }
+
+    /**
+     * Randomly reorders the elements of the specified array.
+     * <pre class="groovyTestCase">
+     * Integer[] array = [10, 5, 20]
+     * def origSize = array.size()
+     * def items = array.toList()
+     * array.shuffle()
+     * assert array.size() == origSize
+     * assert items.every{ array.contains(it) }
+     * </pre>
+     *
+     * @param self an array
+     * @since 3.0.0-beta-3
+     */
+    public static <T> void shuffle(T[] self) {
+        Random rnd = r;
+        if (rnd == null)
+            r = rnd = new Random(); // harmless race.
+        shuffle(self, rnd);
+    }
+
+    private static Random r;
+
+    /**
+     * Randomly reorders the elements of the specified array using the
+     * specified random instance as the source of randomness.
+     * <pre class="groovyTestCase">
+     * def r = new Random()
+     * Integer[] array = [10, 5, 20]
+     * def origSize = array.size()
+     * def items = array.toList()
+     * array.shuffle(r)
+     * assert array.size() == origSize
+     * assert items.every{ array.contains(it) }
+     * </pre>
+     *
+     * @param self an array
+     * @since 3.0.0-beta-3
+     */
+    public static <T> void shuffle(T[] self, Random rnd) {
+        for (int i = 0; i < self.length-1; i++) {
+            int nextIndex = rnd.nextInt(self.length);
+            T tmp = self[i];
+            self[i] = self[nextIndex];
+            self[nextIndex] = tmp;
+        }
+    }
+
+    /**
+     * Creates a new array containing the elements of the specified array but in a random order.
+     * <pre class="groovyTestCase">
+     * Integer[] orig = [10, 5, 20]
+     * def array = orig.shuffled()
+     * assert orig.size() == array.size()
+     * assert orig.every{ array.contains(it) }
+     * </pre>
+     *
+     * @param self an array
+     * @return the shuffled array
+     * @since 3.0.0-beta-3
+     */
+    public static <T> T[] shuffled(T[] self) {
+        Random rnd = r;
+        if (rnd == null)
+            r = rnd = new Random(); // harmless race.
+        return shuffled(self, rnd);
+    }
+
+    /**
+     * Creates a new array containing the elements of the specified array but in a random
+     * order using the specified random instance as the source of randomness.
+     * <pre class="groovyTestCase">
+     * def r = new Random()
+     * Integer[] orig = [10, 5, 20]
+     * def array = orig.shuffled(r)
+     * assert orig.size() == array.size()
+     * assert orig.every{ array.contains(it) }
+     * </pre>
+     *
+     * @param self an array
+     * @return the shuffled array
+     * @since 3.0.0-beta-3
+     */
+    public static <T> T[] shuffled(T[] self, Random rnd) {
+        T[] result = self.clone();
+        List<T> items = Arrays.asList(self);
+        Collections.shuffle(items, rnd);
+        System.arraycopy(items.toArray(), 0, result, 0, items.size());
+        return result;
     }
 
     /**
