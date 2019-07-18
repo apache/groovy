@@ -19,10 +19,14 @@
 package groovy.bugs
 
 import groovy.transform.CompileStatic
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
-final class Groovy9170 extends GroovyTestCase {
+final class Groovy9170 {
 
+    @Test
     void testOverrideJavaLangObjectClone() {
         shouldFail CloneNotSupportedException, '''
             class C implements Cloneable, Serializable {

@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- * 	http://www.apache.org/licenses/LICENSE-2.0
+ *	http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -18,31 +18,55 @@
  */
 package groovy.bugs
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
-final class Groovy9063 {
+// TODO: add JVM option `--illegal-access=deny` when all warnings fixed
+final class Groovy9103 {
 
     @Test
-    void testProtectedFieldAccessFromNestedClosure() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            class Groovy9063 {
-                protected String message = 'hello'
+    void testProperties() {
+        String str = ''
+        assert str.properties
+    }
 
-                int nestedClosures() {
-                    { ->
-                        { ->
-                            message.length()
-                        }.call()
-                    }.call()
-                }
+    @Test
+    void testBigIntegerMultiply() {
+        assert 2G * 1
+    }
+
+    @Test
+    void testClone() {
+        assertScript '''
+            def broadcastSeq(Object value) {
+                value.clone()
             }
 
-            assert new Groovy9063().nestedClosures() == 5
+            assert broadcastSeq(new Tuple1('abc'))
         '''
+    }
+
+    @Test
+    void testClone2() {
+        assertScript '''
+            class Value {
+                @Override
+                public Value clone() {
+                    return new Value()
+                }
+            }
+            def broadcastSeq(Object value) {
+                value.clone()
+            }
+
+            assert broadcastSeq(new Value())
+        '''
+    }
+
+    @Test
+    void testClone3() {
+        Object obj = new Tuple1('abc')
+        assert obj.clone()
     }
 }

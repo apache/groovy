@@ -21,12 +21,15 @@ package groovy.bugs
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.codehaus.groovy.control.ParserPluginFactory.antlr2
 
 @CompileStatic
-final class Groovy9141 extends GroovyTestCase {
+final class Groovy9141 {
 
+    @Test
     void testAbstractMethodWithBodyInClass() {
         def err = shouldFail CompilationFailedException, '''
             abstract class Main {
@@ -36,7 +39,7 @@ final class Groovy9141 extends GroovyTestCase {
         assert err =~ / You defined an abstract method\[meth\] with a body. Try removing the method body @ line /
     }
 
-    // not a language requirement but script-level check takes precedence in current implementation
+    @Test // not a language requirement but script-level check takes precedence in current implementation
     void testAbstractMethodWithBodyInScript() {
         def err = shouldFail CompilationFailedException, '''
             abstract void meth() {}
@@ -44,6 +47,7 @@ final class Groovy9141 extends GroovyTestCase {
         assert err =~ / You cannot define an abstract method\[meth\] in the script. Try removing the 'abstract' /
     }
 
+    @Test
     void testAbstractMethodWithBodyInScript_oldParser() {
         def shell = new GroovyShell(new CompilerConfiguration(pluginFactory: antlr2()))
 

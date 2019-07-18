@@ -20,10 +20,14 @@ package groovy.bugs
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
-final class Groovy9176 extends GroovyTestCase {
+final class Groovy9176 {
 
+    @Test
     void testGroovyPropertyCovariantMethodCheck() {
         def err = shouldFail CompilationFailedException, '''
             class Pojo {
