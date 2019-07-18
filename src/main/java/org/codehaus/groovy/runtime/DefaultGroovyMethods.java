@@ -11843,7 +11843,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @see Collections#shuffle(List)
-     * @since 3.0.0-beta-3
+     * @since 3.0.0
      */
     public static void shuffle(List<?> self) {
         Collections.shuffle(self);
@@ -11864,7 +11864,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @see Collections#shuffle(List)
-     * @since 3.0.0-beta-3
+     * @since 3.0.0
      */
     public static void shuffle(List<?> self, Random rnd) {
         Collections.shuffle(self, rnd);
@@ -11882,7 +11882,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @see Collections#shuffle(List)
-     * @since 3.0.0-beta-3
+     * @since 3.0.0
      */
     public static <T> List<T> shuffled(List<T> self) {
         List<T> copy = new ArrayList(self);
@@ -11903,7 +11903,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List
      * @see Collections#shuffle(List)
-     * @since 3.0.0-beta-3
+     * @since 3.0.0
      */
     public static <T> List<T> shuffled(List<T> self, Random rnd) {
         List<T> copy = new ArrayList(self);
@@ -11923,7 +11923,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self an array
-     * @since 3.0.0-beta-3
+     * @since 3.0.0
      */
     public static <T> void shuffle(T[] self) {
         Random rnd = r;
@@ -11948,7 +11948,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self an array
-     * @since 3.0.0-beta-3
+     * @since 3.0.0
      */
     public static <T> void shuffle(T[] self, Random rnd) {
         for (int i = 0; i < self.length-1; i++) {
@@ -11970,7 +11970,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the shuffled array
-     * @since 3.0.0-beta-3
+     * @since 3.0.0
      */
     public static <T> T[] shuffled(T[] self) {
         Random rnd = r;
@@ -11992,7 +11992,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the shuffled array
-     * @since 3.0.0-beta-3
+     * @since 3.0.0
      */
     public static <T> T[] shuffled(T[] self, Random rnd) {
         T[] result = self.clone();
