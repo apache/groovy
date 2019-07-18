@@ -21,12 +21,16 @@ package groovy.bugs
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
+import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 import static org.codehaus.groovy.control.Phases.CLASS_GENERATION
 
 @CompileStatic
-final class Groovy9127 extends GroovyTestCase {
+final class Groovy9127 {
 
+    @Test
     void testReadOnlyPropertyAssignment1() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -48,6 +52,7 @@ final class Groovy9127 extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testReadOnlyPropertyAssignment2() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -69,6 +74,7 @@ final class Groovy9127 extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testReadOnlyPropertyAssignment3() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -90,6 +96,7 @@ final class Groovy9127 extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testReadOnlyPropertyAssignment4() {
         new CompilationUnit().with {
             addSource 'Foo.groovy', '''
@@ -122,6 +129,7 @@ final class Groovy9127 extends GroovyTestCase {
         }
     }
 
+    @Test
     void testReadOnlyPropertyAssignment5() {
         def err = shouldFail CompilationFailedException, '''
             @groovy.transform.CompileStatic
@@ -141,6 +149,7 @@ final class Groovy9127 extends GroovyTestCase {
         assert err =~ /\[Static type checking\] - Cannot set read-only property: field/
     }
 
+    @Test
     void testAttributeAssignmentVariation() {
         assertScript '''
             @groovy.transform.CompileStatic

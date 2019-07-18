@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- * 	http://www.apache.org/licenses/LICENSE-2.0
+ *	http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -18,30 +18,32 @@
  */
 package groovy.bugs
 
-import groovy.transform.CompileStatic
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
-import static org.codehaus.groovy.control.ParserPluginFactory.antlr2
+import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
-final class Groovy9184 {
+final class Groovy8964 {
 
-    @Test(timeout=1500L)
-    void testEnumWithinEnum() {
-        def config = new CompilerConfiguration(pluginFactory: antlr2())
+    @Test
+    void testInstanceVarargMethodNotMaskedByStaticMethodWithSameNumberOfArgs() {
+        assertScript '''
+            class Example {
 
-        new GroovyShell(config).evaluate('''
-            enum Outer {
-                A, B
-                enum Inner {
-                    X, Y
+                def method(String... args) {
+                    'vararg'
+                }
+
+                static method(List<String> args, File workDirectory, Appendable out, Appendable err) {
+                    'multi'
+                }
+
+                def execute() {
+                    method("a", "b", "c", "d")
                 }
             }
-            assert Outer.A.name() == 'A'
-            assert Outer.A.ordinal() == 0
-            assert Outer.Inner.Y.name() == 'Y'
-            assert Outer.Inner.Y.ordinal() == 1
-        ''')
+
+            Example ex = new Example()
+            assert ex.execute() == 'vararg'
+        '''
     }
 }
