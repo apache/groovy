@@ -6202,7 +6202,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * "plus" method on all items in the Iterable.
      * <pre class="groovyTestCase">assert 1+2+3+4 == [1,2,3,4].sum()</pre>
      *
-     * @param self Collection of values to add together
+     * @param self Iterable of values to add together
      * @return The sum of all of the items
      * @since 2.2.0
      */
@@ -6216,7 +6216,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self The array of values to add together
      * @return The sum of all of the items
-     * @see #sum(java.util.Collection)
+     * @see #sum(java.util.Iterable)
      * @since 1.7.1
      */
     public static Object sum(Object[] self) {
@@ -6639,6 +6639,177 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             result = metaClass.invokeMethod(result, "plus", plusParam);
         }
         return result;
+    }
+
+    /**
+     * Averages the items in an Iterable.  This is equivalent to invoking the
+     * "plus" method on all items in the Iterable and then dividing by the
+     * total count using the "div" method for the resulting sum.
+     * <pre class="groovyTestCase">assert 3 == [1, 2, 6].average()</pre>
+     *
+     * @param self Iterable of values to average
+     * @return The average of all of the items
+     * @since 3.0.0
+     */
+    public static Object average(Iterable self) {
+        boolean first = true;
+        Object result = null;
+        long count = 0;
+        Object[] param = new Object[1];
+        for (Object next : self) {
+            count++;
+            param[0] = next;
+            if (first) {
+                result = param[0];
+                first = false;
+                continue;
+            }
+            MetaClass metaClass = InvokerHelper.getMetaClass(result);
+            result = metaClass.invokeMethod(result, "plus", param);
+        }
+        MetaClass metaClass = InvokerHelper.getMetaClass(result);
+        result = metaClass.invokeMethod(result, "div", count);
+        return result;
+    }
+
+    /**
+     * Averages the items in an array.  This is equivalent to invoking the
+     * "plus" method on all items in the array and then dividing by the
+     * total count using the "div" method for the resulting sum.
+     * <pre class="groovyTestCase">assert 3 == ([1, 2, 6] as Integer[]).average()</pre>
+     *
+     * @param self The array of values to average
+     * @return The average of all of the items
+     * @see #average(java.util.Iterable)
+     * @since 3.0.0
+     */
+    public static Object average(Object[] self) {
+        Object result = sum(self);
+        MetaClass metaClass = InvokerHelper.getMetaClass(result);
+        result = metaClass.invokeMethod(result, "div", self.length);
+        return result;
+    }
+
+    /**
+     * Averages the items from an Iterator.  This is equivalent to invoking the
+     * "plus" method on all items in the array and then dividing by the
+     * total count using the "div" method for the resulting sum.
+     * The iterator will become exhausted of elements after determining the average value.
+     *
+     * @param self an Iterator for the values to average
+     * @return The average of all of the items
+     * @since 3.0.0
+     */
+    public static Object average(Iterator<Object> self) {
+        return average(toList(self));
+    }
+
+    /**
+     * Calculates the average of the bytes in the array.
+     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as byte[]).average()</pre>
+     *
+     * @param self The array of values to calculate the average of
+     * @return The average of the items
+     * @since 3.0.0
+     */
+    public static BigDecimal average(byte[] self) {
+        long s = 0;
+        int count = 0;
+        for (byte v : self) {
+            s += v;
+            count++;
+        }
+        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+    }
+
+    /**
+     * Calculates the average of the shorts in the array.
+     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as short[]).average()</pre>
+     *
+     * @param self The array of values to calculate the average of
+     * @return The average of the items
+     * @since 3.0.0
+     */
+    public static BigDecimal average(short[] self) {
+        long s = 0;
+        int count = 0;
+        for (short v : self) {
+            s += v;
+            count++;
+        }
+        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+    }
+
+    /**
+     * Calculates the average of the ints in the array.
+     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as int[]).average()</pre>
+     *
+     * @param self The array of values to calculate the average of
+     * @return The average of the items
+     * @since 3.0.0
+     */
+    public static BigDecimal average(int[] self) {
+        long s = 0;
+        int count = 0;
+        for (int v : self) {
+            s += v;
+            count++;
+        }
+        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+    }
+
+    /**
+     * Calculates the average of the longs in the array.
+     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as long[]).average()</pre>
+     *
+     * @param self The array of values to calculate the average of
+     * @return The average of the items
+     * @since 3.0.0
+     */
+    public static BigDecimal average(long[] self) {
+        long s = 0;
+        int count = 0;
+        for (long v : self) {
+            s += v;
+            count++;
+        }
+        return BigDecimal.valueOf(s).divide(BigDecimal.valueOf(count));
+    }
+
+    /**
+     * Calculates the average of the floats in the array.
+     * <pre class="groovyTestCase">assert 5.0d == ([2,4,6,8] as float[]).average()</pre>
+     *
+     * @param self The array of values to calculate the average of
+     * @return The average of the items
+     * @since 3.0.0
+     */
+    public static double average(float[] self) {
+        double s = 0.0d;
+        int count = 0;
+        for (float v : self) {
+            s += v;
+            count++;
+        }
+        return s/count;
+    }
+
+    /**
+     * Calculates the average of the doubles in the array.
+     * <pre class="groovyTestCase">assert 5.0d == ([2,4,6,8] as double[]).average()</pre>
+     *
+     * @param self The array of values to calculate the average of
+     * @return The average of the items
+     * @since 3.0.0
+     */
+    public static double average(double[] self) {
+        double s = 0.0d;
+        int count = 0;
+        for (double v : self) {
+            s += v;
+            count++;
+        }
+        return s/count;
     }
 
     /**
