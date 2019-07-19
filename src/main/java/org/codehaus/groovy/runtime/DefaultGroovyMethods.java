@@ -6517,13 +6517,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the result of apply a closure to each item of an Iterable.
+     * Sums the result of applying a closure to each item of an Iterable.
      * <code>coll.sum(closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum()</code>.
      * <pre class="groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum { it * 2 }</pre>
      *
      * @param self    an Iterable
-     * @param closure a single parameter closure that returns a numeric value.
+     * @param closure a single parameter closure that returns a (typically) numeric value.
      * @return The sum of the values returned by applying the closure to each
      *         item of the Iterable.
      * @since 2.2.0
@@ -6533,12 +6533,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the result of apply a closure to each item of an array.
+     * Sums the result of applying a closure to each item of an array.
      * <code>array.sum(closure)</code> is equivalent to:
      * <code>array.collect(closure).sum()</code>.
      *
      * @param self    An array
-     * @param closure a single parameter closure that returns a numeric value.
+     * @param closure a single parameter closure that returns a (typically) numeric value.
      * @return The sum of the values returned by applying the closure to each
      *         item of the array.
      * @since 1.7.1
@@ -6548,13 +6548,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the result of apply a closure to each item returned from an iterator.
+     * Sums the result of applying a closure to each item returned from an iterator.
      * <code>iter.sum(closure)</code> is equivalent to:
      * <code>iter.collect(closure).sum()</code>. The iterator will become
      * exhausted of elements after determining the sum value.
      *
      * @param self    An Iterator
-     * @param closure a single parameter closure that returns a numeric value.
+     * @param closure a single parameter closure that returns a (typically) numeric value.
      * @return The sum of the values returned by applying the closure to each
      *         item from the Iterator.
      * @since 1.7.1
@@ -6575,12 +6575,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the result of applying a closure to each item of an Iterable to some initial value.
-     * <code>coll.sum(initVal, closure)</code> is equivalent to:
-     * <code>coll.collect(closure).sum(initVal)</code>.
+     * <code>iter.sum(initVal, closure)</code> is equivalent to:
+     * <code>iter.collect(closure).sum(initVal)</code>.
      * <pre class="groovyTestCase">assert 50+4+6+10+12 == [2,3,5,6].sum(50) { it * 2 }</pre>
      *
      * @param self         an Iterable
-     * @param closure      a single parameter closure that returns a numeric value.
+     * @param closure      a single parameter closure that returns a (typically) numeric value.
      * @param initialValue the closure results will be summed to this initial value
      * @return The sum of the values returned by applying the closure to each
      *         item of the collection.
@@ -6596,7 +6596,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>array.collect(closure).sum(initVal)</code>.
      *
      * @param self         an array
-     * @param closure      a single parameter closure that returns a numeric value.
+     * @param closure      a single parameter closure that returns a (typically) numeric value.
      * @param initialValue the closure results will be summed to this initial value
      * @return The sum of the values returned by applying the closure to each
      *         item of the array.
@@ -6613,7 +6613,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * exhausted of elements after determining the sum value.
      *
      * @param self         an Iterator
-     * @param closure      a single parameter closure that returns a numeric value.
+     * @param closure      a single parameter closure that returns a (typically) numeric value.
      * @param initialValue the closure results will be summed to this initial value
      * @return The sum of the values returned by applying the closure to each
      *         item from the Iterator.
@@ -6652,20 +6652,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static Object average(Iterable self) {
-        boolean first = true;
         Object result = null;
         long count = 0;
         Object[] param = new Object[1];
         for (Object next : self) {
-            count++;
             param[0] = next;
-            if (first) {
+            if (count == 0) {
                 result = param[0];
-                first = false;
-                continue;
+            } else {
+                MetaClass metaClass = InvokerHelper.getMetaClass(result);
+                result = metaClass.invokeMethod(result, "plus", param);
             }
-            MetaClass metaClass = InvokerHelper.getMetaClass(result);
-            result = metaClass.invokeMethod(result, "plus", param);
+            count++;
         }
         MetaClass metaClass = InvokerHelper.getMetaClass(result);
         result = metaClass.invokeMethod(result, "div", count);
@@ -6810,6 +6808,79 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             count++;
         }
         return s/count;
+    }
+
+    /**
+     * Averages the result of applying a closure to each item of an Iterable.
+     * <code>iter.average(closure)</code> is equivalent to:
+     * <code>iter.collect(closure).average()</code>.
+     * <pre class="groovyTestCase">
+     * assert 20 == [1, 3].average { it * 10 }
+     * assert 3 == ['to', 'from'].average { it.size() }
+     * </pre>
+     *
+     * @param self    an Iterable
+     * @param closure a single parameter closure that returns a (typically) numeric value.
+     * @return The average of the values returned by applying the closure to each
+     *         item of the Iterable.
+     * @since 3.0.0
+     */
+    public static <T> Object average(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        return average(self.iterator(), closure);
+    }
+
+    /**
+     * Averages the result of applying a closure to each item of an array.
+     * <code>array.average(closure)</code> is equivalent to:
+     * <code>array.collect(closure).average()</code>.
+     * <pre class="groovyTestCase">
+     * def (nums, strings) = [[1, 3] as Integer[], ['to', 'from'] as String[]]
+     * assert 20 == nums.average { it * 10 }
+     * assert 3 == strings.average { it.size() }
+     * assert 3 == strings.average (String::size)
+     * </pre>
+     *
+     * @param self    An array
+     * @param closure a single parameter closure that returns a (typically) numeric value.
+     * @return The average of the values returned by applying the closure to each
+     *         item of the array.
+     * @since 3.0.0
+     */
+    public static <T> Object average(T[] self, @ClosureParams(FirstParam.Component.class) Closure closure) {
+        return average(new ArrayIterator<T>(self), closure);
+    }
+
+    /**
+     * Averages the result of applying a closure to each item returned from an iterator.
+     * <code>iter.average(closure)</code> is equivalent to:
+     * <code>iter.collect(closure).average()</code>.
+     * The iterator will become exhausted of elements after determining the average value.
+     *
+     * @param self    An Iterator
+     * @param closure a single parameter closure that returns a (typically) numeric value.
+     * @return The average of the values returned by applying the closure to each
+     *         item from the Iterator.
+     * @since 3.0.0
+     */
+    public static <T> Object average(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
+        Object result = null;
+        long count = 0;
+        Object[] closureParam = new Object[1];
+        Object[] plusParam = new Object[1];
+        while (self.hasNext()) {
+            closureParam[0] = self.next();
+            plusParam[0] = closure.call(closureParam);
+            if (count == 0) {
+                result = plusParam[0];
+            } else {
+                MetaClass metaClass = InvokerHelper.getMetaClass(result);
+                result = metaClass.invokeMethod(result, "plus", plusParam);
+            }
+            count++;
+        }
+        MetaClass metaClass = InvokerHelper.getMetaClass(result);
+        result = metaClass.invokeMethod(result, "div", count);
+        return result;
     }
 
     /**
