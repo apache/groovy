@@ -35,6 +35,7 @@ import java.util.Arrays;
  * @since 2.4.0
  */
 public abstract class StaticPropertyAccessHelper {
+
     public static Expression transformToSetterCall(
             Expression receiver,
             MethodNode setterMethod,
@@ -114,6 +115,7 @@ public abstract class StaticPropertyAccessHelper {
         public Expression transformExpression(final ExpressionTransformer transformer) {
             PoppingMethodCallExpression trn = new PoppingMethodCallExpression(receiver.transformExpression(transformer), setter, (TemporaryVariableExpression) tmp.transformExpression(transformer));
             trn.copyNodeMetaData(this);
+            trn.setSourcePosition(this);
             trn.setImplicitThis(isImplicitThis());
             trn.setSafe(isSafe());
             trn.setSpreadSafe(isSpreadSafe());
