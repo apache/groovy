@@ -50,18 +50,24 @@ public class VariableExpressionTransformer {
         // processClassVariable before it reaches any makeCall, that could handle it
         Object val = expr.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
         if (val == null) return null;
+
         // TODO handle the owner and delegate cases better for nested scenarios and potentially remove the need for the implicit this case
         VariableExpression receiver = new VariableExpression("owner".equals(val) ? (String) val : "delegate".equals(val) ? (String) val : "this");
-        receiver.setSourcePosition(expr);
+        // GROOVY-9136 -- object expression should not overlap source range of property; property stands in for original varibale expression
+        receiver.setLineNumber(expr.getLineNumber());
+        receiver.setColumnNumber(expr.getColumnNumber());
+
         PropertyExpression pexp = new PropertyExpression(receiver, expr.getName());
+        pexp.getProperty().setSourcePosition(expr);
         pexp.copyNodeMetaData(expr);
         pexp.setImplicitThis(true);
-        pexp.getProperty().setSourcePosition(expr);
+
         ClassNode owner = expr.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
         if (owner != null) {
             receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, owner);
             receiver.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, val);
         }
+
         return pexp;
     }
 
