@@ -242,7 +242,7 @@ class AstBrowser {
                         def kvPairs = propList[1].substring(1, propList[1].length() - 1).tokenize(',')
                         def kvFirst = kvPairs.get(0)
                         def btnPanel = swing.button(
-                                text: "Key/value pairs: [" + kvFirst.substring(0, Math.max(25, kvFirst.size())) + "...]",
+                                text: "Key/value pairs: [" + kvFirst.substring(0, Math.min(25, kvFirst.size())) + "...]",
                                 actionPerformed: {
                                     def mapTable
                                     String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
