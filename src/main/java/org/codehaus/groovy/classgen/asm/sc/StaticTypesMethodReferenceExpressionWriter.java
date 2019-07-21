@@ -210,6 +210,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         );
 
         syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(Generated.class)));
+        syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(groovy.transform.CompileStatic.class)));
 
         return syntheticMethodNode;
     }
@@ -239,6 +240,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         );
 
         syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(Generated.class)));
+        syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(groovy.transform.CompileStatic.class)));
 
         return syntheticMethodNode;
     }
