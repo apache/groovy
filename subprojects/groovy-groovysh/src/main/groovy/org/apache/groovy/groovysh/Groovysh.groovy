@@ -199,10 +199,30 @@ class Groovysh extends Shell {
                 if (!Boolean.valueOf(getPreference(INTERPRETER_MODE_PREFERENCE_KEY, 'false')) || isTypeOrMethodDeclaration(current)) {
                     // Evaluate the current buffer w/imports and dummy statement
                     List buff = [importsSpec] + [ 'true' ] + current
-                    setLastResult(result = interp.evaluate(buff))
+                    try {
+                        setLastResult(result = interp.evaluate(buff))
+                    } catch(MultipleCompilationErrorsException t) {
+                        // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
+                        if (t.message.contains('Unexpected input:') || t.message.contains("Missing ')'")) {
+                            // treat like INCOMPLETE case
+                            buffers.updateSelected(current)
+                            break
+                        }
+                        throw t
+                    }
                 } else {
                     // Evaluate Buffer wrapped with code storing bounded vars
-                    result = evaluateWithStoredBoundVars(importsSpec, current)
+                    try {
+                        result = evaluateWithStoredBoundVars(importsSpec, current)
+                    } catch(MultipleCompilationErrorsException t) {
+                        // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
+                        if (t.message.contains('Unexpected input:') || t.message.contains("Missing ')'")) {
+                            // treat like INCOMPLETE case
+                            buffers.updateSelected(current)
+                            break
+                        }
+                        throw t
+                    }
                 }
 
                 buffers.clearSelected()
