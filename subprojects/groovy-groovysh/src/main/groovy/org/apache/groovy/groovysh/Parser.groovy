@@ -154,7 +154,6 @@ final class RigidParser implements Parsing
 
         try {
             parser = SourceUnit.create(SCRIPT_FILENAME, source, /*tolerance*/ 1)
-            parser.getConfiguration().setPluginFactory(ParserPluginFactory.antlr2()) // We have to stick to the old parser before GROOVY-8279 is fixed
             parser.parse()
 
             log.debug('Parse complete')
