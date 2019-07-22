@@ -423,7 +423,7 @@ public class StatementWriter {
         compileStack.removeVar(anyExceptionIndex);
     }
 
-    private BlockRecorder makeBlockRecorder(Statement finallyStatement) {
+    private BlockRecorder makeBlockRecorder(final Statement finallyStatement) {
         final BlockRecorder block = new BlockRecorder();
         block.excludedStatement = new Runnable() {
             @Override
