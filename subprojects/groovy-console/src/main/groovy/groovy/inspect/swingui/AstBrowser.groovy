@@ -229,8 +229,10 @@ class AstBrowser {
                     def propList = it
                     if (propList[2] == "ListHashMap" && propList[1] != 'null' && propList[1] != '[:]') {
                         //If the class is a ListHashMap, make it accessible in a new frame through a button
+                        def kvPairs = propList[1].substring(1, propList[1].length() - 1).tokenize(',')
+                        def kvFirst = kvPairs.get(0)
                         def btnPanel = swing.button(
-                            text: "See key/value pairs",
+                                text: "Key/value pairs: [" + kvFirst.substring(0, Math.min(25, kvFirst.size())) + "...]",
                             actionPerformed: {
                                 def mapTable
                                 String title = titleSuffix ? propList[0] + " (" + titleSuffix + ")" : propList[0]
@@ -249,7 +251,7 @@ class AstBrowser {
                                     }
                                 }
                                 mapTable.model.rows.clear()
-                                propList[1].substring(1, propList[1].length() - 1).tokenize(',').each {
+                                kvPairs.each {
                                     def kv = it.tokenize(':')
                                     if (kv)
                                         mapTable.model.rows << ["name": kv[0], "value": kv[1]]
