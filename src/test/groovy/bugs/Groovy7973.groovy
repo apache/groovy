@@ -18,41 +18,47 @@
  */
 package groovy.bugs
 
-class Groovy7973Bug extends GroovyTestCase {
+import groovy.transform.CompileStatic
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy7973 {
 
     private static final String SCRIPT1 = '''
         class Test {
             def op1() { 'A'.with{ this.class.name } }
             def op2a() { new Object() { def inner() {
-                this.class.name + Test.this.class.name
+                Test.this.class.name + '::' + this.class.name
             } } }
             def op2b() { new Object() { def inner() {
-                'B'.with{ this.class.name + Test.this.class.name }
+                'B'.with { Test.this.class.name + '::' + this.class.name }
             } } }
             def op3a() { new Object() { def inner() { new Object() { def innerinner() {
-                this.class.name + Test$3.this.class.name + Test.this.class.name
+                Test.this.class.name + '::' + this.class.name
             } } } } }
             def op3b() { new Object() { def inner() { new Object() { def innerinner() {
-                'C'.with{ this.class.name + Test$5.this.class.name + Test.this.class.name }
+                'C'.with { Test.this.class.name + '::' + this.class.name }
             } } } } }
         }
 
         def t = new Test()
         assert t.op1() == 'Test'
-        assert t.op2a().inner() == 'Test$1Test'
-        assert t.op2b().inner() == 'Test$2Test'
-        assert t.op3a().inner().innerinner() == 'Test$3$4Test$3Test'
-        assert t.op3b().inner().innerinner() == 'Test$5$6Test$5Test'
+        assert t.op2a().inner() == 'Test::Test$1'
+        assert t.op2b().inner() == 'Test::Test$2'
+        assert t.op3a().inner().innerinner() == 'Test::Test$3$1'
+        assert t.op3b().inner().innerinner() == 'Test::Test$4$1'
     '''
 
     private static final String SCRIPT2 = '''
         class Test {
             def op1() { this }
-            def op2() { ''.with{ this } }
+            def op2() { ''.with { this } }
             def op3() { new Object() { def inner() { this } } }
-            def op4() { new Object() { def inner() { ''.with{ this } } } }
+            def op4() { new Object() { def inner() { ''.with { this } } } }
             def op5() { new Object() { def inner() { Test.this } } }
-            def op6() { new Object() { def inner() { ''.with{ Test.this } } } }
+            def op6() { new Object() { def inner() { ''.with { Test.this } } } }
             class Inner {
                 def inner1() { this }
                 def inner2() { ''.with { this } }
@@ -76,18 +82,22 @@ class Groovy7973Bug extends GroovyTestCase {
         assert inner.inner4().class.name == 'Test'
     '''
 
+    @Test
     void testClassDotThis() {
         assertScript SCRIPT1
     }
 
+    @Test
     void testClassDotThis_CS() {
         assertScript '@groovy.transform.CompileStatic\n' + SCRIPT1
     }
 
+    @Test
     void testClassDotThisAIC() {
         assertScript SCRIPT2
     }
 
+    @Test
     void testClassDotThisAIC_CS() {
         assertScript '@groovy.transform.CompileStatic\n' + SCRIPT2
     }
