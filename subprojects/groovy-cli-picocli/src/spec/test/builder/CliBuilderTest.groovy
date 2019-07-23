@@ -188,7 +188,7 @@ Options:
         cli.usage()
 
         String expected = '''\
-Usage: curl [-Gq] [--basic] [--url=<URL>] [-d=<data>]
+Usage: curl [-Gq] [--basic] [-d=<data>] [--url=<URL>]
       --basic         Use HTTP Basic Authentication
   -d, --data=<data>   HTTP POST data
   -G, --get           Send the -d data with a HTTP GET

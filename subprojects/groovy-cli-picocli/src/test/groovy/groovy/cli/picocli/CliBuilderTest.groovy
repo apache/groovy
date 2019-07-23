@@ -71,8 +71,8 @@ class CliBuilderTest extends GroovyTestCase {
         def expectedUsage = """Usage: $usageString
   -c, --encoding=<charset>   character encoding
   -h, --help                 usage information
-  -i=[<extension>]           modify files in place, create backup if extension is
-                               specified (e.g. '.bak')"""
+  -i=[<extension>]           modify files in place, create backup if extension
+                               is specified (e.g. '.bak')"""
         assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         resetPrintWriter()
         cli.writer = printWriter
@@ -160,7 +160,7 @@ class CliBuilderTest extends GroovyTestCase {
         cli.parse([])
         // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
         assert stringWriter.toString() == String.format(
-                "error: Missing required option '-x=PARAM'%n" +\
+                "error: Missing required option '-x'%n" +\
                 "Usage: groovy -x%n" +\
                 "  -x           message%n")
     }
