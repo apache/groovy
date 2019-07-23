@@ -178,7 +178,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     private ClassNode classNode;
     private MethodNode methodNode;
     private String[] tokenNames;
-    private int innerClassCounter = 1;
     private boolean enumConstantBeingDef = false;
     private boolean forStatementBeingDef = false;
     private boolean annotationBeingDef = false;
@@ -530,10 +529,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void interfaceDef(AST classDef) {
-        int oldInnerClassCounter = innerClassCounter;
         innerInterfaceDef(classDef);
         classNode = null;
-        innerClassCounter = oldInnerClassCounter;
     }
 
     protected void innerInterfaceDef(AST classDef) {
@@ -578,21 +575,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         classNode.setGenericsTypes(genericsType);
         configureAST(classNode, classDef);
 
-        int oldClassCount = innerClassCounter;
-
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
         output.addClass(classNode);
 
         classNode = outerClass;
-        innerClassCounter = oldClassCount;
     }
 
     protected void classDef(AST classDef) {
-        int oldInnerClassCounter = innerClassCounter;
         innerClassDef(classDef);
         classNode = null;
-        innerClassCounter = oldInnerClassCounter;
     }
 
     private ClassNode getClassOrScript(ClassNode node) {
@@ -600,15 +592,25 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return output.getScriptClassDummy();
     }
 
+    private static int anonymousClassCount(ClassNode node) {
+        int count = 0;
+        for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext();) {
+            InnerClassNode innerClass = it.next();
+            if (innerClass.isAnonymous()) {
+                count += 1;
+            }
+        }
+        return count;
+    }
+
     protected Expression anonymousInnerClassDef(AST node) {
         ClassNode oldNode = classNode;
         ClassNode outerClass = getClassOrScript(oldNode);
-        String fullName = outerClass.getName() + '$' + innerClassCounter;
-        innerClassCounter++;
+        String innerClassName = outerClass.getName() + '$' + (anonymousClassCount(outerClass) + 1);
         if (enumConstantBeingDef) {
-            classNode = new EnumConstantClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+            classNode = new EnumConstantClassNode(outerClass, innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         } else {
-            classNode = new InnerClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+            classNode = new InnerClassNode(outerClass, innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         }
         ((InnerClassNode) classNode).setAnonymous(true);
         classNode.setEnclosingMethod(methodNode);
@@ -685,13 +687,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // have here to ensure it won't be the inner class
         output.addClass(classNode);
 
-        int oldClassCount = innerClassCounter;
-
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
 
         classNode = outerClass;
-        innerClassCounter = oldClassCount;
     }
 
     protected void objectBlock(AST objectBlock) {
