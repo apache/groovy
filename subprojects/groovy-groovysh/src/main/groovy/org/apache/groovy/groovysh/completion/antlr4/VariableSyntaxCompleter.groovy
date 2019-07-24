@@ -16,16 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.completion
+package org.apache.groovy.groovysh.completion.antlr4
 
+import org.antlr.v4.runtime.Token
 import org.apache.groovy.groovysh.Groovysh
-import org.codehaus.groovy.antlr.GroovySourceToken
 import org.codehaus.groovy.runtime.MethodClosure
 
 /**
  * Completer completing variable and method names from known variables in the shell
  */
-@Deprecated
 class VariableSyntaxCompleter implements IdentifierCompleter {
 
     final Groovysh shell
@@ -35,7 +34,7 @@ class VariableSyntaxCompleter implements IdentifierCompleter {
     }
 
     @Override
-    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+    boolean complete(final List<Token> tokens, final List<CharSequence> candidates) {
         String prefix = tokens.last().text
         Map vars = shell.interp.context.variables
         boolean foundMatch = false

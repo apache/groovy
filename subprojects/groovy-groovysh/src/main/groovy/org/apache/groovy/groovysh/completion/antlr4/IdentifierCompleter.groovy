@@ -16,16 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.completion
+package org.apache.groovy.groovysh.completion.antlr4
 
-import org.codehaus.groovy.antlr.GroovySourceToken
+import org.antlr.v4.runtime.Token
 
 /**
  * Interface for classes that complete identifier tokens within a groovy Statement
  * (Class, variable, keyword, method, ...)
  * Similar to JLine Completer, but adapted for usage in GroovySyntaxCompleter
  */
-@Deprecated
 interface IdentifierCompleter {
 
     /**
@@ -34,6 +33,6 @@ interface IdentifierCompleter {
      * @param candidates
      * @return
      */
-    boolean complete(List<GroovySourceToken> tokens, List<CharSequence> candidates)
+    boolean complete(List<Token> tokens, List<CharSequence> candidates)
 
 }

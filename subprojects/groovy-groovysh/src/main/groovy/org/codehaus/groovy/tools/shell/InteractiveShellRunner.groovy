@@ -30,6 +30,7 @@ import org.codehaus.groovy.tools.shell.completion.ImportsSyntaxCompletor
 import org.codehaus.groovy.tools.shell.completion.KeywordSyntaxCompletor
 import org.codehaus.groovy.tools.shell.completion.ReflectionCompletor
 import org.codehaus.groovy.tools.shell.completion.VariableSyntaxCompletor
+import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.util.WrappedInputStream

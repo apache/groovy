@@ -16,32 +16,34 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.completion
+package org.apache.groovy.groovysh.completion.antlr4
 
-import org.codehaus.groovy.antlr.GroovySourceToken
+import org.antlr.v4.runtime.Token
+import org.apache.groovy.groovysh.Groovysh
 
 /**
- * Completer completing groovy keywords that appear after identifiers
+ * Completer completing classes defined in the shell
  */
-@Deprecated
-class InfixKeywordSyntaxCompleter implements IdentifierCompleter {
+class CustomClassSyntaxCompleter implements IdentifierCompleter {
 
-    // INFIX keywords can only occur after identifiers
-    private static final String[] INFIX_KEYWORDS = [
-            'in',
-            'instanceof',
-            'extends',
-            'implements',
-    ]
+    private final Groovysh shell
+
+    CustomClassSyntaxCompleter(final Groovysh shell) {
+        this.shell = shell
+    }
 
     @Override
-    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+    boolean complete(final List<Token> tokens, final List<CharSequence> candidates) {
         String prefix = tokens.last().text
         boolean foundMatch = false
-        for (String varName in INFIX_KEYWORDS) {
-            if (varName.startsWith(prefix)) {
-                candidates << varName
-                foundMatch = true
+        Class[] classes = shell.interp.classLoader.loadedClasses
+        if (classes.size() > 0) {
+            List<String> classnames = classes*.name
+            for (String varName in classnames) {
+                if (varName.startsWith(prefix)) {
+                    candidates << varName
+                    foundMatch = true
+                }
             }
         }
         return foundMatch

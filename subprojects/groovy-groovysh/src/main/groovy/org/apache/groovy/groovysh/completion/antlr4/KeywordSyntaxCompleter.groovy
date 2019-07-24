@@ -16,14 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.completion
+package org.apache.groovy.groovysh.completion.antlr4
 
-import org.codehaus.groovy.antlr.GroovySourceToken
+import org.antlr.v4.runtime.Token
 
 /**
  * Completer completing Groovy keywords and special functions
  */
-@Deprecated
 class KeywordSyntaxCompleter implements IdentifierCompleter {
 
     private static final String[] KEYWORDS = [
@@ -64,7 +63,7 @@ class KeywordSyntaxCompleter implements IdentifierCompleter {
             'transient',
             //'true', // value
             //'try {', //special
-            'void', 'volatile'
+            'var', 'void', 'volatile'
             //'while (' // special
     ]
 
@@ -94,7 +93,7 @@ class KeywordSyntaxCompleter implements IdentifierCompleter {
     ]
 
     @Override
-    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+    boolean complete(final List<Token> tokens, final List<CharSequence> candidates) {
         String prefix = tokens.last().text
         boolean foundMatch = false
         for (String varName in KEYWORDS) {

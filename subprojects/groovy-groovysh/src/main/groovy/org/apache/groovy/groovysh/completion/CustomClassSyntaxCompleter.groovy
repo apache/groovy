@@ -24,6 +24,7 @@ import org.codehaus.groovy.antlr.GroovySourceToken
 /**
  * Completer completing classes defined in the shell
  */
+@Deprecated
 class CustomClassSyntaxCompleter implements IdentifierCompleter {
 
     private final Groovysh shell
