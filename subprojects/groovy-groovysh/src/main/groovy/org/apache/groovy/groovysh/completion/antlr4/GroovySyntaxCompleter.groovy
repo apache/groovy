@@ -16,54 +16,53 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.completion
+package org.apache.groovy.groovysh.completion.antlr4
 
-import antlr.TokenStreamException
 import groovy.transform.TupleConstructor
 import jline.console.completer.Completer
 import jline.internal.Configuration
+import org.antlr.v4.runtime.CharStream
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.ConsoleErrorListener
+import org.antlr.v4.runtime.Token
 import org.apache.groovy.groovysh.CommandRegistry
 import org.apache.groovy.groovysh.Groovysh
-import org.codehaus.groovy.antlr.GroovySourceToken
-import org.codehaus.groovy.antlr.SourceBuffer
-import org.codehaus.groovy.antlr.UnicodeEscapingReader
-import org.codehaus.groovy.antlr.parser.GroovyLexer
+import org.apache.groovy.groovysh.completion.BackslashEscapeCompleter
+import org.apache.groovy.groovysh.completion.FileNameCompleter
+import org.apache.groovy.parser.antlr4.GroovyLangLexer
 import org.codehaus.groovy.tools.shell.util.Logger
 
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.DOT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.EOF
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.IDENT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_as
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_boolean
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_byte
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_catch
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_char
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_class
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_def
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_double
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_enum
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_false
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_finally
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_float
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_import
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_instanceof
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_int
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_interface
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_long
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_package
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_short
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_this
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_true
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_try
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.LITERAL_void
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.OPTIONAL_DOT
-import static org.codehaus.groovy.antlr.parser.GroovyTokenTypes.SPREAD_DOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.AS
+import static org.apache.groovy.parser.antlr4.GroovyLexer.BooleanLiteral
+import static org.apache.groovy.parser.antlr4.GroovyLexer.BuiltInPrimitiveType
+import static org.apache.groovy.parser.antlr4.GroovyLexer.CATCH
+import static org.apache.groovy.parser.antlr4.GroovyLexer.CLASS
+import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DEF
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.ENUM
+import static org.apache.groovy.parser.antlr4.GroovyLexer.EOF
+import static org.apache.groovy.parser.antlr4.GroovyLexer.FINALLY
+import static org.apache.groovy.parser.antlr4.GroovyLexer.IMPORT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.INSTANCEOF
+import static org.apache.groovy.parser.antlr4.GroovyLexer.INTERFACE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier
+import static org.apache.groovy.parser.antlr4.GroovyLexer.METHOD_POINTER
+import static org.apache.groovy.parser.antlr4.GroovyLexer.METHOD_REFERENCE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.NOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.NOT_INSTANCEOF
+import static org.apache.groovy.parser.antlr4.GroovyLexer.PACKAGE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SAFE_DOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SPREAD_DOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.THIS
+import static org.apache.groovy.parser.antlr4.GroovyLexer.TRY
+import static org.apache.groovy.parser.antlr4.GroovyLexer.VOID
 
 /**
  * Implements the Completer interface to provide completions for
  * GroovyShell by tokenizing the buffer and invoking other classes depending on the tokens found.
  */
-@Deprecated
 class GroovySyntaxCompleter implements Completer {
 
     protected final static Logger LOG = Logger.create(GroovySyntaxCompleter)
@@ -117,7 +116,7 @@ class GroovySyntaxCompleter implements Completer {
         }
         // complete given the context of the whole buffer, not just last line
         // Build a single string for the lexer
-        List<GroovySourceToken> tokens = []
+        List<Token> tokens = []
         try {
             if (!tokenizeBuffer(bufferLine.substring(0, cursor), shell.buffers.current(), tokens)) {
                 return -1
@@ -158,13 +157,13 @@ class GroovySyntaxCompleter implements Completer {
         }
         if (completionCase == CompletionCase.SECOND_IDENT) {
             if (infixCompleter.complete(tokens, candidates)) {
-                return tokens.last().column - 1
+                return tokens.last().startIndex
             }
             return -1
         }
         if (completionCase == CompletionCase.INSTANCEOF) {
             if (classnameCompleter.complete(tokens, candidates)) {
-                return tokens.last().column - 1
+                return tokens.last().startIndex
             }
             return -1
         }
@@ -189,24 +188,24 @@ class GroovySyntaxCompleter implements Completer {
         return result
     }
 
-    static CompletionCase getCompletionCase(final List<GroovySourceToken> tokens) {
-        GroovySourceToken currentToken = tokens[-1]
+    static CompletionCase getCompletionCase(final List<Token> tokens) {
+        Token currentToken = tokens[-1]
 
         // now look at last 2 tokens to decide whether we are in a completion situation at all
-        if (currentToken.type == IDENT) {
+        if (currentToken.type == Identifier || currentToken.type == CapitalizedIdentifier) {
             // cursor is on identifier, use it as prefix and check whether it follows a dot
 
             if (tokens.size() == 1) {
                 return CompletionCase.NO_DOT_PREFIX
             }
-            GroovySourceToken previousToken = tokens[-2]
-            if (previousToken.type == DOT || previousToken.type == OPTIONAL_DOT) {
+            Token previousToken = tokens[-2]
+            if (previousToken.type == DOT || previousToken.type == SAFE_DOT) {
                 // we have a dot, so need to evaluate the statement up to the dot for completion
                 if (tokens.size() < 3) {
                     return CompletionCase.NO_COMPLETION
                 }
                 return CompletionCase.PREFIX_AFTER_DOT
-            } else if (previousToken.type == SPREAD_DOT) {
+            } else if (previousToken.type == SPREAD_DOT || previousToken.type == METHOD_POINTER || previousToken.type == METHOD_REFERENCE) {
                 // we have a dot, so need to evaluate the statement up to the dot for completion
                 if (tokens.size() < 3) {
                     return CompletionCase.NO_COMPLETION
@@ -216,30 +215,33 @@ class GroovySyntaxCompleter implements Completer {
                 // no dot, so we complete a varname, classname, or similar
                 switch (previousToken.type) {
                 // if any of these is before, no useful completion possible in this completer
-                    case LITERAL_import:
-                    case LITERAL_class:
-                    case LITERAL_interface:
-                    case LITERAL_enum:
-                    case LITERAL_def:
-                    case LITERAL_void:
-                    case LITERAL_boolean:
-                    case LITERAL_byte:
-                    case LITERAL_char:
-                    case LITERAL_short:
-                    case LITERAL_int:
-                    case LITERAL_float:
-                    case LITERAL_long:
-                    case LITERAL_double:
-                    case LITERAL_package:
-                    case LITERAL_true:
-                    case LITERAL_false:
-                    case LITERAL_as:
-                    case LITERAL_this:
-                    case LITERAL_try:
-                    case LITERAL_finally:
-                    case LITERAL_catch:
+                    case IMPORT:
+                    case CLASS:
+                    case INTERFACE:
+                    case ENUM:
+                    case DEF:
+                    case VOID:
+                    case BuiltInPrimitiveType:
+//                    case LITERAL_byte:
+//                    case LITERAL_char:
+//                    case LITERAL_short:
+//                    case LITERAL_int:
+//                    case LITERAL_float:
+//                    case LITERAL_long:
+//                    case LITERAL_double:
+                    case PACKAGE:
+                    case BooleanLiteral:
+//                    case LITERAL_true:
+//                    case LITERAL_false:
+                    case AS:
+                    case THIS:
+                    case TRY:
+                    case FINALLY:
+                    case CATCH:
                         return CompletionCase.NO_COMPLETION
-                    case IDENT:
+                    case NOT: // just for !in and !instanceof; maybe needs special case
+                    case CapitalizedIdentifier:
+                    case Identifier:
                         // identifiers following each other could mean Declaration (no completion) or closure invocation
                         // closure invocation too complex for now to complete
                         return CompletionCase.SECOND_IDENT
@@ -248,33 +250,33 @@ class GroovySyntaxCompleter implements Completer {
                 }
             }
 
-        } else if (currentToken.type == DOT || currentToken.type == OPTIONAL_DOT) {
+        } else if (currentToken.type == DOT || currentToken.type == SAFE_DOT) {
             // cursor is on dot, so need to evaluate the statement up to the dot for completion
             if (tokens.size() == 1) {
                 return CompletionCase.NO_COMPLETION
             }
             return CompletionCase.DOT_LAST
-        } else if (currentToken.type == SPREAD_DOT) {
+        } else if (currentToken.type == SPREAD_DOT || currentToken.type == METHOD_REFERENCE || currentToken.type == METHOD_POINTER) {
             // cursor is on spread-dot, so need to evaluate the statement up to the dot for completion
             if (tokens.size() == 1) {
                 return CompletionCase.NO_COMPLETION
             }
             return CompletionCase.SPREAD_DOT_LAST
-        } else if (currentToken.type == LITERAL_instanceof) {
+        } else if (currentToken.type == INSTANCEOF || currentToken.type == NOT_INSTANCEOF) {
             return CompletionCase.INSTANCEOF
         } else {
-            LOG.debug('Untreated toke type: ' + currentToken.type)
+            LOG.debug('Unhandled token type: ' + currentToken.type)
         }
         return CompletionCase.NO_COMPLETION
     }
 
-    int completeIdentifier(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+    int completeIdentifier(final List<Token> tokens, final List<CharSequence> candidates) {
         boolean foundMatches = false
         for (IdentifierCompleter completer : identifierCompleters) {
             foundMatches |= completer.complete(tokens, candidates)
         }
         if (foundMatches) {
-            return tokens.last().column - 1
+            return tokens.last().startIndex
         }
         return -1
     }
@@ -293,11 +295,13 @@ class GroovySyntaxCompleter implements Completer {
         return false
     }
 
-    static GroovyLexer createGroovyLexer(final String src) {
-        Reader unicodeReader = new UnicodeEscapingReader(new StringReader(src), new SourceBuffer())
-        GroovyLexer lexer = new GroovyLexer(unicodeReader)
-        unicodeReader.setLexer(lexer)
-        return lexer
+    static createTokenStream(String text) {
+        CharStream charStream = CharStreams.fromReader(new StringReader(text))
+        GroovyLangLexer lexer = new GroovyLangLexer(charStream)
+        lexer.removeErrorListener(ConsoleErrorListener.INSTANCE)
+        def tokenStream = new CommonTokenStream(lexer)
+        tokenStream.fill()
+        return tokenStream
     }
 
     @TupleConstructor
@@ -322,24 +326,24 @@ class GroovySyntaxCompleter implements Completer {
      */
     static boolean tokenizeBuffer(final String bufferLine,
                                   final List<String> previousLines,
-                                  final List<GroovySourceToken> result) {
-        GroovyLexer groovyLexer
+                                  final List<Token> result) {
+        def tokenStream
         if (previousLines.size() > 0) {
             StringBuilder src = new StringBuilder()
             for (String line : previousLines) {
                 src.append(line).append('\n')
             }
             src.append(bufferLine)
-            groovyLexer = createGroovyLexer(src.toString())
+            tokenStream = createTokenStream(src.toString()).getTokens().iterator()
         } else {
-            groovyLexer = createGroovyLexer(bufferLine)
+            tokenStream = createTokenStream(bufferLine).getTokens().iterator()
         }
-        // Build a list of tokens using a GroovyLexer
-        GroovySourceToken nextToken
-        GroovySourceToken lastToken
+        // Build a list of tokens
+        Token nextToken
+        Token lastToken
         while (true) {
             try {
-                nextToken = groovyLexer.nextToken() as GroovySourceToken
+                nextToken = tokenStream.next() as Token
                 if (nextToken.type == EOF) {
                     if (!result.isEmpty() && nextToken.line > result.last().line) {
                         // no completion if EOF line has no tokens
@@ -349,14 +353,14 @@ class GroovySyntaxCompleter implements Completer {
                 }
                 result << nextToken
                 lastToken = nextToken
-            } catch (TokenStreamException e) {
+            } catch (Exception e) {
+                // TODO this whole section needs a rework for antlr4
                 // getting the next token failed, possibly due to unclosed quotes; investigate rest of the line to confirm
                 if (lastToken != null) {
                     String restline = bufferLine.substring(lastToken.columnLast - 1)
                     int leadingBlanks = restline.find('^[ ]*').length()
                     if (restline) {
                         String remainder = restline.substring(leadingBlanks)
-                        //System.err.println "|" + remainder + "|"
                         // Exception with following quote either means we're in String or at end of GString.
                         String openDelim = STRING_STARTERS.find { remainder.startsWith(it) }
                         if (openDelim && previousLines.size() + 1 == lastToken.line) {
@@ -365,9 +369,10 @@ class GroovySyntaxCompleter implements Completer {
                     }
                 }
                 return false
-            } catch (NullPointerException e) {
-                // this can happen when e.g. a string as not closed
-                return false
+//            } catch (NullPointerException e) {
+//                // this can happen when e.g. a string as not closed
+//                new File('/tmp/groovysh_log.txt') << e.message << '\n'
+//                return false
             }
         }
         return !result.empty

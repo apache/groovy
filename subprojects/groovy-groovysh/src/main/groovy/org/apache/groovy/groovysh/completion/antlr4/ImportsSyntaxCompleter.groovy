@@ -16,16 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.completion
+package org.apache.groovy.groovysh.completion.antlr4
 
+import org.antlr.v4.runtime.Token
 import org.apache.groovy.groovysh.Groovysh
-import org.codehaus.groovy.antlr.GroovySourceToken
+import org.apache.groovy.groovysh.completion.ReflectionCompleter
 import org.codehaus.groovy.control.ResolveVisitor
 
 /**
  * Completer completing imported classnames
  */
-@Deprecated
 class ImportsSyntaxCompleter implements IdentifierCompleter {
 
     final Groovysh shell
@@ -43,7 +43,7 @@ class ImportsSyntaxCompleter implements IdentifierCompleter {
     }
 
     @Override
-    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+    boolean complete(final List<Token> tokens, final List<CharSequence> candidates) {
         String prefix = tokens.last().getText()
         boolean foundMatch = findMatchingPreImportedClasses(prefix, candidates)
         for (String importSpec in shell.imports) {

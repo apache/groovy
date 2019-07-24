@@ -16,11 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.completion
+package org.apache.groovy.groovysh.completion.antlr4
 
+import org.antlr.v4.runtime.Token
 import org.apache.groovy.groovysh.Groovysh
-import org.codehaus.groovy.antlr.GroovySourceToken
-import org.codehaus.groovy.antlr.parser.GroovyTokenTypes
+import org.apache.groovy.groovysh.completion.NavigablePropertiesCompleter
+import org.apache.groovy.groovysh.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
@@ -32,13 +33,62 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.regex.Pattern
 
+import static org.apache.groovy.parser.antlr4.GroovyLexer.ADD
+import static org.apache.groovy.parser.antlr4.GroovyLexer.ADD_ASSIGN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.AND
+import static org.apache.groovy.parser.antlr4.GroovyLexer.AND_ASSIGN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.ASSIGN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.BITAND
+import static org.apache.groovy.parser.antlr4.GroovyLexer.BITNOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.BITOR
+import static org.apache.groovy.parser.antlr4.GroovyLexer.BooleanLiteral
+import static org.apache.groovy.parser.antlr4.GroovyLexer.BuiltInPrimitiveType
+import static org.apache.groovy.parser.antlr4.GroovyLexer.COLON
+import static org.apache.groovy.parser.antlr4.GroovyLexer.COMMA
+import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DIV
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DIV_ASSIGN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.EQUAL
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GStringBegin
+import static org.apache.groovy.parser.antlr4.GroovyLexer.GT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier
+import static org.apache.groovy.parser.antlr4.GroovyLexer.IN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.INSTANCEOF
+import static org.apache.groovy.parser.antlr4.GroovyLexer.LBRACE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.LBRACK
+import static org.apache.groovy.parser.antlr4.GroovyLexer.LPAREN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.LE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.LT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.METHOD_POINTER
+import static org.apache.groovy.parser.antlr4.GroovyLexer.METHOD_REFERENCE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.MUL
+import static org.apache.groovy.parser.antlr4.GroovyLexer.MUL_ASSIGN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.NOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.NOTEQUAL
+import static org.apache.groovy.parser.antlr4.GroovyLexer.OR
+import static org.apache.groovy.parser.antlr4.GroovyLexer.OR_ASSIGN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.RANGE_EXCLUSIVE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.RANGE_INCLUSIVE
+import static org.apache.groovy.parser.antlr4.GroovyLexer.RBRACK
+import static org.apache.groovy.parser.antlr4.GroovyLexer.RPAREN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SAFE_DOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SEMI
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SPACESHIP
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SPREAD_DOT
+import static org.apache.groovy.parser.antlr4.GroovyLexer.StringLiteral
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SUB
+import static org.apache.groovy.parser.antlr4.GroovyLexer.SUB_ASSIGN
+import static org.apache.groovy.parser.antlr4.GroovyLexer.XOR
+import static org.apache.groovy.parser.antlr4.GroovyLexer.XOR_ASSIGN
+
 /**
  * Completes fields and methods of Classes or instances.
  * Does not quite respect the contract of IdentifierCompleter, as last Token may be a dot or not,
  * thus also returns as int the cursor position.
  */
-@Deprecated
-class ReflectionCompleter implements GroovyTokenTypes {
+class ReflectionCompleter {
 
     private static final NavigablePropertiesCompleter PROPERTIES_COMPLETER = new NavigablePropertiesCompleter()
     private static final Pattern BEAN_ACCESSOR_PATTERN = ~'^(get|set|is)[A-Z].*'
@@ -54,19 +104,19 @@ class ReflectionCompleter implements GroovyTokenTypes {
         this.shell = shell
     }
 
-    int complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
-        GroovySourceToken currentElementToken = null
-        GroovySourceToken dotToken
-        List<GroovySourceToken> previousTokens
+    int complete(final List<Token> tokens, final List<CharSequence> candidates) {
+        Token currentElementToken = null
+        Token dotToken
+        List<Token> previousTokens
         if (tokens.size() < 2) {
-            throw new IllegalArgumentException('must be invoked with at least 2 tokens, one of which is dot' + tokens*.text)
+            throw new IllegalArgumentException('Must be invoked with at least 2 tokens, one of which is a dot-like operator: ' + tokens*.text)
         }
-        if (tokens.last().type == DOT || tokens.last().type == OPTIONAL_DOT || tokens.last().type == SPREAD_DOT) {
+        if (tokens.last().type == DOT || tokens.last().type == SAFE_DOT || tokens.last().type == SPREAD_DOT || tokens.last().type == METHOD_POINTER || tokens.last().type == METHOD_REFERENCE) {
             dotToken = tokens.last()
             previousTokens = tokens[0..-2]
         } else {
-            if (tokens[-2].type != DOT && tokens[-2].type != OPTIONAL_DOT && tokens[-2].type != SPREAD_DOT) {
-                throw new IllegalArgumentException('must be invoked with token list with dot at last position or one position before' + tokens*.text)
+            if (tokens[-2].type != DOT && tokens[-2].type != SAFE_DOT && tokens[-2].type != SPREAD_DOT && tokens[-2].type != METHOD_POINTER && tokens[-2].type != METHOD_REFERENCE) {
+                throw new IllegalArgumentException('Must be invoked with token list with dot-like operator at last position or one position before: ' + tokens*.text)
             }
             currentElementToken = tokens.last()
             dotToken = tokens[-2]
@@ -104,10 +154,11 @@ class ReflectionCompleter implements GroovyTokenTypes {
     private int completeInstanceMembers(final Object instanceOrClass,
                                         final String identifierPrefix,
                                         final List<CharSequence> candidates,
-                                        final GroovySourceToken currentElementToken,
-                                        final GroovySourceToken dotToken) {
+                                        final Token currentElementToken,
+                                        final Token dotToken) {
         // look for public methods/fields that match the prefix
-        Collection<ReflectionCompletionCandidate> myCandidates = getPublicFieldsAndMethods(instanceOrClass, identifierPrefix)
+        def methodRef = dotToken.type == METHOD_POINTER || dotToken.type == METHOD_REFERENCE
+        Collection<ReflectionCompletionCandidate> myCandidates = getPublicFieldsAndMethods(instanceOrClass, identifierPrefix, methodRef)
 
         boolean showAllMethods = (identifierPrefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
         // Also add metaclass methods if prefix is long enough (user would usually not care about those)
@@ -128,6 +179,15 @@ class ReflectionCompleter implements GroovyTokenTypes {
 
         if (myCandidates.size() > 0) {
             myCandidates = myCandidates.sort()
+            if (methodRef) {
+                // strip braces for :: and .& operators
+                myCandidates = myCandidates.collect { cand ->
+                    def val = cand.value
+                    val = val.endsWith('()') ? val[0..-3] :
+                            (val.endsWith('(') ? val[0..-2] : val)
+                    new ReflectionCompletionCandidate(val, *cand.jAnsiCodes)
+                }
+            }
             if (Boolean.valueOf(Preferences.get(Groovysh.COLORS_PREFERENCE_KEY, 'true'))) {
                 candidates.addAll(myCandidates.collect(
                         { ReflectionCompletionCandidate it ->
@@ -141,10 +201,10 @@ class ReflectionCompleter implements GroovyTokenTypes {
             int lastDot
             // dot could be on previous line
             if (currentElementToken && dotToken.line != currentElementToken.line) {
-                lastDot = currentElementToken.column - 1
+                lastDot = currentElementToken.startIndex
             } else {
-                // Spread-dot has length 2!
-                lastDot = dotToken.column + (dotToken.getText().length() - 1)
+                // Spread-dot/Method-ref/Method-pointer have length 2!
+                lastDot = dotToken.startIndex + dotToken.text.size()
             }
             return lastDot
         }
@@ -158,15 +218,15 @@ class ReflectionCompleter implements GroovyTokenTypes {
      * evaluates it and returns a result. "Simple" means evaluation is known to be
      * side-effect free.
      */
-    Object getInvokerClassOrInstance(final List<GroovySourceToken> groovySourceTokens) {
+    Object getInvokerClassOrInstance(final List<Token> groovySourceTokens) {
         if (!groovySourceTokens
                 || groovySourceTokens.last().type == DOT
-                || groovySourceTokens.last().type == OPTIONAL_DOT) {
+                || groovySourceTokens.last().type == SAFE_DOT) {
             // we expect the list of tokens before a dot.
             return null
         }
         // first, try to detect a sequence of token before the dot that can safely be evaluated.
-        List<GroovySourceToken> invokerTokens = getInvokerTokens(groovySourceTokens)
+        List<Token> invokerTokens = getInvokerTokens(groovySourceTokens)
         if (invokerTokens) {
             try {
                 String instanceRefExpression = tokenListToEvalString(invokerTokens)
@@ -191,7 +251,7 @@ class ReflectionCompleter implements GroovyTokenTypes {
      * @param groovySourceTokens
      * @return
      */
-    static List<GroovySourceToken> getInvokerTokens(final List<GroovySourceToken> groovySourceTokens) {
+    static List<Token> getInvokerTokens(final List<Token> groovySourceTokens) {
         int validIndex = groovySourceTokens.size()
         if (validIndex == 0) {
             return []
@@ -200,15 +260,15 @@ class ReflectionCompleter implements GroovyTokenTypes {
         // to be evaluated later
         // need to collect using Strings, to support evaluation of string literals
         Stack<Integer> expectedOpeners = new Stack<Integer>()
-        GroovySourceToken lastToken = null
+        Token lastToken = null
         outerloop:
-        for (GroovySourceToken loopToken in groovySourceTokens.reverse()) {
+        for (Token loopToken in groovySourceTokens.reverse()) {
             switch (loopToken.type) {
             // a combination of any of these can be evaluated without side effects
             // this just avoids any parentheses,
             // could maybe be extended further if harmless parentheses can be detected .
             // This allows already a lot of powerful simple completions, like [foo: Baz.bar]['foo'].
-                case STRING_LITERAL:
+                case StringLiteral:
                     // must escape String for evaluation, need the original string e.g. for mapping key
                     break
                 case LPAREN:
@@ -235,51 +295,53 @@ class ReflectionCompleter implements GroovyTokenTypes {
                     break
             // tokens which indicate we have reached the beginning of a statement
             // operator tokens (must not be evaluated, as they can have side effects via evil overriding
-                case COMPARE_TO:
+                case SPACESHIP:
                 case EQUAL:
-                case NOT_EQUAL:
+                case NOTEQUAL:
                 case ASSIGN:
                 case GT:
                 case LT:
                 case GE:
                 case LE:
-                case PLUS:
-                case PLUS_ASSIGN:
-                case MINUS:
-                case MINUS_ASSIGN:
-                case STAR:
-                case STAR_ASSIGN:
+                case ADD:
+                case ADD_ASSIGN:
+                case SUB:
+                case SUB_ASSIGN:
+                case MUL:
+                case MUL_ASSIGN:
                 case DIV:
                 case DIV_ASSIGN:
-                case BOR:
-                case BOR_ASSIGN:
-                case BAND:
-                case BAND_ASSIGN:
-                case BXOR:
-                case BXOR_ASSIGN:
-                case BNOT:
-                case LOR:
-                case LAND:
-                case LNOT:
-                case LITERAL_in:
-                case LITERAL_instanceof:
+                case BITOR:
+                case OR_ASSIGN:
+                case BITAND:
+                case AND_ASSIGN:
+                case XOR:
+                case XOR_ASSIGN:
+                case BITNOT:
+                case OR:
+                case AND:
+                case NOT:
+                case IN:
+                case INSTANCEOF:
                     if (expectedOpeners.empty()) {
                         break outerloop
                     }
                     break
             // tokens which indicate we have reached the beginning of a statement
-                case LCURLY:
+                case LBRACE:
                 case SEMI:
-                case STRING_CTOR_START:
+//                case STRING_CTOR_START:
+                case GStringBegin:
                     break outerloop
             // tokens we accept
-                case IDENT:
+                case Identifier:
+                case CapitalizedIdentifier:
                     if (lastToken) {
                         if (lastToken.type == LPAREN) {
                             //Method invocation,must be avoided
                             return []
                         }
-                        if (lastToken.type == IDENT) {
+                        if (lastToken.type == Identifier || lastToken.type == CapitalizedIdentifier) {
                             // could be attempt to invoke closure like 'foo.each bar.baz'
                             return []
                         }
@@ -294,17 +356,19 @@ class ReflectionCompleter implements GroovyTokenTypes {
                         break outerloop
                     }
             // harmless literals
-                case LITERAL_true:
-                case LITERAL_false:
-                case NUM_INT:
-                case NUM_FLOAT:
-                case NUM_LONG:
-                case NUM_DOUBLE:
-                case NUM_BIG_INT:
-                case NUM_BIG_DECIMAL:
-                case MEMBER_POINTER:
+                case BooleanLiteral:
+//                case LITERAL_true:
+//                case LITERAL_false:
+                case BuiltInPrimitiveType:
+//                case NUM_INT:
+//                case NUM_FLOAT:
+//                case NUM_LONG:
+//                case NUM_DOUBLE:
+//                case NUM_BIG_INT:
+//                case NUM_BIG_DECIMAL:
+                case METHOD_POINTER:
                 case DOT:
-                case OPTIONAL_DOT:
+                case SAFE_DOT:
                     break
                 default:
                     return null
@@ -315,10 +379,10 @@ class ReflectionCompleter implements GroovyTokenTypes {
         return groovySourceTokens[(validIndex)..-1]
     }
 
-    static String tokenListToEvalString(final List<GroovySourceToken> groovySourceTokens) {
+    static String tokenListToEvalString(final List<Token> groovySourceTokens) {
         StringBuilder builder = new StringBuilder()
-        for (GroovySourceToken token : groovySourceTokens) {
-            if (token.type == STRING_LITERAL) {
+        for (Token token : groovySourceTokens) {
+            if (token.type == StringLiteral) {
                 builder.append('\'').append(token.text).append('\'')
             } else {
                 builder.append(token.text)
@@ -352,7 +416,7 @@ class ReflectionCompleter implements GroovyTokenTypes {
      * @param prefix the prefix that must be matched
      * @return the list of public methods and fields that begin with the prefix
      */
-    static Collection<ReflectionCompletionCandidate> getPublicFieldsAndMethods(final Object instance, final String prefix) {
+    static Collection<ReflectionCompletionCandidate> getPublicFieldsAndMethods(final Object instance, final String prefix, final boolean all = false) {
         Set<ReflectionCompletionCandidate> rv = new HashSet<ReflectionCompletionCandidate>()
         Class clazz = instance.getClass()
         if (clazz == null) {
@@ -368,13 +432,14 @@ class ReflectionCompleter implements GroovyTokenTypes {
         // render immediate class members bold when completing an instance
         boolean renderBold = !isClass
         // hide static members for instances unless user typed a prefix
-        boolean showStatic = isClass || (prefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
+        boolean showStatic = isClass || all || (prefix.length() >= Integer.valueOf(Preferences.get(Groovysh.METACLASS_COMPLETION_PREFIX_LENGTH_PREFERENCE_KEY, '3')))
+        boolean showInstance = !isClass || all
         while (loopclazz != null && loopclazz != Object && loopclazz != GroovyObject) {
-            addClassFieldsAndMethods(loopclazz, showStatic, !isClass, prefix, rv, renderBold)
+            addClassFieldsAndMethods(loopclazz, showStatic, showInstance, prefix, rv, renderBold)
             renderBold = false
             loopclazz = loopclazz.superclass
         }
-        if (clazz.isArray() && !isClass) {
+        if (clazz.isArray() && showInstance) {
             // Arrays are special, these public members cannot be found via Reflection
             for (String member : ['length', 'clone()']) {
                 if (member.startsWith(prefix)) {
@@ -384,7 +449,7 @@ class ReflectionCompleter implements GroovyTokenTypes {
         }
 
         // other completions that are commonly possible with properties
-        if (!isClass) {
+        if (showInstance) {
             Set<String> candidates = new HashSet<String>()
             PROPERTIES_COMPLETER.addCompletions(instance, prefix, candidates)
             rv.addAll(candidates.collect({ String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.MAGENTA.name()) }))

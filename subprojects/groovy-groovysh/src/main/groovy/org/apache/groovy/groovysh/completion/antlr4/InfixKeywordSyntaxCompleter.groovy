@@ -16,26 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.completion
+package org.apache.groovy.groovysh.completion.antlr4
 
-import org.codehaus.groovy.antlr.GroovySourceToken
+import org.antlr.v4.runtime.Token
 
 /**
  * Completer completing groovy keywords that appear after identifiers
  */
-@Deprecated
 class InfixKeywordSyntaxCompleter implements IdentifierCompleter {
 
     // INFIX keywords can only occur after identifiers
     private static final String[] INFIX_KEYWORDS = [
             'in',
             'instanceof',
+            '!in',
+            '!instanceof',
             'extends',
             'implements',
     ]
 
     @Override
-    boolean complete(final List<GroovySourceToken> tokens, final List<CharSequence> candidates) {
+    boolean complete(final List<Token> tokens, final List<CharSequence> candidates) {
         String prefix = tokens.last().text
         boolean foundMatch = false
         for (String varName in INFIX_KEYWORDS) {
