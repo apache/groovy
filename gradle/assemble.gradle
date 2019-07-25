@@ -232,7 +232,7 @@ allprojects {
                     'picocli.**'               : 'groovyjarjarpicocli.@1'
             ]
             excludesPerLibrary = [
-                    '*': ['META-INF/maven/**', 'META-INF/*', 'META-INF/services/javax.annotation.processing.Processor', 'module-info.class']
+                    '*': ['META-INF/**', '**/module-info.class']
             ]
             includesPerLibrary = [
                     'asm-util': ['org/objectweb/asm/util/Printer.class',
