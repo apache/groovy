@@ -99,7 +99,7 @@ public class LexerFrame extends JFrame implements ActionListener {
      * @param tokenTypesClass the lexer token types class
      */
     public LexerFrame(Class lexerClass, Class tokenTypesClass, Reader reader) {
-        super("Token Steam Viewer");
+        super("Token Stream Viewer");
         this.lexerClass = lexerClass;
         try {
             jbInit(reader);
