@@ -234,7 +234,7 @@ allprojects {
             ]
             includesPerLibrary = [
                     'asm-util': ['org/objectweb/asm/util/Printer.class',
-                                 'org/objectweb/asm/util/Textifier.class',
+                                 'org/objectweb/asm/util/Textifier*',
                                  'org/objectweb/asm/util/ASMifier.class',
                                  'org/objectweb/asm/util/Trace*']
             ]
