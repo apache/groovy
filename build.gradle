@@ -413,6 +413,8 @@ allprojects {
 
         // TODO: this null check was required after adding JMH plugin to performance project
         classpath = (classpath != null) ? classpath + groovyClasspath : groovyClasspath
+    }.configureEach {
+        options.incremental = true
     }
 }
 

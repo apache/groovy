@@ -56,3 +56,5 @@ rootProject.children.each { prj ->
 }
 
 rootProject.name = 'groovy' // TODO should this be groovy-core?
+
+enableFeaturePreview('GROOVY_COMPILATION_AVOIDANCE')
