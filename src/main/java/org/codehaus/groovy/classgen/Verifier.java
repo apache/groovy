@@ -1330,7 +1330,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return null;
     }
 
-    public static long getTimestamp(Class clazz) {
+    public static long getTimestamp(Class<?> clazz) {
         if (clazz.getClassLoader() instanceof GroovyClassLoader.InnerLoader) {
             GroovyClassLoader.InnerLoader innerLoader = (GroovyClassLoader.InnerLoader) clazz.getClassLoader();
             return innerLoader.getTimeStamp();
@@ -1438,13 +1438,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if ((overridingMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
         if (oldMethod.isPrivate()) return null;
 
+        if (oldMethod.getGenericsTypes() != null)
+            genericsSpec = addMethodGenerics(oldMethod, genericsSpec);
+
         // parameters
         boolean normalEqualParameters = equalParametersNormal(overridingMethod, oldMethod);
         boolean genericEqualParameters = equalParametersWithGenerics(overridingMethod, oldMethod, genericsSpec);
         if (!normalEqualParameters && !genericEqualParameters) return null;
-
-        //correct to method level generics for the overriding method
-        genericsSpec = addMethodGenerics(overridingMethod, genericsSpec);
 
         // return type
         ClassNode mr = overridingMethod.getReturnType();
