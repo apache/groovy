@@ -360,8 +360,7 @@ public class Java5 implements VMPlugin {
 
     private static void setMethodDefaultValue(MethodNode mn, Method m) {
         Object defaultValue = m.getDefaultValue();
-        ConstantExpression cExp = (ConstantExpression) nullX();
-        if (defaultValue!=null) cExp = new ConstantExpression(defaultValue);
+        ConstantExpression cExp = defaultValue != null ? new ConstantExpression(defaultValue) : nullX();
         mn.setCode(new ReturnStatement(cExp));
         mn.setAnnotationDefault(true);
     }
