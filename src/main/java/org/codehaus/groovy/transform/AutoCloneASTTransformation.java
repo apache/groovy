@@ -73,6 +73,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -216,11 +217,11 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     }
 
     private static Expression callCloneDynamicX(Expression target) {
-        return callX(INVOKER_TYPE, "invokeMethod", args(target, constX("clone"), ConstantExpression.NULL));
+        return callX(INVOKER_TYPE, "invokeMethod", args(target, constX("clone"), nullX()));
     }
 
     private static Expression callCloneDirectX(Expression direct) {
-        return ternaryX(equalsNullX(direct), ConstantExpression.NULL, callX(direct, "clone"));
+        return ternaryX(equalsNullX(direct), nullX(), callX(direct, "clone"));
     }
 
     private static void createSimpleClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {

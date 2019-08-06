@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Token.newSymbol;
 
@@ -204,7 +205,7 @@ public class TryWithResourcesASTTransformation {
                         new DeclarationExpression(
                                 primaryExcX,
                                 newSymbol(Types.ASSIGN, -1, -1),
-                                new ConstantExpression(null)
+                                nullX()
                         )
                 );
         astBuilder.appendStatementsToBlockStatement(blockStatement, primaryExcDeclarationStatement);

@@ -131,6 +131,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+
 /**
  * A parser plugin which adapts the JSR Antlr Parser to the Groovy runtime
  */
@@ -1443,7 +1445,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (node != null) {
             messageExpression = expression(node);
         } else {
-            messageExpression = ConstantExpression.NULL;
+            messageExpression = nullX();
         }
         AssertStatement assertStatement = new AssertStatement(booleanExpression, messageExpression);
         configureAST(assertStatement, assertNode);
@@ -1617,7 +1619,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         //if (exprNode == null) {
         //    exprNode = node.getNextSibling();
         //}
-        Expression expression = exprNode == null ? ConstantExpression.NULL : expression(exprNode);
+        Expression expression = exprNode == null ? nullX() : expression(exprNode);
         ReturnStatement returnStatement = new ReturnStatement(expression);
         configureAST(returnStatement, node);
         return returnStatement;
@@ -2810,7 +2812,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Expression blockExpression(AST node) {
         AST codeNode = node.getFirstChild();
-        if (codeNode == null) return ConstantExpression.NULL;
+        if (codeNode == null) return nullX();
         if (codeNode.getType() == EXPR && codeNode.getNextSibling() == null) {
             // Simplify common case of {expr} to expr.
             return expression(codeNode);

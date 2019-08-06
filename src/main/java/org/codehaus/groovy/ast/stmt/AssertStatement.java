@@ -23,6 +23,8 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+
 /**
  * Represents an assert statement.
  * E.g.:
@@ -34,16 +36,16 @@ public class AssertStatement extends Statement {
 
     private BooleanExpression booleanExpression;
     private Expression messageExpression;
-    
+
     public AssertStatement(BooleanExpression booleanExpression) {
-        this(booleanExpression, ConstantExpression.NULL);
+        this(booleanExpression, nullX());
     }
-    
+
     public AssertStatement(BooleanExpression booleanExpression, Expression messageExpression) {
         this.booleanExpression = booleanExpression;
         this.messageExpression = messageExpression;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitAssertStatement(this);
     }
@@ -55,9 +57,11 @@ public class AssertStatement extends Statement {
     public BooleanExpression getBooleanExpression() {
         return booleanExpression;
     }
+
     public void setBooleanExpression(BooleanExpression booleanExpression) {
         this.booleanExpression = booleanExpression;
     }
+
     public void setMessageExpression(Expression messageExpression) {
         this.messageExpression = messageExpression;
     }

@@ -34,6 +34,8 @@ import org.objectweb.asm.signature.SignatureVisitor;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+
 /**
  * Utility methods for lazy class loading
  */
@@ -134,7 +136,7 @@ class MemberSignatureParser {
                 result.setAnnotationDefault(true);
             } else {
                 // Seems wrong but otherwise some tests fail (e.g. TestingASTTransformsTest)
-                result.setCode(new ReturnStatement(ConstantExpression.NULL));
+                result.setCode(new ReturnStatement(nullX()));
             }
 
         }

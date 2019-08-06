@@ -693,6 +693,10 @@ public class GeneralUtils {
         return new BinaryExpression(lhv, NE, rhv);
     }
 
+    public static Expression nullX() {
+        return new ConstantExpression(null);
+    }
+
     public static BooleanExpression notNullX(Expression argExpr) {
         return new BooleanExpression(new BinaryExpression(argExpr, NE, new ConstantExpression(null)));
     }

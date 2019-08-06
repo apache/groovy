@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -73,6 +74,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -298,12 +301,16 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     }
 
     private static Expression providedOrDefaultInitialValue(FieldNode fNode) {
-        Expression initialExp = fNode.getInitialExpression() != null ? fNode.getInitialExpression() : ConstantExpression.NULL;
+        Expression initialExp = fNode.getInitialExpression() != null ? fNode.getInitialExpression() : nullX();
         final ClassNode paramType = fNode.getType();
-        if (ClassHelper.isPrimitiveType(paramType) && initialExp.equals(ConstantExpression.NULL)) {
+        if (ClassHelper.isPrimitiveType(paramType) && isNull(initialExp)) {
             initialExp = primitivesInitialValues.get(paramType.getTypeClass());
         }
         return initialExp;
+    }
+
+    private static boolean isNull(Expression exp) {
+        return exp instanceof ConstantExpression && ((ConstantExpression) exp).isNullExpression();
     }
 
     public static void addSpecialMapConstructors(int modifiers, ClassNode cNode, String message, boolean addNoArg) {
