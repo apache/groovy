@@ -686,7 +686,7 @@ public class GeneralUtils {
         return new BinaryExpression(lhv, NE, rhv);
     }
 
-    public static Expression nullX() {
+    public static ConstantExpression nullX() {
         return new ConstantExpression(null);
     }
 
