@@ -38,6 +38,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Locale;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+
 /**
  * This local transform adds a logging ability to your program using
  * Apache Commons logging. Every method call on a unbound variable named <i>log</i>
@@ -102,7 +104,7 @@ public @interface Commons {
             return new TernaryExpression(
                     new BooleanExpression(condition),
                     originalExpression,
-                    ConstantExpression.NULL);
+                    nullX());
         }
    }
 }

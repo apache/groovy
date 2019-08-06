@@ -311,7 +311,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
         public void returnStatementAdded(final ReturnStatement returnStatement) {
-            if (returnStatement.getExpression() == ConstantExpression.NULL) return;
             if (isNullConstant(returnStatement.getExpression())) return;
             checkReturnType(returnStatement);
             if (typeCheckingContext.getEnclosingClosure() != null) {

@@ -75,6 +75,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -257,7 +258,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     }
                 }
             }
-            ArgumentListExpression newArgs = new ArgumentListExpression(target.isStatic()?new ConstantExpression(null):fixedReceiver);
+            ArgumentListExpression newArgs = new ArgumentListExpression(target.isStatic() ? nullX() : fixedReceiver);
             for (Expression expression : args.getExpressions()) {
                 newArgs.addExpression(expression);
             }

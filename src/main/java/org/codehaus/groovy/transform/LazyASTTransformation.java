@@ -54,6 +54,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -68,7 +69,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 public class LazyASTTransformation extends AbstractASTTransformation {
 
     private static final ClassNode SOFT_REF = makeWithoutCaching(SoftReference.class, false);
-    private static final Expression NULL_EXPR = ConstantExpression.NULL;
+    private static final Expression NULL_EXPR = nullX();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);

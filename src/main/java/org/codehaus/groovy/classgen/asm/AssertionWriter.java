@@ -67,10 +67,9 @@ public class AssertionWriter {
     public void writeAssertStatement(AssertStatement statement) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
-        
-        boolean rewriteAssert = true;
+
         // don't rewrite assertions with message
-        rewriteAssert = statement.getMessageExpression() == ConstantExpression.NULL;
+        boolean rewriteAssert = isNull(statement.getMessageExpression());
         AssertionTracker oldTracker = assertionTracker;
         Janitor janitor = new Janitor();
         final Label tryStart = new Label();
@@ -149,7 +148,11 @@ public class AssertionWriter {
         // power asserts
         janitor.cleanup();
     }
-    
+
+    private boolean isNull(Expression messageExpression) {
+        return messageExpression instanceof ConstantExpression && ((ConstantExpression) messageExpression).isNullExpression();
+    }
+
     private void writeSourcelessAssertText(AssertStatement statement) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();

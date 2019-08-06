@@ -58,6 +58,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -171,7 +172,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
                     // TODO make EmptyExpression work
                     // partially works but not if only thing in script
                     // return EmptyExpression.INSTANCE;
-                    return new ConstantExpression(null);
+                    return nullX();
                 }
                 addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
                 return expr;
