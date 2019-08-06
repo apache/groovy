@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -26,7 +25,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -43,15 +41,13 @@ import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +73,12 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         this.source = sourceUnit;
     }
 
+    @Override
+    protected SourceUnit getSourceUnit() {
+        return this.source;
+    }
+
+    @Override
     public void visitClass(ClassNode node) {
         AnnotationConstantsVisitor acv = new AnnotationConstantsVisitor();
         acv.visitClass(node, this.source);
@@ -93,6 +95,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         node.visitContents(this);
     }
 
+    @Override
     public void visitField(FieldNode node) {
         visitAnnotations(node, AnnotationNode.FIELD_TARGET);
     }
@@ -102,25 +105,26 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         visitAnnotations(expression, AnnotationNode.LOCAL_VARIABLE_TARGET);
     }
 
+    @Override
     public void visitConstructor(ConstructorNode node) {
         visitConstructorOrMethod(node, AnnotationNode.CONSTRUCTOR_TARGET);
     }
 
+    @Override
     public void visitMethod(MethodNode node) {
         visitConstructorOrMethod(node, AnnotationNode.METHOD_TARGET);
     }
 
     private void visitConstructorOrMethod(MethodNode node, int methodTarget) {
         visitAnnotations(node, methodTarget);
-        for (int i = 0; i < node.getParameters().length; i++) {
-            Parameter parameter = node.getParameters()[i];
+        for (Parameter parameter : node.getParameters()) {
             visitAnnotations(parameter, AnnotationNode.PARAMETER_TARGET);
         }
 
         if (this.currentClass.isAnnotationDefinition() && !node.isStaticConstructor()) {
             ErrorCollector errorCollector = new ErrorCollector(this.source.getConfiguration());
             AnnotationVisitor visitor = new AnnotationVisitor(this.source, errorCollector);
-            visitor.setReportClass(currentClass);
+            visitor.setReportClass(this.currentClass);
             visitor.checkReturnType(node.getReturnType(), node);
             if (node.getParameters().length > 0) {
                 addError("Annotation members may not have parameters.", node.getParameters()[0]);
@@ -131,7 +135,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             ReturnStatement code = (ReturnStatement) node.getCode();
             if (code != null) {
                 visitor.visitExpression(node.getName(), code.getExpression(), node.getReturnType());
-                visitor.checkCircularReference(currentClass, node.getReturnType(), code.getExpression());
+                visitor.checkCircularReference(this.currentClass, node.getReturnType(), code.getExpression());
             }
             this.source.getErrorCollector().addCollectorContents(errorCollector);
         }
@@ -139,9 +143,9 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         if (code != null) {
             code.visit(this);
         }
-
     }
 
+    @Override
     public void visitProperty(PropertyNode node) {
     }
 
@@ -180,8 +184,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         checkForDuplicateAnnotations(node, nonSourceAnnotations);
     }
 
-    private void checkForDuplicateAnnotations(AnnotatedNode node, Map<String, List<AnnotationNode>> runtimeAnnotations) {
-        for (Map.Entry<String, List<AnnotationNode>> next : runtimeAnnotations.entrySet()) {
+    private void checkForDuplicateAnnotations(AnnotatedNode node, Map<String, List<AnnotationNode>> nonSourceAnnotations) {
+        for (Map.Entry<String, List<AnnotationNode>> next : nonSourceAnnotations.entrySet()) {
             if (next.getValue().size() > 1) {
                 ClassNode repeatable = null;
                 AnnotationNode repeatee = next.getValue().get(0);
@@ -275,7 +279,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         ClassNode next = cNode;
         outer:
         while (next != null) {
-            Map genericsSpec = createGenericsSpec(next);
+            Map<String, ClassNode> genericsSpec = createGenericsSpec(next);
             MethodNode mn = correctToGenericsSpec(genericsSpec, method);
             if (next != cNode) {
                 ClassNode correctedNext = correctToGenericsSpecRecurse(genericsSpec, next);
@@ -283,20 +287,19 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 if (found != null) break;
             }
             List<ClassNode> ifaces = new ArrayList<ClassNode>(Arrays.asList(next.getInterfaces()));
-            Map updatedGenericsSpec = new HashMap(genericsSpec);
             while (!ifaces.isEmpty()) {
                 ClassNode origInterface = ifaces.remove(0);
                 if (!origInterface.equals(ClassHelper.OBJECT_TYPE)) {
-                    updatedGenericsSpec = createGenericsSpec(origInterface, updatedGenericsSpec);
-                    ClassNode iNode = correctToGenericsSpecRecurse(updatedGenericsSpec, origInterface);
-                    MethodNode found2 = getDeclaredMethodCorrected(updatedGenericsSpec, mn, iNode);
+                    genericsSpec = createGenericsSpec(origInterface, genericsSpec);
+                    ClassNode iNode = correctToGenericsSpecRecurse(genericsSpec, origInterface);
+                    MethodNode found2 = getDeclaredMethodCorrected(genericsSpec, mn, iNode);
                     if (found2 != null) break outer;
-                    ifaces.addAll(Arrays.asList(iNode.getInterfaces()));
+                    Collections.addAll(ifaces, iNode.getInterfaces());
                 }
             }
             ClassNode superClass = next.getUnresolvedSuperClass();
             if (superClass != null) {
-                next = correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
+                next = correctToGenericsSpecRecurse(genericsSpec, superClass);
             } else {
                 next = null;
             }
@@ -305,10 +308,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     private static MethodNode getDeclaredMethodCorrected(Map genericsSpec, MethodNode mn, ClassNode correctedNext) {
-        for (MethodNode orig : correctedNext.getDeclaredMethods(mn.getName())) {
-            MethodNode method = correctToGenericsSpec(genericsSpec, orig);
-            if (ParameterUtils.parametersEqual(method.getParameters(), mn.getParameters())) {
-                return method;
+        for (MethodNode declared : correctedNext.getDeclaredMethods(mn.getName())) {
+            MethodNode corrected = correctToGenericsSpec(genericsSpec, declared);
+            if (ParameterUtils.parametersEqual(corrected.getParameters(), mn.getParameters())) {
+                return corrected;
             }
         }
         return null;
@@ -335,22 +338,5 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
      */
     protected boolean isAnnotationCompatible() {
         return CompilerConfiguration.isPostJDK5(this.source.getConfiguration().getTargetBytecode());
-    }
-
-    public void addError(String msg, ASTNode expr) {
-        this.source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(
-                        new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()), this.source)
-        );
-    }
-
-    @Override
-    protected SourceUnit getSourceUnit() {
-        return source;
-    }
-
-    // TODO use it or lose it
-    public void visitGenericType(GenericsType genericsType) {
-
     }
 }

@@ -22,7 +22,6 @@ import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
-import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.AntlrParserPlugin;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
@@ -58,7 +57,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
-import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
+import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCorrectedClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
@@ -145,8 +144,8 @@ public class GenericsUtils {
         return gt;
     }
 
-    public static Map<GenericsTypeName, GenericsType> extractPlaceholders(ClassNode cn) {
-        Map<GenericsTypeName, GenericsType> ret = new HashMap<GenericsTypeName, GenericsType>();
+    public static Map<GenericsType.GenericsTypeName, GenericsType> extractPlaceholders(ClassNode cn) {
+        Map<GenericsType.GenericsTypeName, GenericsType> ret = new HashMap<>();
         extractPlaceholders(cn, ret);
         return ret;
     }
@@ -158,7 +157,7 @@ public class GenericsUtils {
      * @param node the class node to check
      * @param map the generics type information collector
      */
-    public static void extractPlaceholders(ClassNode node, Map<GenericsTypeName, GenericsType> map) {
+    public static void extractPlaceholders(ClassNode node, Map<GenericsType.GenericsTypeName, GenericsType> map) {
         if (node == null) return;
 
         if (node.isArray()) {
@@ -184,7 +183,7 @@ public class GenericsUtils {
         for (int i = 0; i < redirectGenericsTypes.length; i++) {
             GenericsType redirectType = redirectGenericsTypes[i];
             if (redirectType.isPlaceholder()) {
-                GenericsTypeName name = new GenericsTypeName(redirectType.getName());
+                GenericsType.GenericsTypeName name = new GenericsType.GenericsTypeName(redirectType.getName());
                 if (!map.containsKey(name)) {
                     GenericsType value = parameterized[i];
                     map.put(name, value);
@@ -316,7 +315,7 @@ public class GenericsUtils {
         if (type.isArray()) {
             return makeClassSafeWithGenerics(type.getComponentType(), genericTypes).makeArray();
         }
-        GenericsType[] gtypes = GenericsType.EMPTY_ARRAY;
+        GenericsType[] gtypes = EMPTY_GENERICS_ARRAY;
         if (genericTypes != null) {
             gtypes = new GenericsType[genericTypes.length];
             System.arraycopy(genericTypes, 0, gtypes, 0, gtypes.length);
@@ -325,6 +324,7 @@ public class GenericsUtils {
     }
 
     public static MethodNode correctToGenericsSpec(Map<String, ClassNode> genericsSpec, MethodNode mn) {
+        if (mn.getGenericsTypes() != null) genericsSpec = addMethodGenerics(mn, genericsSpec);
         ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, mn.getReturnType());
         Parameter[] origParameters = mn.getParameters();
         Parameter[] newParameters = new Parameter[origParameters.length];
@@ -361,15 +361,19 @@ public class GenericsUtils {
         if (type.isGenericsPlaceHolder() && !exclusions.contains(type.getUnresolvedName())) {
             String name = type.getGenericsTypes()[0].getName();
             type = genericsSpec.get(name);
-            if (type != null && type.isGenericsPlaceHolder() && type.getGenericsTypes() == null) {
-                ClassNode placeholder = ClassHelper.makeWithoutCaching(type.getUnresolvedName());
-                placeholder.setGenericsPlaceHolder(true);
-                type = makeClassSafeWithGenerics(type, new GenericsType(placeholder));
+            if (type != null && type.isGenericsPlaceHolder()) {
+                if (type.getGenericsTypes() == null) {
+                    ClassNode placeholder = ClassHelper.makeWithoutCaching(type.getUnresolvedName());
+                    placeholder.setGenericsPlaceHolder(true);
+                    return makeClassSafeWithGenerics(type, new GenericsType(placeholder));
+                } else if (!name.equals(type.getUnresolvedName())) {
+                    return correctToGenericsSpecRecurse(genericsSpec, type, exclusions);
+                }
             }
         }
         if (type == null) type = ClassHelper.OBJECT_TYPE;
         GenericsType[] oldgTypes = type.getGenericsTypes();
-        GenericsType[] newgTypes = GenericsType.EMPTY_ARRAY;
+        GenericsType[] newgTypes = EMPTY_GENERICS_ARRAY;
         if (oldgTypes != null) {
             newgTypes = new GenericsType[oldgTypes.length];
             for (int i = 0; i < newgTypes.length; i++) {
@@ -417,17 +421,20 @@ public class GenericsUtils {
         if (type.isArray()) {
             return correctToGenericsSpec(genericsSpec, type.getComponentType()).makeArray();
         }
-        if (type.isGenericsPlaceHolder()) {
+        if (type.isGenericsPlaceHolder() && type.getGenericsTypes() != null) {
             String name = type.getGenericsTypes()[0].getName();
             type = genericsSpec.get(name);
+            if (type != null && type.isGenericsPlaceHolder()
+                    && !name.equals(type.getUnresolvedName())) {
+                return correctToGenericsSpec(genericsSpec, type);
+            }
         }
         if (type == null) type = ClassHelper.OBJECT_TYPE;
         return type;
     }
 
-    @SuppressWarnings("unchecked")
     public static Map<String, ClassNode> createGenericsSpec(ClassNode current) {
-        return createGenericsSpec(current, Collections.EMPTY_MAP);
+        return createGenericsSpec(current, Collections.emptyMap());
     }
 
     public static Map<String, ClassNode> createGenericsSpec(ClassNode current, Map<String, ClassNode> oldSpec) {
@@ -459,28 +466,31 @@ public class GenericsUtils {
     }
 
     public static Map<String, ClassNode> addMethodGenerics(MethodNode current, Map<String, ClassNode> oldSpec) {
-        Map<String, ClassNode> ret = new HashMap<String, ClassNode>(oldSpec);
+        Map<String, ClassNode> ret = new HashMap<>(oldSpec);
         // ret starts with the original type specs, now add gts for the current method if any
-        GenericsType[] sgts = current.getGenericsTypes();
-        if (sgts != null) {
-            for (GenericsType sgt : sgts) {
-                String name = sgt.getName();
-                if (sgt.isPlaceholder()) {
+        GenericsType[] gts = current.getGenericsTypes();
+        if (gts != null) {
+            for (GenericsType gt : gts) {
+                String name = gt.getName();
+                ClassNode type = gt.getType();
+                if (gt.isPlaceholder()) {
                     ClassNode redirect;
-                    if (sgt.getUpperBounds() != null) {
-                        redirect = sgt.getUpperBounds()[0];
-                    } else if (sgt.getLowerBound() != null) {
-                        redirect = sgt.getLowerBound();
+                    if (gt.getUpperBounds() != null) {
+                        redirect = gt.getUpperBounds()[0];
+                    } else if (gt.getLowerBound() != null) {
+                        redirect = gt.getLowerBound();
                     } else {
                         redirect = ClassHelper.OBJECT_TYPE;
                     }
-                    ClassNode type = ClassHelper.makeWithoutCaching(name);
-                    type.setGenericsPlaceHolder(true);
-                    type.setRedirect(redirect);
-                    ret.put(name, type);
-                } else {
-                    ret.put(name, sgt.getType());
+                    if (redirect.isGenericsPlaceHolder()) {
+                        type = redirect;
+                    } else {
+                        type = ClassHelper.makeWithoutCaching(name);
+                        type.setGenericsPlaceHolder(true);
+                        type.setRedirect(redirect);
+                    }
                 }
+                ret.put(name, type);
             }
         }
         return ret;
@@ -509,7 +519,7 @@ public class GenericsUtils {
                 ClassNode corrected = getCorrectedClassNode(type, superClass, false);
                 extractSuperClassGenerics(corrected, target, spec);
             } else {
-                // if we reach here, we have an unhandled case 
+                // if we reach here, we have an unhandled case
                 throw new GroovyBugError("The type " + type + " seems not to normally extend " + target + ". Sorry, I cannot handle this.");
             }
         }
@@ -528,7 +538,7 @@ public class GenericsUtils {
     }
 
     private static void extractSuperClassGenerics(GenericsType[] usage, GenericsType[] declaration, Map<String, ClassNode> spec) {
-        // if declaration does not provide generics, there is no connection to make 
+        // if declaration does not provide generics, there is no connection to make
         if (usage == null || declaration == null || declaration.length == 0) return;
         if (usage.length != declaration.length) return;
 
@@ -634,8 +644,9 @@ public class GenericsUtils {
     }
 
     /**
-     * transforms generics types from an old context to a new context using the given spec. This method assumes
-     * all generics types will be placeholders. WARNING: The resulting generics types may or may not be placeholders
+     * Transforms generics types from an old context to a new context using the
+     * given spec. This method assumes all generics types will be placeholders.
+     * WARNING: The resulting generics types may or may not be placeholders
      * after the transformation.
      *
      * @param genericsSpec    the generics context information spec
@@ -683,9 +694,7 @@ public class GenericsUtils {
         return newTypes;
     }
 
-    private static final String TRUE_STR = "true";
-    private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED =
-            TRUE_STR.equals(SystemUtil.getSystemPropertySafe("groovy.enable.parameterized.type.cache", TRUE_STR));
+    private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED = Boolean.parseBoolean(getSystemPropertySafe("groovy.enable.parameterized.type.cache", "true"));
 
     /**
      * Try to get the parameterized type from the cache.
