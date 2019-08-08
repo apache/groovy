@@ -65,10 +65,6 @@ class Main {
         groovysh = new Groovysh(io, configuration)
     }
 
-    Groovysh getGroovysh() {
-        return groovysh
-    }
-
     /**
      * create a Main instance, configures it according to CLI arguments, and starts the shell.
      * @param main must have a Groovysh member that has an IO member.
@@ -151,7 +147,7 @@ class Main {
         if (options.e) {
             evalString = options.getOptionValue('e')
         }
-        def configuration = new CompilerConfiguration()
+        def configuration = new CompilerConfiguration(System.getProperties())
         configuration.setParameters((boolean) options.hasOption("pa"))
 
         List<String> filenames = options.arguments()
