@@ -24,9 +24,9 @@ package org.apache.groovy.parser.antlr4;
 public class GroovySyntaxError extends AssertionError {
     public static final int LEXER = 0;
     public static final int PARSER = 1;
-    private int source;
-    private int line;
-    private int column;
+    private final int source;
+    private final int line;
+    private final int column;
 
     public GroovySyntaxError(String message, int source, int line, int column) {
         super(message, null);
