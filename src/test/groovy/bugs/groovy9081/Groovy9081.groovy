@@ -55,7 +55,7 @@ final class Groovy9081 {
         assert f.name
     }
 
-    @Test @Ignore
+    @Test
     void testGetPropertiesOfObjects() {
         assert null != ''.properties
     }
