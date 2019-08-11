@@ -26,6 +26,8 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.reflect.Method;
 
@@ -35,9 +37,10 @@ import java.lang.reflect.Method;
  *   method - cached
 */
 public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
+    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
     private final int version;
     private final boolean skipVersionCheck;
-    public PogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+    public PogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
         super(site, metaClass, metaMethod, params);
         version = metaClass.getVersion();
         skipVersionCheck = metaClass.getClass()==MetaClassImpl.class;
@@ -157,7 +160,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
         final Method reflect;
 
         public PogoCachedMethodSite(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params) {
-            super(site, metaClass, CallSiteHelper.transformMetaMethod(metaClass, metaMethod, params, site.getArray().owner), params);
+            super(site, metaClass, VM_PLUGIN.transformMetaMethod(metaClass, metaMethod, params, site.getArray().owner), params);
             reflect = ((CachedMethod) super.metaMethod).setAccessible();
         }
 
@@ -170,7 +173,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
 
     public static class PogoCachedMethodSiteNoUnwrap extends PogoCachedMethodSite {
 
-        public PogoCachedMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class params[]) {
+        public PogoCachedMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params) {
             super(site, metaClass, metaMethod, params);
         }
 
@@ -182,7 +185,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
 
     public static class PogoCachedMethodSiteNoUnwrapNoCoerce extends PogoCachedMethodSite {
 
-        public PogoCachedMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class params[]) {
+        public PogoCachedMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params) {
             super(site, metaClass, metaMethod, params);
         }
 
@@ -196,7 +199,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
      */
     public static class PogoMetaMethodSiteNoUnwrap extends PogoMetaMethodSite {
 
-        public PogoMetaMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+        public PogoMetaMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
             super(site, metaClass, metaMethod, params);
         }
 
@@ -214,7 +217,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
      */
     public static class PogoMetaMethodSiteNoUnwrapNoCoerce extends PogoMetaMethodSite {
 
-        public PogoMetaMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+        public PogoMetaMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
             super(site, metaClass, metaMethod, params);
         }
 

@@ -48,7 +48,6 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.callsite.AbstractCallSite;
 import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.CallSiteHelper;
 import org.codehaus.groovy.runtime.callsite.ConstructorSite;
 import org.codehaus.groovy.runtime.callsite.MetaClassConstructorSite;
 import org.codehaus.groovy.runtime.callsite.PogoMetaClassSite;
@@ -78,6 +77,8 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.util.ComplexKeyHashMap;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.SingleKeyHashMap;
+import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.ClassVisitor;
 
 import java.beans.BeanInfo;
@@ -119,7 +120,7 @@ import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
  * @see groovy.lang.MetaClass
  */
 public class MetaClassImpl implements MetaClass, MutableMetaClass {
-
+    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
     public static final Object[] EMPTY_ARGUMENTS = {};
 
     protected static final String STATIC_METHOD_MISSING = "$static_methodMissing";
@@ -1279,7 +1280,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            MetaMethod transformedMetaMethod = CallSiteHelper.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         } else {
             return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
@@ -1922,7 +1923,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //----------------------------------------------------------------------
             // executing the getter method
             //----------------------------------------------------------------------
-            MetaMethod transformedMetaMethod = CallSiteHelper.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
@@ -2842,7 +2843,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 arguments[1] = newValue;
             }
 
-            MetaMethod transformedMetaMethod = CallSiteHelper.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
             transformedMetaMethod.doMethodInvoke(object, arguments);
             return;
         }
