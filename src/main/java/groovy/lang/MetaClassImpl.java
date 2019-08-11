@@ -1922,7 +1922,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //----------------------------------------------------------------------
             // executing the getter method
             //----------------------------------------------------------------------
-            return method.doMethodInvoke(object, arguments);
+            MetaMethod transformedMetaMethod = CallSiteHelper.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
         //----------------------------------------------------------------------
@@ -2826,7 +2827,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //----------------------------------------------------------------------
-        // executing the getter method
+        // executing the setter method
         //----------------------------------------------------------------------
         if (method != null) {
             if (arguments.length == 1) {
@@ -2840,7 +2841,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         method.getParameterTypes()[1].getTheClass());
                 arguments[1] = newValue;
             }
-            method.doMethodInvoke(object, arguments);
+
+            MetaMethod transformedMetaMethod = CallSiteHelper.transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            transformedMetaMethod.doMethodInvoke(object, arguments);
             return;
         }
 
