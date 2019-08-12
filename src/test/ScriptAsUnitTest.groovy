@@ -16,9 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-println("About to call another script")
 
-script = new GroovyShell()
-script.run(new File("src/test/groovy/script/HelloWorld.groovy"), [])
-
-println("Done")
+x = 123
+x *= 2
+println "Running unit test with a = ${x}"
+assert x == 246

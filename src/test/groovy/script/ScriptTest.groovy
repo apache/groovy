@@ -18,18 +18,15 @@
  */
 package groovy.script
 
-class ScriptTest extends GroovyTestCase {
+import groovy.test.GroovyTestCase
+
+final class ScriptTes extends GroovyTestCase {
+
     void testScripts() {
-        def file = new File("src/test/groovy/script")
-        file.eachFile {
+        new File('src/test/groovy/script').eachFile {
             def name = it.name
-            if (name.endsWith('.groovy')) {
-                if (name.startsWith('ScriptTest')) {
-                    //
-                }
-                else {
-                    runScript(it)
-                }
+            if (name.startsWith('script') && name.endsWith('.groovy')) {
+                runScript(it)
             }
         }
     }

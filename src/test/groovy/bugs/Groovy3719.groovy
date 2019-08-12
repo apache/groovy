@@ -16,14 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def foo(list, value) {
-    println "Calling function foo() with param ${value}"
-    list << value
+package groovy.bugs
+
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy3719 {
+
+    @Test
+    void testScriptThrowingNoSuchMethodException() {
+        def err = shouldFail '''
+            println "YES I CAN!"
+            throw new NoSuchMethodException()
+        '''
+
+        assert err instanceof NoSuchMethodException
+    }
 }
-
-x = []
-foo(x, 1)
-foo(x, 2)
-assert x == [1, 2]
-
-println "Creating list ${x}"

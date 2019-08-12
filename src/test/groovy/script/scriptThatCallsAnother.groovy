@@ -16,4 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-return 'GROOVY3934Helper script called'
+println("About to call another script")
+
+script = new GroovyShell()
+script.run(new File("src/test/groovy/script/scriptHelloWorld.groovy"), [])
+
+println("Done")
