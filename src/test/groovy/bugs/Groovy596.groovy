@@ -18,39 +18,61 @@
  */
 package groovy.bugs
 
+import org.junit.Test
+
 import java.beans.*
 
 /**
  *  BeanInfo class usage
  */
+final class Groovy596 {
 
-class Groovy596_Bug extends GroovyTestCase {
-
+    @Test
     void testMetaClassUsageOfBeanInfoDoesNotConflictWithScriptUsageLeadingToStackOverflow() {
-        assertNotNull(new A());
-        assertNotNull(new B());
-        assertNotNull(new C());
-        assertNotNull(new D());
+        new A()
+        new B()
+        new C()
+        new D()
     }
+
+    static class A extends SimpleBeanInfo {}
+
+    static class B extends A {}
+
+    static class C implements BeanInfo {
+
+        BeanDescriptor getBeanDescriptor() {
+            null
+        }
+
+        EventSetDescriptor[] getEventSetDescriptors() {
+            new EventSetDescriptor[0]
+        }
+
+        int getDefaultEventIndex() {
+            0
+        }
+
+        PropertyDescriptor[] getPropertyDescriptors() {
+            new PropertyDescriptor[0]
+        }
+
+        int getDefaultPropertyIndex() {
+            0
+        }
+
+        MethodDescriptor[] getMethodDescriptors() {
+            new MethodDescriptor[0]
+        }
+
+        BeanInfo[] getAdditionalBeanInfo() {
+            new BeanInfo[0]
+        }
+
+        java.awt.Image getIcon(int iconKind) {
+            null
+        }
+    }
+
+    static class D extends C {}
 }
-
-class A extends java.beans.SimpleBeanInfo {}
-class B extends A {}
-class C implements java.beans.BeanInfo {
-    public BeanDescriptor getBeanDescriptor() {return null;}
-
-    public EventSetDescriptor[] getEventSetDescriptors() {return new EventSetDescriptor[0];}
-
-    public int getDefaultEventIndex() {return 0;}
-
-    public PropertyDescriptor[] getPropertyDescriptors() {return new PropertyDescriptor[0];}
-
-    public int getDefaultPropertyIndex() {return 0;}
-
-    public MethodDescriptor[] getMethodDescriptors() {return new MethodDescriptor[0];}
-
-    public BeanInfo[] getAdditionalBeanInfo() {return new BeanInfo[0];}
-
-    public java.awt.Image getIcon(int iconKind) {return null;}
-}
-class D extends C {}

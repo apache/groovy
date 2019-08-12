@@ -123,14 +123,13 @@ class ThisAndSuperTest extends GroovyTestCase {
             new TestForSuperHelper6().theMethod()
         }
     }
-}
 
-class A {
-    static {
-        A.metaClass.static.empty << {-> '123' }
+    static class A {
+        static {
+            A.metaClass.static.empty << {-> '123' }
+        }
     }
 }
-
 
 class TestForSuperEach {
     def res = []
