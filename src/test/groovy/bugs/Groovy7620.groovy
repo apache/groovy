@@ -18,12 +18,17 @@
  */
 package groovy.bugs
 
-class Groovy7620Bug extends GroovyTestCase {
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy7620 {
+
+    @Test
     void testShouldSeeThatMethodIsNotImplemented() {
-        def msg = shouldFail '''
+        def err = shouldFail '''
             abstract class A {
                abstract Object getFoo()
-
                void test() {
                    println getFoo()
                }
@@ -34,13 +39,14 @@ class Groovy7620Bug extends GroovyTestCase {
             }
 
             new B().test()
-            '''
+        '''
 
-        assert msg.contains("The method 'java.lang.Object getFoo()' is already defined in class 'B'")
+        assert err =~ /The method 'java.lang.Object getFoo\(\)' is already defined in class 'B'/
     }
 
+    @Test
     void testShouldSeeConflictInTypeSignature() {
-        def msg = shouldFail '''
+        def err = shouldFail '''
             interface C {
                Object getFoo()
             }
@@ -49,9 +55,9 @@ class Groovy7620Bug extends GroovyTestCase {
                static Object foo
             }
 
-            new B().test()
-            '''
+            new D().test()
+        '''
 
-        assert msg.contains("The method 'java.lang.Object getFoo()' is already defined in class 'D'")
+        assert err =~ /The method 'java.lang.Object getFoo\(\)' is already defined in class 'D'/
     }
 }

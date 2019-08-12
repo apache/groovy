@@ -22,110 +22,116 @@ import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.junit.Test
 
-class TraitASTTransformationTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class TraitASTTransformationTest {
+
+    @Test
     void testTraitOverrideAnnotation() {
         assertScript '''
-        interface MyInterface {
-            String fooMethod()
-            void noMethod()
-        }
+            interface MyInterface {
+                String fooMethod()
+                void noMethod()
+            }
 
-        trait MyTrait implements MyInterface {
-            @Override String fooMethod() { "foo" }
-            @Override void noMethod() { }
-        }
+            trait MyTrait implements MyInterface {
+                @Override String fooMethod() { "foo" }
+                @Override void noMethod() { }
+            }
 
-        class Foo implements MyTrait {}
-        def foo = new Foo()
+            class Foo implements MyTrait {}
+            def foo = new Foo()
 
-        foo.noMethod()
-        assert foo.fooMethod() == "foo"
+            foo.noMethod()
+            assert foo.fooMethod() == "foo"
         '''
     }
 
+    @Test
     void testTraitWithNoMethod() {
         assertScript '''
-        trait MyTrait {}
+            trait MyTrait {}
 
-        class Foo implements MyTrait {}
-        def foo = new Foo()
-        assert foo instanceof MyTrait
+            class Foo implements MyTrait {}
+            def foo = new Foo()
+            assert foo instanceof MyTrait
         '''
     }
 
+    @Test
     void testTraitWithOneMethod() {
         assertScript '''
-        trait MyTrait {
-            int a() { 1 }
+            trait MyTrait {
+                int a() { 1 }
+            }
 
-        }
-
-        class Foo implements MyTrait {}
-        def foo = new Foo()
-        assert foo instanceof MyTrait
-        assert foo.a() == 1
+            class Foo implements MyTrait {}
+            def foo = new Foo()
+            assert foo instanceof MyTrait
+            assert foo.a() == 1
         '''
-
     }
 
+    @Test
     void testTraitWithTwoMethods() {
         assertScript '''
-        trait MyTrait {
-            int a() { 1 }
-            int b() { a() }
-        }
+            trait MyTrait {
+                int a() { 1 }
+                int b() { a() }
+            }
 
-        class Foo implements MyTrait {}
-        def foo = new Foo()
-        assert foo instanceof MyTrait
-        assert foo.a() == 1
-        assert foo.b() == 1
+            class Foo implements MyTrait {}
+            def foo = new Foo()
+            assert foo instanceof MyTrait
+            assert foo.a() == 1
+            assert foo.b() == 1
         '''
-
     }
 
+    @Test
     void testTraitWithTwoMethodsAndOneOverride() {
         assertScript '''
-        trait MyTrait {
-            int a() { 1 }
-            int b() { a() }
-        }
+            trait MyTrait {
+                int a() { 1 }
+                int b() { a() }
+            }
 
-        class Foo implements MyTrait {
-            int a() { 2 }
+            class Foo implements MyTrait {
+                int a() { 2 }
 
-        }
-        def foo = new Foo()
-        assert foo instanceof MyTrait
-        assert foo.a() == 2
-        assert foo.b() == 2
+            }
+            def foo = new Foo()
+            assert foo instanceof MyTrait
+            assert foo.a() == 2
+            assert foo.b() == 2
         '''
-
     }
 
+    @Test
     void testTraitWithTwoMethodsAndOneAbstract() {
         assertScript '''
-        trait MyTrait {
-            abstract int a()
-            int b() { a() }
-        }
+            trait MyTrait {
+                abstract int a()
+                int b() { a() }
+            }
 
-        class Foo implements MyTrait {
-            int a() { 2 }
+            class Foo implements MyTrait {
+                int a() { 2 }
+            }
 
-        }
-        def foo = new Foo()
-        assert foo instanceof MyTrait
-        assert foo.a() == 2
-        assert foo.b() == 2
+            def foo = new Foo()
+            assert foo instanceof MyTrait
+            assert foo.a() == 2
+            assert foo.b() == 2
         '''
-
     }
 
+    @Test
     void testTraitWithTwoMethodsAndOneAbstractNotImplemented() {
-        shouldFail {
-            assertScript '''
+        shouldFail '''
             abstract trait MyTrait {
                 abstract int a()
                 int b() { a() }
@@ -135,11 +141,16 @@ class TraitASTTransformationTest extends GroovyTestCase {
             }
             def foo = new Foo()
         '''
-        }
     }
 
+    static trait TestTrait {
+        int a() { 123 }
+    }
+
+    @Test
     void testWithPrecompiledTraitWithOneMethod() {
-        assertScript '''import org.codehaus.groovy.transform.traitx.TraitASTTransformationTest.TestTrait as TestTrait
+        assertScript '''
+            import org.codehaus.groovy.transform.traitx.TraitASTTransformationTest.TestTrait as TestTrait
 
             class Foo implements TestTrait {}
             def foo = new Foo()
@@ -147,9 +158,9 @@ class TraitASTTransformationTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testTraitWithConstructor() {
-        shouldFail {
-            assertScript '''
+        shouldFail '''
             abstract trait MyTrait {
                 MyTrait() {
                     println 'woo'
@@ -160,36 +171,39 @@ class TraitASTTransformationTest extends GroovyTestCase {
             }
             def foo = new Foo()
         '''
-        }
     }
 
+    @Test
     void testTraitWithField() {
         assertScript '''
-        trait MyTrait {
-            private String message = 'Hello'
-            String getBlah() {
-                message
+            trait MyTrait {
+                private String message = 'Hello'
+                String getBlah() {
+                    message
+                }
+
             }
-
-        }
-        class Foo implements MyTrait {}
-        def foo = new Foo()
-        assert foo.blah == 'Hello'
+            class Foo implements MyTrait {}
+            def foo = new Foo()
+            assert foo.blah == 'Hello'
         '''
     }
 
+    @Test
     void testTraitWithField2() {
-        assertScript '''import org.codehaus.groovy.transform.traitx.TestTrait2
-        class Foo implements TestTrait2 {
-            def cat() { "cat" }
-        }
-        def foo = new Foo()
-        assert foo.message == 'Hello'
-        assert foo.blah() == 'Hello'
-        assert foo.meow() == /Meow! I'm a cat/
+        assertScript '''
+            import org.codehaus.groovy.transform.traitx.TestTrait2
+            class Foo implements TestTrait2 {
+                def cat() { "cat" }
+            }
+            def foo = new Foo()
+            assert foo.message == 'Hello'
+            assert foo.blah() == 'Hello'
+            assert foo.meow() == /Meow! I'm a cat/
         '''
     }
 
+    @Test
     void testTraitWithSetValue() {
         assertScript '''
             import groovy.transform.Trait
@@ -211,13 +225,12 @@ class TraitASTTransformationTest extends GroovyTestCase {
             assert p.name == 'label2'
             p.setLabel3('label3')
             assert p.name == 'label3'
-
         '''
     }
 
+    @Test
     void testTraitWithProperty() {
         assertScript '''
-
             trait Named {
                 String name
             }
@@ -227,124 +240,132 @@ class TraitASTTransformationTest extends GroovyTestCase {
             def p = new Person(name:'Stromae')
 
             assert p.name == 'Stromae'
-
         '''
     }
 
+    @Test
     void testClosureExpressionInTrait() {
-        assertScript '''import groovy.transform.*
+        assertScript '''
+            import groovy.transform.*
 
-        trait GreetingObject {
-            String greeting = 'Welcome!'
-            Closure greeter() {
-                return { -> greeting }
+            trait GreetingObject {
+                String greeting = 'Welcome!'
+                Closure greeter() {
+                    return { -> greeting }
+                }
             }
-        }
-        class Hello implements GreetingObject {}
-        def hello = new Hello()
-        def greeter = hello.greeter()
-        assert greeter.thisObject.is(hello)
-        assert greeter() == 'Welcome!'
-
+            class Hello implements GreetingObject {}
+            def hello = new Hello()
+            def greeter = hello.greeter()
+            assert greeter.thisObject.is(hello)
+            assert greeter() == 'Welcome!'
         '''
     }
 
+    @Test
     void testUpdatePropertyFromSelf() {
         assertScript '''
-        trait Updater {
-            void update() {
-                config.key = 'value'
+            trait Updater {
+                void update() {
+                    config.key = 'value'
+                }
             }
-        }
-        class Foo implements Updater {
-            def config = [:]
-        }
-        def foo = new Foo()
-        foo.update()
-        assert foo.config.key == 'value'
+            class Foo implements Updater {
+                def config = [:]
+            }
+            def foo = new Foo()
+            foo.update()
+
+            assert foo.config.key == 'value'
         '''
     }
 
+    @Test
     void testPrivateFieldInTraitShouldBeRemapped() {
-        assertScript '''import groovy.transform.ASTTest
-import org.codehaus.groovy.control.CompilePhase
+        assertScript '''
+            import groovy.transform.ASTTest
+            import org.codehaus.groovy.control.CompilePhase
 
-trait Foo {
-    private int i = 0
-    int sum(int x) { x+i }
-    void setIndex(int index) { this.i = index }
-}
-@ASTTest(phase=CompilePhase.INSTRUCTION_SELECTION, value={
-    assert node.fields.any { it.name == 'Foo__i' }
-})
-class Bob implements Foo {
-}
-def b = new Bob()
-assert b.sum(1) == 1
-b.index = 5
-assert b.sum(1) == 6
-'''
+            trait Foo {
+                private int i = 0
+                int sum(int x) { x+i }
+                void setIndex(int index) { this.i = index }
+            }
+            @ASTTest(phase=CompilePhase.INSTRUCTION_SELECTION, value={
+                assert node.fields.any { it.name == 'Foo__i' }
+            })
+            class Bob implements Foo {
+            }
+            def b = new Bob()
+            assert b.sum(1) == 1
+            b.index = 5
+            assert b.sum(1) == 6
+        '''
     }
 
+    @Test
     void testStaticallyCompiledTrait() {
         assertScript '''
-import groovy.transform.CompileStatic
+            import groovy.transform.CompileStatic
 
-@CompileStatic
-trait Foo {
-   private String msg = 'foo'
-   abstract String bar()
-   public String foo() { bar()+msg }
+            @CompileStatic
+            trait Foo {
+               private String msg = 'foo'
+               abstract String bar()
+               public String foo() { bar()+msg }
 
-}
+            }
 
-@CompileStatic
-class A implements Foo { String bar() {'bar'}}
+            @CompileStatic
+            class A implements Foo { String bar() {'bar'}}
 
-assert new A().foo() == 'barfoo'
-'''
+            assert new A().foo() == 'barfoo'
+        '''
     }
 
+    @Test
     void testOverridePropertyDefinedInTrait() {
         assertScript '''
-trait Id {
-    Long id = 123L
-}
+            trait Id {
+                Long id = 123L
+            }
 
-class Foo implements Id {
-    Long id = 456L
-}
-def f = new Foo()
-assert f.id == 456L
-'''
+            class Foo implements Id {
+                Long id = 456L
+            }
+            def f = new Foo()
+            assert f.id == 456L
+        '''
     }
 
-
+    @Test
     void testOverridePropertyGetterDefinedInTrait() {
         assertScript '''
-trait Id {
-    Long id = 123L
-}
+            trait Id {
+                Long id = 123L
+            }
 
-class Foo implements Id {
-    Long getId() { 456L }
-}
-def f = new Foo()
-assert f.id == 456L
-'''
+            class Foo implements Id {
+                Long getId() { 456L }
+            }
+            def f = new Foo()
+            assert f.id == 456L
+        '''
     }
 
+    @Test
     void testSimpleTraitInheritance() {
         assertScript '''
-trait Top { String methodFromA() { 'A' } }
-trait Bottom extends Top { String methodFromB() { 'B' }}
-class Foo implements Bottom {}
-def f = new Foo()
-assert f.methodFromA() == 'A'
-assert f.methodFromB() == 'B'
-'''
+            trait Top { String methodFromA() { 'A' } }
+            trait Bottom extends Top { String methodFromB() { 'B' }}
+            class Foo implements Bottom {}
+            def f = new Foo()
+            assert f.methodFromA() == 'A'
+            assert f.methodFromB() == 'B'
+        '''
     }
 
+    @Test
     void testSimpleTraitInheritanceWithTraitOverridingMethodFromParent() {
         10.times {
             assertScript '''
@@ -357,103 +378,105 @@ assert f.methodFromB() == 'B'
                 def f = new Foo()
                 assert f.methodFromA() == 'B'
                 assert f.methodFromB() == 'B'
-                '''
+            '''
         }
     }
 
+    @Test
     void testSimpleTraitInheritanceWithTraitOverridingMethodFromParentAndClass() {
         assertScript '''
-trait Top { String methodFromA() { 'A' } }
-trait Bottom extends Top {
-    String methodFromA() { 'B' }
-    String methodFromB() { 'B' }
-}
-class Foo implements Bottom {
-    String methodFromA() { 'Foo' }
-}
-def f = new Foo()
-assert f.methodFromA() == 'Foo'
-assert f.methodFromB() == 'B'
-'''
+            trait Top { String methodFromA() { 'A' } }
+            trait Bottom extends Top {
+                String methodFromA() { 'B' }
+                String methodFromB() { 'B' }
+            }
+            class Foo implements Bottom {
+                String methodFromA() { 'Foo' }
+            }
+            def f = new Foo()
+            assert f.methodFromA() == 'Foo'
+            assert f.methodFromB() == 'B'
+        '''
     }
 
     void testTraitOnEnum() {
-        assertScript '''trait WithBar { int bar }
+        assertScript '''
+            trait WithBar { int bar }
 
-enum MyEnum implements WithBar {
-    X, Y
-}
+            enum MyEnum implements WithBar {
+                X, Y
+            }
 
-class MyClass implements WithBar {}
+            class MyClass implements WithBar {}
 
-def o = new MyClass()
-o.bar = 123
-assert o.bar == 123
+            def o = new MyClass()
+            o.bar = 123
+            assert o.bar == 123
 
-MyEnum.X.bar = 123
-assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
-
-'''
+            MyEnum.X.bar = 123
+            assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
+        '''
     }
 
+    @Test
     void testClassImplementingTraitWithSameMethod() {
         10.times {
             assertScript '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            class AB implements A,B {
-            }
-            def x = new AB()
-            assert x.foo() == 2 // default order, B is first
-            '''
-
-            assertScript '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            class AB implements B,A {
-            }
-            def x = new AB()
-            assert x.foo() == 1 // default order, A is first
-            '''
-
-            assertScript '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            class AB implements A,B {
-                int foo() {
-                    A.super.foo() // explicit use of A
+                trait A {
+                    int foo() { 1 }
                 }
-            }
-            def x = new AB()
-            assert x.foo() == 1
+                trait B {
+                    int foo() { 2 }
+                }
+                class AB implements A,B {
+                }
+                def x = new AB()
+                assert x.foo() == 2 // default order, B is first
             '''
 
             assertScript '''
-            trait A {
-                int foo() { 1 }
-            }
-            trait B {
-                int foo() { 2 }
-            }
-            class AB implements A,B {
-                int foo() {
-                    A.super.foo()  // explicit take of A
+                trait A {
+                    int foo() { 1 }
                 }
-            }
-            def x = new AB()
-            assert x.foo() == 1
+                trait B {
+                    int foo() { 2 }
+                }
+                class AB implements B,A {
+                }
+                def x = new AB()
+                assert x.foo() == 1 // default order, A is first
+            '''
+
+            assertScript '''
+                trait A {
+                    int foo() { 1 }
+                }
+                trait B {
+                    int foo() { 2 }
+                }
+                class AB implements A,B {
+                    int foo() {
+                        A.super.foo() // explicit use of A
+                    }
+                }
+                def x = new AB()
+                assert x.foo() == 1
+            '''
+
+            assertScript '''
+                trait A {
+                    int foo() { 1 }
+                }
+                trait B {
+                    int foo() { 2 }
+                }
+                class AB implements A,B {
+                    int foo() {
+                        A.super.foo()  // explicit take of A
+                    }
+                }
+                def x = new AB()
+                assert x.foo() == 1
             '''
         }
 
@@ -476,6 +499,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testTraitWithGenerics1() {
         assertScript '''
             trait Provider<T> {
@@ -502,6 +526,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testTraitWithGenerics2() {
         assertScript '''
             trait Provider<T> {
@@ -528,6 +553,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testTraitWithGenericProperty() {
         assertScript '''
             trait PropertyProvider<T> {
@@ -552,6 +578,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testTraitWithComplexGenericProperty() {
         assertScript '''
             trait PropertyProvider<T> {
@@ -591,6 +618,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testTraitWithGenericField() {
         assertScript '''
             trait PropertyProvider<T> {
@@ -619,6 +647,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testRuntimeTrait() {
         assertScript '''
             trait Flying {
@@ -639,6 +668,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testRuntimeDoubleTrait() {
         assertScript '''
             trait Flying {
@@ -671,6 +701,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testRuntimeWithTraitsDGM() {
         assertScript '''
             trait Flying {
@@ -699,7 +730,8 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
-   void testRuntimeWithTraitsDGMAndExplicitOverride() {
+    @Test
+    void testRuntimeWithTraitsDGMAndExplicitOverride() {
         assertScript '''
             trait Flying {
                 String fly() {
@@ -730,7 +762,8 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
-   void testRuntimeTraitUnderCompileStaticShouldUseMethodFromTrait() {
+    @Test
+    void testRuntimeTraitUnderCompileStaticShouldUseMethodFromTrait() {
         assertScript '''
             trait Flying {
                 String fly() {
@@ -758,7 +791,8 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
-   void testRuntimeWithTraitsDGMAndExtraMethodCompileStatic() {
+    @Test
+    void testRuntimeWithTraitsDGMAndExtraMethodCompileStatic() {
         assertScript '''
             trait Flying {
                 String fly() {
@@ -789,6 +823,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testRuntimeTraitWithMethodOfTheSameSignature() {
         assertScript '''
             trait Flying {
@@ -806,10 +841,10 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             // when using runtime traits, inherits methods from trait!
             assert d.fly() == "I'm flying!"
             assert d.ability() == 'fly'
-
         '''
     }
 
+    @Test
     void testTraitWithDelegatesTo() {
         assertScript '''
             trait Route {
@@ -833,6 +868,7 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
             '''
     }
 
+    @Test
     void testProxyGenerationShouldNotFail() {
         assertScript '''
             trait Foo { }
@@ -843,22 +879,25 @@ assert MyEnum.X.bar == 123 && MyEnum.Y.bar == 0
         '''
     }
 
+    @Test
     void testShouldNotThrowNPEWithInheritanceUsingExtends() {
         assertScript '''
-trait Named {
-    String name
-}
+            trait Named {
+                String name
+            }
 
-trait NameSpeakable extends Named {
-    String speak() { "My name is $name" }
-}
+            trait NameSpeakable extends Named {
+                String speak() { "My name is $name" }
+            }
 
-class Phone implements NameSpeakable {}
+            class Phone implements NameSpeakable {}
 
-def phone = new Phone(name: 'Galaxy S3')
-assert phone.speak() == 'My name is Galaxy S3\''''
+            def phone = new Phone(name: 'Galaxy S3')
+            assert phone.speak() == 'My name is Galaxy S3\'
+        '''
     }
 
+    @Test
     void testStaticInnerClassInTrait() {
         assertScript '''
             trait Outer {
@@ -878,49 +917,50 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testNonStaticInnerClassInTrait() {
-        shouldFail {
-            assertScript '''
-                trait Outer {
-                    Inner doSomething() {
-                        new Inner()
-                    }
+        shouldFail '''
+            trait Outer {
+                Inner doSomething() {
+                    new Inner()
                 }
-                class Foo implements Outer {}
-                def f = new Foo()
-            '''
-        }
+            }
+            class Foo implements Outer {}
+            def f = new Foo()
+        '''
     }
 
+    @Test
     void testClosureInsideTrait() {
         assertScript '''
-        trait Doubler {
-            int foo(int x) {
-                { -> 2*x }.call()
+            trait Doubler {
+                int foo(int x) {
+                    { -> 2*x }.call()
+                }
             }
-        }
-        class Foo implements Doubler {}
-        def f = new Foo()
-        assert f.foo(4) == 8
+            class Foo implements Doubler {}
+            def f = new Foo()
+            assert f.foo(4) == 8
         '''
     }
 
+    @Test
     void testClosureInsideTraitAccessingProperty() {
         assertScript '''
-
-        trait Doubler {
-            int x
-            int foo() {
-                { -> 2*x }.call()
+            trait Doubler {
+                int x
+                int foo() {
+                    { -> 2*x }.call()
+                }
             }
-        }
-        class Foo implements Doubler {}
-        def f = new Foo()
-        f.x = 4
-        assert f.foo() == 8
+            class Foo implements Doubler {}
+            def f = new Foo()
+            f.x = 4
+            assert f.foo() == 8
         '''
     }
 
+    @Test
     void testThisDotClassInTrait() {
         assertScript '''
             trait Classic {
@@ -934,6 +974,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testShouldNotThrowStackOverflow() {
         assertScript '''
             trait TestTrait {
@@ -949,7 +990,9 @@ assert phone.speak() == 'My name is Galaxy S3\''''
             foo.update('Groovy')
             assert foo.blah() == 'Groovy'
         '''
-        assertScript '''import groovy.transform.CompileStatic
+
+        assertScript '''
+            import groovy.transform.CompileStatic
             @CompileStatic
             trait TestTrait {
                 private String message = 'Hello'
@@ -971,6 +1014,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testSuperCallInTraitExtendingAnotherTrait() {
         assertScript '''
             trait Foo {
@@ -985,7 +1029,9 @@ assert phone.speak() == 'My name is Galaxy S3\''''
             def b = new Baz()
             assert b.foo() == 2
         '''
-        assertScript '''import groovy.transform.CompileStatic
+
+        assertScript '''
+            import groovy.transform.CompileStatic
             @CompileStatic
             trait Foo {
                 int foo() { 1 }
@@ -1002,6 +1048,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testTraitShouldNotTakeOverSuperClassMethod() {
         assertScript '''
             trait TestTrait {
@@ -1021,6 +1068,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testTraitShouldTakeOverSuperClassMethod() {
         assertScript '''
             trait TestTrait {
@@ -1035,6 +1083,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testOverrideUsingRuntimeTrait() {
         assertScript '''
             trait TestTrait {
@@ -1062,6 +1111,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testTraitOverrideHierarchy() {
         assertScript '''
             trait TestTrait {
@@ -1089,6 +1139,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testSAMCoercionOfTraitOnAssignment() {
         assertScript '''
             trait SAMTrait {
@@ -1112,6 +1163,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testSAMCoercionOfTraitOnMethod() {
         assertScript '''
             trait SAMTrait {
@@ -1123,6 +1175,7 @@ assert phone.speak() == 'My name is Galaxy S3\''''
             }
             test { 'hello' } // SAM coercion
         '''
+
         assertScript '''
             trait SAMTrait {
                 String foo() { bar()+bar() }
@@ -1139,28 +1192,31 @@ assert phone.speak() == 'My name is Galaxy S3\''''
         '''
     }
 
+    @Test
     void testImplicitSAMCoercionBug() {
         assertScript '''
-trait Greeter {
-    String greet() { "Hello $name" }
-    abstract String getName()
-}
-Greeter greeter = { 'Alice' }
-assert greeter.greet() == 'Hello Alice'
-'''
+            trait Greeter {
+                String greet() { "Hello $name" }
+                abstract String getName()
+            }
+            Greeter greeter = { 'Alice' }
+            assert greeter.greet() == 'Hello Alice'
+        '''
     }
 
+    @Test
     void testExplicitSAMCoercionBug() {
         assertScript '''
-trait Greeter {
-    String greet() { "Hello $name" }
-    abstract String getName()
-}
-Greeter greeter = { 'Alice' } as Greeter
-assert greeter.greet() == 'Hello Alice'
-'''
+            trait Greeter {
+                String greet() { "Hello $name" }
+                abstract String getName()
+            }
+            Greeter greeter = { 'Alice' } as Greeter
+            assert greeter.greet() == 'Hello Alice'
+        '''
     }
 
+    @Test
     void testMethodMissingInTrait() {
         assertScript '''
             trait MethodMissingProvider {
@@ -1174,6 +1230,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testPropertyMissingInTrait() {
         assertScript '''
             trait PropertyMissingProvider {
@@ -1187,6 +1244,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testShouldUseDefinitionFromClassInsteadOfTrait() {
         assertScript '''
             trait TestTrait {
@@ -1200,6 +1258,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testPrivateFieldNameConflict() {
         assertScript '''
             trait Trait1 { private int v = 111; int getValueFromTrait1() { v } }
@@ -1211,6 +1270,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testPrivateMethodInTrait() {
         assertScript '''
             trait DoingSecretThings {
@@ -1223,6 +1283,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testPrivateMethodInTraitAccessingPrivateField() {
         assertScript '''
             trait DoingSecretThings {
@@ -1236,6 +1297,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testPrivateMethodInTraitWithCompileStatic() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -1249,6 +1311,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testPrivateMethodInTraitAccessingPrivateFieldCompileStatic() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -1264,6 +1327,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testNoShadowingPrivateMethodInTraitAccessingPrivateFieldCompileStatic() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -1281,6 +1345,7 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testNoShadowingPrivateMethodInTraitAccessingPrivateField() {
         assertScript '''
             trait DoingSecretThings {
@@ -1297,9 +1362,9 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testMixPrivatePublicMethodsOfSameName() {
-        shouldFail {
-            assertScript '''
+        def err = shouldFail '''
             trait DoingSecretThings {
                 private String secret(String s) { s.toUpperCase() }
                 String secret() { 'public' }
@@ -1309,9 +1374,11 @@ assert greeter.greet() == 'Hello Alice'
             def foo = new Foo()
             assert foo.foo() == 'SECRET'
         '''
-        } =~ 'Mixing private and public/protected methods of the same name causes multimethods to be disabled'
+
+        assert err =~ 'Mixing private and public/protected methods of the same name causes multimethods to be disabled'
     }
 
+    @Test
     void testInterfaceExtendingTraitShouldNotTriggerRuntimeError() {
         assertScript '''
             trait A {
@@ -1332,24 +1399,27 @@ assert greeter.greet() == 'Hello Alice'
         '''
     }
 
+    @Test
     void testTraitWithDelegate() {
         assertScript '''
-trait ListTrait<T> {
-    private @Delegate ArrayList<T> list = new ArrayList<T>()
-}
-class Person implements ListTrait<String> {
-    void foo() {
-        add('bar')
-    }
-}
-def p = new Person()
-p.foo()
-assert p.get(0) == 'bar'
-'''
+            trait ListTrait<T> {
+                private @Delegate ArrayList<T> list = new ArrayList<T>()
+            }
+            class Person implements ListTrait<String> {
+                void foo() {
+                    add('bar')
+                }
+            }
+            def p = new Person()
+            p.foo()
+            assert p.get(0) == 'bar'
+        '''
     }
 
+    @Test
     void testAnnotationShouldBeCarriedOver() {
-        assertScript '''import groovy.transform.ASTTest
+        assertScript '''
+            import groovy.transform.ASTTest
 
             trait Foo {
                 @Deprecated void foo() { 'ok' }
@@ -1363,16 +1433,18 @@ assert p.get(0) == 'bar'
         '''
     }
 
+    @Test
     void testShouldCompileTraitMethodStatically() {
-        def message = shouldFail '''
+        def err = shouldFail '''
             @groovy.transform.CompileStatic
             trait Foo {
                 int foo() { 1+'foo'}
             }
         '''
-        assert message.contains('[Static type checking] - Cannot return value of type java.lang.String on method returning type int')
+        assert err =~ 'Cannot return value of type java.lang.String on method returning type int'
     }
 
+    @Test
     void testStaticMethodInTrait() {
         assertScript '''
             trait StaticProvider {
@@ -1381,6 +1453,7 @@ assert p.get(0) == 'bar'
             class Foo implements StaticProvider {}
             assert Foo.foo() == 'static method'
         '''
+
         assertScript '''
             trait StaticProvider {
                 static String foo() { bar() }
@@ -1391,284 +1464,304 @@ assert p.get(0) == 'bar'
         '''
     }
 
+    @Test
     void testStaticFieldInTrait() {
         assertScript '''
-trait StaticFieldProvider {
-    public static int VAL = 123
-}
-class Foo implements StaticFieldProvider {}
-assert Foo.StaticFieldProvider__VAL == 123
-'''
+            trait StaticFieldProvider {
+                public static int VAL = 123
+            }
+            class Foo implements StaticFieldProvider {}
+            assert Foo.StaticFieldProvider__VAL == 123
+        '''
     }
 
+    @Test
     void testStaticFieldModifiedInTrait() {
         assertScript '''
-trait StaticFieldProvider {
-    public static int VAL = 123
-    public static void update(int x) { VAL = x }
-}
-class Foo implements StaticFieldProvider {}
-assert Foo.StaticFieldProvider__VAL == 123
-Foo.update(456)
-assert Foo.StaticFieldProvider__VAL == 456
-'''
+            trait StaticFieldProvider {
+                public static int VAL = 123
+                public static void update(int x) { VAL = x }
+            }
+            class Foo implements StaticFieldProvider {}
+            assert Foo.StaticFieldProvider__VAL == 123
+            Foo.update(456)
+            assert Foo.StaticFieldProvider__VAL == 456
+        '''
     }
 
+    @Test
     void testStaticPropertyModifiedInTrait() {
         assertScript '''
-trait StaticFieldProvider {
-    static int VAL = 123
-    public static void update(int x) { VAL = x }
-}
-class Foo implements StaticFieldProvider {}
-assert Foo.VAL == 123
-Foo.update(456)
-assert Foo.VAL == 456
-'''
+            trait StaticFieldProvider {
+                static int VAL = 123
+                public static void update(int x) { VAL = x }
+            }
+            class Foo implements StaticFieldProvider {}
+            assert Foo.VAL == 123
+            Foo.update(456)
+            assert Foo.VAL == 456
+        '''
     }
 
+    @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflection() {
-        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+        assertScript '''
+            import org.codehaus.groovy.transform.trait.Traits
 
-trait Foo {
-    void foo() {}
-}
+            trait Foo {
+                void foo() {}
+            }
 
-class Bar implements Foo {}
+            class Bar implements Foo {}
 
-def method = Bar.getDeclaredMethod('foo')
-assert method.declaringClass == Bar
-assert Traits.isBridgeMethod(method)
-def traitMethod = Traits.getBridgeMethodTarget(method)
-assert traitMethod != null
-assert traitMethod.declaringClass == Foo
-assert traitMethod.name == 'foo'
-'''
+            def method = Bar.getDeclaredMethod('foo')
+            assert method.declaringClass == Bar
+            assert Traits.isBridgeMethod(method)
+            def traitMethod = Traits.getBridgeMethodTarget(method)
+            assert traitMethod != null
+            assert traitMethod.declaringClass == Foo
+            assert traitMethod.name == 'foo'
+        '''
     }
 
+    @Test
     void testTraitMethodShouldNotBeDefaultImplementationUsingReflection() {
-        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+        assertScript '''
+            import org.codehaus.groovy.transform.trait.Traits
 
-trait Foo {
-    void foo() {}
-}
+            trait Foo {
+                void foo() {}
+            }
 
-class Bar implements Foo {
-    void foo() { }
-}
+            class Bar implements Foo {
+                void foo() { }
+            }
 
-def method = Bar.getDeclaredMethod('foo')
-assert method.declaringClass == Bar
-assert !Traits.isBridgeMethod(method)
-def traitMethod = Traits.getBridgeMethodTarget(method)
-assert traitMethod == null
-'''
+            def method = Bar.getDeclaredMethod('foo')
+            assert method.declaringClass == Bar
+            assert !Traits.isBridgeMethod(method)
+            def traitMethod = Traits.getBridgeMethodTarget(method)
+            assert traitMethod == null
+        '''
     }
 
+    @Test
     void testTraitMethodShouldBeDefaultImplementationUsingReflectionAndGenericTypes() {
-        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+        assertScript '''
+            import org.codehaus.groovy.transform.trait.Traits
 
-trait Foo<F,T> {
-    T foo(F from) {}
-}
+            trait Foo<F,T> {
+                T foo(F from) {}
+            }
 
-class Bar implements Foo<String,Integer> {}
+            class Bar implements Foo<String,Integer> {}
 
-def method = Bar.getDeclaredMethod('foo', String)
-assert method.declaringClass == Bar
-assert Traits.isBridgeMethod(method)
-def traitMethod = Traits.getBridgeMethodTarget(method)
-assert traitMethod != null
-assert traitMethod.declaringClass == Foo
-assert traitMethod.name == 'foo'
-assert traitMethod.parameterTypes.length==1
-assert traitMethod.parameterTypes[0] == Object
-'''
+            def method = Bar.getDeclaredMethod('foo', String)
+            assert method.declaringClass == Bar
+            assert Traits.isBridgeMethod(method)
+            def traitMethod = Traits.getBridgeMethodTarget(method)
+            assert traitMethod != null
+            assert traitMethod.declaringClass == Foo
+            assert traitMethod.name == 'foo'
+            assert traitMethod.parameterTypes.length==1
+            assert traitMethod.parameterTypes[0] == Object
+        '''
     }
 
+    @Test
     void testUseOfThisInInitializer() {
         assertScript '''
-trait Dummyable  {
-    String x = this.class.name
+            trait Dummyable  {
+                String x = this.class.name
 
-    void info() {
-        assert x == this.class.name
+                void info() {
+                    assert x == this.class.name
+                }
+            }
+
+            class Util implements Dummyable {}
+
+            def util = new Util()
+            util.info()
+        '''
     }
-}
 
-
-class Util implements Dummyable {}
-
-def util = new Util()
-util.info()'''
-    }
-
+    @Test
     void testUseOfMethodInInitializer() {
         assertScript '''
-trait Dummyable  {
-    String x = whoAmI()
+            trait Dummyable  {
+                String x = whoAmI()
 
-    String whoAmI() { this.class.name }
+                String whoAmI() { this.class.name }
 
-    void info() {
-        assert x == this.class.name
+                void info() {
+                    assert x == this.class.name
+                }
+            }
+
+
+            class Util implements Dummyable {}
+
+            def util = new Util()
+            util.info()
+        '''
     }
-}
 
-
-class Util implements Dummyable {}
-
-def util = new Util()
-util.info()'''
-    }
-
+    @Test
     void testTraitShouldNotBeAllowedToExtendInterface() {
         // GROOVY-6672
-        def message = shouldFail '''
+        def err = shouldFail '''
             trait Foo extends Serializable {}
             Foo x = null
         '''
-        assert message.contains('Trait cannot extend an interface.')
+        assert err =~ 'Trait cannot extend an interface.'
     }
 
+    @Test
     void testImplementingingAbstractClass() {
         assertScript '''
-abstract class AbstractSomething {
-    abstract String something()
-}
+            abstract class AbstractSomething {
+                abstract String something()
+            }
 
-trait SomethingDoing {
-    String something() {
-        "Doing something"
+            trait SomethingDoing {
+                String something() {
+                    "Doing something"
+                }
+            }
+
+            class Something extends AbstractSomething implements SomethingDoing {
+                String foo() {
+                    something()
+                }
+            }
+
+            assert new Something().foo() == 'Doing something'
+        '''
     }
-}
 
-class Something extends AbstractSomething implements SomethingDoing {
-    String foo() {
-        something()
-    }
-}
-
-assert new Something().foo() == 'Doing something'
-
-'''
-    }
-
+    @Test
     void testShouldNotOverrideMethodImplementedFromAbstractClass() {
         assertScript '''
-abstract class AbstractSomething {
-    abstract String something()
-}
+            abstract class AbstractSomething {
+                abstract String something()
+            }
 
-trait SomethingDoing {
-    String something() {
-        "Doing something"
+            trait SomethingDoing {
+                String something() {
+                    "Doing something"
+                }
+            }
+
+            class Something extends AbstractSomething  {
+                String something() { 'implemented' }
+            }
+
+            class BottomSomething extends Something implements SomethingDoing {
+                String something() {
+                    // in order to avoid getting the default impl from the trait, need to call super
+                    super.something()
+                }
+                String foo() {
+                    something()
+                }
+            }
+
+            assert new BottomSomething().foo() == 'implemented'
+        '''
     }
-}
 
-class Something extends AbstractSomething  {
-    String something() { 'implemented' }
-}
-
-class BottomSomething extends Something implements SomethingDoing {
-    String something() {
-        // in order to avoid getting the default impl from the trait, need to call super
-        super.something()
-    }
-    String foo() {
-        something()
-    }
-}
-
-assert new BottomSomething().foo() == 'implemented'
-
-'''
-    }
-
+    @Test
     void testIncrementPropertyOfTrait() {
-        assertScript '''trait Level {
-    int maxLevel
-    int currentLevel = 0
+        assertScript '''
+            trait Level {
+                int maxLevel
+                int currentLevel = 0
 
-    void foo() {
-        if( currentLevel < maxLevel ) {
-            currentLevel += 1
-        }
-    }
-}
+                void foo() {
+                    if( currentLevel < maxLevel ) {
+                        currentLevel += 1
+                    }
+                }
+            }
 
-class Leveller implements Level {
-    Leveller() {
-        maxLevel = 3
-    }
-}
+            class Leveller implements Level {
+                Leveller() {
+                    maxLevel = 3
+                }
+            }
 
-def v = new Leveller()
-v.foo()
-v.foo()
-v.foo()
-v.foo()
-assert v.currentLevel == 3
-'''
+            def v = new Leveller()
+            v.foo()
+            v.foo()
+            v.foo()
+            v.foo()
+            assert v.currentLevel == 3
+        '''
     }
 
     void testIncrementPropertyOfTraitUsingPlusPlus() {
-        def message = shouldFail '''trait Level {
-    int maxLevel
-    int currentLevel = 0
+        def err = shouldFail '''
+            trait Level {
+                int maxLevel
+                int currentLevel = 0
 
-    void foo() {
-        if( currentLevel < maxLevel ) {
-            currentLevel++
-        }
+                void foo() {
+                    if( currentLevel < maxLevel ) {
+                        currentLevel++
+                    }
+                }
+            }
+
+            class Leveller implements Level {
+                Leveller() {
+                    maxLevel = 3
+                }
+            }
+
+            def v = new Leveller()
+            v.foo()
+            v.foo()
+            v.foo()
+            v.foo()
+            assert v.currentLevel == 3
+        '''
+
+        assert err =~ 'Postfix expressions on trait fields/properties  are not supported in traits'
     }
-}
 
-class Leveller implements Level {
-    Leveller() {
-        maxLevel = 3
-    }
-}
-
-def v = new Leveller()
-v.foo()
-v.foo()
-v.foo()
-v.foo()
-assert v.currentLevel == 3
-'''
-        assert message.contains('Postfix expressions on trait fields/properties  are not supported in traits')
-    }
-
+    @Test
     void testIncrementPropertyOfTraitUsingPrefixPlusPlus() {
-        def message = shouldFail '''trait Level {
-    int maxLevel
-    int currentLevel = 0
+        def err = shouldFail '''
+            trait Level {
+                int maxLevel
+                int currentLevel = 0
 
-    void foo() {
-        if( currentLevel < maxLevel ) {
-            ++currentLevel
-        }
+                void foo() {
+                    if( currentLevel < maxLevel ) {
+                        ++currentLevel
+                    }
+                }
+            }
+
+            class Leveller implements Level {
+                Leveller() {
+                    maxLevel = 3
+                }
+            }
+
+            def v = new Leveller()
+            v.foo()
+            v.foo()
+            v.foo()
+            v.foo()
+            assert v.currentLevel == 3
+        '''
+
+        assert err =~ 'Prefix expressions on trait fields/properties are not supported in traits'
     }
-}
 
-class Leveller implements Level {
-    Leveller() {
-        maxLevel = 3
-    }
-}
-
-def v = new Leveller()
-v.foo()
-v.foo()
-v.foo()
-v.foo()
-assert v.currentLevel == 3
-'''
-        assert message.contains('Prefix expressions on trait fields/properties are not supported in traits')
-    }
-
-    // GROOVY-6691
+    @Test // GROOVY-6691
     void testTraitImplementingGenericSuperTrait() {
         assertScript '''
             class App {}
@@ -1686,7 +1779,8 @@ assert v.currentLevel == 3
             }
             test()
         '''
-        def message = shouldFail '''
+
+        def err = shouldFail '''
             class App {}
             trait Base<T> {
                 T value
@@ -1702,9 +1796,11 @@ assert v.currentLevel == 3
             }
             test()
         '''
-        assert message.contains('Cannot find matching method Dummy#set(java.lang.String)')
+
+        assert err =~ 'Cannot find matching method Dummy#set\\(java.lang.String\\)'
     }
 
+    @Test
     void testUpdateFieldFromOtherReceiver() {
         assertScript '''
             class Person {
@@ -1723,6 +1819,7 @@ assert v.currentLevel == 3
         '''
     }
 
+    @Test
     void testUseStaticFieldInTraitBody() {
         assertScript '''
             import java.util.logging.Logger
@@ -1743,6 +1840,7 @@ assert v.currentLevel == 3
         '''
     }
 
+    @Test
     void testUpdateStaticFieldInTraitBody() {
         assertScript '''
             trait Loggable {
@@ -1764,401 +1862,420 @@ assert v.currentLevel == 3
         '''
     }
 
+    @Test
     void testProxyTarget() {
         assertScript '''
-trait Helloable implements CharSequence {
-    void hello() { println "hello" }
-}
+            trait Helloable implements CharSequence {
+                void hello() { println "hello" }
+            }
 
-def x = new String("hello") as Helloable
-x.hello()
-assert !(x instanceof String)
-assert x instanceof Helloable
-assert x instanceof GeneratedGroovyProxy
-assert x.toUpperCase() == "HELLO" // expected
-assert x.proxyTarget.tr('h','*') == "*ello"
-'''
-
+            def x = new String("hello") as Helloable
+            x.hello()
+            assert !(x instanceof String)
+            assert x instanceof Helloable
+            assert x instanceof GeneratedGroovyProxy
+            assert x.toUpperCase() == "HELLO" // expected
+            assert x.proxyTarget.tr('h','*') == "*ello"
+        '''
     }
 
+    @Test
     void testTraitsGetAsType() {
-        assertScript '''import org.codehaus.groovy.transform.trait.Traits
-trait Helloable implements CharSequence {
-    void hello() { println "hello" }
-}
-def str = "hello"
-def x = str as Helloable
-x.hello()
-assert !(x instanceof String)
-assert x instanceof Helloable
-assert x instanceof GeneratedGroovyProxy
-assert x.toUpperCase() == "HELLO" // expected
-assert x.proxyTarget.tr('h','*') == "*ello"
-def proxyTarget = x.proxyTarget
-assert proxyTarget.is(str)
-def converted = Traits.getAsType(x,String)
-assert converted.is(str)
-'''
+        assertScript '''
+            import org.codehaus.groovy.transform.trait.Traits
+            trait Helloable implements CharSequence {
+                void hello() { println "hello" }
+            }
+            def str = "hello"
+            def x = str as Helloable
+            x.hello()
+            assert !(x instanceof String)
+            assert x instanceof Helloable
+            assert x instanceof GeneratedGroovyProxy
+            assert x.toUpperCase() == "HELLO" // expected
+            assert x.proxyTarget.tr('h','*') == "*ello"
+            def proxyTarget = x.proxyTarget
+            assert proxyTarget.is(str)
+            def converted = Traits.getAsType(x,String)
+            assert converted.is(str)
+        '''
     }
 
+    @Test
     void testStackableTraits() {
-        assertScript '''import org.codehaus.groovy.transform.trait.Traits
+        assertScript '''
+            import org.codehaus.groovy.transform.trait.Traits
 
-trait A {
-    int foo(int x) { x }
-}
-trait B {
-    int foo(int x) { x<10?2*super.foo(x):x }
-}
-class C implements A,B {}
-def c = new C()
-(0..9).each {
-    assert c.foo(it) == 2*it
-}
-(10..20).each {
-    assert c.foo(it) == it
-}'''
+            trait A {
+                int foo(int x) { x }
+            }
+            trait B {
+                int foo(int x) { x<10?2*super.foo(x):x }
+            }
+            class C implements A,B {}
+            def c = new C()
+            (0..9).each {
+                assert c.foo(it) == 2*it
+            }
+            (10..20).each {
+                assert c.foo(it) == it
+            }
+        '''
     }
 
+    @Test
     void testStackableTraitsWithExplicitClasses() {
         assertScript '''
+            interface IntQueue {
+                Integer get()
+                void put(Integer x)
+            }
+            trait Incrementing {
+                void put(Integer x) { println 'Incrementing';super.put(x+1) }
+            }
+            trait Filtering {
+                void put(Integer x) { println 'Filtering'; if(x >=0) super.put(x) }
+            }
 
-interface IntQueue {
-    Integer get()
-    void put(Integer x)
-}
-trait Incrementing {
-    void put(Integer x) { println 'Incrementing';super.put(x+1) }
-}
-trait Filtering {
-    void put(Integer x) { println 'Filtering'; if(x >=0) super.put(x) }
-}
+            class BasicIntQueue implements IntQueue{
+                private buf = new ArrayList<Integer>()
+                Integer get() { buf.remove(0) }
+                void put(Integer x) { buf << x}
+                String toString() { buf.toString() }
+            }
+            class Sub extends BasicIntQueue implements Incrementing, Filtering {}
 
-class BasicIntQueue implements IntQueue{
-    private buf = new ArrayList<Integer>()
-    Integer get() { buf.remove(0) }
-    void put(Integer x) { buf << x}
-    String toString() { buf.toString() }
-}
-class Sub extends BasicIntQueue implements Incrementing, Filtering {}
+            def queue = new Sub()
+            //queue.put(-1) // filtering -> sink
+            queue.put(0) // filtering ok -> incrementing.put -> 1
+            queue.put(1)  // filtering ok -> goes to incrementing.put -> 2
+            assert queue.get() == 1
+            assert queue.get() == 2
+            assert queue.toString() == "[]"
 
-def queue = new Sub()
-//queue.put(-1) // filtering -> sink
-queue.put(0) // filtering ok -> incrementing.put -> 1
-queue.put(1)  // filtering ok -> goes to incrementing.put -> 2
-assert queue.get() == 1
-assert queue.get() == 2
-assert queue.toString() == "[]"
+            class Sub2 extends BasicIntQueue implements Filtering, Incrementing {}
 
-class Sub2 extends BasicIntQueue implements Filtering, Incrementing {}
-
-def queue2 = new Sub2()
-queue2.put(-1) // incrementing -> put(0) -> filtering ok -> 0
-queue2.put(0) // incrementing -> put(1) -> filtering ok -> 1
-queue2.put(1) // incrementing -> put(2) -> filtering ok -> 2
-assert queue2.get() == 0
-assert queue2.get() == 1
-assert queue2.get() == 2
-assert queue2.toString() == "[]"
-
-'''
+            def queue2 = new Sub2()
+            queue2.put(-1) // incrementing -> put(0) -> filtering ok -> 0
+            queue2.put(0) // incrementing -> put(1) -> filtering ok -> 1
+            queue2.put(1) // incrementing -> put(2) -> filtering ok -> 2
+            assert queue2.get() == 0
+            assert queue2.get() == 1
+            assert queue2.get() == 2
+            assert queue2.toString() == "[]"
+        '''
     }
 
+    @Test
     void testStackableTraitsWithDynamicTraits() {
         assertScript '''
+            interface IntQueue {
+                Integer get()
+                void put(Integer x)
+            }
+            trait Incrementing {
+                void put(Integer x) { println 'Incrementing';super.put(x+1) }
+            }
+            trait Filtering {
+                void put(Integer x) { println 'Filtering'; if(x >=0) super.put(x) }
+            }
 
-interface IntQueue {
-    Integer get()
-    void put(Integer x)
-}
-trait Incrementing {
-    void put(Integer x) { println 'Incrementing';super.put(x+1) }
-}
-trait Filtering {
-    void put(Integer x) { println 'Filtering'; if(x >=0) super.put(x) }
-}
+            class BasicIntQueue implements IntQueue{
+                private buf = new ArrayList<Integer>()
+                Integer get() { buf.remove(0) }
+                void put(Integer x) { buf << x}
+                String toString() { buf.toString() }
+            }
 
-class BasicIntQueue implements IntQueue{
-    private buf = new ArrayList<Integer>()
-    Integer get() { buf.remove(0) }
-    void put(Integer x) { buf << x}
-    String toString() { buf.toString() }
-}
+            def queue = new BasicIntQueue().withTraits Incrementing, Filtering
+            queue.put(-1) // filtering -> skink
+            queue.put(0) // filtering ok -> incrementing -> [1]
+            queue.put(1) // filtering ok -> incrementing -> [1,2]
+            assert queue.get() == 1
+            assert queue.get() == 2
+            assert queue.proxyTarget.toString() == "[]"
 
-def queue = new BasicIntQueue().withTraits Incrementing, Filtering
-queue.put(-1) // filtering -> skink
-queue.put(0) // filtering ok -> incrementing -> [1]
-queue.put(1) // filtering ok -> incrementing -> [1,2]
-assert queue.get() == 1
-assert queue.get() == 2
-assert queue.proxyTarget.toString() == "[]"
-
-def queue2 = new BasicIntQueue().withTraits Filtering, Incrementing
-queue2.put(-1) // incrementing -> 0 -> filtering -> ok -> [0]
-queue2.put(0) // incrementing -> 1 -> filtering ok -> [0,1]
-queue2.put(1) // incrementing -> 2 -> filtering ok -> [0,1,2]
-assert queue2.get() == 0
-assert queue2.get() == 1
-assert queue2.get() == 2
-assert queue.proxyTarget.toString() == "[]"
-'''
+            def queue2 = new BasicIntQueue().withTraits Filtering, Incrementing
+            queue2.put(-1) // incrementing -> 0 -> filtering -> ok -> [0]
+            queue2.put(0) // incrementing -> 1 -> filtering ok -> [0,1]
+            queue2.put(1) // incrementing -> 2 -> filtering ok -> [0,1,2]
+            assert queue2.get() == 0
+            assert queue2.get() == 1
+            assert queue2.get() == 2
+            assert queue.proxyTarget.toString() == "[]"
+        '''
     }
 
+    @Test
     void testSuperKeywordInRegularTraitInheritance() {
         assertScript '''
-trait A {
-    int foo(x) { 1+x }
-}
-trait B extends A {
-    int foo(x) { 2*super.foo(x)}
-}
-class C implements B {}
-def c = new C()
-assert c.foo(2) == 6
-'''
+            trait A {
+                int foo(x) { 1+x }
+            }
+            trait B extends A {
+                int foo(x) { 2*super.foo(x)}
+            }
+            class C implements B {}
+            def c = new C()
+            assert c.foo(2) == 6
+        '''
     }
 
+    @Test
     void testSuperKeywordInRegularTraitMultipleInheritance() {
         assertScript '''
-trait A {
-    int foo(x) { 1+x }
-}
-trait A2 {
-    int foo(x) { 1+super.foo(x) }
-}
-trait B implements A,A2 {
-    int foo(x) { 2*super.foo(x)}
-}
-class C implements B {}
-def c = new C()
-assert c.foo(2) == 8
-'''
+            trait A {
+                int foo(x) { 1+x }
+            }
+            trait A2 {
+                int foo(x) { 1+super.foo(x) }
+            }
+            trait B implements A,A2 {
+                int foo(x) { 2*super.foo(x)}
+            }
+            class C implements B {}
+            def c = new C()
+            assert c.foo(2) == 8
+        '''
     }
 
+    @Test
     void testStaticallyCompiledTraitWithCallToSuper() {
         assertScript '''
-@groovy.transform.CompileStatic
-trait A {
-    int foo(int x) { 1+x }
-}
-@groovy.transform.CompileStatic
-trait B extends A {
-    int foo(int x) { 2*super.foo(x)}
-}
-class C implements B {}
-def c = new C()
-assert c.foo(2) == 6
-'''
+            @groovy.transform.CompileStatic
+            trait A {
+                int foo(int x) { 1+x }
+            }
+            @groovy.transform.CompileStatic
+            trait B extends A {
+                int foo(int x) { 2*super.foo(x)}
+            }
+            class C implements B {}
+            def c = new C()
+            assert c.foo(2) == 6
+        '''
     }
 
+    @Test
     void testStaticallyCompiledTraitWithCallToSuperInPackage() {
-        assertScript '''package blah
-@groovy.transform.CompileStatic
-trait A {
-    int foo(int x) { 1+x }
-}
-@groovy.transform.CompileStatic
-trait B extends A {
-    int foo(int x) { 2*super.foo(x)}
-}
-class C implements B {}
-def c = new C()
-assert c.foo(2) == 6
-'''
+        assertScript '''
+            package blah
+            @groovy.transform.CompileStatic
+            trait A {
+                int foo(int x) { 1+x }
+            }
+            @groovy.transform.CompileStatic
+            trait B extends A {
+                int foo(int x) { 2*super.foo(x)}
+            }
+            class C implements B {}
+            def c = new C()
+            assert c.foo(2) == 6
+        '''
     }
 
+    @Test
     void testStaticallyCompiledTraitWithCallToSuperInPackageAndUnderscoreInClassName() {
-        assertScript '''package blah
-@groovy.transform.CompileStatic
-trait A {
-    int foo(int x) { 1+x }
-}
-@groovy.transform.CompileStatic
-trait B_B extends A {
-    int foo(int x) { 2*super.foo(x)}
-}
-class C implements B_B {}
-def c = new C()
-assert c.foo(2) == 6
-'''
+        assertScript '''
+            package blah
+            @groovy.transform.CompileStatic
+            trait A {
+                int foo(int x) { 1+x }
+            }
+            @groovy.transform.CompileStatic
+            trait B_B extends A {
+                int foo(int x) { 2*super.foo(x)}
+            }
+            class C implements B_B {}
+            def c = new C()
+            assert c.foo(2) == 6
+        '''
     }
 
+    @Test
     void testStaticallyCompiledTraitWithCallToSuperAndNoExplicitSuperTrait() {
         assertScript '''
-@groovy.transform.CompileStatic
-trait A {
-    int foo(int x) { 1+x }
-}
-@groovy.transform.CompileStatic
-trait B {
-    int foo(int x) { 2*(int)super.foo(x)}
-}
-class C implements A,B {}
-def c = new C()
-assert c.foo(2) == 6
-'''
+            @groovy.transform.CompileStatic
+            trait A {
+                int foo(int x) { 1+x }
+            }
+            @groovy.transform.CompileStatic
+            trait B {
+                int foo(int x) { 2*(int)super.foo(x)}
+            }
+            class C implements A,B {}
+            def c = new C()
+            assert c.foo(2) == 6
+        '''
     }
 
+    @Test
     void testFieldInTraitAndDynamicProxy() {
         assertScript '''
-trait WithName {
-    public String name
-}
-WithName p = new Object() as WithName
-p.WithName__name = 'foo'
-assert p.WithName__name == 'foo'
-'''
+            trait WithName {
+                public String name
+            }
+            WithName p = new Object() as WithName
+            p.WithName__name = 'foo'
+            assert p.WithName__name == 'foo'
+        '''
     }
 
+    @Test
     void testFieldInTraitModifiers() {
-        assertScript '''import groovy.transform.ASTTest
-import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
-trait A {
-    public int foo
-}
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    def field = node.getField('A__foo')
-    assert field.isPublic()
-})
-class B implements A {}
-def b = new B()
-'''
-        assertScript '''import groovy.transform.ASTTest
+        assertScript '''
+            import groovy.transform.ASTTest
+            import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
+            trait A {
+                public int foo
+            }
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def field = node.getField('A__foo')
+                assert field.isPublic()
+            })
+            class B implements A {}
+            def b = new B()
+        '''
 
-import java.lang.reflect.Modifier
+        assertScript '''
+            import groovy.transform.ASTTest
+            import java.lang.reflect.Modifier
 
-import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
-trait A {
-    private int foo
-}
-@ASTTest(phase=INSTRUCTION_SELECTION,value={
-    def field = node.getField('A__foo')
-    assert Modifier.isPrivate(field.modifiers)
-})
-class B implements A {}
-def b = new B()
-'''
+            import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
+            trait A {
+                private int foo
+            }
+            @ASTTest(phase=INSTRUCTION_SELECTION,value={
+                def field = node.getField('A__foo')
+                assert Modifier.isPrivate(field.modifiers)
+            })
+            class B implements A {}
+            def b = new B()
+        '''
     }
 
+    @Test
     void testDecorateFinalClassWithTrait() {
         assertScript '''
-trait Filtering {
-    StringBuilder append(String str) {
-        def subst = str.replace('o','')
-        super.append(subst)
+            trait Filtering {
+                StringBuilder append(String str) {
+                    def subst = str.replace('o','')
+                    super.append(subst)
+                }
+                String toString() { super.toString() }
+            }
+            def sb = new StringBuilder().withTraits Filtering
+            sb.append('Groovy')
+            assert sb.toString() == 'Grvy'
+        '''
     }
-    String toString() { super.toString() }
-}
-def sb = new StringBuilder().withTraits Filtering
-sb.append('Groovy')
-assert sb.toString() == 'Grvy'
 
-'''
-    }
-
-    // GROOVY-6708
+    @Test // GROOVY-6708
     void testCovariantReturnTypeWithGenericsInheritance() {
         assertScript '''
-trait Top<X> {
-    X self(X x) {x}
-}
-trait Bottom<X> extends Top<X> {}
-class A implements Bottom<Integer> {}
-def a = new A()
-assert a.self(15) == 15
-'''
+            trait Top<X> {
+                X self(X x) {x}
+            }
+            trait Bottom<X> extends Top<X> {}
+            class A implements Bottom<Integer> {}
+            def a = new A()
+            assert a.self(15) == 15
+        '''
     }
 
+    @Test
     void testSuperCallInTraitAndDeepHierarchy() {
         assertScript '''
-interface IntQueue {
-    Integer get()
-    void put(Integer x)
-}
+            interface IntQueue {
+                Integer get()
+                void put(Integer x)
+            }
 
-trait Incrementing/* implements IntQueue */{
-    void put(Integer x) {
-        println 'Incrementing'
-        super.put(x+1)
+            trait Incrementing/* implements IntQueue */{
+                void put(Integer x) {
+                    println 'Incrementing'
+                    super.put(x+1)
+                }
+            }
+            trait Filtering/* implements IntQueue */{
+                void put(Integer x) {
+                    println 'Filtering'
+                    if(x > 0) {
+                      println "Value $x, delegating to super"
+                      super.put(x)
+                   }
+                }
+            }
+
+            class BasicIntQueue implements IntQueue {
+                private buf = new ArrayList<Integer>()
+                Integer get() { buf.remove(0) }
+                void put(Integer x) { println 'BasicIntQueue'; buf << x}
+                String toString() { buf.toString() }
+            }
+
+            class IncrementingQueue extends BasicIntQueue implements Incrementing {}
+            class FilteringIncrementingQueue extends IncrementingQueue implements Filtering {}
+
+            def queue = new FilteringIncrementingQueue()
+            queue.put(-1)
+            queue.put(0)
+            queue.put(1)
+            assert queue.get() == 2
+            assert queue.toString() == "[]"
+        '''
     }
-}
-trait Filtering/* implements IntQueue */{
-    void put(Integer x) {
-        println 'Filtering'
-        if(x > 0) {
-          println "Value $x, delegating to super"
-          super.put(x)
-       }
-    }
-}
 
-class BasicIntQueue implements IntQueue {
-    private buf = new ArrayList<Integer>()
-    Integer get() { buf.remove(0) }
-    void put(Integer x) { println 'BasicIntQueue'; buf << x}
-    String toString() { buf.toString() }
-}
-
-class IncrementingQueue extends BasicIntQueue implements Incrementing {}
-class FilteringIncrementingQueue extends IncrementingQueue implements Filtering {}
-
-def queue = new FilteringIncrementingQueue()
-queue.put(-1)
-queue.put(0)
-queue.put(1)
-assert queue.get() == 2
-assert queue.toString() == "[]"
-'''
-    }
-
+    @Test
     void testCallToSuperTraitWithStackable() {
-        assertScript '''trait T2 {
-    void foo() {
-        println 'T2'
-        super.foo()
-    }
-}
-trait T3 {
-    void foo() {
-        println 'T3'
-        super.foo()
-    }
-}
-class D implements T2, T3 {
-    void foo() {
-        T3.super.foo() // explicit call
-        println "D::foo"
-    }
-}
-def d = new D()
-try {
-d.foo()
-} catch (MissingMethodException) {
-    // will fail because T2 calls super.foo() and D.super doesn't define foo
-}
-'''
+        assertScript '''
+            trait T2 {
+                void foo() {
+                    println 'T2'
+                    super.foo()
+                }
+            }
+            trait T3 {
+                void foo() {
+                    println 'T3'
+                    super.foo()
+                }
+            }
+            class D implements T2, T3 {
+                void foo() {
+                    T3.super.foo() // explicit call
+                    println "D::foo"
+                }
+            }
+            def d = new D()
+            try {
+            d.foo()
+            } catch (MissingMethodException) {
+                // will fail because T2 calls super.foo() and D.super doesn't define foo
+            }
+        '''
     }
 
-    // GROOVY-7058
+    @Test // GROOVY-7058
     void testShouldNotThrowNPEBecauseOfIncompleteGenericsTypeInformation() {
         assertScript '''
-    class Project { Task task(String name, Map args) {} }
-    class Task {}
-    interface Plugin<P>{}
-    trait PluginUtils {
-        abstract Project getProject()
+            class Project { Task task(String name, Map args) {} }
+            class Task {}
+            interface Plugin<P>{}
+            trait PluginUtils {
+                abstract Project getProject()
 
-        public <T extends Task> T createTask(String name, Class<T> type, Closure<?> config) {
-          project.task(name, type: type, config)
-        }
+                public <T extends Task> T createTask(String name, Class<T> type, Closure<?> config) {
+                  project.task(name, type: type, config)
+                }
+            }
+
+            class MyPlugin implements Plugin<Project>, PluginUtils { Project project }
+            new MyPlugin()
+        '''
     }
 
-    class MyPlugin implements Plugin<Project>, PluginUtils { Project project }
-    new MyPlugin()
-'''
-    }
-
-    // GROOVY-7123
+    @Test // GROOVY-7123
     void testHelperSetterShouldNotReturnVoid() {
         assertScript '''
             trait A {
@@ -2171,94 +2288,99 @@ d.foo()
         '''
     }
 
-    static trait TestTrait {
-        int a() { 123 }
-    }
-
+    @Test
     void testSimpleSelfType() {
-        assertScript '''import groovy.transform.SelfType
-        import groovy.transform.CompileStatic
+        assertScript '''
+            import groovy.transform.SelfType
+            import groovy.transform.CompileStatic
 
-        trait A {
-            int a() { 1 }
-        }
+            trait A {
+                int a() { 1 }
+            }
 
-        @CompileStatic
-        @SelfType(A)
-        trait B {
-            int b() { 2*a() }
-        }
-        class C implements A,B {}
-        def c = new C()
-        assert c.b() == 2
+            @CompileStatic
+            @SelfType(A)
+            trait B {
+                int b() { 2*a() }
+            }
+            class C implements A,B {}
+            def c = new C()
+            assert c.b() == 2
         '''
     }
 
+    @Test
     void testSimpleSelfTypeInSubTrait() {
-        assertScript '''import groovy.transform.SelfType
-        import groovy.transform.CompileStatic
+        assertScript '''
+            import groovy.transform.SelfType
+            import groovy.transform.CompileStatic
 
-        trait A {
-            int a() { 1 }
-        }
+            trait A {
+                int a() { 1 }
+            }
 
-        @CompileStatic
-        @SelfType(A)
-        trait B {
-            int b() { 2*a() }
-        }
+            @CompileStatic
+            @SelfType(A)
+            trait B {
+                int b() { 2*a() }
+            }
 
-        @CompileStatic
-        trait SubB extends B {
-            int c() { 3*a() }
-        }
+            @CompileStatic
+            trait SubB extends B {
+                int c() { 3*a() }
+            }
 
 
-        class C implements A,SubB {}
-        def c = new C()
-        assert c.c() == 3
+            class C implements A,SubB {}
+            def c = new C()
+            assert c.c() == 3
         '''
     }
 
+    @Test
     void testDoubleSelfType() {
-        assertScript '''import groovy.transform.SelfType
-        import groovy.transform.CompileStatic
+        assertScript '''
+            import groovy.transform.SelfType
+            import groovy.transform.CompileStatic
 
-        trait A {
-            int a() { 1 }
-        }
-        trait A2 {
-            int a2() { 2 }
-        }
+            trait A {
+                int a() { 1 }
+            }
+            trait A2 {
+                int a2() { 2 }
+            }
 
-        @CompileStatic
-        @SelfType([A,A2])
-        trait B {
-            int b() { 2*a()*a2() }
-        }
-        class C implements A,A2,B {}
-        def c = new C()
-        assert c.b() == 4
+            @CompileStatic
+            @SelfType([A,A2])
+            trait B {
+                int b() { 2*a()*a2() }
+            }
+            class C implements A,A2,B {}
+            def c = new C()
+            assert c.b() == 4
         '''
     }
 
+    @Test
     void testClassDoesNotImplementSelfType() {
         def err = shouldFail '''
-        import groovy.transform.SelfType
-        import groovy.transform.CompileStatic
+            import groovy.transform.SelfType
+            import groovy.transform.CompileStatic
 
-        @CompileStatic
-        @SelfType([String,Serializable])
-        trait B {
-            String b() { toUpperCase() }
-        }
-        class C implements B {}
-        def c = new C()
+            @CompileStatic
+            @SelfType([String,Serializable])
+            trait B {
+                String b() { toUpperCase() }
+            }
+            class C implements B {}
+            def c = new C()
         '''
-        assert err.contains("class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'")
-        assert err.contains("class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'")
+
+        assert err =~ "class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'"
+        assert err =~ "class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'"
     }
 
+    @Test
     void testClassDoesNotImplementSelfTypeDefinedInInheritedTrait() {
         def err = shouldFail '''
             import groovy.transform.SelfType
@@ -2272,102 +2394,114 @@ d.foo()
             class Child implements Middle { }
             new Child().foo()
         '''
-        assert err.contains("class 'Child' implements trait 'Trait' but does not implement self type interface 'Self'")
+
+        assert err =~ "class 'Child' implements trait 'Trait' but does not implement self type interface 'Self'"
     }
 
+    @Test
     void testClassDoesNotImplementSelfTypeUsingAbstractClass() {
         def err = shouldFail '''
-        import groovy.transform.SelfType
-        import groovy.transform.CompileStatic
+            import groovy.transform.SelfType
+            import groovy.transform.CompileStatic
 
-        @CompileStatic
-        @SelfType([String,Serializable])
-        trait B {
-            String b() { toUpperCase() }
-        }
-        abstract class C implements B {}
-        class D extends C {}
-        def c = new D()
-
+            @CompileStatic
+            @SelfType([String,Serializable])
+            trait B {
+                String b() { toUpperCase() }
+            }
+            abstract class C implements B {}
+            class D extends C {}
+            def c = new D()
         '''
-        assert err.contains("class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'")
-        assert err.contains("class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'")
+
+        assert err =~ "class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'"
+        assert err =~ "class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'"
     }
 
+    @Test
     void testMethodAcceptingThisAsSelfTrait() {
         assertScript '''
-import groovy.transform.SelfType
-import groovy.transform.CompileStatic
+            import groovy.transform.SelfType
+            import groovy.transform.CompileStatic
 
-class CommunicationService {
-    static void sendMessage(String from, String to, String message) {
-        println "$from sent [$message] to $to"
+            class CommunicationService {
+                static void sendMessage(String from, String to, String message) {
+                    println "$from sent [$message] to $to"
+                }
+            }
+
+            class Device { String id }
+
+            @SelfType(Device)
+            @CompileStatic
+            trait Communicating {
+                void sendMessage(Device to, String message) {
+                    SecurityService.check(this)
+                    CommunicationService.sendMessage(id, to.id, message)
+                }
+            }
+
+            class MyDevice extends Device implements Communicating {}
+
+            def bob = new MyDevice(id:'Bob')
+            def alice = new MyDevice(id:'Alice')
+            bob.sendMessage(alice,'secret')
+
+            class SecurityService {
+                static void check(Device d) { if (d.id==null) throw new SecurityException() }
+            }
+        '''
     }
-}
 
-class Device { String id }
-
-@SelfType(Device)
-@CompileStatic
-trait Communicating {
-    void sendMessage(Device to, String message) {
-        SecurityService.check(this)
-        CommunicationService.sendMessage(id, to.id, message)
-    }
-}
-
-class MyDevice extends Device implements Communicating {}
-
-def bob = new MyDevice(id:'Bob')
-def alice = new MyDevice(id:'Alice')
-bob.sendMessage(alice,'secret')
-
-class SecurityService {
-    static void check(Device d) { if (d.id==null) throw new SecurityException() }
-}
-'''
-    }
-
+    @Test
     void testRuntimeSelfType() {
-        assertScript '''import groovy.transform.CompileStatic
-import groovy.transform.SelfType
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.SelfType
 
-trait A {
-    int a() { 1 }
-}
+            trait A {
+                int a() { 1 }
+            }
 
-@CompileStatic
-@SelfType(A)
-trait B {
-    int b() { 2*a() }
-}
-class C implements A {}
-def c = new C() as B
-assert c.b() == 2
-'''
+            @CompileStatic
+            @SelfType(A)
+            trait B {
+                int b() { 2*a() }
+            }
+            class C implements A {}
+            def c = new C() as B
+            assert c.b() == 2
+        '''
     }
 
+    @Test
     void testRuntimeSelfTypeWithInheritance() {
-        assertScript '''import groovy.transform.CompileStatic
-import groovy.transform.SelfType
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.SelfType
 
-trait A {
-    int a() { 1 }
-}
+            trait A {
+                int a() { 1 }
+            }
 
-@CompileStatic
-@SelfType(A)
-trait B {
-    int b() { 2*a() }
-}
+            @CompileStatic
+            @SelfType(A)
+            trait B {
+                int b() { 2*a() }
+            }
 
-trait B2 extends B {}
+            trait B2 extends B {}
 
-class C implements A {}
-def c = new C() as B2
-assert c.b() == 2
-'''
+            class C implements A {}
+            def c = new C() as B2
+            assert c.b() == 2
+        '''
     }
+
+    @SelfType([String, Date])
+    trait DoubleSelfTypeTrait {}
+
+    @Test
     void testAnnotationsOfPrecompiledTrait() {
         def cn = ClassHelper.make(DoubleSelfTypeTrait)
         def ann = cn.getAnnotations(ClassHelper.make(SelfType))
@@ -2380,12 +2514,8 @@ assert c.b() == 2
         }
     }
 
-
-    @SelfType([String, Date])
-    trait DoubleSelfTypeTrait {}
-
-    //GROOVY-7287
-    void testTraitWithMethodLevelGenericsShadowing() {
+    @Test // GROOVY-7287
+    void testTraitWithMethodLevelGenericsShadowing1() {
         assertScript '''
             trait Configurable<ConfigObject> {
                 ConfigObject configObject
@@ -2429,22 +2559,26 @@ assert c.b() == 2
             }
             assert module.value == 'test-1.0'
         '''
+    }
 
+    @Test // GROOVY-7287
+    void testTraitWithMethodLevelGenericsShadowing2() {
         assertScript '''
             trait SomeTrait {
                 def <T extends Number> T someOtherMethod() {}
             }
             class SuperClass<T> implements SomeTrait {}
             class SubClass extends SuperClass<String> implements SomeTrait {}
-            SubClass.declaredMethods.findAll    {it.name=="someOtherMethod"}.
-                                     each {
-                                         assert it.returnType == Number
-                                         assert it.genericReturnType.name == "T"
-                                     }
+
+            SubClass.declaredMethods.findAll { it.name == 'someOtherMethod' }
+                                    .each {
+                                        assert it.returnType == Number
+                                        assert it.genericReturnType.name == 'T'
+                                    }
         '''
     }
 
-    //GROOVY-7297
+    @Test // GROOVY-7297
     void testMethodlevelGenericsFromPrecompiledClass() {
         //SomeTrait needs to be outside the script
         assertScript '''
@@ -2459,7 +2593,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8281
+    @Test // GROOVY-8281
     void testFinalFieldsDependency() {
         assertScript '''
             trait MyTrait {
@@ -2474,7 +2608,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8282
+    @Test // GROOVY-8282
     void testBareNamedArgumentPrivateMethodCall() {
         assertScript '''
             trait BugReproduction {
@@ -2492,7 +2626,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8730
+    @Test // GROOVY-8730
     void testAbstractMethodsNotNeededInHelperClass() {
         assertScript '''
             import static groovy.test.GroovyAssert.shouldFail
@@ -2511,7 +2645,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8731
+    @Test // GROOVY-8731
     void testStaticMethodsIgnoredWhenExistingInstanceMethodsFound() {
         assertScript '''
             trait StaticFooBarBaz {
@@ -2536,7 +2670,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-6716
+    @Test // GROOVY-6716
     void testAnonymousInnerClassStyleTraitUsage() {
         assertScript '''
             interface Foo { def foo() }
@@ -2553,7 +2687,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8722
+    @Test // GROOVY-8722
     void testFinalModifierSupport() {
         assertScript '''
             import static java.lang.reflect.Modifier.isFinal
@@ -2591,6 +2725,7 @@ assert c.b() == 2
                 assert !isFinal(FooFoo2, 'baz')
             }
         '''
+
         assertScript '''
             trait Startable {
                 final int start() { doStart() * 2 }
@@ -2607,7 +2742,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8880
+    @Test // GROOVY-8880
     void testTraitWithInitBlock() {
         assertScript '''
             trait MyTrait {
@@ -2627,7 +2762,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8880
+    @Test // GROOVY-8880
     void testTraitWithStaticInitBlock() {
         assertScript '''
             trait MyTrait {
@@ -2645,7 +2780,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8892
+    @Test // GROOVY-8892
     void testTraitWithStaticInitBlockWithAndWithoutProps() {
         assertScript '''
             class Counter {
@@ -2669,7 +2804,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8954
+    @Test // GROOVY-8954
     void testTraitWithPropertyAlsoFromInterfaceSC() {
         assertScript '''
             interface DomainProp {
@@ -2689,7 +2824,7 @@ assert c.b() == 2
         '''
     }
 
-    //GROOVY-8272
+    @Test // GROOVY-8272
     void testTraitAccessToInheritedStaticMethods() {
         assertScript '''
             import groovy.transform.CompileStatic
