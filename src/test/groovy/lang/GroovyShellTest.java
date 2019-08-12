@@ -119,7 +119,7 @@ public class GroovyShellTest extends GroovyTestCase {
     }
 
     public void testWithGCSWithURL() throws Exception {
-        String scriptFileName = "src/test/groovy/bugs/GROOVY3934Helper.groovy";
+        String scriptFileName = "src/test/groovy/bugs/scriptForGroovy3934.groovy";
         File helperScript = new File(scriptFileName);
         if(!helperScript.exists()) {
             fail("File " + scriptFileName + " does not exist");

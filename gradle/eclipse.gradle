@@ -59,6 +59,8 @@ allprojects {
                 append('''\
                     eclipse.preferences.version=1
                     groovy.compiler.level=30
+                    groovy.script.filters=**/*.gradle,n,**/script*.groovy,y,**/*resources/**/*.groovy,y,**/benchmarks/**/*.groovy,y
+                    org.codehaus.groovy.eclipse.preferences.compiler.project=true
                     '''.stripIndent()
                 )
             }

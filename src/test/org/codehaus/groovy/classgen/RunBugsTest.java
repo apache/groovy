@@ -53,7 +53,7 @@ public class RunBugsTest extends TestSupport {
     }
 
     public void testUseClosureInScript() throws Exception {
-        GroovyObject object = compile("src/test/groovy/script/UseClosureInScript.groovy");
+        GroovyObject object = compile("src/test/groovy/script/scriptWithClosure.groovy");
         object.invokeMethod("run", null);
     }
 

@@ -16,8 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+a = 1
+evaluate("a = 3")
+assert a == 3
 
-t = new Thread({ println "Groovy" })
-t.start()
-t.join()
+println("Done and now set a to ${a}")
+
+
+println("About to call another script")
+
+evaluate(new File("src/test/groovy/script/scriptHelloWorld.groovy"))
+
+println("Done")
