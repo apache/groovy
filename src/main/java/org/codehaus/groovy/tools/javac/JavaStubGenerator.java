@@ -63,10 +63,17 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
 public class JavaStubGenerator {
     private final boolean java5;
@@ -147,15 +154,35 @@ public class JavaStubGenerator {
         try {
             Verifier verifier = new Verifier() {
                 @Override
-                public void visitClass(final ClassNode node) {
-                    List<Statement> savedStatements = new ArrayList<Statement>(node.getObjectInitializerStatements());
+                public void visitClass(ClassNode node) {
+                    List<Statement> savedStatements = new ArrayList<>(node.getObjectInitializerStatements());
                     super.visitClass(node);
                     node.getObjectInitializerStatements().addAll(savedStatements);
-                    for (ClassNode trait : Traits.findTraits(node)) {
+
+                    for (ClassNode trait : findTraits(node)) {
+                        // GROOVY-9031: replace property type placeholder with resolved type from trait generics
+                        Map<String, ClassNode> generics = trait.isUsingGenerics() ? createGenericsSpec(trait) : null;
                         for (PropertyNode traitProperty : trait.getProperties()) {
+                            ClassNode traitPropertyType = traitProperty.getType();
+                            traitProperty.setType(correctToGenericsSpec(generics, traitPropertyType));
                             super.visitProperty(traitProperty);
+                            traitProperty.setType(traitPropertyType);
                         }
                     }
+                }
+
+                private Iterable<ClassNode> findTraits(ClassNode node) {
+                    Set<ClassNode> traits = new LinkedHashSet<>();
+
+                    LinkedList<ClassNode> todo = new LinkedList<>();
+                    Collections.addAll(todo, node.getInterfaces());
+                    while (!todo.isEmpty()) {
+                        ClassNode next = todo.removeLast();
+                        if (Traits.isTrait(next)) traits.add(next);
+                        Collections.addAll(todo, next.getInterfaces());
+                    }
+
+                    return traits;
                 }
 
                 @Override
