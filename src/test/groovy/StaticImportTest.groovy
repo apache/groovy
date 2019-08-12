@@ -27,7 +27,7 @@ import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static groovy.StaticImportTarget.x
 import static groovy.StaticImportTarget.z // do not remove
-import static groovy.StaticImportTarget.cl
+import static groovy.StaticImportTarget.getCl
 import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
 import static groovy.API.*
@@ -257,12 +257,14 @@ class StaticImportTest extends CompilableTestSupport {
             fail()
         } catch (MissingMethodException expected) {}
     }
-    
-    void testStaticImportOfAClosureField() { //GROOVY-3945
+
+    // GROOVY-3945
+    void testStaticImportOfAClosureProperty() {
         assert cl() == 'StaticImportTarget#static closure called'
     }
 
-    void testStaticPropertyImportedImplementedAsGetter() { //GROOVY-4145
+    // GROOVY-4145
+    void testStaticPropertyImportedImplementedAsGetter() {
         assert foo4145 == 3
     }
 
