@@ -16,8 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class NoPackageTest extends GroovyTestCase {
+import org.junit.Test
 
+final class NoPackageTest {
+    @Test
     void testClassDef() {
         assert getClass().name == "NoPackageTest"
     }

@@ -16,17 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class IndyUsageTest extends GroovyTestCase {
-  void testIndyIsUsedNested() {
-    assertScript """
-      def foo(){
-         throw new Exception("blah")
-      }
-      try {
-        foo()
-      } catch (Exception e) {
-        assert e.stackTrace.find { it.className == "org.codehaus.groovy.vmplugin.v7.IndyInterface" }
-      }
-    """
-  }
+package indy
+
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class IndyUsageTest {
+
+    @Test
+    void testIndyIsUsedNested() {
+        assertScript '''
+            def foo() {
+                 throw new Exception('blah')
+            }
+            try {
+                foo()
+            } catch (e) {
+                assert e.stackTrace.find { it.className == 'org.codehaus.groovy.vmplugin.v7.IndyInterface' }
+            }
+        '''
+    }
 }

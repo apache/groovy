@@ -23,7 +23,7 @@ import gls.CompilableTestSupport
 /**
  * Tests various properties of annotation definitions.
  */
-class AnnotationTest extends CompilableTestSupport {
+final class AnnotationTest extends CompilableTestSupport {
 
     /**
      * Check that it is possible to annotate an annotation definition with field and method target elements.
@@ -827,6 +827,8 @@ class AnnotationTest extends CompilableTestSupport {
     void testAnnotationAttributeConstantFromPrecompiledGroovyClass() {
         // GROOVY-3278
         assertScript '''
+            import gls.annotations.*
+
             @ConstAnnotation(ints = 42)
             class Child1 extends Base3278 {}
             

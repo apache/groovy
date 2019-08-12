@@ -16,8 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class Groovy2951Bug extends GroovyTestCase{
-    def void testInstanceLevelMissingMethodWithRegularClosure1() {
+package groovy.bugs
+
+import org.junit.Test
+
+final class Groovy2951 {
+
+    @Test
+    void testInstanceLevelMissingMethodWithRegularClosure1() {
         Groovy2951BugClass1.metaClass.methodMissing = {
             method, args ->
             return method
@@ -26,7 +32,8 @@ class Groovy2951Bug extends GroovyTestCase{
         assert result == "test1"
     }
 
-    def void testInstanceLevelMissingMethodWithRegularClosure2() {
+    @Test
+    void testInstanceLevelMissingMethodWithRegularClosure2() {
         Groovy2951BugClass2.metaClass.methodMissing << { method, args ->
             return method
         }
@@ -34,7 +41,8 @@ class Groovy2951Bug extends GroovyTestCase{
         assert result == "test2"
     }
 
-    def void testInstanceLevelMissingMethodWithMethodClosure() {
+    @Test
+    void testInstanceLevelMissingMethodWithMethodClosure() {
         Groovy2951BugClass3.metaClass.methodMissing = Groovy2951BugClass3.&mm
 
         def result = new Groovy2951BugClass3().test3("arg3", "arg4")
