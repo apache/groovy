@@ -54,18 +54,11 @@ matrix:
       jdk: oraclejdk8
 
 before_script:
-  - |
-    unset _JAVA_OPTIONS
+  - unset _JAVA_OPTIONS
 
 script:
   - ./gradlew -version
   - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test; else travis_wait 60 ./gradlew testWithIndy; fi
-
-notification:
-  email:
-    recipients:
-      - notifications@groovy.apache.org
-    on_failure: always
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
