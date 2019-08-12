@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package gls.annotations
+
 class Base3278 {
     static final int CONST = 3278
     static final int CONST1 = 1024 * 2

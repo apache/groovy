@@ -19,7 +19,7 @@
 package groovy.benchmarks
 
 class Loop {
-  def array = new ArrayList()
+  def array = []
   def pos = 0
 
   void push(obj){
@@ -41,4 +41,3 @@ class Loop {
      }
   }
 }
-

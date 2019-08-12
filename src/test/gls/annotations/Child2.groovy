@@ -16,5 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package gls.annotations
+
 @ConstAnnotation(ints = Integer.MAX_VALUE)
 class Child2 extends Base3278 {}

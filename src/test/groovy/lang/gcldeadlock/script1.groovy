@@ -16,6 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def util = new DeadlockBugUtil()
+def util = new groovy.lang.gcldeadlock.DeadlockBugUtil()
 
 number + "+" + number + "=" + util.plus(number, number)

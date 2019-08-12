@@ -34,7 +34,6 @@ class Loop2 {
 
   static void main(args){
      println "Starting the Loop2 test"
-      
      def s = new Loop2()
      for (i in 1..1000000){
        s.push(i)
@@ -44,4 +43,3 @@ class Loop2 {
      }
   }
 }
-

@@ -129,14 +129,14 @@ class AbstractConcurrentMapSegmentTest {
         assert segment.table.length > INITIAL_SEGMENT_SIZE == truth
     }
 
-    class TestSegment extends AbstractConcurrentMap.Segment {
+    class TestSegment extends org.codehaus.groovy.util.AbstractConcurrentMap.Segment {
 
         protected TestSegment(int initialCapacity) {
             super(initialCapacity)
         }
 
         @Override
-        protected AbstractConcurrentMap.Entry createEntry(Object key, int hash, Object value) {
+        protected org.codehaus.groovy.util.AbstractConcurrentMap.Entry createEntry(Object key, int hash, Object value) {
             TestEntry entry = new TestEntry(key, hash, value)
             entries.add(entry)
             return entry
@@ -150,7 +150,7 @@ class AbstractConcurrentMapSegmentTest {
     }
 }
 
-class TestEntry implements AbstractConcurrentMap.Entry {
+class TestEntry implements org.codehaus.groovy.util.AbstractConcurrentMap.Entry {
     Object key
     Object value
     int hash
