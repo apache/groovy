@@ -91,7 +91,7 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
     """
   }
   
-  void testStandardInhgeritance() {
+  void testStandardInheritance() {
     assertScript """
         class Foo{}
         class Bar extends Foo{}
@@ -105,13 +105,13 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
         assert Foo.class.declaredMethods.find{it.name=="setMetaClass"}!=null
         assert Bar.class.declaredMethods.find{it.name=="setMetaClass"}==null
         
-        assert Foo.class.declaredMethods.find{it.name=="getProperty"}!=null
+        assert Foo.class.declaredMethods.find{it.name=="getProperty"}==null
         assert Bar.class.declaredMethods.find{it.name=="getProperty"}==null
         
-        assert Foo.class.declaredMethods.find{it.name=="setProperty"}!=null
+        assert Foo.class.declaredMethods.find{it.name=="setProperty"}==null
         assert Bar.class.declaredMethods.find{it.name=="setProperty"}==null
         
-        assert Foo.class.declaredMethods.find{it.name=="invokeMethod"}!=null
+        assert Foo.class.declaredMethods.find{it.name=="invokeMethod"}==null
         assert Bar.class.declaredMethods.find{it.name=="invokeMethod"}==null
     """
   }

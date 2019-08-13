@@ -32,18 +32,6 @@ public abstract class GroovyObjectSupport implements GroovyObject {
         this.metaClass = getDefaultMetaClass();
     }
 
-    public Object getProperty(String property) {
-        return getMetaClass().getProperty(this, property);
-    }
-
-    public void setProperty(String property, Object newValue) {
-        getMetaClass().setProperty(this, property, newValue);
-    }
-
-    public Object invokeMethod(String name, Object args) {
-        return getMetaClass().invokeMethod(this, name, args);
-    }
-
     public MetaClass getMetaClass() {
         return this.metaClass;
     }
@@ -51,8 +39,8 @@ public abstract class GroovyObjectSupport implements GroovyObject {
     public void setMetaClass(MetaClass metaClass) {
         this.metaClass =
                 null == metaClass
-                    ? getDefaultMetaClass()
-                    : metaClass;
+                        ? getDefaultMetaClass()
+                        : metaClass;
     }
 
     private MetaClass getDefaultMetaClass() {

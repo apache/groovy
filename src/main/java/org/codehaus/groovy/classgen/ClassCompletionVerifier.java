@@ -205,6 +205,13 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (abstractMethods == null) return;
         for (MethodNode method : abstractMethods) {
             MethodNode sameArgsMethod = node.getMethod(method.getName(), method.getParameters());
+            if (null == sameArgsMethod) {
+                sameArgsMethod = ClassHelper.GROOVY_OBJECT_TYPE.getMethod(method.getName(), method.getParameters());
+                if (null != sameArgsMethod && !sameArgsMethod.isAbstract() && method.getReturnType().equals(sameArgsMethod.getReturnType())) {
+                    return;
+                }
+            }
+
             if (sameArgsMethod==null || method.getReturnType().equals(sameArgsMethod.getReturnType())) {
                 addError("Can't have an abstract method in a non-abstract class." +
                         " The " + getDescription(node) + " must be declared abstract or" +

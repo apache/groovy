@@ -25,6 +25,7 @@ import org.junit.Test
 class GroovyObjectGeneratedTest extends AbstractGeneratedAstTestCase {
     final Class<?> classUnderTest = parseClass('class MyClass { }')
 
+    /*  invokeMethod, getProperty and setProperty are not generated
     @Test
     void test_invokeMethod_is_annotated() {
         assertMethodIsAnnotated(classUnderTest, 'invokeMethod', String, Object)
@@ -39,6 +40,7 @@ class GroovyObjectGeneratedTest extends AbstractGeneratedAstTestCase {
     void test_setProperty_is_annotated() {
         assertMethodIsAnnotated(classUnderTest, 'setProperty', String, Object)
     }
+    */
 
     @Test
     void test_getMetaClass_is_annotated() {

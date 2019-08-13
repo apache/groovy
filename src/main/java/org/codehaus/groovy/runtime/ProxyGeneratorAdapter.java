@@ -441,59 +441,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             mv.visitEnd();
         }
 
-        // getProperty
-        {
-            mv = super.visitMethod(ACC_PUBLIC, "getProperty", "(Ljava/lang/String;)Ljava/lang/Object;", null, null);
-            mv.visitCode();
-            mv.visitIntInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/GroovyObject", "getMetaClass", "()Lgroovy/lang/MetaClass;", true);
-            mv.visitIntInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;", true);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(3, 2);
-            mv.visitEnd();
-        }
-
-        // setProperty
-        {
-            mv = super.visitMethod(ACC_PUBLIC, "setProperty", "(Ljava/lang/String;Ljava/lang/Object;)V", null, null);
-            mv.visitCode();
-            Label l0 = new Label();
-            mv.visitLabel(l0);
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKEVIRTUAL, proxyName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "setProperty", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V", true);
-            Label l1 = new Label();
-            mv.visitLabel(l1);
-            mv.visitInsn(RETURN);
-            Label l2 = new Label();
-            mv.visitLabel(l2);
-            mv.visitMaxs(4, 3);
-            mv.visitEnd();
-        }
-
-        // invokeMethod
-        {
-            mv = super.visitMethod(ACC_PUBLIC, "invokeMethod", "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", null, null);
-            Label l0 = new Label();
-            mv.visitLabel(l0);
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKEVIRTUAL, proxyName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", true);
-            mv.visitInsn(ARETURN);
-            Label l1 = new Label();
-            mv.visitLabel(l1);
-            mv.visitMaxs(4, 3);
-            mv.visitEnd();
-        }
-
         // setMetaClass
         {
             mv = super.visitMethod(ACC_PUBLIC, "setMetaClass", "(Lgroovy/lang/MetaClass;)V", null, null);

@@ -18,6 +18,8 @@
  */
 package groovy.lang;
 
+import groovy.transform.Internal;
+
 /**
  * The interface implemented by all Groovy objects.
  * <p>
@@ -32,7 +34,10 @@ public interface GroovyObject {
      * @param args the arguments to use for the method call
      * @return the result of invoking the method
      */
-    Object invokeMethod(String name, Object args);
+    @Internal // marked as internal just for backward compatibility, e.g. AbstractCallSite.createGroovyObjectGetPropertySite will check `isMarkedInternal`
+    default Object invokeMethod(String name, Object args) {
+        return getMetaClass().invokeMethod(this, name, args);
+    }
 
     /**
      * Retrieves a property value.
@@ -40,7 +45,10 @@ public interface GroovyObject {
      * @param propertyName the name of the property of interest
      * @return the given property
      */
-    Object getProperty(String propertyName);
+    @Internal // marked as internal just for backward compatibility, e.g. AbstractCallSite.createGroovyObjectGetPropertySite will check `isMarkedInternal`
+    default Object getProperty(String propertyName) {
+        return getMetaClass().getProperty(this, propertyName);
+    }
 
     /**
      * Sets the given property to the new value.
@@ -48,7 +56,10 @@ public interface GroovyObject {
      * @param propertyName the name of the property of interest
      * @param newValue     the new value for the property
      */
-    void setProperty(String propertyName, Object newValue);
+    @Internal // marked as internal just for backward compatibility, e.g. AbstractCallSite.createGroovyObjectGetPropertySite will check `isMarkedInternal`
+    default void setProperty(String propertyName, Object newValue) {
+        getMetaClass().setProperty(this, propertyName, newValue);
+    }
 
     /**
      * Returns the metaclass for a given class.
