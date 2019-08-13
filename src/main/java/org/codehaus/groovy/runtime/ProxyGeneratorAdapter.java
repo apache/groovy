@@ -90,12 +90,14 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
 
     private static final String CLOSURES_MAP_FIELD = "$closures$delegate$map";
     private static final String DELEGATE_OBJECT_FIELD = "$delegate";
+
     private static List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<Method>());
     private static List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<Method>());
 
     private static final AtomicLong pxyCounter = new AtomicLong();
     private static final Set<String> GROOVYOBJECT_METHOD_NAMESS;
     private static final Object[] EMPTY_ARGS = new Object[0];
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     static {
         List<String> names = new ArrayList<String>();
@@ -341,7 +343,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
             classList.add(GeneratedGroovyProxy.class);
             interfacesSet.add("groovy/lang/GeneratedGroovyProxy");
         }
-        super.visit(V1_5, ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(new String[0]));
+        super.visit(V1_5, ACC_PUBLIC, proxyName, signature, BytecodeHelper.getClassInternalName(superClass), interfacesSet.toArray(EMPTY_STRING_ARRAY));
         visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         addDelegateFields();
         if (addGroovyObjectSupport) {
