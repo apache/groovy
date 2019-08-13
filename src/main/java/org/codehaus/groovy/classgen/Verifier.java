@@ -135,17 +135,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     // for binary compatibility
     public static final String __TIMESTAMP = "__timeStamp";
     public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
-    private static final Parameter[] INVOKE_METHOD_PARAMS = new Parameter[]{
-            new Parameter(ClassHelper.STRING_TYPE, "method"),
-            new Parameter(ClassHelper.OBJECT_TYPE, "arguments")
-    };
-    private static final Parameter[] SET_PROPERTY_PARAMS = new Parameter[]{
-            new Parameter(ClassHelper.STRING_TYPE, "property"),
-            new Parameter(ClassHelper.OBJECT_TYPE, "value")
-    };
-    private static final Parameter[] GET_PROPERTY_PARAMS = new Parameter[]{
-            new Parameter(ClassHelper.STRING_TYPE, "property")
-    };
     private static final Parameter[] SET_METACLASS_PARAMS = new Parameter[]{
             new Parameter(ClassHelper.METACLASS_TYPE, "mc")
     };
@@ -497,88 +486,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     ACC_PUBLIC, ClassHelper.VOID_TYPE,
                     SET_METACLASS_PARAMS, ClassNode.EMPTY_ARRAY,
                     setMetaClassCode
-            );
-            if (shouldAnnotate) {
-                methodNode.addAnnotation(generatedAnnotation);
-                methodNode.addAnnotation(internalAnnotation);
-            }
-        }
-
-        if (!node.hasMethod("invokeMethod", INVOKE_METHOD_PARAMS)) {
-            VariableExpression vMethods = new VariableExpression("method");
-            VariableExpression vArguments = new VariableExpression("arguments");
-            VariableScope blockScope = new VariableScope();
-            blockScope.putReferencedLocalVariable(vMethods);
-            blockScope.putReferencedLocalVariable(vArguments);
-
-            MethodNode methodNode = addMethod(node, !shouldAnnotate,
-                    "invokeMethod",
-                    ACC_PUBLIC,
-                    ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
-                    ClassNode.EMPTY_ARRAY,
-                    new BytecodeSequence(new BytecodeInstruction() {
-                        @Override
-                        public void visit(MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitVarInsn(ALOAD, 1);
-                            mv.visitVarInsn(ALOAD, 2);
-                            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", true);
-                            mv.visitInsn(ARETURN);
-                        }
-                    })
-            );
-            if (shouldAnnotate) {
-                methodNode.addAnnotation(generatedAnnotation);
-                methodNode.addAnnotation(internalAnnotation);
-            }
-        }
-
-        if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
-            MethodNode methodNode = addMethod(node, !shouldAnnotate,
-                    "getProperty",
-                    ACC_PUBLIC,
-                    ClassHelper.OBJECT_TYPE,
-                    GET_PROPERTY_PARAMS,
-                    ClassNode.EMPTY_ARRAY,
-                    new BytecodeSequence(new BytecodeInstruction() {
-                        @Override
-                        public void visit(MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitVarInsn(ALOAD, 1);
-                            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;", true);
-                            mv.visitInsn(ARETURN);
-                        }
-                    })
-            );
-            if (shouldAnnotate) {
-                methodNode.addAnnotation(generatedAnnotation);
-                methodNode.addAnnotation(internalAnnotation);
-            }
-        }
-
-        if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
-            MethodNode methodNode = addMethod(node, !shouldAnnotate,
-                    "setProperty",
-                    ACC_PUBLIC,
-                    ClassHelper.VOID_TYPE,
-                    SET_PROPERTY_PARAMS,
-                    ClassNode.EMPTY_ARRAY,
-                    new BytecodeSequence(new BytecodeInstruction() {
-                        @Override
-                        public void visit(MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;", false);
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitVarInsn(ALOAD, 1);
-                            mv.visitVarInsn(ALOAD, 2);
-                            mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "setProperty", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V", true);
-                            mv.visitInsn(RETURN);
-                        }
-                    })
             );
             if (shouldAnnotate) {
                 methodNode.addAnnotation(generatedAnnotation);
