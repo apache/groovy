@@ -179,10 +179,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
     private static final Tuple2<String, String> COMPILESTATIC_AND_TYPECHECKED = Tuple.tuple("groovy.transform.CompileStatic", "groovy.transform.TypeChecked");
     private Predicate<AnnotationNode> distinctAnnotationsPredicate() {
         final Set<String> set = new HashSet<>();
-        return t -> {
-            String className = t.getClassNode().getName();
-            return COMPILESTATIC_AND_TYPECHECKED.contains(className) ? set.add(COMPILESTATIC_AND_TYPECHECKED.getV1()) : true;
-        };
+        return t -> COMPILESTATIC_AND_TYPECHECKED.contains(t.getClassNode().getName()) ? set.add(COMPILESTATIC_AND_TYPECHECKED.getV1()) : true;
     }
 
     public static void addPhaseOperations(final CompilationUnit compilationUnit) {
