@@ -19,6 +19,8 @@
 package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.Tuple;
+import groovy.lang.Tuple2;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -46,12 +48,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * This class handles the invocation of the ASTAnnotationTransformation
@@ -154,13 +159,30 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      *
      * @param node the node to be processed
      */
-    public void visitAnnotations(AnnotatedNode node) {
+    public void visitAnnotations(final AnnotatedNode node) {
         super.visitAnnotations(node);
-        for (AnnotationNode annotation : node.getAnnotations()) {
+        for (AnnotationNode annotation : distinctAnnotations(node)) {
             if (transforms.containsKey(annotation)) {
                 targetNodes.add(new ASTNode[]{annotation, node});
             }
         }
+    }
+
+    // GROOVY-9215
+    // `StaticTypeCheckingVisitor` visits multi-times because `node` has duplicated `CompileStatic` and `TypeChecked`
+    private List<AnnotationNode> distinctAnnotations(AnnotatedNode node) {
+        return node.getAnnotations().stream()
+                .filter(distinctAnnotationsPredicate())
+                .collect(Collectors.toList());
+    }
+
+    private static final Tuple2<String, String> COMPILESTATIC_AND_TYPECHECKED = Tuple.tuple("groovy.transform.CompileStatic", "groovy.transform.TypeChecked");
+    private Predicate<AnnotationNode> distinctAnnotationsPredicate() {
+        final Set<String> set = new HashSet<>();
+        return t -> {
+            String className = t.getClassNode().getName();
+            return COMPILESTATIC_AND_TYPECHECKED.contains(className) ? set.add(COMPILESTATIC_AND_TYPECHECKED.getV1()) : true;
+        };
     }
 
     public static void addPhaseOperations(final CompilationUnit compilationUnit) {
