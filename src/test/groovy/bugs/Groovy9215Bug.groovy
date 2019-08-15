@@ -20,7 +20,7 @@
 package groovy.bugs
 
 class Groovy9215Bug extends GroovyTestCase {
-    void testDuplicatedCompileStaticAndTypeCheckedAnnotations1() {
+    void testDuplicatedAnnotations1() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.TypeChecked
@@ -55,7 +55,7 @@ class Groovy9215Bug extends GroovyTestCase {
         '''
     }
 
-    void testDuplicatedCompileStaticAndTypeCheckedAnnotations2() {
+    void testDuplicatedAnnotations2() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.TypeChecked
@@ -90,7 +90,7 @@ class Groovy9215Bug extends GroovyTestCase {
         '''
     }
 
-    void testDuplicatedCompileStaticAndTypeCheckedAnnotations3() {
+    void testDuplicatedAnnotations3() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.TypeChecked
@@ -122,6 +122,29 @@ class Groovy9215Bug extends GroovyTestCase {
             }
             
             assert Op.class
+        '''
+    }
+
+    void testDuplicatedAnnotations4() {
+        assertScript '''
+            import groovy.transform.CompileDynamic
+            import groovy.transform.CompileStatic
+            import groovy.transform.TypeChecked
+            
+            class Person {
+                String name
+            }
+            
+            @CompileStatic  // ignored
+            @CompileDynamic // taken effect
+            @TypeChecked    // ignored
+            def x() {
+                Person.metaClass.introduce << {return "I'm $name"}
+                def person = new Person(name:"Daniel.Sun")
+                assert "I'm Daniel.Sun" == person.introduce()
+            }
+            
+            x()
         '''
     }
 }
