@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static groovy.ui.GroovyMain.processConfigScripts;
+import static groovy.ui.GroovyMain.*;
 
 /**
  * Command-line compiler (aka. <tt>groovyc</tt>).
@@ -386,6 +386,12 @@ public class FileSystemCompiler {
                 paramLabel = "<source-files>")
         private List<String> files;
 
+        @Option(names = {"-cs", "--compile-static"}, description = "Use CompileStatic")
+        private boolean compileStatic;
+
+        @Option(names = {"-tc", "--type-checked"}, description = "Use TypeChecked")
+        private boolean typeChecked;
+
         public CompilerConfiguration toCompilerConfiguration() throws IOException {
             // Setup the configuration data
             CompilerConfiguration configuration = new CompilerConfiguration();
@@ -415,6 +421,15 @@ public class FileSystemCompiler {
                 configuration.getOptimizationOptions().put("int", false);
                 configuration.getOptimizationOptions().put("indy", true);
             }
+
+            final List<String> transformations = new ArrayList<>();
+            if (compileStatic) {
+                transformations.add("ast(groovy.transform.CompileStatic)");
+            }
+            if (typeChecked) {
+                transformations.add("ast(groovy.transform.TypeChecked)");
+            }
+            processConfigScriptText(buildConfigScriptText(transformations), configuration);
 
             String configScripts = System.getProperty("groovy.starter.configscripts", null);
             if (configScript != null || (configScripts != null && !configScripts.isEmpty())) {
