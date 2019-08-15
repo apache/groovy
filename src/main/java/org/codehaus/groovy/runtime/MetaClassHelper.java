@@ -97,6 +97,8 @@ public class MetaClassHelper {
         return accessible;
     }
 
+
+
     private static Boolean checkCompatiblePackages(Class at, Constructor constructor) {
         if (at.getPackage() == null && constructor.getDeclaringClass().getPackage() == null) {
             return Boolean.TRUE;
@@ -1015,5 +1017,22 @@ public class MetaClassHelper {
             return prop;
         }
         return BeanUtils.decapitalize(prop);
+    }
+
+    // GROOVY-9075
+    public static void checkMetaClassProperty(MetaClass oldValue, Object newValue) {
+        if (null == newValue) return;
+
+        if (!(newValue instanceof MetaClass)) {
+            throw new IllegalArgumentException("the new metaClass[" + newValue.getClass() + "] is not an instance of " + MetaClass.class);
+        }
+
+        MetaClass newMetaClass = (MetaClass) newValue;
+        if (!newMetaClass.getTheClass().isAssignableFrom(oldValue.getTheClass())) {
+            throw new IllegalArgumentException(
+                    "the new metaClass[" + newMetaClass.getTheClass() + "]"
+                            + " is not compatible with the old metaClass[" + oldValue.getTheClass() + "]"
+            );
+        }
     }
 }

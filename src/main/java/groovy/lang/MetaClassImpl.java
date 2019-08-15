@@ -114,6 +114,7 @@ import java.util.concurrent.ConcurrentMap;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
 import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
+import static org.codehaus.groovy.runtime.MetaClassHelper.checkMetaClassProperty;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -144,6 +145,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final MetaMethod[] EMPTY = MetaMethod.EMPTY_ARRAY;
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
     private static final boolean PERMISSIVE_PROPERTY_ACCESS = SystemUtil.getBooleanSafe("groovy.permissive.property.access");
+    private static final String META_CLASS_PROPERTY_NAME = "metaClass";
 
     protected final Class theClass;
     protected final CachedClass theCachedClass;
@@ -2720,6 +2722,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     public void setProperty(Class sender, Object object, String name, Object newValue, boolean useSuper, boolean fromInsideClass) {
         checkInitalised();
+
+        if (META_CLASS_PROPERTY_NAME.equals(name)) checkMetaClassProperty(this, newValue);
 
         //----------------------------------------------------------------------
         // handling of static
