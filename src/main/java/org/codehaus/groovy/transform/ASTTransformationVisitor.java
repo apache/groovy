@@ -19,12 +19,15 @@
 package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.Tuple;
+import groovy.lang.Tuple3;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.ASTTransformationsContext;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -154,14 +157,51 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      *
      * @param node the node to be processed
      */
-    public void visitAnnotations(AnnotatedNode node) {
+    public void visitAnnotations(final AnnotatedNode node) {
         super.visitAnnotations(node);
-        for (AnnotationNode annotation : node.getAnnotations()) {
+        for (AnnotationNode annotation : distinctAnnotations(node)) {
             if (transforms.containsKey(annotation)) {
                 targetNodes.add(new ASTNode[]{annotation, node});
             }
         }
     }
+
+    private static final Tuple3<String, String, String> COMPILEDYNAMIC_AND_COMPILESTATIC_AND_TYPECHECKED =
+            Tuple.tuple("groovy.transform.CompileDynamic", "groovy.transform.CompileStatic", "groovy.transform.TypeChecked");
+
+    // GROOVY-9215
+    // `StaticTypeCheckingVisitor` visits multi-times because `node` has duplicated `CompileStatic` and `TypeChecked`
+    // If annotation with higher priority appears, annotation with lower priority will be ignored
+    // Priority: CompileDynamic > CompileStatic > TypeChecked
+    private List<AnnotationNode> distinctAnnotations(AnnotatedNode node) {
+        List<AnnotationNode> result = new LinkedList<>();
+        AnnotationNode resultAnnotationNode = null;
+        int resultIndex = -1;
+
+        for (AnnotationNode annotationNode : node.getAnnotations()) {
+            int index = COMPILEDYNAMIC_AND_COMPILESTATIC_AND_TYPECHECKED.indexOf(annotationNode.getClassNode().getName());
+            if (-1 != index) {
+                if (1 == index) { // CompileStatic
+                    Expression value = annotationNode.getMember("value");
+                    if (null != value && "groovy.transform.TypeCheckingMode.SKIP".equals(value.getText())) {
+                        index = 0; // `CompileStatic` with "SKIP" `value` is actually `CompileDynamic`
+                    }
+                }
+
+                if (null == resultAnnotationNode || index < resultIndex) {
+                    resultAnnotationNode = annotationNode;
+                    resultIndex = index;
+                }
+                continue;
+            }
+            result.add(annotationNode);
+        }
+
+        if (null != resultAnnotationNode) result.add(resultAnnotationNode);
+
+        return result;
+    }
+
 
     public static void addPhaseOperations(final CompilationUnit compilationUnit) {
         final ASTTransformationsContext context = compilationUnit.getASTTransformationsContext();
