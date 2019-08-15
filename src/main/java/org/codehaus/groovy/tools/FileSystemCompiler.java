@@ -27,9 +27,17 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 import picocli.CommandLine;
-import picocli.CommandLine.*;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.IVersionProvider;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+import picocli.CommandLine.ParseResult;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,7 +45,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static groovy.ui.GroovyMain.*;
+import static groovy.ui.GroovyMain.buildConfigScriptText;
+import static groovy.ui.GroovyMain.processConfigScriptText;
+import static groovy.ui.GroovyMain.processConfigScripts;
 
 /**
  * Command-line compiler (aka. <tt>groovyc</tt>).
