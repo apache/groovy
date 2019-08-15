@@ -19,6 +19,7 @@
 package groovy.ui;
 
 import groovy.lang.*;
+import groovy.transform.TypeChecked;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
@@ -27,17 +28,16 @@ import picocli.CommandLine;
 import picocli.CommandLine.*;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * A Command line to execute groovy.
@@ -111,8 +111,9 @@ public class GroovyMain {
         try {
             ParseResult result = parser.parseArgs(args);
 
-            if (CommandLine.executeHelpRequest(result) != null)
+            if (CommandLine.printHelpIfRequested(result)) {
                 return;
+            }
 
             // TODO: pass printstream(s) down through process
             if (!groovyCommand.process(parser)) {
@@ -207,6 +208,12 @@ public class GroovyMain {
         @Option(names = {"-v", "--version"}, versionHelp = true, description = "Print version information and exit")
         private boolean versionRequested;
 
+        @Option(names = {"-cs", "--compile-static"}, description = "Use CompileStatic")
+        private boolean compileStatic;
+
+        @Option(names = {"-tc", "--type-checked"}, description = "Use TypeChecked")
+        private boolean typeChecked;
+
         @Unmatched
         List<String> arguments = new ArrayList<>();
 
@@ -274,6 +281,15 @@ public class GroovyMain {
                 main.conf.setScriptBaseClass(scriptBaseClass);
             }
 
+            final List<String> transformations = new ArrayList<>();
+            if (compileStatic) {
+                transformations.add("ast(groovy.transform.CompileStatic)");
+            }
+            if (typeChecked) {
+                transformations.add("ast(groovy.transform.TypeChecked)");
+            }
+            processConfigScriptText(buildConfigScriptText(transformations), main.conf);
+
             processConfigScripts(getConfigScripts(), main.conf);
 
             main.args = arguments;
@@ -301,6 +317,35 @@ public class GroovyMain {
     public static void processConfigScripts(List<String> scripts, CompilerConfiguration conf) throws IOException {
         if (scripts.isEmpty()) return;
 
+        GroovyShell shell = createConfigScriptsShell(conf);
+
+        for (String script : scripts) {
+            shell.evaluate(new File(script));
+        }
+    }
+
+    public static void processConfigScriptText(final String scriptText, final CompilerConfiguration conf) {
+        if (scriptText.trim().isEmpty()) return;
+
+        GroovyShell shell = createConfigScriptsShell(conf);
+
+        shell.evaluate(scriptText);
+    }
+
+    public static String buildConfigScriptText(List<String> transforms) {
+        StringBuilder script = new StringBuilder();
+        script.append("withConfig(configuration) {").append("\n");
+
+        for (String t : transforms) {
+            script.append(t).append(";\n");
+        }
+
+        script.append("}");
+
+        return script.toString();
+    }
+
+    private static GroovyShell createConfigScriptsShell(CompilerConfiguration conf) {
         Binding binding = new Binding();
         binding.setVariable("configuration", conf);
 
@@ -311,11 +356,7 @@ public class GroovyMain {
 
         configuratorConfig.addCompilationCustomizers(customizer);
 
-        GroovyShell shell = new GroovyShell(binding, configuratorConfig);
-
-        for (String script : scripts) {
-            shell.evaluate(new File(script));
-        }
+        return new GroovyShell(binding, configuratorConfig);
     }
 
 
