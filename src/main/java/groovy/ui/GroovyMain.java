@@ -18,38 +18,15 @@
  */
 package groovy.ui;
 
-import groovy.lang.Binding;
-import groovy.lang.GroovyCodeSource;
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovyShell;
-import groovy.lang.GroovySystem;
-import groovy.lang.MissingMethodException;
-import groovy.lang.Script;
+import groovy.lang.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.ResourceGroovyMethods;
-import org.codehaus.groovy.runtime.StackTraceUtils;
-import org.codehaus.groovy.runtime.StringGroovyMethods;
+import org.codehaus.groovy.runtime.*;
 import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Help;
-import picocli.CommandLine.IVersionProvider;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.ParameterException;
-import picocli.CommandLine.Unmatched;
+import picocli.CommandLine.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -57,7 +34,6 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +45,7 @@ import java.util.regex.Pattern;
 public class GroovyMain {
 
     // arguments to the script
-    private List args;
+    private List<String> args;
 
     // is this a file on disk
     private boolean isScriptFile;
@@ -112,7 +88,7 @@ public class GroovyMain {
      *
      * @param args all command line args.
      */
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         processArgs(args, System.out, System.err);
     }
 
@@ -121,15 +97,23 @@ public class GroovyMain {
     static void processArgs(String[] args, final PrintStream out) {
         processArgs(args, out, out);
     }
+
     // package-level visibility for testing purposes (just usage/errors at this stage)
     static void processArgs(String[] args, final PrintStream out, final PrintStream err) {
         GroovyCommand groovyCommand = new GroovyCommand();
-        CommandLine parser = new CommandLine(groovyCommand).setUnmatchedArgumentsAllowed(true).setStopAtUnmatched(true);
+
+        CommandLine parser = new CommandLine(groovyCommand)
+                .setOut(new PrintWriter(out))
+                .setErr(new PrintWriter(err))
+                .setUnmatchedArgumentsAllowed(true)
+                .setStopAtUnmatched(true);
+
         try {
-            List<CommandLine> result = parser.parse(args);
-            if (CommandLine.printHelpIfRequested(result, out, err, Help.Ansi.AUTO)) {
+            ParseResult result = parser.parseArgs(args);
+
+            if (CommandLine.executeHelpRequest(result) != null)
                 return;
-            }
+
             // TODO: pass printstream(s) down through process
             if (!groovyCommand.process(parser)) {
                 // If we fail, then exit with an error so scripting frameworks can catch it.
@@ -224,7 +208,7 @@ public class GroovyMain {
         private boolean versionRequested;
 
         @Unmatched
-        List<String> arguments = new ArrayList<String>();
+        List<String> arguments = new ArrayList<>();
 
         /**
          * Process the users request.
@@ -236,7 +220,8 @@ public class GroovyMain {
             for (Map.Entry<String, String> entry : systemProperties.entrySet()) {
                 System.setProperty(entry.getKey(), entry.getValue());
             }
-            GroovyMain main = new GroovyMain();
+
+            final GroovyMain main = new GroovyMain();
 
             // add the ability to parse scripts with a specified encoding
             main.conf.setSourceEncoding(encoding);
@@ -292,31 +277,42 @@ public class GroovyMain {
             processConfigScripts(getConfigScripts(), main.conf);
 
             main.args = arguments;
+
             return main.run();
         }
 
         private List<String> getConfigScripts() {
             List<String> scripts = new ArrayList<String>();
+
             if (this.configscript != null) {
                 scripts.add(this.configscript);
             }
+
             String configScripts = System.getProperty("groovy.starter.configscripts", null);
+
             if (configScripts != null && !configScripts.isEmpty()) {
-                scripts.addAll(StringGroovyMethods.tokenize((CharSequence) configScripts, ','));
+                scripts.addAll(StringGroovyMethods.tokenize(configScripts, ','));
             }
+
             return scripts;
         }
     }
 
     public static void processConfigScripts(List<String> scripts, CompilerConfiguration conf) throws IOException {
         if (scripts.isEmpty()) return;
+
         Binding binding = new Binding();
         binding.setVariable("configuration", conf);
+
         CompilerConfiguration configuratorConfig = new CompilerConfiguration();
         ImportCustomizer customizer = new ImportCustomizer();
+
         customizer.addStaticStars("org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder");
+
         configuratorConfig.addCompilationCustomizers(customizer);
+
         GroovyShell shell = new GroovyShell(binding, configuratorConfig);
+
         for (String script : scripts) {
             shell.evaluate(new File(script));
         }
@@ -393,7 +389,7 @@ public class GroovyMain {
      * (isScript is true) or as text (isScript is false).
      *
      * @param isScriptFile indicates whether the script parameter is a location or content
-     * @param script the location or context of the script
+     * @param script       the location or context of the script
      * @return a new GroovyCodeSource for the given script
      * @throws IOException
      * @throws URISyntaxException
@@ -407,7 +403,7 @@ public class GroovyMain {
             if (!scriptFile.exists() && URI_PATTERN.matcher(script).matches()) {
                 return new GroovyCodeSource(new URI(script));
             }
-            return new GroovyCodeSource( scriptFile );
+            return new GroovyCodeSource(scriptFile);
         }
         return new GroovyCodeSource(script, "script_from_command_line", GroovyShell.DEFAULT_CODE_BASE);
     }
@@ -459,7 +455,7 @@ public class GroovyMain {
     // GROOVY-6771
     private static void setupContextClassLoader(GroovyShell shell) {
         final Thread current = Thread.currentThread();
-        class DoSetContext implements PrivilegedAction {
+        class DoSetContext implements PrivilegedAction<Object> {
             ClassLoader classLoader;
 
             public DoSetContext(ClassLoader loader) {
@@ -491,9 +487,7 @@ public class GroovyMain {
                 writer.flush();
             }
         } else {
-            Iterator i = args.iterator();
-            while (i.hasNext()) {
-                String filename = (String) i.next();
+            for (String filename : args) {
                 //TODO: These are the arguments for -p and -i.  Why are we searching using Groovy script extensions?
                 // Where is this documented?
                 File file = huntForTheScriptFile(filename);
