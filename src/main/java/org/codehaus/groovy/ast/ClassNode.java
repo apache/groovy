@@ -47,6 +47,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
+
 /**
  * Represents a class in the AST.
  * <p>
@@ -191,19 +194,23 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * Returns the ClassNode this ClassNode is redirecting to.
      */
-    public ClassNode redirect(){
-        if (redirect==null) return this;
-        return redirect.redirect();
+    public ClassNode redirect() {
+        return (redirect == null ? this : redirect.redirect());
+    }
+
+    public final boolean isRedirectNode() {
+        return (redirect != null);
     }
 
     /**
      * Sets this instance as proxy for the given ClassNode.
-     * @param cn the class to redirect to. If set to null the redirect will be removed
+     *
+     * @param cn the class to redirect to. If {@code null} the redirect will be removed.
      */
     public void setRedirect(ClassNode cn) {
-        if (isPrimaryNode) throw new GroovyBugError("tried to set a redirect for a primary ClassNode ("+getName()+"->"+cn.getName()+").");
-        if (cn!=null) cn = cn.redirect();
-        if (cn==this) return;
+        if (isPrimaryNode) throw new GroovyBugError("tried to set a redirect for a primary ClassNode (" + getName() + "->" + cn.getName() + ").");
+        if (cn != null && !isGenericsPlaceHolder()) cn = cn.redirect();
+        if (cn == this) return;
         redirect = cn;
     }
 
@@ -1239,53 +1246,45 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public String toString(boolean showRedirect) {
         if (isArray()) {
-            return componentType.toString(showRedirect)+"[]";
+            return getComponentType().toString(showRedirect) + "[]";
         }
-        StringBuilder ret = new StringBuilder(getName());
-        if (placeholder) ret = new StringBuilder(getUnresolvedName());
-        if (!placeholder && genericsTypes != null) {
+        boolean placeholder = isGenericsPlaceHolder();
+        StringBuilder ret = new StringBuilder(!placeholder ? getName() : getUnresolvedName());
+        GenericsType[] genericsTypes = getGenericsTypes();
+        if (!placeholder && genericsTypes != null && genericsTypes.length > 0) {
             ret.append(" <");
-            for (int i = 0; i < genericsTypes.length; i++) {
-                if (i != 0) ret.append(", ");
-                GenericsType genericsType = genericsTypes[i];
-                ret.append(genericTypeAsString(genericsType));
-            }
+            ret.append(stream(genericsTypes).map(this::genericTypeAsString).collect(joining(", ")));
             ret.append(">");
         }
-        if (redirect != null && showRedirect) {
-            ret.append(" -> ").append(redirect().toString());
+        if (isRedirectNode() && showRedirect) {
+            ret.append(" -> ").append(redirect.toString());
         }
         return ret.toString();
     }
 
     /**
-     * This exists to avoid a recursive definition of toString. The default toString
-     * in GenericsType calls ClassNode.toString(), which calls GenericsType.toString(), etc. 
-     * @param genericsType
-     * @return the string representing the generic type
+     * Avoids a recursive definition of toString. The default {@code toString}
+     * in {@link GenericsType} calls {@code ClassNode.toString()}, which would
+     * call {@code GenericsType.toString()} without this method.
      */
     private String genericTypeAsString(GenericsType genericsType) {
-        StringBuilder ret = new StringBuilder(genericsType.getName());
+        String name = genericsType.getName();
         if (genericsType.getUpperBounds() != null) {
-            ret.append(" extends ");
-            for (int i = 0; i < genericsType.getUpperBounds().length; i++) {
-                ClassNode classNode = genericsType.getUpperBounds()[i];
-                if (classNode.equals(this)) {
-                    ret.append(classNode.getName());
-                } else {
-                    ret.append(classNode.toString(false));
-                }
-                if (i + 1 < genericsType.getUpperBounds().length) ret.append(" & ");
-            }
-        } else if (genericsType.getLowerBound() !=null) {
-            ClassNode classNode = genericsType.getLowerBound();
-            if (classNode.equals(this)) {
-                ret.append(" super ").append(classNode.getName());
-            } else {
-                ret.append(" super ").append(classNode);
-            }
+            return name + " extends " + stream(genericsType.getUpperBounds())
+                        .map(this::toStringTerminal).collect(joining(" & "));
+        } else if (genericsType.getLowerBound() != null) {
+            return name + " super " + toStringTerminal(genericsType.getLowerBound());
+        } else {
+            return name;
         }
-        return ret.toString();
+    }
+
+    private String toStringTerminal(ClassNode classNode) {
+        if (classNode.equals(this)) {
+            return classNode.getName();
+        } else {
+            return classNode.toString(false);
+        }
     }
 
     /**
@@ -1456,6 +1455,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return this.annotated;
     }
 
+    public GenericsType asGenericsType() {
+        if (!isGenericsPlaceHolder()) {
+            return new GenericsType(this);
+        } else {
+            ClassNode upper = (redirect != null ? redirect : this);
+            return new GenericsType(this, new ClassNode[]{upper}, null);
+        }
+    }
+
     public GenericsType[] getGenericsTypes() {
         return genericsTypes;
     }
@@ -1562,10 +1570,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
         }
         return transformInstances;
-    }
-    
-    public boolean isRedirectNode() {
-        return redirect!=null;
     }
 
     @Override
