@@ -231,10 +231,10 @@ public class GroovyMain {
         @Option(names = {"-v", "--version"}, versionHelp = true, description = "Print version information and exit")
         private boolean versionRequested;
 
-        @Option(names = {"-cs", "--compile-static"}, description = "Use CompileStatic")
+        @Option(names = {"--compile-static"}, description = "Use CompileStatic")
         private boolean compileStatic;
 
-        @Option(names = {"-tc", "--type-checked"}, description = "Use TypeChecked")
+        @Option(names = {"--type-checked"}, description = "Use TypeChecked")
         private boolean typeChecked;
 
         @Unmatched
@@ -311,7 +311,9 @@ public class GroovyMain {
             if (typeChecked) {
                 transformations.add("ast(groovy.transform.TypeChecked)");
             }
-            processConfigScriptText(buildConfigScriptText(transformations), main.conf);
+            if (!transformations.isEmpty()) {
+                processConfigScriptText(buildConfigScriptText(transformations), main.conf);
+            }
 
             processConfigScripts(getConfigScripts(), main.conf);
 
@@ -347,7 +349,7 @@ public class GroovyMain {
         }
     }
 
-    public static void processConfigScriptText(final String scriptText, final CompilerConfiguration conf) {
+    public static void processConfigScriptText(String scriptText, CompilerConfiguration conf) {
         if (scriptText.trim().isEmpty()) return;
 
         GroovyShell shell = createConfigScriptsShell(conf);
