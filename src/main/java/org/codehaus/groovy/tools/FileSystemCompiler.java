@@ -396,10 +396,10 @@ public class FileSystemCompiler {
                 paramLabel = "<source-files>")
         private List<String> files;
 
-        @Option(names = {"-cs", "--compile-static"}, description = "Use CompileStatic")
+        @Option(names = {"--compile-static"}, description = "Use CompileStatic")
         private boolean compileStatic;
 
-        @Option(names = {"-tc", "--type-checked"}, description = "Use TypeChecked")
+        @Option(names = {"--type-checked"}, description = "Use TypeChecked")
         private boolean typeChecked;
 
         public CompilerConfiguration toCompilerConfiguration() throws IOException {
@@ -439,7 +439,9 @@ public class FileSystemCompiler {
             if (typeChecked) {
                 transformations.add("ast(groovy.transform.TypeChecked)");
             }
-            processConfigScriptText(buildConfigScriptText(transformations), configuration);
+            if (!transformations.isEmpty()) {
+                processConfigScriptText(buildConfigScriptText(transformations), configuration);
+            }
 
             String configScripts = System.getProperty("groovy.starter.configscripts", null);
             if (configScript != null || (configScripts != null && !configScripts.isEmpty())) {
