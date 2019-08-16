@@ -466,8 +466,7 @@ public class GenericsUtils {
     }
 
     public static Map<String, ClassNode> addMethodGenerics(MethodNode current, Map<String, ClassNode> oldSpec) {
-        Map<String, ClassNode> ret = new HashMap<>(oldSpec);
-        // ret starts with the original type specs, now add gts for the current method if any
+        Map<String, ClassNode> newSpec = new HashMap<>(oldSpec);
         GenericsType[] gts = current.getGenericsTypes();
         if (gts != null) {
             for (GenericsType gt : gts) {
@@ -490,10 +489,10 @@ public class GenericsUtils {
                         type.setRedirect(redirect);
                     }
                 }
-                ret.put(name, type);
+                newSpec.put(name, type);
             }
         }
-        return ret;
+        return newSpec;
     }
 
     public static void extractSuperClassGenerics(ClassNode type, ClassNode target, Map<String, ClassNode> spec) {
@@ -663,12 +662,7 @@ public class GenericsUtils {
                 throw new GroovyBugError("Given generics type " + old + " must be a placeholder!");
             ClassNode fromSpec = genericsSpec.get(old.getName());
             if (fromSpec != null) {
-                if (fromSpec.isGenericsPlaceHolder()) {
-                    ClassNode[] upper = new ClassNode[]{fromSpec.redirect()};
-                    newTypes[i] = new GenericsType(fromSpec, upper, null);
-                } else {
-                    newTypes[i] = new GenericsType(fromSpec);
-                }
+                newTypes[i] = fromSpec.asGenericsType();
             } else {
                 ClassNode[] upper = old.getUpperBounds();
                 ClassNode[] newUpper = upper;
