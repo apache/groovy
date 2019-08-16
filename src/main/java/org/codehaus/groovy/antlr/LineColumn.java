@@ -45,9 +45,7 @@ public class LineColumn {
         final LineColumn lineColumn = (LineColumn) that;
 
         if (column != lineColumn.column) return false;
-        if (line != lineColumn.line) return false;
-
-        return true;
+        return line == lineColumn.line;
     }
 
     public int hashCode() {

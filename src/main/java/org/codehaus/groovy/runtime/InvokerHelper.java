@@ -214,7 +214,7 @@ public class InvokerHelper {
             GroovyObject pogo = (GroovyObject) object;
             pogo.setProperty(property, newValue);
         } else if (object instanceof Class) {
-            metaRegistry.getMetaClass((Class) object).setProperty((Class) object, property, newValue);
+            metaRegistry.getMetaClass((Class) object).setProperty(object, property, newValue);
         } else {
             ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(object).setProperty(object, property, newValue);
         }
@@ -433,7 +433,7 @@ public class InvokerHelper {
         if (message == null || "".equals(message)) {
             throw new PowerAssertionError(expression.toString());
         }
-        throw new AssertionError(String.valueOf(message) + ". Expression: " + expression);
+        throw new AssertionError(message + ". Expression: " + expression);
     }
 
     public static Object runScript(Class scriptClass, String[] args) {
@@ -956,11 +956,11 @@ public class InvokerHelper {
         }
         if (value instanceof String) {
             // value is a regular expression.
-            return StringGroovyMethods.bitwiseNegate((CharSequence)value.toString());
+            return StringGroovyMethods.bitwiseNegate(value.toString());
         }
         if (value instanceof GString) {
             // value is a regular expression.
-            return StringGroovyMethods.bitwiseNegate((CharSequence)value.toString());
+            return StringGroovyMethods.bitwiseNegate(value.toString());
         }
         if (value instanceof ArrayList) {
             // value is a list.

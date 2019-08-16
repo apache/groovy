@@ -309,7 +309,7 @@ public class GenericsType extends ASTNode {
             }
             if (lowerBound!=null) {
                 if (!lowerBound.redirect().isUsingGenerics()) {
-                    if (!compareGenericsWithBound(classNode, lowerBound)) return false;
+                    return compareGenericsWithBound(classNode, lowerBound);
                 }
             }
             return true;
