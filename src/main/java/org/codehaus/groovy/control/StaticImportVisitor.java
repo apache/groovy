@@ -501,7 +501,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             ImportNode importNode = starImports.get(currentClass.getName());
             starImportType = importNode == null ? null : importNode.getType();
             expression = findStaticMethod(starImportType, name, args);
-            if (expression != null) return expression;
+            return expression;
         } else {
             for (ImportNode importNode : starImports.values()) {
                 starImportType = importNode == null ? null : importNode.getType();

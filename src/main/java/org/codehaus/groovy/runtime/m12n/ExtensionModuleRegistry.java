@@ -50,11 +50,7 @@ public class ExtensionModuleRegistry {
     }
 
     public boolean hasModule(final String moduleName) {
-        if (null == getModule(moduleName)) {
-            return false;
-        }
-
-        return true;
+        return null != getModule(moduleName);
     }
 
     public ExtensionModule getModule(final String moduleName) {

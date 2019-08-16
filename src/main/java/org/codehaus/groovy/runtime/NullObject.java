@@ -132,7 +132,7 @@ public class NullObject extends GroovyObjectSupport {
      * @return nothing
      */
     public Object plus(Object o) {
-        throw new NullPointerException("Cannot execute null+" + String.valueOf(o));
+        throw new NullPointerException("Cannot execute null+" + o);
     }
 
     /**

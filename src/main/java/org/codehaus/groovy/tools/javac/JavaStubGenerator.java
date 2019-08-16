@@ -765,10 +765,7 @@ public class JavaStubGenerator {
         if (isDefaultTraitImpl(methodNode)) {
             return false;
         }
-        if ((methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
-            return true;
-        }
-        return false;
+        return (methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0;
     }
 
     private static boolean isDefaultTraitImpl(final MethodNode methodNode) {

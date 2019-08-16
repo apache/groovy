@@ -298,7 +298,7 @@ public class ClassNodeUtils {
         if (accessorName.startsWith("get") || accessorName.startsWith("is") || accessorName.startsWith("set")) {
             int prefixLength = accessorName.startsWith("is") ? 2 : 3;
             return accessorName.length() > prefixLength;
-        };
+        }
         return false;
     }
 
