@@ -903,10 +903,7 @@ public class MetaClassHelper {
     }
 
     public static boolean sameClasses(Class[] params) {
-        if (params.length != 0)
-            return false;
-
-        return true;
+        return params.length == 0;
     }
 
     public static boolean sameClasses(Class[] params, Object arg1) {
@@ -923,9 +920,7 @@ public class MetaClassHelper {
             return false;
 
         if (params[0] != getClassWithNullAndWrapper(arg1)) return false;
-        if (params[1] != getClassWithNullAndWrapper(arg2)) return false;
-
-        return true;
+        return params[1] == getClassWithNullAndWrapper(arg2);
     }
 
     public static boolean sameClasses(Class[] params, Object arg1, Object arg2, Object arg3) {
@@ -934,9 +929,7 @@ public class MetaClassHelper {
 
         if (params[0] != getClassWithNullAndWrapper(arg1)) return false;
         if (params[1] != getClassWithNullAndWrapper(arg2)) return false;
-        if (params[2] != getClassWithNullAndWrapper(arg3)) return false;
-
-        return true;
+        return params[2] == getClassWithNullAndWrapper(arg3);
     }
 
     public static boolean sameClasses(Class[] params, Object arg1, Object arg2, Object arg3, Object arg4) {
@@ -946,9 +939,7 @@ public class MetaClassHelper {
         if (params[0] != getClassWithNullAndWrapper(arg1)) return false;
         if (params[1] != getClassWithNullAndWrapper(arg2)) return false;
         if (params[2] != getClassWithNullAndWrapper(arg3)) return false;
-        if (params[3] != getClassWithNullAndWrapper(arg4)) return false;
-        
-        return true;
+        return params[3] == getClassWithNullAndWrapper(arg4);
     }
 
     public static boolean sameClass(Class[] params, Object arg) {

@@ -618,10 +618,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
-        if (resolveFromDefaultImports(type, DEFAULT_IMPORTS)) {
-            return true;
-        }
-        return false;
+        return resolveFromDefaultImports(type, DEFAULT_IMPORTS);
     }
 
 

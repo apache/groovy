@@ -647,8 +647,7 @@ public class DefaultTypeTransformation {
             if (Objects.equals(k1, k2)) {
                 Object v1 = ((Map.Entry) left).getValue();
                 Object v2 = ((Map.Entry) right).getValue();
-                if (v1 == v2 || (v1 != null && DefaultTypeTransformation.compareEqual(v1, v2)))
-                    return true;
+                return v1 == v2 || (v1 != null && DefaultTypeTransformation.compareEqual(v1, v2));
             }
             return false;
         }
