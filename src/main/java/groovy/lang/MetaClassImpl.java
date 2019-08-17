@@ -107,6 +107,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -3200,7 +3201,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             MetaMethod aMethod = (MetaMethod) data[j];
             Boolean match = getMatchKindForCategory(aMethod, method);
             // true == replace
-            if (match == Boolean.TRUE) {
+            if (Objects.equals(match, Boolean.TRUE)) {
                 list.set(j, method);
                 return;
                 // null == ignore (we have a better method already)
