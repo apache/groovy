@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * Represents a list of Integer objects starting at a specified {@code from} value up (or down)
@@ -262,7 +263,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      */
     public boolean equals(IntRange that) {
         return that != null && ((inclusive == null && reverse == that.reverse && from == that.from && to == that.to)
-                || (inclusive != null && inclusive == that.inclusive && from == that.from && to == that.to));
+                || (inclusive != null && Objects.equals(inclusive, that.inclusive) && from == that.from && to == that.to));
     }
 
     @Override
