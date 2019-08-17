@@ -1030,7 +1030,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             try {
                 writeTo(writer);
             } catch (IOException e) {
-                return null;
+                return "";
             }
 
             return writer.toString();
