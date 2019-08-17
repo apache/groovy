@@ -477,11 +477,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         ExpandoMetaClassCreationHandle.disable();
     }
 
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClassImpl#initialize()
+    /**
+     * {@inheritDoc}
      */
-
-    public void initialize() {
+    @Override
+    public synchronized void initialize() {
         try {
             writeLock.lock();
             if (!isInitialized()) {
