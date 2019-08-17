@@ -302,7 +302,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
                 // let's fast calculate the size
                 final BigDecimal fromNum = new BigDecimal(from.toString());
                 final BigDecimal toNum = new BigDecimal(to.toString());
-                final BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
+                final BigInteger sizeNum = toNum.subtract(fromNum).add(BigDecimal.valueOf(1.0)).toBigInteger();
                 tempsize = sizeNum.intValue();
                 if (!BigInteger.valueOf(tempsize).equals(sizeNum)) {
                     tempsize = Integer.MAX_VALUE;
