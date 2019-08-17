@@ -75,7 +75,7 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
     }
 
     public boolean hasNext() {
-        return numLeft.compareTo(BigInteger.ZERO) == 1;
+        return numLeft.compareTo(BigInteger.ZERO) > 0;
     }
 
     /**
