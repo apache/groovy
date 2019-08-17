@@ -148,10 +148,9 @@ public class GroovySocketServer implements Runnable {
     /**
     * Runs this server. There is typically no need to call this method, as the object's constructor
     * creates a new thread and runs this object automatically. 
-    */ 
+    */
     public void run() {
-        try {
-            ServerSocket serverSocket = new ServerSocket(url.getPort());
+        try (ServerSocket serverSocket = new ServerSocket(url.getPort())) {
             while (true) {
                 // Create one script per socket connection.
                 // This is purposefully not caching the Script
