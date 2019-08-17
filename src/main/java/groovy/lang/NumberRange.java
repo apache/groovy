@@ -401,7 +401,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
                 final BigInteger toTemp = new BigInteger(to.toString());
                 final BigInteger toNum = inclusive ? toTemp : toTemp.subtract(BigInteger.ONE);
                 final BigInteger sizeNum = new BigDecimal(toNum.subtract(fromNum)).divide(new BigDecimal(stepSize.longValue()), BigDecimal.ROUND_DOWN).toBigInteger().add(BigInteger.ONE);
-                tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) == -1 ? sizeNum.intValue() : Integer.MAX_VALUE;
+                tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0 ? sizeNum.intValue() : Integer.MAX_VALUE;
                 shortcut = true;
             } else if (((from instanceof BigDecimal || from instanceof BigInteger) && to instanceof Number) ||
                     ((to instanceof BigDecimal || to instanceof BigInteger) && from instanceof Number)) {
@@ -410,7 +410,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
                 final BigDecimal toTemp = new BigDecimal(to.toString());
                 final BigDecimal toNum = inclusive ? toTemp : toTemp.subtract(new BigDecimal("1.0"));
                 final BigInteger sizeNum = toNum.subtract(fromNum).divide(new BigDecimal(stepSize.longValue()), BigDecimal.ROUND_DOWN).toBigInteger().add(BigInteger.ONE);
-                tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) == -1 ? sizeNum.intValue() : Integer.MAX_VALUE;
+                tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0 ? sizeNum.intValue() : Integer.MAX_VALUE;
                 shortcut = true;
             }
         }
