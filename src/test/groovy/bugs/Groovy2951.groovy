@@ -24,12 +24,11 @@ final class Groovy2951 {
 
     @Test
     void testInstanceLevelMissingMethodWithRegularClosure1() {
-        Groovy2951BugClass1.metaClass.methodMissing = {
-            method, args ->
+        Groovy2951BugClass1.metaClass.methodMissing = { method, args ->
             return method
         }
-        def result = new Groovy2951BugClass1().test1("arg1", "arg2")
-        assert result == "test1"
+        def result = new Groovy2951BugClass1().test1('arg1', 'arg2')
+        assert result == 'test1'
     }
 
     @Test
@@ -37,22 +36,23 @@ final class Groovy2951 {
         Groovy2951BugClass2.metaClass.methodMissing << { method, args ->
             return method
         }
-        def result = new Groovy2951BugClass2().test2("arg1", "arg2")
-        assert result == "test2"
+        def result = new Groovy2951BugClass2().test2('arg1', 'arg2')
+        assert result == 'test2'
     }
 
     @Test
     void testInstanceLevelMissingMethodWithMethodClosure() {
         Groovy2951BugClass3.metaClass.methodMissing = Groovy2951BugClass3.&mm
-
-        def result = new Groovy2951BugClass3().test3("arg3", "arg4")
-        assert result == "test3"
+        def result = new Groovy2951BugClass3().test3('arg1', 'arg2')
+        assert result == 'test3'
     }
 }
 
-class Groovy2951BugClass1 {}
+class Groovy2951BugClass1 {
+}
 
-class Groovy2951BugClass2 {}
+class Groovy2951BugClass2 {
+}
 
 class Groovy2951BugClass3 {
     static def mm(method, args) {

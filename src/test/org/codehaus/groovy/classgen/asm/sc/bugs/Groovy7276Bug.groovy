@@ -16,79 +16,70 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-class Groovy7276Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7276Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
     void testShouldGoThroughPrivateBridgeAccessor() {
-            assertScript '''
-                class Foo {
-                    private i = 1
-                    def m() { new String().with {i}}
-                }
-                assert new Foo().m() == 1
-                class Bar extends Foo {}
-                assert new Bar().m() == 1
+        assertScript '''
+            class Foo {
+                private i = 1
+                def m() { new String().with {i}}
+            }
+            assert new Foo().m() == 1
+            class Bar extends Foo {}
+            assert new Bar().m() == 1
         '''
     }
 
     void testShouldGoThroughPrivateBridgeMethod() {
-            assertScript '''
-                class Foo {
-                    private i = 1
-                    private def pvI() { i }
-                    def m() { new String().with {pvI()}}
-                }
-                assert new Foo().m() == 1
-                class Bar extends Foo {}
-                assert new Bar().m() == 1
+        assertScript '''
+            class Foo {
+                private i = 1
+                private def pvI() { i }
+                def m() { new String().with {pvI()}}
+            }
+            assert new Foo().m() == 1
+            class Bar extends Foo {}
+            assert new Bar().m() == 1
         '''
     }
 
     void testPrivateAccessInInnerClass() {
-        assertScript '''import groovy.transform.CompileStatic
-
-class Outer {
-    private static class Inner {
-
-        private Set<String> variablesToCheck = []
-
-        private void checkAssertions(String name) {
-            Runnable r = {
-                def candidates = variablesToCheck.findAll { it == name }
+        assertScript '''
+            class Outer {
+                private static class Inner {
+                    private Set<String> variablesToCheck = []
+                    private void checkAssertions(String name) {
+                        Runnable r = {
+                            def candidates = variablesToCheck.findAll { it == name }
+                        }
+                        r.run()
+                    }
+                }
+                static void test() {
+                    new Inner().checkAssertions('name')
+                }
             }
-            r.run()
-        }
-    }
-
-    static void test() {
-        new Inner().checkAssertions('name')
-    }
-}
-
-Outer.test()'''
+            Outer.test()
+        '''
     }
 
     @NotYetImplemented
     // GROOVY-7304
     void testShouldGoThroughPrivateBridgeAccessorWithWriteAccess() {
-            assertScript '''
-                class Foo {
-                    private int i = 1
-                    def m() { new String().with {++i}}
-                }
-                assert new Foo().m() == 2
-                class Bar extends Foo {}
-                assert new Bar().m() == 2
+        assertScript '''
+            class Foo {
+                private int i = 1
+                def m() { new String().with { ++i } }
+            }
+            assert new Foo().m() == 2
+            class Bar extends Foo {}
+            assert new Bar().m() == 2
         '''
     }
-
-
 }
