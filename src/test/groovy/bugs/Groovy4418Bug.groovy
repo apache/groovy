@@ -18,9 +18,14 @@
  */
 package groovy.bugs
 
-import gls.CompilableTestSupport
+import org.junit.Test
 
-class Groovy4418Bug extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.util.GroovyAssert.shouldFail
+
+final class Groovy4418Bug {
+
+    @Test
     void testStaticFieldAccess() {
         assertScript '''
             class Base {
@@ -35,31 +40,31 @@ class Groovy4418Bug extends CompilableTestSupport {
         '''
     }
 
-    // additional test for GROOVY-6183
+    @Test // GROOVY-6183
     void testStaticAttributeAccess() {
         assertScript '''
-        class A {
-            static protected int x
-            public static void reset() { this.@x = 2 }
-        }
-        assert A.x == 0
-        assert A.@x == 0
-        A.reset()
-        assert A.x == 2
-        assert A.@x == 2
+            class A {
+                static protected int x
+                public static void reset() { this.@x = 2 }
+            }
+            assert A.x == 0
+            assert A.@x == 0
+            A.reset()
+            assert A.x == 2
+            assert A.@x == 2
         '''
     }
 
-    // GROOVY-8385
-    void testParentClassStaticAttributeSetAccessShouldNotCallSetter() {
+    @Test // GROOVY-8385
+    void testParentClassStaticAttributeSetAccess() {
         assertScript '''
             class A {
                 static protected p
-                static setP(){def val}
-                static getP(){this.@p}
+                static setP(def val){ p = 2 }
+                static getP(){ -1 }
             }
             class B extends A {
-              def m(){this.@p = 1}
+                def m(){ this.@p = 1 }
             }
             def x = new B()
             assert A.@p == null
@@ -70,11 +75,11 @@ class Groovy4418Bug extends CompilableTestSupport {
         assertScript '''
             class A {
                 static protected p
-                static setP(){def val}
-                static getP(){this.@p}
+                static setP(def val){ p = 2 }
+                static getP(){ -1 }
             }
             class B extends A {
-              def m(){super.@p = 1}
+                def m(){ super.@p = 1 }
             }
             def x = new B()
             assert A.@p == null
@@ -85,12 +90,12 @@ class Groovy4418Bug extends CompilableTestSupport {
         assertScript '''
             class A {
                 static protected p
-                static setP(){def val}
-                static getP(){this.@p}
+                static setP(def val){ p = 2 }
+                static getP(){ -1 }
             }
             class AA extends A {}
             class B extends AA {
-              def m(){super.@p = 1}
+                def m(){ super.@p = 1 }
             }
             def x = new B()
             assert A.@p == null
@@ -99,16 +104,16 @@ class Groovy4418Bug extends CompilableTestSupport {
         '''
     }
 
-    // GROOVY-8385
-    void testParentClassNonStaticAttributeSetAccessShouldNotCallSetter() {
+    @Test // GROOVY-8385
+    void testParentClassNonStaticAttributeSetAccess() {
         assertScript '''
             class A {
                 protected p
-                void setP(def val){}
-                def getP(){p}
+                void setP(def val) { p = 2 }
+                def getP() { -1 }
             }
             class B extends A {
-              def m(){this.@p = 1}
+                def m() { this.@p = 1 }
             }
             def x = new B()
             assert x.@p == null
@@ -119,11 +124,11 @@ class Groovy4418Bug extends CompilableTestSupport {
         assertScript '''
             class A {
                 protected p
-                void setP(def val){}
-                def getP(){p}
+                void setP(def val) { p = 2 }
+                def getP() { -1 }
             }
             class B extends A {
-              def m(){super.@p = 1}
+                def m() { super.@p = 1 }
             }
             def x = new B()
             assert x.@p == null
@@ -134,12 +139,12 @@ class Groovy4418Bug extends CompilableTestSupport {
         assertScript '''
             class A {
                 protected p
-                void setP(def val){}
-                def getP(){p}
+                void setP(def val) { p = 2 }
+                def getP() { -1 }
             }
             class AA extends A {}
             class B extends AA {
-              def m(){super.@p = 1}
+                def m() { super.@p = 1 }
             }
             def x = new B()
             assert x.@p == null
@@ -148,39 +153,43 @@ class Groovy4418Bug extends CompilableTestSupport {
         '''
     }
 
-    // GROOVY-8385
+    @Test // GROOVY-8385
     void testParentClassPrivateStaticAttributeSetAccessShouldCallSetter() {
-        shouldFail(MissingFieldException, '''
-            class A {
-                static private p
-                static setP(){def val}
-                static getP(){this.@p}
-            }
-            class B extends A {
-              def m(){this.@p = 1}
-            }
-            def x = new B()
-            assert A.@p == null
-            x.m()
-        ''')
+        shouldFail(MissingFieldException) {
+            Eval.me'''
+                class A {
+                    static private p
+    
+                    void setP(def val) { p = 2 }
+    
+                    def getP() { -1 }
+                }
+                class B extends A {
+                    def m() { this.@p = 1 }
+                }
+                def x = new B()
+                assert A.@p == null
+                x.m()
+            '''
+        }
     }
 
-    // GROOVY-8385
+    @Test // GROOVY-8385
     void testParentClassPrivateNonStaticAttributeSetAccessShouldNotCallSetter() {
-        shouldFail(MissingFieldException, '''
-            class A {
-                private p
-                void setP(def val){}
-                def getP(){p}
-            }
-            class B extends A {
-              def m(){this.@p = 1}
-            }
-            def x = new B()
-            assert x.@p == null
-            x.m()
-        ''')
+        shouldFail(MissingFieldException) {
+            Eval.me'''
+                class A {
+                    private p
+                    void setP(def val) { p = 2 }
+                    def getP() { -1 }
+                }
+                class B extends A {
+                    def m() { this.@p = 1 }
+                }
+                def x = new B()
+                assert x.@p == null
+                x.m()
+        '''
+        }
     }
-
-
 }
