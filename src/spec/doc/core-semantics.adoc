@@ -939,7 +939,7 @@ manual.
 However, if your program doesn't rely on dynamic features and that you come from the static world (in particular, from
 a Java mindset), not catching such "errors" at compile time can be surprising. As we have seen in the previous example,
 the compiler cannot be sure this is an error. To make it aware that it is, you have to explicitly instruct the compiler
-that you are switching to a type checked mode. This can be done by annotating a class or a method with `@groovy.lang.TypeChecked`.
+that you are switching to a type checked mode. This can be done by annotating a class or a method with `@groovy.transform.TypeChecked`.
 
 When type checking is activated, the compiler performs much more work:
 
@@ -956,7 +956,7 @@ In this section, we will describe the behavior of the type checker in various si
 
 ===== Activating type checking at compile time
 
-The `groovy.lang.TypeChecked` annotation enabled type checking. It can be placed on a class:
+The `groovy.transform.TypeChecked` annotation enables type checking. It can be placed on a class:
 
 [source,groovy]
 ----
