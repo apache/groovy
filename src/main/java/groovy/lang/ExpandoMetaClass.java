@@ -481,7 +481,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void initialize() {
+    public void initialize() {
         try {
             writeLock.lock();
             if (!isInitialized()) {
