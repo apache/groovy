@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import groovy.transform.NotYetImplemented
+import groovy.test.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
@@ -69,8 +69,7 @@ final class Groovy7276Bug extends StaticTypeCheckingTestCase implements StaticCo
         '''
     }
 
-    @NotYetImplemented
-    // GROOVY-7304
+    @NotYetImplemented // GROOVY-7304
     void testShouldGoThroughPrivateBridgeAccessorWithWriteAccess() {
         assertScript '''
             class Foo {
