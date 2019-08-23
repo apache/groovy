@@ -126,11 +126,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             transforms = new HashMap<ASTNode, List<ASTTransformation>>();
             for (Map.Entry<Class<? extends ASTTransformation>, Set<ASTNode>> entry : baseTransforms.entrySet()) {
                 for (ASTNode node : entry.getValue()) {
-                    List<ASTTransformation> list = transforms.get(node);
-                    if (list == null)  {
-                        list = new ArrayList<ASTTransformation>();
-                        transforms.put(node, list);
-                    }
+                    List<ASTTransformation> list = transforms.computeIfAbsent(node, k -> new ArrayList<>());
                     list.add(transformInstances.get(entry.getKey()));
                 }
             }
