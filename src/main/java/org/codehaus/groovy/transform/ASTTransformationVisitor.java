@@ -19,8 +19,6 @@
 package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
-import groovy.lang.Tuple;
-import groovy.lang.Tuple3;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -46,6 +44,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -166,8 +165,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private static final Tuple3<String, String, String> COMPILEDYNAMIC_AND_COMPILESTATIC_AND_TYPECHECKED =
-            Tuple.tuple("groovy.transform.CompileDynamic", "groovy.transform.CompileStatic", "groovy.transform.TypeChecked");
+    private static final List<String> COMPILEDYNAMIC_AND_COMPILESTATIC_AND_TYPECHECKED =
+            Arrays.asList("groovy.transform.CompileDynamic", "groovy.transform.CompileStatic", "groovy.transform.TypeChecked");
 
     // GROOVY-9215
     // `StaticTypeCheckingVisitor` visits multi-times because `node` has duplicated `CompileStatic` and `TypeChecked`
