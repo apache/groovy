@@ -79,7 +79,6 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.SingleKeyHashMap;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
-import org.objectweb.asm.ClassVisitor;
 
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
@@ -3035,11 +3034,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                      * checking won't work but that mostly affects the bytecode
                      * generation rather than viewing the AST
                      */
-                    CompilationUnit.ClassgenCallback search = new CompilationUnit.ClassgenCallback() {
-                        public void call(ClassVisitor writer, ClassNode node) {
-                            if (node.getName().equals(theClass.getName())) {
-                                MetaClassImpl.this.classNode = node;
-                            }
+                    CompilationUnit.ClassgenCallback search = (writer, node) -> {
+                        if (node.getName().equals(theClass.getName())) {
+                            MetaClassImpl.this.classNode = node;
                         }
                     };
 

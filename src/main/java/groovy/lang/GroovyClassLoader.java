@@ -684,7 +684,7 @@ public class GroovyClassLoader extends URLClassLoader {
         return new ClassCollector(loader, unit, su);
     }
 
-    public static class ClassCollector extends CompilationUnit.ClassgenCallback {
+    public static class ClassCollector implements CompilationUnit.ClassgenCallback {
         private Class generatedClass;
         private final GroovyClassLoader cl;
         private final SourceUnit su;
