@@ -54,7 +54,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
 import javax.tools.JavaFileObject;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -538,9 +537,9 @@ public class CompilationUnit extends ProcessingUnit {
      * ProcessingUnit and a phase indicator.  Use setProgressCallback()
      * before running compile() to set your callback.
      */
-    // TODO: Convert to functional interface?
-    public abstract static class ProgressCallback {
-        public abstract void call(ProcessingUnit context, int phase) throws CompilationFailedException;
+    @FunctionalInterface
+    public interface ProgressCallback {
+        void call(ProcessingUnit context, int phase) throws CompilationFailedException;
     }
 
     /**
