@@ -319,14 +319,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             }
             addPhaseOperationsForGlobalTransforms(context.getCompilationUnit(), transformNames, isFirstScan);
         } else {
-            Iterator<Map.Entry<String, URL>> it = transformNames.entrySet().iterator();
-            while(it.hasNext()) {
-                Map.Entry<String, URL> entry = it.next();
-                if(!context.getGlobalTransformNames().add(entry.getKey())) {
-                    // phase operations for this transform class have already been added before, so remove from current scan cycle
-                    it.remove(); 
-                }
-            }
+            // phase operations for this transform class have already been added before, so remove from current scan cycle
+            transformNames.entrySet().removeIf(entry -> !context.getGlobalTransformNames().add(entry.getKey()));
             addPhaseOperationsForGlobalTransforms(context.getCompilationUnit(), transformNames, isFirstScan);
         }
     }
