@@ -514,9 +514,9 @@ public class CompilationUnit extends ProcessingUnit {
      * for each primary and inner class.  Use setClassgenCallback() before
      * running compile() to set your callback.
      */
-    // TODO: Convert to functional interface?
-    public abstract static class ClassgenCallback {
-        public abstract void call(ClassVisitor writer, ClassNode node) throws CompilationFailedException;
+    @FunctionalInterface
+    public interface ClassgenCallback {
+        void call(ClassVisitor writer, ClassNode node) throws CompilationFailedException;
     }
 
     /**
