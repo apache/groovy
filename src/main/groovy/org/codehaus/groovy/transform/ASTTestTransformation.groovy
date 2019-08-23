@@ -165,7 +165,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
 
     }
     
-    private static class ProgressCallbackChain extends CompilationUnit.ProgressCallback {
+    private static class ProgressCallbackChain implements CompilationUnit.ProgressCallback {
 
         private final List<CompilationUnit.ProgressCallback> chain = new LinkedList<CompilationUnit.ProgressCallback>()
 
