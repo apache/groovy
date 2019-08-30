@@ -462,12 +462,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return true;
         }
 
-        return resolveNestedClass(type) ||
+        return  resolveNestedClass(type) ||
                 resolveFromModule(type, testModuleImports) ||
                 resolveFromCompileUnit(type) ||
                 resolveFromDefaultImports(type, testDefaultImports) ||
-                resolveFromStaticInnerClasses(type, testStaticInnerClasses) ||
-                resolveToOuter(type);
+                resolveToOuter(type) ||
+                resolveFromStaticInnerClasses(type, testStaticInnerClasses);
     }
 
     private boolean resolveNestedClass(ClassNode type) {
