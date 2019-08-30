@@ -19,25 +19,32 @@
 
 package groovy.bugs
 
-class Groovy9226Bug extends GroovyTestCase {
+import groovy.transform.CompileStatic
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy9226 {
+
+    @Test
     void testDuplicatedAnnotations5() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.TypeChecked
-            
+
             @CompileStatic
             class Super {
               String toString() { 'Super' }
             }
-            
+
             @TypeChecked
             @CompileStatic
             class Child extends Super {
               String toString() { 'Child extends ' + super.toString() }
             }
-            
+
             assert new Child().toString()
         '''
     }
-
 }

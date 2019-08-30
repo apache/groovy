@@ -19,12 +19,20 @@
 
 package groovy.bugs
 
-class Groovy9215Bug extends GroovyTestCase {
+import groovy.transform.CompileStatic
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy9215 {
+
+    @Test
     void testDuplicatedAnnotations1() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.TypeChecked
-            
+
             @TypeChecked
             @CompileStatic
             class Data {
@@ -32,16 +40,16 @@ class Groovy9215Bug extends GroovyTestCase {
                     c("hello")
                 }
             }
-            
+
             @CompileStatic
             @CompileStatic
             class Op {
                 public Data d = new Data()
-            
+
                 void aFunc(Closure c){
                     c()
                 }
-            
+
                 void broken() {
                     aFunc({
                         d.getThing({ String res ->
@@ -50,16 +58,17 @@ class Groovy9215Bug extends GroovyTestCase {
                     })
                 }
             }
-            
+
             assert Op.class
         '''
     }
 
+    @Test
     void testDuplicatedAnnotations2() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.TypeChecked
-            
+
             @TypeChecked
             @CompileStatic
             class Data {
@@ -67,16 +76,16 @@ class Groovy9215Bug extends GroovyTestCase {
                     c("hello")
                 }
             }
-            
+
             @TypeChecked
             @CompileStatic
             class Op {
                 public Data d = new Data()
-            
+
                 void aFunc(Closure c){
                     c()
                 }
-            
+
                 void broken() {
                     aFunc({
                         d.getThing({ String res ->
@@ -85,16 +94,17 @@ class Groovy9215Bug extends GroovyTestCase {
                     })
                 }
             }
-            
+
             assert Op.class
         '''
     }
 
+    @Test
     void testDuplicatedAnnotations3() {
         assertScript '''
             import groovy.transform.CompileStatic
             import groovy.transform.TypeChecked
-            
+
             @TypeChecked
             @CompileStatic
             class Data {
@@ -102,16 +112,16 @@ class Groovy9215Bug extends GroovyTestCase {
                     c("hello")
                 }
             }
-            
+
             @TypeChecked
             @TypeChecked
             class Op {
                 public Data d = new Data()
-            
+
                 void aFunc(Closure c){
                     c()
                 }
-            
+
                 void broken() {
                     aFunc({
                         d.getThing({ String res ->
@@ -120,21 +130,22 @@ class Groovy9215Bug extends GroovyTestCase {
                     })
                 }
             }
-            
+
             assert Op.class
         '''
     }
 
+    @Test
     void testDuplicatedAnnotations4() {
         assertScript '''
             import groovy.transform.CompileDynamic
             import groovy.transform.CompileStatic
             import groovy.transform.TypeChecked
-            
+
             class Person {
                 String name
             }
-            
+
             @CompileStatic  // ignored
             @CompileDynamic // taken effect
             @TypeChecked    // ignored
@@ -143,7 +154,7 @@ class Groovy9215Bug extends GroovyTestCase {
                 def person = new Person(name:"Daniel.Sun")
                 assert "I'm Daniel.Sun" == person.introduce()
             }
-            
+
             x()
         '''
     }

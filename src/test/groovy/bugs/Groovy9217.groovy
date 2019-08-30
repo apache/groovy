@@ -18,12 +18,21 @@
  */
 package groovy.bugs
 
-// TODO add JVM option `--illegal-access=deny` when all warnings fixed
-class Groovy9217Bug extends GroovyTestCase {
+import groovy.transform.CompileStatic
+import org.junit.Test
+
+// TODO: add JVM option `--illegal-access=deny` when all warnings fixed
+@CompileStatic
+final class Groovy9217 {
+
+    @Test
     void testSetProperty() {
-        HttpURLConnection conn = new URL('http://www.bing.com').openConnection() as HttpURLConnection
-        conn.requestMethod = 'HEAD'
-        assert 'HEAD' == conn.requestMethod
-        conn.disconnect()
+        def conn = new URL('http://www.bing.com').openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = 'HEAD'
+            assert 'HEAD' == conn.requestMethod
+        } finally {
+            conn.disconnect()
+        }
     }
 }

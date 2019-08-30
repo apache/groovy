@@ -18,7 +18,15 @@
  */
 package groovy.bugs
 
-class Groovy8943Bug extends GroovyTestCase {
+import groovy.transform.CompileStatic
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy8943 {
+
+    @Test
     void testImplicitGetAtInStaticMethod() {
         assertScript '''
             class Pippo {

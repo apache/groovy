@@ -18,13 +18,21 @@
  */
 package groovy.bugs
 
-class Groovy8947Bug extends GroovyTestCase {
+import groovy.transform.CompileStatic
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+@CompileStatic
+final class Groovy8947 {
+
+    @Test
     void testResolvingNonStaticInnerClass() {
         assertScript '''
             public class Computer {
                 public class Cpu {
                     int coreNumber
-            
                     public Cpu(int coreNumber) {
                         this.coreNumber = coreNumber
                     }
@@ -33,60 +41,57 @@ class Groovy8947Bug extends GroovyTestCase {
                     return new Computer().new Cpu(coreNumber)
                 }
             }
-            
+
             assert 4 == new Computer().new Cpu(4).coreNumber
-            
             assert 4 == Computer.newCpuInstance(4).coreNumber
             assert 0 == new HashSet(new ArrayList()).size()
         '''
     }
 
+    @Test
     void testResolvingNonStaticInnerClass2() {
         assertScript '''
             public class Computer {
                 public class Cpu {
                     int coreNumber
-            
                     public Cpu(int coreNumber) {
                         this.coreNumber = coreNumber
                     }
                 }
-                
                 static newComputerInstance() {
                     return new Computer()
                 }
-                
                 static newCpuInstance(int coreNumber) {
                     // `new Cpu(coreNumber)` is inside of the outer class `Computer`, so we can resolve `Cpu`
                     return newComputerInstance().new Cpu(coreNumber)
-                } 
+                }
             }
-            
-            assert 4 == Computer.newCpuInstance(4).coreNumber 
+
+            assert 4 == Computer.newCpuInstance(4).coreNumber
         '''
     }
 
+    @Test
     void testResolvingNonStaticInnerClass3() {
-        def errMsg = shouldFail '''
+        def err = shouldFail '''
             public class Computer {
                 public class Cpu {
                     int coreNumber
-            
+
                     public Cpu(int coreNumber) {
                         this.coreNumber = coreNumber
                     }
                 }
             }
-            
             def newComputerInstance() {
                 return new Computer()
             }
-            
-            // `new Cpu(4)` is outside of outer class `Computer` and the return type of `newComputerInstance()` can not be resolved, 
+
+            // `new Cpu(4)` is outside of outer class `Computer` and the return type of `newComputerInstance()` can not be resolved,
             // so we does not support this syntax outside of outer class
-            assert 4 == newComputerInstance().new Cpu(4).coreNumber 
+            assert 4 == newComputerInstance().new Cpu(4).coreNumber
         '''
 
-        assert errMsg.contains('unable to resolve class Cpu')
+        assert err =~ 'unable to resolve class Cpu'
     }
 }
