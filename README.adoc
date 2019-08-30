@@ -194,19 +194,19 @@ https://opencollective.com/friends-of-groovy
 
 This initiative is designed to complement the Apache project and the many contributions we get from our great community and supporters.
 
-Thank you to our Silver Sponsors:
+* Thank you to our Silver Sponsors:
 
 image:{sponsors-silver-img}[]
 
-Thank you to our Bronze Sponsors:
+* Thank you to our Bronze Sponsors:
 
 image:{sponsors-bronze-img}[]
 
-Thank you to our backers(donating monthly):
+* Thank you to our backers(donating monthly):
 
 image:{backers-monthly-img}[]
 
-Thank you to all our backers:
+* Thank you to all our backers:
 
 image:{backers-all-img}[]
 
