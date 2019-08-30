@@ -69,8 +69,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static org.codehaus.groovy.runtime.DefaultGroovyMethods.get;
-
 /**
  * This class defines new groovy methods for Readers, Writers, InputStreams and
  * OutputStreams which appear on normal JDK classes inside the Groovy environment.
@@ -1310,13 +1308,24 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.io.FileType
      * @since 1.7.1
      */
-    public static void traverse(final File self, final Map<String, Object> options, @ClosureParams(value = SimpleType.class, options = "java.io.File") final Closure closure)
+    public static void traverse(final File self, final Map<String, ?> options, @ClosureParams(value = SimpleType.class, options = "java.io.File") final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
-        Number maxDepthNumber = DefaultGroovyMethods.asType(options.remove("maxDepth"), Number.class);
-        int maxDepth = maxDepthNumber == null ? -1 : maxDepthNumber.intValue();
-        Boolean visitRoot = DefaultGroovyMethods.asType(get(options, "visitRoot", false), Boolean.class);
-        Boolean preRoot = DefaultGroovyMethods.asType(get(options, "preRoot", false), Boolean.class);
-        Boolean postRoot = DefaultGroovyMethods.asType(get(options, "postRoot", false), Boolean.class);
+        final int maxDepth;
+        final boolean preRoot;
+        final boolean postRoot;
+        final boolean visitRoot;
+
+        {
+            Object maxDepthValue = options.remove("maxDepth");
+            maxDepth = maxDepthValue == null ? -1 : DefaultGroovyMethods.asType(maxDepthValue, Number.class).intValue();
+            Object preRootValue = options.get("preRoot");
+            preRoot = preRootValue == null ? false : DefaultGroovyMethods.asType(preRootValue, Boolean.class).booleanValue();
+            Object postRootValue = options.get("postRoot");
+            postRoot = postRootValue == null ? false : DefaultGroovyMethods.asType(postRootValue, Boolean.class).booleanValue();
+            Object visitRootValue = options.get("visitRoot");
+            visitRoot = visitRootValue == null ? false : DefaultGroovyMethods.asType(visitRootValue, Boolean.class).booleanValue();
+        }
+
         final Closure pre = (Closure) options.get("preDir");
         final Closure post = (Closure) options.get("postDir");
         final FileType type = (FileType) options.get("type");
@@ -1324,6 +1333,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         final Object nameFilter = options.get("nameFilter");
         final Object excludeFilter = options.get("excludeFilter");
         final Object excludeNameFilter = options.get("excludeNameFilter");
+
         Object preResult = null;
         if (preRoot && pre != null) {
             preResult = pre.call(self);
@@ -1405,13 +1415,13 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
      * @since 1.7.1
      */
-    public static void traverse(final File self, final Map<String, Object> options)
+    public static void traverse(final File self, final Map<String, ?> options)
             throws FileNotFoundException, IllegalArgumentException {
         final Closure visit = (Closure) options.remove("visit");
         traverse(self, options, visit);
     }
 
-    private static FileVisitResult traverse(final File self, final Map<String, Object> options, final Closure closure, final int maxDepth)
+    private static FileVisitResult traverse(final File self, final Map<String, ?> options, final Closure closure, final int maxDepth)
             throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final Closure pre = (Closure) options.get("preDir");
