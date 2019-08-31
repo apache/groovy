@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-jdk: oraclejdk8
+jdk: oraclejdk9
 
 install:
-  - ./gradlew install -x test
+  - ./gradlew install -x test -x asciidoctor
