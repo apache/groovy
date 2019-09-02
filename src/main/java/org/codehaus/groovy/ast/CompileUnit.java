@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * Represents the entire contents of a compilation step which consists of one or more
@@ -186,7 +187,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     public InnerClassNode getGeneratedInnerClass(String name) {
         return generatedInnerClasses.get(name);
     }
-    
+
     public void addGeneratedInnerClass(InnerClassNode icn) {
         generatedInnerClasses.put(icn.getName(), icn);
     }
@@ -228,6 +229,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     @Internal
     public static class ConstructedOuterNestedClassNode extends ClassNode {
         private final ClassNode enclosingClassNode;
+        private final List<BiConsumer<ConstructedOuterNestedClassNode, ClassNode>> setRedirectListenerList = new ArrayList<>();
 
         public ConstructedOuterNestedClassNode(ClassNode outer, String innerClassName) {
             super(innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
@@ -235,8 +237,20 @@ public class CompileUnit implements NodeMetaDataHandler {
             this.isPrimaryNode = false;
         }
 
+        @Override
+        public void setRedirect(ClassNode cn) {
+            for (BiConsumer<ConstructedOuterNestedClassNode, ClassNode> setRedirectListener : setRedirectListenerList) {
+                setRedirectListener.accept(this, cn);
+            }
+            super.setRedirect(cn);
+        }
+
         public ClassNode getEnclosingClassNode() {
             return enclosingClassNode;
+        }
+
+        public void addSetRedirectListener(BiConsumer<ConstructedOuterNestedClassNode, ClassNode> setRedirectListener) {
+            setRedirectListenerList.add(setRedirectListener);
         }
     }
 }
