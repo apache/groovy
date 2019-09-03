@@ -25,6 +25,7 @@ import groovy.io.GroovyPrintWriter;
 import groovy.lang.Closure;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;
+import groovy.transform.NamedParam;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
@@ -1308,8 +1309,23 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.io.FileType
      * @since 1.7.1
      */
-    public static void traverse(final File self, final Map<String, ?> options, @ClosureParams(value = SimpleType.class, options = "java.io.File") final Closure closure)
-            throws FileNotFoundException, IllegalArgumentException {
+    public static void traverse(final File self,
+            @NamedParam(value = "type", type = FileType.class)
+            @NamedParam(value = "preDir", type = Closure.class)
+            @NamedParam(value = "preRoot", type = Boolean.class)
+            @NamedParam(value = "postDir", type = Closure.class)
+            @NamedParam(value = "postRoot", type = Boolean.class)
+            @NamedParam(value = "visitRoot", type = Boolean.class)
+            @NamedParam(value = "maxDepth", type = Integer.class)
+            @NamedParam(value = "filter", type = Object.class)
+            @NamedParam(value = "nameFilter", type = Object.class)
+            @NamedParam(value = "excludeFilter", type = Object.class)
+            @NamedParam(value = "excludeNameFilter", type = Object.class)
+            @NamedParam(value = "sort", type = Closure.class)
+            final Map<String, ?> options,
+            @ClosureParams(value = SimpleType.class, options = "java.io.File")
+            final Closure closure)
+                throws FileNotFoundException, IllegalArgumentException {
         final int maxDepth;
         final boolean preRoot;
         final boolean postRoot;
@@ -1415,8 +1431,21 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
      * @since 1.7.1
      */
-    public static void traverse(final File self, final Map<String, ?> options)
-            throws FileNotFoundException, IllegalArgumentException {
+    public static void traverse(final File self,
+            @NamedParam(value = "type", type = FileType.class)
+            @NamedParam(value = "preDir", type = Closure.class)
+            @NamedParam(value = "preRoot", type = Boolean.class)
+            @NamedParam(value = "postDir", type = Closure.class)
+            @NamedParam(value = "postRoot", type = Boolean.class)
+            @NamedParam(value = "visitRoot", type = Boolean.class)
+            @NamedParam(value = "maxDepth", type = Integer.class)
+            @NamedParam(value = "filter", type = Object.class)
+            @NamedParam(value = "nameFilter", type = Object.class)
+            @NamedParam(value = "excludeFilter", type = Object.class)
+            @NamedParam(value = "excludeNameFilter", type = Object.class)
+            @NamedParam(value = "sort", type = Closure.class)
+            final Map<String, ?> options)
+                throws FileNotFoundException, IllegalArgumentException {
         final Closure visit = (Closure) options.remove("visit");
         traverse(self, options, visit);
     }
