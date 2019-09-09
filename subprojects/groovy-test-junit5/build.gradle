@@ -18,8 +18,8 @@
  */
 
 ext {
-    junit5Version = '5.5.1'
-    junit5PlatformVersion = '1.5.1'
+    junit5Version = '5.5.2'
+    junit5PlatformVersion = '1.5.2'
 }
 
 dependencies {
