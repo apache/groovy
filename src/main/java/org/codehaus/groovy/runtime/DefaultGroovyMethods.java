@@ -6678,7 +6678,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self The array of values to average
      * @return The average of all of the items
-     * @see #average(java.util.Iterable)
+     * @see #sum(java.lang.Object[])
      * @since 3.0.0
      */
     public static Object average(Object[] self) {
