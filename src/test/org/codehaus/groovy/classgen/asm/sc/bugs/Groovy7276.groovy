@@ -22,7 +22,7 @@ import groovy.test.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-final class Groovy7276Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testShouldGoThroughPrivateBridgeAccessor() {
         assertScript '''

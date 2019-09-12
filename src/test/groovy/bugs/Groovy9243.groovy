@@ -18,15 +18,20 @@
  */
 package groovy.bugs
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.tools.GroovyStarter
+import org.junit.Test
 
-class Groovy9243Bug extends GroovyTestCase {
-    void testResolveNestedClassFromBaseType() {
-        def mainScriptPath = new File(this.getClass().getResource('/groovy/bugs/groovy9243/Main.groovy').toURI()).absolutePath
-        runScript(mainScriptPath)
+@CompileStatic
+final class Groovy9243 {
+
+    private static void runScript(String path) {
+        GroovyStarter.main('--main', 'groovy.ui.GroovyMain', path)
     }
 
-    static void runScript(String path) {
-        GroovyStarter.main(new String[] { "--main", "groovy.ui.GroovyMain", path })
+    @Test
+    void testResolveNestedClassFromBaseType() {
+        def mainScriptPath = new File(getClass().getResource('/groovy/bugs/groovy9243/Main.groovy').toURI()).absolutePath
+        runScript(mainScriptPath)
     }
 }
