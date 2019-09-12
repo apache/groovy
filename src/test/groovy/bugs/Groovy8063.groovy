@@ -16,34 +16,49 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.annotations
+package groovy.bugs
 
 import groovy.transform.CompileStatic
+import org.junit.Ignore
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
-final class PackageAndImportAnnotationTest {
+final class Groovy8063 {
 
     @Test
-    void testTransformationOfPropertyInvokedOnThis() {
+    void testTypeAnnotationWithQualifiedInnerClassReference() {
         assertScript '''
-            def x = new groovy.annotations.MyClass()
-            assert x.class.annotations[0].value() == 60
-            assert x.class.package.annotations[0].value() == 30
-            new AntBuilder().with {
-                mkdir(dir:'temp')
-                delete(file:'temp/log.txt')
-                taskdef(name:'groovyc', classname:'org.codehaus.groovy.ant.Groovyc')
-                groovyc(srcdir:'src/test', destdir:'temp', includes:'groovy/annotations/MyClass.groovy')
-                def text = new File('temp/log.txt').text
-                delete(dir:'temp')
-
-                assert text.contains('ClassNode 60')
-                assert text.contains('PackageNode 40')
-                assert text.contains('ImportNode 50')
+            @interface Anno {
+                Class value()
             }
+
+            @Anno(value=Outer.Inner)
+            class Outer {
+                static class Inner {}
+            }
+
+            new Outer()
         '''
+    }
+
+    @Test @Ignore
+    void testTypeAnnotationWithUnqualifiedInnerClassReference() {
+        def err = shouldFail '''
+            @interface Anno {
+                Class value()
+            }
+
+            @Anno(value=Inner) // type annotation is outside the class scope
+            class Outer {
+                static class Inner {}
+            }
+
+            new Outer()
+        '''
+
+        assert err =~ / X /
     }
 }

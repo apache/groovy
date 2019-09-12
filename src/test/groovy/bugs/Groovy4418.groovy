@@ -18,12 +18,14 @@
  */
 package groovy.bugs
 
+import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-final class Groovy4418Bug {
+@CompileStatic
+final class Groovy4418 {
 
     @Test
     void testStaticFieldAccess() {
