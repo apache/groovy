@@ -171,6 +171,7 @@ import java.lang.annotation.Target;
  * </pre>
  * 
  * @see org.codehaus.groovy.transform.AnnotationCollectorTransform
+ * @since 2.1.0
  */
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
