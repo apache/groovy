@@ -200,7 +200,7 @@ options:
         //when starting via main set the look and feel to system
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
 
-        def console = new Console(Console.class.classLoader?.getRootLoader())
+        def console = new Console(Thread.currentThread().contextClassLoader)
         console.useScriptClassLoaderForScriptExecution = true
         console.run()
         if (args.length == 1) console.loadScriptFile(args[0] as File)
