@@ -18,7 +18,6 @@
  */
 package groovy.console.ui
 
-import groovy.ui.HistoryRecord
 import junit.framework.TestCase
 
 class HistoryRecordGetTextToRunTests extends TestCase {
