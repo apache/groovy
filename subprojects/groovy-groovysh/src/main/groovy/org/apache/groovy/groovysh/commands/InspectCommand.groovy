@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import groovy.inspect.swingui.ObjectBrowser
+import groovy.console.ui.ObjectBrowser
 import jline.console.completer.Completer
 import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Groovysh
