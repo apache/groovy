@@ -18,7 +18,7 @@
  */
 package groovy.swing.factory
 
-import org.codehaus.groovy.binding.BindingProxy
+import org.apache.groovy.swing.binding.BindingProxy
 
 /**
  * @since Groovy 1.1
