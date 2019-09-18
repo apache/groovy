@@ -217,9 +217,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     Closure beforeExecution
     Closure afterExecution
 
-    public static URL ICON_PATH = Console.class.classLoader.getResource('groovy/ui/ConsoleIcon.png')
+    public static URL ICON_PATH = Console.class.classLoader.getResource('groovy/console/ui/ConsoleIcon.png')
     // used by ObjectBrowser and AST Viewer
-    public static URL NODE_ICON_PATH = Console.class.classLoader.getResource('groovy/ui/icons/bullet_green.png')
+    public static URL NODE_ICON_PATH = Console.class.classLoader.getResource('groovy/console/ui/icons/bullet_green.png')
     // used by AST Viewer
 
     static groovyFileFilter = new GroovyFileFilter()
@@ -394,7 +394,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 frame(
                         title: 'GroovyConsole',
                         //location: [100,100], // in groovy 2.0 use platform default location
-                        iconImage: imageIcon('/groovy/ui/ConsoleIcon.png').image,
+                        iconImage: imageIcon('/groovy/console/ui/ConsoleIcon.png').image,
                         defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
                 ) {
                     try {
