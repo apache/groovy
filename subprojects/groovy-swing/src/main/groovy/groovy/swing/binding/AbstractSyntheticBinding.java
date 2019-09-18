@@ -18,10 +18,10 @@
  */
 package groovy.swing.binding;
 
-import org.codehaus.groovy.binding.AbstractFullBinding;
-import org.codehaus.groovy.binding.PropertyBinding;
-import org.codehaus.groovy.binding.SourceBinding;
-import org.codehaus.groovy.binding.TargetBinding;
+import org.apache.groovy.swing.binding.AbstractFullBinding;
+import org.apache.groovy.swing.binding.PropertyBinding;
+import org.apache.groovy.swing.binding.SourceBinding;
+import org.apache.groovy.swing.binding.TargetBinding;
 
 public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
     boolean bound;
