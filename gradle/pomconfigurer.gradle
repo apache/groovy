@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-group = 'org.codehaus.groovy'
+group = 'org.apache.groovy'
 
 project.ext.optionalDeps = []
 project.ext.providedDeps = []
@@ -28,7 +28,7 @@ project.ext.provided = { project.ext.providedDeps << it }
 project.ext.pomConfigureClosureWithoutTweaks = {
     project {
         name 'Apache Groovy'
-        description 'Groovy: A powerful, dynamic language for the JVM'
+        description 'Groovy: A powerful multi-faceted language for the JVM'
         url 'https://groovy-lang.org'
         inceptionYear '2003'
         organization {
