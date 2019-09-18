@@ -28,17 +28,17 @@ import groovy.swing.binding.JSliderProperties
 import groovy.swing.binding.JSpinnerProperties
 import groovy.swing.binding.JTableProperties
 import groovy.swing.binding.JTextComponentProperties
-import org.codehaus.groovy.binding.AggregateBinding
-import org.codehaus.groovy.binding.BindingUpdatable
-import org.codehaus.groovy.binding.ClosureSourceBinding
-import org.codehaus.groovy.binding.ClosureTriggerBinding
-import org.codehaus.groovy.binding.EventTriggerBinding
-import org.codehaus.groovy.binding.FullBinding
-import org.codehaus.groovy.binding.MutualPropertyBinding
-import org.codehaus.groovy.binding.PropertyBinding
-import org.codehaus.groovy.binding.SourceBinding
-import org.codehaus.groovy.binding.TargetBinding
-import org.codehaus.groovy.binding.TriggerBinding
+import org.apache.groovy.swing.binding.AggregateBinding
+import org.apache.groovy.swing.binding.BindingUpdatable
+import org.apache.groovy.swing.binding.ClosureSourceBinding
+import org.apache.groovy.swing.binding.ClosureTriggerBinding
+import org.apache.groovy.swing.binding.EventTriggerBinding
+import org.apache.groovy.swing.binding.FullBinding
+import org.apache.groovy.swing.binding.MutualPropertyBinding
+import org.apache.groovy.swing.binding.PropertyBinding
+import org.apache.groovy.swing.binding.SourceBinding
+import org.apache.groovy.swing.binding.TargetBinding
+import org.apache.groovy.swing.binding.TriggerBinding
 
 import java.util.Map.Entry
 

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class returns half bound {@link org.codehaus.groovy.binding.FullBinding}s on the source half to the model
+ * This class returns half bound {@link org.apache.groovy.swing.binding.FullBinding}s on the source half to the model
  * object for every property reference (and I do mean every, valid or not, queried before or not).  These returned
  * half bindings are stored strongly in a list when generated.
  *

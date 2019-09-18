@@ -18,7 +18,7 @@
  */
 package groovy.swing.factory
 
-import org.codehaus.groovy.binding.AggregateBinding
+import org.apache.groovy.swing.binding.AggregateBinding
 
 /**
  * Factory for aggregate bindings
