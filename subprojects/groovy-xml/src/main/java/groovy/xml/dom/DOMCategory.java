@@ -23,8 +23,8 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.xml.DOMBuilder;
 import groovy.namespace.QName;
+import org.apache.groovy.xml.extensions.XmlExtensions;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -281,7 +281,7 @@ public class DOMCategory {
 
     public static List<Node> list(NodeList self) {
         List<Node> answer = new ArrayList<Node>();
-        Iterator<Node> it = XmlGroovyMethods.iterator(self);
+        Iterator<Node> it = XmlExtensions.iterator(self);
         while (it.hasNext()) {
             answer.add(it.next());
         }
@@ -381,7 +381,7 @@ public class DOMCategory {
         Node beforeNode = self.getNextSibling();
         DOMBuilder b = new DOMBuilder(self.getOwnerDocument());
         Element newNodes = (Element) b.invokeMethod("rootNode", c);
-        Iterator<Node> iter = XmlGroovyMethods.iterator(children(newNodes));
+        Iterator<Node> iter = XmlExtensions.iterator(children(newNodes));
         while (iter.hasNext()) {
             parent.insertBefore(iter.next(), beforeNode);
         }
@@ -507,7 +507,7 @@ public class DOMCategory {
     private static String toString(NodeList self) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
-        Iterator it = XmlGroovyMethods.iterator(self);
+        Iterator it = XmlExtensions.iterator(self);
         while (it.hasNext()) {
             if (sb.length() > 1) sb.append(", ");
             sb.append(it.next().toString());
