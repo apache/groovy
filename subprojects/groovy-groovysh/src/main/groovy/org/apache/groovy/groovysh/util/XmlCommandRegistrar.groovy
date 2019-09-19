@@ -74,7 +74,7 @@ class XmlCommandRegistrar {
         }
 
         url.withReader { Reader reader ->
-            groovy.util.Node doc = new groovy.util.XmlParser().parse(reader)
+            groovy.util.Node doc = new groovy.xml.XmlParser().parse(reader)
 
             doc.children().each { groovy.util.Node element ->
                 String classname = element.text()
