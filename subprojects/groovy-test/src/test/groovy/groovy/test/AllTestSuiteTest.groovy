@@ -21,7 +21,7 @@ package groovy.test
 import java.util.logging.Level
 
 /**
- * Testing groovy.util.AllTestSuite.
+ * Testing groovy.test.AllTestSuite.
  * The suite() method must properly collect Test files under the given dir and pattern,
  * add found files to the log,
  * produce a proper TestSuite,
