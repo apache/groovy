@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.tools;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.io.File;

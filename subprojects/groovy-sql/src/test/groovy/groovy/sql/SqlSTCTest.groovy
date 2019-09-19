@@ -18,6 +18,7 @@
  */
 package groovy.sql
 
+import groovy.test.GroovyShellTestCase
 import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer

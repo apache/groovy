@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.syntax.parser;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.SourceUnit;
 

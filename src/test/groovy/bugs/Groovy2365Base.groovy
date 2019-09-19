@@ -25,6 +25,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 abstract class Groovy2365Base extends GroovyTestCase {
 
     protected String createData () {

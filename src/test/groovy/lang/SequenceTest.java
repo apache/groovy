@@ -18,7 +18,7 @@
  */
 package groovy.lang;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.List;

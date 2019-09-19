@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.control;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;

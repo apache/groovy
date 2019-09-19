@@ -18,6 +18,8 @@
  */
 package gls.annotations.closures
 
+import groovy.test.GroovyTestCase
+
 abstract class AnnotationClosureExhaustiveTestSupport extends GroovyTestCase {
     abstract Class getAnnotationClass()
 

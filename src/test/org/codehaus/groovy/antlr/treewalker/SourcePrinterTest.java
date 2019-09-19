@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 /**
  * Testcases for the antlr AST visitor that prints groovy source code.

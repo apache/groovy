@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.antlr;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 import java.io.PrintWriter;
 import java.io.Reader;

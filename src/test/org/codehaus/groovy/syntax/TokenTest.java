@@ -19,7 +19,7 @@
 package org.codehaus.groovy.syntax;
 
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 public class TokenTest
         extends GroovyTestCase {

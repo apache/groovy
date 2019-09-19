@@ -19,7 +19,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyShell;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
 public class Groovy7826Bug extends GroovyTestCase {

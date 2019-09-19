@@ -28,7 +28,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 @SuppressWarnings("deprecation")
 public class DependencyTest extends GroovyTestCase {

@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.antlr.treewalker;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.antlr.java.Java2GroovyProcessor;
 
 public class Java2GroovyTest extends GroovyTestCase {

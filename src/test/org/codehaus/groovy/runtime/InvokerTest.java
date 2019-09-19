@@ -20,7 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.*;

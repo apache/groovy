@@ -21,7 +21,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import junit.framework.AssertionFailedError;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;

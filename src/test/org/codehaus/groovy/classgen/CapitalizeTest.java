@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 public class CapitalizeTest extends GroovyTestCase {
 
