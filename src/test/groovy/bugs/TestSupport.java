@@ -18,7 +18,7 @@
  */
 package groovy.bugs;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.junit.Ignore;
 
 import java.util.Arrays;

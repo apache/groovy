@@ -20,7 +20,7 @@ package gls.annotations;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyClassLoader.InnerLoader;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;

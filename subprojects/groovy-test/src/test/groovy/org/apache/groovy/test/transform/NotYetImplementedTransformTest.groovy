@@ -18,12 +18,14 @@
  */
 package org.apache.groovy.test.transform
 
+import groovy.test.GroovyShellTestCase
 import junit.framework.AssertionFailedError
 
 class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testNotYetImplemented() {
         def output = evaluate("""
+              import groovy.test.GroovyTestCase
               import groovy.test.NotYetImplemented
 
               class MyTests extends GroovyTestCase {
@@ -41,6 +43,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testNotYetImplementedWithException() {
             def output = evaluate("""
+                  import groovy.test.GroovyTestCase
                   import groovy.test.NotYetImplemented
 
                   class MyTests extends GroovyTestCase {
@@ -58,6 +61,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testNotYetImplementedPassThrough() {
         def output = evaluate("""
+              import groovy.test.GroovyTestCase
               import groovy.test.NotYetImplemented
 
               class MyTests extends GroovyTestCase {
@@ -77,6 +81,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
 
     void testEmptyTestMethod() {
         def output = evaluate("""
+              import groovy.test.GroovyTestCase
               import groovy.test.NotYetImplemented
 
               class MyTests extends GroovyTestCase {

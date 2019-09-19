@@ -21,7 +21,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 /**
  * Tests failing method invocations to ensure correct exceptions

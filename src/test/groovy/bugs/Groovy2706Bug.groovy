@@ -18,7 +18,7 @@
  */
 package groovy.bugs
 
-import groovy.util.GroovyTestCase
+import groovy.test.GroovyTestCase
 
 public class Groovy2706Bug extends GroovyTestCase {
     static counter = 0

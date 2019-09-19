@@ -19,7 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

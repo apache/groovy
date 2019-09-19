@@ -19,7 +19,7 @@
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.GroovyObjectSupport;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

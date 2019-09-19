@@ -19,7 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.MissingMethodException;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 import groovy.util.HeadlessTestSupport;
 import groovy.util.Node;
 

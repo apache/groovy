@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 public abstract class DefaultPackageClassSupport extends GroovyTestCase {
 }

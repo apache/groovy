@@ -19,7 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GroovyClassLoader;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 public class JdkDynamicProxyTest extends GroovyTestCase {
 

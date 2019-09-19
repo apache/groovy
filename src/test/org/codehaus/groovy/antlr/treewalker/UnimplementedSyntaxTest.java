@@ -20,7 +20,7 @@ package org.codehaus.groovy.antlr.treewalker;
 
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 /**
  * This tests code that is valid in parser, but has issues further down the line.

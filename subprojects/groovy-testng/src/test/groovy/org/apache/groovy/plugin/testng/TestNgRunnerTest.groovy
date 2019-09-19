@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.plugin.testng
 
+import groovy.test.GroovyShellTestCase
+
 class TestNgRunnerTest extends GroovyShellTestCase {
 
     @Override

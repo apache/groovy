@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.antlr;
 
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 public class GroovySourceASTTest extends GroovyTestCase {
     GroovySourceAST a;

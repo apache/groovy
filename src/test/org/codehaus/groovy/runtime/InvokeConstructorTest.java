@@ -19,7 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
-import groovy.util.GroovyTestCase;
+import groovy.test.GroovyTestCase;
 
 /**
  * Tests method invocation
