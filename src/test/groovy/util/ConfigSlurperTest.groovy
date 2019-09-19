@@ -17,6 +17,9 @@
  *  under the License.
  */
 package groovy.util
+
+import groovy.test.GroovyTestCase
+
 /**
  * Tests for the ConfigSlurper class
  *

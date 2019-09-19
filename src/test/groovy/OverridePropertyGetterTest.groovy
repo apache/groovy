@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * test to ensure that overriding getter doesn't throw a NPE on access
  */

@@ -18,6 +18,8 @@
  */
 package groovy.operator
 
+import groovy.test.GroovyTestCase
+
 class StringOperatorsTest extends GroovyTestCase {
 
     def x

@@ -18,6 +18,8 @@
  */
 package groovy.txn
 
+import groovy.test.GroovyTestCase
+
 class TransactionTest extends GroovyTestCase {
 
     void testTxn() {

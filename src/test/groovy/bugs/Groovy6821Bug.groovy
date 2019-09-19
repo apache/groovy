@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests that 6821 is fixed using an explicit Outer.this notation if not using @CompileStatic
  */

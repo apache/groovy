@@ -212,8 +212,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //            DateTimeExtensions.class,
 //            SqlExtensions.class,
 //            SwingGroovyMethods.class,
-//            XmlGroovyMethods.class,
-//            NioGroovyMethods.class
+//            XmlExtensions.class,
+//            NioExtensions.class
     };
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
     private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<Comparable>();

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3560Bug extends GroovyTestCase {
     void testVarArgsWithAnInterfaceAsVarArgArrayType() {
         assert Groovy3560Helper.m1(new Groovy3560A(), new Groovy3560B()) == 2

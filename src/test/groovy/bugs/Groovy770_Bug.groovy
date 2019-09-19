@@ -21,6 +21,8 @@
 
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy770_Bug extends GroovyTestCase {
      
     void testBug() {

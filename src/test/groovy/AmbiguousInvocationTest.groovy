@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * to prove GROOVY-467 is no longer an issue    
  */

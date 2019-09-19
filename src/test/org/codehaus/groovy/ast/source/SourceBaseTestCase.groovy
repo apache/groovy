@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.source
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.*
 import org.codehaus.groovy.control.io.*
 import org.codehaus.groovy.ast.stmt.*

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4980Bug extends GroovyTestCase {
     void testNamedArgumentWithInnerClassConstructor() {
         assertScript """

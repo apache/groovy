@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyShellTestCase
+
 class ExternalizeVerifierTransformTest extends GroovyShellTestCase {
 
     void testCheckPropertyTypes() {

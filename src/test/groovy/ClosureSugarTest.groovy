@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ClosureSugarTest extends GroovyTestCase {
 
     def count;

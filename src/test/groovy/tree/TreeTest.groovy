@@ -18,6 +18,8 @@
  */
 package groovy.tree
 
+import groovy.test.GroovyTestCase
+
 /**
  * This test uses the concise GroovyMarkup syntax to test the building of trees
  */

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class GroovyInnerEnumBug extends GroovyTestCase {
     static public enum MyEnum { 
         a, b, c

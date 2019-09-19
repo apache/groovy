@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy6736Bug extends GroovyTestCase {
     void testAddExtraMethodToMapUsingTraitAndAsKeyword() {
         assertScript '''

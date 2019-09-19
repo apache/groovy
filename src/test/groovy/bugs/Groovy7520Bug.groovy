@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7520Bug extends GroovyTestCase {
     void testShouldSeeConflictUsingAbstractMethod() {
         def msg = shouldFail '''

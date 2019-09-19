@@ -20,6 +20,7 @@ package testingguide
 
 import groovy.mock.interceptor.MockFor
 import groovy.mock.interceptor.StubFor
+import groovy.test.GroovyTestCase
 
 // tag::map_coercion[]
         class TranslationService {

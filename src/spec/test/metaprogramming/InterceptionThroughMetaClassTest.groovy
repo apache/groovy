@@ -18,6 +18,7 @@
  */
 package metaprogramming
 
+import groovy.test.GroovyTestCase
 import groovy.xml.Entity
 
 // tag::meta_class_interception[]

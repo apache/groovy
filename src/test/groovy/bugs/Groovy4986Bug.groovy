@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 import java.sql.Timestamp
 
 class Groovy4986Bug extends GroovyTestCase {

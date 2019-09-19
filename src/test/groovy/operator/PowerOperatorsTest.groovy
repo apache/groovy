@@ -18,6 +18,8 @@
  */
 package groovy.operator
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test Math Power Operation in Classic/New Groovy
  */

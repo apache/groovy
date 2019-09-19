@@ -18,6 +18,8 @@
  */
 package gls.ch03.s03
 
+import groovy.test.GroovyTestCase
+
 /**
  * GLS 3.3:
  * Implementations first recognize Unicode escapes in their input, translating 

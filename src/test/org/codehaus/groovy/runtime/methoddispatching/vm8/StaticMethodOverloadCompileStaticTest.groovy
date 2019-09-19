@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.methoddispatching.vm8
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 
 import static groovy.test.GroovyAssert.isAtLeastJdk

@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyShellTestCase
+
 class SyntheticReturnTest extends GroovyShellTestCase{
 
     // GROOVY-5980

@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class LeftShiftTest extends GroovyTestCase {
 
     def foo = [1, 2, 3]

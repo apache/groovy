@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3894Bug extends GroovyTestCase {
     void testInfinityToBigDecimalConversion() {
         BigDecimal x = 999999999999999999999999999999999999999999999999999999999999999999999999999999999999999

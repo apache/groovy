@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.tailrec
 
+import groovy.test.GroovyShellTestCase
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 

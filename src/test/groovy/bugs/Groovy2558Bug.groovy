@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy2558Bug extends GroovyTestCase {
     void testMe () {
         Person person = new Person()

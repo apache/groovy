@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * check that the new filterLine() method on InputStream is ok
  * (and indirectly test newReader() method on InputStream)

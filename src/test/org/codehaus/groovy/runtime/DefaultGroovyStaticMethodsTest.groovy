@@ -17,6 +17,9 @@
  *  under the License.
  */
 package org.codehaus.groovy.runtime
+
+import groovy.test.GroovyTestCase
+
 /**
  * Tests for DefaultGroovyStaticMethods
  */

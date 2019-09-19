@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3749Bug extends GroovyTestCase {
     void testScriptsProvidingStaticMainMethod() {
         def scriptStr

@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 

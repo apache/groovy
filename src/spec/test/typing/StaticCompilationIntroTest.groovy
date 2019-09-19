@@ -18,6 +18,8 @@
  */
 package typing
 
+import groovy.test.GroovyTestCase
+
 class StaticCompilationIntroTest extends GroovyTestCase {
 
     private static String TYPESAFE_PROGRAM = '''

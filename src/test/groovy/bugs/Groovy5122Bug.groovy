@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5122Bug extends GroovyTestCase {
     void testInterfaceFieldShouldBeInitialized() {
         assertScript '''

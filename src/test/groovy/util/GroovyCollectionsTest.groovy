@@ -18,6 +18,8 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
+
 import static GroovyCollections.min
 import static GroovyCollections.max
 import static GroovyCollections.combinations

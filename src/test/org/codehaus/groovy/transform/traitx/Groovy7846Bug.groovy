@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassNode
 
 class Groovy7846Bug extends GroovyTestCase {

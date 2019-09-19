@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test case for DefaultGroovyMethods involving Object streams and data streams.
  */

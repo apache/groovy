@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4235Bug extends GroovyTestCase {
     void testAccessStaticPropInsideClosure() {
         assertScript """

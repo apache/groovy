@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8176Bug extends GroovyTestCase {
     void testTernaryWithTap() {
         assertScript '''

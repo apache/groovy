@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 import java.awt.Dimension
 import java.nio.CharBuffer
 import java.util.concurrent.LinkedBlockingQueue

@@ -18,6 +18,7 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.ProxyGeneratorAdapter
 
 class ProxyGeneratorAdapterTest extends GroovyTestCase {

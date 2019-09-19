@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class AmbiguousListOrMethodTest extends GroovyTestCase {
 
     void testLocalVariableVersion() {

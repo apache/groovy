@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class SerializeTest extends GroovyTestCase {
 
     void testGString () {

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests for {@link DefaultGroovyMethods} URL.getBytes() methods.
  *

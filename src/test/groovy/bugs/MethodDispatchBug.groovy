@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class MethodDispatchBug extends GroovyTestCase {
     def doit(Object parameter1, Object parameter2) {
         "OO"

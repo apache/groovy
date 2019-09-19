@@ -18,6 +18,8 @@
  */
 package gls.ch03.s02
 
+import groovy.test.GroovyTestCase
+
 /**
  * Checks Lexical Translation steps as defined in $3.2 of GLS
  */

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy7196Bug extends GroovyTestCase {
     void testShouldNotThrowDuplicateMethodWithPrecompiledTrait() {
         assertScript '''import org.codehaus.groovy.transform.traitx.Groovy7196SupportTrait

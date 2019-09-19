@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
+import groovy.test.GroovyTestCase
 import groovy.transform.ConditionalInterrupt
 import groovy.util.logging.Log
 import org.codehaus.groovy.ast.ClassNode

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.ast
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit

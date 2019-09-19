@@ -18,6 +18,8 @@
  */
 package groovy.script
 
+import groovy.test.GroovyShellTestCase
+
 class StreamClassloaderInScriptTest extends GroovyShellTestCase {
 
     static final BLAH = """

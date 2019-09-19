@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy1593 extends GroovyTestCase {
    void testPropertyAccessInSubClassOfHashMap() {
       def subclass = new SubClassOfHashMap()

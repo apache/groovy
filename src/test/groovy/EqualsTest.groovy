@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyShellTestCase
+
 class EqualsTest extends GroovyShellTestCase {
 
     void testParentChildrenEquals() {

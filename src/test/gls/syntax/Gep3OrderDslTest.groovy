@@ -18,6 +18,7 @@
  */
 package gls.syntax
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
 
 class Gep3OrderDslTest extends GroovyTestCase {

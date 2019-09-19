@@ -18,7 +18,7 @@
  */
 package gls.innerClass
 
-import groovy.transform.NotYetImplemented
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.CompilationFailedException
 import org.junit.Test
 

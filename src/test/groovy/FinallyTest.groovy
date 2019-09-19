@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class FinallyTest extends GroovyTestCase {
 
     void testBreakInTry() {

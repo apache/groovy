@@ -18,6 +18,8 @@
  */
 package groovy.gpath
 
+import groovy.test.GroovyTestCase
+
 /**
  * Some GPath tests using trees
  */

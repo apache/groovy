@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * test to ensure that private instance variables are visible to 
  * other instance variables of the same class

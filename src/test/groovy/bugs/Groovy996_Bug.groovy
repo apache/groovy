@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy996_Bug extends GroovyTestCase {
     void testAccessToSuperProtectedField() {
         def a = new Groovy996_SubClass()

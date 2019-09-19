@@ -22,6 +22,8 @@
 
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy6741Bug extends GroovyTestCase {
     void testRunTimeCoercionOfTraitUsingGenerics() {
         assertScript '''

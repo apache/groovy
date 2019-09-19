@@ -18,6 +18,8 @@
  */
 package groovy.tree
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test case for a bug with nested closures
  */

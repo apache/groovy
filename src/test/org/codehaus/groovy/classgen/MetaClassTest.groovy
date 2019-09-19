@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen
 
+import groovy.test.GroovyTestCase
+
 class MetaClassTest extends GroovyTestCase {
 
     void testMetaClass() {

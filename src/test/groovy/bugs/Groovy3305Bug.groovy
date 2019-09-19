@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3305Bug extends GroovyTestCase {
     def void testSingleListExpandingToMultipleArgs() {
         assert foo1([1, "A"]) == "1,A"

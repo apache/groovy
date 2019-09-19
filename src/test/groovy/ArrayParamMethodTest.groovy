@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ArrayParamMethodTest extends GroovyTestCase implements DummyInterface {
 
     void testMethodCall() {

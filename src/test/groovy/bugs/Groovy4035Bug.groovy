@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4035Bug extends GroovyTestCase {
     void testSuperCallInsideAnAIC() {
         def aic = new Foo4035() {

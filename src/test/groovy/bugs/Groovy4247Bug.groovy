@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4247Bug extends GroovyTestCase {
     void testNewFileRenameToMethod() {
         def file = new File('blah_blah')

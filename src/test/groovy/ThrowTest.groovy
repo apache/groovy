@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ThrowTest extends GroovyTestCase {
     void testThrow() {
         try {

@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class InstanceofTest extends GroovyTestCase {
 
     void testTrue() {

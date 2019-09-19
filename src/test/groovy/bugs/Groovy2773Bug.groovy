@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy2773Bug extends GroovyTestCase {
     void test() {
         assertScript '''

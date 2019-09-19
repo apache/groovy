@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.ast.expr
 
+import groovy.test.GroovyTestCase
+
 class PropertyExpressionTest extends GroovyTestCase {
 
     void testGetText() {

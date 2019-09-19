@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class LocalFieldTest extends GroovyTestCase {
 
     private def x

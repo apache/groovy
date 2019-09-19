@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4075Bug extends GroovyTestCase {
     static void failChecked() throws Exception {
         throw new Exception(new IllegalArgumentException(new NullPointerException("NPE in failChecked")))

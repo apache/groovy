@@ -170,7 +170,7 @@ class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilationTest
     void testCanonicalInInnerClass() {
         new GroovyShell().evaluate '''import groovy.transform.*
             @CompileStatic
-            class CanonicalStaticTest extends GroovyTestCase {
+            class CanonicalStaticTest extends groovy.test.GroovyTestCase {
               @Canonical class Thing {
                 String stuff
               }

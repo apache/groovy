@@ -18,6 +18,7 @@
  */
 package groovy.execute
 
+import groovy.test.GroovyTestCase
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

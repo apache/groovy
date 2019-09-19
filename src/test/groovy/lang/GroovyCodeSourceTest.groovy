@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 class GroovyCodeSourceTest extends GroovyTestCase {
     void testValidEncoding() {
         new GroovyCodeSource(createTemporaryGroovyClassFile(), "UTF-8")

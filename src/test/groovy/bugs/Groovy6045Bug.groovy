@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6045Bug extends GroovyTestCase {
     void testCallingSafeSuperShouldNotThrowVerifyError() {
         assertScript '''

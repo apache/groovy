@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests the behaviour of the runtime evaluating methods of Groovy's MetaClass system
  *

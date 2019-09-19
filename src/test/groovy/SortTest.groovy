@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class SortTest extends GroovyTestCase {
 
     // GROOVY-1956

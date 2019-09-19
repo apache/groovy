@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CompileUnit
@@ -119,7 +120,7 @@ class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
 
             def name = file.name - ".groovy"
             def script = """
-            class $name extends GroovyTestCase{}
+            class $name extends groovy.test.GroovyTestCase{}
           """
             file << script
             paths << file.parentFile.toURL()

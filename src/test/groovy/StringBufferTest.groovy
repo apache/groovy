@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class StringBufferTest extends GroovyTestCase {
     void testSize() {
         def x = new StringBuffer()

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7996Bug extends GroovyTestCase {
     void testPropertyAccessFromInnerClass() {
         assertScript '''

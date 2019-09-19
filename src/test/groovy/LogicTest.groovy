@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class LogicTest extends GroovyTestCase {
 
     void testAndWithTrue() {

@@ -24,6 +24,7 @@ import gls.ch06.s05.testClasses.Tt1gi
 import gls.ch06.s05.testClasses.Tt1go
 import gls.ch06.s05.testClasses.Tt1
 import gls.ch06.s05.testClasses.Tt1c
+import groovy.test.GroovyTestCase
 
 class GName1Test extends GroovyTestCase {
   void testObjectSupportNameHandling() {

@@ -113,8 +113,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testGroovyDocTheCategoryMethodClass() throws Exception {
         List<String> srcList = new ArrayList<String>();
-        srcList.add("groovy/util/CliBuilder.groovy");
-        srcList.add("groovy/lang/GroovyLogTestCase.groovy");
+        srcList.add("groovy/cli/picocli/CliBuilder.groovy");
+        srcList.add("groovy/test/GroovyLogTestCase.groovy");
         srcList.add("groovy/mock/interceptor/StrictExpectation.groovy");
         srcList.add("org/codehaus/groovy/runtime/GroovyCategorySupport.java");
         srcList.add("org/codehaus/groovy/runtime/ConvertedMap.java");

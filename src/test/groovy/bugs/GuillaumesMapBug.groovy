@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class GuillaumesMapBug extends GroovyTestCase {
     
     void testBug2() {

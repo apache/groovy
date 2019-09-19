@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6670Bug extends GroovyTestCase {
     void testCircularClassNodeReference() {
         // NOTE: The bug only seems to show up if we copy the following code into a file

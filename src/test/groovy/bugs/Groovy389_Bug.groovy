@@ -18,11 +18,12 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  *  Verifies that closures work inside case blocks.
  *
  */
-
 class Groovy389_Bug extends GroovyTestCase {
  
     void testBug() {

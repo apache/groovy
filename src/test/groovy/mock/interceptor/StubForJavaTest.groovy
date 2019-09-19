@@ -18,6 +18,8 @@
  */
 package groovy.mock.interceptor
 
+import groovy.test.GroovyTestCase
+
 class StubForJavaTest extends GroovyTestCase {
     void testIterator() {
 //        ProxyGenerator.INSTANCE.debug = true

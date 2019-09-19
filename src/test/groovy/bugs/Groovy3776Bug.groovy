@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 import java.lang.reflect.*
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.GroovyBugError

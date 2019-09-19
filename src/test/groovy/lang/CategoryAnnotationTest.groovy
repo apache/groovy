@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 class CategoryAnnotationTest extends GroovyTestCase {
     void testTransformationOfPropertyInvokedOnThis() {
         //Test the fix for GROOVY-3367

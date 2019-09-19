@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.util
 
+import groovy.test.GroovyTestCase
+
 class ManagedConcurrentLinkedQueueTest extends GroovyTestCase {
 
     def queue

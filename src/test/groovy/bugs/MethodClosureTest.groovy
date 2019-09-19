@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.MethodClosure
 
 class MethodClosureTest extends GroovyTestCase {

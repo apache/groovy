@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8048Bug extends GroovyTestCase {
     void testFinalFieldInPreCompiledTrait() {
         def shell = new GroovyShell(getClass().classLoader)

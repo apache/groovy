@@ -18,6 +18,8 @@
  */
 package groovy.bugs.groovy8953
 
+import groovy.test.GroovyTestCase
+
 class SyntheticParameterAnnotationsBug extends GroovyTestCase {
     void testEnumConstructorWithSyntheticParamUsageWithAsmResolvingDisabled() {
         assertScript '''

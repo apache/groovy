@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  *  Verifies that DefaultGroovyMethods.transformLine(Reader, Writer, Closure)
  *  actually writes its output.

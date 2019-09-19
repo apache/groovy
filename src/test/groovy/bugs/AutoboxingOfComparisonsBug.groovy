@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class AutoboxingOfComparisonsBug extends GroovyTestCase {
     void testBug() {
         def y = true

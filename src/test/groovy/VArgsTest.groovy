@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class VArgsTest extends GroovyTestCase {
 
   def primitiveMethod(){0}

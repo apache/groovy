@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4133Bug extends GroovyTestCase {
     void testDelegateAnnotationWithNativeMethods() {
         new GroovyShell().evaluate """

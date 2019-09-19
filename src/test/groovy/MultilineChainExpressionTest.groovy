@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class MultilineChainExpressionTest extends GroovyTestCase {
     void testMultiLineChain() {
         // the code below should be compilable

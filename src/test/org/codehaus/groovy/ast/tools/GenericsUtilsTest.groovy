@@ -19,6 +19,7 @@
 
 package org.codehaus.groovy.ast.tools
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType

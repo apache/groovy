@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyShellTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 class Groovy4252Bug extends GroovyShellTestCase {

@@ -18,6 +18,8 @@
  */
 package semantics
 
+import groovy.test.GroovyTestCase
+
 class TheGroovyTruthTest extends GroovyTestCase {
 
     void testGroovyTruth() {

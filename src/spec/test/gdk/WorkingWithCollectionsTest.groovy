@@ -18,6 +18,8 @@
  */
 package gdk
 
+import groovy.test.GroovyTestCase
+
 class WorkingWithCollectionsTest extends GroovyTestCase {
     void testListLiterals() {
         // tag::list_literals[]

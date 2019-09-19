@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3426Bug extends GroovyTestCase {
 
     MetaClassRegistry registry

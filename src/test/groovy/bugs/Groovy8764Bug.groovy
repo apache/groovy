@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8764Bug extends GroovyTestCase {
     void testDgmMethodInClosureInAnonymousInnerClass() {
         assertScript '''

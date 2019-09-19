@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3831Bug extends GroovyTestCase {
     void testClosureDefinitionInSpecialCallsInConstructorsV1() {
         def test = new Test3831V1('hello', ["world"])

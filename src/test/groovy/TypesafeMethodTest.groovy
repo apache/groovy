@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class TypesafeMethodTest extends GroovyTestCase {
 
     void testTypesafeMethod() {

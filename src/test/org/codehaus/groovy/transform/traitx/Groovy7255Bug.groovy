@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy7255Bug extends GroovyTestCase {
     void testShouldAllowSettingStaticFieldInTraitUsingCompileStatic() {
         assertScript '''

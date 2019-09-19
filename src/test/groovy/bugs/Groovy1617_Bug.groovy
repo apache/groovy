@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy1617_Bug extends GroovyTestCase {
    void testCoerceStringIntoStringArray() {
       def expected = ["G","r","o","o","v","y"] as String[]

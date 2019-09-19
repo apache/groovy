@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4080Bug extends GroovyTestCase {
     public void testClassGeneratedWithAnnotationHavingGrabOnImport() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())

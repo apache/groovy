@@ -17,6 +17,9 @@
  *  under the License.
  */
 package groovy
+
+import groovy.test.GroovyTestCase
+
 // GROOVY-435
 
 class SingletonBugTest extends GroovyTestCase {

@@ -19,6 +19,8 @@
 
 package groovy.transform.stc
 
+import groovy.test.GroovyTestCase
+
 /**
  * Unit tests for static type checking : with method.
  */

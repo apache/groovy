@@ -18,7 +18,9 @@
  */
 package groovy.bugs
 
-public class Groovy3235Bug extends GroovyTestCase {
+import groovy.test.GroovyTestCase
+
+class Groovy3235Bug extends GroovyTestCase {
 
 void testBug3235 () {
       def d = """This is one line.

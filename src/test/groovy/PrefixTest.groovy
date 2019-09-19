@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class PrefixTest extends GroovyTestCase {
 
     void testIntegerPrefix() {

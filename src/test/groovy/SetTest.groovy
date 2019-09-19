@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class SetTest extends GroovyTestCase {
 
     void testSetPlus() {

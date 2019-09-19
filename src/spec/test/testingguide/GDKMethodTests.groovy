@@ -18,6 +18,8 @@
  */
 package testingguide
 
+import groovy.test.GroovyTestCase
+
 class GDKMethodTests extends GroovyTestCase {
 
     // tag::combinations[]

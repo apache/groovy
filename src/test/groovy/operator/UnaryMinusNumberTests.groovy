@@ -18,6 +18,8 @@
  */
 package groovy.operator
 
+import groovy.test.GroovyTestCase
+
 class UnaryMinusNumberTests extends GroovyTestCase {
 
     void testNegateInteger() {

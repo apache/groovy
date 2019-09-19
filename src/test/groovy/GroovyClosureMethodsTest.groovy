@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 

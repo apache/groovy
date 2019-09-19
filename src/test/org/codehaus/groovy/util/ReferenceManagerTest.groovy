@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.util
 
+import groovy.test.GroovyTestCase
+
 import java.lang.ref.ReferenceQueue
 
 class ReferenceManagerTest extends GroovyTestCase {

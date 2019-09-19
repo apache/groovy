@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy2490Bug extends GroovyTestCase {
     void test () {
         assertEquals One.foo, "hello"

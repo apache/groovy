@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 import java.util.concurrent.*
 
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.createSimilarCollection

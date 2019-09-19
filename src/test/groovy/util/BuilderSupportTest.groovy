@@ -18,6 +18,8 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
+
 /**
  * Testing BuilderSupport and reveal how calling methods on it result in implementation callbacks.
  * Using the SpoofBuilder (see below) to call it in various ways and analyze the "spoofed" logs.

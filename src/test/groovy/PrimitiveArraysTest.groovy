@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class PrimitiveArraysTest extends GroovyTestCase {
 
     def c1Field = [] as char[]

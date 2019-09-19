@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5185Bug extends GroovyTestCase {
     void testShouldNotThrowMethodMissingException() {
         assertScript '''

@@ -18,6 +18,8 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
+
 import java.util.concurrent.ConcurrentHashMap
 import org.codehaus.groovy.control.CompilerConfiguration
 

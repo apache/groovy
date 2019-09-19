@@ -22,6 +22,8 @@
 
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy7285Bug extends GroovyTestCase {
     void testRuntimeStackableTraits() {
         assertScript '''trait D {

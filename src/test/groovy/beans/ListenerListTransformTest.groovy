@@ -18,6 +18,8 @@
  */
 package groovy.beans
 
+import groovy.test.GroovyTestCase
+
 /**
  * Unit test for ListenerList.
  */

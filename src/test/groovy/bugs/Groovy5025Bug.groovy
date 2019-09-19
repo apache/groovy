@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5025Bug extends GroovyTestCase {
     void testDisableAstBuilder() {
         def config = new org.codehaus.groovy.control.CompilerConfiguration()

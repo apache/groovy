@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package gls.ch03.s01;
+package gls.ch03.s01
+
+import groovy.test.GroovyTestCase
 
 /**
  * Except for comments, identifiers and the contents of ... string 

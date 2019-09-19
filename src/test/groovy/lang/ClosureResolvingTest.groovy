@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests how closures resolve to either a delegate or an owner for a given resolveStrategy
  *

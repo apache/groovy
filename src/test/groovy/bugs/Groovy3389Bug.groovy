@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3389Bug extends GroovyTestCase {
     void testFieldHidingByLocalVariable() {
         assertScript """

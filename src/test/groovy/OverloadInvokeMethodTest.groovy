@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class OverloadInvokeMethodTest extends GroovyTestCase {
     
     void testBug() {

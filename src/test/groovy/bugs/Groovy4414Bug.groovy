@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.InvokerHelper
 
 class Groovy4414Bug extends GroovyTestCase {

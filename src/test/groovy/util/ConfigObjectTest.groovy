@@ -18,6 +18,8 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
+
 class ConfigObjectTest extends GroovyTestCase {
 
     void test_isSet_Returns_true_for_Boolean_option_with_value_true() {

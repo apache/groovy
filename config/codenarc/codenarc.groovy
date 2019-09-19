@@ -109,7 +109,7 @@ ruleset {
         'UnusedVariable' {
             doNotApplyToClassNames = 'SourceBaseTestCase,SAXTest,groovy.ForLoopTest,groovy.bugs.Groovy3894Bug,' +
                 'ExpandoMetaClassTest,ExceptionTest,JSR223Test,' +
-                'groovy.util.GroovyShellTestCase,org.codehaus.groovy.tools.shell.ShellRunner,' +
+                'groovy.test.GroovyShellTestCase,org.codehaus.groovy.tools.shell.ShellRunner,' +
                 'groovy.bugs.Bytecode7Bug,groovy.mock.interceptor.HalfMockTest,' +
                 'groovy.mock.interceptor.MockSingleCallTest,groovy.mock.interceptor.StubSingleCallTest,' +
                 'groovy.operator.TernaryOperatorsTest,groovy.swing.SwingBuilderTableTest,' +

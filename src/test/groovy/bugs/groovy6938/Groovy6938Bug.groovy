@@ -19,6 +19,8 @@
 
 package groovy.bugs.groovy6938
 
+import groovy.test.GroovyTestCase
+
 class Groovy6938Bug extends GroovyTestCase {
     void test() {
         assert null == new L().doSomething()

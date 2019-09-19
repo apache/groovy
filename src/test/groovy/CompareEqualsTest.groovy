@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class CompareEqualsTest extends GroovyTestCase {
     void testEqualsOperatorIsMultimethodAware() {
         assert new Xyz() == new Xyz()

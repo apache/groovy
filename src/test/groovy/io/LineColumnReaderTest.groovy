@@ -18,6 +18,8 @@
  */
 package groovy.io
 
+import groovy.test.GroovyTestCase
+
 import java.nio.CharBuffer
 
 class LineColumnReaderTest extends GroovyTestCase {

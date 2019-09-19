@@ -18,6 +18,8 @@
  */
 package groovy.grape
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test for GROOVY-3853. Kept with other grab tests and not normally
  * run unless -Djunit.network=true is set on command line.

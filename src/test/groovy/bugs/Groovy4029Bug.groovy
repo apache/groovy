@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4029Bug extends GroovyTestCase {
     void testAddNullKeyEntryInMapUsingSubscriptNotation() {
         Map m = [:]

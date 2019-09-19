@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3658Bug extends GroovyTestCase {
     void testConstructorWithParameterWithInitialValueAsStaticMethodCallResult() {
         Groovy3658BugHelper bug2 = new Groovy3658BugHelper('person', 'tag')

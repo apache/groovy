@@ -1558,7 +1558,7 @@ class DesignPatternsTest extends CompilableTestSupport {
                 }
             }
             // end::state_variation32[]
-
+            import groovy.test.GroovyTestCase
             // tag::state_variation33[]
             class StatePatternDslTest extends GroovyTestCase {
                 private fsm

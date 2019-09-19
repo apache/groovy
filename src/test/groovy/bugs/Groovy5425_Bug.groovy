@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * Check Range.size finishes in a timely fashion. If we get a regression on this bug,
  * the build will take 10 - 20 minutes longer than normal

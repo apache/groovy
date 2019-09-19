@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8030Bug extends GroovyTestCase {
     void testCompileStaticWithBinaryExpressionAndFlowTyping() {
         assertScript """

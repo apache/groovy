@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * Ensure that the correct line information is reported when an exception is thrown.
  * <p>
@@ -45,7 +47,7 @@ class BadLineNumberOnExceptionBugTest extends GroovyTestCase {
 
                 assert false
             } catch (MissingMethodException e) {
-                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(groovy.test.GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 9 == scriptTraceElement.lineNumber
             }
         """
@@ -65,7 +67,7 @@ class BadLineNumberOnExceptionBugTest extends GroovyTestCase {
 
                 assert false
             } catch (MissingPropertyException e) {
-                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(groovy.test.GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 3 == scriptTraceElement.lineNumber
             }
         """

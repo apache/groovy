@@ -18,6 +18,7 @@
  */
 package groovy.mock.interceptor
 
+import groovy.test.GroovyTestCase
 import junit.framework.AssertionFailedError
 
 /**

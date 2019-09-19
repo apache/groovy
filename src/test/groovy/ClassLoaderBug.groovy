@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ClassLoaderBug extends GroovyTestCase {
     
     static void main(args) {

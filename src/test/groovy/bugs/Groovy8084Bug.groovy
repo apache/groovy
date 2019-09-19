@@ -19,7 +19,7 @@
 package groovy.bugs
 
 import gls.CompilableTestSupport
-import groovy.transform.NotYetImplemented
+import groovy.test.NotYetImplemented
 
 class Groovy8084Bug extends CompilableTestSupport {
     // TODO REFINE ME

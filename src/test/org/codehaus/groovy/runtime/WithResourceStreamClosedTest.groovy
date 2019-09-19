@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.runtime
+
+import groovy.test.GroovyTestCase;
 
 /**
  * Test withWriter with inner loop closing the stream in advance.

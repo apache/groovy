@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle
+import groovy.test.GroovyTestCase
 
 class Groovy4106Bug extends GroovyTestCase {
     void testStackOverflowError() {

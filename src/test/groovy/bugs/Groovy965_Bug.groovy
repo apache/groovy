@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * A test case to ensure that Groovy can compile class names and variable names with non-ASCII
  * characters and that non-ASCII characters in Strings do the right thing.

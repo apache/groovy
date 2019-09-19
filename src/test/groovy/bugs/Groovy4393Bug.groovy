@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
 import org.junit.Ignore
 
 @Ignore('requires a specific configuration, see: https://issues.apache.org/jira/browse/GROOVY-4393 for details')

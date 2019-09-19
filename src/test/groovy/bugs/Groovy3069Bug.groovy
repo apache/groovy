@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3069Bug extends GroovyTestCase {
     final String CLOSURE_STR = '[Closure]'
     final String CLASS_METHOD_STR = '[ClassMethod]'

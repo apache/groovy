@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class CastTest extends GroovyTestCase {
 
     Short b = 1

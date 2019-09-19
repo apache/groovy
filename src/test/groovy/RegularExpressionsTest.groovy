@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 

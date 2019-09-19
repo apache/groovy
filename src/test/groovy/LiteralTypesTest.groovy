@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test numeric literal types (with and without suffixes)
  * @see org.codehaus.groovy.syntax.parser/ASTBuilder#createIntegralNumber()

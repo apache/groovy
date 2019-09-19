@@ -19,6 +19,7 @@
 package metaprogramming
 
 import asciidoctor.Utils
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase

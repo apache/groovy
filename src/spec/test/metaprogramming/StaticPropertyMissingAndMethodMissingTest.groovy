@@ -18,6 +18,8 @@
  */
 package metaprogramming
 
+import groovy.test.GroovyTestCase
+
 class StaticPropertyMissingAndMethodMissingTest extends GroovyTestCase {
 
     void testStaticMethodMissing() {

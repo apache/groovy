@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5852Bug extends GroovyTestCase {
     void testMissingProperty() {
         def errMsg = shouldFail '''

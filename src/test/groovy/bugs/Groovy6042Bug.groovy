@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6042Bug extends GroovyTestCase {
     void testShouldAllowObjectAsConfigKey() {
         Map result = new ConfigSlurper().parse('''

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class MethodPointerBug extends GroovyTestCase {
 
     void sayHello() {

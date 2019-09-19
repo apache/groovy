@@ -18,6 +18,8 @@
  */
 package groovy.bugs.vm8
 
+import groovy.test.GroovyTestCase
+
 class Groovy8579Bug extends GroovyTestCase {
     void testCallToStaticInterfaceMethod() {
         assertScript '''

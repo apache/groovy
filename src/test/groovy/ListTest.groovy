@@ -18,6 +18,7 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
 import groovy.transform.TypeChecked
 
 class ListTest extends GroovyTestCase {

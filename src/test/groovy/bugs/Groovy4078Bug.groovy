@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4078Bug extends GroovyTestCase {
     void testInfiniteLoopDetectionInStepUsage() {
         (2..2).step 0, {assert it != null} //IntRange

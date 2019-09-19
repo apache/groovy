@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8110Bug extends GroovyTestCase {
     void testListenerListWithArrayParam() {
         assertScript '''

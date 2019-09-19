@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
+import groovy.test.GroovyTestCase
 import junit.framework.TestCase
 
 import static groovy.io.FileType.*

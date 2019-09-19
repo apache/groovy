@@ -18,6 +18,8 @@
  */
 package gls.annotations.closures
 
+import groovy.test.GroovyTestCase
+
 class AnnotationClosureWithNonLocalVariable extends GroovyTestCase {
     
     void testVanillaVariable() {

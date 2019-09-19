@@ -18,6 +18,8 @@
  */
 package groovy.bugs.groovy5912.otherpkg
 
+import groovy.test.GroovyTestCase
+
 class Groovy5912Bug extends GroovyTestCase {
     void test() {
         def errMsg = shouldFail '''

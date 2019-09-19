@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.CyclicBarrier

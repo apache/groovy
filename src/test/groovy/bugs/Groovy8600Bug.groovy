@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8600Bug extends GroovyTestCase {
     void testClosureFieldUseWithinMethod() {
         assertScript '''

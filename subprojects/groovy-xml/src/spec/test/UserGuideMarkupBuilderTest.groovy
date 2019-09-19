@@ -19,7 +19,7 @@
 package groovy.xml
 
 import groovy.test.GroovyTestCase
-import org.codehaus.groovy.tools.xml.DomToGroovy
+import org.apache.groovy.xml.tools.DomToGroovy
 
 /**
  * Tests for the Groovy Xml user guide related to MarkupBuilderTest.

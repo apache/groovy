@@ -17,6 +17,9 @@
  *  under the License.
  */
 package groovy.grape
+
+import groovy.test.GroovyTestCase
+
 /**
  * Created by IntelliJ IDEA.
  * User: Danno

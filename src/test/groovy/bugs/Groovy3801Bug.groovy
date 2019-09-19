@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3801Bug extends GroovyTestCase {
     void testMainMethodSignature() {
         def gcl = new GroovyClassLoader()

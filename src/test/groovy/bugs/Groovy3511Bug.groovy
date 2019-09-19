@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation
 
 class Groovy3511Bug extends GroovyTestCase {

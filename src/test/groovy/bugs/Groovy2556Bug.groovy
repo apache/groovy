@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy2556Bug extends GroovyTestCase {
     final String SOME_METHOD_VALUE = 'someMethodValue'
     final String TEST_NAME = 'someName'

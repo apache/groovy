@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3135Bug extends GroovyTestCase {
     static Byte b = Byte.parseByte("1")
     static Short s = Short.parseShort("2")

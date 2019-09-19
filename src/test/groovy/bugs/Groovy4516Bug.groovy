@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4516Bug extends GroovyTestCase {
     void testDelegateMethodsWithDefaultValues() {
         assertScript """

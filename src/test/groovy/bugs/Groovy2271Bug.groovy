@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import groovy.mock.interceptor.StubFor
+import groovy.test.GroovyTestCase
 
 class Groovy2271Bug extends GroovyTestCase {
     static final String TEST_TEXT = "I'm a mock"

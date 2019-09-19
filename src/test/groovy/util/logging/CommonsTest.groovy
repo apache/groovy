@@ -18,6 +18,8 @@
  */
 package groovy.util.logging
 
+import groovy.test.GroovyTestCase
+
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 

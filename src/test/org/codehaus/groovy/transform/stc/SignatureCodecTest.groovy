@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.stc
 
+import groovy.test.GroovyTestCase
+
 import static org.codehaus.groovy.ast.ClassHelper.*
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType

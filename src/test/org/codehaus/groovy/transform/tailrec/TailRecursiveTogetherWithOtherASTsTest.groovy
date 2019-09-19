@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.tailrec
 
+import groovy.test.GroovyShellTestCase
+
 class TailRecursiveTogetherWithOtherASTsTest extends GroovyShellTestCase {
 
     void testStaticallyCompiledRecursiveMethod() {

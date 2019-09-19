@@ -18,6 +18,8 @@
  */
 package objectorientation
 
+import groovy.test.GroovyTestCase
+
 class MethodsTest extends GroovyTestCase {
 
     void testMethodDefinition() {

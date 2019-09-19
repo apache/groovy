@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7970Bug extends GroovyTestCase {
 
     private static final String getScriptAIC(String visibility, boolean cs) {

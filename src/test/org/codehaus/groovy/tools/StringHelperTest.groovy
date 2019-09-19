@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools
 
+import groovy.test.GroovyTestCase
+
 import static org.codehaus.groovy.tools.StringHelper.*
 
 class StringHelperTest extends GroovyTestCase {

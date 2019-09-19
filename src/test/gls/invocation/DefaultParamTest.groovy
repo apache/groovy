@@ -18,6 +18,7 @@
  */
 package gls.invocation
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 
 @CompileStatic

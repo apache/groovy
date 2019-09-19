@@ -22,6 +22,8 @@
 
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy7213Bug extends GroovyTestCase {
     void testShouldAllowPrivateMethodInTraitEvenIfUseCompileStatic() {
         assertScript '''

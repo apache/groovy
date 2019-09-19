@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4202Bug extends GroovyTestCase {
     void testSuccessiveMCModificationFirstClassThenInstance() {
         def inst0 = new Foo4202()

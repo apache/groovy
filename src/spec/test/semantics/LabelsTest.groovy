@@ -18,6 +18,8 @@
  */
 package semantics
 
+import groovy.test.GroovyTestCase
+
 class LabelsTest extends GroovyTestCase {
     void testLabels() {
         // tag::test_labels[]

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.classloading
 
+import groovy.test.GroovyTestCase
 import junit.framework.TestCase
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ModuleNode

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3645Bug extends GroovyTestCase {
     void testMethodCallOnSuperInAStaticMethod() {
         try{

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * StatementWriter.writeTryCatchFinally visits the finally block
  * twice, once for the normal path and once again for the "catch all"

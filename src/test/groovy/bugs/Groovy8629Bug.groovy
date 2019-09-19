@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 public class Groovy8629Bug extends GroovyTestCase {
     void testNestedMethodCallInConstructor() {
         assertScript '''

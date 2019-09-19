@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyShellTestCase
 import org.codehaus.groovy.control.CompilationFailedException
 
 class LocalASTTransformTest extends GroovyShellTestCase {

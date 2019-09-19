@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 import java.text.SimpleDateFormat
 
 class Groovy5687Bug extends GroovyTestCase {

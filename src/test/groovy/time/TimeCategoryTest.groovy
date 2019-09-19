@@ -18,6 +18,8 @@
  */
 package groovy.time
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests the groovy.time.TimeCategory class. 
  * Most of these tests use January 1 as a start time to avoid 

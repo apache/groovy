@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8229Bug extends GroovyTestCase {
     void testFinallyBlockInClosureCalledOnce() {
         assert shouldFail(

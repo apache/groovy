@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.trampoline
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test for the trampoline capabilities of closures.
  */

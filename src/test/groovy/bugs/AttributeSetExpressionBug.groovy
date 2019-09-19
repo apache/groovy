@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class AttributeSetExpressionBug extends GroovyTestCase {
     void testAttributeSetAccess() {
         def a = new HasStaticFieldSomeClass()

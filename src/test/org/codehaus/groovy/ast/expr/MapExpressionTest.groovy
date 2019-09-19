@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.expr
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.builder.AstBuilder
 
 class MapExpressionTest extends GroovyTestCase {

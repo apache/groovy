@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5152Bug extends GroovyTestCase {
     void testShouldNotThrowClassFormatError() {
         assertScript '''

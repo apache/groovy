@@ -58,6 +58,7 @@ import java.util.Map;
  * <p>
  * Example usage:
  * <pre class="groovyTestCase">
+ * import groovy.xml.XmlParser
  * def xml = '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;'
  * def rootNode = new XmlParser().parseText(xml)
  * assert rootNode.name() == 'root'

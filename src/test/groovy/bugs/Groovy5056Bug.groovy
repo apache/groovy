@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5056Bug extends GroovyTestCase {
     void testASortedSetMinusACollection() {
         def comparator = [compare: {a,b->

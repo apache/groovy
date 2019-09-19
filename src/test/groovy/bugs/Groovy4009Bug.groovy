@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4009Bug extends GroovyTestCase {
     void testNoOfTimesResolveCallIsMade() {
         try {

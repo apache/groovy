@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 class InterfaceConversionTest extends GroovyTestCase {

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 class PerInstanceMetaClassTest extends GroovyTestCase{
 
     protected void setUp() {

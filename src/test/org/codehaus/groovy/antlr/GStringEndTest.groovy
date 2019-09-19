@@ -1,5 +1,6 @@
 package org.codehaus.groovy.antlr
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.antlr.parser.GroovyLexer
 
 /*

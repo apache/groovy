@@ -18,6 +18,8 @@
  */
 package cli
 
+import groovy.test.GroovyTestCase
+
 abstract class CliBuilderTestCase extends GroovyTestCase {
 
     abstract String getImportCliBuilder()

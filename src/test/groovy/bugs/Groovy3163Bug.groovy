@@ -18,13 +18,11 @@
  */
 package groovy.bugs
 
-import java.math.BigInteger;
+import groovy.test.GroovyTestCase
 
+class Groovy3163Test extends GroovyTestCase {
 
-public class Groovy3163Test extends GroovyTestCase {
-
-public void testSuperOverStatic()
-{
+void testSuperOverStatic() {
     def siws = new Groovy3163SomeImplementorWithStatic()
 
     assert (1 == siws.build(1)[0])
@@ -42,20 +40,20 @@ public void testSuperOverStatic()
 
 class Groovy3163SomeBaseClass {
 
-    public Object build(Integer i) {
-        return i;
+    Object build(Integer i) {
+        return i
     }
 
-    public Object build(BigInteger i) {
-        return i;
+    Object build(BigInteger i) {
+        return i
     }
 
-    public Object build(Class c) {
-        return c;
+    Object build(Class c) {
+        return c
     }
 
-    public Object build(Script s) {
-        return s;
+    Object build(Script s) {
+        return s
     }
 }
 
@@ -63,20 +61,20 @@ class Groovy3163SomeImplementorWithStatic extends Groovy3163SomeBaseClass {
 
     // Comment this out, otherwise the super.build(x) calls won't match the members in our parent.
 
-    public static Object build(Closure c) {
+    static Object build(Closure c) {
         return [c]
     }
 
     // This one will also block a super.build, but it's the Script one.
-    public static Object build(BigDecimal d) {
+    static Object build(BigDecimal d) {
         return [d]
     }
 
-    public Object build(Integer i) {
+    Object build(Integer i) {
         return [super.build(i)]
     }
 
-    public Object build(Script s) {
+    Object build(Script s) {
         return [super.build(s)]
     }
 

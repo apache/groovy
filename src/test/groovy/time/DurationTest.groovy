@@ -18,6 +18,8 @@
  */
 package groovy.time
 
+import groovy.test.GroovyTestCase
+
 import static java.util.Calendar.*
 
 class DurationTest extends GroovyTestCase {

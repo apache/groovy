@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 class FileLeftShiftTest extends GroovyTestCase {
     void testFileLeftShift() {
         def base = new File("target/classes/")

@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.transform.packageScope
 
-import groovy.transform.NotYetImplemented
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.*
 import org.codehaus.groovy.tools.GroovyClass
 import org.junit.Test

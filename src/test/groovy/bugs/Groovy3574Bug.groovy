@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3574Bug extends GroovyTestCase {
     void testToStringCallDelegationToConvertedClosureProxy() {
         Closure failing1 = { 

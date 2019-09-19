@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3839Bug extends GroovyTestCase {
     void testGroovyASTTransformationWithOneClass() {
         assertScript """

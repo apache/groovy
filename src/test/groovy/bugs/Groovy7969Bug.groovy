@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7969Bug extends GroovyTestCase {
     void testBindablePropertySettersHaveValidModifiersForMethod() {
         assertScript """

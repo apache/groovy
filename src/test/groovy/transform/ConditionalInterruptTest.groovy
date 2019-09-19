@@ -18,6 +18,8 @@
  */
 package groovy.transform
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test for {@link ConditionalInterrupt} AST Transformation.
  */

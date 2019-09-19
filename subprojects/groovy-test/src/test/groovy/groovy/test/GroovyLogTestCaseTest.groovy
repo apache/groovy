@@ -26,14 +26,14 @@ import java.util.logging.Logger
  */
 class GroovyLogTestCaseTest extends GroovyLogTestCase {
 
-    static final LOG = Logger.getLogger('groovy.lang.GroovyLogTestCaseTest')
+    static final LOG = Logger.getLogger('groovy.test.GroovyLogTestCaseTest')
 
     void loggedMethod() {
         LOG.finer 'some log entry'
     }
 
     void testStringLog(){
-        def result = stringLog(Level.FINER, 'groovy.lang.GroovyLogTestCaseTest') {
+        def result = stringLog(Level.FINER, 'groovy.test.GroovyLogTestCaseTest') {
             loggedMethod()
         }
         assertTrue result, result.contains('some log entry')

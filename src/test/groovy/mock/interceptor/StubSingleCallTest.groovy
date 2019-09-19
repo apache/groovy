@@ -18,6 +18,8 @@
  */
 package groovy.mock.interceptor
 
+import groovy.test.GroovyTestCase
+
 /**
  * Testing Groovy Stub support for single calls to the Collaborator
  */

@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ThisAndSuperTest extends GroovyTestCase {
     void testOverwrittenSuperMethod() {
         def helper = new TestForSuperHelper2()

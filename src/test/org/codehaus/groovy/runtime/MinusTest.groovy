@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 class MinusTest extends GroovyTestCase {
 
     void doTestMinus(String type, def a, b, c, d) {

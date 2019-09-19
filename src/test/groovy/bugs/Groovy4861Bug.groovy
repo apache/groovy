@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4861Bug extends GroovyTestCase {
     void testCallSitesUsageInNestedInterface() {
         assert Foo4861.A.j == 3
