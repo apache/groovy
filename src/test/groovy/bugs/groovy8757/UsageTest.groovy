@@ -18,6 +18,8 @@
  */
 package groovy.bugs.groovy8757
 
+import groovy.test.GroovyTestCase
+
 class UsageTest extends GroovyTestCase {
     void testAccessingPrecompiledTraitWithMethodGenerics() {
         def c0 = new GroovyShell().evaluate('''

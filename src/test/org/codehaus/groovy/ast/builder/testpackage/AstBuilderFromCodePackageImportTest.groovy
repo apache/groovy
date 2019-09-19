@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.builder.testpackage
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.builder.AstAssert
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.builder.WithAstBuilder

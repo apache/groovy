@@ -18,6 +18,8 @@
  */
 package gls.ch03.s02
 
+import groovy.test.GroovyTestCase
+
 /**
  * GLS 3.2: The longest possible translation is used at each step, even if the 
  * result does not ultimately make a correct program while another lexical 

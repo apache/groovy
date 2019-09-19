@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ModuloTest extends GroovyTestCase {
   int modulo = 100
 

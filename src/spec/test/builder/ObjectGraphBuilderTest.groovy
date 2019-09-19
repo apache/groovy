@@ -19,6 +19,7 @@
 package builder
 
 import asciidoctor.Utils
+import groovy.test.GroovyTestCase
 
 /**
 * Tests for ObjectGraphBuilder. The tests directly in this file are specific

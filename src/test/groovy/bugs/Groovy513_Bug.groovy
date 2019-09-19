@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  *  Verifies that comparisons to Integer.MIN_VALUE work
  */

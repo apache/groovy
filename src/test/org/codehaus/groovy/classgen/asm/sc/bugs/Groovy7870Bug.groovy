@@ -32,7 +32,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             try {
                 test()
             } catch (org.codehaus.groovy.classgen.asm.sc.bugs.Groovy7870Bug.DummyException e) {
-                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(groovy.test.GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 4 == scriptTraceElement.lineNumber
             }
         '''
@@ -47,7 +47,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             try {
                 test()
             } catch (org.codehaus.groovy.classgen.asm.sc.bugs.Groovy7870Bug.DummyException e) {
-                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(groovy.test.GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 4 == scriptTraceElement.lineNumber
             }
         '''
@@ -62,7 +62,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             try {
                 test()
             } catch (org.codehaus.groovy.classgen.asm.sc.bugs.Groovy7870Bug.DummyException e) {
-                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(groovy.test.GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 4 == scriptTraceElement.lineNumber
             }
         '''
@@ -77,7 +77,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             try {
                 test(null)
             } catch (org.codehaus.groovy.classgen.asm.sc.bugs.Groovy7870Bug.DummyException e) {
-                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(groovy.test.GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 4 == scriptTraceElement.lineNumber
             }
         '''
@@ -92,7 +92,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             try {
                 test()
             } catch (org.codehaus.groovy.classgen.asm.sc.bugs.Groovy7870Bug.DummyException e) {
-                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(groovy.test.GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 4 == scriptTraceElement.lineNumber
             }
         '''
@@ -107,7 +107,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             try {
                 test(null)
             } catch (org.codehaus.groovy.classgen.asm.sc.bugs.Groovy7870Bug.DummyException e) {
-                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
+                def scriptTraceElement = e.stackTrace.find { it.className.startsWith(groovy.test.GroovyTestCase.TEST_SCRIPT_NAME_PREFIX) }
                 assert 4 == scriptTraceElement.lineNumber
             }
         '''

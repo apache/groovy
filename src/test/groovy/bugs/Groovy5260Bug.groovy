@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CompileUnit
 import org.codehaus.groovy.ast.ModuleNode

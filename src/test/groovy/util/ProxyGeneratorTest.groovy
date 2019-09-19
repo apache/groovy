@@ -18,6 +18,8 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
+
 class ProxyGeneratorTest extends GroovyTestCase {
 
     ProxyGenerator generator = ProxyGenerator.INSTANCE

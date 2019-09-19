@@ -18,6 +18,8 @@
  */
 package gdk
 
+import groovy.test.GroovyTestCase
+
 import java.beans.PropertyChangeListener
 
 class ObservableTest extends GroovyTestCase {

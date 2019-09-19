@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 class NestedCategoryTest extends GroovyTestCase {
     void testGreeter_plain() {
         def greeter = new Greeter()

@@ -18,6 +18,8 @@
  */
 package gdk
 
+import groovy.test.GroovyTestCase
+
 class ConfigSlurperTest extends GroovyTestCase {
     void testWithArbitraryTypes() {
         // tag::arbitrary_types[]

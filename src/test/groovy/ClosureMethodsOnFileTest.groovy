@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests various Closure methods in Groovy on file
  */

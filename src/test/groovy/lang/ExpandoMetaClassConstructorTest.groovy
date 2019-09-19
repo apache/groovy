@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 class ExpandoMetaClassConstructorTest extends GroovyTestCase {
     void testVariousConstructorForms() {
         try {

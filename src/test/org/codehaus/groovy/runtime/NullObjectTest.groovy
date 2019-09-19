@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 class NullObjectTest extends GroovyTestCase {
     void testCallingMethod() {
         def foo = null

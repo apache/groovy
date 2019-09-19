@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6808Bug extends GroovyTestCase {
     void testThatInnerClassTableIsNotCorrupt() {
         assertScript """

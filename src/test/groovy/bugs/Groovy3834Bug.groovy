@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3834Bug extends GroovyTestCase {
     void testDuplicateCallsToMissingMethod() {
         def instance = new AClassWithMethodMissingMethod()

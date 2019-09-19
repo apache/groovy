@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 public class DownUpStepTest extends GroovyTestCase {
 
     void testDownto() {

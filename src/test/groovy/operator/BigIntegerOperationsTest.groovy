@@ -18,6 +18,8 @@
  */
 package groovy.operator
 
+import groovy.test.GroovyTestCase
+
 class BigIntegerOperationsTest extends GroovyTestCase {
     void testAssign() {
         BigInteger foo

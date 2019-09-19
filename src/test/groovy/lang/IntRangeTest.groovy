@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.lang;
+package groovy.lang
+
+import groovy.test.GroovyTestCase;
 
 /**
  * Provides unit tests for the <code>IntRange</code> class.

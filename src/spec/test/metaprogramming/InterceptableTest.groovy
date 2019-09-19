@@ -18,6 +18,8 @@
  */
 package metaprogramming
 
+import groovy.test.GroovyTestCase
+
 // tag::groovy_interceptable_test[]
 class InterceptableTest extends GroovyTestCase {
 

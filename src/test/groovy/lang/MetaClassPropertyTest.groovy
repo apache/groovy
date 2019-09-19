@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 class MetaClassPropertyTest extends GroovyTestCase {
 
     void testForJavaClass() {

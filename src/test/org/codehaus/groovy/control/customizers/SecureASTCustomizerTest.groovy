@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control.customizers
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression

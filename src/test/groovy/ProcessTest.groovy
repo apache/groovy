@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * check that groovy Process methods do their job.
  */

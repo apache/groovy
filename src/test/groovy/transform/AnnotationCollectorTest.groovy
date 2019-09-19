@@ -18,6 +18,7 @@
  */
 package groovy.transform
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.control.MultipleCompilationErrorsException

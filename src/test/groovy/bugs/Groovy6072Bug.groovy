@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6072Bug extends GroovyTestCase {
     void testShouldNotChangeBinExpToClassExp() {
         assertScript '''import groovy.transform.ASTTest

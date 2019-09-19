@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.util;
+package groovy.util
+
+import groovy.test.GroovyTestCase;
 
 public class ResourceBundleTest extends GroovyTestCase {
     public void testNoClassLoaderNoLocale() {

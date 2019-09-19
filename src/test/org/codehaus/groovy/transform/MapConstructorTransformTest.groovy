@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyShellTestCase
+
 class MapConstructorTransformTest extends GroovyShellTestCase {
     void testMapConstructorWithFinalFields() {
         assertScript '''

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 
 class ClassGeneratorFixesTest extends GroovyTestCase {
     def count = 0;

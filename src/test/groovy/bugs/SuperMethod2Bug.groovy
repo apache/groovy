@@ -18,9 +18,10 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  */
- 
 class SuperMethod2Bug extends GroovyTestCase {
      
     void testBug() {

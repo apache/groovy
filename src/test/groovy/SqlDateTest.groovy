@@ -16,8 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy;
+package groovy
 
+import groovy.test.GroovyTestCase;
 import groovy.time.TimeCategory
 
 class SqlDateTest extends GroovyTestCase {

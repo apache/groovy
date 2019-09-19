@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.plugin
 
+import groovy.test.GroovyTestCase
+
 import static java.util.Collections.emptyMap
 
 class GroovyRunnerRegistryTest extends GroovyTestCase {

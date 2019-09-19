@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5101Test extends GroovyTestCase {
 
     static class ClassA {

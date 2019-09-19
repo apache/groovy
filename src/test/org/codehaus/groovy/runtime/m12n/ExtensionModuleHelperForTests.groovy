@@ -18,13 +18,14 @@
  */
 package org.codehaus.groovy.runtime.m12n
 
+import groovy.ant.AntBuilder
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 class ExtensionModuleHelperForTests {
     static void doInFork(String code) {
-        doInFork("GroovyTestCase", code)
+        doInFork("groovy.test.GroovyTestCase", code)
     }
 
     static void doInFork(String baseTestClass, String code) {

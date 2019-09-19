@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7916Bug extends GroovyTestCase {
     void testShouldBeAbleToOverrideStaticConstantProperties() {
         assertScript '''

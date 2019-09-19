@@ -23,7 +23,7 @@ import groovy.text.markup.BaseTemplate
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TagLibAdapter
 import groovy.text.markup.TemplateConfiguration
-import groovy.transform.NotYetImplemented
+import groovy.test.NotYetImplemented
 
 class MarkupTemplateEngineTest extends GroovyTestCase {
     private Locale locale

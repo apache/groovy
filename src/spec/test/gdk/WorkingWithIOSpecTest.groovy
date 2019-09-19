@@ -16,12 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package gdk
 
 import groovy.io.FileType
 import groovy.io.FileVisitResult
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import org.junit.Test
 import org.junit.runner.RunWith

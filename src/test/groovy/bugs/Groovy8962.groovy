@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
 import junit.framework.TestCase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit

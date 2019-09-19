@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3405Bug extends GroovyTestCase {
 
     protected void tearDown() {

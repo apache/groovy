@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test whether the Invoker includes categories when 
  * trying to find an iterator (via the method iterator())

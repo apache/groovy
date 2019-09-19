@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * Mixes variables, closures and method calls in markup
  *

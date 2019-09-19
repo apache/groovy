@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import groovy.Foo
+import groovy.test.GroovyTestCase
 
 class PrintlnWithNewBug extends GroovyTestCase {
     

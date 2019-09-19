@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8816Bug extends GroovyTestCase {
     void testCallNoArgClosureWithArg() {
         def msg = shouldFail MissingMethodException, '''

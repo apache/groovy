@@ -18,9 +18,11 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  */
-class CompareTypesTest extends GroovyTestCase { 
+class CompareTypesTest extends GroovyTestCase {
     void testCompareByteToInt() { 
         Byte a = 12
         Integer b = 10

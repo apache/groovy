@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * To test access to method scoped variable within closure
  */

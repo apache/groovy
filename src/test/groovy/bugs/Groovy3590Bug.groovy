@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3590Bug extends GroovyTestCase {
     void testMapDefaultValueGetWithPrevKeyHavingNullValue() {
         def map = ['key':null]

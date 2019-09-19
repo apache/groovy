@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
+import groovy.test.GroovyTestCase
+
 import static AssertionTestUtil.*
 import static java.lang.Math.min
 

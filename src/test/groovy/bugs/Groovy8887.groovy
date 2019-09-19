@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8887 extends GroovyTestCase {
     void testMultiAssignment() {
         assertScript '''

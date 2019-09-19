@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * Groovy-4720: Method overriding with ExpandoMetaClass is partially broken
  */

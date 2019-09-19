@@ -19,6 +19,7 @@
 package groovy
 
 import groovy.io.GroovyPrintStream
+import groovy.test.GroovyTestCase
 
 import java.text.NumberFormat
 

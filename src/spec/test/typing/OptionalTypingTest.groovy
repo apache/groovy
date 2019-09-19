@@ -18,6 +18,8 @@
  */
 package typing
 
+import groovy.test.GroovyTestCase
+
 class OptionalTypingTest extends GroovyTestCase {
 
     void testOptionalTypingInVariableDeclaration() {

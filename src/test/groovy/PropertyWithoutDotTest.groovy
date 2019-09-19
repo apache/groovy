@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class PropertyWithoutDotTest extends GroovyTestCase {
     def getFoo() {
         return "cheese"

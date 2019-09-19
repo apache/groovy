@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6522Bug extends GroovyTestCase {
     // this is a non-regression test that makes sure
     // that the fix for 6522 doesn't introduce breaking changes

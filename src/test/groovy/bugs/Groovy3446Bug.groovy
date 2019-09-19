@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 import static java.lang.System.currentTimeMillis
 
 class Groovy3446Bug extends GroovyTestCase {

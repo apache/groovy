@@ -18,7 +18,7 @@
  */
 package groovy.bugs
 
-import groovy.transform.NotYetImplemented
+import groovy.test.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 
 class Groovy6786Bug extends StaticTypeCheckingTestCase {

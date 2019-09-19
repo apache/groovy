@@ -18,6 +18,8 @@
  */
 package groovy.util.logging
 
+import groovy.test.GroovyTestCase
+
 import java.lang.reflect.*
 import org.apache.log4j.AppenderSkeleton
 import org.apache.log4j.spi.LoggingEvent

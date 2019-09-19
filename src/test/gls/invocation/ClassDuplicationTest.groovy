@@ -18,6 +18,8 @@
  */
 package gls.invocation
 
+import groovy.test.GroovyTestCase
+
 final class ClassDuplicationTest extends GroovyTestCase {
     void testDuplicationOnMethodSignatureTest() {
         def shell1 = new GroovyShell(this.class.classLoader)

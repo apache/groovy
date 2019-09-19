@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5272Bug extends GroovyTestCase {
     /**
      * In Groovy-5272, there are chances that the following test fails.

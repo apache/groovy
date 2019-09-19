@@ -18,6 +18,8 @@
  */
 package gls.syntax
 
+import groovy.test.GroovyTestCase
+
 import static Container.*
 import static Ingredient.*
 import static CookingAction.*

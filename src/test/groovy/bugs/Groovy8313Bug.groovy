@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8313Bug extends GroovyTestCase {
     void testCorrectBridgeMethodForGenericArrayReturnType() {
         assertScript '''

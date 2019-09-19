@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 import java.util.concurrent.Callable
 
 class Groovy5806Bug extends GroovyTestCase {

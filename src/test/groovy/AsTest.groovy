@@ -17,6 +17,9 @@
  *  under the License.
  */
 package groovy
+
+import groovy.test.GroovyTestCase
+
 /**
  * Test case for using the "as" keyword to convert between strings
  * and numbers in both directions.

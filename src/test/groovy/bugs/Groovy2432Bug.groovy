@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyLogTestCase
+
 import java.util.logging.Level
 
 class Groovy2432Bug extends GroovyLogTestCase {

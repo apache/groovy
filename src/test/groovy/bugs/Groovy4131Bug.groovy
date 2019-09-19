@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4131Bug extends GroovyTestCase {
     void testTwoMainMethodsInAScript() {
         try {

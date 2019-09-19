@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4416Bug extends GroovyTestCase {
     void testImplicitThisPassingInNonStaticInnerClassesBug() {
         assertScript """

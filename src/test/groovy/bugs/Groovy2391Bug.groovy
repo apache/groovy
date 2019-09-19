@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy2391Bug extends GroovyTestCase{
     void testBug () {
       ArrayList.metaClass.asType = { Class clazz ->

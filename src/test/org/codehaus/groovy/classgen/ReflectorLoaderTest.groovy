@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen
 
+import groovy.test.GroovyTestCase
+
 class ReflectorLoaderTest extends GroovyTestCase {
 
     void testDuplication() {

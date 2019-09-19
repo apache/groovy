@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import org.codehaus.groovy.control.CompilationFailedException

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3339Bug extends GroovyTestCase {
     void testConstantCachingInClosureClasses() {
         // In all the cases below, the OptimizerVisitor replaces number 10 by

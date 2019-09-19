@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.typehandling
 
+import groovy.test.GroovyTestCase
+
 class EqualityTest extends GroovyTestCase {
 
     void testEquality() {

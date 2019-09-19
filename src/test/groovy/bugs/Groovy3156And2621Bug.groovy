@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3156And2621Bug extends GroovyTestCase {
     void testMethodNameResolutionInANestedClosure() {
         assert m() == 'method'

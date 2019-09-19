@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy325_Bug extends GroovyTestCase {
   static boolean staticMethod() {
     return true

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class BadScriptNameBug extends GroovyTestCase {
 
     void testBug() {

@@ -18,6 +18,8 @@
  */
 package groovy.transform
 
+import groovy.test.GroovyTestCase
+
 import java.lang.ref.SoftReference
 import java.lang.reflect.Modifier
 

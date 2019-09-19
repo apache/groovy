@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6841Bug extends GroovyTestCase {
     void testShouldNotThrowNPEduringCompilation() {
         assertScript '''

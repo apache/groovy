@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class GStringTest extends GroovyTestCase {
 
     void check(template, teststr) {

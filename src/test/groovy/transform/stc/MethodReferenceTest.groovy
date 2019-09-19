@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.GroovyTestCase
+
 class MethodReferenceTest extends GroovyTestCase {
     // class::instanceMethod
     void testFunctionCI() {

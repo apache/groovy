@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8474Bug extends GroovyTestCase {
     void testSettingSuperProperty() {
         assertScript '''

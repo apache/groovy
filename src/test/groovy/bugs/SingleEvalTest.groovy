@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class SingleEvalTest extends GroovyTestCase {
     int getArrayCount
     int getIndexCount

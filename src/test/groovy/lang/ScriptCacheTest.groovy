@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 class ScriptCacheTest extends GroovyTestCase {
 
     def packageName = "scriptcachetest"

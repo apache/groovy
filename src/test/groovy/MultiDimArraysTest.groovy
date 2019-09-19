@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * Expose how to deal with multi-dimensional Arrays until this is supported at the language level.
  */

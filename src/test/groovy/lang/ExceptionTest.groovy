@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 public class ExceptionTest extends GroovyTestCase {
 
     private int finallyCounter;

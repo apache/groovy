@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy239_Bug extends GroovyTestCase {
     
     void testBug() {

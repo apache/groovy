@@ -19,6 +19,7 @@
 package groovy.mock.interceptor
 
 import groovy.mock.interceptor.MockFor
+import groovy.test.GroovyTestCase
 import junit.framework.AssertionFailedError
 
 class MockForWithZeroRangeTest extends GroovyTestCase {

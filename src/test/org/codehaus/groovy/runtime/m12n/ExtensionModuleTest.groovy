@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.m12n
 
+import groovy.test.GroovyTestCase
+
 /**
  * Unit tests for extension methods loading.
  */

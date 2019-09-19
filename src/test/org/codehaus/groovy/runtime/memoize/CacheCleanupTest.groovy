@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import groovy.test.GroovyTestCase
+
 import java.lang.ref.SoftReference
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.TimeUnit

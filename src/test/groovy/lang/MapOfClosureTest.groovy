@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests maps of closures coerced to classes by asType()
  */

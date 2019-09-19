@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy7456Bug extends GroovyTestCase {
     void testShouldAllowBuilderInTrait() {
         assertScript '''

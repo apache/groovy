@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7883Bug extends GroovyTestCase {
     void testGroovy7883() {
         assertScript '''

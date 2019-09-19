@@ -18,6 +18,8 @@
  */
 package groovy.mock.interceptor
 
+import groovy.test.GroovyTestCase
+
 class MockNestedCallTest extends GroovyTestCase {
 
     void testRestore() {

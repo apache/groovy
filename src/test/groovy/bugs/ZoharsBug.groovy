@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class ZoharsBug extends GroovyTestCase {
     
     void testBug() {

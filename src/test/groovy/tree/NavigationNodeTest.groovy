@@ -18,10 +18,10 @@
  */
 package groovy.tree
 
+import groovy.test.GroovyTestCase
+
 /**
  * Simple test of tree walking for Nodes
- *
- * @see groovy.tree.NavigationXmlTest
  */
 class NavigationNodeTest extends GroovyTestCase {
 

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.util
 
+import groovy.test.GroovyTestCase
+
 class ManagedConcurrentValueMapTest extends GroovyTestCase {
 
     ManagedConcurrentValueMap<String, Object> map =

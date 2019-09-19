@@ -18,7 +18,8 @@
  */
 package testingguide
 
-import groovy.transform.NotYetImplemented
+import groovy.test.GroovyTestCase
+import groovy.test.NotYetImplemented
 
 class GroovyTestCaseExampleTests extends GroovyTestCase {
 

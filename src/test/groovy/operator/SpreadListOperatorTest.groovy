@@ -18,6 +18,8 @@
  */
 package groovy.operator
 
+import groovy.test.GroovyTestCase
+
 /**
  * <code>[2, 3].toSpreadList() equals to *[2, 3]</code> <br><br>
  *

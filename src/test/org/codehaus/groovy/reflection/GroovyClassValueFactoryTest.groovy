@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.reflection
 
+import groovy.test.GroovyTestCase
+
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue

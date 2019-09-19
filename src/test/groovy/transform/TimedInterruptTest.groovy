@@ -19,6 +19,7 @@
 package groovy.transform
 
 import groovy.mock.interceptor.StubFor
+import groovy.test.GroovyTestCase
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException

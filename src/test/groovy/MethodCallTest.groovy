@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class MethodCallTest extends GroovyTestCase {
 
     void testMethodCall() {

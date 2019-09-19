@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3679Bug extends GroovyTestCase {
     void testMapEntryWinOverPvtAndPkgPrivateClassFields() {
         // map entry should win over a package-private field

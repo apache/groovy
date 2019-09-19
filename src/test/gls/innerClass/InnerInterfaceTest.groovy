@@ -18,6 +18,8 @@
  */
 package gls.innerClass
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests on inner interface usage
  */

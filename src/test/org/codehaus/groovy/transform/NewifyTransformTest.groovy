@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyShellTestCase
+
 /**
  * Tests for the {@code @Newify} AST transform.
  */

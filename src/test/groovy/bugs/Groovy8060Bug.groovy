@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8060Bug extends GroovyTestCase {
     void testLoggingWithinClosuresThatAreMethodArgsShouldHaveGuards() {
         assertScript '''

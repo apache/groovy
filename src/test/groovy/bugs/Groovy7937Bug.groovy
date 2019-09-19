@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7937Bug extends GroovyTestCase {
     void testMethodsWithinAnInstanceShouldBeChosenAheadOfDGMMethodsOnAnInterface() {
         assertScript """

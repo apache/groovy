@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3789Bug extends GroovyTestCase {
     void testAddReturnWhenLastStatementIsSwitch() {
         def ifClosure = { ->

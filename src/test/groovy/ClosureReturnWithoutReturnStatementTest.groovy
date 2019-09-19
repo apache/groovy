@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ClosureReturnWithoutReturnStatementTest extends GroovyTestCase {
 
     void testReturnValues() {

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyShellTestCase
+
 class Groovy4272Bug extends GroovyShellTestCase {
     void testAstBuilderOptimizerVisitorConflictInCompilation() {
         evaluate """

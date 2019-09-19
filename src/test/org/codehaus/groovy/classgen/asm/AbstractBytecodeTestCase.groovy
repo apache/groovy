@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import groovy.test.GroovyTestCase
 import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration

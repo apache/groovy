@@ -18,7 +18,8 @@
  */
 package semantics
 
-import asciidoctor.Utils
+import groovy.test.GroovyTestCase
+import groovy.xml.XmlSlurper
 
 class GPathTest extends GroovyTestCase {
 

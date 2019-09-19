@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  *  Verifies that the Groovy parser can accept quoted methods.
  */

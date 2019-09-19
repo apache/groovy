@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8868Bug extends GroovyTestCase {
     void testNoargConstructorIncludedForImmutableWithNoProperties() {
         assertScript '''

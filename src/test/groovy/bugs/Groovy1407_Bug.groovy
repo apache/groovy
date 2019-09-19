@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy1407_Bug extends GroovyTestCase {
    void testGPathOnMultiKeyMap(){
       // each key is a two-element String list

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
+import groovy.test.GroovyTestCase
+
 class InvokerHelperFormattingTest extends GroovyTestCase {
 
     private static class ExceptionOnToString implements Comparable {

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class ByteIndexBug extends GroovyTestCase {
     // TODO: this tests a string with 128 nulls - is that what is intended?
     void testBug() {

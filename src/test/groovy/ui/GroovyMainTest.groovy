@@ -18,6 +18,8 @@
  */
 package groovy.ui
 
+import groovy.test.GroovyTestCase
+
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 class GroovyMainTest extends GroovyTestCase {

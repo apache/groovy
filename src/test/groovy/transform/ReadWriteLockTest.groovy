@@ -18,6 +18,8 @@
  */
 package groovy.transform
 
+import groovy.test.GroovyTestCase
+
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.lang.reflect.Modifier
 

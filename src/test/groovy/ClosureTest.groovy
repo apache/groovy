@@ -18,6 +18,7 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 import static groovy.lang.Closure.IDENTITY

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 import static java.util.Collections.EMPTY_LIST
 import static java.util.Collections.emptyList
 

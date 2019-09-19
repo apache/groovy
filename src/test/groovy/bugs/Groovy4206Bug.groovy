@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4206Bug extends GroovyTestCase {
     void testIsNamesForBooleanProps() {
         assert Bar4206.isValid()

@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import groovy.test.GroovyTestCase
+
 class ClassDesignASTTransformsTest extends GroovyTestCase {
 
     void testDelegateTransformation() {

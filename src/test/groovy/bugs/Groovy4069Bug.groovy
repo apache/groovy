@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4069Bug extends GroovyTestCase {
 
     void testEMCConstructorWithSubClassingTest1V1() {

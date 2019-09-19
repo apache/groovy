@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ShellTest extends GroovyTestCase {
 
     void testReadAndWriteVariable() {

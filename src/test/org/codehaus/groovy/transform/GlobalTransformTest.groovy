@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyTestCase
+
 class GlobalLegacyTransformTest extends GroovyTestCase {
     def path = "org/codehaus/groovy/transform/META-INF/services/org.codehaus.groovy.transform.ASTTransformation"
     URL transformRoot = new File(getClass().classLoader.getResource(path).toURI()).parentFile.parentFile.parentFile.toURI().toURL()

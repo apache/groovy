@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.typehandling
 
+import groovy.test.GroovyTestCase
+
 import static org.codehaus.groovy.runtime.typehandling.ShortTypeHandling.castToClass
 import static org.codehaus.groovy.runtime.typehandling.ShortTypeHandling.castToString
 import static org.codehaus.groovy.runtime.typehandling.ShortTypeHandling.castToChar

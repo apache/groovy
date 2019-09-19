@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy2549Bug extends GroovyTestCase {
     void test2549() {
         def c = 2

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4038Bug extends GroovyTestCase {
     void testResondsToOnClosures() {
         def c = {String x -> }

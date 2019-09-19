@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.tools.GroovyStarter
 
 class Groovy4287Bug extends GroovyTestCase {

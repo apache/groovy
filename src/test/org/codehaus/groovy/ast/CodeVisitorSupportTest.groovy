@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement

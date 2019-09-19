@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.util
 
-class ManagedLinkedListTest extends GroovyTestCase{
+import groovy.test.GroovyTestCase
+
+class ManagedLinkedListTest extends GroovyTestCase {
   
   def list
   

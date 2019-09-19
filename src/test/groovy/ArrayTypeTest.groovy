@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ArrayTypeTest extends GroovyTestCase {
 
     void testClosureWithTypedParam() {

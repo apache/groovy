@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3335Bug extends GroovyTestCase {
     void testClassToString() {
         // the following call was resulting in a MethodSelectionException

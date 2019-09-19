@@ -18,6 +18,8 @@
  */
 package builder
 
+import groovy.test.GroovyTestCase
+
 class FileTreeBuilderTest extends GroovyTestCase {
     File tmpDir
 
@@ -37,7 +39,7 @@ class FileTreeBuilderTest extends GroovyTestCase {
             }
             dir('test') {
                dir('groovy') {
-                  file('FooTest.groovy', 'class FooTest extends GroovyTestCase {}')
+                  file('FooTest.groovy', 'class FooTest extends groovy.test.GroovyTestCase {}')
                }
             }
          }
@@ -45,7 +47,7 @@ class FileTreeBuilderTest extends GroovyTestCase {
          
          // tag::example_assert[]
          assert new File(tmpDir, '/src/main/groovy/Foo.groovy').text == 'println "Hello"'
-         assert new File(tmpDir, '/src/test/groovy/FooTest.groovy').text == 'class FooTest extends GroovyTestCase {}'
+         assert new File(tmpDir, '/src/test/groovy/FooTest.groovy').text == 'class FooTest extends groovy.test.GroovyTestCase {}'
          // end::example_assert[]
     }
     
@@ -61,7 +63,7 @@ class FileTreeBuilderTest extends GroovyTestCase {
             }
             test {
                groovy {
-                  'FooTest.groovy'('class FooTest extends GroovyTestCase {}')
+                  'FooTest.groovy'('class FooTest extends groovy.test.GroovyTestCase {}')
                }
             }
          }
@@ -69,7 +71,7 @@ class FileTreeBuilderTest extends GroovyTestCase {
          
          // tag::shorthand_syntax_assert[]
          assert new File(tmpDir, '/src/main/groovy/Foo.groovy').text == 'println "Hello"'
-         assert new File(tmpDir, '/src/test/groovy/FooTest.groovy').text == 'class FooTest extends GroovyTestCase {}'
+         assert new File(tmpDir, '/src/test/groovy/FooTest.groovy').text == 'class FooTest extends groovy.test.GroovyTestCase {}'
          // end::shorthand_syntax_assert[]
     }    
  }

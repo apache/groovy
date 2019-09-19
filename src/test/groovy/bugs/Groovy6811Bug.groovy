@@ -20,6 +20,8 @@
 
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6811Bug extends GroovyTestCase {
     void testShouldAllowAnonymousInnerClassFromNonStaticInnerClass() {
         assertScript '''class CreatePaymentPanel {

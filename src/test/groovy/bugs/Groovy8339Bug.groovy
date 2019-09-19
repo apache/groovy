@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 // TODO add JVM option `--illegal-access=deny` when all warnings fixed
 class Groovy8339Bug extends GroovyTestCase {
     void testCase2() {

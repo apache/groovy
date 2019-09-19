@@ -18,7 +18,7 @@
  */
 package groovy.transform.stc
 
-import groovy.transform.NotYetImplemented
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 
 /**

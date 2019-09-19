@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4293Bug extends GroovyTestCase {
     void testNoBUGMessageForNullScriptPassedToCompiler() {
         try {

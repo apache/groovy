@@ -19,7 +19,7 @@
 package gls.annotations.closures
 
 import gls.CompilableTestSupport
-import groovy.transform.NotYetImplemented
+import groovy.test.NotYetImplemented
 
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Retention

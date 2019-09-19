@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools.rootloadersync
 
+import groovy.test.GroovyTestCase
+
 import static junit.framework.Assert.assertEquals
 
 public class SubclassingInGroovyTest extends GroovyTestCase{

@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 import static groovy.io.FileType.*
 import static groovy.io.FileVisitResult.*
 

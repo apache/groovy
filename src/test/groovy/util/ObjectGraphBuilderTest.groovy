@@ -18,6 +18,8 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
+
 class ObjectGraphBuilderTest extends GroovyTestCase {
    ObjectGraphBuilder builder
    ObjectGraphBuilder reflectionBuilder

@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 /**
  * GROOVY-2875: MetaClassRegistryImpl constantMetaClasses map is leaking resources
  * GROOVY-4481: the listener and iterator mechanism over the MetaClassRegistry wasn't working.

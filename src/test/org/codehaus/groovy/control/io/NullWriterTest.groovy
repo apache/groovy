@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.control.io
 
+import groovy.test.GroovyTestCase
+
 class NullWriterTest extends GroovyTestCase {
 
     void testProperties() {

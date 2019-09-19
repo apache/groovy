@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.reflection
 
+import groovy.test.GroovyTestCase
+
 class CachedMethodTest extends GroovyTestCase {
     void testCachedMethodCompareTo() {
         assert String.metaClass.methods.size() == String.metaClass.methods.unique().size()

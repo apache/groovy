@@ -18,6 +18,7 @@
  */
 package groovy.transform.stc
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration

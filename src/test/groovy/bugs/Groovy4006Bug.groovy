@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4006Bug extends GroovyTestCase {
     void testOuterThisReferenceImplicitPassingToInnerClassConstructorNoArg() {
         try {

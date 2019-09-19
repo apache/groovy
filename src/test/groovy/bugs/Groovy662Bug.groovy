@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 //  The order of the classes is crucial, the first must be the GroovyTestCase.  Its name doesn't
 //  matter it just has to be first.
 

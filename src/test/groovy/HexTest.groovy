@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test cases for encodeHex methods in DefaultGroovyMethods
  */

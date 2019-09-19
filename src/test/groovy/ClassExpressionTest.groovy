@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /** 
  * Tests the use of classes as variable expressions
  */

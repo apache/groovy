@@ -19,6 +19,8 @@
 
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7081Bug extends GroovyTestCase {
     void testShouldSeeThatMethodIsNotImplemented() {
         def msg = shouldFail '''

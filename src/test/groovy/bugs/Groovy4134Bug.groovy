@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4134Bug extends GroovyTestCase {
     void testClosureParamsWithDefaultValues() {
         def c = {Integer maxRows = Integer.MAX_VALUE -> maxRows}

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3770Bug extends GroovyTestCase {
     void testSetDelegateAndResolveStrategyOnACurriedClosure() {
         assertScript """

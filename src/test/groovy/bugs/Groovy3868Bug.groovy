@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3868Bug extends GroovyTestCase {
     void testAsTypeCallWithPrimitiveType() {
         callAndcheckResults(Long)

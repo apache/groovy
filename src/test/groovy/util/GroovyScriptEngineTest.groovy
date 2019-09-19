@@ -18,6 +18,7 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilePhase

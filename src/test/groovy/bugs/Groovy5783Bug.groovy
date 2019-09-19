@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy5783Bug extends GroovyTestCase {
 
     void testDefaultTypeTransformationCreatesLinkedHashSet() {

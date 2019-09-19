@@ -19,6 +19,7 @@
 package semantics
 
 import asciidoctor.Utils
+import groovy.test.GroovyTestCase
 
 class PowerAssertTest extends GroovyTestCase {
     void testPowerAssert() {

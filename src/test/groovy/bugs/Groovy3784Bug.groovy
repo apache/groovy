@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3784Bug extends GroovyTestCase {
     void testUseOfDelegateAndThenGenericsSharingTheSameClassHelper() {
         GroovyClassLoader gcl = new GroovyClassLoader()

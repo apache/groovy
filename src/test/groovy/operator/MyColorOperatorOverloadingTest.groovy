@@ -18,6 +18,8 @@
  */
 package groovy.operator
 
+import groovy.test.GroovyTestCase
+
 import static java.awt.Color.*
 
 class MyColorOperatorOverloadingTest extends GroovyTestCase {

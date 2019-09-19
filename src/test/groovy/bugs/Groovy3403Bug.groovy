@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import groovy.mock.interceptor.StubFor
+import groovy.test.GroovyTestCase
 
 class Groovy3403Bug extends GroovyTestCase {
 

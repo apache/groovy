@@ -2779,7 +2779,7 @@ include::{projectdir}/src/spec/test/SwingASTTransformsTest.groovy[tags=vetoable_
 
 ==== Test assistance
 [[xform-NotYetImplemented]]
-===== `@groovy.transform.NotYetImplemented`
+===== `@groovy.test.NotYetImplemented`
 
 `@NotYetImplemented` is used to invert the result of a JUnit 3/4 test case. It is in particular useful if a feature is not yet implemented but the test is. In that case, it is expected
 that the test fails. Marking it with `@NotYetImplemented` will inverse the result of the test, like in this example:

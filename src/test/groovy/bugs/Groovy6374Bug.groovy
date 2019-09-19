@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6374Bug extends GroovyTestCase {
     void testShouldNotAllowCoercionOfFinalClass() {
         assertScript '''import org.codehaus.groovy.runtime.typehandling.GroovyCastException

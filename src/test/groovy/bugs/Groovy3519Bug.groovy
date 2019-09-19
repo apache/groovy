@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3519Bug extends GroovyTestCase {
 
     void testShouldSkipPrivateMethodsFromCovariantReturnTypeChecks() {

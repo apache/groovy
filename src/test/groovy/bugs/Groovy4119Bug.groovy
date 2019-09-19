@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4119Bug extends GroovyTestCase {
     void testThis$0PassingInSuperCallWithinInnerClasses() {
         assertScript """

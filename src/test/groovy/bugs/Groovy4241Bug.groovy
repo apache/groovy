@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4241Bug extends GroovyTestCase {
     void testAsTypeWithinvokeMethodOverridden() {
         Foo4241.metaClass.invokeMethod = { String name, args ->

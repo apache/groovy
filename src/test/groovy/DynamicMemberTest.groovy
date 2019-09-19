@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class DynamicMemberTest extends GroovyTestCase {
   def aTestMethod(o){o}
   def aProperty

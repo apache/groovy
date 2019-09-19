@@ -18,6 +18,7 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams
 import groovy.transform.TypeChecked

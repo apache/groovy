@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import groovy.mock.interceptor.*
+import groovy.test.GroovyTestCase
 
 class Groovy3720Bug extends GroovyTestCase {
     void testCreateStubNode() {

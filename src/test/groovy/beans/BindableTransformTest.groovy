@@ -18,6 +18,7 @@
  */
 package groovy.beans
 
+import groovy.test.GroovyShellTestCase
 import org.codehaus.groovy.control.CompilationFailedException
 
 import java.beans.PropertyChangeListener

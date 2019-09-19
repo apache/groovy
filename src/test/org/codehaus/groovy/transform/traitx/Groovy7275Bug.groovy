@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy7275Bug extends GroovyTestCase {
     void testShouldNotThrowCompileBug() {
         assertScript '''

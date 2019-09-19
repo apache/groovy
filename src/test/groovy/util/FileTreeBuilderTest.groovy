@@ -18,6 +18,8 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
+
 class FileTreeBuilderTest extends GroovyTestCase {
     File tmpDir
     FileTreeBuilder builder

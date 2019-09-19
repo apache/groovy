@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class IfElseCompactTest extends GroovyTestCase {
 
     void testIf_NoElse() {

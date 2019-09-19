@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ChainedAssignmentTest extends GroovyTestCase {
 
     def dummy(v) {

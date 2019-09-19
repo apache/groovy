@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.parser.antlr4
 
+import groovy.test.GroovyTestCase
 import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode

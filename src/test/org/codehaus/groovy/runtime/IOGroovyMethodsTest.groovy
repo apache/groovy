@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime
 
 import groovy.test.GroovyAssert
+import groovy.test.GroovyTestCase
 
 class IOGroovyMethodsTest extends GroovyTestCase {
 

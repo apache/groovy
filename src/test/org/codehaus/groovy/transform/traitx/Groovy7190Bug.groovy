@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy7190Bug extends GroovyTestCase {
     void testStaticPropertyBug() {
         assertScript '''

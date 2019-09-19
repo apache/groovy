@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class ClassInNamedParamsBug extends GroovyTestCase {
     
     void testBug() {

@@ -18,7 +18,9 @@
  */
 package groovy.bugs
 
-public class Groovy3208Bug extends GroovyTestCase {
+import groovy.test.GroovyTestCase
+
+class Groovy3208Bug extends GroovyTestCase {
 
    void testBug () {
       new Sub().each { assertEquals("ABC", it.doIt()) }

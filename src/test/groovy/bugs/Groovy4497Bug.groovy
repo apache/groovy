@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4497Bug extends GroovyTestCase {
     void testAccessSuperPrivateField() {
         assertScript """

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * NullObject has no asBoolean() method,
  * making null.asBoolean() return true instead of false.

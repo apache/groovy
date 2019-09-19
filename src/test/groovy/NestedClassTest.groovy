@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class NestedClassTest extends GroovyTestCase {
 
     void testStaticInnerStaticMethod () {

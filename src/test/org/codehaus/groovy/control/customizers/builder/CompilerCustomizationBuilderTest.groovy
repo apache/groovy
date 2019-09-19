@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control.customizers.builder
 
 import groovy.mock.interceptor.StubFor
+import groovy.test.GroovyTestCase
 import groovy.transform.ToString
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer

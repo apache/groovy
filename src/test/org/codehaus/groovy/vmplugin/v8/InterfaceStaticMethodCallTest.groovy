@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v8
 
+import groovy.test.GroovyTestCase
+
 class InterfaceStaticMethodCallTest extends GroovyTestCase {
     void testStreamOf() {
         // "of" is a static method declared on the interface, we only want to be sure we can call the method

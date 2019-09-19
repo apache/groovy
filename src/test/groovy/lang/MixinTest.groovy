@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 import java.util.concurrent.locks.ReentrantLock
 import org.codehaus.groovy.reflection.ClassInfo
 

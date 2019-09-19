@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class ClosureMissingMethodTest extends GroovyTestCase {
 
     void testInScript() {

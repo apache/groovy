@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4415Bug extends GroovyTestCase {
     void testCompilerShouldFindMethod() {
         // interface defined in Groovy

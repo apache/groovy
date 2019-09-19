@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class Constructor2Test extends GroovyTestCase {
 
     Constructor2Test() { }

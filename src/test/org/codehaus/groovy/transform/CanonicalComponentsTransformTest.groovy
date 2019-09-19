@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyShellTestCase
 import groovy.transform.AutoClone
 import groovy.transform.AutoExternalize
 import groovy.transform.CompileStatic

@@ -18,6 +18,8 @@
  */
 package builder
 
+import groovy.test.GroovyTestCase
+
 class NodeBuilderTest extends GroovyTestCase {
 
     void testNodeBuilder() {

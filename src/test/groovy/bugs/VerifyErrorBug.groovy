@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class VerifyErrorBug extends GroovyTestCase {
     void testShouldNotThrowVerifyError1() {
         assertScript """

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import groovy.test.GroovyTestCase
+
 class LRUProtectionStorageTest extends GroovyTestCase {
     void testLRUStrategyWithOneElement() {
         def storage = new LRUProtectionStorage(1)

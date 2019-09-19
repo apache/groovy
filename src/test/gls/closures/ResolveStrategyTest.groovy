@@ -18,6 +18,7 @@
  */
 package gls.closures
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import static groovy.lang.Closure.*
 

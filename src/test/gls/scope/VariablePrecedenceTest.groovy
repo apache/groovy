@@ -18,6 +18,8 @@
  */
 package gls.scope
 
+import groovy.test.GroovyTestCase
+
 /**
 *  test case based on GROOVY-3069
 */

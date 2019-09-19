@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyShellTestCase
 import org.codehaus.groovy.reflection.ReflectionCache
 
 class MixinAnnotationTest extends GroovyShellTestCase {
@@ -47,7 +48,7 @@ class ClassToExtend implements Mixed{
     def a = "blah"
 }
 
-        GroovyTestCase.assertEquals("under category: object of ClassToExtend: blah", new ClassToExtend().asText ())
+        groovy.test.GroovyTestCase.assertEquals("under category: object of ClassToExtend: blah", new ClassToExtend().asText ())
 
         boolean failed = false;
         try {
@@ -84,7 +85,7 @@ class ClassToExtend {
     }
 }
 
-        GroovyTestCase.assertEquals("under category: under BIG category: object of ClassToExtend", new ClassToExtend().asText ())
+        groovy.test.GroovyTestCase.assertEquals("under category: under BIG category: object of ClassToExtend", new ClassToExtend().asText ())
         """
     }
 

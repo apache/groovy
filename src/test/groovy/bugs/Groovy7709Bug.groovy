@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7709Bug extends GroovyTestCase {
 
     void testConvertedClosureAsGroovyObject() {

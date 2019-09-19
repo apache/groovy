@@ -18,6 +18,8 @@
  */
 package groovy.bugs.groovy8531
 
+import groovy.test.GroovyTestCase
+
 class Groovy8531Bug extends GroovyTestCase {
     void testPublicAndProtectedInnerType() {
         assertScript '''

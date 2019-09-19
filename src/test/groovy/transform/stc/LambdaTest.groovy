@@ -19,6 +19,8 @@
 
 package groovy.transform.stc
 
+import groovy.test.GroovyTestCase
+
 class LambdaTest extends GroovyTestCase {
     void testFunction() {
         assertScript '''

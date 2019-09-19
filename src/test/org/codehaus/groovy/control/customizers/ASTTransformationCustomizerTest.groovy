@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control.customizers
 
+import groovy.test.GroovyTestCase
 import groovy.transform.TimedInterrupt
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression

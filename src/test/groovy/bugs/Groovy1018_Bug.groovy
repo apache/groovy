@@ -18,13 +18,15 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test to fix the Jira issues GROOVY-1018 and GROOVY-732.
  * Access to a static field member by a class name:
  *      ClassName.fieldName or ClassName.@fieldName.
  */
 
-class Groovy1018_Bug extends GroovyTestCase { 
+class Groovy1018_Bug extends GroovyTestCase {
 
     public static Object Class = "bar" 
 

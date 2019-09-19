@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4922Bug extends GroovyTestCase {
     void testShouldNotThrowStackOverflow() {
         assertScript """

@@ -18,6 +18,7 @@
  */
 package groovy.annotations
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.*
 
 class ParameterAnnotationTest extends GroovyTestCase {

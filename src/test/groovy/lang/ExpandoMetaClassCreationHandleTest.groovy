@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.lang;
+package groovy.lang
+
+import groovy.test.GroovyTestCase;
 
 class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
     def registry = GroovySystem.metaClassRegistry

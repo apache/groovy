@@ -32,7 +32,7 @@ final class PackageAndImportAnnotationTest {
             def x = new groovy.annotations.MyClass()
             assert x.class.annotations[0].value() == 60
             assert x.class.package.annotations[0].value() == 30
-            new AntBuilder().with {
+            new groovy.ant.AntBuilder().with {
                 mkdir(dir:'temp')
                 delete(file:'temp/log.txt')
                 taskdef(name:'groovyc', classname:'org.codehaus.groovy.ant.Groovyc')

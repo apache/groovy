@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7920Bug extends GroovyTestCase {
     void testGetAtViaInterface() {
         assertScript '''

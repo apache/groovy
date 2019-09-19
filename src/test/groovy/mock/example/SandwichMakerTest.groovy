@@ -19,6 +19,7 @@
 package groovy.mock.example
 
 import groovy.mock.interceptor.MockFor
+import groovy.test.GroovyTestCase
 
 class SandwichMakerTest extends GroovyTestCase {
 

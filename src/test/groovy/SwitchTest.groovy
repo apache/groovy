@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class SwitchTest extends GroovyTestCase {
 
     void testSwitch() {

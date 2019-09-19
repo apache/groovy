@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8833Bug extends GroovyTestCase {
     void testEqualsAndHashCodeAndToStringWithCompileStatic() {
         assertScript '''

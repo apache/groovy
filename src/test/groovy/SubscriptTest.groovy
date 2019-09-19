@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class SubscriptTest extends GroovyTestCase {
 
     void testListRange() {

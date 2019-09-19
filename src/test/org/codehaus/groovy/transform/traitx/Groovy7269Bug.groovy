@@ -20,6 +20,8 @@
 
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy7269Bug extends GroovyTestCase {
     void testTraitWithMetaClassMod() {
         assertScript '''

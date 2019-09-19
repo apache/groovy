@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4410Bug extends GroovyTestCase {
     void testBridgeMethodWithArrayTypeParameterV1() {
         StringProducer1 sp = new StringProducer1()

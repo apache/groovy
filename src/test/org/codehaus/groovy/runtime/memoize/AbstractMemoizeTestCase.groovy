@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import groovy.test.GroovyTestCase
+
 abstract class AbstractMemoizeTestCase extends GroovyTestCase {
 
     volatile int counter = 0

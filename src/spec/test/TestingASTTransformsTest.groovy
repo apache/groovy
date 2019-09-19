@@ -16,10 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import groovy.test.GroovyTestCase
+
 class TestingASTTransformsTest extends GroovyTestCase {
     void testNotYetImplemented() {
         assertScript '''// tag::notyetimplemented[]
-import groovy.transform.NotYetImplemented
+import groovy.test.GroovyTestCase
+import groovy.test.NotYetImplemented
 
 class Maths {
     static int fib(int n) {

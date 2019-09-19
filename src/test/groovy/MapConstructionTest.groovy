@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /** 
  * Tests creating Maps in Groovy
  */

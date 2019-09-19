@@ -19,6 +19,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * Test to ensure that readLine() method works on Reader/InputStream
  */

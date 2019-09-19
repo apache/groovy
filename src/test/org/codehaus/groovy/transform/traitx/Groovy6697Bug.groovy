@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.GroovyTestCase
+
 class Groovy6697Bug extends GroovyTestCase {
     void testShouldAllowTraitSuperPropertyNotation() {
         assertScript '''

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4257Bug extends GroovyTestCase {
     void testSetUnique() {
         Set orig = [[3035, 26972], [2795, 34412]]

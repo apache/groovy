@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * Tests the use of getMetaPropertyValues() and getProperties() for Beans and Expandos.
  */

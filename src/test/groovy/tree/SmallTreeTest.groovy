@@ -18,6 +18,8 @@
  */
 package groovy.tree
 
+import groovy.test.GroovyTestCase
+
 class SmallTreeTest extends GroovyTestCase {
     def b
     def EXPECTED = 'root1[attributes={}; value=[elem1[attributes={}; value=hello1]]]'

@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 import java.nio.charset.StandardCharsets
 
 class Base64Test extends GroovyTestCase {

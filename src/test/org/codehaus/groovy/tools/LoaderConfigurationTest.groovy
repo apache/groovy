@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools
 
+import groovy.test.GroovyTestCase
+
 class LoaderConfigurationTest extends GroovyTestCase {
 
     void testComment() {

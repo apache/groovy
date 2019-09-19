@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 /**
  * Bug illustrating the nested closures variable scope visibility issue.
  * l.each is ClosureInClosureBug$1 and it.each is ClosureInClosureBug$2

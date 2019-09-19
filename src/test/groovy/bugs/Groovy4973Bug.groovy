@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy4973Bug extends GroovyTestCase {
     void testRangeWithDifferentFromToNumericTypes() {
         assert (1L..10).every { it.class == Long }

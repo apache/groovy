@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.stmt
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression

@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class VerbatimGStringTest extends GroovyTestCase {
 
     void testWithOneVariable() {

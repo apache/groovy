@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy6862Bug extends GroovyTestCase {
     void testDollarAllowedInTraitMethodNames() {
         assertScript '''

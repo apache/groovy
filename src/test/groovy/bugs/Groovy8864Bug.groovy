@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy8864Bug extends GroovyTestCase {
     void testGenericsAppliedToStaticMethodsForTraits() {
         assertScript '''

@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy7584Bug extends GroovyTestCase {
     void testTraitFieldModifiersAreRetained() {
         assertScript """

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.methoddispatching.vm8
 
+import groovy.test.GroovyTestCase
+
 class StaticMethodOverloadTest extends GroovyTestCase {
     void testOneStaticMethod() {
         assert FooOne.foo() == "FooOne.foo()"

@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import groovy.test.GroovyTestCase
+
 class Groovy7888Bug extends GroovyTestCase {
     void testCompoundAssignmentUsesCorrectType() {
         assertScript '''

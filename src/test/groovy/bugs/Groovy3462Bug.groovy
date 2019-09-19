@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3462Bug extends GroovyTestCase {
 
     void testClosureWithParameterHavingDefaultExpression() {

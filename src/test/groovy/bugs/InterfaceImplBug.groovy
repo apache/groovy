@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.dummy.FooHandler
 
 class InterfaceImplBug extends GroovyTestCase implements FooHandler {

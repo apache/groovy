@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy3498Bug extends GroovyTestCase {
     void testClosureExpressionFiltering() {
         new GroovyShell().evaluate """

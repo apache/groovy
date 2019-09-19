@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import groovy.test.GroovyTestCase
 import org.junit.Ignore
 
 @Ignore("does not run consistently on the build server")

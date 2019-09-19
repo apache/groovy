@@ -18,6 +18,8 @@
  */
 package groovy.execute
 
+import groovy.test.GroovyTestCase
+
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 /**

@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
+
 class NullPropertyTest extends GroovyTestCase {
     def wensleydale = null
 

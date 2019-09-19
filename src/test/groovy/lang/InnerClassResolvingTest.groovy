@@ -18,6 +18,8 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase
+
 class InnerClassResolvingTest extends GroovyTestCase {
     void testInnerClass() {
         // Thread.UncaughtExceptionHandler was added in Java 1.5

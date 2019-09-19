@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen
 
+import groovy.test.GroovyShellTestCase
+
 class CastToStringTest extends GroovyShellTestCase {
     void testNormalAndPrimitiveArrayHandling_Groovy7853() {
         assertScript '''

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.transform.tailrec
 
+import groovy.test.GroovyShellTestCase
+
 class TailRecursiveTransformationTest extends GroovyShellTestCase {
 
     void testSimpleRecursiveMethod() {

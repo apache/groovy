@@ -18,6 +18,7 @@
  */
 package metaprogramming
 
+import groovy.test.GroovyTestCase
 import groovy.time.TimeCategory
 
 class CategoryTest extends GroovyTestCase {

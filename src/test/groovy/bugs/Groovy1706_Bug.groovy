@@ -18,6 +18,8 @@
  */
 package groovy.bugs
 
+import groovy.test.GroovyTestCase
+
 class Groovy1706_Bug extends GroovyTestCase {
    void testStaticMethodIsCalledFromSubclass() {
       // disclaimer: static methods shouldn't be
