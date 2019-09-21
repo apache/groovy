@@ -147,7 +147,7 @@ brew install groovy
 
 === Installation on Windows
 
-If you're on Windows, you can also use the link:TODO-Windows+NSIS-Installer[NSIS Windows installer].
+If you're on Windows, you can also use the https://bintray.com/groovy/Distributions/Windows-Installer[NSIS Windows installer].
 
 === Other Distributions
 
