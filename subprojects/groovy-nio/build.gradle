@@ -16,6 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+repositories {
+    maven {
+        url 'https://oss.sonatype.org/content/repositories/snapshots'
+    }
+}
+
 dependencies {
     compile rootProject
     testCompile project(':groovy-test')
