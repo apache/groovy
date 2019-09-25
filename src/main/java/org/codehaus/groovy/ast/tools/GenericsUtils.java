@@ -18,14 +18,11 @@
  */
 package org.codehaus.groovy.ast.tools;
 
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
+import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin;
+import org.apache.groovy.parser.antlr4.Antlr4PluginFactory;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.antlr.AntlrParserPlugin;
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -34,15 +31,14 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.ParserPluginFactory;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
-import org.codehaus.groovy.syntax.ParserException;
-import org.codehaus.groovy.syntax.Reduction;
 
-import java.io.StringReader;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,7 +49,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
@@ -587,20 +582,12 @@ public class GenericsUtils {
             final CompilationUnit compilationUnit,
             final MethodNode mn,
             final ASTNode usage) {
-        GroovyLexer lexer = new GroovyLexer(new StringReader("DummyNode<" + option + ">"));
-        final GroovyRecognizer rn = GroovyRecognizer.make(lexer);
+
         try {
-            rn.classOrInterfaceType(true);
-            final AtomicReference<ClassNode> ref = new AtomicReference<ClassNode>();
-            AntlrParserPlugin plugin = new AntlrParserPlugin() {
-                @Override
-                public ModuleNode buildAST(final SourceUnit sourceUnit, final ClassLoader classLoader, final Reduction cst) throws ParserException {
-                    ref.set(makeTypeWithArguments(rn.getAST()));
-                    return null;
-                }
-            };
-            plugin.buildAST(null, null, null);
-            ClassNode parsedNode = ref.get();
+            Antlr4PluginFactory antlr4PluginFactory = (Antlr4PluginFactory) ParserPluginFactory.antlr4(compilationUnit.getConfiguration());
+            Antlr4ParserPlugin antlr4ParserPlugin = (Antlr4ParserPlugin) antlr4PluginFactory.createParserPlugin();
+            ClassNode parsedNode = antlr4ParserPlugin.makeType("DummyNode<" + option + ">");
+
             // the returned node is DummyNode<Param1, Param2, Param3, ...)
             GenericsType[] parsedNodeGenericsTypes = parsedNode.getGenericsTypes();
             if (parsedNodeGenericsTypes == null) {
@@ -612,7 +599,7 @@ public class GenericsUtils {
                 signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
             }
             return signature;
-        } catch (RecognitionException | ParserException | TokenStreamException e) {
+        } catch (CompilationFailedException e) {
             sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         }
         return null;
