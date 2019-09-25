@@ -19,9 +19,8 @@
 package groovy.text.markup
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.antlr.AntlrParserPlugin
-import org.codehaus.groovy.antlr.parser.GroovyLexer
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer
+import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin
+import org.apache.groovy.parser.antlr4.Antlr4PluginFactory
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
 import org.codehaus.groovy.ast.ClassHelper
@@ -39,17 +38,15 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.ParserPluginFactory
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
-import org.codehaus.groovy.syntax.ParserException
-import org.codehaus.groovy.syntax.Reduction
 import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.TypeCheckingContext
-
-import java.util.concurrent.atomic.AtomicReference
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignment
@@ -178,23 +175,11 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
     @CompileStatic
     private static ClassNode buildNodeFromString(String option, TypeCheckingContext ctx) {
-        GroovyLexer lexer = new GroovyLexer(new StringReader(option))
-        final GroovyRecognizer rn = GroovyRecognizer.make(lexer)
-        rn.classOrInterfaceType(true);
-        final AtomicReference<ClassNode> ref = new AtomicReference<ClassNode>();
-        AntlrParserPlugin plugin = new AntlrParserPlugin() {
-            @Override
-            public ModuleNode buildAST(
-                    final SourceUnit sourceUnit,
-                    final ClassLoader classLoader, final Reduction cst) throws ParserException {
-                ref.set(makeTypeWithArguments(rn.getAST()));
-                return null;
-            }
-        };
-        plugin.buildAST(null, null, null);
-        ClassNode parsedNode = ref.get();
-        ClassNode dummyClass = new ClassNode("dummy", 0, ClassHelper.OBJECT_TYPE);
-        dummyClass.setModule(new ModuleNode(ctx.source));
+        Antlr4PluginFactory antlr4PluginFactory = (Antlr4PluginFactory) ParserPluginFactory.antlr4(CompilerConfiguration.DEFAULT)
+        Antlr4ParserPlugin antlr4ParserPlugin = (Antlr4ParserPlugin) antlr4PluginFactory.createParserPlugin()
+        ClassNode parsedNode = antlr4ParserPlugin.makeType(option)
+        ClassNode dummyClass = new ClassNode("dummy", 0, ClassHelper.OBJECT_TYPE)
+        dummyClass.setModule(new ModuleNode(ctx.source))
         MethodNode dummyMN = new MethodNode(
                 "dummy",
                 0,
@@ -203,16 +188,16 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
                 ClassNode.EMPTY_ARRAY,
                 EmptyStatement.INSTANCE
         )
-        dummyClass.addMethod(dummyMN);
+        dummyClass.addMethod(dummyMN)
         ResolveVisitor visitor = new ResolveVisitor(ctx.compilationUnit) {
             @Override
-            public void addError(final String msg, final ASTNode expr) {
+            void addError(final String msg, final ASTNode expr) {
                 ctx.errorCollector.addErrorAndContinue(new SyntaxErrorMessage(
                         new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()),
                         ctx.source)
-                );
+                )
             }
-        };
+        }
         visitor.startResolving(dummyClass, ctx.source)
         return dummyMN.getReturnType()
     }
