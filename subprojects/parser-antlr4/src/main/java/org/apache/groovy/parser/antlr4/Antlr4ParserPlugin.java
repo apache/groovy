@@ -102,13 +102,7 @@ public class Antlr4ParserPlugin implements ParserPlugin {
                         "Script" + System.nanoTime(),
                         "final " + typeStr + " v",
                         compilerConfiguration,
-                        AccessController.doPrivileged(
-                                new PrivilegedAction<GroovyClassLoader>() {
-                                    @Override
-                                    public GroovyClassLoader run() {
-                                        return new GroovyClassLoader();
-                                    }
-                                }),
+                        AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) GroovyClassLoader::new),
                         new ErrorCollector(compilerConfiguration)
                 );
         AstBuilder builder = new AstBuilder(sourceUnit, compilerConfiguration);
