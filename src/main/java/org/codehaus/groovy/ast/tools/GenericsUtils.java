@@ -22,6 +22,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -30,8 +31,8 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
@@ -582,7 +583,11 @@ public class GenericsUtils {
             final ASTNode usage) {
 
         try {
-            ClassNode parsedNode = Antlr4Utils.parse("DummyNode<" + option + ">", compilationUnit.getConfiguration());
+            // for parsing just class names old and new parser should be the same but let's stick to the correct parser any way
+            boolean oldParserEnabled = CompilerConfiguration.DEFAULT.getPluginFactory() instanceof AntlrParserPluginFactory;
+            ClassNode parsedNode = oldParserEnabled ?
+                    Antlr2Utils.parse("DummyNode<" + option + ">") :
+                    Antlr4Utils.parse("DummyNode<" + option + ">", compilationUnit.getConfiguration());
 
             // the returned node is DummyNode<Param1, Param2, Param3, ...)
             GenericsType[] parsedNodeGenericsTypes = parsedNode.getGenericsTypes();

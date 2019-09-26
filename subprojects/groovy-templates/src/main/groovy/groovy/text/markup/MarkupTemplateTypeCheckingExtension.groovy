@@ -19,6 +19,7 @@
 package groovy.text.markup
 
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
 import org.codehaus.groovy.ast.ClassHelper
@@ -36,6 +37,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.ast.tools.Antlr2Utils
 import org.codehaus.groovy.ast.tools.Antlr4Utils
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ResolveVisitor
@@ -173,7 +175,11 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
     @CompileStatic
     private static ClassNode buildNodeFromString(String option, TypeCheckingContext ctx) {
-        ClassNode parsedNode = Antlr4Utils.parse(option, CompilerConfiguration.DEFAULT)
+        // for parsing just class names old and new parser should be the same but let's stick to the correct parser any way
+        boolean oldParserEnabled = CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory
+        ClassNode parsedNode = oldParserEnabled ?
+                Antlr2Utils.parse(option) :
+                Antlr4Utils.parse(option, CompilerConfiguration.DEFAULT)
         ClassNode dummyClass = new ClassNode("dummy", 0, OBJECT_TYPE)
         dummyClass.setModule(new ModuleNode(ctx.source))
         MethodNode dummyMN = new MethodNode(
