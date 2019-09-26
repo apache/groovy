@@ -15,6 +15,12 @@ import org.codehaus.groovy.syntax.Reduction;
 import java.io.StringReader;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Utilities for working with the Antlr2 parser
+ *
+ * @deprecated will be removed when antlr2 parser is removed
+ */
+@Deprecated
 public class Antlr2Utils {
     private Antlr2Utils() {
     }
