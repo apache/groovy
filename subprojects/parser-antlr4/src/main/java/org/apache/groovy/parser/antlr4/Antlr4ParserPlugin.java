@@ -100,7 +100,7 @@ public class Antlr4ParserPlugin implements ParserPlugin {
         SourceUnit sourceUnit =
                 new SourceUnit(
                         "Script" + System.nanoTime(),
-                        typeStr + " v",
+                        "final " + typeStr + " v",
                         compilerConfiguration,
                         AccessController.doPrivileged(
                                 new PrivilegedAction<GroovyClassLoader>() {
