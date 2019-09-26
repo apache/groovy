@@ -18,10 +18,9 @@
  */
 package org.codehaus.groovy.ast.tools;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
-import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin;
-import org.apache.groovy.parser.antlr4.Antlr4PluginFactory;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -33,7 +32,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.ParserPluginFactory;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
@@ -584,9 +582,7 @@ public class GenericsUtils {
             final ASTNode usage) {
 
         try {
-            Antlr4PluginFactory antlr4PluginFactory = (Antlr4PluginFactory) ParserPluginFactory.antlr4(compilationUnit.getConfiguration());
-            Antlr4ParserPlugin antlr4ParserPlugin = (Antlr4ParserPlugin) antlr4PluginFactory.createParserPlugin();
-            ClassNode parsedNode = antlr4ParserPlugin.makeType("DummyNode<" + option + ">");
+            ClassNode parsedNode = Antlr4Utils.parse("DummyNode<" + option + ">", compilationUnit.getConfiguration());
 
             // the returned node is DummyNode<Param1, Param2, Param3, ...)
             GenericsType[] parsedNodeGenericsTypes = parsedNode.getGenericsTypes();
@@ -599,7 +595,7 @@ public class GenericsUtils {
                 signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
             }
             return signature;
-        } catch (CompilationFailedException e) {
+        } catch (GroovyRuntimeException e) {
             sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         }
         return null;
