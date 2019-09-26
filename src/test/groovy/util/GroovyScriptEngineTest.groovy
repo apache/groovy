@@ -50,7 +50,7 @@ class GroovyScriptEngineTest extends GroovyTestCase {
         try {
             System.setProperty('groovy.ast', 'xml')
 
-            def clazz = new GroovyScriptEngine([temporaryFolder.root.toURL()] as URL[]).loadScriptByName('Script1.groovy')
+            def clazz = new GroovyScriptEngine([temporaryFolder.root.toURI().toURL()] as URL[]).loadScriptByName('Script1.groovy')
 
             assert new File(temporaryFolder.root, scriptFile.name + '.xml').exists()
             assert clazz != null
@@ -69,7 +69,7 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 
         System.clearProperty('groovy.ast')
 
-        def clazz = new GroovyScriptEngine([temporaryFolder.root.toURL()] as URL[]).loadScriptByName('Script1.groovy')
+        def clazz = new GroovyScriptEngine([temporaryFolder.root.toURI().toURL()] as URL[]).loadScriptByName('Script1.groovy')
         assert clazz != null
 
         assert !new File(temporaryFolder.root, scriptFile.name + '.xml').exists()
