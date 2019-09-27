@@ -23,6 +23,15 @@ import groovy.transform.CompileStatic
 import jline.Terminal
 import jline.WindowsTerminal
 import jline.console.history.FileHistory
+import org.apache.groovy.groovysh.commands.LoadCommand
+import org.apache.groovy.groovysh.commands.RecordCommand
+import org.apache.groovy.groovysh.util.CurlyCountingGroovyLexer
+import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
+import org.apache.groovy.groovysh.util.PackageHelper
+import org.apache.groovy.groovysh.util.PackageHelperImpl
+import org.apache.groovy.groovysh.util.ScriptVariableAnalyzer
+import org.apache.groovy.groovysh.util.XmlCommandRegistrar
+import org.apache.groovy.parser.antlr4.Antlr4PluginFactory
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -30,17 +39,9 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.Message
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
-import org.apache.groovy.groovysh.commands.LoadCommand
-import org.apache.groovy.groovysh.commands.RecordCommand
-import org.apache.groovy.groovysh.util.CurlyCountingGroovyLexer
-import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.apache.groovy.groovysh.util.PackageHelper
-import org.apache.groovy.groovysh.util.PackageHelperImpl
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.apache.groovy.groovysh.util.ScriptVariableAnalyzer
-import org.apache.groovy.groovysh.util.XmlCommandRegistrar
 import org.fusesource.jansi.AnsiRenderer
 
 import java.util.regex.Pattern
@@ -93,15 +94,16 @@ class Groovysh extends Shell {
     String evictedLine  // remembers the command which will get evicted if history is full
 
     PackageHelper packageHelper
+    private CompilerConfiguration configuration
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
-        this(classLoader, binding, io, registrar, null)
+        this(classLoader, binding, io, registrar, CompilerConfiguration.DEFAULT)
     }
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration) {
-       this(classLoader, binding, io, registrar, configuration,  new Interpreter(classLoader, binding, configuration))
+        this(classLoader, binding, io, registrar, configuration, new Interpreter(classLoader, binding, configuration))
     }
-    
+
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration, Interpreter interpreter) {
         super(io)
         assert classLoader
@@ -111,10 +113,11 @@ class Groovysh extends Shell {
         interp = interpreter
         actualRegistrar.call(this)
         this.packageHelper = new PackageHelperImpl(classLoader)
+        this.configuration = configuration
     }
 
     private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
-        return {Groovysh shell ->
+        return { Groovysh shell ->
             URL xmlCommandResource = getClass().getResource('commands.xml')
             if (xmlCommandResource != null) {
                 def r = new XmlCommandRegistrar(shell, classLoader)
@@ -198,10 +201,10 @@ class Groovysh extends Shell {
 
                 if (!Boolean.valueOf(getPreference(INTERPRETER_MODE_PREFERENCE_KEY, 'false')) || isTypeOrMethodDeclaration(current)) {
                     // Evaluate the current buffer w/imports and dummy statement
-                    List buff = [importsSpec] + [ 'true' ] + current
+                    List buff = [importsSpec] + ['true'] + current
                     try {
                         setLastResult(result = interp.evaluate(buff))
-                    } catch(MultipleCompilationErrorsException t) {
+                    } catch (MultipleCompilationErrorsException t) {
                         // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
                         if (t.message.contains('Unexpected input:') || t.message.contains("Missing ')'")) {
                             // treat like INCOMPLETE case
@@ -214,7 +217,7 @@ class Groovysh extends Shell {
                     // Evaluate Buffer wrapped with code storing bounded vars
                     try {
                         result = evaluateWithStoredBoundVars(importsSpec, current)
-                    } catch(MultipleCompilationErrorsException t) {
+                    } catch (MultipleCompilationErrorsException t) {
                         // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
                         if (t.message.contains('Unexpected input:') || t.message.contains("Missing ')'")) {
                             // treat like INCOMPLETE case
@@ -258,6 +261,7 @@ class Groovysh extends Shell {
      * to simulate an interpreter mode, this method wraps the statements into a try/finally block that
      * stores bound variables like unbound variables
      */
+
     private Object evaluateWithStoredBoundVars(String importsSpec, final List<String> current) {
         Object result
         String variableBlocks = null
@@ -292,7 +296,6 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     }
 
 
-
     protected Object executeCommand(final String line) {
         return super.execute(line)
     }
@@ -311,7 +314,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     }
 
     String getImportStatements() {
-        return this.imports.collect({String it -> "import $it;"}).join('')
+        return this.imports.collect({ String it -> "import $it;" }).join('')
     }
 
     //
@@ -329,6 +332,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         The code will always assume you want the line number in the prompt.  To implement differently overhead the render
         prompt variable.
      */
+
     private String buildPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
 
@@ -338,7 +342,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
         def groovyshellEnv = System.getenv('GROOVYSH_PROMPT')
         if (groovyshellEnv) {
-            return  "@|bold ${groovyshellEnv}:|@${lineNum}@|bold >|@ "
+            return "@|bold ${groovyshellEnv}:|@${lineNum}@|bold >|@ "
         }
         return "@|bold groovy:|@${lineNum}@|bold >|@ "
 
@@ -355,27 +359,36 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             return ''
         }
         StringBuilder src = new StringBuilder()
-        for (String line: buffer) {
+        for (String line : buffer) {
             src.append(line).append('\n')
         }
 
-        // not sure whether the same Lexer instance could be reused.
-        def lexer = CurlyCountingGroovyLexer.createGroovyLexer(src.toString())
+        int curlyLevel
+        boolean antlr4ParserEnabled = configuration.getPluginFactory() instanceof Antlr4PluginFactory
+        if (antlr4ParserEnabled) {
+            def lexer = org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer.createGroovyLexer(src.toString())
+            curlyLevel = lexer.countCurlyLevel()
+        } else {
+            // not sure whether the same Lexer instance could be reused.
+            def lexer = CurlyCountingGroovyLexer.createGroovyLexer(src.toString())
 
-        // read all tokens
-        try {
-            while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {}
-        } catch (TokenStreamException e) {
-            // pass
+            // read all tokens
+            try {
+                while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {
+                }
+            } catch (TokenStreamException e) {
+                // pass
+            }
+            curlyLevel = lexer.getParenLevel()
         }
-        int parenIndent = (lexer.getParenLevel()) * indentSize
+        int parenIndent = curlyLevel * indentSize
 
         // dedent after closing brackets
         return ' ' * Math.max(parenIndent, 0)
     }
 
     public String renderPrompt() {
-        return prompt.render( buildPrompt() )
+        return prompt.render(buildPrompt())
     }
 
     /**
@@ -415,7 +428,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
                 // Disable the result hook for profile scripts
                 def previousHook = resultHook
-                resultHook = { result -> /* nothing */}
+                resultHook = { result -> /* nothing */ }
 
                 try {
                     command.load(file.toURI().toURL())
@@ -465,7 +478,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     // Hooks
     //
 
-    final Closure defaultResultHook = {Object result ->
+    final Closure defaultResultHook = { Object result ->
         boolean showLastResult = !io.quiet && (io.verbose || getPreference(SHOW_LAST_RESULT_PREFERENCE_KEY, 'false'))
         if (showLastResult) {
             // avoid String.valueOf here because it bypasses pretty-printing of Collections,
@@ -481,7 +494,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             throw new IllegalStateException('Result hook is not set')
         }
 
-        resultHook.call((Object)result)
+        resultHook.call((Object) result)
 
         interp.context['_'] = result
 
@@ -491,7 +504,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     final Closure defaultErrorHook = { Throwable cause ->
         assert cause != null
 
-        if (log.debug || ! (cause instanceof CompilationFailedException)) {
+        if (log.debug || !(cause instanceof CompilationFailedException)) {
             // For CompilationErrors, the Exception Class is usually not useful to the user
             io.err.println("@|bold,red ERROR|@ ${cause.getClass().name}:")
         }
@@ -518,8 +531,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             if (log.debug) {
                 // If we have debug enabled then skip the fancy bits below
                 log.debug(cause)
-            }
-            else {
+            } else {
                 boolean sanitize = getPreference(SANITIZE_PREFERENCE_KEY, 'false')
 
                 // Sanitize the stack trace unless we are in verbose mode, or the user has request otherwise
@@ -584,8 +596,8 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     }
 
     /**
-    * Run Interactive Shell with optional initial script and files to load
-    */
+     * Run Interactive Shell with optional initial script and files to load
+     */
     int run(final String evalString, final List<String> filenames) {
         List<String> startCommands = []
 
@@ -593,7 +605,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             startCommands.add(evalString)
         }
         if (filenames != null && filenames.size() > 0) {
-            startCommands.addAll(filenames.collect({String it -> "${LoadCommand.COMMAND_NAME} $it"}))
+            startCommands.addAll(filenames.collect({ String it -> "${LoadCommand.COMMAND_NAME} $it" }))
         }
         return run(startCommands.join('\n'))
     }

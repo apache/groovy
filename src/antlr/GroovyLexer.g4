@@ -143,20 +143,28 @@ options {
         }
     });
 
+    protected void enterParenCallback(String text) {}
+
+    protected void exitParenCallback(String text) {}
+
     private final Deque<Paren> parenStack = new ArrayDeque<>(32);
+
     private void enterParen() {
-        parenStack.push(new Paren(getText(), this.lastTokenType, getLine(), getCharPositionInLine()));
+        String text = getText();
+        enterParenCallback(text);
+        parenStack.push(new Paren(text, this.lastTokenType, getLine(), getCharPositionInLine()));
     }
+
     private void exitParen() {
         Paren paren = parenStack.peek();
         String text = getText();
-
         require(null != paren, "Too many '" + text + "'");
         require(text.equals(PAREN_MAP.get(paren.getText())),
                 "'" + paren.getText() + "'" + new PositionInfo(paren.getLine(), paren.getColumn()) + " can not match '" + text + "'", -1);
-
+        exitParenCallback(text);
         parenStack.pop();
     }
+
     private boolean isInsideParens() {
         Paren paren = parenStack.peek();
 
