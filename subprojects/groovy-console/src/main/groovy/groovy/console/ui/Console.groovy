@@ -1041,7 +1041,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void inspectTokens(EventObject evt = null) {
         def content = inputArea.getText()
-        def lf = (CompilerConfiguration.DEFAULT.pluginFactory instanceof org.codehaus.groovy.antlr.AntlrParserPluginFactory
+        def lf = (config.pluginFactory instanceof org.codehaus.groovy.antlr.AntlrParserPluginFactory
                 ? LexerFrame.groovyScriptFactory(content) : new LexerFrame(GroovyLangLexer, org.apache.groovy.parser.antlr4.GroovyLexer, new StringReader(content)))
 
         lf.visible = true
