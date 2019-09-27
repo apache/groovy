@@ -584,7 +584,7 @@ public class GenericsUtils {
 
         try {
             // for parsing just class names old and new parser should be the same but let's stick to the correct parser any way
-            boolean oldParserEnabled = CompilerConfiguration.DEFAULT.getPluginFactory() instanceof AntlrParserPluginFactory;
+            boolean oldParserEnabled = compilationUnit.getConfiguration().getPluginFactory() instanceof AntlrParserPluginFactory;
             ClassNode parsedNode = oldParserEnabled ?
                     Antlr2Utils.parse("DummyNode<" + option + ">") :
                     Antlr4Utils.parse("DummyNode<" + option + ">", compilationUnit.getConfiguration());
