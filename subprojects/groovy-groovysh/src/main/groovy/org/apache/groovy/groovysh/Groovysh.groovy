@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.groovysh
 
-import antlr.TokenStreamException
 import groovy.transform.CompileStatic
 import jline.Terminal
 import jline.WindowsTerminal
@@ -376,7 +375,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             try {
                 while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {
                 }
-            } catch (TokenStreamException e) {
+            } catch (Exception ignore) { // TokenStreamException for antlr2
                 // pass
             }
             curlyLevel = lexer.getParenLevel()
