@@ -21,8 +21,8 @@ package org.apache.groovy.groovysh
 import groovy.mock.interceptor.MockFor
 import groovy.test.GroovyTestCase
 import org.codehaus.groovy.tools.shell.IO
-import org.apache.groovy.groovysh.completion.IdentifierCompleter
-import org.apache.groovy.groovysh.completion.ReflectionCompleter
+import org.apache.groovy.groovysh.completion.antlr4.IdentifierCompleter
+import org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter
 import org.apache.groovy.groovysh.util.PackageHelper
 import org.apache.groovy.groovysh.util.PackageHelperImpl
 

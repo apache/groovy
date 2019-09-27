@@ -37,17 +37,13 @@ class Interpreter implements Evaluator
     private final GroovyShell shell
 
     Interpreter(final ClassLoader classLoader, final Binding binding) {
-        this(classLoader, binding, null)
+        this(classLoader, binding, CompilerConfiguration.DEFAULT)
     }
 
     Interpreter(final ClassLoader classLoader, final Binding binding, CompilerConfiguration configuration) {
         assert classLoader
         assert binding
-        if (configuration != null) {
-            shell = new GroovyShell(classLoader, binding, configuration)
-        } else {
-            shell = new GroovyShell(classLoader, binding)
-        }
+        shell = new GroovyShell(classLoader, binding, configuration)
     }
 
     Binding getContext() {

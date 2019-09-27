@@ -19,43 +19,44 @@
 package org.apache.groovy.groovysh.util
 
 import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer
 
 /**
- * Unit tests for the {@link CurlyCountingGroovyLexer} class.
+ * Unit tests for the {@link org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer} class.
  */
 class CurlyCountingGroovyLexerTest extends GroovyTestCase {
-   void testLexerEmpty() {
-       CurlyCountingGroovyLexer it = CurlyCountingGroovyLexer.createGroovyLexer('')
-       assert 0 == it.parenLevel
-       assert [''] == it.toList()*.text
-       assert 0 == it.parenLevel
-   }
+    void testLexerEmpty() {
+        CurlyCountingGroovyLexer it = CurlyCountingGroovyLexer.createGroovyLexer('')
+        assert 0 == it.curlyLevel
+        assert 0 == it.countCurlyLevel()
+        assert 0 == it.curlyLevel
+    }
 
     void testLexerText() {
         CurlyCountingGroovyLexer it = CurlyCountingGroovyLexer.createGroovyLexer('foo bar baz')
-        assert 0 == it.parenLevel
-        assert ['foo', 'bar', 'baz', ''] == it.toList()*.text
-        assert 0 == it.parenLevel
+        assert 0 == it.curlyLevel
+        assert 0 == it.countCurlyLevel()
+        assert 0 == it.curlyLevel
     }
 
     void testLexerCurly() {
         CurlyCountingGroovyLexer it = CurlyCountingGroovyLexer.createGroovyLexer('Foo{')
-        assert 0 == it.parenLevel
-        assert ['Foo', '{', ''] == it.toList()*.text
-        assert 1 == it.parenLevel
+        assert 0 == it.curlyLevel
+        assert 1 == it.countCurlyLevel()
+        assert 1 == it.curlyLevel
     }
 
     void testLexerCurlyMore() {
         CurlyCountingGroovyLexer it = CurlyCountingGroovyLexer.createGroovyLexer('Foo{Baz{Bar{')
-        assert 0 == it.parenLevel
-        assert ['Foo', '{', 'Baz', '{', 'Bar', '{', ''] == it.toList()*.text
-        assert 3 == it.parenLevel
+        assert 0 == it.curlyLevel
+        assert 3 == it.countCurlyLevel()
+        assert 3 == it.curlyLevel
     }
 
     void testLexerCurlyMany() {
         CurlyCountingGroovyLexer it = CurlyCountingGroovyLexer.createGroovyLexer('Foo{Bar{}}{')
-        assert 0 == it.parenLevel
-        assert ['Foo', '{', 'Bar', '{', '}', '}', '{',''] == it.toList()*.text
-        assert 1 == it.parenLevel
+        assert 0 == it.curlyLevel
+        assert 1 == it.countCurlyLevel()
+        assert 1 == it.curlyLevel
     }
 }

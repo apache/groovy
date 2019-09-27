@@ -32,7 +32,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.apache.groovy.groovysh.commands.LoadCommand
 import org.apache.groovy.groovysh.commands.RecordCommand
-import org.apache.groovy.groovysh.util.CurlyCountingGroovyLexer
+import org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer
 import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -54,7 +54,6 @@ import java.util.regex.Pattern
  * See {@link XmlCommandRegistrar}
  */
 class Groovysh extends Shell {
-
 
     private static final MessageSource messages = new MessageSource(Groovysh)
 
@@ -95,7 +94,7 @@ class Groovysh extends Shell {
     PackageHelper packageHelper
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
-        this(classLoader, binding, io, registrar, null)
+        this(classLoader, binding, io, registrar, CompilerConfiguration.DEFAULT)
     }
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar, CompilerConfiguration configuration) {
@@ -365,13 +364,13 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         // read all tokens
         try {
             while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {}
-        } catch (TokenStreamException e) {
+        } catch (TokenStreamException ignore) {
             // pass
         }
-        int parenIndent = (lexer.getParenLevel()) * indentSize
+        int curlyIndent = (lexer.getCurlyLevel()) * indentSize
 
         // dedent after closing brackets
-        return ' ' * Math.max(parenIndent, 0)
+        return ' ' * Math.max(curlyIndent, 0)
     }
 
     public String renderPrompt() {

@@ -20,6 +20,8 @@ package org.apache.groovy.groovysh.completion
 
 import org.apache.groovy.groovysh.CompleterTestSupport
 import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.completion.antlr4.VariableSyntaxCompleter
+
 import static org.apache.groovy.groovysh.completion.TokenUtilTest.tokenList
 
 class VariableCompleterTest extends CompleterTestSupport {

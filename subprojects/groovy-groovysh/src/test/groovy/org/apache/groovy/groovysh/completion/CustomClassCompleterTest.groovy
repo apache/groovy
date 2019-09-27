@@ -20,6 +20,7 @@ package org.apache.groovy.groovysh.completion
 
 import org.apache.groovy.groovysh.CompleterTestSupport
 import org.apache.groovy.groovysh.Groovysh
+import org.apache.groovy.groovysh.completion.antlr4.CustomClassSyntaxCompleter
 
 import static org.apache.groovy.groovysh.completion.TokenUtilTest.tokenList
 

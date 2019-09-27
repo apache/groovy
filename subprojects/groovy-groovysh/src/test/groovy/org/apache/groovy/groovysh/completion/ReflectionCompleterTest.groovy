@@ -19,6 +19,7 @@
 package org.apache.groovy.groovysh.completion
 
 import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter
 import org.codehaus.groovy.antlr.parser.GroovyLexer
 import org.apache.groovy.groovysh.Interpreter
 
@@ -228,61 +229,3 @@ class ReflectionCompleterTest extends GroovyTestCase {
 }
 
 
-class InvokerParsingTest extends GroovyTestCase {
-
-    void testTokenListToEvalString() {
-        assert '' == ReflectionCompleter.tokenListToEvalString(tokenList(''))
-        assert '1' == ReflectionCompleter.tokenListToEvalString(tokenList('1'))
-        assert '1.' == ReflectionCompleter.tokenListToEvalString(tokenList('1.'))
-        assert 'foo' == ReflectionCompleter.tokenListToEvalString(tokenList('foo'))
-        assert '\'foo\'' == ReflectionCompleter.tokenListToEvalString(tokenList('\'foo\''))
-    }
-
-    void testGetInvokerTokens() {
-        // must make sure no token list is returned that could be evaluated with side effects.
-        assert null == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('foo')))
-        assert 'bar.foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('bar.foo')))
-        assert 'bar.&foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('bar.&foo')))
-        // literal (simple join of token text forgets hyphens)
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('"foo"')))
-        assert '1' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('1')))
-        // operator
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('1+"foo"')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('bar == foo')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('bar = foo')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('1+foo')))
-        // begin
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList(';foo')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('(foo')))
-        assert '[foo[][2]].bar' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('[[foo[][2]].bar')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('${foo')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('"$foo')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('[1,foo')))
-        assert 'foo' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('[1: foo')))
-        // Collections
-        assert '[1+2]' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('[1+2]')))
-        assert '[1..2]' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('[1..2]')))
-        assert '[1,2]' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('[1, 2]')))
-        assert '[1:2]' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('[1: 2]')))
-        // allowed Parens
-        assert '((Foo)foo).' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('((Foo) foo).')))
-        assert '((1+2>4)==(a&&b)).' == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('((1 + 2 > 4) == (a && b)).')))
-        // not allowed
-        assert null == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('foo()')))
-        assert null == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('foo each')))
-        assert null == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('New Foo().')))
-        assert null == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('foo.each bar')))
-        assert null == tokensString(ReflectionCompleter.getInvokerTokens(tokenList('foo++')))
-    }
-
-    void testGetFieldnameForAccessor() {
-        assert 'foo' == ReflectionCompleter.getFieldnameForAccessor('getFoo', 0)
-        assert 'foo' == ReflectionCompleter.getFieldnameForAccessor('setFoo', 1)
-        assert 'foo' == ReflectionCompleter.getFieldnameForAccessor('isFoo', 0)
-
-        assert null == ReflectionCompleter.getFieldnameForAccessor('getFoo', 1)
-        assert null == ReflectionCompleter.getFieldnameForAccessor('setFoo', 0)
-        assert null == ReflectionCompleter.getFieldnameForAccessor('isFoo', 1)
-    }
-}

@@ -20,7 +20,6 @@ package org.apache.groovy.groovysh.completion.antlr4
 
 import org.antlr.v4.runtime.Token
 import org.apache.groovy.groovysh.Groovysh
-import org.apache.groovy.groovysh.completion.ReflectionCompleter
 import org.codehaus.groovy.control.ResolveVisitor
 
 /**

@@ -19,6 +19,7 @@
 package org.apache.groovy.groovysh.completion
 
 import groovy.test.GroovyTestCase
+import org.apache.groovy.groovysh.completion.antlr4.KeywordSyntaxCompleter
 
 import static org.apache.groovy.groovysh.completion.TokenUtilTest.tokenList
 

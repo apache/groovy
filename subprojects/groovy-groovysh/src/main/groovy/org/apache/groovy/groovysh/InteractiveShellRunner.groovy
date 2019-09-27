@@ -24,11 +24,6 @@ import jline.console.completer.CandidateListCompletionHandler
 import jline.console.completer.CompletionHandler
 import jline.console.history.FileHistory
 import org.apache.groovy.groovysh.completion.FileNameCompleter
-//import org.apache.groovy.groovysh.completion.GroovySyntaxCompleter
-//import org.apache.groovy.groovysh.completion.ImportsSyntaxCompleter
-//import org.apache.groovy.groovysh.completion.KeywordSyntaxCompleter
-//import org.apache.groovy.groovysh.completion.ReflectionCompleter
-//import org.apache.groovy.groovysh.completion.VariableSyntaxCompleter
 import org.apache.groovy.groovysh.util.WrappedInputStream
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
@@ -72,34 +67,22 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
 
         def antlr4 = Boolean.parseBoolean(getSystemPropertySafe("groovy.antlr4", "true"))
 
-        def reflectionCompleter = antlr4 ?
-                new org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter(shell) :
-                new org.apache.groovy.groovysh.completion.ReflectionCompleter(shell)
+        def reflectionCompleter = new org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter(shell)
 
-        def classnameCompleter = antlr4 ?
-                new org.apache.groovy.groovysh.completion.antlr4.CustomClassSyntaxCompleter(shell) :
-                new org.apache.groovy.groovysh.completion.CustomClassSyntaxCompleter(shell)
+        def classnameCompleter = new org.apache.groovy.groovysh.completion.antlr4.CustomClassSyntaxCompleter(shell)
 
-        def identifierCompleters = antlr4 ? [
+        def identifierCompleters = [
                 new org.apache.groovy.groovysh.completion.antlr4.KeywordSyntaxCompleter(),
                 new org.apache.groovy.groovysh.completion.antlr4.VariableSyntaxCompleter(shell),
                 classnameCompleter,
                 new org.apache.groovy.groovysh.completion.antlr4.ImportsSyntaxCompleter(shell),
-        ] : [
-                new org.apache.groovy.groovysh.completion.KeywordSyntaxCompleter(),
-                new org.apache.groovy.groovysh.completion.VariableSyntaxCompleter(shell),
-                classnameCompleter,
-                new org.apache.groovy.groovysh.completion.ImportsSyntaxCompleter(shell),
         ]
 
         def filenameCompleter = new FileNameCompleter(false)
 
         def completerArgs = [shell, reflectionCompleter, classnameCompleter, identifierCompleters, filenameCompleter]
 
-        reader.addCompleter(antlr4 ?
-                new org.apache.groovy.groovysh.completion.antlr4.GroovySyntaxCompleter(*completerArgs) :
-                new org.apache.groovy.groovysh.completion.GroovySyntaxCompleter(*completerArgs)
-        )
+        reader.addCompleter(new org.apache.groovy.groovysh.completion.antlr4.GroovySyntaxCompleter(*completerArgs))
     }
 
     @Override

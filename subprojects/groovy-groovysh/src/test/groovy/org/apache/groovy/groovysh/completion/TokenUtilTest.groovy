@@ -19,8 +19,8 @@
 package org.apache.groovy.groovysh.completion
 
 import groovy.test.GroovyTestCase
-import org.apache.groovy.groovysh.util.CurlyCountingGroovyLexer
-import org.codehaus.groovy.antlr.GroovySourceToken
+import org.antlr.v4.runtime.Token
+import org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer
 
 /**
  * Defines method tokenList for other Unit tests and tests it
@@ -30,7 +30,7 @@ class TokenUtilTest extends GroovyTestCase {
     /**
      * return token list without EOF
      */
-    static List<GroovySourceToken> tokenList(String src) {
+    static List<Token> tokenList(String src) {
         CurlyCountingGroovyLexer lexer = CurlyCountingGroovyLexer.createGroovyLexer(src)
         def result = lexer.toList()
         if (result && result.size() > 1) {
@@ -47,7 +47,7 @@ class TokenUtilTest extends GroovyTestCase {
         assert ['1', '..', '2'] == tokenList('1..2')*.text
     }
 
-    static tokensString(List<GroovySourceToken> tokens) {
+    static String tokensString(List<Token> tokens) {
         if (tokens == null || tokens.size() == 0) {
             return null
         }

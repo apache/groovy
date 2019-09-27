@@ -248,11 +248,11 @@ class ReflectionCompleter {
      * expression cannot be detected. This discards Expressions that could easily have side effects or be long
      * in evaluation. However it assumes that operators can be evaluated without side-effect or long running
      * operation. Users who use operators for which this does not hold should not use tab completion.
-     * @param groovySourceTokens
+     * @param tokens
      * @return
      */
-    static List<Token> getInvokerTokens(final List<Token> groovySourceTokens) {
-        int validIndex = groovySourceTokens.size()
+    static List<Token> getInvokerTokens(final List<Token> tokens) {
+        int validIndex = tokens.size()
         if (validIndex == 0) {
             return []
         }
@@ -262,7 +262,7 @@ class ReflectionCompleter {
         Stack<Integer> expectedOpeners = new Stack<Integer>()
         Token lastToken = null
         outerloop:
-        for (Token loopToken in groovySourceTokens.reverse()) {
+        for (Token loopToken in tokens.reverse()) {
             switch (loopToken.type) {
             // a combination of any of these can be evaluated without side effects
             // this just avoids any parentheses,
@@ -376,7 +376,7 @@ class ReflectionCompleter {
             validIndex--
             lastToken = loopToken
         } // end for
-        return groovySourceTokens[(validIndex)..-1]
+        return tokens[(validIndex)..-1]
     }
 
     static String tokenListToEvalString(final List<Token> groovySourceTokens) {

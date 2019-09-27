@@ -27,7 +27,7 @@ import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Evaluator
 import org.apache.groovy.groovysh.Groovysh
 import org.apache.groovy.groovysh.Interpreter
-import org.apache.groovy.groovysh.completion.ReflectionCompleter
+import org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter
 import org.apache.groovy.groovysh.completion.ReflectionCompletionCandidate
 import org.apache.groovy.groovysh.completion.StricterArgumentCompleter
 import org.apache.groovy.groovysh.util.PackageHelper
