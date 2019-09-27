@@ -18,9 +18,8 @@
  */
 package org.apache.groovy.groovysh
 
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
+import org.apache.groovy.groovysh.antlr4.RelaxedParser
 import org.codehaus.groovy.control.CompilationFailedException
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
@@ -48,8 +47,7 @@ class Parser {
 
         switch (flavor) {
             case Preferences.PARSER_RELAXED:
-                boolean oldParserEnabled = CompilerConfiguration.DEFAULT.getPluginFactory() instanceof AntlrParserPluginFactory;
-                delegate = oldParserEnabled ? new RelaxedParser() : new org.apache.groovy.groovysh.antlr4.RelaxedParser()
+                delegate = new RelaxedParser()
                 break
 
             case Preferences.PARSER_RIGID:
