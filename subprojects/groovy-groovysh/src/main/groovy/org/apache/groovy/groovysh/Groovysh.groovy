@@ -92,6 +92,7 @@ class Groovysh extends Shell {
     String evictedLine  // remembers the command which will get evicted if history is full
 
     PackageHelper packageHelper
+    private CompilerConfiguration configuration
 
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
         this(classLoader, binding, io, registrar, CompilerConfiguration.DEFAULT)
@@ -110,6 +111,7 @@ class Groovysh extends Shell {
         interp = interpreter
         actualRegistrar.call(this)
         this.packageHelper = new PackageHelperImpl(classLoader)
+        this.configuration = configuration
     }
 
     private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
