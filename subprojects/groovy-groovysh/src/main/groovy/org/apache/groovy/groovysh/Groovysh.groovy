@@ -18,11 +18,19 @@
  */
 package org.apache.groovy.groovysh
 
-import antlr.TokenStreamException
+
 import groovy.transform.CompileStatic
 import jline.Terminal
 import jline.WindowsTerminal
 import jline.console.history.FileHistory
+import org.apache.groovy.groovysh.commands.LoadCommand
+import org.apache.groovy.groovysh.commands.RecordCommand
+import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
+import org.apache.groovy.groovysh.util.PackageHelper
+import org.apache.groovy.groovysh.util.PackageHelperImpl
+import org.apache.groovy.groovysh.util.ScriptVariableAnalyzer
+import org.apache.groovy.groovysh.util.XmlCommandRegistrar
+import org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -30,17 +38,9 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.Message
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
-import org.apache.groovy.groovysh.commands.LoadCommand
-import org.apache.groovy.groovysh.commands.RecordCommand
-import org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer
-import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.apache.groovy.groovysh.util.PackageHelper
-import org.apache.groovy.groovysh.util.PackageHelperImpl
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.apache.groovy.groovysh.util.ScriptVariableAnalyzer
-import org.apache.groovy.groovysh.util.XmlCommandRegistrar
 import org.fusesource.jansi.AnsiRenderer
 
 import java.util.regex.Pattern
@@ -360,16 +360,8 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             src.append(line).append('\n')
         }
 
-        // not sure whether the same Lexer instance could be reused.
         def lexer = CurlyCountingGroovyLexer.createGroovyLexer(src.toString())
-
-        // read all tokens
-        try {
-            while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {}
-        } catch (TokenStreamException ignore) {
-            // pass
-        }
-        int curlyIndent = (lexer.getCurlyLevel()) * indentSize
+        int curlyIndent = lexer.countCurlyLevel() * indentSize
 
         // dedent after closing brackets
         return ' ' * Math.max(curlyIndent, 0)
