@@ -30,6 +30,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
 /**
  * A relaxed parser, which tends to allow more, but won't really catch valid syntax errors.
  */
+@Deprecated
 final class RelaxedParser implements Parsing {
     private final Logger log = Logger.create(this.class)
 
