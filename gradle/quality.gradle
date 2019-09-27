@@ -176,6 +176,7 @@ subprojects { sp ->
 }
 
 rat {
+    inputDir = projectDir.absolutePath
     excludes = [ 'subprojects/**', // covered above
                  'benchmark/**', // benchmarking files excluded from src zip
                  'config/**',
@@ -185,7 +186,7 @@ rat {
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
                  'gradle.properties',  // artifactory release plugin removes header when bumping version
                  '**/target/**', '**/build/**', 'licenses/**', 'notices/**',
-                 'out/**', '*.ipr',  '**/*.iml', '*.iws', // Intellij files
+                 'out/**', '*.ipr',  '**/*.iml', '*.iws', '.idea/**', // Intellij files
                  '**/style.css', // MIT license as per NOTICE/LICENSE files
                  '**/jquery-2.1.1.min.js', // MIT license as per NOTICE/LICENSE files
                  '.classpath', '.project', '.settings/**', 'bin/**', // Eclipse files
