@@ -22,6 +22,14 @@ import groovy.transform.CompileStatic
 import jline.Terminal
 import jline.WindowsTerminal
 import jline.console.history.FileHistory
+import org.apache.groovy.groovysh.commands.LoadCommand
+import org.apache.groovy.groovysh.commands.RecordCommand
+import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
+import org.apache.groovy.groovysh.util.PackageHelper
+import org.apache.groovy.groovysh.util.PackageHelperImpl
+import org.apache.groovy.groovysh.util.ScriptVariableAnalyzer
+import org.apache.groovy.groovysh.util.XmlCommandRegistrar
+import org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -29,17 +37,9 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.Message
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
-import org.apache.groovy.groovysh.commands.LoadCommand
-import org.apache.groovy.groovysh.commands.RecordCommand
-import org.apache.groovy.groovysh.util.antlr4.CurlyCountingGroovyLexer
-import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.apache.groovy.groovysh.util.PackageHelper
-import org.apache.groovy.groovysh.util.PackageHelperImpl
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.apache.groovy.groovysh.util.ScriptVariableAnalyzer
-import org.apache.groovy.groovysh.util.XmlCommandRegistrar
 import org.fusesource.jansi.AnsiRenderer
 
 import java.util.regex.Pattern
@@ -275,7 +275,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             })
         }
         // Evaluate the current buffer w/imports and dummy statement
-        List<String> buff;
+        List<String> buff
         if (variableBlocks) {
             buff = [importsSpec] + ['try {', 'true'] + current + ['} finally {' + variableBlocks + '}']
         } else {
@@ -359,22 +359,14 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             src.append(line).append('\n')
         }
 
-        // not sure whether the same Lexer instance could be reused.
         def lexer = CurlyCountingGroovyLexer.createGroovyLexer(src.toString())
-
-        // read all tokens
-        try {
-            while (lexer.nextToken().getType() != CurlyCountingGroovyLexer.EOF) {}
-        } catch (Exception ignore) { // TokenStreamException for antlr2
-            // pass
-        }
-        int curlyIndent = (lexer.getCurlyLevel()) * indentSize
+        int curlyIndent = lexer.countCurlyLevel() * indentSize
 
         // dedent after closing brackets
         return ' ' * Math.max(curlyIndent, 0)
     }
 
-    public String renderPrompt() {
+    String renderPrompt() {
         return prompt.render( buildPrompt() )
     }
 
@@ -497,8 +489,8 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
 
         if (cause instanceof MultipleCompilationErrorsException) {
-            Writer data = new org.apache.groovy.io.StringBuilderWriter();
-            PrintWriter writer = new PrintWriter(data);
+            Writer data = new org.apache.groovy.io.StringBuilderWriter()
+            PrintWriter writer = new PrintWriter(data)
             ErrorCollector collector = ((MultipleCompilationErrorsException) cause).getErrorCollector()
             Iterator<Message> msgIterator = collector.getErrors().iterator()
             while (msgIterator.hasNext()) {
@@ -656,7 +648,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
      * maybe displays log information and a welcome message
      * @param term
      */
-    public void displayWelcomeBanner(InteractiveShellRunner runner) {
+    void displayWelcomeBanner(InteractiveShellRunner runner) {
         if (!log.debug && io.quiet) {
             // nothing to do here
             return
