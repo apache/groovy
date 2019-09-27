@@ -18,15 +18,9 @@
  */
 package org.apache.groovy.groovysh
 
-import antlr.RecognitionException
-import antlr.TokenStreamException
-import antlr.collections.AST
-import org.codehaus.groovy.antlr.SourceBuffer
-import org.codehaus.groovy.antlr.UnicodeEscapingReader
-import org.codehaus.groovy.antlr.parser.GroovyLexer
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.control.CompilationFailedException
-import org.codehaus.groovy.control.ParserPluginFactory
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
@@ -40,8 +34,7 @@ interface Parsing {
 /**
  * Provides a facade over the parser to recognize valid Groovy syntax.
  */
-class Parser
-{
+class Parser {
     static final String NEWLINE = System.getProperty('line.separator')
 
     private static final Logger log = Logger.create(Parser)
@@ -55,7 +48,8 @@ class Parser
 
         switch (flavor) {
             case Preferences.PARSER_RELAXED:
-                delegate = new RelaxedParser()
+                boolean oldParserEnabled = CompilerConfiguration.DEFAULT.getPluginFactory() instanceof AntlrParserPluginFactory;
+                delegate = oldParserEnabled ? new RelaxedParser() : new org.apache.groovy.groovysh.antlr4.RelaxedParser()
                 break
 
             case Preferences.PARSER_RIGID:
@@ -74,68 +68,11 @@ class Parser
     }
 }
 
-/**
- * A relaxed parser, which tends to allow more, but won't really catch valid syntax errors.
- */
-final class RelaxedParser implements Parsing
-{
-    private final Logger log = Logger.create(this.class)
-
-    private SourceBuffer sourceBuffer
-
-    private String[] tokenNames
-
-    @Override
-    ParseStatus parse(final Collection<String> buffer) {
-        assert buffer
-
-        sourceBuffer = new SourceBuffer()
-
-        def source = buffer.join(Parser.NEWLINE)
-
-        log.debug("Parsing: $source")
-
-        try {
-            doParse(new UnicodeEscapingReader(new StringReader(source), sourceBuffer))
-
-            log.debug('Parse complete')
-
-            return new ParseStatus(ParseCode.COMPLETE)
-        }
-        catch (e) {
-            switch (e.getClass()) {
-                case TokenStreamException:
-                case RecognitionException:
-                    log.debug("Parse incomplete: $e (${e.getClass().name})")
-
-                    return new ParseStatus(ParseCode.INCOMPLETE)
-
-                default:
-                    log.debug("Parse error: $e (${e.getClass().name})")
-
-                    return new ParseStatus(e)
-            }
-        }
-    }
-
-    protected AST doParse(final UnicodeEscapingReader reader) throws Exception {
-        GroovyLexer lexer = new GroovyLexer(reader)
-        reader.setLexer(lexer)
-
-        def parser = GroovyRecognizer.make(lexer)
-        parser.setSourceBuffer(sourceBuffer)
-        tokenNames = parser.tokenNames
-
-        parser.compilationUnit()
-        return parser.AST
-    }
-}
 
 /**
  * A more rigid parser which catches more syntax errors, but also tends to barf on stuff that is really valid from time to time.
  */
-final class RigidParser implements Parsing
-{
+final class RigidParser implements Parsing {
     private static final Pattern ANNOTATION_PATTERN = Pattern.compile('^@[a-zA-Z_][a-zA-Z_0-9]*(.*)$')
     static final String SCRIPT_FILENAME = 'groovysh_parse'
 
@@ -217,7 +154,7 @@ final class RigidParser implements Parsing
         int parens = 0
         int brackets = 0
         for (ch in source) {
-            switch(ch) {
+            switch (ch) {
                 case '[': ++brackets; break;
                 case ']': --brackets; break;
                 case '(': ++parens; break;
@@ -237,8 +174,7 @@ final class RigidParser implements Parsing
 /**
  * Container for the parse code.
  */
-final class ParseCode
-{
+final class ParseCode {
     static final ParseCode COMPLETE = new ParseCode(0)
 
     static final ParseCode INCOMPLETE = new ParseCode(1)
@@ -260,8 +196,7 @@ final class ParseCode
 /**
  * Container for parse status details.
  */
-final class ParseStatus
-{
+final class ParseStatus {
     final ParseCode code
 
     final Throwable cause
