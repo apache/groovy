@@ -30,6 +30,7 @@ import static org.codehaus.groovy.control.ParserPluginFactory.antlr4
 final class Groovy9213 {
 
     @Test(timeout=15000L)
+    @Deprecated
     void testUnmatchedParenInLongScript2() {
         def config = new CompilerConfiguration()
         config.pluginFactory = antlr2()

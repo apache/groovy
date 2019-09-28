@@ -122,6 +122,7 @@ class MultiCatchTest extends GroovyTestCase {
     }
 
     // GROOVY-8238
+    @Deprecated
     void testMultipleCatchGroovyAndJavaExceptions() {
         def cc = new CompilerConfiguration(pluginFactory: ParserPluginFactory.antlr2())
         new GroovyShell(cc).evaluate '''

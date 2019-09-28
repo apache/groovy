@@ -48,6 +48,7 @@ final class Groovy9141 {
     }
 
     @Test
+    @Deprecated
     void testAbstractMethodWithBodyInScript_oldParser() {
         def shell = new GroovyShell(new CompilerConfiguration(pluginFactory: antlr2()))
 

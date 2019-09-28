@@ -25,6 +25,7 @@ import org.junit.Test
 import static org.codehaus.groovy.control.ParserPluginFactory.antlr2
 
 @CompileStatic
+@Deprecated
 final class Groovy9184 {
 
     @Test(timeout=1500L)
