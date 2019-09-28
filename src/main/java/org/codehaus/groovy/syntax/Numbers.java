@@ -32,14 +32,12 @@ public class Numbers {
     //---------------------------------------------------------------------------
     // LEXING SUPPORT
 
-
     /**
      * Returns true if the specified character is a base-10 digit.
      */
     public static boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
-
 
     /**
      * Returns true if the specific character is a base-8 digit.
@@ -48,14 +46,12 @@ public class Numbers {
         return c >= '0' && c <= '7';
     }
 
-
     /**
      * Returns true if the specified character is a base-16 digit.
      */
     public static boolean isHexDigit(char c) {
         return isDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
     }
-
 
     /**
      * Returns true if the specified character is a valid type specifier
@@ -87,10 +83,8 @@ public class Numbers {
         return false;
     }
 
-
     //---------------------------------------------------------------------------
     // PARSING SUPPORT
-
 
     private static final BigInteger MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);
     private static final BigInteger MIN_LONG = BigInteger.valueOf(Long.MIN_VALUE);
@@ -104,20 +98,102 @@ public class Numbers {
     private static final BigDecimal MAX_FLOAT = new BigDecimal(String.valueOf(Float.MAX_VALUE));
     private static final BigDecimal MIN_FLOAT = MAX_FLOAT.negate();
 
-
     /**
      * Builds a Number from the given integer descriptor.  Creates the narrowest
      * type possible, or a specific type, if specified.
      *
      * @param text literal text to parse
      * @return instantiated Number object
-     * @throws NumberFormatException if the number does not fit within the type
-     *                               requested by the type specifier suffix (invalid numbers don't make
-     *                               it here)
+     * @throws NumberFormatException if the number does not fit within the type requested by the type
+     *                               specifier suffix (invalid numbers don't make it here)
      */
-    @Deprecated
     public static Number parseInteger(String text) {
-        return parseInteger(null, text);
+        String text1 = text;
+        // remove place holder underscore before starting
+        text1 = text1.replace("_", "");
+
+        char c = ' ';
+        int length = text1.length();
+
+        //
+        // Strip off the sign, if present
+
+        boolean negative = false;
+        if ((c = text1.charAt(0)) == '-' || c == '+') {
+            negative = (c == '-');
+            text1 = text1.substring(1, length);
+            length -= 1;
+        }
+
+        //
+        // Determine radix (default is 10).
+
+        int radix = 10;
+        if (text1.charAt(0) == '0' && length > 1) {
+            c = text1.charAt(1);
+            if (c == 'X' || c == 'x') {
+                radix = 16;
+                text1 = text1.substring(2, length);
+                length -= 2;
+            } else if (c == 'B' || c == 'b') {
+                radix = 2;
+                text1 = text1.substring(2, length);
+                length -= 2;
+            } else {
+                radix = 8;
+            }
+        }
+
+        //
+        // Strip off any type specifier and convert it to lower
+        // case, if present.
+
+        char type = 'x';  // pick best fit
+        if (isNumericTypeSpecifier(text1.charAt(length - 1), false)) {
+            type = Character.toLowerCase(text1.charAt(length - 1));
+            text1 = text1.substring(0, length - 1);
+
+            length -= 1;
+        }
+
+        //
+        // Add the sign back, if necessary
+
+        if (negative) {
+            text1 = "-" + text1;
+        }
+
+        //
+        // Build the specified type or, if no type was specified, the
+        // smallest type in which the number will fit.
+
+        BigInteger value = new BigInteger(text1, radix);
+
+        switch (type) {
+            case 'i':
+                if (radix == 10 && (value.compareTo(MAX_INTEGER) > 0 || value.compareTo(MIN_INTEGER) < 0)) {
+                    throw new NumberFormatException("Number of value " + value + " does not fit in the range of int, but int was enforced.");
+                } else {
+                    return value.intValue();
+                }
+            case 'l':
+                if (radix == 10 && (value.compareTo(MAX_LONG) > 0 || value.compareTo(MIN_LONG) < 0)) {
+                    throw new NumberFormatException("Number of value " + value + " does not fit in the range of long, but long was enforced.");
+                } else {
+                    return value.longValue();
+                }
+            case 'g':
+                return value;
+            default:
+                // If not specified, we will return the narrowest possible
+                // of Integer, Long, and BigInteger.
+                if (value.compareTo(MAX_INTEGER) <= 0 && value.compareTo(MIN_INTEGER) >= 0) {
+                    return value.intValue();
+                } else if (value.compareTo(MAX_LONG) <= 0 && value.compareTo(MIN_LONG) >= 0) {
+                    return value.longValue();
+                }
+                return value;
+        }
     }
 
     /**
@@ -127,17 +203,16 @@ public class Numbers {
      * @param reportNode at node for error reporting in the parser
      * @param text       literal text to parse
      * @return instantiated Number object
-     * @throws NumberFormatException if the number does not fit within the type
-     *                               requested by the type specifier suffix (invalid numbers don't make
-     *                               it here)
+     * @throws NumberFormatException if the number does not fit within the type requested by the type
+     *                               specifier suffix (invalid numbers don't make it here)
      */
+    @Deprecated
     public static Number parseInteger(AST reportNode, String text) {
         // remove place holder underscore before starting
         text = text.replace("_", "");
 
         char c = ' ';
         int length = text.length();
-
 
         //
         // Strip off the sign, if present
@@ -148,7 +223,6 @@ public class Numbers {
             text = text.substring(1, length);
             length -= 1;
         }
-
 
         //
         // Determine radix (default is 10).
@@ -169,7 +243,6 @@ public class Numbers {
             }
         }
 
-
         //
         // Strip off any type specifier and convert it to lower
         // case, if present.
@@ -182,14 +255,12 @@ public class Numbers {
             length -= 1;
         }
 
-
         //
         // Add the sign back, if necessary
 
         if (negative) {
             text = "-" + text;
         }
-
 
         //
         // Build the specified type or, if no type was specified, the
@@ -224,7 +295,6 @@ public class Numbers {
         }
     }
 
-
     /**
      * Builds a Number from the given decimal descriptor.  Uses BigDecimal,
      * unless, Double or Float is requested.
@@ -238,7 +308,6 @@ public class Numbers {
     public static Number parseDecimal(String text) {
         text = text.replace("_", "");
         int length = text.length();
-
 
         //
         // Strip off any type specifier and convert it to lower

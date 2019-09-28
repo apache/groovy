@@ -2837,7 +2837,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
                         String integerLiteralText = constantExpression.getNodeMetaData(INTEGER_LITERAL_TEXT);
                         if (null != integerLiteralText) {
 
-                            ConstantExpression result = new ConstantExpression(Numbers.parseInteger(null, SUB_STR + integerLiteralText));
+                            ConstantExpression result = new ConstantExpression(Numbers.parseInteger(SUB_STR + integerLiteralText));
 
                             this.numberFormatError = null; // reset the numberFormatError
 
@@ -3471,7 +3471,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         Number num = null;
         try {
-            num = Numbers.parseInteger(null, text);
+            num = Numbers.parseInteger(text);
         } catch (Exception e) {
             this.numberFormatError = tuple(ctx, e);
         }
