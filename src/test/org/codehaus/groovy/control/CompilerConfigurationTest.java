@@ -129,7 +129,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         initJoint.put("somekey", "somevalue");
         init.setJointCompilationOptions(initJoint);
 
-        final ParserPluginFactory initPPF = ParserPluginFactory.newInstance();
+        final ParserPluginFactory initPPF = ParserPluginFactory.antlr4(init);
         init.setPluginFactory(initPPF);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
