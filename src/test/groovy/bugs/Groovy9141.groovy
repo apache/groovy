@@ -20,11 +20,9 @@ package groovy.bugs
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
-import static org.codehaus.groovy.control.ParserPluginFactory.antlr2
 
 @CompileStatic
 final class Groovy9141 {
@@ -45,17 +43,5 @@ final class Groovy9141 {
             abstract void meth() {}
         '''
         assert err =~ / You cannot define an abstract method\[meth\] in the script. Try removing the 'abstract' /
-    }
-
-    @Test
-    void testAbstractMethodWithBodyInScript_oldParser() {
-        def shell = new GroovyShell(new CompilerConfiguration(pluginFactory: antlr2()))
-
-        def err = shouldFail CompilationFailedException, {
-            shell.evaluate '''
-                abstract void meth() {}
-            '''
-        }
-        assert err =~ / Abstract methods do not define a body. /
     }
 }

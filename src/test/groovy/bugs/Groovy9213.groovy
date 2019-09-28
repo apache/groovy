@@ -23,23 +23,10 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Ignore
 import org.junit.Test
 
-import static org.codehaus.groovy.control.ParserPluginFactory.antlr2
 import static org.codehaus.groovy.control.ParserPluginFactory.antlr4
 
 @CompileStatic @Ignore
 final class Groovy9213 {
-
-    @Test(timeout=15000L)
-    void testUnmatchedParenInLongScript2() {
-        def config = new CompilerConfiguration()
-        config.pluginFactory = antlr2()
-
-        new GroovyShell(config).evaluate('''
-            int a = 0
-            (
-        ''' + ('a = 0\n' * 50))
-    }
-
     @Test(timeout=15000L)
     void testUnmatchedParenInLongScript4() {
         def config = new CompilerConfiguration()

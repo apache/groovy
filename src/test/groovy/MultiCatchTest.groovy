@@ -120,17 +120,4 @@ class MultiCatchTest extends GroovyTestCase {
         }
         assert catched
     }
-
-    // GROOVY-8238
-    void testMultipleCatchGroovyAndJavaExceptions() {
-        def cc = new CompilerConfiguration(pluginFactory: ParserPluginFactory.antlr2())
-        new GroovyShell(cc).evaluate '''
-            import groovy.cli.CliBuilderException
-            try {
-                throw new RuntimeException('boom')
-            } catch ( RuntimeException | CliBuilderException e ) {
-                assert e.message == 'boom'
-            }
-        '''
-    }
 }

@@ -394,7 +394,6 @@ public class CompilerConfiguration {
      * <blockquote>
      * <table summary="Groovy Compiler Configuration Properties">
      *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
-     *   <tr><td><code>groovy.antlr4</code></td><td>{@link #getPluginFactory}</td></tr>
      *   <tr><td><code>groovy.source.encoding</code> (defaulting to <code>file.encoding</code>)</td><td>{@link #getSourceEncoding}</td></tr>
      *   <tr><td><code>groovy.target.bytecode</code></td><td>{@link #getTargetBytecode}</td></tr>
      *   <tr><td><code>groovy.target.directory</code></td><td>{@link #getTargetDirectory}</td></tr>
@@ -892,8 +891,7 @@ public class CompilerConfiguration {
 
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
-            pluginFactory = !Boolean.parseBoolean(getSystemPropertySafe("groovy.antlr4", "true"))
-                                ? ParserPluginFactory.antlr2() : ParserPluginFactory.antlr4(this);
+            pluginFactory = ParserPluginFactory.antlr4(this);
         }
         return pluginFactory;
     }
