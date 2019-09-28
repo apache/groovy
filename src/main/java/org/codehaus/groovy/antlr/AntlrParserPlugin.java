@@ -136,6 +136,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 /**
  * A parser plugin which adapts the JSR Antlr Parser to the Groovy runtime
  */
+@Deprecated
 public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, GroovyTokenTypes {
 
     private static class AnonymousInnerClassCarrier extends Expression {
