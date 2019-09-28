@@ -23,8 +23,8 @@ import org.codehaus.groovy.control.ParserPluginFactory;
 
 /**
  */
+@Deprecated
 public class AntlrParserPluginFactory extends ParserPluginFactory {
-
     public ParserPlugin createParserPlugin() {
         return new AntlrParserPlugin();
     }
