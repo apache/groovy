@@ -29,8 +29,6 @@ import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
 
-import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe
-
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
  */
@@ -64,8 +62,6 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         // complete groovysh commands, display, import, ... as first word in line
         this.completer = new CommandsMultiCompleter()
         reader.addCompleter(this.completer)
-
-        def antlr4 = Boolean.parseBoolean(getSystemPropertySafe("groovy.antlr4", "true"))
 
         def reflectionCompleter = new org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter(shell)
 
