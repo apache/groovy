@@ -1097,32 +1097,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
     }
 
+    @Deprecated
     public static Expression getDefaultValueForPrimitive(ClassNode type) {
-        if (type == ClassHelper.int_TYPE) {
-            return new ConstantExpression(0);
-        }
-        if (type == ClassHelper.long_TYPE) {
-            return new ConstantExpression(0L);
-        }
-        if (type == ClassHelper.double_TYPE) {
-            return new ConstantExpression(0.0);
-        }
-        if (type == ClassHelper.float_TYPE) {
-            return new ConstantExpression(0.0F);
-        }
-        if (type == ClassHelper.boolean_TYPE) {
-            return ConstantExpression.FALSE;
-        }
-        if (type == ClassHelper.short_TYPE) {
-            return new ConstantExpression((short) 0);
-        }
-        if (type == ClassHelper.byte_TYPE) {
-            return new ConstantExpression((byte) 0);
-        }
-        if (type == ClassHelper.char_TYPE) {
-            return new ConstantExpression((char) 0);
-        }
-        return null;
+        return PrimitiveHelper.getDefaultValueForPrimitive(type);
     }
 
     protected ClassNode[] interfaces(AST node) {

@@ -44,7 +44,7 @@ import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
-import static org.codehaus.groovy.antlr.AntlrParserPlugin.getDefaultValueForPrimitive;
+import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.expr.ArgumentListExpression.EMPTY_ARGUMENTS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
