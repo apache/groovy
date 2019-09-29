@@ -38,21 +38,23 @@ The new parser(Parrot) can parse Groovy source code and construct the related AS
 
 === How to enable the new parser
 
-The new parser is enabled by default since Groovy 3.0.0
+The new parser is enabled by default since Groovy 3.0.0 but you can fall back to the old parser if needed. Note however, that the old parser is not available from Groovy 4 onwards.
 
-* In the gradle build the property useAntlr4 has to be set to enable the build of the parser and the execution of all tests with it. Command line example:
+* Although not recommended, you can set the `useAntlr4` Gradle build property to false to disable the build of the new parser and the execution of all tests with it. Command line example:
 ```
-./gradlew -PuseAntlr4=true bootstrapJar
+./gradlew -PuseAntlr4=false bootstrapJar
 ```
-* To enable the new parser automatically at runtime the system property groovy.antlr4 has to be set. Command line example:
+* To disable the new parser at runtime the system property `groovy.antlr4` can be set to `false`. Command line example:
 ```
-export JAVA_OPTS="-Dgroovy.antlr4=true"
+export JAVA_OPTS="-Dgroovy.antlr4=false"
 groovy foo.groovy
 ```
-* This system property also controls groovyc and has to be used in case it is used outside of this build, for example with:
+* This system property is also recognized by `groovyc`. It can be set for example in a gradle build as follows:
 ```
-groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=true"]
+groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=false"]
 ```
+* The old parser can also be set via compiler configuration by setting the
+`pluginFactory` property to `ParserPluginFactory.antlr2()`.
 
 === JVM system properties to control parsing
 
