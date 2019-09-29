@@ -36,24 +36,6 @@ The new parser(Parrot) can parse Groovy source code and construct the related AS
 * non-static inner class instantiation, e.g. `outer.new Inner()`
 * runtime groovydoc, i.e. groovydoc with `@Groovydoc`; groovydoc attached to AST node as metadata
 
-=== How to enable the new parser
-
-The new parser is enabled by default since Groovy 3.0.0
-
-* In the gradle build the property useAntlr4 has to be set to enable the build of the parser and the execution of all tests with it. Command line example:
-```
-./gradlew -PuseAntlr4=true bootstrapJar
-```
-* To enable the new parser automatically at runtime the system property groovy.antlr4 has to be set. Command line example:
-```
-export JAVA_OPTS="-Dgroovy.antlr4=true"
-groovy foo.groovy
-```
-* This system property also controls groovyc and has to be used in case it is used outside of this build, for example with:
-```
-groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4=true"]
-```
-
 === JVM system properties to control parsing
 
 * `groovy.antlr4.cache.threshold`: how frequently to clear DFA cache(default: 64). **Notice:** The more frequently the DFA cache is cleared, the poorer parsing performance will be(you can not set the value that is less than the default value). But the DFA cache has to be cleared to avoid OutOfMemoryError's occurring.
