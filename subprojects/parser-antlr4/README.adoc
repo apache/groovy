@@ -40,10 +40,6 @@ The new parser(Parrot) can parse Groovy source code and construct the related AS
 
 The new parser is enabled by default since Groovy 3.0.0 but you can fall back to the old parser if needed. Note however, that the old parser is not available from Groovy 4 onwards.
 
-* Although not recommended, you can set the `useAntlr4` Gradle build property to false to disable the build of the new parser and the execution of all tests with it. Command line example:
-```
-./gradlew -PuseAntlr4=false bootstrapJar
-```
 * To disable the new parser at runtime the system property `groovy.antlr4` can be set to `false`. Command line example:
 ```
 export JAVA_OPTS="-Dgroovy.antlr4=false"
