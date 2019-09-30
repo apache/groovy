@@ -27,10 +27,9 @@ import groovy.swing.SwingBuilder
 import groovy.transform.CompileStatic
 import groovy.transform.ThreadInterrupt
 import groovy.ui.GroovyMain
+import org.apache.groovy.antlr.LexerFrame
 import org.apache.groovy.io.StringBuilderWriter
-import org.apache.groovy.parser.antlr4.GroovyLangLexer
 import org.apache.groovy.util.SystemUtil
-import org.codehaus.groovy.antlr.LexerFrame
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
@@ -71,7 +70,6 @@ import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.Style
 import javax.swing.text.StyleConstants
 import javax.swing.text.html.HTML
-
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -1041,7 +1039,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void inspectTokens(EventObject evt = null) {
         def content = inputArea.getText()
-        def lf = new LexerFrame(GroovyLangLexer, org.apache.groovy.parser.antlr4.GroovyLexer, new StringReader(content))
+        def lf = new LexerFrame(new StringReader(content))
         lf.visible = true
     }
 
