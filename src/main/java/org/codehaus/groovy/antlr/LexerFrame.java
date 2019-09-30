@@ -69,7 +69,10 @@ import java.util.Map;
 
 /**
  * Swing application to graphically display the tokens produced by the lexer.
+ *
+ * @deprecated {@link org.apache.groovy.antlr.LexerFrame} instead
  */
+@Deprecated
 public class LexerFrame extends JFrame implements ActionListener {
     private static final long serialVersionUID = 2715693043143492893L;
     private final JSplitPane jSplitPane1 = new JSplitPane();
