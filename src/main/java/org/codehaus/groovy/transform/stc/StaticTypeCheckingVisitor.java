@@ -814,7 +814,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
-    public void visitBinaryExpression(BinaryExpression expression) {
+    public void visitBinaryExpression(final BinaryExpression expression) {
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
         typeCheckingContext.pushEnclosingBinaryExpression(expression);
         try {
@@ -856,6 +856,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             if (null == lType) lType = getType(leftExpression);
+
             ClassNode rType = getType(rightExpression);
             if (isNullConstant(rightExpression)) {
                 if (!isPrimitiveType(lType))
@@ -995,8 +996,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (!isEmptyDeclaration) {
                 storeType(expression, resultType);
             }
+
+            validateResourceInARM(expression, resultType);
         } finally {
             typeCheckingContext.popEnclosingBinaryExpression();
+        }
+    }
+
+    private void validateResourceInARM(BinaryExpression expression, ClassNode lType) {
+        if (expression instanceof DeclarationExpression) {
+            if (TryCatchStatement.isResource(expression)) {
+                if (!lType.implementsInterface(ClassHelper.AUTOCLOSEABLE_TYPE)) {
+                    addError("Resource[" + lType.getName() + "] in ARM should be of type AutoCloseable", expression);
+                }
+            }
         }
     }
 
