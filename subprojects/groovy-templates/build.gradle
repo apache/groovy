@@ -27,8 +27,22 @@ dependencies {
     compile project(':groovy-xml')
     testCompile rootProject.sourceSets.test.runtimeClasspath
     testCompile project(':groovy-test')
-    testCompile("org.spockframework:spock-core:$spockVersion") {
-        exclude group: 'org.codehaus.groovy'
+    // temporarily disable spock tests since it doesn't support 4 yet
+    if (!spockVersion.startsWith('1.3') || !groovyVersion.startsWith('4')) {
+        testCompile ("org.spockframework:spock-core:$spockVersion") {
+            exclude group: 'org.codehaus.groovy'
+        }
+    }
+}
+
+// temporarily disable spock tests since it doesn't support 4 yet
+if (spockVersion.startsWith('1.3') && groovyVersion.startsWith('4')) {
+    sourceSets {
+        test {
+            groovy {
+                exclude 'groovy/text/StreamingTemplateEngineSpecification.groovy'
+            }
+        }
     }
 }
 
