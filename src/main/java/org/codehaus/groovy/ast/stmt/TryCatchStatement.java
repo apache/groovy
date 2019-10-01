@@ -18,8 +18,10 @@
  */
 package org.codehaus.groovy.ast.stmt;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 
 import java.util.ArrayList;
@@ -29,10 +31,10 @@ import java.util.List;
  * Represents a try { ... } catch () finally {} statement in Groovy
  */
 public class TryCatchStatement extends Statement {
-
+    private static final String IS_RESOURCE = "_IS_RESOURCE";
     private Statement tryStatement;
-    private List<ExpressionStatement> resourceStatements = new ArrayList<ExpressionStatement>();
-    private List<CatchStatement> catchStatements = new ArrayList<CatchStatement>();
+    private List<ExpressionStatement> resourceStatements = new ArrayList<>();
+    private List<CatchStatement> catchStatements = new ArrayList<>();
     private Statement finallyStatement;
     
 
@@ -62,11 +64,19 @@ public class TryCatchStatement extends Statement {
     }
 
     public void addResource(ExpressionStatement resourceStatement) {
-        if (!(resourceStatement.getExpression() instanceof DeclarationExpression || resourceStatement.getExpression() instanceof VariableExpression)) {
-            throw new IllegalArgumentException("resourceStatement should be a variable declaration statement or a variable");
+        Expression resourceExpression = resourceStatement.getExpression();
+        if (!(resourceExpression instanceof DeclarationExpression || resourceExpression instanceof VariableExpression)) {
+            throw new GroovyBugError("resourceStatement should be a variable declaration statement or a variable");
         }
 
+        resourceExpression.putNodeMetaData(IS_RESOURCE, Boolean.TRUE);
+
         resourceStatements.add(resourceStatement);
+    }
+
+    public static boolean isResource(Expression expression) {
+        Boolean r = expression.getNodeMetaData(IS_RESOURCE);
+        return null != r && r;
     }
 
     public void addCatch(CatchStatement catchStatement) {

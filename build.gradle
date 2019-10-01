@@ -116,10 +116,6 @@ allprojects {
     tasks.withType(org.asciidoctor.gradle.AsciidoctorTask) {
         outputs.cacheIf { true }
     }
-
-    tasks.withType(GroovyCompile) {
-        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
-    }
 }
 
 task(copyTestResources, type: Copy)
@@ -403,6 +399,7 @@ allprojects {
     }
 
     tasks.withType(GroovyCompile) {
+        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=100"]
         groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
         groovyOptions.encoding = 'UTF-8'
         //options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
