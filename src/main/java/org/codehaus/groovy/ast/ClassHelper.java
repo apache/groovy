@@ -123,6 +123,7 @@ public class ClassHelper {
 
     void_WRAPPER_TYPE = makeCached(Void.class), METACLASS_TYPE = makeCached(MetaClass.class),
             Iterator_TYPE = makeCached(Iterator.class),
+            AUTOCLOSEABLE_TYPE = makeCached(AutoCloseable.class),
 
     Enum_Type = makeWithoutCaching(Enum.class),
             Annotation_TYPE = makeCached(Annotation.class),
