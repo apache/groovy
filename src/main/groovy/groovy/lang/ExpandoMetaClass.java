@@ -18,6 +18,8 @@
  */
 package groovy.lang;
 
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.runtime.DefaultCachedMethodKey;
@@ -796,7 +798,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-    public ExpandoMetaClass define(Closure closure) {
+    public ExpandoMetaClass define(@ClosureParams(value=SimpleType.class, options="java.lang.Object")
+            @DelegatesTo(value=DefiningClosure.class, strategy=Closure.DELEGATE_ONLY) Closure closure) {
         final DefiningClosure definer = new DefiningClosure();
         Object delegate = closure.getDelegate();
         closure.setDelegate(definer);

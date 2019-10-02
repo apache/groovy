@@ -17325,7 +17325,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws GroovyRuntimeException if the metaclass can't be set for this class
      * @since 1.6.0
      */
-    public static MetaClass metaClass (Class self, Closure closure){
+    public static MetaClass metaClass(Class self, @ClosureParams(value=SimpleType.class, options="java.lang.Object")
+            @DelegatesTo(type="groovy.lang.ExpandoMetaClass.DefiningClosure", strategy=Closure.DELEGATE_ONLY) Closure closure) {
         MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass mc = metaClassRegistry.getMetaClass(self);
 
@@ -17372,7 +17373,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws GroovyRuntimeException if the metaclass can't be set for this object
      * @since 1.6.0
      */
-    public static MetaClass metaClass (Object self, Closure closure){
+    public static MetaClass metaClass(Object self, @ClosureParams(value=SimpleType.class, options="java.lang.Object")
+            @DelegatesTo(type="groovy.lang.ExpandoMetaClass.DefiningClosure", strategy=Closure.DELEGATE_ONLY) Closure closure) {
         MetaClass emc = hasPerInstanceMetaClass(self);
         if (emc == null) {
             final ExpandoMetaClass metaClass = new ExpandoMetaClass(self.getClass(), false, true);
