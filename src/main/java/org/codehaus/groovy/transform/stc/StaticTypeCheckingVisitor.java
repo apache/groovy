@@ -532,14 +532,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private String checkOrMarkInnerPropertyOwnerAccess(PropertyExpression source, boolean lhsOfAssignment, String delegationData) {
         // check for reference to method, closure, for loop, try with, or catch block parameter from a non-nested closure
-        if (typeCheckingContext.getEnclosingClosureStack().size() == 1 && !"this".equals(source.getPropertyAsString())) {
-            if (!(source.getObjectExpression() instanceof VariableExpression &&
-                    ((VariableExpression) source.getObjectExpression()).getAccessedVariable() instanceof Parameter)) {
-                delegationData = "owner";
-                source.getObjectExpression().putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
-            }
+        if (typeCheckingContext.getEnclosingClosureStack().size() == 1 && !"this".equals(source.getPropertyAsString()) &&
+                !isParameterOrVariableReference(source.getObjectExpression())) {
+            delegationData = "owner";
+            source.getObjectExpression().putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
         return delegationData;
+    }
+
+    private static boolean isParameterOrVariableReference(Expression objectExpr) {
+        if (objectExpr instanceof VariableExpression) {
+            Variable accessedVar = ((VariableExpression) objectExpr).getAccessedVariable();
+            return (accessedVar instanceof Parameter || accessedVar instanceof VariableExpression);
+        }
+        return false;
     }
 
     private MethodNode findValidGetter(ClassNode classNode, String name) {
