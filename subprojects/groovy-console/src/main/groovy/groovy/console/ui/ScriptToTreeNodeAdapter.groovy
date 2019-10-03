@@ -560,7 +560,7 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     }
 
     @Override
-    protected void visitEmptyStatement(EmptyStatement node) {
+    void visitEmptyStatement(EmptyStatement node) {
         addNode(node, EmptyStatement, { super.visitEmptyStatement(it) })
     }
 

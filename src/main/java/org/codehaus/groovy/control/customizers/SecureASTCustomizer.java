@@ -803,6 +803,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitBlockStatement(final BlockStatement block) {
             assertStatementAuthorized(block);
             for (Statement statement : block.getStatements()) {
@@ -810,76 +811,70 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
-
+        @Override
         public void visitForLoop(final ForStatement forLoop) {
             assertStatementAuthorized(forLoop);
             forLoop.getCollectionExpression().visit(this);
             forLoop.getLoopBlock().visit(this);
         }
 
+        @Override
         public void visitWhileLoop(final WhileStatement loop) {
             assertStatementAuthorized(loop);
             loop.getBooleanExpression().visit(this);
             loop.getLoopBlock().visit(this);
         }
 
+        @Override
         public void visitDoWhileLoop(final DoWhileStatement loop) {
             assertStatementAuthorized(loop);
             loop.getBooleanExpression().visit(this);
             loop.getLoopBlock().visit(this);
         }
 
+        @Override
         public void visitIfElse(final IfStatement ifElse) {
             assertStatementAuthorized(ifElse);
             ifElse.getBooleanExpression().visit(this);
             ifElse.getIfBlock().visit(this);
-
-            Statement elseBlock = ifElse.getElseBlock();
-            if (elseBlock instanceof EmptyStatement) {
-                // dispatching to EmptyStatement will not call back visitor,
-                // must call our visitEmptyStatement explicitly
-                visitEmptyStatement((EmptyStatement) elseBlock);
-            } else {
-                elseBlock.visit(this);
-            }
+            ifElse.getElseBlock().visit(this);
         }
 
+        @Override
         public void visitExpressionStatement(final ExpressionStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        @Override
         public void visitReturnStatement(final ReturnStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        @Override
         public void visitAssertStatement(final AssertStatement statement) {
             assertStatementAuthorized(statement);
             statement.getBooleanExpression().visit(this);
             statement.getMessageExpression().visit(this);
         }
 
+        @Override
         public void visitTryCatchFinally(final TryCatchStatement statement) {
             assertStatementAuthorized(statement);
             statement.getTryStatement().visit(this);
             for (CatchStatement catchStatement : statement.getCatchStatements()) {
                 catchStatement.visit(this);
             }
-            Statement finallyStatement = statement.getFinallyStatement();
-            if (finallyStatement instanceof EmptyStatement) {
-                // dispatching to EmptyStatement will not call back visitor,
-                // must call our visitEmptyStatement explicitly
-                visitEmptyStatement((EmptyStatement) finallyStatement);
-            } else {
-                finallyStatement.visit(this);
-            }
+            statement.getFinallyStatement().visit(this);
         }
 
-        protected void visitEmptyStatement(EmptyStatement statement) {
+        @Override
+        public void visitEmptyStatement(EmptyStatement statement) {
             // noop
         }
 
+        @Override
         public void visitSwitch(final SwitchStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
@@ -889,36 +884,43 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             statement.getDefaultStatement().visit(this);
         }
 
+        @Override
         public void visitCaseStatement(final CaseStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
             statement.getCode().visit(this);
         }
 
+        @Override
         public void visitBreakStatement(final BreakStatement statement) {
             assertStatementAuthorized(statement);
         }
 
+        @Override
         public void visitContinueStatement(final ContinueStatement statement) {
             assertStatementAuthorized(statement);
         }
 
+        @Override
         public void visitThrowStatement(final ThrowStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        @Override
         public void visitSynchronizedStatement(final SynchronizedStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
             statement.getCode().visit(this);
         }
 
+        @Override
         public void visitCatchStatement(final CatchStatement statement) {
             assertStatementAuthorized(statement);
             statement.getCode().visit(this);
         }
 
+        @Override
         public void visitMethodCallExpression(final MethodCallExpression call) {
             assertExpressionAuthorized(call);
             Expression receiver = call.getObjectExpression();
@@ -934,6 +936,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             call.getArguments().visit(this);
         }
 
+        @Override
         public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
             assertExpressionAuthorized(call);
             final String typeName = call.getOwnerType().getName();
@@ -945,11 +948,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             call.getArguments().visit(this);
         }
 
+        @Override
         public void visitConstructorCallExpression(final ConstructorCallExpression call) {
             assertExpressionAuthorized(call);
             call.getArguments().visit(this);
         }
 
+        @Override
         public void visitTernaryExpression(final TernaryExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getBooleanExpression().visit(this);
@@ -957,11 +962,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getFalseExpression().visit(this);
         }
 
+        @Override
         public void visitShortTernaryExpression(final ElvisOperatorExpression expression) {
             assertExpressionAuthorized(expression);
             visitTernaryExpression(expression);
         }
 
+        @Override
         public void visitBinaryExpression(final BinaryExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
@@ -969,23 +976,27 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getRightExpression().visit(this);
         }
 
+        @Override
         public void visitPrefixExpression(final PrefixExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitPostfixExpression(final PostfixExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitBooleanExpression(final BooleanExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitClosureExpression(final ClosureExpression expression) {
             assertExpressionAuthorized(expression);
             if (!isClosuresAllowed) throw new SecurityException("Closures are not allowed");
@@ -997,33 +1008,39 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             visitClosureExpression(expression);
         }
 
+        @Override
         public void visitTupleExpression(final TupleExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
         }
 
+        @Override
         public void visitMapExpression(final MapExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getMapEntryExpressions());
         }
 
+        @Override
         public void visitMapEntryExpression(final MapEntryExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getKeyExpression().visit(this);
             expression.getValueExpression().visit(this);
         }
 
+        @Override
         public void visitListExpression(final ListExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
         }
 
+        @Override
         public void visitRangeExpression(final RangeExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getFrom().visit(this);
             expression.getTo().visit(this);
         }
 
+        @Override
         public void visitPropertyExpression(final PropertyExpression expression) {
             assertExpressionAuthorized(expression);
             Expression receiver = expression.getObjectExpression();
@@ -1048,6 +1065,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitAttributeExpression(final AttributeExpression expression) {
             assertExpressionAuthorized(expression);
             Expression receiver = expression.getObjectExpression();
@@ -1062,10 +1080,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             checkConstantTypeIfNotMethodNameOrProperty(property);
         }
 
+        @Override
         public void visitFieldExpression(final FieldExpression expression) {
             assertExpressionAuthorized(expression);
         }
 
+        @Override
         public void visitMethodPointerExpression(final MethodPointerExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
@@ -1077,6 +1097,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             visitMethodPointerExpression(expression);
         }
 
+        @Override
         public void visitConstantExpression(final ConstantExpression expression) {
             assertExpressionAuthorized(expression);
             final String type = expression.getType().getName();
@@ -1088,10 +1109,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitClassExpression(final ClassExpression expression) {
             assertExpressionAuthorized(expression);
         }
 
+        @Override
         public void visitVariableExpression(final VariableExpression expression) {
             assertExpressionAuthorized(expression);
             final String type = expression.getType().getName();
@@ -1103,69 +1126,82 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitDeclarationExpression(final DeclarationExpression expression) {
             assertExpressionAuthorized(expression);
             visitBinaryExpression(expression);
         }
 
+        @Override
         public void visitGStringExpression(final GStringExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getStrings());
             visitListOfExpressions(expression.getValues());
         }
 
+        @Override
         public void visitArrayExpression(final ArrayExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
             visitListOfExpressions(expression.getSizeExpression());
         }
 
+        @Override
         public void visitSpreadExpression(final SpreadExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitSpreadMapExpression(final SpreadMapExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitNotExpression(final NotExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitCastExpression(final CastExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitArgumentlistExpression(final ArgumentListExpression expression) {
             assertExpressionAuthorized(expression);
             visitTupleExpression(expression);
         }
 
+        @Override
         public void visitClosureListExpression(final ClosureListExpression closureListExpression) {
             assertExpressionAuthorized(closureListExpression);
             if (!isClosuresAllowed) throw new SecurityException("Closures are not allowed");
             visitListOfExpressions(closureListExpression.getExpressions());
         }
 
+        @Override
         public void visitBytecodeExpression(final BytecodeExpression expression) {
             assertExpressionAuthorized(expression);
         }
@@ -1175,6 +1211,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * This interface allows the user to plugin custom expression checkers if expression blacklist or whitelist are not
      * sufficient
      */
+    @FunctionalInterface
     public interface ExpressionChecker {
         boolean isAuthorized(Expression expression);
     }
@@ -1183,8 +1220,8 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * This interface allows the user to plugin custom statement checkers if statement blacklist or whitelist are not
      * sufficient
      */
+    @FunctionalInterface
     public interface StatementChecker {
         boolean isAuthorized(Statement expression);
     }
-
 }

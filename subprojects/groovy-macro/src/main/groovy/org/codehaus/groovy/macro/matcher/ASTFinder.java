@@ -245,7 +245,7 @@ class ASTFinder extends ContextualClassCodeVisitor {
     }
 
     @Override
-    protected void visitEmptyStatement(final EmptyStatement statement) {
+    public void visitEmptyStatement(final EmptyStatement statement) {
         super.visitEmptyStatement(statement);
         tryFind(EmptyStatement.class, statement);
     }
