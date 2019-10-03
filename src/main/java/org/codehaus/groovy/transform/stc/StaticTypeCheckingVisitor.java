@@ -324,6 +324,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     protected final ReturnAdder.ReturnStatementListener returnListener = new ReturnAdder.ReturnStatementListener() {
+        @Override
         public void returnStatementAdded(final ReturnStatement returnStatement) {
             if (isNullConstant(returnStatement.getExpression())) return;
             checkReturnType(returnStatement);
@@ -360,7 +361,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return ext;
     }
 
-    //        @Override
+    @Override
     protected SourceUnit getSourceUnit() {
         return typeCheckingContext.source;
     }
@@ -3912,14 +3913,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // GROOVY-6099: restore assignment info as before the if branch
             restoreTypeBeforeConditional();
 
-            Statement elseBlock = ifElse.getElseBlock();
-            if (elseBlock instanceof EmptyStatement) {
-                // dispatching to EmptyStatement will not call back visitor,
-                // must call our visitEmptyStatement explicitly
-                visitEmptyStatement((EmptyStatement) elseBlock);
-            } else {
-                elseBlock.visit(this);
-            }
+            ifElse.getElseBlock().visit(this);
         } finally {
             popAssignmentTracking(oldTracker);
         }

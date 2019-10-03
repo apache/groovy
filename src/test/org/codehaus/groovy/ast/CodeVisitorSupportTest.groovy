@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.ast
 
-import groovy.test.GroovyTestCase
+import groovy.transform.PackageScope
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
@@ -27,14 +27,16 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.control.CompilePhase
+import org.junit.Test
 
 /**
  * Tests the CodeVisitorSupport.
  */
-class CodeVisitorSupportTest extends GroovyTestCase {
+final class CodeVisitorSupportTest {
 
+    @Test
     void testIfElse() {
-        def ast = new AstBuilder().buildFromCode { if (true) { 1 } else  { 2 } }
+        def ast = new AstBuilder().buildFromCode { if (true) { 1 } else { 2 } }
         def visitor = new RecordingCodeVisitorSupport()
         visitor.visitBlockStatement(ast[0]) // first element is always BlockStatement
 
@@ -46,6 +48,7 @@ class CodeVisitorSupportTest extends GroovyTestCase {
         assert visitor.history.size() == 5
     }
 
+    @Test
     void testEmptyStatementsOnIfElse() {
         def ast = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS, true, {
             if (true) { 1 }
@@ -61,12 +64,13 @@ class CodeVisitorSupportTest extends GroovyTestCase {
         assert visitor.history.size() == 5
     }
 
+    @Test
     void testTryCatchFinally() {
         def ast = new AstBuilder().buildFromCode {
             def x
             try {
                 x = 1
-            } catch (IOException ei) {
+            } catch (IOException e) {
                 x = 2
             } finally {
                 x = 4
@@ -82,6 +86,7 @@ class CodeVisitorSupportTest extends GroovyTestCase {
         assert visitor.history[4] == BlockStatement
     }
 
+    @Test
     void testEmptyStatementsOnTryCatch() {
         def ast = new AstBuilder().buildFromCode {
             def x
@@ -108,7 +113,7 @@ class CodeVisitorSupportTest extends GroovyTestCase {
  * This would be better implemented using invokeMethod but it is called from Java so it
  * won't dispatch correctly.
  */
-@groovy.transform.PackageScope
+@PackageScope
 class RecordingCodeVisitorSupport extends CodeVisitorSupport implements GroovyInterceptable {
     def history = []
 
@@ -127,7 +132,7 @@ class RecordingCodeVisitorSupport extends CodeVisitorSupport implements GroovyIn
         super.visitBooleanExpression(node)
     }
 
-    protected void visitEmptyStatement(EmptyStatement node) {
+    void visitEmptyStatement(EmptyStatement node) {
         history << EmptyStatement
         super.visitEmptyStatement(node)
     }

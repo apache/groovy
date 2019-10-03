@@ -39,6 +39,7 @@ public class EmptyStatement extends Statement {
 
     @Override
     public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitEmptyStatement(this);
     }
 
     //--------------------------------------------------------------------------
