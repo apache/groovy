@@ -128,7 +128,7 @@ class RecordingCodeVisitorSupport extends CodeVisitorSupport implements GroovyIn
     }
 
     protected void visitEmptyStatement(EmptyStatement node) {
-        history << node.getClass()
+        history << EmptyStatement
         super.visitEmptyStatement(node)
     }
 
@@ -141,6 +141,4 @@ class RecordingCodeVisitorSupport extends CodeVisitorSupport implements GroovyIn
         history << node.getClass()
         super.visitCatchStatement(node);
     }
-
 }
-
