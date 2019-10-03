@@ -545,7 +545,7 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
     }
 
     @Override
-    protected void visitEmptyStatement(final EmptyStatement statement) {
+    public void visitEmptyStatement(final EmptyStatement statement) {
         pushContext(statement);
         super.visitEmptyStatement(statement);
         popContext();

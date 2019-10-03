@@ -48,6 +48,7 @@ public class EmptyExpression extends Expression {
 
     @Override
     public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitEmptyExpression(this);
     }
 
     //--------------------------------------------------------------------------

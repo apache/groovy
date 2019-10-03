@@ -80,73 +80,69 @@ import org.codehaus.groovy.classgen.BytecodeExpression;
  */
 public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
+    @Override
     public void visitBlockStatement(BlockStatement block) {
         for (Statement statement : block.getStatements()) {
             statement.visit(this);
         }
     }
 
+    @Override
     public void visitForLoop(ForStatement forLoop) {
         forLoop.getCollectionExpression().visit(this);
         forLoop.getLoopBlock().visit(this);
     }
 
+    @Override
     public void visitWhileLoop(WhileStatement loop) {
         loop.getBooleanExpression().visit(this);
         loop.getLoopBlock().visit(this);
     }
 
+    @Override
     public void visitDoWhileLoop(DoWhileStatement loop) {
         loop.getLoopBlock().visit(this);
         loop.getBooleanExpression().visit(this);
     }
 
+    @Override
     public void visitIfElse(IfStatement ifElse) {
         ifElse.getBooleanExpression().visit(this);
         ifElse.getIfBlock().visit(this);
-
-        Statement elseBlock = ifElse.getElseBlock();
-        if (elseBlock instanceof EmptyStatement) {
-            // dispatching to EmptyStatement will not call back visitor, 
-            // must call our visitEmptyStatement explicitly
-            visitEmptyStatement((EmptyStatement) elseBlock);
-        } else {
-            elseBlock.visit(this);
-        }
+        ifElse.getElseBlock().visit(this);
     }
 
+    @Override
     public void visitExpressionStatement(ExpressionStatement statement) {
         statement.getExpression().visit(this);
     }
 
+    @Override
     public void visitReturnStatement(ReturnStatement statement) {
         statement.getExpression().visit(this);
     }
 
+    @Override
     public void visitAssertStatement(AssertStatement statement) {
         statement.getBooleanExpression().visit(this);
         statement.getMessageExpression().visit(this);
     }
 
+    @Override
     public void visitTryCatchFinally(TryCatchStatement statement) {
         statement.getTryStatement().visit(this);
         for (CatchStatement catchStatement : statement.getCatchStatements()) {
             catchStatement.visit(this);
         }
-        Statement finallyStatement = statement.getFinallyStatement();
-        if (finallyStatement instanceof EmptyStatement) {
-            // dispatching to EmptyStatement will not call back visitor, 
-            // must call our visitEmptyStatement explicitly
-            visitEmptyStatement((EmptyStatement) finallyStatement);
-        } else {
-            finallyStatement.visit(this);
-        }
+        statement.getFinallyStatement().visit(this);
     }
 
-    protected void visitEmptyStatement(EmptyStatement statement) {
+    @Override
+    public void visitEmptyStatement(EmptyStatement statement) {
         // noop
     }
 
+    @Override
     public void visitSwitch(SwitchStatement statement) {
         statement.getExpression().visit(this);
         for (CaseStatement caseStatement : statement.getCaseStatements()) {
@@ -155,184 +151,225 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         statement.getDefaultStatement().visit(this);
     }
 
+    @Override
     public void visitCaseStatement(CaseStatement statement) {
         statement.getExpression().visit(this);
         statement.getCode().visit(this);
     }
 
+    @Override
     public void visitBreakStatement(BreakStatement statement) {
     }
 
+    @Override
     public void visitContinueStatement(ContinueStatement statement) {
     }
 
+    @Override
     public void visitSynchronizedStatement(SynchronizedStatement statement) {
         statement.getExpression().visit(this);
         statement.getCode().visit(this);
     }
 
+    @Override
     public void visitThrowStatement(ThrowStatement statement) {
         statement.getExpression().visit(this);
     }
 
+    @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         call.getObjectExpression().visit(this);
         call.getMethod().visit(this);
         call.getArguments().visit(this);
     }
 
+    @Override
     public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
         call.getArguments().visit(this);
     }
 
+    @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         call.getArguments().visit(this);
     }
 
+    @Override
     public void visitBinaryExpression(BinaryExpression expression) {
         expression.getLeftExpression().visit(this);
         expression.getRightExpression().visit(this);
     }
 
+    @Override
     public void visitTernaryExpression(TernaryExpression expression) {
         expression.getBooleanExpression().visit(this);
         expression.getTrueExpression().visit(this);
         expression.getFalseExpression().visit(this);
     }
 
+    @Override
     public void visitShortTernaryExpression(ElvisOperatorExpression expression) {
         visitTernaryExpression(expression);
     }
 
+    @Override
     public void visitPostfixExpression(PostfixExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitPrefixExpression(PrefixExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitBooleanExpression(BooleanExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitNotExpression(NotExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitClosureExpression(ClosureExpression expression) {
         expression.getCode().visit(this);
     }
 
+    @Override
     public void visitLambdaExpression(LambdaExpression expression) {
         visitClosureExpression(expression);
     }
 
+    @Override
     public void visitTupleExpression(TupleExpression expression) {
         visitListOfExpressions(expression.getExpressions());
     }
 
+    @Override
     public void visitListExpression(ListExpression expression) {
         visitListOfExpressions(expression.getExpressions());
     }
 
+    @Override
     public void visitArrayExpression(ArrayExpression expression) {
         visitListOfExpressions(expression.getExpressions());
         visitListOfExpressions(expression.getSizeExpression());
     }
 
+    @Override
     public void visitMapExpression(MapExpression expression) {
         visitListOfExpressions(expression.getMapEntryExpressions());
-
     }
 
+    @Override
     public void visitMapEntryExpression(MapEntryExpression expression) {
         expression.getKeyExpression().visit(this);
         expression.getValueExpression().visit(this);
-
     }
 
+    @Override
     public void visitRangeExpression(RangeExpression expression) {
         expression.getFrom().visit(this);
         expression.getTo().visit(this);
     }
 
+    @Override
     public void visitSpreadExpression(SpreadExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitSpreadMapExpression(SpreadMapExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitMethodPointerExpression(MethodPointerExpression expression) {
         expression.getExpression().visit(this);
         expression.getMethodName().visit(this);
     }
 
+    @Override
     public void visitMethodReferenceExpression(MethodReferenceExpression expression) {
         visitMethodPointerExpression(expression);
     }
 
+    @Override
     public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitCastExpression(CastExpression expression) {
         expression.getExpression().visit(this);
     }
 
+    @Override
     public void visitConstantExpression(ConstantExpression expression) {
     }
 
+    @Override
     public void visitClassExpression(ClassExpression expression) {
     }
 
+    @Override
     public void visitVariableExpression(VariableExpression expression) {
     }
 
+    @Override
     public void visitDeclarationExpression(DeclarationExpression expression) {
         visitBinaryExpression(expression);
     }
 
+    @Override
     public void visitPropertyExpression(PropertyExpression expression) {
         expression.getObjectExpression().visit(this);
         expression.getProperty().visit(this);
     }
 
+    @Override
     public void visitAttributeExpression(AttributeExpression expression) {
         expression.getObjectExpression().visit(this);
         expression.getProperty().visit(this);
     }
 
+    @Override
     public void visitFieldExpression(FieldExpression expression) {
     }
 
+    @Override
     public void visitGStringExpression(GStringExpression expression) {
         visitListOfExpressions(expression.getStrings());
         visitListOfExpressions(expression.getValues());
     }
 
+    @Override
     public void visitCatchStatement(CatchStatement statement) {
         statement.getCode().visit(this);
     }
 
-    public void visitArgumentlistExpression(ArgumentListExpression ale) {
-        visitTupleExpression(ale);
+    @Override
+    public void visitArgumentlistExpression(ArgumentListExpression expression) {
+        visitTupleExpression(expression);
     }
 
-    public void visitClosureListExpression(ClosureListExpression cle) {
-        visitListOfExpressions(cle.getExpressions());
+    @Override
+    public void visitClosureListExpression(ClosureListExpression expression) {
+        visitListOfExpressions(expression.getExpressions());
     }
 
-    public void visitBytecodeExpression(BytecodeExpression cle) {
+    @Override
+    public void visitBytecodeExpression(BytecodeExpression expression) {
     }
 }

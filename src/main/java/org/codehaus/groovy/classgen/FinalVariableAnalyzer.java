@@ -33,7 +33,6 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -275,9 +274,8 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         Map<Variable, VariableState> ifState = pushState();
         ifElse.getIfBlock().visit(this);
         popState();
-        Statement elseBlock = ifElse.getElseBlock();
         Map<Variable, VariableState> elseState = pushState();
-        visitPossiblyEmptyStatement(elseBlock);
+        ifElse.getElseBlock().visit(this);
         popState();
 
         // merge if/else branches
@@ -299,16 +297,6 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
-    private void visitPossiblyEmptyStatement(Statement block) {
-        if (block instanceof EmptyStatement) {
-            // dispatching to EmptyStatement will not call back visitor,
-            // must call our visitEmptyStatement explicitly
-            visitEmptyStatement((EmptyStatement) block);
-        } else {
-            block.visit(this);
-        }
-    }
-
     private boolean isFinal(VariableState value) {
         return value != null && value.isFinal;
     }
@@ -324,14 +312,14 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         Statement finallyStatement = statement.getFinallyStatement();
         List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
         // the try finally case
-        visitPossiblyEmptyStatement(finallyStatement);
+        finallyStatement.visit(this);
         if (!returningBlock(tryStatement)) {
             afterStates.add(new HashMap<Variable, VariableState>(getState()));
         }
         popState();
         // now the finally only case but only if no catches
         if (statement.getCatchStatements().isEmpty()) {
-            visitPossiblyEmptyStatement(finallyStatement);
+            finallyStatement.visit(this);
             if (!returningBlock(tryStatement)) {
                 afterStates.add(new HashMap<Variable, VariableState>(getState()));
             }
@@ -373,9 +361,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         getState().putAll(initialVarState);
         Statement code = catchStatement.getCode();
         catchStatement.visit(this);
-        visitPossiblyEmptyStatement(finallyStatement);
+        finallyStatement.visit(this);
         if (code == null || !returningBlock(code)) {
-            afterTryCatchStates.add(new HashMap<Variable, VariableState>(getState()));
+            afterTryCatchStates.add(new HashMap<>(getState()));
         }
         popState();
     }
