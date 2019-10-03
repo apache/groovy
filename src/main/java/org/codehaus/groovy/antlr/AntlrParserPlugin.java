@@ -1620,8 +1620,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             } else {
                 tmpDefaultStatement = statement(child.getNextSibling());
             }
-            if (tmpDefaultStatement != EmptyStatement.INSTANCE) {
-                if (defaultStatement == EmptyStatement.INSTANCE) {
+            if (!(tmpDefaultStatement instanceof EmptyStatement)) {
+                if (defaultStatement instanceof EmptyStatement) {
                     defaultStatement = tmpDefaultStatement;
                 } else {
                     throw new ASTRuntimeException(switchNode, "The default case is already defined.");

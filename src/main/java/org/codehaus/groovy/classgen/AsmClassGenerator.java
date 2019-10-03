@@ -1910,7 +1910,7 @@ public class AsmClassGenerator extends ClassGenerator {
         int mark = controller.getOperandStack().getStackLength();
         for (Iterator iterator = instructions.iterator(); iterator.hasNext();) {
             Object part = iterator.next();
-            if (part == EmptyExpression.INSTANCE) {
+            if (part instanceof EmptyExpression) {
                 mv.visitInsn(ACONST_NULL);
             } else if (part instanceof Expression) {
                 ((Expression) part).visit(this);

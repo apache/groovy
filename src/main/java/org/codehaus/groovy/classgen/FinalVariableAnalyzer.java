@@ -172,8 +172,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     private void recordAssignments(BinaryExpression expression, boolean isDeclaration, Expression leftExpression, Expression rightExpression) {
         if (leftExpression instanceof Variable) {
-            boolean uninitialized =
-                    isDeclaration && rightExpression == EmptyExpression.INSTANCE;
+            boolean uninitialized = isDeclaration && rightExpression instanceof EmptyExpression;
             recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, false, expression);
         } else if (leftExpression instanceof TupleExpression) {
             TupleExpression te = (TupleExpression) leftExpression;

@@ -20,94 +20,81 @@ package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.NodeMetaDataHandler;
 
 import java.util.Map;
 
-/**
- * Represents an empty statement
- */
-
 public class EmptyStatement extends Statement {
-    public static final EmptyStatement INSTANCE = new EmptyStatement();
 
     /**
-     * use EmptyStatement.INSTANCE instead
+     * @see EmptyStatement#INSTANCE
      */
-//    @Deprecated
-    private EmptyStatement() {
-        // org.spockframework.compiler.ConditionRewriter will create EmptyStatement via calling the constructor
-        // so we keep the constructor for the time being, but it will be removed finally.
-    }
-    
-    public void visit(GroovyCodeVisitor visitor) {
+    public EmptyStatement() {
+        super();
     }
 
+    @Override
     public boolean isEmpty() {
         return true;
     }
 
     @Override
-    public void setStatementLabel(String label) {
-        throw createUnsupportedOperationException();
+    public void visit(GroovyCodeVisitor visitor) {
     }
 
-    @Override
-    public void addStatementLabel(String label) {
-        throw createUnsupportedOperationException();
-    }
+    //--------------------------------------------------------------------------
 
-    @Override
-    public void setLineNumber(int lineNumber) {
-        throw createUnsupportedOperationException();
-    }
+    /**
+     * Immutable singleton that is recommended for use when source range or any
+     * other occurrence-specific metadata is not needed.
+     */
+    public static final EmptyStatement INSTANCE = new EmptyStatement() {
 
-    @Override
-    public void setColumnNumber(int columnNumber) {
-        throw createUnsupportedOperationException();
-    }
+        private void throwUnsupportedOperationException() {
+            throw new UnsupportedOperationException("EmptyStatement.INSTANCE is immutable");
+        }
 
-    @Override
-    public void setLastLineNumber(int lastLineNumber) {
-        throw createUnsupportedOperationException();
-    }
+        // ASTNode overrides:
 
-    @Override
-    public void setLastColumnNumber(int lastColumnNumber) {
-        throw createUnsupportedOperationException();
-    }
+        @Override
+        public void setColumnNumber(int n) {
+            throwUnsupportedOperationException();
+        }
 
-    @Override
-    public void setSourcePosition(ASTNode node) {
-        throw createUnsupportedOperationException();
-    }
+        @Override
+        public void setLastColumnNumber(int n) {
+            throwUnsupportedOperationException();
+        }
 
-    @Override
-    public void copyNodeMetaData(NodeMetaDataHandler other) {
-        throw createUnsupportedOperationException();
-    }
+        @Override
+        public void setLastLineNumber(int n) {
+            throwUnsupportedOperationException();
+        }
 
-    @Override
-    public void setNodeMetaData(Object key, Object value) {
-        throw createUnsupportedOperationException();
-    }
+        @Override
+        public void setLineNumber(int n) {
+            throwUnsupportedOperationException();
+        }
 
-    @Override
-    public Object putNodeMetaData(Object key, Object value) {
-        throw createUnsupportedOperationException();
-    }
+        @Override
+        public void setMetaDataMap(Map<?, ?> meta) {
+            throwUnsupportedOperationException();
+        }
 
-    @Override
-    public void removeNodeMetaData(Object key) {
-        throw createUnsupportedOperationException();
-    }
+        @Override
+        public void setSourcePosition(ASTNode node) {
+            throwUnsupportedOperationException();
+        }
 
-    @Override
-    public void setMetaDataMap(Map<?, ?> metaDataMap) {
-        throw createUnsupportedOperationException();
-    }
+        // Statement overrides:
 
-    private UnsupportedOperationException createUnsupportedOperationException() {
-        return new UnsupportedOperationException("EmptyStatement.INSTANCE is immutable");
-    }
+        @Override
+        public void addStatementLabel(String label) {
+            throwUnsupportedOperationException();
+        }
+
+        @Override
+        public void setStatementLabel(String label) {
+            throwUnsupportedOperationException();
+        }
+    };
 }

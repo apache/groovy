@@ -77,8 +77,8 @@ public class TryWithResourcesASTTransformation {
     }
 
     private boolean isBasicTryWithResourcesStatement(TryCatchStatement tryCatchStatement) {
-        if (EmptyStatement.INSTANCE.equals(tryCatchStatement.getFinallyStatement())
-                && !asBoolean(tryCatchStatement.getCatchStatements())) {
+        if (tryCatchStatement.getFinallyStatement() instanceof EmptyStatement &&
+                !asBoolean(tryCatchStatement.getCatchStatements())) {
             return true;
         }
 
