@@ -230,7 +230,7 @@ public class StatementWriter {
     }
 
     private void visitExpressionOrStatement(Object o) {
-        if (o == EmptyExpression.INSTANCE) return;
+        if (o instanceof EmptyExpression) return;
         if (o instanceof Expression) {
             Expression expr = (Expression) o;
             int mark = controller.getOperandStack().getStackLength();
