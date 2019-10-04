@@ -18,15 +18,14 @@
  */
 package org.codehaus.groovy.ast.tools;
 
-import groovy.lang.Tuple;
-import groovy.lang.Tuple2;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
 
-import java.util.function.Function;
+import java.util.function.BiPredicate;
 
 public class ParameterUtils {
+
     public static boolean parametersEqual(Parameter[] a, Parameter[] b) {
         return parametersEqual(a, b, false);
     }
@@ -36,7 +35,7 @@ public class ParameterUtils {
     }
 
     /**
-     * check whether parameters type are compatible
+     * Checks if two parameter arrays are type-compatible.
      *
      * each parameter should match the following condition:
      * {@code targetParameter.getType().getTypeClass().isAssignableFrom(sourceParameter.getType().getTypeClass())}
@@ -47,34 +46,29 @@ public class ParameterUtils {
      * @since 3.0.0
      */
     public static boolean parametersCompatible(Parameter[] source, Parameter[] target) {
-        return parametersMatch(source, target,
-                t -> ClassHelper.getWrapper(t.getV2()).getTypeClass()
-                        .isAssignableFrom(ClassHelper.getWrapper(t.getV1()).getTypeClass())
+        return parametersMatch(source, target, (sourceType, targetType) ->
+            ClassHelper.getWrapper(targetType).getTypeClass().isAssignableFrom(ClassHelper.getWrapper(sourceType).getTypeClass())
         );
     }
 
-    private static boolean parametersEqual(Parameter[] a, Parameter[] b, final boolean wrapType) {
-        return parametersMatch(a, b, t -> {
-            ClassNode v1 = t.getV1();
-            ClassNode v2 = t.getV2();
-
+    private static boolean parametersEqual(Parameter[] a, Parameter[] b, boolean wrapType) {
+        return parametersMatch(a, b, (aType, bType) -> {
             if (wrapType) {
-                v1 = ClassHelper.getWrapper(v1);
-                v2 = ClassHelper.getWrapper(v2);
+                aType = ClassHelper.getWrapper(aType);
+                bType = ClassHelper.getWrapper(bType);
             }
-
-            return v1.equals(v2);
+            return aType.equals(bType);
         });
     }
 
-    private static boolean parametersMatch(Parameter[] a, Parameter[] b, Function<Tuple2<ClassNode, ClassNode>, Boolean> typeChecker) {
+    private static boolean parametersMatch(Parameter[] a, Parameter[] b, BiPredicate<ClassNode, ClassNode> typeChecker) {
         if (a.length == b.length) {
             boolean answer = true;
-            for (int i = 0; i < a.length; i++) {
+            for (int i = 0, n = a.length; i < n; i += 1) {
                 ClassNode aType = a[i].getType();
                 ClassNode bType = b[i].getType();
 
-                if (!typeChecker.apply(Tuple.tuple(aType, bType))) {
+                if (!typeChecker.test(aType, bType)) {
                     answer = false;
                     break;
                 }

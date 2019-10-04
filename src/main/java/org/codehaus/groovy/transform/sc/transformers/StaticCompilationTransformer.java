@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -41,8 +42,6 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -54,20 +53,15 @@ import java.util.Map;
 public class StaticCompilationTransformer extends ClassCodeExpressionTransformer {
 
     protected static final ClassNode BYTECODE_ADAPTER_CLASS = ClassHelper.make(ScriptBytecodeAdapter.class);
-    protected static final Map<Integer, MethodNode> BYTECODE_BINARY_ADAPTERS = Collections.unmodifiableMap(new HashMap<Integer, MethodNode>() {
-        private static final long serialVersionUID = -9117028399464862605L;
-
-        {
-        put(Types.COMPARE_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareEqual").get(0));
-        put(Types.COMPARE_GREATER_THAN, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThan").get(0));
-        put(Types.COMPARE_GREATER_THAN_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThanEqual").get(0));
-        put(Types.COMPARE_LESS_THAN, BYTECODE_ADAPTER_CLASS.getMethods("compareLessThan").get(0));
-        put(Types.COMPARE_LESS_THAN_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareLessThanEqual").get(0));
-        put(Types.COMPARE_NOT_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareNotEqual").get(0));
-        put(Types.COMPARE_TO, BYTECODE_ADAPTER_CLASS.getMethods("compareTo").get(0));
-
-    }});
-
+    protected static final Map<Integer, MethodNode> BYTECODE_BINARY_ADAPTERS = Maps.of(
+        Types.COMPARE_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareEqual").get(0),
+        Types.COMPARE_GREATER_THAN, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThan").get(0),
+        Types.COMPARE_GREATER_THAN_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThanEqual").get(0),
+        Types.COMPARE_LESS_THAN, BYTECODE_ADAPTER_CLASS.getMethods("compareLessThan").get(0),
+        Types.COMPARE_LESS_THAN_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareLessThanEqual").get(0),
+        Types.COMPARE_NOT_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareNotEqual").get(0),
+        Types.COMPARE_TO, BYTECODE_ADAPTER_CLASS.getMethods("compareTo").get(0)
+    );
 
     private ClassNode classNode;
     private final SourceUnit unit;
@@ -151,18 +145,16 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     final Expression superTransform(Expression expr) {
         return super.transform(expr);
     }
-    
+
     @Override
     public void visitClass(final ClassNode node) {
-        ClassNode prec = classNode;
+        ClassNode prev = classNode;
         classNode = node;
         super.visitClass(node);
-        Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses();
-        while (innerClasses.hasNext()) {
-            InnerClassNode innerClassNode = innerClasses.next();
-            visitClass(innerClassNode);
+        for (Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses(); innerClasses.hasNext();) {
+            visitClass(innerClasses.next());
         }
-        classNode = prec;
+        classNode = prev;
     }
 
     @Override
