@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.classgen.asm.MopWriter;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -126,6 +126,6 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
     }
 
     private static boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
-        return MopWriter.equalParameterTypes(params, existingParams);
+        return ParameterUtils.parametersEqual(params, existingParams);
     }
 }

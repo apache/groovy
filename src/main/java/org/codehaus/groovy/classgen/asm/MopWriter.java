@@ -22,16 +22,18 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_BRIDGE;
@@ -42,16 +44,12 @@ import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 
 public class MopWriter {
+    @FunctionalInterface
     public interface Factory {
         MopWriter create(WriterController controller);
     }
 
-    public static final Factory FACTORY = new Factory() {
-        @Override
-        public MopWriter create(final WriterController controller) {
-            return new MopWriter(controller);
-        }
-    };
+    public static final Factory FACTORY = MopWriter::new;
 
     private static class MopKey {
         final int hash;
@@ -72,52 +70,45 @@ public class MopWriter {
             if (!(obj instanceof MopKey)) {
                 return false;
             }
-
             MopKey other = (MopKey) obj;
-            return other.name.equals(name) && equalParameterTypes(other.params,params);
+            return other.name.equals(name) && ParameterUtils.parametersEqual(other.params, params);
         }
     }
-    
+
+    //--------------------------------------------------------------------------
+
     private final WriterController controller;
-    
-    public MopWriter(WriterController wc) {
-        controller = wc;
+
+    public MopWriter(WriterController controller) {
+        this.controller = Objects.requireNonNull(controller);
     }
-    
+
     public void createMopMethods() {
         ClassNode classNode = controller.getClassNode();
         if (classNode.declaresAnyInterfaces(ClassHelper.GENERATED_CLOSURE_Type, ClassHelper.GENERATED_LAMBDA_TYPE)) {
             return;
         }
-        Set<MopKey> currentClassSignatures = buildCurrentClassSignatureSet(classNode.getMethods());
-        visitMopMethodList(classNode.getMethods(), true, Collections.EMPTY_SET, Collections.EMPTY_LIST);
+        Set<MopKey> currentClassSignatures = classNode.getMethods().stream()
+                .map(mn -> new MopKey(mn.getName(), mn.getParameters())).collect(Collectors.toSet());
+        visitMopMethodList(classNode.getMethods(), true, Collections.emptySet(), Collections.emptyList());
         visitMopMethodList(classNode.getSuperClass().getAllDeclaredMethods(), false, currentClassSignatures, controller.getSuperMethodNames());
     }
 
-    private static Set<MopKey> buildCurrentClassSignatureSet(List<MethodNode> methods) {
-        if (methods.isEmpty()) return Collections.EMPTY_SET;
-        Set<MopKey> result = new HashSet<MopKey>(methods.size());
-        for (MethodNode mn : methods) {
-            MopKey key = new MopKey(mn.getName(), mn.getParameters());
-            result.add(key);
-        }
-        return result;
-    }
-    
     /**
-     * filters a list of method for MOP methods. For all methods that are no
+     * Filters a list of method for MOP methods. For all methods that are no
      * MOP methods a MOP method is created if the method is not public and the
      * call would be a call on "this" (isThis == true). If the call is not on
      * "this", then the call is a call on "super" and all methods are used,
-     * unless they are already a MOP method
+     * unless they are already a MOP method.
      *
      * @param methods unfiltered list of methods for MOP
      * @param isThis  if true, then we are creating a MOP method on "this", "super" else
+     *
      * @see #generateMopCalls(LinkedList, boolean)
      */
     private void visitMopMethodList(List<MethodNode> methods, boolean isThis, Set<MopKey> useOnlyIfDeclaredHereToo, List<String> orNameMentionedHere) {
-        Map<MopKey, MethodNode> mops = new HashMap<MopKey, MethodNode>();
-        LinkedList<MethodNode> mopCalls = new LinkedList<MethodNode>();
+        Map<MopKey, MethodNode> mops = new HashMap<>();
+        LinkedList<MethodNode> mopCalls = new LinkedList<>();
         for (MethodNode mn : methods) {
             // mop methods are helper for this and super calls and do direct calls
             // to the target methods. Such a method cannot be abstract or a bridge
@@ -135,8 +126,7 @@ public class MopWriter {
             }
             if (methodName.startsWith("<")) continue;
             if (!useOnlyIfDeclaredHereToo.contains(new MopKey(methodName, mn.getParameters())) &&
-                !orNameMentionedHere.contains(methodName))
-            {
+                    !orNameMentionedHere.contains(methodName)) {
                 continue;
             }
             String name = getMopMethodName(mn, isThis);
@@ -151,7 +141,7 @@ public class MopWriter {
     }
 
     /**
-     * creates a MOP method name from a method
+     * Creates a MOP method name from a method.
      *
      * @param method  the method to be called by the mop method
      * @param useThis if true, then it is a call on "this", "super" else
@@ -161,26 +151,25 @@ public class MopWriter {
         ClassNode declaringNode = method.getDeclaringClass();
         int distance = 0;
         for (; declaringNode != null; declaringNode = declaringNode.getSuperClass()) {
-            distance++;
+            distance += 1;
         }
         return (useThis ? "this" : "super") + "$" + distance + "$" + method.getName();
     }
 
     /**
-     * method to determine if a method is a MOP method. This is done by the
-     * method name. If the name starts with "this$" or "super$" but does not 
-     * contain "$dist$", then it is an MOP method
+     * Determines if a method is a MOP method. This is done by the method name.
+     * If the name starts with "this$" or "super$" but does not contain "$dist$",
+     * then it is an MOP method.
      *
      * @param methodName name of the method to test
      * @return true if the method is a MOP method
      */
     public static boolean isMopMethod(String methodName) {
-        return (methodName.startsWith("this$") ||
-                methodName.startsWith("super$")) && !methodName.contains("$dist$");
+        return (methodName.startsWith("this$") || methodName.startsWith("super$")) && !methodName.contains("$dist$");
     }
 
     /**
-     * generates a Meta Object Protocol method, that is used to call a non public
+     * Generates a Meta Object Protocol method, that is used to call a non public
      * method, or to make a call to super.
      *
      * @param mopCalls list of methods a mop call method should be generated for
@@ -199,15 +188,14 @@ public class MopWriter {
             for (Parameter parameter : parameters) {
                 ClassNode type = parameter.getType();
                 operandStack.load(parameter.getType(), newRegister);
-                // increment to next register, double/long are using two places
-                newRegister++;
-                if (type == ClassHelper.double_TYPE || type == ClassHelper.long_TYPE) newRegister++;
+                newRegister += 1; // increment to next register; double/long are using two places
+                if (type == ClassHelper.double_TYPE || type == ClassHelper.long_TYPE) newRegister += 1;
             }
             operandStack.remove(parameters.length);
             ClassNode declaringClass = method.getDeclaringClass();
             // JDK 8 support for default methods in interfaces
-            // this should probably be strenghtened when we support the A.super.foo() syntax
-            int opcode = declaringClass.isInterface()?INVOKEINTERFACE:INVOKESPECIAL;
+            // TODO: this should probably be strenghtened when we support the A.super.foo() syntax
+            int opcode = declaringClass.isInterface() ? INVOKEINTERFACE : INVOKESPECIAL;
             mv.visitMethodInsn(opcode, BytecodeHelper.getClassInternalName(declaringClass), method.getName(), methodDescriptor, declaringClass.isInterface());
             BytecodeHelper.doReturn(mv, method.getReturnType());
             mv.visitMaxs(0, 0);
@@ -215,13 +203,4 @@ public class MopWriter {
             controller.getClassNode().addMethod(name, ACC_PUBLIC | ACC_SYNTHETIC, method.getReturnType(), parameters, null, null);
         }
     }
-
-    public static boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
-        if (p1.length != p2.length) return false;
-        for (int i = 0; i < p1.length; i++) {
-            if (!p1[i].getType().equals(p2[i].getType())) return false;
-        }
-        return true;
-    }
-
 }
