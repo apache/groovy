@@ -38,6 +38,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -51,31 +52,28 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGener
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class InheritConstructorsASTTransformation extends AbstractASTTransformation {
 
-    private static final Class MY_CLASS = InheritConstructors.class;
-    private static final ClassNode MY_TYPE = make(MY_CLASS);
-    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final ClassNode INHERIT_CONSTRUCTORS_TYPE = make(InheritConstructors.class);
+    private static final String ANNOTATION = "@" + INHERIT_CONSTRUCTORS_TYPE.getNameWithoutPackage();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
-        AnnotationNode node = (AnnotationNode) nodes[0];
-        if (!MY_TYPE.equals(node.getClassNode())) return;
-
-        if (parent instanceof ClassNode) {
-            processClass((ClassNode) parent, node);
+        AnnotationNode anno = (AnnotationNode) nodes[0];
+        AnnotatedNode target = (AnnotatedNode) nodes[1];
+        if (INHERIT_CONSTRUCTORS_TYPE.equals(anno.getClassNode()) && target instanceof ClassNode) {
+            processClass((ClassNode) target, anno);
         }
     }
 
     private void processClass(ClassNode cNode, AnnotationNode node) {
         if (cNode.isInterface()) {
             addError("Error processing interface '" + cNode.getName() +
-                    "'. " + MY_TYPE_NAME + " only allowed for classes.", cNode);
+                    "'. " + ANNOTATION + " only allowed for classes.", cNode);
             return;
         }
         boolean copyConstructorAnnotations = memberHasValue(node, "constructorAnnotations", true);
         boolean copyParameterAnnotations = memberHasValue(node, "parameterAnnotations", true);
         ClassNode sNode = cNode.getSuperClass();
-        List<AnnotationNode> superAnnotations = sNode.getAnnotations(MY_TYPE);
+        List<AnnotationNode> superAnnotations = sNode.getAnnotations(INHERIT_CONSTRUCTORS_TYPE);
         if (superAnnotations.size() == 1) {
             // We need @InheritConstructors from parent classes processed first
             // so force that order here. The transformation is benign on an already
@@ -98,31 +96,27 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         if (isExisting(classNode, params)) return;
         ConstructorNode added = addGeneratedConstructor(classNode, consNode.getModifiers(), params, consNode.getExceptions(), block(ctorSuperS(args(theArgs))));
         if (copyConstructorAnnotations) {
-            added.addAnnotations(copyAnnotatedNodeAnnotations(consNode, MY_TYPE_NAME));
+            added.addAnnotations(copyAnnotatedNodeAnnotations(consNode, ANNOTATION));
         }
     }
 
     private List<Expression> buildParams(Parameter[] origParams, Parameter[] params, Map<String, ClassNode> genericsSpec, boolean copyParameterAnnotations) {
-        List<Expression> theArgs = new ArrayList<Expression>();
-        for (int i = 0; i < origParams.length; i++) {
+        List<Expression> theArgs = new ArrayList<>();
+        for (int i = 0, n = origParams.length; i < n; i += 1) {
             Parameter p = origParams[i];
             ClassNode newType = correctToGenericsSpecRecurse(genericsSpec, p.getType());
             params[i] = p.hasInitialExpression() ? param(newType, p.getName(), p.getInitialExpression()) : param(newType, p.getName());
             if (copyParameterAnnotations) {
-                params[i].addAnnotations(copyAnnotatedNodeAnnotations(origParams[i], MY_TYPE_NAME));
+                params[i].addAnnotations(copyAnnotatedNodeAnnotations(origParams[i], ANNOTATION));
             }
-            theArgs.add(varX(p.getName(), newType));
+            // cast argument to parameter type in case the value is null
+            theArgs.add(castX(p.getType(), varX(p.getName(), newType)));
         }
         return theArgs;
     }
 
     private static boolean isExisting(ClassNode classNode, Parameter[] params) {
-        for (ConstructorNode consNode : classNode.getDeclaredConstructors()) {
-            if (matchingTypes(params, consNode.getParameters())) {
-                return true;
-            }
-        }
-        return false;
+        return classNode.getDeclaredConstructors().stream().anyMatch(ctor -> matchingTypes(params, ctor.getParameters()));
     }
 
     private static boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
