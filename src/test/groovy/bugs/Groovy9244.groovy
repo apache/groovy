@@ -111,7 +111,7 @@ final class Groovy9244 {
             }
 
             def impl = new Base((String) null) {}
-            assert iompl.which == 'String'
+            assert impl.which == 'String'
         '''
     }
 }
