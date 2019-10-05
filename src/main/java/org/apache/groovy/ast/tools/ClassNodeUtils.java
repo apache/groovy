@@ -45,6 +45,7 @@ import java.util.Set;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * Utility class for working with ClassNodes
@@ -162,7 +163,7 @@ public class ClassNodeUtils {
         for (ClassNode iface : cNode.getInterfaces()) {
             Map<String, MethodNode> declaredMethods = iface.getDeclaredMethodsMap();
             for (Map.Entry<String, MethodNode> entry : declaredMethods.entrySet()) {
-                if (entry.getValue().getDeclaringClass().isInterface()) {
+                if (entry.getValue().getDeclaringClass().isInterface() && (entry.getValue().getModifiers() & ACC_SYNTHETIC) == 0) {
                     methodsMap.putIfAbsent(entry.getKey(), entry.getValue());
                 }
             }
