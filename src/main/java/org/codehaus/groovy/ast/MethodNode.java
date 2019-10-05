@@ -24,12 +24,13 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents a method declaration
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
-    public static final String SCRIPT_BODY_METHOD_KEY = "org.codehaus.groovy.ast.MethodNode.isScriptBody";
+
     private final String name;
     private int modifiers;
     private boolean syntheticPublic;
@@ -41,7 +42,6 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private VariableScope variableScope;
     private final ClassNode[] exceptions;
     private final boolean staticConstructor;
-    private boolean hasDefault; // annotation method value
 
     // type spec for generics
     private GenericsType[] genericsTypes;
@@ -55,7 +55,6 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         this.code = code;
         setReturnType(returnType);
         setParameters(parameters);
-        this.hasDefault = false;
         this.exceptions = exceptions;
         this.staticConstructor = (name != null && name.equals("<clinit>"));
     }
@@ -156,7 +155,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean isDefault() {
-        return (modifiers & (ACC_ABSTRACT | ACC_PUBLIC | ACC_STATIC)) == ACC_PUBLIC && getDeclaringClass() != null && getDeclaringClass().isInterface();
+        return (modifiers & (ACC_ABSTRACT | ACC_PUBLIC | ACC_STATIC)) == ACC_PUBLIC &&
+            Optional.ofNullable(getDeclaringClass()).filter(ClassNode::isInterface).isPresent();
     }
 
     public boolean isFinal() {
@@ -181,22 +181,6 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public boolean isPackageScope() {
         return (modifiers & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) == 0;
-    }
-
-    /**
-     * @return {@code true} if this method is the run method from a script
-     */
-    public boolean isScriptBody() {
-        return getNodeMetaData(SCRIPT_BODY_METHOD_KEY) != null;
-    }
-
-    /**
-     * Set the metadata flag for this method to indicate that it is a script body implementation.
-     *
-     * @see ModuleNode#createStatementsClass()
-     */
-    public void setIsScriptBody() {
-        setNodeMetaData(SCRIPT_BODY_METHOD_KEY, Boolean.TRUE);
     }
 
     public ClassNode[] getExceptions() {
@@ -226,12 +210,35 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         this.genericsTypes = genericsTypes;
     }
 
-    public void setAnnotationDefault(boolean hasDefault) {
-        this.hasDefault = hasDefault;
+    /**
+     * @return {@code true} if annotation method has a default value
+     */
+    public boolean hasAnnotationDefault() {
+        return Boolean.TRUE.equals(getNodeMetaData("org.codehaus.groovy.ast.MethodNode.hasDefaultValue"));
     }
 
-    public boolean hasAnnotationDefault() {
-        return hasDefault;
+    public void setAnnotationDefault(boolean hasDefaultValue) {
+        if (hasDefaultValue) {
+            putNodeMetaData("org.codehaus.groovy.ast.MethodNode.hasDefaultValue", Boolean.TRUE);
+        } else {
+            removeNodeMetaData("org.codehaus.groovy.ast.MethodNode.hasDefaultValue");
+        }
+    }
+
+    /**
+     * @return {@code true} if this method is the run method from a script
+     */
+    public boolean isScriptBody() {
+        return Boolean.TRUE.equals(getNodeMetaData("org.codehaus.groovy.ast.MethodNode.isScriptBody"));
+    }
+
+    /**
+     * Sets the flag for this method to indicate it is a script body implementation.
+     *
+     * @see ModuleNode#createStatementsClass()
+     */
+    public void setIsScriptBody() {
+        setNodeMetaData("org.codehaus.groovy.ast.MethodNode.isScriptBody", Boolean.TRUE);
     }
 
     public boolean isStaticConstructor() {
