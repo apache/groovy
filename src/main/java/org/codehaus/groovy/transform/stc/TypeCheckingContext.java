@@ -23,14 +23,11 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -56,10 +53,7 @@ public class TypeCheckingContext {
     protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<ClassNode>();
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<Expression>();
-    protected final LinkedList<ConstructorCallExpression> enclosingConstructorCalls = new LinkedList<ConstructorCallExpression>();
     protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<BlockStatement>();
-    protected final LinkedList<ReturnStatement> enclosingReturnStatements = new LinkedList<ReturnStatement>();
-    protected final LinkedList<PropertyExpression> enclosingPropertyExpressions = new LinkedList<PropertyExpression>();
 
 
     // used for closure return type inference
@@ -222,33 +216,6 @@ public class TypeCheckingContext {
         return enclosingMethods.getFirst();
     }
 
-
-    /**
-     * Pushes a return statement into the return statement stack.
-     * @param returnStatement the return statement to be pushed
-     */
-    public void pushEnclosingReturnStatement(ReturnStatement returnStatement) {
-        enclosingReturnStatements.addFirst(returnStatement);
-    }
-
-    /**
-     * Pops a return statement from the enclosing return statements stack.
-     * @return the popped return statement
-     */
-    public ReturnStatement popEnclosingReturnStatement() {
-        return enclosingReturnStatements.removeFirst();
-    }
-
-    /**
-     * Returns the return statement which is on the top of the stack, or null
-     * if there's no such element.
-     * @return the enclosing return statement on top of the stack, or null if no such element.
-     */
-    public ReturnStatement getEnclosingReturnStatement() {
-        if (enclosingReturnStatements.isEmpty()) return null;
-        return enclosingReturnStatements.getFirst();
-    }
-
     /**
      * Returns the current stack of enclosing methods. The first
      * element is the top of the stack, that is to say the last visited method.
@@ -302,42 +269,6 @@ public class TypeCheckingContext {
         temporaryIfBranchTypeInformation.pop();
     }
 
-
-    /**
-     * Pushes a property expression into the property expression stack.
-     * @param propertyExpression the property expression to be pushed
-     */
-    public void pushEnclosingPropertyExpression(PropertyExpression propertyExpression) {
-        enclosingPropertyExpressions.addFirst(propertyExpression);
-    }
-
-    /**
-     * Pops a property expression from the property expression stack.
-     * @return the popped property expression
-     */
-    public Expression popEnclosingPropertyExpression() {
-        return enclosingPropertyExpressions.removeFirst();
-    }
-
-    /**
-     * Returns the property expression which is on the top of the stack, or null
-     * if there's no such element.
-     * @return the property expression on top of the stack, or null if no such element.
-     */
-    public Expression getEnclosingPropertyExpression() {
-        if (enclosingPropertyExpressions.isEmpty()) return null;
-        return enclosingPropertyExpressions.getFirst();
-    }
-
-    /**
-     * Returns the current stack of property expressions. The first
-     * element is the top of the stack, that is to say the currently visited property expression.
-     * @return an immutable list of property expressions.
-     */
-    public List<PropertyExpression> getEnclosingPropertyExpressions() {
-        return Collections.unmodifiableList(enclosingPropertyExpressions);
-    }
-
     /**
      * Pushes a method call into the method call stack.
      * @param call the call expression to be pushed, either a {@link MethodCallExpression} or a {@link StaticMethodCallExpression}
@@ -375,42 +306,6 @@ public class TypeCheckingContext {
      */
     public List<Expression> getEnclosingMethodCalls() {
         return Collections.unmodifiableList(enclosingMethodCalls);
-    }
-
-
-    /**
-     * Pushes a constructor call into the constructor call stack.
-     * @param call the call expression to be pushed
-     */
-    public void pushEnclosingConstructorCall(ConstructorCallExpression call) {
-        enclosingConstructorCalls.addFirst(call);
-    }
-
-    /**
-     * Pops a constructor call from the enclosing constructor call stack.
-     * @return the popped call
-     */
-    public ConstructorCallExpression popEnclosingConstructorCall() {
-        return enclosingConstructorCalls.removeFirst();
-    }
-
-    /**
-     * Returns the constructor call which is on the top of the stack, or null
-     * if there's no such element.
-     * @return the enclosing constructor call on top of the stack, or null if no such element.
-     */
-    public ConstructorCallExpression getEnclosingConstructorCall() {
-        if (enclosingConstructorCalls.isEmpty()) return null;
-        return enclosingConstructorCalls.getFirst();
-    }
-
-    /**
-     * Returns the current stack of enclosing constructor calls. The first
-     * element is the top of the stack, that is to say the currently visited constructor call.
-     * @return an immutable list of enclosing constructor calls.
-     */
-    public List<ConstructorCallExpression> getEnclosingConstructorCalls() {
-        return Collections.unmodifiableList(enclosingConstructorCalls);
     }
 
     public List<ErrorCollector> getErrorCollectors() {
