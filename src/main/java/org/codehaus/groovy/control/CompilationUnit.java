@@ -802,6 +802,14 @@ public class CompilationUnit extends ProcessingUnit {
             visitor = new LabelVerifier(source);
             visitor.visitClass(classNode);
 
+            visitor = new InstanceOfVerifier() {
+                @Override
+                protected SourceUnit getSourceUnit() {
+                    return source;
+                }
+            };
+            visitor.visitClass(classNode);
+
             visitor = new ClassCompletionVerifier(source);
             visitor.visitClass(classNode);
 
