@@ -20,7 +20,6 @@ package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyBugError;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -368,6 +367,9 @@ public class Types {
     //---------------------------------------------------------------------------
     // TYPE HIERARCHIES
 
+    public static boolean isAssignment(int type) {
+        return ofType(type, ASSIGNMENT_OPERATOR);
+    }
 
     /**
      * Given two types, returns true if the second describes the first.
@@ -1366,16 +1368,5 @@ public class Types {
         addDescription(LEFT_OF_MATCHED_CONTAINER, "<left of matched container>");
         addDescription(RIGHT_OF_MATCHED_CONTAINER, "<right of matched container>");
         addDescription(SWITCH_ENTRIES, "<valid in a switch body>");
-    }
-
-    private static final int[] ASSIGNMENT_TYPES;
-
-    static {
-        ASSIGNMENT_TYPES = new int[]{EQUAL, BITWISE_AND_EQUAL, BITWISE_OR_EQUAL, BITWISE_XOR_EQUAL, PLUS_EQUAL, MINUS_EQUAL, MULTIPLY_EQUAL, DIVIDE_EQUAL, INTDIV_EQUAL, MOD_EQUAL, POWER_EQUAL, LEFT_SHIFT_EQUAL, RIGHT_SHIFT_EQUAL, RIGHT_SHIFT_UNSIGNED_EQUAL, ELVIS_EQUAL};
-        Arrays.sort(ASSIGNMENT_TYPES);
-    }
-
-    public static boolean isAssignment(int type) {
-        return Arrays.binarySearch(ASSIGNMENT_TYPES, type) >= 0;
     }
 }

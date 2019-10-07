@@ -18,38 +18,46 @@
  */
 package groovy.bugs
 
-import gls.CompilableTestSupport
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-class Groovy8046Bug extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.shouldFail
+
+@CompileStatic
+final class Groovy8046 {
+
+    @Test
     void testFieldShouldNotHavePrimitiveVoidType() {
-        def message = shouldNotCompile """
+        def err = shouldFail '''
             class MyClass {
                 void field
             }
-        """
-        assert message.contains("The field 'field' has invalid type void") ||
-                message.contains("void is not allowed here")
+        '''
+
+        assert err =~ /The field 'field' has invalid type void|void is not allowed here/
     }
 
+    @Test
     void testParameterShouldNotHavePrimitiveVoidType() {
-        def message = shouldNotCompile """
+        def err = shouldFail '''
             class MyClass {
                 int foo(void param) {}
             }
-        """
-        assert message.contains("The parameter 'param' in method 'int foo(void)' has invalid type void") ||
-                message.contains("void is not allowed here")
+        '''
+
+        assert err =~ /The parameter 'param' in method 'int foo\(void\)' has invalid type void|void is not allowed here/
     }
 
+    @Test
     void testLocalVariableShouldNotHavePrimitiveVoidType() {
-        def message = shouldNotCompile """
+        def err = shouldFail '''
             class MyClass {
                 def foo() {
                     void bar = null
                 }
             }
-        """
-        assert message.contains("The variable 'bar' has invalid type void") ||
-                message.contains("void is not allowed here")
+        '''
+
+        assert err =~ /The variable 'bar' has invalid type void|void is not allowed here/
     }
 }
