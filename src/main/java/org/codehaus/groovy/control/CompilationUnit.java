@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
@@ -810,8 +811,19 @@ public class CompilationUnit extends ProcessingUnit {
                 );
             }
 
-            LabelVerifier lv = new LabelVerifier(source);
-            lv.visitClass(classNode);
+            GroovyClassVisitor visitor = new LabelVerifier(source);
+            visitor.visitClass(classNode);
+
+            visitor = new InstanceOfVerifier() {
+                @Override
+                protected SourceUnit getSourceUnit() {
+                    return source;
+                }
+            };
+            visitor.visitClass(classNode);
+
+            visitor = new ClassCompletionVerifier(source);
+            visitor.visitClass(classNode);
 
             ClassCompletionVerifier completionVerifier = new ClassCompletionVerifier(source);
             completionVerifier.visitClass(classNode);
@@ -826,7 +838,7 @@ public class CompilationUnit extends ProcessingUnit {
             //
             // Prep the generator machinery
             //
-            ClassVisitor visitor = createClassVisitor();
+            ClassVisitor classVisitor = createClassVisitor();
             
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
             // only show the file name and its extension like javac does in its stacktraces rather than the full path
@@ -835,21 +847,21 @@ public class CompilationUnit extends ProcessingUnit {
                 sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
             //TraceClassVisitor tracer = new TraceClassVisitor(visitor, new PrintWriter(System.err,true));
             //AsmClassGenerator generator = new AsmClassGenerator(source, context, tracer, sourceName);
-            AsmClassGenerator generator = new AsmClassGenerator(source, context, visitor, sourceName);
+            AsmClassGenerator generator = new AsmClassGenerator(source, context, classVisitor, sourceName);
 
             //
             // Run the generation and create the class (if required)
             //
             generator.visitClass(classNode);
 
-            byte[] bytes = ((ClassWriter) visitor).toByteArray();
+            byte[] bytes = ((ClassWriter) classVisitor).toByteArray();
             generatedClasses.add(new GroovyClass(classNode.getName(), bytes));
 
             //
             // Handle any callback that's been set
             //
             if (CompilationUnit.this.classgenCallback != null) {
-                classgenCallback.call(visitor, classNode);
+                classgenCallback.call(classVisitor, classNode);
             }
 
             //
