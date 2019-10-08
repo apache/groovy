@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 import groovy.transform.Generated;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -134,7 +135,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         if (!isClassExpr) {
             if (isConstructorReference) {
                 // TODO move the checking code to the Parrot parser
-                throw new RuntimeParserException("Constructor reference must be className::new", methodReferenceExpression);
+                addFatalError("Constructor reference must be className::new", methodReferenceExpression);
             }
 
             if (methodRefMethod.isStatic()) {
@@ -169,7 +170,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     private void validate(MethodReferenceExpression methodReferenceExpression, Expression typeOrTargetRef, ClassNode typeOrTargetRefType, String methodRefName, Parameter[] parametersWithExactType, MethodNode methodRefMethod) {
         if (null == methodRefMethod) {
-            throw new RuntimeParserException("Failed to find the expected method["
+            addFatalError("Failed to find the expected method["
                     + methodRefName + "("
                     + Arrays.stream(parametersWithExactType)
                             .map(e -> e.getType().getName())
@@ -377,5 +378,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
 
         return score;
+    }
+
+    private void addFatalError(String msg, ASTNode node) {
+        controller.getSourceUnit().addFatalError(msg, node);
     }
 }
