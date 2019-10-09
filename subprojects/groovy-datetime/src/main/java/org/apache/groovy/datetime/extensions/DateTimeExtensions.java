@@ -579,6 +579,18 @@ public class DateTimeExtensions {
     }
 
     /**
+     * Calculates the number of days between two dates
+     *
+     * @param self a LocalDate
+     * @param other the other LocalDate
+     * @return the number of days
+     * @since 3.0.0
+     */
+    public static long minus(final LocalDate self, LocalDate other) {
+        return ChronoUnit.DAYS.between(other, self);
+    }
+
+    /**
      * Returns a {@link java.time.LocalDate} one day after this date.
      *
      * @param self a LocalDate

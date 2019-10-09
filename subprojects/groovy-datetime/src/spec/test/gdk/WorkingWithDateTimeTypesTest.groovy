@@ -252,4 +252,18 @@ class WorkingWithDateTimeTypesTest extends GroovyTestCase {
         // end::to_jsr310_types[]
     }
 
+    void testLocalDateMinusOtherLocalDate() {
+        def date1 = LocalDate.of(2019, Month.OCTOBER, 10)
+        def date2 = LocalDate.of(2019, Month.OCTOBER, 1)
+        assert 9 == date1 - date2
+        assert -9 == date2 - date1
+
+        def date3 = LocalDate.of(2019, Month.OCTOBER, 1)
+        def date4 = LocalDate.of(2019, Month.OCTOBER, 1)
+        assert 0 == date3 - date4
+
+        def date5 = LocalDate.of(2019, Month.OCTOBER, 1)
+        def date6 = LocalDate.of(2019, Month.SEPTEMBER, 30)
+        assert 1 == date5 - date6
+    }
 }
