@@ -348,7 +348,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (resolveToInner(type)) return;
         if (resolveToOuterNested(type)) return;
 
-        addError("unable to resolve class " + type.getName() + " " + msg, node);
+        addError("unable to resolve class " + type.toString(false) + msg, node);
     }
 
     // GROOVY-7812(#1): Static inner classes cannot be accessed from other files when running by 'groovy' command
@@ -1364,7 +1364,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
         AnnotationNode an = (AnnotationNode) ace.getValue();
         ClassNode type = an.getClassNode();
-        resolveOrFail(type, ", unable to find class for annotation", an);
+        resolveOrFail(type, " for annotation", an);
         for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
             member.setValue(transform(member.getValue()));
         }
@@ -1375,12 +1375,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         List<AnnotationNode> annotations = node.getAnnotations();
         if (annotations.isEmpty()) return;
         Map<String, AnnotationNode> tmpAnnotations = new HashMap<String, AnnotationNode>();
-        ClassNode annType;
         for (AnnotationNode an : annotations) {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
-            annType = an.getClassNode();
-            resolveOrFail(annType, ",  unable to find class for annotation", an);
+            ClassNode annType = an.getClassNode();
+            resolveOrFail(annType, " for annotation", an);
             for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
                 Expression newValue = transform(member.getValue());
                 Expression adjusted = transformInlineConstants(newValue);
@@ -1422,7 +1421,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
                     member.setValue(transformInlineConstants(member.getValue()));
                 }
-
             }
         } else {
             return ExpressionUtils.transformInlineConstants(exp);
