@@ -20,8 +20,6 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
-import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -54,8 +52,6 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 import static java.lang.reflect.Modifier.isFinal;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
@@ -172,6 +168,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope.putDeclaredVariable(var);
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
@@ -319,6 +316,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // code visit
     // ------------------------------
 
+    @Override
     public void visitBlockStatement(BlockStatement block) {
         pushState();
         block.setVariableScope(currentScope);
@@ -326,6 +324,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    @Override
     public void visitForLoop(ForStatement forLoop) {
         pushState();
         forLoop.setVariableScope(currentScope);
@@ -336,6 +335,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    @Override
     public void visitIfElse(IfStatement ifElse) {
         ifElse.getBooleanExpression().visit(this);
         pushState();
@@ -346,6 +346,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    @Override
     public void visitDeclarationExpression(DeclarationExpression expression) {
         visitAnnotations(expression);
         // visit right side first to avoid the usage of a
@@ -396,6 +397,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    @Override
     public void visitVariableExpression(VariableExpression expression) {
         String name = expression.getName();
         Variable v = checkVariableNameForDeclaration(name, expression);
@@ -404,12 +406,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         checkVariableContextAccess(v, expression);
     }
 
+    @Override
     public void visitPropertyExpression(PropertyExpression expression) {
         expression.getObjectExpression().visit(this);
         expression.getProperty().visit(this);
         checkPropertyOnExplicitThis(expression);
     }
 
+    @Override
     public void visitClosureExpression(ClosureExpression expression) {
         pushState();
 
@@ -442,6 +446,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    @Override
     public void visitCatchStatement(CatchStatement statement) {
         pushState();
         Parameter p = statement.getVariable();
@@ -451,6 +456,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    @Override
     public void visitFieldExpression(FieldExpression expression) {
         String name = expression.getFieldName();
         //TODO: change that to get the correct scope
@@ -462,6 +468,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // class visit
     // ------------------------------
 
+    @Override
     public void visitClass(ClassNode node) {
         // AIC are already done, doing them here again will lead to wrong scopes
         if (isAnonymous(node)) return;
@@ -488,6 +495,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope.setClassScope(node);
     }
 
+    @Override
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         pushState(node.isStatic());
         inConstructor = isConstructor;
@@ -506,6 +514,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         if (call.isImplicitThis() && call.getMethod() instanceof ConstantExpression) {
             ConstantExpression methodNameConstant = (ConstantExpression) call.getMethod();
@@ -535,6 +544,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         super.visitMethodCallExpression(call);
     }
 
+    @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         isSpecialConstructorCall = call.isSpecialCall();
         super.visitConstructorCallExpression(call);
@@ -577,28 +587,17 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    @Override
     public void visitProperty(PropertyNode node) {
         pushState(node.isStatic());
         super.visitProperty(node);
         popState();
     }
 
+    @Override
     public void visitField(FieldNode node) {
         pushState(node.isStatic());
         super.visitField(node);
         popState();
-    }
-
-    public void visitAnnotations(AnnotatedNode node) {
-        List<AnnotationNode> annotations = node.getAnnotations();
-        if (annotations.isEmpty()) return;
-        for (AnnotationNode an : annotations) {
-            // skip built-in properties
-            if (an.isBuiltIn()) continue;
-            for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
-                Expression annMemberValue = member.getValue();
-                annMemberValue.visit(this);
-            }
-        }
     }
 }

@@ -158,9 +158,16 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             addError("Annotations are not supported in the current runtime. " + JVM_ERROR_MESSAGE, node);
             return;
         }
-        Map<String, List<AnnotationNode>> nonSourceAnnotations = new LinkedHashMap<String, List<AnnotationNode>>();
+        Map<String, List<AnnotationNode>> nonSourceAnnotations = new LinkedHashMap<>();
         for (AnnotationNode unvisited : node.getAnnotations()) {
-            AnnotationNode visited = visitAnnotation(unvisited);
+            AnnotationNode visited;
+            {
+                ErrorCollector errorCollector = new ErrorCollector(source.getConfiguration());
+                AnnotationVisitor visitor = new AnnotationVisitor(source, errorCollector);
+                visited = visitor.visit(unvisited);
+                source.getErrorCollector().addCollectorContents(errorCollector);
+            }
+
             String name = visited.getClassNode().getName();
             if (!visited.hasSourceRetention()) {
                 List<AnnotationNode> seen = nonSourceAnnotations.get(name);
@@ -206,8 +213,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 if (repeatable != null) {
                     AnnotationNode collector = new AnnotationNode(repeatable);
                     if (repeatable.isResolved()) {
-                        Class repeatableType = repeatable.getTypeClass();
-                        Retention retAnn = (Retention) repeatableType.getAnnotation(Retention.class);
+                        Class<?> repeatableType = repeatable.getTypeClass();
+                        Retention retAnn = repeatableType.getAnnotation(Retention.class);
                         collector.setRuntimeRetention(retAnn != null && retAnn.value().equals(RetentionPolicy.RUNTIME));
                     } else if (repeatable.redirect() != null) {
                         for (AnnotationNode annotationNode : repeatable.redirect().getAnnotations()) {
@@ -315,20 +322,6 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
         }
         return null;
-    }
-
-    /**
-     * Resolve metadata and details of the annotation.
-     *
-     * @param unvisited the node to visit
-     * @return the visited node
-     */
-    private AnnotationNode visitAnnotation(AnnotationNode unvisited) {
-        ErrorCollector errorCollector = new ErrorCollector(this.source.getConfiguration());
-        AnnotationVisitor visitor = new AnnotationVisitor(this.source, errorCollector);
-        AnnotationNode visited = visitor.visit(unvisited);
-        this.source.getErrorCollector().addCollectorContents(errorCollector);
-        return visited;
     }
 
     /**

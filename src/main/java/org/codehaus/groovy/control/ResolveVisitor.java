@@ -507,7 +507,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean resolveNestedClass(ClassNode type) {
         if (type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
         // we have for example a class name A, are in class X
-        // and there is a nested class A$X. we want to be able 
+        // and there is a nested class A$X. we want to be able
         // to access that class directly, so A becomes a valid
         // name in X.
         // GROOVY-4043: Do this check up the hierarchy, if needed
@@ -527,19 +527,19 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // nested class A$B$C and want to access B without
         // qualifying it by A.B. A alone will work, since that
         // is the qualified (minus package) name of that class
-        // anyway. 
-        
+        // anyway.
+
         // That means if the current class is not an InnerClassNode
         // there is nothing to be done.
         if (!(currentClass instanceof InnerClassNode)) return false;
-        
-        // since we have B and want to get A we start with the most 
+
+        // since we have B and want to get A we start with the most
         // outer class, put them together and then see if that does
-        // already exist. In case of B from within A$B we are done 
+        // already exist. In case of B from within A$B we are done
         // after the first step already. In case of for example
-        // A.B.C.D.E.F and accessing E from F we test A$E=failed, 
+        // A.B.C.D.E.F and accessing E from F we test A$E=failed,
         // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success
-        
+
         LinkedList<ClassNode> outerClasses = new LinkedList<ClassNode>();
         ClassNode outer = currentClass.getOuterClass();
         while (outer!=null) {
@@ -1127,11 +1127,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformVariableExpression(VariableExpression ve) {
         visitAnnotations(ve);
         Variable v = ve.getAccessedVariable();
-        
+
         if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
             /*
-             *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to 
-             *  resolve its type. Variable type resolve should proceed only if the variable is being declared. 
+             *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to
+             *  resolve its type. Variable type resolve should proceed only if the variable is being declared.
              */
             return ve;
         }
@@ -1312,14 +1312,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private static String getDescription(ClassNode node) {
         return (node.isInterface() ? "interface" : "class") + " '" + node.getName() + "'";
     }
-    
+
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
         Expression object = transform(mce.getObjectExpression());
 
         resolveGenericsTypes(mce.getGenericsTypes());
-        
+
         MethodCallExpression result = new MethodCallExpression(object, method, args);
         result.setSafe(mce.isSafe());
         result.setImplicitThis(mce.isImplicitThis());
@@ -1329,7 +1329,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         result.setMethodTarget(mce.getMethodTarget());
         return result;
     }
-    
+
     protected Expression transformDeclarationExpression(DeclarationExpression de) {
         visitAnnotations(de);
         Expression oldLeft = de.getLeftExpression();
@@ -1388,8 +1388,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 checkAnnotationMemberValue(adjusted);
             }
             if (annType.isResolved()) {
-                Class annTypeClass = annType.getTypeClass();
-                Retention retAnn = (Retention) annTypeClass.getAnnotation(Retention.class);
+                Class<?> annTypeClass = annType.getTypeClass();
+                Retention retAnn = annTypeClass.getAnnotation(Retention.class);
                 if (retAnn != null && !retAnn.value().equals(RetentionPolicy.SOURCE) && !isRepeatable(annTypeClass)) {
                     // remember non-source/non-repeatable annos (auto collecting of Repeatable annotations is handled elsewhere)
                     AnnotationNode anyPrevAnnNode = tmpAnnotations.put(annTypeClass.getName(), an);
@@ -1401,7 +1401,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
-    private boolean isRepeatable(Class annTypeClass) {
+    private boolean isRepeatable(Class<?> annTypeClass) {
         Annotation[] annTypeAnnotations = annTypeClass.getAnnotations();
         for (Annotation annTypeAnnotation : annTypeAnnotations) {
             if (annTypeAnnotation.annotationType().getName().equals("java.lang.annotation.Repeatable")) {

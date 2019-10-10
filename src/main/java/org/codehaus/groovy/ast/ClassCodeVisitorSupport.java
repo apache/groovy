@@ -42,10 +42,9 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ErrorCollecting;
 
-import java.util.Map;
-
 public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport implements ErrorCollecting, GroovyClassVisitor {
 
+    @Override
     public void visitClass(ClassNode node) {
         visitAnnotations(node);
         visitPackage(node.getPackage());
@@ -57,10 +56,15 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     public void visitAnnotations(AnnotatedNode node) {
         for (AnnotationNode annotation : node.getAnnotations()) {
             // skip built-in properties
-            if (annotation.isBuiltIn()) continue;
-            for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet()) {
-                member.getValue().visit(this);
+            if (!annotation.isBuiltIn()) {
+                visitAnnotation(annotation);
             }
+        }
+    }
+
+    protected void visitAnnotation(AnnotationNode node) {
+        for (Expression expr : node.getMembers().values()) {
+            expr.visit(this);
         }
     }
 
