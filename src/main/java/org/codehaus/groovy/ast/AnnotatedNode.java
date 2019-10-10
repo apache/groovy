@@ -30,96 +30,89 @@ import java.util.List;
  */
 public class AnnotatedNode extends ASTNode implements GroovydocHolder<AnnotatedNode> {
     private List<AnnotationNode> annotations = Collections.emptyList();
+    private ClassNode declaringClass;
     private boolean synthetic;
-    ClassNode declaringClass;
-    private boolean hasNoRealSourcePositionFlag;
-
-    public AnnotatedNode() {
-    }
 
     public List<AnnotationNode> getAnnotations() {
         return annotations;
     }
 
     public List<AnnotationNode> getAnnotations(ClassNode type) {
-        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(annotations.size());
-        for (AnnotationNode node: annotations) {
-            if (type.equals(node.getClassNode())) ret.add(node);
+        List<AnnotationNode> ret = new ArrayList<>(annotations.size());
+        for (AnnotationNode node : annotations) {
+            if (type.equals(node.getClassNode())) {
+                ret.add(node);
+            }
         }
         return ret;
     }
 
-    public void addAnnotation(AnnotationNode value) {
-        checkInit();
-        annotations.add(value);
-    }
-
-    private void checkInit() {
-        if (annotations == Collections.EMPTY_LIST)
-            annotations = new ArrayList<AnnotationNode>(3);
+    public void addAnnotation(AnnotationNode annotation) {
+        if (annotation != null) {
+            if (annotations == Collections.EMPTY_LIST) {
+                annotations = new ArrayList<>(3);
+            }
+            annotations.add(annotation);
+        }
     }
 
     public void addAnnotations(List<AnnotationNode> annotations) {
-        for (AnnotationNode node : annotations) {
-            addAnnotation(node);
+        for (AnnotationNode annotation : annotations) {
+            addAnnotation(annotation);
+        }
+    }
+
+    public /*@Nullable*/ ClassNode getDeclaringClass() {
+        return declaringClass;
+    }
+
+    public void setDeclaringClass(ClassNode declaringClass) {
+        this.declaringClass = declaringClass;
+    }
+
+    @Override
+    public Groovydoc getGroovydoc() {
+        Groovydoc groovydoc = getNodeMetaData(DOC_COMMENT);
+        return (groovydoc != null ? groovydoc : Groovydoc.EMPTY_GROOVYDOC);
+    }
+
+    @Override
+    public AnnotatedNode getInstance() {
+        return this;
+    }
+
+    /**
+     * Returns true for default constructors added by the compiler.
+     * <p>
+     * See GROOVY-4161
+     */
+    public boolean hasNoRealSourcePosition() {
+        return Boolean.TRUE.equals(getNodeMetaData("org.codehaus.groovy.ast.AnnotatedNode.hasNoRealSourcePosition"));
+    }
+
+    public void setHasNoRealSourcePosition(boolean hasNoRealSourcePosition) {
+        if (hasNoRealSourcePosition) {
+            putNodeMetaData("org.codehaus.groovy.ast.AnnotatedNode.hasNoRealSourcePosition", Boolean.TRUE);
+        } else {
+            removeNodeMetaData("org.codehaus.groovy.ast.AnnotatedNode.hasNoRealSourcePosition");
         }
     }
 
     /**
-     * returns true if this node is added by the compiler.
-     * <b>NOTE</b>: 
-     * This method has nothing to do with the synthetic flag
-     * for fields, methods or classes.              
-     * @return true if this node is added by the compiler
+     * Indicates if this node was added by the compiler.
+     * <p>
+     * <b>Note</b>: This method has nothing to do with the synthetic flag for classes, fields, methods or properties.
      */
     public boolean isSynthetic() {
         return synthetic;
     }
 
     /**
-     * sets this node as a node added by the compiler.
-     * <b>NOTE</b>: 
-     * This method has nothing to do with the synthetic flag
-     * for fields, methods or classes.              
-     * @param synthetic - if true this node is marked as
-     *                    added by the compiler
+     * Sets this node as a node added by the compiler.
+     * <p>
+     * <b>Note</b>: This method has nothing to do with the synthetic flag for classes, fields, methods or properties.
      */
     public void setSynthetic(boolean synthetic) {
         this.synthetic = synthetic;
-    }
-
-    public ClassNode getDeclaringClass() {
-        return declaringClass;
-    }
-
-    /**
-     * @param declaringClass - The declaringClass to set.
-     */
-    public void setDeclaringClass(ClassNode declaringClass) {
-        this.declaringClass = declaringClass;
-    }
-
-    /**
-     * Currently only ever returns true for default constructors
-     * added by the compiler. See GROOVY-4161.
-     */
-    public boolean hasNoRealSourcePosition() {
-        return hasNoRealSourcePositionFlag;
-    }
-
-    public void setHasNoRealSourcePosition(boolean value) {
-        this.hasNoRealSourcePositionFlag = value;
-    }
-
-    @Override
-    public Groovydoc getGroovydoc() {
-        Groovydoc groovydoc = this.<Groovydoc>getNodeMetaData(DOC_COMMENT);
-
-        return null == groovydoc ? Groovydoc.EMPTY_GROOVYDOC : groovydoc;
-    }
-
-    @Override
-    public AnnotatedNode getInstance() {
-        return this;
     }
 }
