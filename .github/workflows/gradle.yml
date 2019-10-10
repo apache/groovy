@@ -1,0 +1,35 @@
+name: Java CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [windows-2019]
+        java: ['12.0.2']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Test with Gradle
+        run: ./gradlew test
+        timeout-minutes: 60
+  testWithIndy:
+    strategy:
+      matrix:
+        os: [windows-2019]
+        java: ['12.0.2']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Test Indy with Gradle
+        run: ./gradlew testWithIndy
+        timeout-minutes: 60
