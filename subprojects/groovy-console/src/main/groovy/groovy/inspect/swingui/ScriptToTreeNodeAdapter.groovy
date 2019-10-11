@@ -24,6 +24,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.GroovyBugError
+import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -120,19 +121,19 @@ class ScriptToTreeNodeAdapter {
     static Properties classNameToStringForm
     boolean showScriptFreeForm, showScriptClass, showClosureClasses
     final GroovyClassLoader classLoader
-    final AstBrowserNodeMaker nodeMaker
+    final groovy.console.ui.AstBrowserNodeMaker nodeMaker
     private final CompilerConfiguration config
 
     static {
         try {
-            URL url =  ClassLoader.getSystemResource('groovy/inspect/swingui/AstBrowserProperties.groovy')
+            URL url =  ClassLoader.getSystemResource('groovy/console/ui/AstBrowserProperties.groovy')
             if (!url) {
-                url = ScriptToTreeNodeAdapter.class.classLoader.getResource('groovy/inspect/swingui/AstBrowserProperties.groovy')
+                url = ScriptToTreeNodeAdapter.class.classLoader.getResource('groovy/console/ui/AstBrowserProperties.groovy')
             }
-    
+
             def config = new ConfigSlurper().parse(url)
             classNameToStringForm = config.toProperties()
-    
+
             String home = System.getProperty('user.home')
             if (home) {
                 File userFile = new File(home + File.separator + '.groovy/AstBrowserProperties.groovy')
@@ -145,10 +146,10 @@ class ScriptToTreeNodeAdapter {
         } catch(ex) {
             // on restricted environments like, such calls may fail, but that should not prevent the class
             // from being loaded. Tree nodes can still get rendered with their simple names.
-            classNameToStringForm = new Properties()  
+            classNameToStringForm = new Properties()
         }
     }
-    
+
     ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass, showClosureClasses, nodeMaker, config = null) {
         this.classLoader = classLoader ?: new GroovyClassLoader(getClass().classLoader)
         this.showScriptFreeForm = showScriptFreeForm
@@ -159,7 +160,7 @@ class ScriptToTreeNodeAdapter {
     }
 
     /**
-    * Performs the conversion from script to TreeNode.
+     * Performs the conversion from script to TreeNode.
      *
      * @param script
      *      a Groovy script in String form
@@ -167,7 +168,7 @@ class ScriptToTreeNodeAdapter {
      *      the int based CompilePhase to compile it to.
      * @param indy
      *      if {@code true} InvokeDynamic (Indy) bytecode is generated
-    */
+     */
     def compile(String script, int compilePhase, boolean indy=false) {
         def scriptName = 'script' + System.currentTimeMillis() + '.groovy'
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, '/groovy/script')
@@ -223,29 +224,29 @@ class ScriptToTreeNodeAdapter {
      */
     private List<List<String>> getPropertyTable(node) {
         node.metaClass.properties?.
-            findAll { it.getter }?.
-            collect {
-                def name = it.name.toString()
-                def value
-                try {
-                    // multiple assignment statements cannot be cast to VariableExpression so
-                    // instead reference the value through the leftExpression property, which is the same
-                    if (node instanceof DeclarationExpression &&
-                            (name == 'variableExpression' || name == 'tupleExpression')) {
-                        value = toString(node.leftExpression)
-                    } else {
-                        value = toString(it.getProperty(node))
+                findAll { it.getter }?.
+                collect {
+                    def name = it.name.toString()
+                    def value
+                    try {
+                        // multiple assignment statements cannot be cast to VariableExpression so
+                        // instead reference the value through the leftExpression property, which is the same
+                        if (node instanceof DeclarationExpression &&
+                                (name == 'variableExpression' || name == 'tupleExpression')) {
+                            value = toString(node.leftExpression)
+                        } else {
+                            value = toString(it.getProperty(node))
+                        }
+                    } catch (GroovyBugError reflectionArtefact) {
+                        // compiler throws error if it thinks a field is being accessed
+                        // before it is set under certain conditions. It wasn't designed
+                        // to be walked reflectively like this.
+                        value = null
                     }
-                } catch (GroovyBugError reflectionArtefact) {
-                    // compiler throws error if it thinks a field is being accessed
-                    // before it is set under certain conditions. It wasn't designed
-                    // to be walked reflectively like this.
-                    value = null
-                }
-                def type = it.type.simpleName.toString()
-                [name, value, type]
-            }?.
-            sort { it[0] }
+                    def type = it.type.simpleName.toString()
+                    [name, value, type]
+                }?.
+                sort { it[0] }
     }
 
     // GROOVY-8339: to avoid illegal access to a non-visible implementation class - can be removed if a more general solution is found
@@ -275,7 +276,6 @@ class ScriptToTreeNodeAdapter {
 /**
  * This Node Operation builds up a root tree node for the viewer.
  */
-@Deprecated
 class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
     final root
@@ -352,12 +352,14 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         }
     }
 
-    private void collectAnnotationData(parent, String name, ClassNode classNode) {
+    private void collectAnnotationData(parent, String name, AnnotatedNode node) {
         def allAnnotations = nodeMaker.makeNode(name)
-        if (classNode.annotations) parent.add(allAnnotations)
-        classNode.annotations?.each {AnnotationNode annotationNode ->
-            def ggrandchild = adapter.make(annotationNode)
-            allAnnotations.add(ggrandchild)
+        if (node.annotations) {
+            parent.add(allAnnotations)
+            node.annotations?.each {AnnotationNode annotationNode ->
+                def ggrandchild = adapter.make(annotationNode)
+                allAnnotations.add(ggrandchild)
+            }
         }
     }
 
@@ -403,12 +405,12 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 
         doCollectMethodData(allMethods, methods)
     }
-    
+
     private void doCollectMethodData(allMethods, List methods) {
         methods?.each {MethodNode methodNode ->
             def ggrandchild = adapter.make(methodNode)
             allMethods.add(ggrandchild)
-    
+
             // print out parameters of method
             methodNode.parameters?.each {Parameter parameter ->
                 def gggrandchild = adapter.make(parameter)
@@ -418,14 +420,16 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
                     parameter.initialExpression.visit(visitor)
                     if (visitor.currentNode) gggrandchild.add(visitor.currentNode)
                 }
+                collectAnnotationData(gggrandchild, 'Annotations', parameter)
             }
-    
+
             // print out code of method
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             if (methodNode.code) {
                 methodNode.code.visit(visitor)
                 if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
             }
+            collectAnnotationData(ggrandchild, 'Annotations', methodNode)
         }
     }
 
@@ -441,6 +445,7 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
                 ctorNode.code.visit(visitor)
                 if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
             }
+            collectAnnotationData(ggrandchild, 'Annotations', ctorNode)
         }
 
     }
@@ -464,10 +469,9 @@ class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
 }
 
 /**
-* This AST visitor builds up a TreeNode.
-*/
+ * This AST visitor builds up a TreeNode.
+ */
 @PackageScope
-@Deprecated
 class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     def currentNode
@@ -483,12 +487,12 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     }
 
     /**
-    * This method looks at the AST node and decides how to represent it in a TreeNode, then it
+     * This method looks at the AST node and decides how to represent it in a TreeNode, then it
      * continues walking the tree. If the node and the expectedSubclass are not exactly the same
      * Class object then the node is not added to the tree. This is to eliminate seeing duplicate
      * nodes, for instance seeing an ArgumentListExpression and a TupleExpression in the tree, when
      * an ArgumentList is-a Tuple.
-    */
+     */
     private void addNode(node, Class expectedSubclass, Closure superMethod) {
 
         if (expectedSubclass.getName() == node.getClass().getName()) {
@@ -643,7 +647,7 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     @Override
     void visitClosureExpression(ClosureExpression node) {
-        addNode(node, ClosureExpression, { 
+        addNode(node, ClosureExpression, {
             it.parameters?.each { parameter -> visitParameter(parameter) }
             super.visitClosureExpression(it)
         })
@@ -789,9 +793,9 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     @Override
     void visitCatchStatement(CatchStatement node) {
-        addNode(node, CatchStatement, { 
-            if (it.variable) visitParameter(it.variable) 
-            super.visitCatchStatement(it) 
+        addNode(node, CatchStatement, {
+            if (it.variable) visitParameter(it.variable)
+            super.visitCatchStatement(it)
         })
     }
 
