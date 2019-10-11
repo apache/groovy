@@ -733,12 +733,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         classNode.addMethod(method);
         markAsGenerated(classNode, method);
         // GROOVY-4415 / GROOVY-4645: check that there's no abstract method which corresponds to this one
-        List<MethodNode> abstractMethods = classNode.getAbstractMethods();
-        if (abstractMethods == null) return;
         String methodName = method.getName();
         Parameter[] parameters = method.getParameters();
         ClassNode methodReturnType = method.getReturnType();
-        for (MethodNode node : abstractMethods) {
+        for (MethodNode node : classNode.getAbstractMethods()) {
             if (!node.getDeclaringClass().equals(classNode)) continue;
             if (node.getName().equals(methodName) && node.getParameters().length == parameters.length) {
                 if (parameters.length == 1) {

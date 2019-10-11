@@ -45,7 +45,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
@@ -109,32 +111,19 @@ import static java.util.stream.Collectors.joining;
 public class ClassNode extends AnnotatedNode implements Opcodes {
 
     private static class MapOfLists {
-        private Map<Object, List<MethodNode>> map;
+        Map<Object, List<MethodNode>> map;
 
-        public List<MethodNode> get(Object key) {
-            return map == null ? null : map.get(key);
+        List<MethodNode> get(Object key) {
+            return Optional.ofNullable(map)
+                .map(m -> m.get(key)).orElseGet(Collections::emptyList);
         }
 
-        public List<MethodNode> getNotNull(Object key) {
-            List<MethodNode> ret = get(key);
-            if (ret == null) ret = Collections.emptyList();
-            return ret;
+        void put(Object key, MethodNode value) {
+            if (map == null) map = new LinkedHashMap<>();
+            map.computeIfAbsent(key, k -> new ArrayList<>(2)).add(value);
         }
 
-        public void put(Object key, MethodNode value) {
-            if (map == null) {
-                 map = new LinkedHashMap<Object, List<MethodNode>>();
-            }
-            if (map.containsKey(key)) {
-                get(key).add(value);
-            } else {
-                List<MethodNode> list = new ArrayList<MethodNode>(2);
-                list.add(value);
-                map.put(key, list);
-            }
-        }
-
-        public void remove(Object key, MethodNode value) {
+        void remove(Object key, MethodNode value) {
             get(key).remove(value);
         }
     }
@@ -268,8 +257,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         clazz = c;
         lazyInitDone = false;
         isPrimaryNode = false;
-        CompileUnit cu = getCompileUnit();
-        if (cu != null) cu.addClass(this);
+        Optional.ofNullable(getCompileUnit()).ifPresent(cu -> cu.addClass(this));
     }
 
     /**
@@ -405,27 +393,18 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the methods associated with this {@code ClassNode}
      */
     public List<MethodNode> getMethods() {
-        if (redirect != null) return redirect().getMethods();
+        if (redirect != null)
+            return redirect().getMethods();
         lazyClassInit();
         return methodsList;
     }
 
     /**
-     * @return the abstract methods associated with this ClassNode or {@code null} if there are no such methods
+     * @return the abstract methods associated with this {@code ClassNode}
      */
     public List<MethodNode> getAbstractMethods() {
-        List<MethodNode> result = new ArrayList<>(3);
-        for (MethodNode method : getDeclaredMethodsMap().values()) {
-            if (method.isAbstract()) {
-                result.add(method);
-            }
-        }
-
-        if (result.isEmpty()) {
-            return null;
-        } else {
-            return result;
-        }
+        return getDeclaredMethodsMap().values().stream()
+            .filter(MethodNode::isAbstract).collect(Collectors.toList());
     }
 
     public List<MethodNode> getAllDeclaredMethods() {
@@ -517,7 +496,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public PackageNode getPackage() {
-        return getModule() == null ? null : getModule().getPackage();
+        return Optional.ofNullable(getModule()).map(ModuleNode::getPackage).orElse(null);
     }
 
     public void setModule(ModuleNode module) {
@@ -589,14 +568,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean hasProperty(String name) {
-        return getProperty(name) != null;
+        return getProperties().stream().map(PropertyNode::getName).anyMatch(name::equals);
     }
 
     public PropertyNode getProperty(String name) {
-        for (PropertyNode pn : getProperties()) {
-            if (pn.getName().equals(name)) return pn;
-        }
-        return null;
+        return getProperties().stream().filter(pn -> pn.getName().equals(name)).findFirst().orElse(null);
     }
 
     public void addConstructor(ConstructorNode node) {
@@ -886,7 +862,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public List<MethodNode> getDeclaredMethods(String name) {
         if (redirect != null) return redirect().getDeclaredMethods(name);
         lazyClassInit();
-        return methods.getNotNull(name);
+        return methods.get(name);
     }
 
     /**
@@ -1505,14 +1481,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addTransform(Class<? extends ASTTransformation> transform, ASTNode node) {
         GroovyASTTransformation annotation = transform.getAnnotation(GroovyASTTransformation.class);
-        if (annotation == null) return;
-
-        Set<ASTNode> nodes = getTransformInstances().get(annotation.phase()).get(transform);
-        if (nodes == null) {
-            nodes = new LinkedHashSet<>();
-            getTransformInstances().get(annotation.phase()).put(transform, nodes);
+        if (annotation != null) {
+            Map<Class<? extends ASTTransformation>, Set<ASTNode>> transforms = getTransforms(annotation.phase());
+            Set<ASTNode> nodes = transforms.computeIfAbsent(transform, k -> new LinkedHashSet<>());
+            nodes.add(node);
         }
-        nodes.add(node);
     }
 
     public Map<Class <? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {

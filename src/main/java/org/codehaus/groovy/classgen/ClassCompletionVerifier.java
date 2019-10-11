@@ -188,10 +188,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         // we only do check abstract classes (including enums), no interfaces or non-abstract classes
         if (!isAbstract(node.getModifiers()) || isInterface(node.getModifiers())) return;
 
-        List<MethodNode> abstractMethods = node.getAbstractMethods();
-        if (abstractMethods == null || abstractMethods.isEmpty()) return;
-
-        for (MethodNode method : abstractMethods) {
+        for (MethodNode method : node.getAbstractMethods()) {
             if (method.isPrivate()) {
                 addError("Method '" + method.getName() + "' from " + getDescription(node) +
                         " must not be private as it is declared as an abstract method.", method);
@@ -201,9 +198,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private void checkNoAbstractMethodsNonabstractClass(ClassNode node) {
         if (isAbstract(node.getModifiers())) return;
-        List<MethodNode> abstractMethods = node.getAbstractMethods();
-        if (abstractMethods == null) return;
-        for (MethodNode method : abstractMethods) {
+        for (MethodNode method : node.getAbstractMethods()) {
             MethodNode sameArgsMethod = node.getMethod(method.getName(), method.getParameters());
             if (null == sameArgsMethod) {
                 sameArgsMethod = ClassHelper.GROOVY_OBJECT_TYPE.getMethod(method.getName(), method.getParameters());
