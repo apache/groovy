@@ -48,12 +48,12 @@ public class GroovyLangParser extends GroovyParser {
     }
 
     private static class LightWeightFailedPredicateException extends FailedPredicateException {
-        public LightWeightFailedPredicateException(Parser recognizer, String predicate, String message) {
+        LightWeightFailedPredicateException(Parser recognizer, String predicate, String message) {
             super(recognizer, predicate, message);
         }
 
         @Override
-        public Throwable fillInStackTrace() {
+        public final Throwable fillInStackTrace() {
             // `FailedPredicateException` is used to change the control flow,
             // so its stack trace can be eliminated for better performance
             return this;
