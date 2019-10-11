@@ -49,11 +49,6 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 
 public class ExpressionUtils {
     private static ArrayList<Integer> handledTypes = new ArrayList<Integer>();
-
-    private ExpressionUtils() {
-
-    }
-
     static {
         handledTypes.add(PLUS);
         handledTypes.add(MINUS);
@@ -66,6 +61,9 @@ public class ExpressionUtils {
         handledTypes.add(BITWISE_AND);
         handledTypes.add(BITWISE_XOR);
         handledTypes.add(POWER);
+    }
+
+    private ExpressionUtils() {
     }
 
     /**
@@ -236,7 +234,7 @@ public class ExpressionUtils {
                         Field field = type.redirect().getTypeClass().getField(pe.getPropertyAsString());
                         if (field != null && Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers())) {
                             ConstantExpression ce3 = new ConstantExpression(field.get(null), true);
-                            ce3.setSourcePosition(exp);
+                            configure(exp, ce3);
                             return ce3;
                         }
                     } catch(Exception e) {
@@ -346,5 +344,4 @@ public class ExpressionUtils {
         }
         return null;
     }
-
 }
