@@ -19,6 +19,8 @@
 
 package org.apache.groovy.parser.antlr4;
 
+import org.antlr.v4.runtime.FailedPredicateException;
+import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.ParserATNSimulator;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.ParserAtnManager;
@@ -40,4 +42,21 @@ public class GroovyLangParser extends GroovyParser {
         }
     }
 
+    @Override
+    protected FailedPredicateException createFailedPredicateException(String predicate, String message) {
+        return new LightWeightFailedPredicateException(this, predicate, message);
+    }
+
+    private static class LightWeightFailedPredicateException extends FailedPredicateException {
+        public LightWeightFailedPredicateException(Parser recognizer, String predicate, String message) {
+            super(recognizer, predicate, message);
+        }
+
+        @Override
+        public Throwable fillInStackTrace() {
+            // `FailedPredicateException` is used to change the control flow,
+            // so its stack trace can be eliminated for better performance
+            return this;
+        }
+    }
 }
