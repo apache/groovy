@@ -199,7 +199,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return (redirect == null ? this : redirect.redirect());
     }
 
-    public final boolean isRedirectNode() {
+    public boolean isRedirectNode() {
         return (redirect != null);
     }
 
@@ -227,9 +227,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         ClassNode cn;
         if (clazz != null) {
-            Class ret = Array.newInstance(clazz, 0).getClass();
+            Class<?> type = Array.newInstance(clazz, 0).getClass();
             // don't use the ClassHelper here!
-            cn = new ClassNode(ret, this);
+            cn = new ClassNode(type, this);
         } else {
             cn = new ClassNode(this);
         }
@@ -255,22 +255,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * Constructor used by {@code makeArray()} if a real class is available.
      */
-    private ClassNode(Class c, ClassNode componentType) {
+    private ClassNode(Class<?> c, ClassNode componentType) {
         this(c);
         this.componentType = componentType;
-        isPrimaryNode = false;
     }
 
     /**
      * Creates a non-primary {@code ClassNode} from a real class.
      */
-    public ClassNode(Class c) {
+    public ClassNode(Class<?> c) {
         this(c.getName(), c.getModifiers(), null, null, MixinNode.EMPTY_ARRAY);
         clazz = c;
         lazyInitDone = false;
+        isPrimaryNode = false;
         CompileUnit cu = getCompileUnit();
         if (cu != null) cu.addClass(this);
-        isPrimaryNode = false;
     }
 
     /**
@@ -352,8 +351,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 if (usesGenerics) break;
             }
         }
-        this.methods = new MapOfLists();
-        this.methodsList = Collections.emptyList();
+        methods = new MapOfLists();
+        methodsList = Collections.emptyList();
     }
 
     /**
@@ -434,18 +433,18 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public Set<ClassNode> getAllInterfaces() {
-        Set<ClassNode> res = new LinkedHashSet<>();
-        getAllInterfaces(res);
-        return res;
+        Set<ClassNode> result = new LinkedHashSet<>();
+        getAllInterfaces(result);
+        return result;
     }
 
-    private void getAllInterfaces(Set<ClassNode> res) {
+    private void getAllInterfaces(Set<ClassNode> set) {
         if (isInterface()) {
-          res.add(this);
+          set.add(this);
         }
         for (ClassNode anInterface : getInterfaces()) {
-            res.add(anInterface);
-            anInterface.getAllInterfaces(res);
+            set.add(anInterface);
+            anInterface.getAllInterfaces(set);
         }
     }
 
@@ -481,10 +480,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List<PropertyNode> getProperties() {
-        final ClassNode r = redirect();
-        if (r.properties == null)
-            r.properties = new ArrayList<>();
-        return r.properties;
+        if (redirect != null)
+            return redirect().getProperties();
+        if (properties == null)
+            properties = new ArrayList<>();
+        return properties;
     }
 
     public List<ConstructorNode> getDeclaredConstructors() {
@@ -509,7 +509,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void removeConstructor(ConstructorNode node) {
-        redirect().constructors.remove(node);
+        getDeclaredConstructors().remove(node);
     }
 
     public ModuleNode getModule() {
@@ -558,12 +558,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addProperty(PropertyNode node) {
         node.setDeclaringClass(redirect());
-        FieldNode field = node.getField();
-        addField(field);
-        final ClassNode r = redirect();
-        if (r.properties == null)
-            r.properties = new ArrayList<>();
-        r.properties.add(node);
+        addField(node.getField());
+        getProperties().add(node);
     }
 
     public PropertyNode addProperty(String name,
@@ -662,16 +658,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @see #getDeclaredMethod(String, Parameter[])
      */
     public boolean hasDeclaredMethod(String name, Parameter[] parameters) {
-        MethodNode other = getDeclaredMethod(name, parameters);
-        return other != null;
+        return (getDeclaredMethod(name, parameters) != null);
     }
 
     /**
      * @see #getMethod(String, Parameter[])
      */
     public boolean hasMethod(String name, Parameter[] parameters) {
-        MethodNode other = getMethod(name, parameters);
-        return other != null;
+        return (getMethod(name, parameters) != null);
     }
 
     /**
@@ -713,16 +707,16 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
     }
 
-    public boolean equals(Object o) {
-        if (redirect != null) return redirect().equals(o);
-        if (!(o instanceof ClassNode)) return false;
-        ClassNode cn = (ClassNode) o;
-        return (cn.getText().equals(getText()));
+    public boolean equals(Object that) {
+        if (that == this) return true;
+        if (!(that instanceof ClassNode)) return false;
+        if (redirect != null) return redirect().equals(that);
+        return (((ClassNode) that).getText().equals(getText()));
     }
 
     public int hashCode() {
         if (redirect != null) return redirect().hashCode();
-        return getName().hashCode();
+        return getText().hashCode();
     }
 
     public void addMixin(MixinNode mixin) {
@@ -776,25 +770,28 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the field on the outer class or {@code null} if this is not an inner class
      */
     public FieldNode getOuterField(String name) {
+        if (redirect != null) {
+            return redirect().getOuterField(name);
+        }
         return null;
     }
 
     public ClassNode getOuterClass() {
+        if (redirect != null) {
+            return redirect().getOuterClass();
+        }
         return null;
     }
 
     public List<ClassNode> getOuterClasses() {
-        if (!(this instanceof InnerClassNode)) {
+        ClassNode outer = getOuterClass();
+        if (outer == null) {
             return Collections.emptyList();
         }
-
         List<ClassNode> result = new LinkedList<>();
-        ClassNode outestClass = ((InnerClassNode) this).getOuterMostClass();
-        ClassNode cn = this;
-
         do {
-            result.add(cn = cn.getOuterClass());
-        } while (!cn.equals(outestClass));
+            result.add(outer);
+        } while ((outer = outer.getOuterClass()) != null);
 
         return result;
     }
@@ -1400,11 +1397,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public boolean isResolved() {
         if (clazz != null) return true;
         if (redirect != null) return redirect.isResolved();
-        return componentType != null && componentType.isResolved();
+        return (componentType != null && componentType.isResolved());
     }
 
     public boolean isArray() {
-        return componentType != null;
+        return (componentType != null);
     }
 
     public ClassNode getComponentType() {
@@ -1430,14 +1427,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean hasPackageName() {
-        return redirect().name.indexOf('.') > 0;
+        return (redirect().name.indexOf('.') > 0);
     }
 
     /**
      * Marks if the current class uses annotations or not.
      */
-    public void setAnnotated(boolean flag) {
-        this.annotated = flag;
+    public void setAnnotated(boolean annotated) {
+        this.annotated = annotated;
     }
 
     public boolean isAnnotated() {
@@ -1462,9 +1459,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         this.genericsTypes = genericsTypes;
     }
 
-    public void setGenericsPlaceHolder(boolean b) {
-        usesGenerics = usesGenerics || b;
-        placeholder = b;
+    public void setGenericsPlaceHolder(boolean placeholder) {
+        usesGenerics = usesGenerics || placeholder;
+        this.placeholder = placeholder;
     }
 
     public boolean isGenericsPlaceHolder() {
@@ -1475,8 +1472,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return usesGenerics;
     }
 
-    public void setUsingGenerics(boolean b) {
-        usesGenerics = b;
+    public void setUsingGenerics(boolean usesGenerics) {
+        this.usesGenerics = usesGenerics;
     }
 
     public ClassNode getPlainNodeReference() {
