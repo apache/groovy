@@ -29,41 +29,41 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
  */
 public class MissingMethodException extends GroovyRuntimeException {
 
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
     private static final long serialVersionUID = -6676430495683939401L;
+
     private final String method;
-    private final Class type;
+    private final Class<?> type;
     private final boolean isStatic;
+    private final Object[] arguments;
+
+    public MissingMethodException(String method, Class<?> type, Object[] arguments) {
+        this(method, type, arguments, false);
+    }
+
+    public MissingMethodException(String method, Class<?> type, Object[] arguments, boolean isStatic) {
+        super();
+        this.method = method;
+        this.type = type;
+        this.isStatic = isStatic;
+        this.arguments = arguments != null ? arguments : new Object[0];
+    }
 
     public Object[] getArguments() {
         return arguments;
     }
 
-    private final Object arguments[];
-
-    public MissingMethodException(String method, Class type, Object[] arguments) {
-        this(method, type, arguments, false);
-    }
-
-    public MissingMethodException(String method, Class type, Object[] arguments, boolean isStatic) {
-        super();
-        this.method = method;
-        this.type = type;
-        this.isStatic = isStatic;
-        this.arguments = arguments == null ? EMPTY_OBJECT_ARRAY : arguments;
-    }
-
+    @Override
     public String getMessage() {
         return "No signature of method: "
                 + (isStatic ? "static " : "")
-                + type.getName()
+                + (type != null ? type.getName() : "<unknown>")
                 + "."
                 + method
                 + "() is applicable for argument types: ("
                 + InvokerHelper.toTypeString(arguments, 60)
                 + ") values: "
                 + InvokerHelper.toArrayString(arguments, 60, true)
-                + MethodRankHelper.getMethodSuggestionString(method, type, arguments);
+                + (type != null ? MethodRankHelper.getMethodSuggestionString(method, type, arguments) : "");
     }
 
     /**
@@ -76,7 +76,7 @@ public class MissingMethodException extends GroovyRuntimeException {
     /**
      * @return The type on which the method was attempted to be called
      */
-    public Class getType() {
+    public Class<?> getType() {
         return type;
     }
 
