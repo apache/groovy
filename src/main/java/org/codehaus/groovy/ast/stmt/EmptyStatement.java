@@ -29,12 +29,9 @@ public class EmptyStatement extends Statement {
     /**
      * @see EmptyStatement#INSTANCE
      */
-    public EmptyStatement() {
-        super();
-    }
+    public EmptyStatement() {}
 
     protected EmptyStatement(Map<?, ?> metaDataMap) {
-        super();
         super.setMetaDataMap(metaDataMap);
     }
 
