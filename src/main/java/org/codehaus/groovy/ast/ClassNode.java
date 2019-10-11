@@ -334,10 +334,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             usesGenerics = superClass.isUsingGenerics();
         }
         if (!usesGenerics && interfaces != null) {
-            for (ClassNode anInterface : interfaces) {
-                usesGenerics = usesGenerics || anInterface.isUsingGenerics();
-                if (usesGenerics) break;
-            }
+            usesGenerics = stream(interfaces).anyMatch(ClassNode::isUsingGenerics);
         }
         methods = new MapOfLists();
         methodsList = Collections.emptyList();
