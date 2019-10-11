@@ -45,11 +45,11 @@ class JmxListenerFactoryTest extends GroovyTestCase {
 
     void testListenerEvent() {
         def eventCount = 0
-        builder.timer(name: "test:type=timer", period: 400).start()
+        builder.timer(name: "test:type=timer", period: 200).start()
         builder.listener(from: "test:type=timer", call: {event ->
             eventCount = eventCount + 1
         })
-        sleep 1100
+        sleep 1300
         assert eventCount > 1
 
         shouldFail {
