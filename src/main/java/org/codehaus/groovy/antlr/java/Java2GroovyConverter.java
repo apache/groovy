@@ -22,6 +22,7 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 
+@Deprecated
 public class Java2GroovyConverter extends VisitorAdapter{
     private final int[] typeMapping;
 

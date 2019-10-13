@@ -20,6 +20,7 @@ package org.codehaus.groovy.antlr.java;
 
 import java.util.Arrays;
 
+@Deprecated
 public class Java2GroovyMain {
 
     public static void main(String[] args) {
