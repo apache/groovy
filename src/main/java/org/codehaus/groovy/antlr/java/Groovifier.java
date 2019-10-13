@@ -22,6 +22,7 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 
+@Deprecated
 public class Groovifier extends VisitorAdapter implements GroovyTokenTypes {
     private String currentClassName = "";
     private final boolean cleanRedundantPublic;

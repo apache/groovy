@@ -41,6 +41,7 @@ import java.io.StringReader;
 import java.util.Iterator;
 import java.util.List;
 
+@Deprecated
 public class Java2GroovyProcessor {
 
     public static void processFiles(List<String> fileNames) throws Exception {
