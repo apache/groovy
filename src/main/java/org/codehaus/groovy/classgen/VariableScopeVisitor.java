@@ -564,22 +564,21 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope.setInStaticContext(false);
         for (MethodNode method : innerClass.getMethods()) {
             Parameter[] parameters = method.getParameters();
-            if (parameters.length == 0) parameters = null; // null means no implicit "it"
+            if (parameters.length == 0)
+                parameters = null; // null means no implicit "it"
             ClosureExpression cl = new ClosureExpression(parameters, method.getCode());
             visitClosureExpression(cl);
         }
 
         for (FieldNode field : innerClass.getFields()) {
-            final Expression expression = field.getInitialExpression();
+            Expression expression = field.getInitialExpression();
             pushState(field.isStatic());
             if (expression != null) {
-                if (expression instanceof VariableExpression) {
-                    VariableExpression vexp = (VariableExpression) expression;
-                    if (vexp.getAccessedVariable() instanceof Parameter) {
-                        // workaround for GROOVY-6834: accessing a parameter which is not yet seen in scope
-                        popState();
-                        continue;
-                    }
+                if (expression.isSynthetic() && expression instanceof VariableExpression &&
+                        ((VariableExpression) expression).getAccessedVariable() instanceof Parameter) {
+                    // GROOVY-6834: accessing a parameter which is not yet seen in scope
+                    popState();
+                    continue;
                 }
                 expression.visit(this);
             }
