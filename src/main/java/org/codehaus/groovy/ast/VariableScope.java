@@ -28,36 +28,48 @@ import java.util.Map;
  * across method and closure boundaries.
  */
 public class VariableScope  {
+
+    private VariableScope parent;
+    private ClassNode classScope;
+    private boolean inStaticContext;
+    private boolean resolvesDynamic;
+
     private Map<String, Variable> declaredVariables = Collections.emptyMap();
     private Map<String, Variable> referencedLocalVariables = Collections.emptyMap();
     private Map<String, Variable> referencedClassVariables = Collections.emptyMap();
- 
-    private boolean inStaticContext = false;
-    private boolean resolvesDynamic = false; 
-    // Non-null iff this scope corresponds to a class, as opposed to a method, "if" statement,
-    // block statement, etc.
-    private ClassNode clazzScope;
-    private VariableScope parent;
 
     public VariableScope() {
+        super();
     }
+
     public VariableScope(VariableScope parent) {
         this.parent = parent;
     }
 
-    public Variable getDeclaredVariable(String name) {
-        return declaredVariables.get(name);
-    }
-
-    public boolean isReferencedLocalVariable(String name) {
-        return referencedLocalVariables.containsKey(name);
-    }
-    
-    public boolean isReferencedClassVariable(String name) {
-        return referencedClassVariables.containsKey(name);
-    }
     public VariableScope getParent() {
         return parent;
+    }
+
+    public boolean isRoot() {
+        return parent == null;
+    }
+
+    /**
+     * Non-null iff this scope corresponds to a class; as opposed to a method, "if" statement, block statement, etc.
+     */
+    public ClassNode getClassScope() {
+        return classScope;
+    }
+
+    /**
+     * Returns true iff this scope corresponds to a class; as opposed to a method, "if" statement, block statement, etc.
+     */
+    public boolean isClassScope() {
+        return classScope != null;
+    }
+
+    public void setClassScope(ClassNode classScope) {
+        this.classScope = classScope;
     }
 
     public boolean isInStaticContext() {
@@ -68,114 +80,31 @@ public class VariableScope  {
         this.inStaticContext = inStaticContext;
     }
 
-    public void setClassScope(ClassNode node) {
-        this.clazzScope = node;
-    }
-    
-    /**
-     * Non-null iff this scope corresponds to a class; as opposed to a method, "if" statement,
-     * block statement, etc.
-     */
-    public ClassNode getClassScope(){
-        return clazzScope;
-    }
-    
-    /**
-     * Returns true iff this scope corresponds to a class; as opposed to a method, "if" statement,
-     * block statement, etc.
-     */
-    public boolean isClassScope(){
-        return clazzScope!=null;
-    }
-    
-    public boolean isRoot() {
-        return parent==null;
-    }
-    
-    public VariableScope copy() {
-        VariableScope copy = new VariableScope();
-        copy.clazzScope = clazzScope;
-        if (!declaredVariables.isEmpty()) {
-          copy.declaredVariables = new LinkedHashMap<String, Variable>(declaredVariables);
-        }
-        copy.inStaticContext = inStaticContext;
-        copy.parent = parent;
-        if (!referencedClassVariables.isEmpty()) {
-            copy.referencedClassVariables = new LinkedHashMap<String, Variable>(referencedClassVariables);
-        }
-        if (!referencedLocalVariables.isEmpty()) {
-            copy.referencedLocalVariables = new LinkedHashMap<String, Variable>(referencedLocalVariables);
-        }
-        copy.resolvesDynamic = resolvesDynamic;
-        return copy;
-    }
+    //
 
-    public void putDeclaredVariable(Variable var) {
-        if (declaredVariables == Collections.EMPTY_MAP)
-          declaredVariables = new LinkedHashMap<String, Variable>();
-        declaredVariables.put(var.getName(), var);
-    }
-
-    public Iterator<Variable> getReferencedLocalVariablesIterator() {
-        return referencedLocalVariables.values().iterator();
-    }
-
-    public int getReferencedLocalVariablesCount() {
-        return referencedLocalVariables.size();
+    public Variable getDeclaredVariable(String name) {
+        return declaredVariables.get(name);
     }
 
     public Variable getReferencedLocalVariable(String name) {
         return referencedLocalVariables.get(name);
     }
 
-    public void putReferencedLocalVariable(Variable var) {
-        if (referencedLocalVariables == Collections.EMPTY_MAP)
-          referencedLocalVariables = new LinkedHashMap<String, Variable>();
-        referencedLocalVariables.put(var.getName(), var);
-    }
-
-    public void putReferencedClassVariable(Variable var) {
-        if (referencedClassVariables == Collections.EMPTY_MAP)
-          referencedClassVariables = new LinkedHashMap<String, Variable>();
-        referencedClassVariables.put(var.getName(), var);
-    }
-
     public Variable getReferencedClassVariable(String name) {
         return referencedClassVariables.get(name);
     }
 
-    public Object removeReferencedClassVariable(String name) {
-        if (referencedClassVariables == Collections.EMPTY_MAP)
-          return null;
-        else
-          return referencedClassVariables.remove(name);
+    public boolean isReferencedLocalVariable(String name) {
+        return referencedLocalVariables.containsKey(name);
     }
-    
-    /**
-     * Gets a map containing the class variables referenced 
-     * by this scope. This not can not be modified.
-     * @return a map containing the class variable references
-     */
-    public Map<String, Variable> getReferencedClassVariables() {
-        if (referencedClassVariables == Collections.EMPTY_MAP) {
-            return referencedClassVariables;
-        } else {
-            return Collections.unmodifiableMap(referencedClassVariables);
-        }
-    }
-    
-    /**
-     * Gets an iterator for the referenced class variables. The
-     * remove operation is not supported.
-     * @return an iterator for the referenced class variables
-     */
-    public Iterator<Variable> getReferencedClassVariablesIterator() {
-        return getReferencedClassVariables().values().iterator();
+
+    public boolean isReferencedClassVariable(String name) {
+        return referencedClassVariables.containsKey(name);
     }
 
     /**
-     * Gets a map containing the variables declared in this scope.
-     * This map cannot be modified.
+     * Gets a map containing the variables declared in this scope. This map cannot be modified.
+     *
      * @return a map containing the declared variable references
      */
     public Map<String, Variable> getDeclaredVariables() {
@@ -187,11 +116,92 @@ public class VariableScope  {
     }
 
     /**
-     * Gets an iterator for the declared class variables. The remove
-     * operation is not supported.
+     * Gets a map containing the class variables referenced by this scope. This not can not be modified.
+     *
+     * @return a map containing the class variable references
+     */
+    public Map<String, Variable> getReferencedClassVariables() {
+        if (referencedClassVariables == Collections.EMPTY_MAP) {
+            return referencedClassVariables;
+        } else {
+            return Collections.unmodifiableMap(referencedClassVariables);
+        }
+    }
+
+    public int getReferencedLocalVariablesCount() {
+        return referencedLocalVariables.size();
+    }
+
+    /**
+     * Gets an iterator for the declared class variables. The remove operation is not supported.
+     *
      * @return an iterator for the declared variables
      */
     public Iterator<Variable> getDeclaredVariablesIterator() {
         return getDeclaredVariables().values().iterator();
+    }
+
+    /**
+     * Gets an iterator for the referenced local variables. The remove operation *is* supported.
+     *
+     * @return an iterator for the referenced local variables
+     */
+    public Iterator<Variable> getReferencedLocalVariablesIterator() {
+        return referencedLocalVariables.values().iterator();
+    }
+
+    /**
+     * Gets an iterator for the referenced class variables. The remove operation is not supported.
+     *
+     * @return an iterator for the referenced class variables
+     */
+    public Iterator<Variable> getReferencedClassVariablesIterator() {
+        return getReferencedClassVariables().values().iterator();
+    }
+
+    public void putDeclaredVariable(Variable var) {
+        if (declaredVariables == Collections.EMPTY_MAP)
+            declaredVariables = new LinkedHashMap<>();
+        declaredVariables.put(var.getName(), var);
+    }
+
+    public void putReferencedLocalVariable(Variable var) {
+        if (referencedLocalVariables == Collections.EMPTY_MAP)
+            referencedLocalVariables = new LinkedHashMap<>();
+        referencedLocalVariables.put(var.getName(), var);
+    }
+
+    public void putReferencedClassVariable(Variable var) {
+        if (referencedClassVariables == Collections.EMPTY_MAP)
+            referencedClassVariables = new LinkedHashMap<>();
+        referencedClassVariables.put(var.getName(), var);
+    }
+
+    public Object removeReferencedClassVariable(String name) {
+        if (referencedClassVariables.isEmpty()) {
+            return null;
+        } else {
+            return referencedClassVariables.remove(name);
+        }
+    }
+
+    //
+
+    // TODO: implement Cloneable and override Object.clone()
+    public VariableScope copy() {
+        VariableScope copy = new VariableScope(parent);
+        copy.classScope = classScope;
+        copy.inStaticContext = inStaticContext;
+        copy.resolvesDynamic = resolvesDynamic;
+        if (!declaredVariables.isEmpty()) {
+            copy.declaredVariables = new LinkedHashMap<>(declaredVariables);
+        }
+        if (!referencedLocalVariables.isEmpty()) {
+            copy.referencedLocalVariables = new LinkedHashMap<>(referencedLocalVariables);
+        }
+        if (!referencedClassVariables.isEmpty()) {
+            copy.referencedClassVariables = new LinkedHashMap<>(referencedClassVariables);
+        }
+        return copy;
     }
 }
