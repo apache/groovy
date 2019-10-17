@@ -91,7 +91,7 @@ public class ClassNodeResolver {
     }
 
     // Map to store cached classes
-    private final Map<String,ClassNode> cachedClasses = new HashMap();
+    private final Map<String, ClassNode> cachedClasses = new HashMap<>();
     /**
      * Internal helper used to indicate a cache hit for a class that does not exist. 
      * This way further lookups through a slow {@link #findClassNode(String, CompilationUnit)} 
