@@ -123,7 +123,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                             arr [0] = ee;
                             arr [1] = e;
                             tab[index] = arr;
-                            count++;
+                            count.getAndIncrement();
                             return ee;
                         }
                     }
@@ -142,7 +142,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                             Entry e = (Entry) arr[i];
                             if (e == null) {
                                 arr [i] = ee;
-                                count++;
+                                count.getAndIncrement();
                                 return ee;
                             }
                         }
@@ -151,14 +151,14 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                         newArr [0] = ee;
                         System.arraycopy(arr, 0, newArr, 1, arr.length);
                         tab [index] = newArr;
-                        count++;
+                        count.getAndIncrement();
                         return ee;
                     }
                 }
 
                 Entry e = createEntry(key, hash, value);
                 tab[index] = e;
-                count++; // write-volatile
+                count.getAndIncrement();
                 return e;
             } finally {
                 unlock();
@@ -168,7 +168,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
         public void remove(K key, int hash) {
             lock();
             try {
-                int c = count-1;
+                int c = count.get() - 1;
                 final Object[] tab = table;
                 final int index = hash & (tab.length - 1);
                 Object o = tab[index];
@@ -177,16 +177,16 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                     if (o instanceof Entry) {
                         if (((Entry<K,V>)o).isEqual(key, hash)) {
                           tab[index] = null;
-                          count = c;
+                          count.set(c);
                         }
                     }
                     else {
-                        Object arr [] = (Object[]) o;
+                        Object[] arr  = (Object[]) o;
                         for (int i = 0; i < arr.length; i++) {
                             Entry<K,V> e = (Entry<K,V>) arr[i];
                             if (e != null && e.isEqual(key, hash)) {
                                 arr [i] = null;
-                                count = c;
+                                count.set(c);
                                 break;
                             }
                         }

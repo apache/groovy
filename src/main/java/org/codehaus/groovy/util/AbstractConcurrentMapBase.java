@@ -20,6 +20,7 @@ package org.codehaus.groovy.util;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class AbstractConcurrentMapBase {
     protected static final int MAXIMUM_CAPACITY = 1 << 30;
@@ -155,7 +156,7 @@ public abstract class AbstractConcurrentMapBase {
 
     public static class Segment extends LockableObject {
         private static final long serialVersionUID = -4128828550135386431L;
-        volatile int count;
+        AtomicInteger count = new AtomicInteger(0);
 
         int threshold;
 
@@ -172,7 +173,7 @@ public abstract class AbstractConcurrentMapBase {
 
         void removeEntry (Entry e) {
             lock ();
-            int newCount = count;
+            int newCount = count.get();
             try {
                 Object [] tab = table;
                 int index = e.getHash() & (tab.length-1);
@@ -205,7 +206,7 @@ public abstract class AbstractConcurrentMapBase {
                         }
                         tab [index] = res;
                     }
-                    count = newCount;
+                    count.set(newCount);
                 }
             }
             finally {
@@ -214,7 +215,7 @@ public abstract class AbstractConcurrentMapBase {
         }
 
         void rehashIfThresholdExceeded() {
-            if(count > threshold) {
+            if(count.get() > threshold) {
                 rehash();
             }
         }
@@ -289,7 +290,7 @@ public abstract class AbstractConcurrentMapBase {
             threshold = (int)(newTable.length * 0.75f);
 
             table = newTable;
-            count = newCount;
+            count.set(newCount);
         }
 
         private static void put(Entry ee, int index, Object[] tab) {
