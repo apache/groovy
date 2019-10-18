@@ -56,7 +56,6 @@ import org.objectweb.asm.Opcodes;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -1040,7 +1039,7 @@ public class JavaStubGenerator {
     }
 
     public void clean() {
-        javaStubCompilationUnitSet.parallelStream().peek(FileObject::delete);
+        javaStubCompilationUnitSet.stream().peek(FileObject::delete);
         javaStubCompilationUnitSet.clear();
     }
 
