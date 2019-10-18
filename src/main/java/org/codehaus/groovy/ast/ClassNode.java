@@ -563,6 +563,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return node;
     }
 
+    public boolean hasField(String name) {
+        return null != getField(name);
+    }
+
     public boolean hasProperty(String name) {
         return getProperties().stream().map(PropertyNode::getName).anyMatch(name::equals);
     }
