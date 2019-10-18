@@ -25,19 +25,25 @@ interface Reducable {
 class BaseReducer {
     public abstract class PublicBaseContext {}
     protected abstract class ProtectedBaseContext {}
+    /*package*/ abstract class PackagePrivateBaseContext {}
+
     public static abstract class PublicStaticBaseContext {}
     protected static abstract class ProtectedStaticBaseContext {}
+    /*package*/ static abstract class PackagePrivateStaticBaseContext {}
+
     private abstract class PrivateBaseContext {}
 }
 
 public class Reducer extends BaseReducer implements Reducable {
     public abstract class PublicContext {}
     protected abstract class ProtectedContext {}
+    /*package*/ abstract class PackagePrivateContext {}
+
     public static abstract class PublicStaticContext {}
     protected static abstract class ProtectedStaticContext {}
+    /*package*/ static abstract class PackagePrivateStaticContext {}
+
     private abstract class PrivateContext {}
 
-    public enum Type {
-        DYNAMIC, STATIC
-    }
+    public enum Type { DYNAMIC, STATIC }
 }

@@ -77,14 +77,13 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
 import static org.codehaus.groovy.ast.CompileUnit.ConstructedOuterNestedClassNode;
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.isDefaultVisibility;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
@@ -149,8 +148,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
     }
-
-
 
     private static String replacePoints(String name) {
         return name.replace('.','$');
@@ -308,39 +305,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveToNestedOfCurrentClassAndSuperClasses(ClassNode type) {
-        // GROOVY-8531: Fail to resolve type defined in super class written in Java
-        for (ClassNode enclosingClassNode = currentClass; ClassHelper.OBJECT_TYPE != enclosingClassNode && null != enclosingClassNode; enclosingClassNode = enclosingClassNode.getSuperClass()) {
-            if(resolveToNested(enclosingClassNode, type)) return true;
-        }
-
-        return false;
-    }
-
-    private boolean resolveToNested(ClassNode enclosingType, ClassNode type) {
-        if (type instanceof ConstructedNestedClass) return false;
-        // GROOVY-3110: It may be an inner enum defined by this class itself, in which case it does not need to be
-        // explicitly qualified by the currentClass name
-        String name = type.getName();
-        if (enclosingType != type && !name.contains(".") && type.getClass().equals(ClassNode.class)) {
-            ClassNode tmp = new ConstructedNestedClass(enclosingType,name);
-            if (resolve(tmp)) {
-                if (!checkInnerTypeVisibility(enclosingType, tmp)) return false;
-
-                type.setRedirect(tmp);
+        for (ClassNode enclosingClass = currentClass; enclosingClass != null && enclosingClass != type && enclosingClass != ClassHelper.OBJECT_TYPE; enclosingClass = enclosingClass.getSuperClass()) {
+            ClassNode nestedClass = new ConstructedNestedClass(enclosingClass, type.getName());
+            if (resolve(nestedClass) && (enclosingClass == currentClass || isVisibleNestedClass(nestedClass, currentClass))) {
+                type.setRedirect(nestedClass);
                 return true;
             }
         }
-
         return false;
-    }
-
-    private boolean checkInnerTypeVisibility(ClassNode enclosingType, ClassNode innerClassNode) {
-        if (currentClass == enclosingType) {
-            return true;
-        }
-
-        int modifiers = innerClassNode.getModifiers();
-        return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers);
     }
 
     private void resolveOrFail(ClassNode type, String msg, ASTNode node) {
@@ -1072,12 +1044,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
-    private boolean isVisibleNestedClass(ClassNode type, ClassNode ceType) {
-        if (!type.isRedirectNode()) return false;
-        ClassNode redirect = type.redirect();
-        if (Modifier.isPublic(redirect.getModifiers()) || Modifier.isProtected(redirect.getModifiers())) return true;
-        // package local
-        return isDefaultVisibility(redirect.getModifiers()) && inSamePackage(ceType, redirect);
+    private static boolean isVisibleNestedClass(ClassNode innerType, ClassNode outerType) {
+        int modifiers = innerType.getModifiers();
+        return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)
+                || (!Modifier.isPrivate(modifiers) && Objects.equals(innerType.getPackageName(), outerType.getPackageName()));
     }
 
     private boolean directlyImplementsTrait(ClassNode trait) {
@@ -1148,11 +1118,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // In that case we change it to a LowerCaseClass to let the
                 // compiler skip the resolving at several places in this class.
                 if (Character.isLowerCase(name.charAt(0))) {
-                  t = new LowerCaseClass(name);
-                }
-                isClass = resolve(t);
-                if(!isClass) {
-                    isClass = resolveToNestedOfCurrentClassAndSuperClasses(t);
+                    t = new LowerCaseClass(name);
+                    isClass = resolve(t);
+                } else {
+                    isClass = resolve(t) || resolveToNestedOfCurrentClassAndSuperClasses(t);
                 }
             }
             if (isClass) {
