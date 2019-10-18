@@ -18,11 +18,17 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-class Groovy9261 extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+@CompileStatic
+final class Groovy9261 {
+
+    @Test
     void testInvalidResourceInARM() {
-        String errMsg = shouldFail '''\
+        def err = shouldFail '''\
             @groovy.transform.CompileStatic
             void test() {
                 try (String str = '123') {
@@ -31,12 +37,13 @@ class Groovy9261 extends GroovyTestCase {
             test()
         '''
 
-        assert errMsg.contains('Resource[java.lang.String] in ARM should be of type AutoCloseable')
-        assert errMsg.contains('@ line 3, column 22.')
+        assert err.message.contains('Resource[java.lang.String] in ARM should be of type AutoCloseable')
+        assert err.message.contains('@ line 3, column 22.')
     }
 
+    @Test
     void testInvalidResourceInARM2() {
-        String errMsg = shouldFail '''\
+        def err = shouldFail '''\
             @groovy.transform.CompileStatic
             void test() {
                 try (str = '123') {
@@ -45,12 +52,13 @@ class Groovy9261 extends GroovyTestCase {
             test()
         '''
 
-        assert errMsg.contains('Resource[java.lang.String] in ARM should be of type AutoCloseable')
-        assert errMsg.contains('@ line 3, column 22.')
+        assert err.message.contains('Resource[java.lang.String] in ARM should be of type AutoCloseable')
+        assert err.message.contains('@ line 3, column 22.')
     }
 
+    @Test
     void testInvalidResourceInARM3() {
-        String errMsg = shouldFail '''\
+        def err = shouldFail '''\
             @groovy.transform.CompileStatic
             void test() {
                 try (def sr = new StringReader(''); str = '123') {
@@ -59,12 +67,13 @@ class Groovy9261 extends GroovyTestCase {
             test()
         '''
 
-        assert errMsg.contains('Resource[java.lang.String] in ARM should be of type AutoCloseable')
-        assert errMsg.contains('@ line 3, column 53.')
+        assert err.message.contains('Resource[java.lang.String] in ARM should be of type AutoCloseable')
+        assert err.message.contains('@ line 3, column 53.')
     }
 
+    @Test
     void testInvalidResourceInEnhancedARM() {
-        String errMsg = shouldFail '''\
+        def err = shouldFail '''\
             @groovy.transform.CompileStatic
             void test() {
                 String str = '123'
@@ -74,7 +83,7 @@ class Groovy9261 extends GroovyTestCase {
             test()
         '''
 
-        assert errMsg.contains('Resource[java.lang.String] in ARM should be of type AutoCloseable')
-        assert errMsg.contains('@ line 4, column 22.')
+        assert err.message.contains('Resource[java.lang.String] in ARM should be of type AutoCloseable')
+        assert err.message.contains('@ line 4, column 22.')
     }
 }
