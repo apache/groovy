@@ -76,10 +76,12 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import static org.codehaus.groovy.ast.CompileUnit.ConstructedOuterNestedClassNode;
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
@@ -113,10 +115,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean inClosure = false;
 
     private final Map<ClassNode, ClassNode> possibleOuterClassNodeMap = new HashMap<>();
-    private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<GenericsTypeName, GenericsType>();
-    private final Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
-    private boolean checkingVariableTypeInDeclaration = false;
-    private ImportNode currImportNode = null;
+    private Map<GenericsTypeName, GenericsType> genericParameterNames = new HashMap<>();
+    private final Set<FieldNode> fieldTypesChecked = new HashSet<>();
+    private boolean checkingVariableTypeInDeclaration;
+    private ImportNode currImportNode;
     private MethodNode currentMethod;
     private ClassNodeResolver classNodeResolver;
 
@@ -298,20 +300,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (resolve(type)) return true;
         }
 
-        if (resolveToNestedOfCurrentClassAndSuperClasses(type)) return true;
-
         type.setName(saved);
-        return false;
-    }
-
-    private boolean resolveToNestedOfCurrentClassAndSuperClasses(ClassNode type) {
-        for (ClassNode enclosingClass = currentClass; enclosingClass != null && enclosingClass != type && enclosingClass != ClassHelper.OBJECT_TYPE; enclosingClass = enclosingClass.getSuperClass()) {
-            ClassNode nestedClass = new ConstructedNestedClass(enclosingClass, type.getName());
-            if (resolve(nestedClass) && (enclosingClass == currentClass || isVisibleNestedClass(nestedClass, currentClass))) {
-                type.setRedirect(nestedClass);
-                return true;
-            }
-        }
         return false;
     }
 
@@ -477,21 +466,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveNestedClass(ClassNode type) {
-        if (type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
+        if (type.hasPackageName() || type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
+
         // we have for example a class name A, are in class X
         // and there is a nested class A$X. we want to be able
         // to access that class directly, so A becomes a valid
         // name in X.
         // GROOVY-4043: Do this check up the hierarchy, if needed
-        Map<String, ClassNode> hierClasses = findHierClasses(currentClass);
-
-        for (ClassNode classToCheck : hierClasses.values()) {
+        for (ClassNode classToCheck : findHierClasses(currentClass).values()) {
             if (setRedirect(type, classToCheck)) return true;
         }
 
         // GROOVY-8947: Fail to resolve non-static inner class outside of outer class
         ClassNode possibleOuterClassNode = possibleOuterClassNodeMap.get(type);
-        if (null != possibleOuterClassNode) {
+        if (possibleOuterClassNode != null) {
             if (setRedirect(type, possibleOuterClassNode)) return true;
         }
 
@@ -501,43 +489,50 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // is the qualified (minus package) name of that class
         // anyway.
 
-        // That means if the current class is not an InnerClassNode
-        // there is nothing to be done.
-        if (!(currentClass instanceof InnerClassNode)) return false;
+        List<ClassNode> outerClasses = currentClass.getOuterClasses();
+        if (!outerClasses.isEmpty()) {
+            // since we have B and want to get A we start with the most
+            // outer class, put them together and then see if that does
+            // already exist. In case of B from within A$B we are done
+            // after the first step already. In case of for example
+            // A.B.C.D.E.F and accessing E from F we test A$E=failed,
+            // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success
 
-        // since we have B and want to get A we start with the most
-        // outer class, put them together and then see if that does
-        // already exist. In case of B from within A$B we are done
-        // after the first step already. In case of for example
-        // A.B.C.D.E.F and accessing E from F we test A$E=failed,
-        // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success
-
-        LinkedList<ClassNode> outerClasses = new LinkedList<ClassNode>();
-        ClassNode outer = currentClass.getOuterClass();
-        while (outer!=null) {
-            outerClasses.addFirst(outer);
-            outer = outer.getOuterClass();
-        }
-        // most outer class is now element 0
-        for (ClassNode testNode : outerClasses) {
-            if (setRedirect(type, testNode)) return true;
+            for (ListIterator<ClassNode> it = outerClasses.listIterator(outerClasses.size()); it.hasPrevious();) {
+                ClassNode outerClass = it.previous();
+                if (setRedirect(type, outerClass)) return true;
+            }
         }
 
         return false;
     }
 
     private boolean setRedirect(ClassNode type, ClassNode classToCheck) {
-        ClassNode val = new ConstructedNestedClass(classToCheck, type.getName());
-        if (resolveFromCompileUnit(val)) {
-            type.setRedirect(val);
-            return true;
+        String typeName = type.getName();
+
+        Predicate<ClassNode> resolver = new Predicate<ClassNode>() {
+            @Override
+            public boolean test(ClassNode maybeOuter) {
+                if (!typeName.equals(maybeOuter.getName())) {
+                    ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
+                    if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
+                        type.setRedirect(maybeNested);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+
+        if (resolver.test(classToCheck)) {
+            if (currentClass != classToCheck && !currentClass.getOuterClasses().contains(classToCheck) && !isVisibleNestedClass(type.redirect(), currentClass)) {
+                type.setRedirect(null);
+            } else {
+                return true;
+            }
         }
-        // also check interfaces in case we have interfaces with nested classes
-        for (ClassNode next : classToCheck.getAllInterfaces()) {
-            if (type.getName().contains(next.getName())) continue;
-            val = new ConstructedNestedClass(next, type.getName());
-            if (resolve(val, false, false, false)) {
-                type.setRedirect(val);
+        for (ClassNode face : classToCheck.getAllInterfaces()) {
+            if (resolver.test(face)) {
                 return true;
             }
         }
@@ -621,7 +616,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         return resolveFromDefaultImports(type, DEFAULT_IMPORTS);
     }
-
 
     private static final EvictableCache<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new UnlimitedConcurrentCache<>();
 
@@ -1105,7 +1099,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
              */
             return ve;
         }
-        if (v instanceof DynamicVariable){
+        if (v instanceof DynamicVariable) {
             String name = ve.getName();
             ClassNode t = ClassHelper.make(name);
             // asking isResolved here allows to check if a primitive
@@ -1119,10 +1113,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // compiler skip the resolving at several places in this class.
                 if (Character.isLowerCase(name.charAt(0))) {
                     t = new LowerCaseClass(name);
-                    isClass = resolve(t);
-                } else {
-                    isClass = resolve(t) || resolveToNestedOfCurrentClassAndSuperClasses(t);
                 }
+                isClass = resolve(t);
             }
             if (isClass) {
                 // the name is a type so remove it from the scoping
