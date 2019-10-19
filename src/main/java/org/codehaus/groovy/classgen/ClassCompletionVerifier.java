@@ -466,7 +466,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             Parameter[] superParams = superMethod.getParameters();
             if (!hasEqualParameterTypes(params, superParams)) continue;
             if ((mn.isPrivate() && !superMethod.isPrivate())
-                    || (mn.isProtected() && !superMethod.isProtected() && !superMethod.isPrivate())
+                    || (mn.isProtected() && !superMethod.isProtected() && !superMethod.isPackageScope() && !superMethod.isPrivate())
                     || (!mn.isPrivate() && !mn.isProtected() && !mn.isPublic() && (superMethod.isPublic() || superMethod.isProtected()))) {
                 addWeakerAccessError(cn, mn, params, superMethod);
                 return;
@@ -704,20 +704,20 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             checkGenericsUsage(ref, node);
         }
     }
-    
+
     private void checkGenericsUsage(ASTNode ref, Parameter[] params) {
         for (Parameter p : params) {
             checkGenericsUsage(ref, p.getType());
         }
     }
-    
+
     private void checkGenericsUsage(ASTNode ref, ClassNode node) {
         if (node.isArray()) {
             checkGenericsUsage(ref, node.getComponentType());
         } else if (!node.isRedirectNode() && node.isUsingGenerics()) {
-            addError(   
+            addError(
                     "A transform used a generics containing ClassNode "+ node + " " +
-                    "for "+getRefDescriptor(ref) + 
+                    "for "+getRefDescriptor(ref) +
                     "directly. You are not supposed to do this. " +
                     "Please create a new ClassNode referring to the old ClassNode " +
                     "and use the new ClassNode instead of the old one. Otherwise " +
