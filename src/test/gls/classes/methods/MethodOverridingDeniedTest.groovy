@@ -26,10 +26,10 @@ import org.junit.runners.Parameterized
 import static groovy.test.GroovyAssert.shouldFail
 
 @RunWith(Parameterized)
-class MethodOverridingTest {
+class MethodOverridingDeniedTest {
     String baseVisibility, childVisibility
 
-    MethodOverridingTest(String baseVisibility, String childVisibility) {
+    MethodOverridingDeniedTest(String baseVisibility, String childVisibility) {
         this.baseVisibility = baseVisibility
         this.childVisibility = childVisibility
     }
