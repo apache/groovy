@@ -23,6 +23,7 @@ dependencies {
     testRuntime(project(':groovy-ant')) {
         transitive = false // bring in just what we need below
     }
+    testRuntime "org.apache.ant:ant:$antVersion"
     testRuntime "org.apache.ant:ant-launcher:$antVersion"
 }
 

@@ -170,16 +170,13 @@ dependencies {
     api "org.ow2.asm:asm-commons:$asmVersion"
     api "org.ow2.asm:asm-tree:$asmVersion"
     api "org.ow2.asm:asm-util:$asmVersion"
-
     api "info.picocli:picocli:$picocliVersion"
-    implementation "org.apache.ant:ant:$antVersion"
     implementation("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
         exclude(group: 'xmlpull', module: 'xmlpull')
     }
-    implementation "com.googlecode:openbeans:$openbeansVersion"
     implementation "org.fusesource.jansi:jansi:$jansiVersion"
     implementation("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
