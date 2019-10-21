@@ -22,6 +22,7 @@ import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
 final class Groovy8444 {
@@ -42,6 +43,27 @@ final class Groovy8444 {
             assert 1 == meth(SomeEnum.A)
             assert 2 == meth(SomeEnum.B)
         '''
+    }
+
+    @Test
+    void testAccessingNonEnumConstantInSwitchCase() {
+        def err = shouldFail '''\
+            enum SomeEnum {
+                A, B
+                
+                static final String C = 'C'
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case C: return 3
+                }
+            }
+            meth(SomeEnum.C)
+        '''
+
+        assert err.message.contains('[Static type checking] - The variable [C] is undeclared')
+        assert err.message.contains('@ line 9, column 26.')
     }
 
     @Test
@@ -100,4 +122,6 @@ final class Groovy8444 {
             assert 2.2 == meth(SomeEnum.B, OtherEnum.D)
         '''
     }
+
+
 }

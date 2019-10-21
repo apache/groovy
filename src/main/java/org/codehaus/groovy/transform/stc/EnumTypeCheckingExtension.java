@@ -19,19 +19,20 @@
 package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_TYPE;
 
 /**
- * A type checking extension that will take care of handling errors which are specific to switch-case statements. In particular, it will
+ * A type checking extension that will take care of handling errors which are specific to enums. In particular, it will
  * handle the enum constants within switch-case statement.
  *
  * @since 3.0.0
  */
-public class SwitchTypeCheckingExtension extends TypeCheckingExtension {
-    public SwitchTypeCheckingExtension(StaticTypeCheckingVisitor staticTypeCheckingVisitor) {
+public class EnumTypeCheckingExtension extends TypeCheckingExtension {
+    public EnumTypeCheckingExtension(StaticTypeCheckingVisitor staticTypeCheckingVisitor) {
         super(staticTypeCheckingVisitor);
     }
 
@@ -45,10 +46,12 @@ public class SwitchTypeCheckingExtension extends TypeCheckingExtension {
 
         if (null == type) return false;
 
-        if (type.isEnum() && type.redirect().hasField(vexp.getName())) {
-            vexp.putNodeMetaData(SWITCH_TYPE, type);
-
-            return true;
+        if (type.isEnum()) {
+            FieldNode fieldNode = type.redirect().getField(vexp.getName());
+            if (null != fieldNode && type.equals(fieldNode.getType())) {
+                vexp.putNodeMetaData(SWITCH_TYPE, type);
+                return true;
+            }
         }
 
         return false;

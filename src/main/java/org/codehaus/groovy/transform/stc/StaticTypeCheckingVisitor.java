@@ -358,7 +358,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private DefaultTypeCheckingExtension createDefaultTypeCheckingExtension() {
         DefaultTypeCheckingExtension ext = new DefaultTypeCheckingExtension(this);
         ext.addHandler(new TraitTypeCheckingExtension(this));
-        ext.addHandler(new SwitchTypeCheckingExtension(this));
+        ext.addHandler(new EnumTypeCheckingExtension(this));
         return ext;
     }
 
