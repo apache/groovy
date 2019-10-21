@@ -21,6 +21,7 @@ package org.codehaus.groovy.ast;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
@@ -150,5 +151,18 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     public void visitWhileLoop(WhileStatement stmt) {
         stmt.setBooleanExpression((BooleanExpression) transform(stmt.getBooleanExpression()));
         super.visitWhileLoop(stmt);
+    }
+
+    /**
+     * Set the source position of toSet including its property expression if it has one.
+     *
+     * @param toSet resulting node
+     * @param origNode original node
+     */
+    protected static void setSourcePosition(Expression toSet, Expression origNode) {
+        toSet.setSourcePosition(origNode);
+        if (toSet instanceof PropertyExpression) {
+            ((PropertyExpression) toSet).getProperty().setSourcePosition(origNode);
+        }
     }
 }

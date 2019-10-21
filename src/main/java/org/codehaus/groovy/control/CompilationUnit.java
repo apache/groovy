@@ -103,6 +103,7 @@ public class CompilationUnit extends ProcessingUnit {
     protected ProgressCallback progressCallback;  // A callback for use during compile()
     protected ResolveVisitor resolveVisitor;
     protected StaticImportVisitor staticImportVisitor;
+    protected DefaultTransformer defaultTransformer;
     protected OptimizerVisitor optimizer;
     protected ClassNodeResolver classNodeResolver;
 
@@ -170,6 +171,7 @@ public class CompilationUnit extends ProcessingUnit {
         this.verifier = new Verifier();
         this.resolveVisitor = new ResolveVisitor(this);
         this.staticImportVisitor = new StaticImportVisitor();
+        this.defaultTransformer = new DefaultTransformer();
         this.optimizer = new OptimizerVisitor(this);
 
         initPhaseOperations();
@@ -283,6 +285,8 @@ public class CompilationUnit extends ProcessingUnit {
                 }
             }
         }, Phases.INSTRUCTION_SELECTION);
+
+        addPhaseOperation(defaultTransform, Phases.INSTRUCTION_SELECTION);
     }
 
     private void applyCompilationCustomizers() {
@@ -693,6 +697,12 @@ public class CompilationUnit extends ProcessingUnit {
     private final PrimaryClassNodeOperation staticImport = new PrimaryClassNodeOperation() {
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
             staticImportVisitor.visitClass(classNode, source);
+        }
+    };
+
+    private PrimaryClassNodeOperation defaultTransform = new PrimaryClassNodeOperation() {
+        public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+            defaultTransformer.visitClass(classNode, source);
         }
     };
 

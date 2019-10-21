@@ -358,6 +358,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private DefaultTypeCheckingExtension createDefaultTypeCheckingExtension() {
         DefaultTypeCheckingExtension ext = new DefaultTypeCheckingExtension(this);
         ext.addHandler(new TraitTypeCheckingExtension(this));
+        ext.addHandler(new EnumTypeCheckingExtension(this));
         return ext;
     }
 
@@ -4049,11 +4050,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitSwitch(final SwitchStatement statement) {
-        Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+        typeCheckingContext.pushEnclosingSwitchStatement(statement);
         try {
-            super.visitSwitch(statement);
+            Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+            try {
+                super.visitSwitch(statement);
+            } finally {
+                popAssignmentTracking(oldTracker);
+            }
         } finally {
-            popAssignmentTracking(oldTracker);
+            typeCheckingContext.popEnclosingSwitchStatement();
         }
     }
 
