@@ -21,7 +21,7 @@ evaluationDependsOn(':groovy-swing')
 dependencies {
     implementation rootProject
     implementation project(':groovy-swing')
-    api project(':groovy-templates')
+    implementation project(':groovy-templates')
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-swing').sourceSets.test.runtimeClasspath
 }
