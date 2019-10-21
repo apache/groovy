@@ -19,11 +19,11 @@
 evaluationDependsOn(':groovy-swing')
 
 dependencies {
-    compile rootProject
-    compile project(':groovy-swing')
-    compile project(':groovy-templates')
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-swing').sourceSets.test.runtimeClasspath
+    implementation rootProject
+    implementation project(':groovy-swing')
+    api project(':groovy-templates')
+    testImplementation project(':groovy-test')
+    testImplementation project(':groovy-swing').sourceSets.test.runtimeClasspath
 }
 
 task console(type: JavaExec, dependsOn:classes) {

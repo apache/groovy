@@ -17,12 +17,12 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    testCompile group: 'org.hsqldb', name: 'hsqldb', version: '2.3.3'
+    implementation rootProject
+    testImplementation group: 'org.hsqldb', name: 'hsqldb', version: '2.3.3'
 // uncomment to test with other databases (requires changes elsewhere too)
-//    testCompile 'com.h2database:h2:1.3.164'
-//    testCompile 'hsqldb:hsqldb:1.8.0.10'
-    testCompile project(':groovy-test')
+//    testImplementation 'com.h2database:h2:1.3.164'
+//    testImplementation 'hsqldb:hsqldb:1.8.0.10'
+    testImplementation project(':groovy-test')
 }
 
 // TODO move to parent build.gradle subprojects

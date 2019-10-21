@@ -82,7 +82,7 @@ File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
 
 allprojects {
-    apply plugin: 'java'
+    apply plugin: 'java-library'
 
     buildDir = 'target'
     sourceCompatibility = 1.8
@@ -164,24 +164,24 @@ ext {
 }
 
 dependencies {
-    compile "antlr:antlr:$antlrVersion"
-    compile "org.ow2.asm:asm:$asmVersion"
-    compile "org.ow2.asm:asm-analysis:$asmVersion"
-    compile "org.ow2.asm:asm-commons:$asmVersion"
-    compile "org.ow2.asm:asm-tree:$asmVersion"
-    compile "org.ow2.asm:asm-util:$asmVersion"
+    api "antlr:antlr:$antlrVersion"
+    api "org.ow2.asm:asm:$asmVersion"
+    api "org.ow2.asm:asm-analysis:$asmVersion"
+    api "org.ow2.asm:asm-commons:$asmVersion"
+    api "org.ow2.asm:asm-tree:$asmVersion"
+    api "org.ow2.asm:asm-util:$asmVersion"
 
-    compile "info.picocli:picocli:$picocliVersion"
-    compile "org.apache.ant:ant:$antVersion"
-    compile("com.thoughtworks.xstream:xstream:$xstreamVersion") {
+    api "info.picocli:picocli:$picocliVersion"
+    implementation "org.apache.ant:ant:$antVersion"
+    implementation("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
         exclude(group: 'jmock', module: 'jmock')
         exclude(group: 'xmlpull', module: 'xmlpull')
     }
-    compile "com.googlecode:openbeans:$openbeansVersion"
-    compile "org.fusesource.jansi:jansi:$jansiVersion"
-    compile("org.apache.ivy:ivy:$ivyVersion") {
+    implementation "com.googlecode:openbeans:$openbeansVersion"
+    implementation "org.fusesource.jansi:jansi:$jansiVersion"
+    implementation("org.apache.ivy:ivy:$ivyVersion") {
         transitive = false
     }
 
@@ -191,14 +191,14 @@ dependencies {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
 
-    testCompile "jmock:jmock:$jmockVersion"
-    testCompile "jmock:jmock-cglib:$jmockVersion"
-    testCompile "xmlunit:xmlunit:$xmlunitVersion"
-    testCompile "ch.qos.logback:logback-classic:$logbackVersion"
-    testCompile "log4j:log4j:$log4jVersion"
-    testCompile "org.apache.logging.log4j:log4j-core:$log4j2Version"
-    testCompile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
-    testCompile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    testImplementation "jmock:jmock:$jmockVersion"
+    testImplementation "jmock:jmock-cglib:$jmockVersion"
+    testImplementation "xmlunit:xmlunit:$xmlunitVersion"
+    testImplementation "ch.qos.logback:logback-classic:$logbackVersion"
+    testImplementation "log4j:log4j:$log4jVersion"
+    testImplementation "org.apache.logging.log4j:log4j-core:$log4j2Version"
+    testImplementation "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+    testImplementation "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
     tools "org.pantsbuild:jarjar:$jarjarVersion"
     tools "org.jboss.bridger:bridger:$bridgerVersion"
@@ -213,11 +213,11 @@ dependencies {
 
     antlr2 "org.apache.ant:ant-antlr:$antVersion"
 
-    testCompile project(':groovy-ant')
-    testCompile project(':groovy-xml')
-    testCompile project(':groovy-dateutil')
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-macro')
+    testImplementation project(':groovy-ant')
+    testImplementation project(':groovy-xml')
+    testImplementation project(':groovy-dateutil')
+    testImplementation project(':groovy-test')
+    testImplementation project(':groovy-macro')
 }
 
 ext.generatedDirectory = "${buildDir}/generated/sources"
@@ -314,10 +314,10 @@ task ensureGrammars {
                     classpath: configurations.antlr2.asPath)
 
             antlr2(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
-                classpath path: configurations.compile.asPath
+                classpath path: configurations.compileClasspath.asPath
             }
             antlr2(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaOutDir) {
-                classpath path: configurations.compile.asPath
+                classpath path: configurations.compileClasspath.asPath
             }
         }
     }
@@ -343,7 +343,7 @@ task dgmConverter(dependsOn:compileJava) {
     outputs.cacheIf { true }
 
     description = 'Generates DGM info file required for faster startup.'
-    def classpath = files(sourceSets.main.output.classesDirs, configurations.compile)
+    def classpath = files(sourceSets.main.output.classesDirs, configurations.compileClasspath)
     ext.outputDir = file("$buildDir/dgm")
 
     //main = 'org.codehaus.groovy.tools.DgmConverter'

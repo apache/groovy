@@ -17,9 +17,9 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-dateutil')
+    implementation rootProject
+    testImplementation project(':groovy-test')
+    testImplementation project(':groovy-dateutil')
     testRuntime "org.slf4j:slf4j-api:$slf4jVersion"
     testRuntime project(':groovy-ant') // for JavadocAssertionTests
 }

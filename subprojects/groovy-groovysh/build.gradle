@@ -17,10 +17,10 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    compile project(':groovy-console')
-    testCompile project(':groovy-test')
-    compile("jline:jline:$jlineVersion") {
+    implementation rootProject
+    implementation project(':groovy-console')
+    testImplementation project(':groovy-test')
+    implementation("jline:jline:$jlineVersion") {
         exclude(group: 'junit', module: 'junit')
     }
 }
