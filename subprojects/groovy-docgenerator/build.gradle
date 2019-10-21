@@ -17,10 +17,10 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    compile project(':groovy-templates')
-    testCompile project(':groovy-test')
-    compile "com.thoughtworks.qdox:qdox:$qdoxVersion"
+    implementation rootProject
+    implementation project(':groovy-templates')
+    testImplementation project(':groovy-test')
+    implementation "com.thoughtworks.qdox:qdox:$qdoxVersion"
 }
 
 eclipse.classpath.file.whenMerged {

@@ -17,10 +17,10 @@
  *  under the License.
  */
 dependencies {
-    compile('bsf:bsf:2.4.0') {
+    implementation('bsf:bsf:2.4.0') {
         exclude(group: 'commons-logging', module: 'commons-logging')
     }
-    compile 'commons-logging:commons-logging:1.2'
-    compile rootProject
-    testCompile project(':groovy-test')
+    implementation 'commons-logging:commons-logging:1.2'
+    implementation rootProject
+    testImplementation project(':groovy-test')
 }

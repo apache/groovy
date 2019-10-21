@@ -47,7 +47,7 @@ allprojects {
                 'org.gradle.plugins.ide.eclipse.model.ProjectDependency'
             ]
         }.each { entry ->
-            if (entry.path.substring(1) in project.configurations.testCompile.dependencies*.name) {
+            if (entry.path.substring(1) in project.configurations.testImplementation.dependencies*.name) {
                 entry.entryAttributes['test'] = 'true'
             }
         }

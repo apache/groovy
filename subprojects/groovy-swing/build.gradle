@@ -17,9 +17,9 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    testCompile rootProject.sourceSets.test.runtimeClasspath
-    testCompile project(':groovy-test')
+    implementation rootProject
+    testImplementation rootProject.sourceSets.test.runtimeClasspath
+    testImplementation project(':groovy-test')
 }
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.apache.groovy.swing.extensions.SwingExtensions'

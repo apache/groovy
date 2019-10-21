@@ -22,8 +22,8 @@ configurations {
 }
 
 dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
+    implementation rootProject
+    testImplementation project(':groovy-test')
     jaxb 'javax.xml.bind:jaxb-api:2.3.0'
     jaxbRuntime 'com.sun.xml.bind:jaxb-core:2.3.0.1'
     jaxbRuntime 'com.sun.xml.bind:jaxb-impl:2.3.0.1'

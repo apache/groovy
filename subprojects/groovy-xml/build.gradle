@@ -17,10 +17,10 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    testCompile rootProject.sourceSets.test.runtimeClasspath
-    testCompile "xmlunit:xmlunit:$xmlunitVersion"
-    testCompile project(':groovy-test')
+    implementation rootProject
+    testImplementation rootProject.sourceSets.test.runtimeClasspath
+    testImplementation "xmlunit:xmlunit:$xmlunitVersion"
+    testImplementation project(':groovy-test')
 }
 
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {

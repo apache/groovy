@@ -17,10 +17,10 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
+    implementation rootProject
     runtime('org.testng:testng:6.14.3') {
         // exclude 'optional' beanshell even though testng's pom doesn't say optional
         exclude(group: 'org.apache-extras.beanshell', module: 'bsh')
     }
-    testCompile project(':groovy-test')
+    testImplementation project(':groovy-test')
 }

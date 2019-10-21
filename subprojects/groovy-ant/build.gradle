@@ -17,19 +17,19 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    compile "org.apache.ant:ant:$antVersion"
+    implementation rootProject
+    implementation "org.apache.ant:ant:$antVersion"
     runtime("org.apache.ant:ant-junit:$antVersion") {
         exclude(group: 'junit', module: 'junit')
     }
     runtime "org.apache.ant:ant-launcher:$antVersion"
     runtime "org.apache.ant:ant-antlr:$antVersion"
     // for groovydoc ant command
-    compile project(':groovy-groovydoc'), {
+    implementation project(':groovy-groovydoc'), {
         transitive = false
     }
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-xml')
+    testImplementation project(':groovy-test')
+    testImplementation project(':groovy-xml')
 }
 
 apply from: "${rootProject.projectDir}/gradle/jacoco/jacocofix.gradle"

@@ -17,8 +17,8 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    testCompile project(':groovy-test')
+    implementation rootProject
+    testImplementation project(':groovy-test')
 }
 
 compileTestGroovy.classpath += rootProject.sourceSets.test.output

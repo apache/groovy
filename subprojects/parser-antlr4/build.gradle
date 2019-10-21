@@ -57,15 +57,15 @@ generateGrammarSource {
 }
 
 configurations {
-    compile {
+    implementation {
         extendsFrom = extendsFrom.findAll { it != configurations.antlr2 }
     }
 }
 
 dependencies {
     antlr "com.tunnelvisionlabs:antlr4:$antlr4Version"
-    compile "com.tunnelvisionlabs:antlr4-runtime:$antlr4Version"
-    testCompile project(':groovy-test')
+    implementation "com.tunnelvisionlabs:antlr4-runtime:$antlr4Version"
+    testImplementation project(':groovy-test')
 }
 
 sourceSets.main.java.srcDirs += file("$srcMain/java")
