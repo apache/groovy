@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -54,6 +55,7 @@ public class TypeCheckingContext {
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<MethodNode>();
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<Expression>();
     protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<BlockStatement>();
+    protected final LinkedList<SwitchStatement> switchStatements = new LinkedList<SwitchStatement>();
 
 
     // used for closure return type inference
@@ -223,6 +225,42 @@ public class TypeCheckingContext {
      */
     public List<MethodNode> getEnclosingMethods() {
         return Collections.unmodifiableList(enclosingMethods);
+    }
+
+
+    /**
+     * Pushes a switch statement into the switch statement stack.
+     * @param switchStatement the switch statement to be pushed
+     */
+    public void pushEnclosingSwitchStatement(SwitchStatement switchStatement) {
+        switchStatements.addFirst(switchStatement);
+    }
+
+    /**
+     * Pops a switch statement from the enclosing switch statements stack.
+     * @return the popped switch statement
+     */
+    public SwitchStatement popEnclosingSwitchStatement() {
+        return switchStatements.removeFirst();
+    }
+
+    /**
+     * Returns the switch statement which is on the top of the stack, or null
+     * if there's no such element.
+     * @return the enclosing switch statement on top of the stack, or null if no such element.
+     */
+    public SwitchStatement getEnclosingSwitchStatement() {
+        if (switchStatements.isEmpty()) return null;
+        return switchStatements.getFirst();
+    }
+
+    /**
+     * Returns the current stack of enclosing switch statements. The first
+     * element is the top of the stack, that is to say the last visited switch statement.
+     * @return an immutable list of switch statements.
+     */
+    public List<SwitchStatement> getEnclosingSwitchStatements() {
+        return Collections.unmodifiableList(switchStatements);
     }
 
     /**
