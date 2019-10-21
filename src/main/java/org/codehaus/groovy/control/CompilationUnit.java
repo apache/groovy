@@ -112,8 +112,6 @@ public class CompilationUnit extends ProcessingUnit {
 
     private Set<JavaFileObject> javaCompilationUnitSet = new HashSet<>();
 
-
-
     /**
      * Initializes the CompilationUnit with defaults.
      */

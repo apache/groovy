@@ -25,10 +25,10 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_CONDITION_EXPRESSION_TYPE;
 
 /**
- * The default transformer a.k.a. the last transformer to transform expressions
+ * The default transformer a.k.a. the last transformer to transform expressions, it can use type info if STC is enabled
  *
  * @since 3.0.0
  */
@@ -52,7 +52,7 @@ public class DefaultTransformer extends ClassCodeExpressionTransformer {
     }
 
     private Expression transformVariableExpression(VariableExpression ve) {
-        ClassNode enumClassNode = ve.getNodeMetaData(SWITCH_TYPE);
+        ClassNode enumClassNode = ve.getNodeMetaData(SWITCH_CONDITION_EXPRESSION_TYPE);
         if (null != enumClassNode) {
             Expression result = new PropertyExpression(new ClassExpression(enumClassNode), ve.getName());
             setSourcePosition(result, ve);

@@ -41,5 +41,5 @@ public enum StaticTypesMarker {
     PARAMETER_TYPE, // used to store the parameter type information of method invocation on an expression
     INFERRED_FUNCTIONAL_INTERFACE_TYPE, // used to store the function interface type information on an expression
     CONSTRUCTED_LAMBDA_EXPRESSION, // used to store the constructed lambda expression for method reference and constructor reference
-    SWITCH_TYPE // used to store the expression type of the switch-case statement
+    SWITCH_CONDITION_EXPRESSION_TYPE // used to store the condition expression type of the switch-case statement
 }

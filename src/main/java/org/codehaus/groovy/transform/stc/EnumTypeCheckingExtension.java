@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_CONDITION_EXPRESSION_TYPE;
 
 /**
  * A type checking extension that will take care of handling errors which are specific to enums. In particular, it will
@@ -49,7 +49,7 @@ public class EnumTypeCheckingExtension extends TypeCheckingExtension {
         if (type.isEnum()) {
             FieldNode fieldNode = type.redirect().getField(vexp.getName());
             if (null != fieldNode && type.equals(fieldNode.getType())) {
-                vexp.putNodeMetaData(SWITCH_TYPE, type);
+                vexp.putNodeMetaData(SWITCH_CONDITION_EXPRESSION_TYPE, type);
                 return true;
             }
         }
