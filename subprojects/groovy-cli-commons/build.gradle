@@ -17,9 +17,9 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
-    compile "commons-cli:commons-cli:$commonsCliVersion"
-    testCompile rootProject.sourceSets.test.output
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-dateutil')
+    implementation rootProject
+    implementation "commons-cli:commons-cli:$commonsCliVersion"
+    testImplementation rootProject.sourceSets.test.output
+    testImplementation project(':groovy-test')
+    testImplementation project(':groovy-dateutil')
 }

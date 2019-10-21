@@ -17,9 +17,9 @@
  *  under the License.
  */
 dependencies {
-    compile rootProject
+    implementation rootProject
     compileOnly "info.picocli:picocli:$picocliVersion"
-    testCompile rootProject.sourceSets.test.output
-    testCompile project(':groovy-test')
-    testCompile project(':groovy-dateutil')
+    testImplementation rootProject.sourceSets.test.output
+    testImplementation project(':groovy-test')
+    testImplementation project(':groovy-dateutil')
 }

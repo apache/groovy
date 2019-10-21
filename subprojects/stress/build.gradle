@@ -17,7 +17,7 @@
  *  under the License.
  */
 dependencies {
-    testCompile project(':groovy-test')
+    testImplementation project(':groovy-test')
 }
 
 test {
