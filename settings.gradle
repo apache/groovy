@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.gradle.util.GradleVersion
+
 def subprojects = ['groovy-ant',
         'groovy-bsf',
         'groovy-cli-commons',
@@ -55,6 +57,10 @@ rootProject.children.each { prj ->
     prj.projectDir = new File("$rootDir/subprojects/$prj.name")
 }
 
-rootProject.name = 'groovy' // TODO should this be groovy-core?
+rootProject.name = 'groovy'
 
-enableFeaturePreview('GROOVY_COMPILATION_AVOIDANCE')
+GradleVersion gradleVersion = GradleVersion.current()
+GradleVersion gradle5_6 = GradleVersion.version('5.6')
+if (gradleVersion >= gradle5_6) {
+    enableFeaturePreview('GROOVY_COMPILATION_AVOIDANCE')
+}
