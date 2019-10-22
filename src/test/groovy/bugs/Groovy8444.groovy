@@ -67,6 +67,69 @@ final class Groovy8444 {
     }
 
     @Test
+    void testAccessingNonEnumConstantInSwitchCase2() {
+        def err = shouldFail '''\
+            enum SomeEnum {
+                A, B
+                
+                SomeEnum C = A
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case C: return 3
+                }
+            }
+            meth(SomeEnum.C)
+        '''
+
+        assert err.message.contains('[Static type checking] - The variable [C] is undeclared')
+        assert err.message.contains('@ line 9, column 26.')
+    }
+
+    @Test
+    void testAccessingNonEnumConstantInSwitchCase3() {
+        def err = shouldFail '''\
+            enum SomeEnum {
+                A, B
+                
+                static SomeEnum C = A
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case C: return 3
+                }
+            }
+            meth(SomeEnum.C)
+        '''
+
+        assert err.message.contains('[Static type checking] - The variable [C] is undeclared')
+        assert err.message.contains('@ line 9, column 26.')
+    }
+
+    @Test
+    void testAccessingNonEnumConstantInSwitchCase4() {
+        def err = shouldFail '''\
+            enum SomeEnum {
+                A, B
+                
+                static final SomeEnum C = A
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case C: return 3
+                }
+            }
+            meth(SomeEnum.C)
+        '''
+
+        assert err.message.contains('[Static type checking] - The variable [C] is undeclared')
+        assert err.message.contains('@ line 9, column 26.')
+    }
+
+    @Test
     void testAccessingEnumConstantInNestedSwitchCase() {
         assertScript '''\
             enum SomeEnum {
