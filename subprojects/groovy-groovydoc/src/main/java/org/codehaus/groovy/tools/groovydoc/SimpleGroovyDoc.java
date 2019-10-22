@@ -29,7 +29,12 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
+public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
+    public static final int CLASS_DEF = 13;
+    public static final int TRAIT_DEF = 15;
+    public static final int INTERFACE_DEF = 14;
+    public static final int ANNOTATION_DEF = 64;
+    public static final int ENUM_DEF = 61;
     private static final Pattern TAG2_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(.*)");
     private static final Pattern TAG3_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(\\S*)\\s+(.*)");
     private static final Pattern RAW_COMMENT_PATTERN = Pattern.compile("\"(?s).*?\\\\*\\\\s*@\"");

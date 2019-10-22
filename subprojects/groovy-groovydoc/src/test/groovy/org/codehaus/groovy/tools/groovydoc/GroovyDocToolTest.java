@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
@@ -66,7 +67,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         ArrayList<LinkArgument> links = new ArrayList<LinkArgument>();
         LinkArgument link = new LinkArgument();
-        link.setHref("http://docs.oracle.com/javase/7/docs/api/");
+        link.setHref("https://docs.oracle.com/javase/8/docs/api/");
         link.setPackages("java.,org.xml.,javax.,org.xml.");
         links.add(link);
 
@@ -123,17 +124,18 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
 
         String groovyCategorySupportDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/GroovyCategorySupport.html");
-        assertTrue(groovyCategorySupportDocument != null &&
+        assertTrue("Expect hasCategoryInAnyThread in:\n" + groovyCategorySupportDocument, groovyCategorySupportDocument != null &&
                 groovyCategorySupportDocument.indexOf("<method modifiers=\"public static \" returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
 
         String categoryMethodDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/GroovyCategorySupport.CategoryMethodList.html");
-        assertTrue(categoryMethodDocument != null &&
+        assertNotNull("Expected to find GroovyCategorySupport.CategoryMethodList in: " + output, categoryMethodDocument);
+        assertTrue("Expected add in:\n" + categoryMethodDocument, categoryMethodDocument != null &&
                 categoryMethodDocument.indexOf("<method modifiers=\"public \" returns=\"boolean\" name=\"add\">") > 0);
 
         String packageDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/packageDocStructuredData.xml");
         assertTrue("Failed to find 'packageDocStructuredData.xml' in generated output", packageDocument != null);
         assertTrue(packageDocument.indexOf("<class name=\"GroovyCategorySupport\" />") > 0);
-        assertTrue(packageDocument.indexOf("<class name=\"GroovyCategorySupport.CategoryMethod\" />") > 0);
+        assertTrue("Expected GroovyCategorySupport.CategoryMethod in:\n" + packageDocument, packageDocument.indexOf("<class name=\"GroovyCategorySupport.CategoryMethod\" />") > 0);
 
         String rootDocument = output.getText(MOCK_DIR + "/rootDocStructuredData.xml");
         assertTrue("Failed to find 'rootDocStructuredData.xml' in generated output", rootDocument != null);
@@ -225,14 +227,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
 
         String groovyClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterfaceWithMultipleInterfaces.html");
+        assertNotNull("GroovyInterfaceWithMultipleInterfaces not found in: " + output, groovyClassDoc);
         assertTrue(groovyClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
         assertTrue(groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
         assertTrue(groovyClassDoc.indexOf("<interface>Runnable</interface>") > 0);
 
         String javaClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/JavaInterfaceWithMultipleInterfaces.html");
-        assertTrue(javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
-        assertTrue(javaClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
-        assertTrue(javaClassDoc.indexOf("<interface>Runnable</interface>") > 0);
+        assertNotNull("JavaInterfaceWithMultipleInterfaces not found in: " + output, javaClassDoc);
+        assertTrue(javaClassDoc, javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
+        assertTrue(javaClassDoc, javaClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+        assertTrue(javaClassDoc, javaClassDoc.indexOf("<interface>Runnable</interface>") > 0);
     }
 
     public void testImplementsClauseWithMultipleInterfaces() throws Exception {
@@ -246,11 +250,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
 
         String groovyClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.html");
+        assertNotNull("GroovyClassWithMultipleInterfaces not found in: " + output, groovyClassDoc);
         assertTrue(groovyClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
         assertTrue(groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
         assertTrue(groovyClassDoc.indexOf("<interface>Runnable</interface>") > 0);
 
         String javaClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.html");
+        assertNotNull("JavaClassWithMultipleInterfaces not found in: " + output, javaClassDoc);
         assertTrue(javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
         assertTrue(javaClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
         assertTrue(javaClassDoc.indexOf("<interface>Runnable</interface>") > 0);
@@ -267,8 +273,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
 
         String groovyClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.html");
-        assertTrue(groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
-        assertTrue(groovyClassDoc.indexOf("<interface>Runnable</interface>") > 0);
+        assertTrue(groovyClassDoc, groovyClassDoc.indexOf("<interface>GroovyInterface1</interface>") > 0);
+        assertTrue(groovyClassDoc, groovyClassDoc.indexOf("<interface>Runnable</interface>") > 0);
 
         String javaClassDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.html");
         assertTrue(javaClassDoc.indexOf("<interface>JavaInterface1</interface>") > 0);
@@ -436,9 +442,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
         String javaExampleClass = output.getText(MOCK_DIR + "/" + base + "J.html");
-        assertMethodVisibility(base, output, javaExampleClass, a, b, c, d);
+        assertMethodVisibility(base + "J", output, javaExampleClass, a, b, c, d);
         String groovyExampleClass = output.getText(MOCK_DIR + "/" + base + "G.html");
-        assertMethodVisibility(base, output, groovyExampleClass, a, b, c, d);
+        assertMethodVisibility(base + "G", output, groovyExampleClass, a, b, c, d);
     }
 
     private void assertMethodVisibility(String base, MockOutputTool output, String text, boolean a, boolean b, boolean c, boolean d) {
@@ -455,11 +461,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("field _c" + (c ? " not" : "") + " found in: \"" + text + "\"", c ^ !text.contains("<a href=\"#_c\">_c</a>"));
         assertTrue("field _d" + (d ? " not" : "") + " found in: \"" + text + "\"", d ^ !text.contains("<a href=\"#_d\">_d</a>"));
 
-        assertTrue("class A1" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains(".A1</a></code>"));
-        assertTrue("class A2" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains(".A2</a></code>"));
-        assertTrue("class B" + (b ? " not" : "") + " found in: \"" + text + "\"", b ^ !text.contains(".B</a></code>"));
-        assertTrue("class C" + (c ? " not" : "") + " found in: \"" + text + "\"", c ^ !text.contains(".C</a></code>"));
-        assertTrue("class D" + (d ? " not" : "") + " found in: \"" + text + "\"", d ^ !text.contains(".D</a></code>"));
+        assertTrue("class A1" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains("A1</a></code>"));
+        assertTrue("class A2" + (a ? " not" : "") + " found in: \"" + text + "\"", a ^ !text.contains("A2</a></code>"));
+        assertTrue("class B" + (b ? " not" : "") + " found in: \"" + text + "\"", b ^ !text.contains("B</a></code>"));
+        assertTrue("class C" + (c ? " not" : "") + " found in: \"" + text + "\"", c ^ !text.contains("C</a></code>"));
+        assertTrue("class D" + (d ? " not" : "") + " found in: \"" + text + "\"", d ^ !text.contains("D</a></code>"));
     }
 
     public void testMultipleConstructorErrorBug() throws Exception {
@@ -468,10 +474,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-        String sqlDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/MultipleConstructorErrorBug.html");
-        System.out.println(sqlDoc);
+        String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/MultipleConstructorErrorBug.html");
         // VARBINARY() and other methods were assumed to be Constructors, make sure they aren't anymore...
-        assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"java.lang.String\" name=\"VARBINARY\">") > 0);
+        assertTrue(text,text.indexOf("<method modifiers=\"public static \" returns=\"java.lang.String\" name=\"VARBINARY\">") > 0);
     }
 
     public void testReturnTypeResolution() throws Exception {
@@ -482,7 +487,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
-        assertTrue(text.indexOf("org.codehaus.groovy.groovydoc.GroovyClassDoc") > 0);
+        assertTrue("GroovyClassDoc should appear in:\n" + text, text.indexOf("org.codehaus.groovy.groovydoc.GroovyClassDoc") > 0);
     }
 
     public void testParameterTypeResolution() throws Exception {
@@ -493,7 +498,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
-        assertTrue(text.indexOf("<parameter type=\"org.codehaus.groovy.groovydoc.GroovyPackageDoc\"") > 0);
+        assertTrue("GroovyPackageDoc should appear in:\n" + text, text.indexOf("<parameter type=\"org.codehaus.groovy.groovydoc.GroovyPackageDoc\"") > 0);
     }
 
     public void testFileEncodingFallbackToCharset() throws Exception {
@@ -574,22 +579,26 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         // loop through classes in tree
         GroovyClassDoc classDocDescendantA = getGroovyClassDocByName(root, "DescendantA");
-        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantA, "Base").getFullPathName()));
+        assertEquals(fullPathBaseA, root.classNamed(classDocDescendantA, "Base").getFullPathName());
 
         GroovyClassDoc classDocDescendantB = getGroovyClassDocByName(root, "DescendantB");
-        assertTrue(fullPathBaseB.equals(root.classNamed(classDocDescendantB, "Base").getFullPathName()));
+        assertEquals(fullPathBaseB, root.classNamed(classDocDescendantB, "Base").getFullPathName());
 
         GroovyClassDoc classDocDescendantC = getGroovyClassDocByName(root, "DescendantC");
-        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantC, "Base").getFullPathName()));
+        assertEquals(fullPathBaseA, root.classNamed(classDocDescendantC, "Base").getFullPathName());
 
         GroovyClassDoc classDocDescendantD = getGroovyClassDocByName(root, "DescendantD");
-        assertTrue(fullPathBaseA.equals(root.classNamed(classDocDescendantD, "Base").getFullPathName()));
+        assertEquals(fullPathBaseA, root.classNamed(classDocDescendantD, "Base").getFullPathName());
 
         GroovyClassDoc classDocDescendantE = getGroovyClassDocByName(root, "DescendantE");
-        assertTrue(fullPathBaseC.equals(root.classNamed(classDocDescendantE, "Base").getFullPathName()));
+        assertNotNull("Expecting to find DescendantE", classDocDescendantE);
+        GroovyClassDoc base = root.classNamed(classDocDescendantE, "Base");
+        assertNotNull("Expecting to find Base in: " + Arrays.stream(root.classes()).map(GroovyClassDoc::getFullPathName).collect(Collectors.joining(", ")), base);
+        assertEquals(fullPathBaseC, base.getFullPathName());
 
         GroovyClassDoc classDocDescendantF = getGroovyClassDocByName(root, "DescendantF");
-        assertTrue(fullPathBaseC.equals(root.classNamed(classDocDescendantF, "Base").getFullPathName()));
+        assertNotNull("Expecting to find DescendantF", classDocDescendantF);
+        assertEquals(fullPathBaseC, root.classNamed(classDocDescendantF, "Base").getFullPathName());
     }
 
     // GROOVY-5939
@@ -606,7 +615,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         Matcher m = p.matcher(arrayPropertyLinkDoc);
 
         assertTrue(m.find());
-        assertEquals("There has to be at least a single reference to the ArrayPropertyLink[]", "ArrayPropertyLink", m.group(2));
+        assertEquals("There should be at least a single reference to the ArrayPropertyLink[] in:\n" + arrayPropertyLinkDoc, "ArrayPropertyLink", m.group(2));
     }
 
     public void testClassesAreNotInitialized() throws Exception {
@@ -618,7 +627,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         htmlTool.renderToOutput(output, MOCK_DIR);
         String doc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/staticInit/UsesClassesWithFailingStaticInit.html");
 
-        assertTrue(doc.contains("org.codehaus.groovy.tools.groovydoc.testfiles.staticInit.JavaWithFailingStaticInit"));
+        assertTrue("Expected JavaWithFailingStaticInit and GroovyWithFailingStaticInit in:\n" + doc, doc.contains("JavaWithFailingStaticInit") && doc.contains("GroovyWithFailingStaticInit"));
     }
 
     public void testArrayPropertyLinkWithExternalReference() throws Exception {
@@ -649,11 +658,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
         htmlTool.renderToOutput(output, MOCK_DIR);
         String derivDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/InnerClassProperty.html");
 
-        Pattern p = Pattern.compile("<a(.+?)testfiles/InnerEnum.Enum.html'>(.+?)</a>");
+        // TODO FIXME? - old behavior: Enum was not qualified by outer class InnerEnum
+        Pattern p = Pattern.compile("<a(.+?)testfiles/InnerEnum.Enum.html'>(InnerEnum\\.)?(.+?)</a>");
         Matcher m = p.matcher(derivDoc);
 
-        assertTrue(m.find());
-        assertEquals("There has to be a reference to class Enum", "Enum", m.group(2));
+        assertTrue("Expecting to find InnerEnum.Enum anchor in:\n" + derivDoc, m.find());
+        assertEquals("There has to be a reference to class Enum", "Enum", m.group(3));
     }
 
     public void testClassAliasing() throws Exception {
@@ -666,16 +676,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
         htmlTool.renderToOutput(output, MOCK_DIR);
         String derivDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Alias.html");
 
-        Pattern p = Pattern.compile("<a(.+?)java/util/ArrayList.html' title='ArrayList'>(.+?)</a>");
+        Pattern p = Pattern.compile("<a href='(.+?)java/util/ArrayList.html' title='ArrayList'>(.+?)</a>");
         Matcher m = p.matcher(derivDoc);
 
-        assertTrue(m.find());
-        assertEquals("There has to be a reference to class ArrayList", "ArrayList", m.group(2));
+        assertTrue("expect ArrayList anchor in:\n" + derivDoc, m.find());
+        assertEquals("Expect link text to contain ArrayList", "ArrayList", m.group(2));
     }
 
     public void testImplementedInterfaceWithAlias() throws Exception {
         // FooAdapter imports both api.Foo and lib.Foo, using "lib.Foo as FooImpl" to disambiguate.
-        // lib.Foo is imported later that api.Foo, so groovydoc tries to resolve to lib.Foo first.
+        // lib.Foo is imported later than api.Foo, so groovydoc tries to resolve to lib.Foo first.
         htmlTool.add(Arrays.asList(
                 "org/codehaus/groovy/tools/groovydoc/testfiles/alias/api/Foo.java",
                 "org/codehaus/groovy/tools/groovydoc/testfiles/alias/lib/Foo.java",
@@ -700,7 +710,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 "FooAdapter(</[a-z]+>)*\\(<a href='[./]*/org/codehaus/groovy/tools/groovydoc/testfiles/alias/(api|lib)/Foo.html'>(Foo|FooImpl)</a> foo\\)"
         ).matcher(fooAdapterDoc);
 
-        assertTrue("Interfaces and Traits pattern should match for this test to make sense", interfacesAndTraits.find());
+        assertTrue("Interfaces and Traits pattern should match for this test to make sense in: " + fooAdapterDoc, interfacesAndTraits.find());
         assertTrue("Constructor pattern should match for this test to make sense", constructor.find());
 
         assertEquals("The implemented interface should link to api.Foo", "api", interfacesAndTraits.group(1));
@@ -717,13 +727,14 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String scriptDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/Script.html");
-        assertTrue("There should be a reference to method sayHello", containsTagWithName(scriptDoc, "method", "sayHello"));
-        assertTrue(scriptDoc, scriptDoc.contains("Use this to say Hello"));
+        assertNotNull("Expected to find Script.html in: " + output, scriptDoc);
+        assertTrue("There should be a reference to method sayHello in: " + scriptDoc, containsTagWithName(scriptDoc, "method", "sayHello"));
+        assertTrue("Expecting say Hello in:\n" + scriptDoc, scriptDoc.contains("Use this to say Hello"));
 
         assertTrue("There should be a reference to method sayGoodbye", containsTagWithName(scriptDoc, "method", "sayGoodbye"));
-        assertTrue(scriptDoc, scriptDoc.contains("Use this to bid farewell"));
+        assertTrue("Expecting bid farewell in:\n" + scriptDoc, scriptDoc.contains("Use this to bid farewell"));
 
-        assertTrue("There should be a reference to property instanceProp", containsTagWithName(scriptDoc, "property", "instanceProp"));
+        assertTrue("There should be a reference to property instanceProp in:\n" + scriptDoc, containsTagWithName(scriptDoc, "property", "instanceProp"));
 
         assertTrue("There should be a reference to field staticField", containsTagWithName(scriptDoc, "field", "staticField"));
 
