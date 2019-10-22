@@ -4064,6 +4064,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    protected void afterSwitchConditionExpressionVisited(SwitchStatement statement) {
+        Expression conditionExpression = statement.getExpression();
+        conditionExpression.putNodeMetaData(StaticTypesMarker.TYPE, getType(conditionExpression));
+    }
+
+    @Override
     public void visitCaseStatement(final CaseStatement statement) {
         super.visitCaseStatement(statement);
         restoreTypeBeforeConditional();

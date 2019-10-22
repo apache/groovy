@@ -46,6 +46,46 @@ final class Groovy8444 {
     }
 
     @Test
+    void testAccessingEnumConstantInSwitchCase2() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (same(e)) {
+                    case A: return 1
+                    case B: return 2
+                }
+            }
+            @groovy.transform.CompileStatic
+            SomeEnum same(SomeEnum e) {
+                return e
+            }
+            assert 1 == meth(SomeEnum.A)
+            assert 2 == meth(SomeEnum.B)
+        '''
+    }
+
+    @Test
+    void testAccessingEnumConstantInSwitchCase3() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch ([e][0]) {
+                    case A: return 1
+                    case B: return 2
+                }
+            }
+            assert 1 == meth(SomeEnum.A)
+            assert 2 == meth(SomeEnum.B)
+        '''
+    }
+
+    @Test
     void testAccessingNonEnumConstantInSwitchCase() {
         def err = shouldFail '''\
             enum SomeEnum {
