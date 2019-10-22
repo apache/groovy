@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import org.apache.groovy.groovydoc.tools.GroovyDocUtil;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
@@ -32,14 +33,17 @@ import java.util.Properties;
  */
 public class GroovyDocWriter {
     private final Logger log = Logger.create(GroovyDocWriter.class);
-    private final GroovyDocTool tool;
     private final OutputTool output;
     private final GroovyDocTemplateEngine templateEngine;
     private static final String FS = "/";
     private final Properties properties;
 
+    @Deprecated
     public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties) {
-        this.tool = tool;
+        this(output, templateEngine, properties);
+    }
+
+    public GroovyDocWriter(OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties) {
         this.output = output;
         this.templateEngine = templateEngine;
         this.properties = properties;
@@ -82,7 +86,7 @@ public class GroovyDocWriter {
         while (templates.hasNext()) {
             String template = templates.next();
             String renderedSrc = templateEngine.applyPackageTemplate(template, packageDoc);
-            String destFileName = destdir + FS + packageDoc.name() + FS + tool.getFile(template);
+            String destFileName = destdir + FS + packageDoc.name() + FS + GroovyDocUtil.getFile(template);
             log.debug("Generating " + destFileName);
             output.writeToOutput(destFileName, renderedSrc, properties.getProperty("fileEncoding"));
         }
@@ -97,7 +101,7 @@ public class GroovyDocWriter {
         Iterator<String> templates = templateEngine.docTemplatesIterator();
         while (templates.hasNext()) {
             String template = templates.next();
-            String destFileName = destdir + FS + tool.getFile(template);
+            String destFileName = destdir + FS + GroovyDocUtil.getFile(template);
             log.debug("Generating " + destFileName);
             if (hasBinaryExtension(template)) {
                 templateEngine.copyBinaryResource(template, destFileName);

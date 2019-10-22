@@ -16,22 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-dependencies {
-    implementation rootProject
-    implementation "com.github.javaparser:javaparser-core:$javaParserVersion"
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
-    implementation project(':groovy-templates')
-    runtime project(':groovy-docgenerator')
-    testImplementation project(':groovy-test')
-    testImplementation "org.apache.ant:ant-testutil:$antVersion"
-}
+package org.apache.groovy.groovydoc.tools;
 
-compileJava {
-    doLast {
-        mkdir "$sourceSets.main.java.outputDir/META-INF"
+import java.io.File;
+
+public class GroovyDocUtil {
+    public static String getPath(String filename) {
+        String path = new File(filename).getParent();
+        // path length of 1 indicates that probably is 'default package' i.e. "/"
+        if (path == null || (path.length() == 1 && !Character.isJavaIdentifierStart(path.charAt(0)))) {
+            path = "DefaultPackage"; // "DefaultPackage" for 'default package' path, rather than null...
+        }
+        return path;
     }
-}
 
-eclipse.classpath.file.whenMerged {
-    entries.removeAll { entry -> entry.path == '/groovy-xml' }
+    public static String getFile(String filename) {
+        return new File(filename).getName();
+    }
 }

@@ -39,7 +39,7 @@ public class GroovyRootDocBuilderTest extends GroovyTestCase {
             "package org.dummy.cmdline;";
 
     public void testCommentExtraction() throws Exception {
-        GroovyRootDocBuilder builder = new GroovyRootDocBuilder(null, null, new ArrayList<LinkArgument>(), null);
+        GroovyRootDocBuilder builder = new GroovyRootDocBuilder(null, new ArrayList<LinkArgument>(), null);
         SimpleGroovyPackageDoc doc = new SimpleGroovyPackageDoc("org.dummy.cmdline");
         builder.processPackageInfo(src, "package-info.groovy", doc);
         assertEquals("<h1>Description</h1>\n" +
