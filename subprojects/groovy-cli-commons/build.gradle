@@ -18,7 +18,7 @@
  */
 dependencies {
     implementation rootProject
-    implementation "commons-cli:commons-cli:$commonsCliVersion"
+    compile "commons-cli:commons-cli:$commonsCliVersion"
     testImplementation rootProject.sourceSets.test.output
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')

@@ -23,8 +23,8 @@ ext {
 
 dependencies {
     implementation rootProject
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
-    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+    compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     testRuntime "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     implementation project(':groovy-json')
     testImplementation project(':groovy-test')
