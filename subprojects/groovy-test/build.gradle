@@ -18,6 +18,7 @@
  */
 dependencies {
     implementation rootProject
+    implementation "org.ow2.asm:asm:$asmVersion"
     api 'junit:junit:4.12'
     // groovy-ant needed for FileNameFinder used in AllTestSuite and JavadocAssertionTestSuite
     testRuntime(project(':groovy-ant')) {

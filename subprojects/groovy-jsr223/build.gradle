@@ -18,6 +18,7 @@
  */
 dependencies {
     implementation rootProject
+    testImplementation "org.ow2.asm:asm:$asmVersion"
     testImplementation project(':groovy-test')
 }
 

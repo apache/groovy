@@ -165,13 +165,13 @@ ext {
 }
 
 dependencies {
-    api "antlr:antlr:$antlrVersion"
-    api "org.ow2.asm:asm:$asmVersion"
-    api "org.ow2.asm:asm-analysis:$asmVersion"
-    api "org.ow2.asm:asm-commons:$asmVersion"
-    api "org.ow2.asm:asm-tree:$asmVersion"
-    api "org.ow2.asm:asm-util:$asmVersion"
-    api "info.picocli:picocli:$picocliVersion"
+    implementation "antlr:antlr:$antlrVersion"
+    implementation "org.ow2.asm:asm:$asmVersion"
+    implementation "org.ow2.asm:asm-analysis:$asmVersion"
+    implementation "org.ow2.asm:asm-commons:$asmVersion"
+    implementation "org.ow2.asm:asm-tree:$asmVersion"
+    implementation "org.ow2.asm:asm-util:$asmVersion"
+    implementation "info.picocli:picocli:$picocliVersion"
     implementation("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
