@@ -145,11 +145,14 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     @Override
     public void visitSwitch(SwitchStatement statement) {
         statement.getExpression().visit(this);
+        afterSwitchConditionExpressionVisited(statement);
         for (CaseStatement caseStatement : statement.getCaseStatements()) {
             caseStatement.visit(this);
         }
         statement.getDefaultStatement().visit(this);
     }
+
+    protected void afterSwitchConditionExpressionVisited(SwitchStatement statement) {}
 
     @Override
     public void visitCaseStatement(CaseStatement statement) {

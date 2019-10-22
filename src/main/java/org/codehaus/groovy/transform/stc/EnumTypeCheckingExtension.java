@@ -44,7 +44,7 @@ public class EnumTypeCheckingExtension extends TypeCheckingExtension {
 
         if (null == switchStatement) return false;
 
-        ClassNode type = switchStatement.getExpression().getType();
+        ClassNode type = switchStatement.getExpression().getNodeMetaData(StaticTypesMarker.TYPE);
 
         if (null == type) return false;
 
