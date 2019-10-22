@@ -23,6 +23,8 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 
+import java.lang.reflect.Modifier;
+
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_CONDITION_EXPRESSION_TYPE;
 
 /**
@@ -48,9 +50,13 @@ public class EnumTypeCheckingExtension extends TypeCheckingExtension {
 
         if (type.isEnum()) {
             FieldNode fieldNode = type.redirect().getField(vexp.getName());
-            if (null != fieldNode && type.equals(fieldNode.getType())) {
-                vexp.putNodeMetaData(SWITCH_CONDITION_EXPRESSION_TYPE, type);
-                return true;
+            if (null != fieldNode) {
+                int modifiers = fieldNode.getModifiers();
+                if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers)
+                        && type.equals(fieldNode.getType())) {
+                    vexp.putNodeMetaData(SWITCH_CONDITION_EXPRESSION_TYPE, type);
+                    return true;
+                }
             }
         }
 
