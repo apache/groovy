@@ -19,12 +19,11 @@
 package groovy.bugs
 
 import groovy.test.GroovyTestCase
-import org.codehaus.groovy.tools.GroovyStarter
+import org.apache.groovy.util.ScriptRunner
 
 class Groovy7812Bug extends GroovyTestCase {
     void testResolvingOuterNestedClass() {
-        def mainScriptPath = new File(this.getClass().getResource('/groovy/bugs/groovy7812/Main.groovy').toURI()).absolutePath
-        runScript(mainScriptPath)
+        ScriptRunner.runScript('/groovy/bugs/groovy7812/Main.groovy')
     }
 
 //   Even if try to catch `Throwable`, the expected error is thrown all the same..., as a result, the test fails due to the weired problem...
@@ -46,8 +45,4 @@ class Groovy7812Bug extends GroovyTestCase {
 //        }
 //    }
 
-
-    static void runScript(String path) {
-        GroovyStarter.main(new String[] { "--main", "groovy.ui.GroovyMain", path })
-    }
 }

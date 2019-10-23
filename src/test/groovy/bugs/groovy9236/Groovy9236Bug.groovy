@@ -19,7 +19,7 @@
 package groovy.bugs.groovy9236
 
 import groovy.test.GroovyTestCase
-import org.codehaus.groovy.tools.GroovyStarter
+import org.apache.groovy.util.ScriptRunner
 
 class Groovy9236Bug extends GroovyTestCase {
     /* groovy-3.0.0-beta-3 will try to guess and load the following classes:
@@ -106,12 +106,7 @@ java.util.stream$Stream
     }
 
     void testResolvingPrecedence() {
-        def mainScriptPath = new File(this.getClass().getResource('/groovy/bugs/groovy9236/Main.groovy').toURI()).absolutePath
-        runScript(mainScriptPath)
-    }
-
-    static void runScript(String path) {
-        GroovyStarter.main(new String[] { "--main", "groovy.ui.GroovyMain", path })
+        ScriptRunner.runScript('/groovy/bugs/groovy9236/Main.groovy')
     }
 
     private static class Groovy9236ClassLoader extends GroovyClassLoader {
