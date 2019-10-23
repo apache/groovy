@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 /**
- * The tool to run script files
+ * The tool to simulate running script files via groovy command
  *
  * @since 3.0.0
  */
@@ -46,9 +46,9 @@ public class ScriptRunner {
     }
 
     /**
-     * Run the script file specified by class path
+     * Run the script file specified by the classpath
      *
-     * @param cp the class path
+     * @param cp the classpath
      * @since 3.0.0
      */
     public static void runScript(String cp) {
