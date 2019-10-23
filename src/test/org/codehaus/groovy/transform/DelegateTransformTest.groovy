@@ -828,6 +828,25 @@ assert foo.dm.x == '123'
             assert new BugsMe().length == 2
         '''
     }
+
+    // GROOVY-9289
+    void testExcludesWithInvalidPropertyNameResultsInError() {
+        def message = shouldFail """
+            class WMap {
+                String name
+                @Delegate(excludes = "name")
+                Map<String, String> data
+             
+                WMap(String name, Map<String, String> data) {
+                    this.name = name
+                    this.data = data
+                }
+            }
+
+            new WMap('example', [name: 'weird'])
+        """
+        assert message.contains("Error during @Delegate processing: 'excludes' property or method 'name' does not exist.")
+    }
 }
 
 interface DelegateFoo {
