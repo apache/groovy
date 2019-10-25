@@ -69,7 +69,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 public class LazyASTTransformation extends AbstractASTTransformation {
 
     private static final ClassNode SOFT_REF = makeWithoutCaching(SoftReference.class, false);
-    private static final Expression NULL_EXPR = nullX();
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -219,7 +218,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         body.addStatement(ifElseS(
                 notNullX(paramExpr),
                 assignS(fieldExpr, ctorX(SOFT_REF, paramExpr)),
-                assignS(fieldExpr, NULL_EXPR)
+                assignS(fieldExpr, nullX())
         ));
         int visibility = ACC_PUBLIC;
         if (fieldNode.isStatic()) visibility |= ACC_STATIC;
