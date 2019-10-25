@@ -41,7 +41,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 name 'Guillaume Laforge'
                 organization 'SpringSource'
                 roles {
-                    role 'Despot'
                     role 'Developer'
                 }
             }
@@ -205,7 +204,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 email 'blackdrag@gmx.org'
                 roles {
                     role 'Developer'
-                    role 'Despot'
                 }
             }
             developer {
@@ -252,7 +250,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 roles {
                     role 'Project Manager'
                     role 'Developer'
-                    role 'Despot'
                 }
             }
             developer {
@@ -298,7 +295,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 email 'aalmiray@users.sourceforge.net'
                 roles {
                     role 'Developer'
-                    role 'Despot'
                 }
             }
             developer {
@@ -362,7 +358,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 email 'realbluesun@hotmail.com'
                 roles {
                     role 'Developer'
-                    role 'Despot'
                 }
             }
             developer {
@@ -375,6 +370,14 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'grocher'
                 name 'Graeme Rocher'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'emilles'
+                name 'Eric Milles'
+                organization 'Thomson Reuters'
                 roles {
                     role 'Developer'
                 }
