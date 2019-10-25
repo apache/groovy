@@ -533,18 +533,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean setRedirect(ClassNode type, ClassNode classToCheck) {
         String typeName = type.getName();
 
-        Predicate<ClassNode> resolver = new Predicate<ClassNode>() {
-            @Override
-            public boolean test(ClassNode maybeOuter) {
-                if (!typeName.equals(maybeOuter.getName())) {
-                    ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
-                    if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
-                        type.setRedirect(maybeNested);
-                        return true;
-                    }
+        Predicate<ClassNode> resolver = (ClassNode maybeOuter) -> {
+            if (!typeName.equals(maybeOuter.getName())) {
+                ClassNode maybeNested = new ConstructedNestedClass(maybeOuter, typeName);
+                if (resolveFromCompileUnit(maybeNested) || resolveToOuter(maybeNested)) {
+                    type.setRedirect(maybeNested);
+                    return true;
                 }
-                return false;
             }
+            return false;
         };
 
         if (resolver.test(classToCheck)) {
