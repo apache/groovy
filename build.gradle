@@ -144,7 +144,7 @@ ext {
     coberturaVersion = '1.9.4.1'
     commonsCliVersion = '1.4'
     gparsVersion = '1.2.1'
-    ivyVersion = '2.5.0-rc1'
+    ivyVersion = '2.5.0'
     jansiVersion = '1.18'
     jarjarVersion = '1.7.2'
     javaParserVersion = '3.15.2'
