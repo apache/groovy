@@ -61,8 +61,6 @@ import java.lang.reflect.WildcardType;
 import java.security.Permission;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
-
 /**
  * java 5 based functions
  */
@@ -359,8 +357,7 @@ public class Java5 implements VMPlugin {
     }
 
     private static void setMethodDefaultValue(MethodNode mn, Method m) {
-        Object defaultValue = m.getDefaultValue();
-        ConstantExpression cExp = defaultValue != null ? new ConstantExpression(defaultValue) : nullX();
+        ConstantExpression cExp = new ConstantExpression(m.getDefaultValue());
         mn.setCode(new ReturnStatement(cExp));
         mn.setAnnotationDefault(true);
     }
