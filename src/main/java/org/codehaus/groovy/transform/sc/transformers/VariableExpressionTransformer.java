@@ -26,6 +26,10 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import java.lang.reflect.Modifier;
+
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.FIELD_MODIFIERS;
+
 /**
  * Transformer for VariableExpression the bytecode backend wouldn't be able to
  * handle otherwise.
@@ -53,6 +57,13 @@ public class VariableExpressionTransformer {
 
         // TODO handle the owner and delegate cases better for nested scenarios and potentially remove the need for the implicit this case
         VariableExpression receiver = new VariableExpression("owner".equals(val) ? (String) val : "delegate".equals(val) ? (String) val : "this");
+
+        // GROOVY-9288: Compilation error when accessing a protected super class field from inside a closure
+        Integer modifiers = expr.getNodeMetaData(FIELD_MODIFIERS);
+        if (null != modifiers && Modifier.isProtected(modifiers)) {
+            receiver.putNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY, val);
+        }
+
         // GROOVY-9136 -- object expression should not overlap source range of property; property stands in for original varibale expression
         receiver.setLineNumber(expr.getLineNumber());
         receiver.setColumnNumber(expr.getColumnNumber());

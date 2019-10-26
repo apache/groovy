@@ -42,5 +42,6 @@ public enum StaticTypesMarker {
     INFERRED_FUNCTIONAL_INTERFACE_TYPE, // used to store the function interface type information on an expression
     CONSTRUCTED_LAMBDA_EXPRESSION, // used to store the constructed lambda expression for method reference and constructor reference
     SWITCH_CONDITION_EXPRESSION_TYPE, // used to store the condition expression type of the switch-case statement
-    TYPE // used to store the result of `org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.getType`
+    TYPE, // used to store the result of `org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.getType`
+    FIELD_MODIFIERS // used to store the modifiers of field
 }

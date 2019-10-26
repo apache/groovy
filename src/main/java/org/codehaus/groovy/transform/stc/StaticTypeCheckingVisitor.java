@@ -271,6 +271,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCh
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CONSTRUCTED_LAMBDA_EXPRESSION;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.FIELD_MODIFIERS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 
 /**
@@ -762,6 +763,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode previousIt = vexp.getNodeMetaData(INFERRED_TYPE);
             vexp.copyNodeMetaData(implicitThis);
             vexp.putNodeMetaData(INFERRED_TYPE, previousIt);
+            vexp.putNodeMetaData(FIELD_MODIFIERS, pe.getNodeMetaData(FIELD_MODIFIERS));
             storeType(vexp, getType(pe));
             Object val = pe.getNodeMetaData(StaticTypesMarker.READONLY_PROPERTY);
             if (val != null) vexp.putNodeMetaData(StaticTypesMarker.READONLY_PROPERTY, val);
@@ -1879,6 +1881,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
         if (field != null && !field.isStatic() && !field.isPrivate() && !"delegate".equals(delegationData)) {
+            expressionToStoreOn.putNodeMetaData(FIELD_MODIFIERS, field.getModifiers());
             delegationData = checkOrMarkInnerPropertyOwnerAccess(expressionToStoreOn, lhsOfAssignment, delegationData);
         }
         if (delegationData != null) {
