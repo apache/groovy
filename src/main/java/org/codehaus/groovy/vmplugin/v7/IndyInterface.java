@@ -130,7 +130,7 @@ public class IndyInterface {
          * bootstrap method for method calls from Groovy compiled code with indy 
          * enabled. This method gets a flags parameter which uses the following 
          * encoding:<ul>
-         * <li>{@value #SAFE_NAVIGATION} is the flag value for safe navigation see {@link #SAFE_NAVIGATION}<li/>
+         * <li>{@value #SAFE_NAVIGATION} is the flag value for safe navigation see {@link #SAFE_NAVIGATION}</li>
          * <li>{@value #THIS_CALL} is the flag value for a call on this see {@link #THIS_CALL}</li>
          * </ul> 
          * @param caller - the caller
