@@ -955,7 +955,7 @@ public class CompilerConfiguration {
     }
 
     private void setTargetBytecodeIfValid(String version) {
-        if (JDK_TO_BYTECODE_VERSION_MAP.keySet().contains(version)) {
+        if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(version)) {
             this.targetBytecode = version;
         }
     }
