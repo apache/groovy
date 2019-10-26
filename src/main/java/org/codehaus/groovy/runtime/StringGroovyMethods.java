@@ -3619,7 +3619,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         if (searchString == null || searchString.length() == 0 || self.length() < searchString.length())
             return false;
 
-        String s = take(self.toString(), searchString.length()).toString();
+        String s = take(self.toString(), searchString.length());
 
         return s.equalsIgnoreCase(searchString.toString());
     }
@@ -3637,7 +3637,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         if (searchString == null || searchString.length() == 0 || self.length() < searchString.length())
             return false;
 
-        String s = takeRight(self.toString(), searchString.length()).toString();
+        String s = takeRight(self.toString(), searchString.length());
 
         return s.equalsIgnoreCase(searchString.toString());
     }
