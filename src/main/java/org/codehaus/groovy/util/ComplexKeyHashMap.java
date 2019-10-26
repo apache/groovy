@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.util;
 
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 public class ComplexKeyHashMap
@@ -74,8 +75,7 @@ public class ComplexKeyHashMap
 
   public void clear() {
       Object[] tab = table;
-      for (int i = 0; i < tab.length; i++)
-          tab[i] = null;
+      Arrays.fill(tab, null);
       size = 0;
   }
 
