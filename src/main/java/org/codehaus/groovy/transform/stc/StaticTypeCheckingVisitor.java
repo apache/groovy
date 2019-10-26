@@ -2836,7 +2836,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (typeX != null) {
             expectedType = typeX.getType();
         }
-        if (!entries.keySet().contains(name)) {
+        if (!entries.containsKey(name)) {
             if (required) {
                 addStaticTypeError("required named arg '" + name + "' not found.", expression);
             }

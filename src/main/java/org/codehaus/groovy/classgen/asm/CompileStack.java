@@ -747,7 +747,7 @@ public class CompileStack implements Opcodes {
         StateStackElement result = null;
         for (ListIterator iter = stateStack.listIterator(stateStack.size()); iter.hasPrevious();) {
             StateStackElement element = (StateStackElement) iter.previous();
-            if (!element.currentBlockNamedLabels.values().contains(label)) {
+            if (!element.currentBlockNamedLabels.containsValue(label)) {
                 if (isBreakLabel && element.breakLabel != label) {
                     result = element;
                     break;
