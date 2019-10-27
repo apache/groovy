@@ -18,33 +18,76 @@
  */
 package groovy.bugs
 
-import groovy.transform.CompileStatic
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class Groovy9136 {
 
     @Test
-    void testMethodParameterAccessFromClosure() {
+    void testMethodParameterFieldAccessFromClosure1() {
         assertScript '''
-            @groovy.transform.CompileStatic
             class Foo {
                 public String field = 'foo'
             }
-            @groovy.transform.CompileStatic
             class Bar {
-                def doIt(Foo foo) {
+                @groovy.transform.CompileStatic
+                def test(Foo foo) {
                     'baz'.with {
-                        foo.field // GROOVY-9136: Access to Foo#foo is forbidden at line: -1, column: -1
+                        foo.field // Access to Foo#foo is forbidden at line: -1, column: -1
                     }
                 }
             }
 
             def bar = new Bar()
-            def out = bar.doIt(new Foo())
+            def out = bar.test(new Foo())
             assert out == 'foo'
         '''
+    }
+
+    @Test @NotYetImplemented // GROOVY-9195
+    void testMethodParameterFieldAccessFromClosure2() {
+        def err = shouldFail '''
+            class Foo {
+                private String field = 'foo'
+            }
+            class Bar {
+                @groovy.transform.CompileStatic
+                def test(Foo foo) {
+                    'baz'.with {
+                        foo.field
+                    }
+                }
+            }
+
+            def bar = new Bar()
+            def out = bar.test(new Foo())
+        '''
+
+        assert err =~ /Access to Foo#field is forbidden/
+    }
+
+    @Test
+    void testMethodParameterFieldAccessFromClosure3() {
+        def err = shouldFail '''
+            class Foo {
+                private String field = 'foo'
+            }
+            @groovy.transform.CompileStatic
+            class Bar {
+                def test(Foo foo) {
+                    foo.with {
+                        field
+                    }
+                }
+            }
+
+            def bar = new Bar()
+            def out = bar.test(new Foo())
+        '''
+
+        assert err =~ /Access to Foo#field is forbidden/
     }
 }

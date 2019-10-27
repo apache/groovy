@@ -224,11 +224,10 @@ final class DifferentPackageTest {
                         }
                     }
                 ''')
-            // TODO: Don't need this once compiler errors
-            assert loader.loadClass('q.Two').half() == 21
+            loader.loadClass('q.Two').half()
         }
 
-        assert err =~ / Access to p.One#CONST is forbidden /
+        assert err =~ / MissingPropertyException: No such property: CONST for class: q.Two /
     }
 
     @Test
