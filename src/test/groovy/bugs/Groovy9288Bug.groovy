@@ -105,4 +105,160 @@ final class Groovy9288Bug {
         shell.evaluate("assert new a.ConcreteClass().doThing() == 'field'")
     }
 
+    @Test
+    void "test accessing a protected super class field from inside a closure - using this - different package"() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate('''
+            package a
+            
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            abstract class Abstract_Class {
+                protected String protectedField = 'field'
+                
+                abstract String doThing()
+            }
+            assert true
+        ''')
+
+        shell.evaluate('''
+            package b
+            
+            import a.Abstract_Class
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            class ConcreteClass extends Abstract_Class {
+               
+                @Override
+                String doThing() {
+                    'something'.with {
+                        return this.protectedField
+                    }
+                }
+            }
+            assert true
+        ''')
+
+        shell.evaluate("assert new b.ConcreteClass().doThing() == 'field'")
+    }
+
+
+    @Test
+    void "test accessing a protected super class field from inside a closure - using thisObject - different package"() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate('''
+            package a
+            
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            abstract class Abstract_Class {
+                protected String protectedField = 'field'
+                
+                abstract String doThing()
+            }
+            assert true
+        ''')
+
+        shell.evaluate('''
+            package b
+            
+            import a.Abstract_Class
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            class ConcreteClass extends Abstract_Class {
+               
+                @Override
+                String doThing() {
+                    'something'.with {
+                        return thisObject.protectedField
+                    }
+                }
+            }
+            assert true
+        ''')
+
+        shell.evaluate("assert new b.ConcreteClass().doThing() == 'field'")
+    }
+
+    @Test
+    void "test accessing a protected super class field from inside a closure - using owner - different package"() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate('''
+            package a
+            
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            abstract class Abstract_Class {
+                protected String protectedField = 'field'
+                
+                abstract String doThing()
+            }
+            assert true
+        ''')
+
+        shell.evaluate('''
+            package b
+            
+            import a.Abstract_Class
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            class ConcreteClass extends Abstract_Class {
+               
+                @Override
+                String doThing() {
+                    'something'.with {
+                        return owner.protectedField
+                    }
+                }
+            }
+            assert true
+        ''')
+
+        shell.evaluate("assert new b.ConcreteClass().doThing() == 'field'")
+    }
+
+    @Test
+    void "test accessing a protected super class field from inside a closure - using delegate - different package"() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate('''
+            package a
+            
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            abstract class Abstract_Class {
+                protected String protectedField = 'field'
+                
+                abstract String doThing()
+            }
+            assert true
+        ''')
+
+        shell.evaluate('''
+            package b
+            
+            import a.Abstract_Class
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            class ConcreteClass extends Abstract_Class {
+               
+                @Override
+                String doThing() {
+                    this.with {
+                        return delegate.protectedField
+                    }
+                }
+            }
+            assert true
+        ''')
+
+        shell.evaluate("assert new b.ConcreteClass().doThing() == 'field'")
+    }
 }
