@@ -18,12 +18,9 @@
  */
 package groovy.bugs
 
-
-import groovy.transform.CompileStatic
-import org.junit.Ignore
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
-@CompileStatic
 final class Groovy9292Bug {
 
     @Test
@@ -339,7 +336,7 @@ final class Groovy9292Bug {
         shell.evaluate("assert new a.ConcreteClass().doThing() == 'field'")
     }
 
-    @Ignore // java.lang.IllegalAccessError: class a.ConcreteClass$_doThing_closure1 tried to access field a.Abstract_Class.superField (a.ConcreteClass$_doThing_closure1 is in unnamed module of loader groovy.lang.GroovyClassLoader$InnerLoader @5fa47fea; a.Abstract_Class is in unnamed module of loader groovy.lang.GroovyClassLoader$InnerLoader @28cda624)
+    @NotYetImplemented // java.lang.IllegalAccessError: class a.ConcreteClass$_doThing_closure1 tried to access field a.Abstract_Class.superField (a.ConcreteClass$_doThing_closure1 is in unnamed module of loader groovy.lang.GroovyClassLoader$InnerLoader @5fa47fea; a.Abstract_Class is in unnamed module of loader groovy.lang.GroovyClassLoader$InnerLoader @28cda624)
     @Test
     void "test accessing a package-private super class field from inside a closure - using this - same package"() {
         GroovyShell shell = new GroovyShell()
