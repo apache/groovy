@@ -27,281 +27,313 @@ final class Groovy9288 {
 
     @Test
     void 'test accessing a protected super class field inside a closure - same package'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                class B extends A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return superField
-                        }
+            class B extends A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    'something'.with {
+                        return superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test
     void 'test accessing a protected super class field inside a closure - diff package'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                assert true
-            '''
+            assert true
+        '''
 
-            evaluate '''
-                package b
+        shell.evaluate '''
+            package b
 
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return superField
-                        }
+            class B extends a.A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    'something'.with {
+                        return superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
+    }
+
+    @Test
+    void 'test accessing a protected super class field inside a closure - same package, it qualifier'() {
+        shell.evaluate '''
+            package a
+
+            class A {
+                protected String superField = 'works'
+            }
+
+            class B extends A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    with {
+                        return it.superField
+                    }
+                }
+            }
+
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
+    }
+
+    @Test @NotYetImplemented // GROOVY-9292
+    void 'test accessing a protected super class field inside a closure - diff package, it qualifier'() {
+        shell.evaluate '''
+            package a
+
+            class A {
+                protected String superField = 'works'
+            }
+
+            assert true
+        '''
+
+        shell.evaluate '''
+            package b
+
+            class B extends a.A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    with {
+                        return it.superField
+                    }
+                }
+            }
+
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test
     void 'test accessing a protected super class field inside a closure - same package, this qualifier'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                class B extends A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return this.superField
-                        }
+            class B extends A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    'something'.with {
+                        return this.superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test
     void 'test accessing a protected super class field inside a closure - diff package, this qualifier'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                assert true
-            '''
+            assert true
+        '''
 
-            evaluate '''
-                package b
+        shell.evaluate '''
+            package b
 
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return this.superField
-                        }
+            class B extends a.A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    'something'.with {
+                        return this.superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test
     void 'test accessing a protected super class field inside a closure - same package, owner qualifier'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                class B extends A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return owner.superField
-                        }
+            class B extends A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    'something'.with {
+                        return owner.superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test @NotYetImplemented // GROOVY-9292
     void 'test accessing a protected super class field inside a closure - diff package, owner qualifier'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                assert true
-            '''
+            assert true
+        '''
 
-            evaluate '''
-                package b
+        shell.evaluate '''
+            package b
 
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return owner.superField
-                        }
+            class B extends a.A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    'something'.with {
+                        return owner.superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test
     void 'test accessing a protected super class field inside a closure - same package, delegate qualifier'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                class B extends A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        with {
-                            return delegate.superField
-                        }
+            class B extends A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    with {
+                        return delegate.superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test @NotYetImplemented // GROOVY-9292
     void 'test accessing a protected super class field inside a closure - diff package, delegate qualifier'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                assert true
-            '''
+            assert true
+        '''
 
-            evaluate '''
-                package b
+        shell.evaluate '''
+            package b
 
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        with {
-                            return delegate.superField
-                        }
+            class B extends a.A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    with {
+                        return delegate.superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test
     void 'test accessing a protected super class field inside a closure - same package, thisObject qualifier'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                class B extends A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return thisObject.superField
-                        }
+            class B extends A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    'something'.with {
+                        return thisObject.superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 
     @Test @NotYetImplemented // GROOVY-9292
     void 'test accessing a protected super class field inside a closure - diff package, thisObject qualifier'() {
-        shell.with {
-            evaluate '''
-                package a
+        shell.evaluate '''
+            package a
 
-                class A {
-                    protected String superField = 'works'
-                }
+            class A {
+                protected String superField = 'works'
+            }
 
-                assert true
-            '''
+            assert true
+        '''
 
-            evaluate '''
-                package b
+        shell.evaluate '''
+            package b
 
-                class B extends a.A {
-                    @groovy.transform.CompileStatic
-                    def test() {
-                        'something'.with {
-                            return thisObject.superField
-                        }
+            class B extends a.A {
+                @groovy.transform.CompileStatic
+                def test() {
+                    'something'.with {
+                        return thisObject.superField
                     }
                 }
+            }
 
-                def obj = new B()
-                assert obj.test() == "works"
-            '''
-        }
+            def obj = new B()
+            assert obj.test() == "works"
+        '''
     }
 }
