@@ -194,16 +194,16 @@ public class AnnotationNode extends ASTNode {
 
     @Override
     public String getText() {
-        String memberText = "";
+        StringBuilder memberText = new StringBuilder();
         if (members != null) {
             boolean first = true;
             for (Map.Entry<String, Expression> next : members.entrySet()) {
                 if (first) {
                     first = false;
                 } else {
-                    memberText += ", ";
+                    memberText.append(", ");
                 }
-                memberText += next.getKey() + ": " + next.getValue().getText();
+                memberText.append(next.getKey()).append(": ").append(next.getValue().getText());
             }
         }
         return "@" + classNode.getText() + "(" + memberText + ")";

@@ -238,11 +238,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     public Reduction outputAST(final SourceUnit sourceUnit, final SourceBuffer sourceBuffer) {
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                outputASTInVariousFormsIfNeeded(sourceUnit, sourceBuffer);
-                return null;
-            }
+        AccessController.doPrivileged((PrivilegedAction) () -> {
+            outputASTInVariousFormsIfNeeded(sourceUnit, sourceBuffer);
+            return null;
         });
 
         return null; //new Reduction(Tpken.EOF);
