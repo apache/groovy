@@ -101,6 +101,46 @@ final class Groovy9292Bug {
         shell.evaluate("assert new a.ConcreteClass().doThing() == 'field'")
     }
 
+
+    @Test
+    void "test accessing a protected super class field from inside a closure - using it - different package"() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate('''
+            package a
+            
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            abstract class Abstract_Class {
+                protected String superField = 'field'
+                
+                abstract String doThing()
+            }
+            assert true
+        ''')
+
+        shell.evaluate('''
+            package b
+            
+            import a.Abstract_Class
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            class ConcreteClass extends Abstract_Class {
+               
+                @Override
+                String doThing() {
+                    this.with {
+                        return it.superField
+                    }
+                }
+            }
+            assert true
+        ''')
+
+        shell.evaluate("assert new b.ConcreteClass().doThing() == 'field'")
+    }
+
     @Test
     void "test accessing a protected super class field from inside a closure - using this - different package"() {
         GroovyShell shell = new GroovyShell()
@@ -336,6 +376,45 @@ final class Groovy9292Bug {
         shell.evaluate("assert new a.ConcreteClass().doThing() == 'field'")
     }
 
+    @Test
+    void "test accessing a package-private super class field from inside a closure - using it - same package"() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate('''
+            package a
+            
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            abstract class Abstract_Class {
+                @groovy.transform.PackageScope String superField = 'field'
+                
+                abstract String doThing()
+            }
+            assert true
+        ''')
+
+        shell.evaluate('''
+            package a
+            
+            import a.Abstract_Class
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            class ConcreteClass extends Abstract_Class {
+               
+                @Override
+                String doThing() {
+                    this.with {
+                        return it.superField
+                    }
+                }
+            }
+            assert true
+        ''')
+
+        shell.evaluate("assert new a.ConcreteClass().doThing() == 'field'")
+    }
+
     @NotYetImplemented // java.lang.IllegalAccessError: class a.ConcreteClass$_doThing_closure1 tried to access field a.Abstract_Class.superField (a.ConcreteClass$_doThing_closure1 is in unnamed module of loader groovy.lang.GroovyClassLoader$InnerLoader @5fa47fea; a.Abstract_Class is in unnamed module of loader groovy.lang.GroovyClassLoader$InnerLoader @28cda624)
     @Test
     void "test accessing a package-private super class field from inside a closure - using this - same package"() {
@@ -533,6 +612,46 @@ final class Groovy9292Bug {
         shell.evaluate("assert new b.ConcreteClass().doThing() == 'field'")
     }
 
+
+    @Test
+    void "test accessing a public super class field from inside a closure - using it - different package"() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate('''
+            package a
+            
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            abstract class Abstract_Class {
+                public String superField = 'field'
+                
+                abstract String doThing()
+            }
+            assert true
+        ''')
+
+        shell.evaluate('''
+            package b
+            
+            import a.Abstract_Class
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            class ConcreteClass extends Abstract_Class {
+               
+                @Override
+                String doThing() {
+                    this.with {
+                        return it.superField
+                    }
+                }
+            }
+            assert true
+        ''')
+
+        shell.evaluate("assert new b.ConcreteClass().doThing() == 'field'")
+    }
+
     @Test
     void "test accessing a public super class field from inside a closure - using this - different package"() {
         GroovyShell shell = new GroovyShell()
@@ -721,6 +840,45 @@ final class Groovy9292Bug {
                 String doThing() {
                     this.with {
                         return delegate.superField
+                    }
+                }
+            }
+            assert true
+        ''')
+
+        shell.evaluate("assert new b.ConcreteClass().doThing() == 'field'")
+    }
+
+    @Test
+    void "test accessing a private super class field from inside a closure via getter - using it - different package -- regression"() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate('''
+            package a
+            
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            abstract class Abstract_Class {
+                String superField = 'field'
+                
+                abstract String doThing()
+            }
+            assert true
+        ''')
+
+        shell.evaluate('''
+            package b
+            
+            import a.Abstract_Class
+            import groovy.transform.CompileStatic
+            
+            @CompileStatic
+            class ConcreteClass extends Abstract_Class {
+               
+                @Override
+                String doThing() {
+                    this.with {
+                        return it.superField
                     }
                 }
             }

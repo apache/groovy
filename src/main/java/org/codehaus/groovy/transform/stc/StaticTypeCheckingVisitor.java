@@ -1513,7 +1513,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static final Set<String> CLOSURE_IMPLICIT_VARIABLE_SET =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("this", "thisObject", "owner", "delegate")));
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("it", "this", "thisObject", "owner", "delegate")));
 
     /**
      * Checks whether a property exists on the receiver, or on any of the possible receiver classes (found in the
