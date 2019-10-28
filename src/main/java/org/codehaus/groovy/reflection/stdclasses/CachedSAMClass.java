@@ -103,11 +103,7 @@ public class CachedSAMClass extends CachedClass {
 
     private static Method[] getDeclaredMethods(final Class c) {
         try {
-            Method[] methods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
-                public Method[] run() {
-                    return c.getDeclaredMethods();
-                }
-            });
+            Method[] methods = AccessController.doPrivileged((PrivilegedAction<Method[]>) () -> c.getDeclaredMethods());
             if (methods!=null) return methods;
         } catch (java.security.AccessControlException ace) {
             // swallow and do as if no method is available
