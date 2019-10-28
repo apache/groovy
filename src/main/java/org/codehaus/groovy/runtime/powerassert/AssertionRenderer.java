@@ -73,11 +73,7 @@ public final class AssertionRenderer {
         // it's important to use a stable sort here, otherwise
         // renderValues() will skip the wrong values
         Collections.sort(recorder.getValues(),
-                new Comparator<Value>() {
-                    public int compare(Value v1, Value v2) {
-                        return v2.getColumn() - v1.getColumn();
-                    }
-                }
+                (v1, v2) -> v2.getColumn() - v1.getColumn()
         );
     }
 

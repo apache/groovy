@@ -61,15 +61,13 @@ public class CachedClass {
         private static final long serialVersionUID = 5450437842165410025L;
 
         public CachedField[] initValue() {
-            final Field[] declaredFields = AccessController.doPrivileged(new PrivilegedAction<Field[]>() {
-                public Field[] run() {
-                    Field[] df = getTheClass().getDeclaredFields();
-                    df = Arrays.stream(df)
-                            .filter(f -> checkCanSetAccessible(f, CachedClass.class))
-                            .toArray(Field[]::new);
+            final Field[] declaredFields = AccessController.doPrivileged((PrivilegedAction<Field[]>) () -> {
+                Field[] df = getTheClass().getDeclaredFields();
+                df = Arrays.stream(df)
+                        .filter(f -> checkCanSetAccessible(f, CachedClass.class))
+                        .toArray(Field[]::new);
 //                    df = (Field[]) ReflectionUtils.makeAccessible(df);
-                    return df;
-                }
+                return df;
             });
             CachedField[] fields = new CachedField[declaredFields.length];
             for (int i = 0; i != fields.length; ++i)
@@ -83,15 +81,13 @@ public class CachedClass {
 
         public CachedConstructor[] initValue() {
             final Constructor[] declaredConstructors = (Constructor[])
-               AccessController.doPrivileged(new PrivilegedAction<Constructor[]>() {
-                   public Constructor[] run() {
-                       Constructor[] dc = getTheClass().getDeclaredConstructors();
-                       dc = Arrays.stream(dc)
-                               .filter(c -> checkCanSetAccessible(c, CachedClass.class))
-                               .toArray(Constructor[]::new);
+               AccessController.doPrivileged((PrivilegedAction<Constructor[]>) () -> {
+                   Constructor[] dc = getTheClass().getDeclaredConstructors();
+                   dc = Arrays.stream(dc)
+                           .filter(c -> checkCanSetAccessible(c, CachedClass.class))
+                           .toArray(Constructor[]::new);
 
-                       return dc;
-                   }
+                   return dc;
                });
             CachedConstructor[] constructors = new CachedConstructor[declaredConstructors.length];
             for (int i = 0; i != constructors.length; ++i)
@@ -104,22 +100,22 @@ public class CachedClass {
         private static final long serialVersionUID = 6347586066597418308L;
 
         public CachedMethod[] initValue() {
-            final Method[] declaredMethods =
-               AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
-                   public Method[] run() {
-                       try {
-                           Method[] dm = getTheClass().getDeclaredMethods();
-                           dm = Arrays.stream(dm)
-                                   .filter(m -> checkCanSetAccessible(m, CachedClass.class))
-                                   .toArray(Method[]::new);
+            final Method[] declaredMethods;
+            declaredMethods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+                public Method[] run() {
+                    try {
+                        Method[] dm = getTheClass().getDeclaredMethods();
+                        dm = Arrays.stream(dm)
+                                .filter(m -> checkCanSetAccessible(m, CachedClass.class))
+                                .toArray(Method[]::new);
 //                           dm = (Method[]) ReflectionUtils.makeAccessible(dm);
-                           return dm;
-                       } catch (Throwable e) {
-                           // Typically, Android can throw ClassNotFoundException
-                           return EMPTY_METHOD_ARRAY;
-                       }
-                   }
-               });
+                        return dm;
+                    } catch (Throwable e) {
+                        // Typically, Android can throw ClassNotFoundException
+                        return EMPTY_METHOD_ARRAY;
+                    }
+                }
+            });
             List<CachedMethod> methods = new ArrayList<CachedMethod>(declaredMethods.length);
             List<CachedMethod> mopMethods = new ArrayList<CachedMethod>(declaredMethods.length);
             for (int i = 0; i != declaredMethods.length; ++i) {
@@ -173,11 +169,7 @@ public class CachedClass {
 
         public CallSiteClassLoader initValue() {
             return
-               AccessController.doPrivileged(new PrivilegedAction<CallSiteClassLoader>() {
-                   public CallSiteClassLoader run() {
-                       return new CallSiteClassLoader(CachedClass.this.cachedClass);
-                   }
-               });
+               AccessController.doPrivileged((PrivilegedAction<CallSiteClassLoader>) () -> new CallSiteClassLoader(CachedClass.this.cachedClass));
         }
     };
 
