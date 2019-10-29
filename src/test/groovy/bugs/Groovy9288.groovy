@@ -100,7 +100,7 @@ final class Groovy9288 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9292
+    @Test
     void 'test accessing a protected super class field inside a closure - diff package, it qualifier'() {
         shell.evaluate '''
             package a
@@ -204,7 +204,7 @@ final class Groovy9288 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9292
+    @Test
     void 'test accessing a protected super class field inside a closure - diff package, owner qualifier'() {
         shell.evaluate '''
             package a
@@ -256,7 +256,7 @@ final class Groovy9288 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9292
+    @Test
     void 'test accessing a protected super class field inside a closure - diff package, delegate qualifier'() {
         shell.evaluate '''
             package a
@@ -308,7 +308,7 @@ final class Groovy9288 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9292
+    @Test
     void 'test accessing a protected super class field inside a closure - diff package, thisObject qualifier'() {
         shell.evaluate '''
             package a
