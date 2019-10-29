@@ -196,7 +196,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         }
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
-        // GROOVY-5580, it is still possible that we're calling a superinterface property
+        // GROOVY-5580: it is still possible that we're calling a superinterface property
         String getterName = "get" + capitalize(propertyName);
         String altGetterName = "is" + capitalize(propertyName);
         if (receiverType.isInterface()) {
@@ -226,7 +226,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             }
         }
 
-        // GROOVY-5568, we would be facing a DGM call, but instead of foo.getText(), have foo.text
+        // GROOVY-5568: we would be facing a DGM call, but instead of foo.getText(), have foo.text
         List<MethodNode> methods = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, getterName, ClassNode.EMPTY_ARRAY);
         for (MethodNode dgm : findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, altGetterName, ClassNode.EMPTY_ARRAY)) {
             if (Boolean_TYPE.equals(getWrapper(dgm.getReturnType()))) methods.add(dgm);
@@ -256,8 +256,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
         String receiverName = (receiver instanceof ClassExpression ? receiver.getType() : receiverType).toString(false);
         controller.getSourceUnit().addError(
-                new SyntaxException("Access to " + receiverName + "#" + propertyName + " is forbidden",
-                    receiver.getLineNumber(), receiver.getColumnNumber(), receiver.getLastLineNumber(), receiver.getLastColumnNumber())        );
+                new SyntaxException("Access to " + receiverName + "#" + propertyName + " is forbidden", receiver));
         controller.getMethodVisitor().visitInsn(ACONST_NULL);
         controller.getOperandStack().push(OBJECT_TYPE);
     }
@@ -411,18 +410,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             return makeGetPrivateFieldWithBridgeMethod(pexp, outerClass, fieldName, safe, true);
         }
         ClassNode classNode = controller.getClassNode();
-        if (field != null && field.isPrivate()
-                && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))
-                && !receiverType.equals(classNode)) {
+        if (field != null && field.isPrivate() && !receiverType.equals(classNode)
+                && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode) || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
             Map<String, MethodNode> accessors = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
-            if (accessors!=null) {
+            if (accessors != null) {
                 MethodNode methodNode = accessors.get(fieldName);
-                if (methodNode!=null) {
+                if (methodNode != null) {
                     MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(),
-                            new ArgumentListExpression(field.isStatic()?new ConstantExpression(null):receiver));
+                            new ArgumentListExpression(field.isStatic() ? new ConstantExpression(null) : receiver));
+                    mce.setImplicitThis(implicitThis);
                     mce.setMethodTarget(methodNode);
                     mce.setSafe(safe);
-                    mce.setImplicitThis(implicitThis);
                     mce.visit(controller.getAcg());
                     return true;
                 }

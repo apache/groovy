@@ -503,22 +503,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     private void checkOrMarkPrivateAccess(Expression source, FieldNode fn, boolean lhsOfAssignment) {
         if (fn == null) return;
-        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        ClassNode declaringClass = fn.getDeclaringClass();
-        if (fn.isPrivate() &&
-                (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) &&
-                declaringClass.getModule() == enclosingClassNode.getModule()) {
+        ClassNode declaringClass = fn.getDeclaringClass(), enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
+        if (fn.isPrivate() && (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null)
+                && declaringClass.getModule() == enclosingClassNode.getModule()) {
             if (!lhsOfAssignment && enclosingClassNode.isDerivedFrom(declaringClass)) {
                 // check for a public/protected getter since JavaBean getters haven't been recognised as properties
                 // at this point and we don't want private field access for that case which will be handled later
-                boolean isPrimBool = fn.getOriginType().equals(boolean_TYPE);
                 String suffix = Verifier.capitalize(fn.getName());
-                MethodNode getterNode = findValidGetter(enclosingClassNode, "get" + suffix);
-                if (getterNode == null && isPrimBool) {
-                    getterNode = findValidGetter(enclosingClassNode, "is" + suffix);
+                MethodNode getter = findValidGetter(enclosingClassNode, "get" + suffix);
+                if (getter == null && boolean_TYPE.equals(fn.getOriginType())) {
+                    getter = findValidGetter(enclosingClassNode, "is" + suffix);
                 }
-                if (getterNode != null) {
-                    source.putNodeMetaData(INFERRED_TYPE, getterNode.getReturnType());
+                if (getter != null) {
+                    source.putNodeMetaData(INFERRED_TYPE, getter.getReturnType());
                     return;
                 }
             }
