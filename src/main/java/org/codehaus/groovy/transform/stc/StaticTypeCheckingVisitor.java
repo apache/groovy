@@ -1544,15 +1544,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        if (objectExpressionType.isArray() && "length".equals(pexp.getPropertyAsString())) {
-            storeType(pexp, int_TYPE);
-            if (visitor != null) {
-                PropertyNode node = new PropertyNode("length", Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, int_TYPE, objectExpressionType, null, null, null);
-                visitor.visitProperty(node);
-            }
-            return true;
-        }
-
         boolean foundGetterOrSetter = false;
         List<Receiver<String>> receivers = new LinkedList<>();
         List<Receiver<String>> owners = makeOwnerList(objectExpression);
@@ -1563,6 +1554,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         HashSet<ClassNode> handledNodes = new HashSet<>();
         for (Receiver<String> receiver : receivers) {
             ClassNode testClass = receiver.getType();
+
+            if (testClass.isArray() && "length".equals(propertyName)) {
+                storeType(pexp, int_TYPE);
+                if (visitor != null) {
+                    PropertyNode length = new PropertyNode("length", Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, int_TYPE, testClass, null, null, null);
+                    visitor.visitProperty(length);
+                }
+                return true;
+            }
+
             LinkedList<ClassNode> queue = new LinkedList<>();
             queue.add(testClass);
             if (isPrimitiveType(testClass)) {
