@@ -178,7 +178,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private final Map genericParameterNames;
     private final SourceUnit source;
     private WriterController controller;
-    
+
     public AsmClassGenerator(
             SourceUnit source, GeneratorContext context,
             ClassVisitor classVisitor, String sourceFile
@@ -1092,7 +1092,7 @@ public class AsmClassGenerator extends ClassGenerator {
             return;
         }
 
-        if (propName!=null) {
+        if (propName != null) {
             // TODO: spread safe should be handled inside
             if (adapter == getProperty && !expression.isSpreadSafe()) {
                 controller.getCallSiteWriter().makeGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
@@ -1163,25 +1163,28 @@ public class AsmClassGenerator extends ClassGenerator {
         return controller.isStaticContext() && isThisOrSuper(objectExpression);
     }
 
+    @Override
     public void visitPropertyExpression(PropertyExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
         OperandStack operandStack = controller.getOperandStack();
-        int mark = operandStack.getStackLength()-1;
+        int mark = operandStack.getStackLength() - 1;
         MethodCallerMultiAdapter adapter;
         if (controller.getCompileStack().isLHS()) {
-            //operandStack.box();
-            adapter = setProperty;
-            if (isGroovyObject(objectExpression)) adapter = setGroovyObjectProperty;
-            if (isThisOrSuperInStaticContext(objectExpression)) adapter = setProperty;
+            if (isGroovyObject(objectExpression) && !isThisOrSuperInStaticContext(objectExpression)) {
+                adapter = setGroovyObjectProperty;
+            } else {
+                adapter = setProperty;
+            }
         } else {
-            adapter = getProperty;
-            if (isGroovyObject(objectExpression)) adapter = getGroovyObjectProperty;
-            if (isThisOrSuperInStaticContext(objectExpression)) adapter = getProperty;
+            if (isGroovyObject(objectExpression) && !isThisOrSuperInStaticContext(objectExpression)) {
+                adapter = getGroovyObjectProperty;
+            } else {
+                adapter = getProperty;
+            }
         }
         visitAttributeOrProperty(expression, adapter);
         if (controller.getCompileStack().isLHS()) {
-            // remove surplus values
-            operandStack.remove(operandStack.getStackLength()-mark);
+            operandStack.remove(operandStack.getStackLength() - mark);
         } else {
             controller.getAssertionWriter().record(expression.getProperty());
         }
