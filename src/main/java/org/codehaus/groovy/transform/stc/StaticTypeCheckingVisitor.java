@@ -1590,7 +1590,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 FieldNode field = current.getDeclaredField(propertyName);
                 field = allowStaticAccessToMember(field, staticOnly);
 
-                if (null != field) {
+                if (null != field && objectExpression instanceof VariableExpression) {
                     int fieldModifiers = field.getModifiers();
                     if (Modifier.isProtected(fieldModifiers) || isPackagePrivate(fieldModifiers)) {
                         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
