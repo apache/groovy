@@ -106,7 +106,7 @@ final class Groovy9293 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9293
+    @Test
     void 'test accessing a package-private super class field inside a closure - diff package, it qualifier'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
@@ -216,7 +216,7 @@ final class Groovy9293 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9293
+    @Test
     void 'test accessing a package-private super class field inside a closure - diff package, owner qualifier'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
@@ -271,7 +271,7 @@ final class Groovy9293 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9293
+    @Test
     void 'test accessing a package-private super class field inside a closure - diff package, delegate qualifier'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
@@ -326,7 +326,7 @@ final class Groovy9293 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9293
+    @Test
     void 'test accessing a package-private super class field inside a closure - diff package, thisObject qualifier'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
