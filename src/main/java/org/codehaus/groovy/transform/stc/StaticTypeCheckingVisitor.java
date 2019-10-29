@@ -123,6 +123,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -193,6 +194,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.MINIMUM_BYTECODE_VERSION;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.isNullConstant;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
@@ -213,6 +215,7 @@ import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
@@ -1403,6 +1406,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return existsProperty(pexp, checkForReadOnly, null);
     }
 
+    private static final Set<String> CLOSURE_IMPLICIT_VARIABLE_SET =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("it", "this", "thisObject", "owner", "delegate")));
+
     /**
      * Checks whether a property exists on the receiver, or on any of the possible receiver classes (found in the
      * temporary type information table)
@@ -1486,8 +1492,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                 FieldNode field = current.getDeclaredField(propertyName);
                 field = allowStaticAccessToMember(field, staticOnly);
-                if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData(), !readMode))
+
+                if (null != field) {
+                    int fieldModifiers = field.getModifiers();
+                    if (Modifier.isProtected(fieldModifiers) || isPackagePrivate(fieldModifiers)) {
+                        if (null != typeCheckingContext.getEnclosingClosure() && CLOSURE_IMPLICIT_VARIABLE_SET.contains(objectExpression.getText())) {
+                            objectExpression.putNodeMetaData(RECEIVER_OF_DYNAMIC_PROPERTY, OBJECT_TYPE);
+                        }
+                    }
+                }
+
+                if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData(), !readMode)) {
+                    pexp.removeNodeMetaData(READONLY_PROPERTY);
                     return true;
+                }
 
                 boolean isThisExpression = objectExpression instanceof VariableExpression
                         && ((VariableExpression) objectExpression).isThisExpression()
@@ -1628,6 +1646,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return true;
         }
         return foundGetterOrSetter;
+    }
+
+    private static boolean isPackagePrivate(int modifiers) {
+        return !(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers) || Modifier.isPrivate(modifiers));
+    }
+
+    private static boolean hasAccessToField(FieldNode field, ClassNode objectExpressionType) {
+        if (field != null) {
+            if (field.isPublic() || field.isProtected()) {
+                return true;
+            }
+            if (!field.isPrivate() && Objects.equals(objectExpressionType.getPackageName(), field.getDeclaringClass().getPackageName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private MethodNode findGetter(ClassNode current, String name, boolean searchOuterClasses) {
