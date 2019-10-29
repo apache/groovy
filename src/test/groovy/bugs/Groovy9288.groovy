@@ -18,7 +18,7 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
+
 import org.junit.Test
 
 final class Groovy9288 {

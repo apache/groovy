@@ -222,7 +222,6 @@ import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
@@ -1509,9 +1508,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return existsProperty(pexp, checkForReadOnly, null);
     }
 
-    private static final Set<String> CLOSURE_IMPLICIT_VARIABLE_SET =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("it", "this", "thisObject", "owner", "delegate")));
-
     /**
      * Checks whether a property exists on the receiver, or on any of the possible receiver classes (found in the
      * temporary type information table)
@@ -1597,8 +1593,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (null != field) {
                     int fieldModifiers = field.getModifiers();
                     if (Modifier.isProtected(fieldModifiers) || isPackagePrivate(fieldModifiers)) {
-                        if (null != typeCheckingContext.getEnclosingClosure() && CLOSURE_IMPLICIT_VARIABLE_SET.contains(objectExpression.getText())) {
-                            objectExpression.putNodeMetaData(RECEIVER_OF_DYNAMIC_PROPERTY, OBJECT_TYPE);
+                        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+                        if (null != enclosingClosure) {
+                            switch (objectExpression.getText()) {
+                                case "it":
+                                case "owner":
+                                case "delegate":
+                                case "thisObject":
+                                    pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
+                            }
                         }
                     }
                 }
