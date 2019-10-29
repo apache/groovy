@@ -1597,6 +1597,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (null != enclosingClosure) {
                             switch (objectExpression.getText()) {
                                 case "it":
+                                    if (!enclosingClosure.getClosureExpression().hasItParameter()) break;
                                 case "owner":
                                 case "delegate":
                                 case "thisObject":
