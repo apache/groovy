@@ -82,7 +82,14 @@ public class ClosureExpression extends Expression {
     }
 
     /**
-     * @return true if one or more explicit parameters are supplied
+     * @return {@code true} if implicit {@code it} is supplied
+     */
+    public boolean hasItParameter() {
+        return null != parameters && 0 == parameters.length;
+    }
+
+    /**
+     * @return {@code true} if one or more explicit parameters are supplied
      */
     public boolean isParameterSpecified() {
         return parameters != null && parameters.length > 0;
