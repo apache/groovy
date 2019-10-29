@@ -129,6 +129,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1524,34 +1525,32 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (propertyName == null) return false;
 
         Expression objectExpression = pexp.getObjectExpression();
-        final ClassNode objectExpressionType = getType(objectExpression);
+        ClassNode objectExpressionType = getType(objectExpression);
 
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
-        if ("this".equals(propertyName) && staticOnlyAccess) {
-            // Outer.this for any level of nesting
-            ClassNode outerNode = objectExpressionType.getGenericsTypes()[0].getType();
-            List<ClassNode> candidates = typeCheckingContext.getEnclosingClassNodes();
+        if (staticOnlyAccess && "this".equals(propertyName)) {
+            // handle "Outer.this" for any level of nesting
+            ClassNode outer = objectExpressionType.getGenericsTypes()[0].getType();
+
             ClassNode found = null;
-            for (ClassNode current : candidates) {
-                if (!current.isStaticClass() && outerNode.equals(current.getOuterClass())) {
-                    found = current;
+            for (ClassNode enclosingType : typeCheckingContext.getEnclosingClassNodes()) {
+                if (!enclosingType.isStaticClass() && outer.equals(enclosingType.getOuterClass())) {
+                    found = enclosingType;
                     break;
                 }
             }
             if (found != null) {
-                storeType(pexp, outerNode);
+                storeType(pexp, outer);
                 return true;
             }
         }
 
         boolean foundGetterOrSetter = false;
-        List<Receiver<String>> receivers = new LinkedList<>();
-        List<Receiver<String>> owners = makeOwnerList(objectExpression);
-        addReceivers(receivers, owners, pexp.isImplicitThis());
-
         String capName = capitalize(propertyName);
-        boolean isAttributeExpression = pexp instanceof AttributeExpression;
-        HashSet<ClassNode> handledNodes = new HashSet<>();
+        Set<ClassNode> handledNodes = new HashSet<>();
+        List<Receiver<String>> receivers = new LinkedList<>();
+        addReceivers(receivers, makeOwnerList(objectExpression), pexp.isImplicitThis());
+
         for (Receiver<String> receiver : receivers) {
             ClassNode testClass = receiver.getType();
 
@@ -1564,19 +1563,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return true;
             }
 
-            LinkedList<ClassNode> queue = new LinkedList<>();
+            Queue<ClassNode> queue = new LinkedList<>();
             queue.add(testClass);
             if (isPrimitiveType(testClass)) {
                 queue.add(getWrapper(testClass));
             }
             while (!queue.isEmpty()) {
-                ClassNode current = queue.removeFirst();
+                ClassNode current = queue.remove();
                 if (!handledNodes.add(current)) continue;
-                Set<ClassNode> allInterfaces = current.getAllInterfaces();
-                for (ClassNode intf : allInterfaces) {
-                    // TODO: apply right generics here!
-                    queue.add(GenericsUtils.parameterizeType(current, intf));
-                }
 
                 // in case of a lookup on Class we look for instance methods on Class
                 // as well, since in case of a static property access we have the class
@@ -1608,89 +1602,98 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
 
-                if (storeField(field, isAttributeExpression, pexp, current, visitor, receiver.getData(), !readMode)) {
-                    pexp.removeNodeMetaData(READONLY_PROPERTY);
-                    return true;
+                // skip property/accessor checks for "x.@field"
+                if (field != null && pexp instanceof AttributeExpression) {
+                    if (storeField(field, pexp, current, visitor, receiver.getData(), !readMode)) {
+                        pexp.removeNodeMetaData(READONLY_PROPERTY);
+                        return true;
+                    }
                 }
 
+                // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. in declaring class of field
                 boolean isThisExpression = objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isThisExpression()
                         && (objectExpressionType.equals(current) || (objectExpressionType.isDerivedFrom(current) && hasAccessToField(field, objectExpressionType)));
-
-                if (storeField(field, isThisExpression, pexp, receiver.getType(), visitor, receiver.getData(), !readMode)) {
-                    pexp.removeNodeMetaData(READONLY_PROPERTY);
-                    return true;
+                if (field != null && isThisExpression) {
+                    if (storeField(field, pexp, receiver.getType(), visitor, receiver.getData(), !readMode)) {
+                        pexp.removeNodeMetaData(READONLY_PROPERTY);
+                        return true;
+                    }
                 }
 
                 MethodNode getter = findGetter(current, "get" + capName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
                 if (getter == null) getter = findGetter(current, "is" + capName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                final String setterName = "set" + capName;
-                List<MethodNode> setters = findSetters(current, setterName, false);
+                List<MethodNode> setters = findSetters(current, "set" + capName, false);
                 setters = allowStaticAccessToMember(setters, staticOnly);
 
-                // TODO: remove this visit
-                // need to visit even if we only look for a setters for compatibility
+                // need to visit even if we only look for setters for compatibility
                 if (visitor != null && getter != null) visitor.visitMethod(getter);
 
-                PropertyNode propertyNode = current.getProperty(propertyName);
-                propertyNode = allowStaticAccessToMember(propertyNode, staticOnly);
+                PropertyNode property = current.getProperty(propertyName);
+                property = allowStaticAccessToMember(property, staticOnly);
                 // prefer explicit getter or setter over property if receiver is not 'this'
-                boolean checkGetterOrSetter = (!isThisExpression || propertyNode == null);
-
-                if (readMode && checkGetterOrSetter) {
-                    if (getter != null) {
-                        ClassNode cn = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
-                        storeInferredTypeForPropertyExpression(pexp, cn);
-                        storeTargetMethod(pexp, getter);
-                        pexp.removeNodeMetaData(READONLY_PROPERTY);
-                        String delegationData = receiver.getData();
-                        if (delegationData != null)
-                            pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
-                        return true;
-                    }
-                } else if (!readMode && checkGetterOrSetter) {
-                    if (!setters.isEmpty()) {
-                        if (visitor != null) {
-                            if (field != null) {
-                                visitor.visitField(field);
-                            } else {
-                                for (MethodNode setter : setters) {
-                                    ClassNode setterType = setter.getParameters()[0].getOriginType();
-                                    FieldNode virtual = new FieldNode(propertyName, 0, setterType, current, EmptyExpression.INSTANCE);
-                                    visitor.visitField(virtual);
+                if (property == null || !isThisExpression) {
+                    if (readMode) {
+                        if (getter != null) {
+                            ClassNode returnType = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                            storeInferredTypeForPropertyExpression(pexp, returnType);
+                            storeTargetMethod(pexp, getter);
+                            String delegationData = receiver.getData();
+                            if (delegationData != null) {
+                                pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
+                            }
+                            pexp.removeNodeMetaData(READONLY_PROPERTY);
+                            return true;
+                        }
+                    } else {
+                        if (!setters.isEmpty()) {
+                            if (visitor != null) {
+                                if (field != null) {
+                                    visitor.visitField(field);
+                                } else {
+                                    for (MethodNode setter : setters) {
+                                        ClassNode setterType = setter.getParameters()[0].getOriginType();
+                                        FieldNode virtual = new FieldNode(propertyName, 0, setterType, current, EmptyExpression.INSTANCE);
+                                        visitor.visitField(virtual);
+                                    }
                                 }
                             }
+                            SetterInfo info = new SetterInfo(current, "set" + capName, setters);
+                            BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
+                            if (enclosingBinaryExpression != null) {
+                                putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
+                            }
+                            String delegationData = receiver.getData();
+                            if (delegationData != null) {
+                                pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
+                            }
+                            return true;
+                        } else if (getter != null && property == null) {
+                            pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
                         }
-                        SetterInfo info = new SetterInfo(current, setterName, setters);
-                        BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-                        if (enclosingBinaryExpression != null) {
-                            putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
-                        }
-                        String delegationData = receiver.getData();
-                        if (delegationData != null) {
-                            pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
-                        }
-                        return true;
-                    } else if (getter != null && propertyNode == null) {
-                        pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
                     }
                 }
-                foundGetterOrSetter = foundGetterOrSetter || !setters.isEmpty() || getter != null;
+                foundGetterOrSetter = (foundGetterOrSetter || !setters.isEmpty() || getter != null);
 
-                if (storeProperty(propertyNode, pexp, current, visitor, receiver.getData())) return true;
+                if (property != null && storeProperty(property, pexp, current, visitor, receiver.getData())) return true;
 
-                if (storeField(field, true, pexp, current, visitor, receiver.getData(), !readMode)) return true;
+                if (field != null && storeField(field, pexp, current, visitor, receiver.getData(), !readMode)) return true;
 
-                // check the parent class
+                // check the super types
                 if (current.getSuperClass() != null) {
                     queue.add(current.getUnresolvedSuperClass());
                 }
+                for (ClassNode face : current.getAllInterfaces()) {
+                    queue.add(GenericsUtils.parameterizeType(current, face));
+                }
             }
+
             // GROOVY-5568: the property may be defined by DGM
             List<ClassNode> dgmReceivers = new ArrayList<>(2);
             dgmReceivers.add(testClass);
-            if (isPrimitiveType(testClass)) dgmReceivers.add(getWrapper(testClass));
+            if (isPrimitiveType(testClass))
+                dgmReceivers.add(getWrapper(testClass));
             for (ClassNode dgmReceiver : dgmReceivers) {
                 List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), dgmReceiver, "get" + capName, ClassNode.EMPTY_ARRAY);
                 for (MethodNode method : findDGMMethodsByNameAndArguments(getTransformLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
@@ -1870,8 +1873,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         storeType(expressionToStoreOn, type);
     }
 
-    private boolean storeField(FieldNode field, boolean returnTrueIfFieldExists, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData, boolean lhsOfAssignment) {
-        if (field == null || !returnTrueIfFieldExists) return false;
+    private boolean storeField(FieldNode field, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData, boolean lhsOfAssignment) {
         if (visitor != null) visitor.visitField(field);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
@@ -1882,7 +1884,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean storeProperty(PropertyNode property, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData) {
-        if (property == null) return false;
         if (visitor != null) visitor.visitProperty(property);
         storeWithResolve(property.getOriginType(), receiver, property.getDeclaringClass(), property.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
