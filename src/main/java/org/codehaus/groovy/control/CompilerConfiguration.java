@@ -448,7 +448,7 @@ public class CompilerConfiguration {
     private void handleOptimizationOption(Map<String, Boolean> options, String optionName, String sysOptionName) {
         String propValue = getSystemPropertySafe(sysOptionName);
         boolean optionEnabled = propValue == null
-                ? (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName)))
+                ? Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName))
                 : Boolean.parseBoolean(propValue);
 
         if (optionEnabled) {
@@ -459,7 +459,7 @@ public class CompilerConfiguration {
     private void handleJointCompilationOption(Map<String, Object> options, String optionName, String sysOptionName) {
         String propValue = getSystemPropertySafe(sysOptionName);
         boolean optionEnabled = propValue == null
-                ? (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getJointCompilationOptions().get(optionName)))
+                ? Boolean.TRUE.equals(DEFAULT.getJointCompilationOptions().get(optionName))
                 : Boolean.parseBoolean(propValue);
 
         if (optionEnabled) {
