@@ -71,14 +71,10 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         if (labels != null) {
             for (String label : labels) {
                 if (breakLabels != null) {
-                    for (Iterator<BreakStatement> iter = breakLabels.iterator(); iter.hasNext(); ) {
-                        if (iter.next().getLabel().equals(label)) iter.remove();
-                    }
+                    breakLabels.removeIf(breakStatement -> breakStatement.getLabel().equals(label));
                 }
                 if (continueLabels != null) {
-                    for (Iterator<ContinueStatement> iter = continueLabels.iterator(); iter.hasNext(); ) {
-                        if (iter.next().getLabel().equals(label)) iter.remove();
-                    }
+                    continueLabels.removeIf(continueStatement -> continueStatement.getLabel().equals(label));
                 }
                 if (visitedLabels != null) {
                     visitedLabels.add(label);
