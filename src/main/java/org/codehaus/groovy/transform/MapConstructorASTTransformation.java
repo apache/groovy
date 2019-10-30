@@ -142,11 +142,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
                                            List<String> excludes, List<String> includes, ClosureExpression pre, ClosureExpression post, SourceUnit source) {
 
         // HACK: JavaStubGenerator could have snuck in a constructor we don't want
-        Iterator<ConstructorNode> iterator = cNode.getDeclaredConstructors().iterator();
-        while (iterator.hasNext()) {
-            ConstructorNode next = iterator.next();
-            if (next.getFirstStatement() == null) iterator.remove();
-        }
+        cNode.getDeclaredConstructors().removeIf(next -> next.getFirstStatement() == null);
 
         Set<String> names = new HashSet<String>();
         List<PropertyNode> superList;
