@@ -18,11 +18,9 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy9136 {
 
@@ -47,9 +45,9 @@ final class Groovy9136 {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9195
+    @Test // GROOVY-9195
     void testMethodParameterFieldAccessFromClosure2() {
-        def err = shouldFail '''
+        assertScript '''
             class Foo {
                 private String field = 'foo'
             }
@@ -64,14 +62,13 @@ final class Groovy9136 {
 
             def bar = new Bar()
             def out = bar.test(new Foo())
+            assert out == 'foo'
         '''
-
-        assert err =~ /Access to Foo#field is forbidden/
     }
 
     @Test
     void testMethodParameterFieldAccessFromClosure3() {
-        def err = shouldFail '''
+        assertScript '''
             class Foo {
                 private String field = 'foo'
             }
@@ -86,8 +83,7 @@ final class Groovy9136 {
 
             def bar = new Bar()
             def out = bar.test(new Foo())
+            assert out == 'foo'
         '''
-
-        assert err =~ /Access to Foo#field is forbidden/
     }
 }
