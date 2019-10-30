@@ -1583,23 +1583,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 FieldNode field = current.getDeclaredField(propertyName);
                 field = allowStaticAccessToMember(field, staticOnly);
 
-                if (null != field && objectExpression instanceof VariableExpression) {
-                    int fieldModifiers = field.getModifiers();
-                    if (Modifier.isProtected(fieldModifiers) || isPackagePrivate(fieldModifiers)) {
-                        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-                        if (null != enclosingClosure) {
-                            switch (objectExpression.getText()) {
-                                case "it":
-                                    if (!enclosingClosure.getClosureExpression().hasItParameter()) break;
-                                case "owner":
-                                case "delegate":
-                                case "thisObject":
-                                    pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
-                            }
-                        }
-                    }
-                }
-
                 // skip property/accessor checks for "x.@field"
                 if (field != null && pexp instanceof AttributeExpression) {
                     if (storeField(field, pexp, current, visitor, receiver.getData(), !readMode)) {
@@ -1737,10 +1720,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return foundGetterOrSetter;
-    }
-
-    private static boolean isPackagePrivate(int modifiers) {
-        return !(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers) || Modifier.isPrivate(modifiers));
     }
 
     private static boolean hasAccessToField(ClassNode accessor, FieldNode field) {

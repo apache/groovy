@@ -18,11 +18,12 @@
  */
 package groovy.bugs
 
-
+import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
+@CompileStatic
 final class Groovy9293 {
 
     private final GroovyShell shell = new GroovyShell()
@@ -106,7 +107,7 @@ final class Groovy9293 {
         '''
     }
 
-    @Test
+    @Test // GROOVY-9293
     void 'test accessing a package-private super class field inside a closure - diff package, it qualifier'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
@@ -216,7 +217,7 @@ final class Groovy9293 {
         '''
     }
 
-    @Test
+    @Test // GROOVY-9293
     void 'test accessing a package-private super class field inside a closure - diff package, owner qualifier'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
@@ -271,7 +272,7 @@ final class Groovy9293 {
         '''
     }
 
-    @Test
+    @Test // GROOVY-9293
     void 'test accessing a package-private super class field inside a closure - diff package, delegate qualifier'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
@@ -326,7 +327,7 @@ final class Groovy9293 {
         '''
     }
 
-    @Test
+    @Test // GROOVY-9293
     void 'test accessing a package-private super class field inside a closure - diff package, thisObject qualifier'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
