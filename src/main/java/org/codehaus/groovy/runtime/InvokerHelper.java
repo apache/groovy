@@ -586,20 +586,17 @@ public class InvokerHelper {
             out.append(stringWriter.toString());
         } else if (object instanceof InputStream || object instanceof Reader) {
             // Copy stream to stream
-            Reader reader;
-            if (object instanceof InputStream) {
-                reader = new InputStreamReader((InputStream) object);
-            } else {
-                reader = (Reader) object;
-            }
-            char[] chars = new char[8192];
-            int i;
-            while ((i = reader.read(chars)) != -1) {
-                for (int j = 0; j < i; j++) {
-                    out.append(chars[j]);
+            try (Reader reader =
+                         object instanceof InputStream
+                                 ? new InputStreamReader((InputStream) object)
+                                 : (Reader) object) {
+                char[] chars = new char[8192];
+                for (int i; (i = reader.read(chars)) != -1; ) {
+                    for (int j = 0; j < i; j++) {
+                        out.append(chars[j]);
+                    }
                 }
             }
-            reader.close();
         } else {
             out.append(toString(object));
         }
