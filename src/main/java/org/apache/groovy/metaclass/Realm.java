@@ -68,19 +68,8 @@ public final class Realm {
     }
 
     public <T> MetaClass<T> getMetaClass(final Class<T> theClass) {
-        Supplier<MetaClassConstant<T>> valueSupplier = new Supplier<MetaClassConstant<T>>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public MetaClassConstant<T> get() {
-                return (MetaClassConstant<T>) cv.get(theClass);
-            }
-        };
-        Function<MetaClassConstant<T>, SwitchPoint> validationSupplier = new Function<MetaClassConstant<T>, SwitchPoint>() {
-            @Override
-            public SwitchPoint apply(MetaClassConstant<T> metaClassImpl) {
-                return metaClassImpl.getSwitchPoint();
-            }
-        };
+        Supplier<MetaClassConstant<T>> valueSupplier = () -> (MetaClassConstant<T>) cv.get(theClass);
+        Function<MetaClassConstant<T>, SwitchPoint> validationSupplier = MetaClassConstant::getSwitchPoint;
         ReevaluatingReference<MetaClassConstant<T>> ref = new ReevaluatingReference<>(
                 MetaClassConstant.class,
                 valueSupplier,

@@ -193,11 +193,7 @@ public class CachedSAMClass extends CachedClass {
             LinkedList<Method> methods = new LinkedList();
             getAbstractMethods(c, methods);
             if (methods.isEmpty()) return null;
-            ListIterator<Method> it = methods.listIterator();
-            while (it.hasNext()) {
-                Method m = it.next();
-                if (hasUsableImplementation(c, m)) it.remove();
-            }
+            methods.removeIf(m -> hasUsableImplementation(c, m));
             return getSingleNonDuplicateMethod(methods);
         }
     }
