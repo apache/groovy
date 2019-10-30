@@ -1158,9 +1158,17 @@ public class AsmClassGenerator extends ClassGenerator {
         return classNode.getSuperClass().getGetterMethod(getterMethodName);
     }
 
+    private boolean isGroovyObject(Expression objectExpression) {
+        if (isThisExpression(objectExpression)) return true;
+        if (objectExpression instanceof ClassExpression) return false;
+
+        ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
+        if (objectExpressionType.equals(ClassHelper.OBJECT_TYPE)) objectExpressionType = objectExpression.getType();
+        return objectExpressionType.isDerivedFromGroovyObject();
+    }
+
     private boolean isThisOrSuperInStaticContext(Expression objectExpression) {
-        if (controller.isInClosure()) return false;
-        return controller.isStaticContext() && isThisOrSuper(objectExpression);
+        return !controller.isInClosure() && controller.isStaticContext() && isThisOrSuper(objectExpression);
     }
 
     @Override
@@ -1239,10 +1247,6 @@ public class AsmClassGenerator extends ClassGenerator {
             return variable.equals("super");
         }
         return false;
-    }
-
-    private static boolean isGroovyObject(Expression objectExpression) {
-        return isThisExpression(objectExpression) || objectExpression.getType().isDerivedFromGroovyObject() && !(objectExpression instanceof ClassExpression);
     }
 
     public void visitFieldExpression(FieldExpression expression) {
