@@ -25,6 +25,7 @@ import groovy.text.markup.TagLibAdapter
 import groovy.text.markup.TemplateConfiguration
 import org.junit.After
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -762,7 +763,7 @@ html {
         assert rendered.toString() == '<html><body><ul><li>Cedric</li><li>Jochen</li></ul></body></html>'
     }
 
-    @Test @NotYetImplemented // ClassCastException: java.util.LinkedHashMap cannot be cast to groovy.lang.GroovyObject
+    @Test @Ignore("ClassCastException: java.util.LinkedHashMap cannot be cast to groovy.lang.GroovyObject")
     void testInlinedModelTypeDeclaration() {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
