@@ -456,17 +456,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 ) {
             int stackLen = operandStack.getStackLength() + argumentListSize;
             MethodVisitor mv = controller.getMethodVisitor();
-            //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
             controller.setMethodVisitor(mv);
             // varg call
             // first parameters as usual
             for (int i = 0; i < para.length - 1; i++) {
-                Expression expression = argumentList.get(i);
-                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
-                expression.visit(acg);
-                if (!isNullConstant(expression)) {
-                    operandStack.doGroovyCast(para[i].getType());
-                }
+                visitArgument(argumentList.get(i), para[i].getType());
             }
             // last parameters wrapped in an array
             List<Expression> lastParams = new LinkedList<Expression>();
@@ -487,12 +481,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
         } else if (argumentListSize == para.length) {
             for (int i = 0; i < argumentListSize; i++) {
-                Expression expression = argumentList.get(i);
-                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
-                expression.visit(acg);
-                if (!isNullConstant(expression)) {
-                    operandStack.doGroovyCast(para[i].getType());
-                }
+                visitArgument(argumentList.get(i), para[i].getType());
             }
         } else {
             // method call with default arguments
@@ -519,13 +508,16 @@ public class StaticInvocationWriter extends InvocationWriter {
                 }
             }
             for (int i = 0; i < arguments.length; i++) {
-                Expression expression = arguments[i];
-                expression.putNodeMetaData(PARAMETER_TYPE, para[i].getType());
-                expression.visit(acg);
-                if (!isNullConstant(expression)) {
-                    operandStack.doGroovyCast(para[i].getType());
-                }
+                visitArgument(arguments[i], para[i].getType());
             }
+        }
+    }
+
+    private void visitArgument(Expression argumentExpr, ClassNode parameterType) {
+        argumentExpr.putNodeMetaData(PARAMETER_TYPE, parameterType);
+        argumentExpr.visit(controller.getAcg());
+        if (!isNullConstant(argumentExpr)) {
+            controller.getOperandStack().doGroovyCast(parameterType);
         }
     }
 

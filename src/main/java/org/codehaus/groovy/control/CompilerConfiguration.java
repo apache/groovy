@@ -35,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -55,30 +56,30 @@ public class CompilerConfiguration {
     /** This (<code>"runtimeGroovydoc"</code>) is the Optimization Option value for enabling attaching {@link groovy.lang.Groovydoc} annotation. */
     public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
-    /** This (<code>"memStub"</code>) is the Joint Compilation Option value for enabling generating stubs in memory. .*/
+    /** This (<code>"memStub"</code>) is the Joint Compilation Option value for enabling generating stubs in memory. */
     public static final String MEM_STUB = "memStub";
 
-    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. **/
+    /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
     public static final String JDK4 = "1.4";
-    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. **/
+    /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. */
     public static final String JDK5 = "1.5";
-    /** This (<code>"1.6"</code>) is the value for targetBytecode to compile for a JDK 1.6. **/
+    /** This (<code>"1.6"</code>) is the value for targetBytecode to compile for a JDK 1.6. */
     public static final String JDK6 = "1.6";
-    /** This (<code>"1.7"</code>) is the value for targetBytecode to compile for a JDK 1.7. **/
+    /** This (<code>"1.7"</code>) is the value for targetBytecode to compile for a JDK 1.7. */
     public static final String JDK7 = "1.7";
-    /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. **/
+    /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. */
     public static final String JDK8 = "1.8";
-    /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. **/
+    /** This (<code>"9"</code>) is the value for targetBytecode to compile for a JDK 9. */
     public static final String JDK9 = "9";
-    /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. **/
+    /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. */
     public static final String JDK10 = "10";
-    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. **/
+    /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. */
     public static final String JDK11 = "11";
-    /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. **/
+    /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. */
     public static final String JDK12 = "12";
-    /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. **/
+    /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. */
     public static final String JDK13 = "13";
-    /** This (<code>"14"</code>) is the value for targetBytecode to compile for a JDK 14. **/
+    /** This (<code>"14"</code>) is the value for targetBytecode to compile for a JDK 14. */
     public static final String JDK14 = "14";
 
     /**
@@ -86,7 +87,7 @@ public class CompilerConfiguration {
      * @deprecated
      */
     @Deprecated
-    public static final String POST_JDK5 = JDK5; // for backwards compatibility
+    public static final String POST_JDK5 = JDK5;
 
     /**
      * This constant is for comparing targetBytecode to ensure it is set to an earlier value than JDK 1.5.
@@ -112,10 +113,8 @@ public class CompilerConfiguration {
             JDK14, Opcodes.V14
     );
 
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
-
-    /** An array of the valid targetBytecode values */
-    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(EMPTY_STRING_ARRAY);
+    /** The valid targetBytecode values. */
+    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
 
     /**
      * The default source encoding
@@ -126,7 +125,7 @@ public class CompilerConfiguration {
      *  A convenience for getting a default configuration.  Do not modify it!
      *  See {@link #CompilerConfiguration(Properties)} for an example on how to
      *  make a suitable copy to modify.  But if you're really starting from a
-     *  default context, then you probably just want <code>new CompilerConfiguration()</code>. 
+     *  default context, then you probably just want <code>new CompilerConfiguration()</code>.
      */
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration() {
         @Override
@@ -280,7 +279,6 @@ public class CompilerConfiguration {
         }
     };
 
-
     /**
      * See {@link WarningMessage} for levels.
      */
@@ -319,7 +317,7 @@ public class CompilerConfiguration {
     /**
      * If true, generates metadata for reflection on method parameters
      */
-    private boolean parameters = false;
+    private boolean parameters;
 
     /**
      * The number of non-fatal errors to allow before bailing
@@ -923,7 +921,6 @@ public class CompilerConfiguration {
         return defaultScriptExtension;
     }
 
-
     public void setDefaultScriptExtension(String defaultScriptExtension) {
         this.defaultScriptExtension = defaultScriptExtension;
     }
@@ -945,8 +942,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Allow setting the bytecode compatibility level. The parameter can take
-     * one of the values in {@link #ALLOWED_JDKS}.
+     * Sets the bytecode compatibility level. The parameter can take one of the values
+     * in {@link #ALLOWED_JDKS}.
      *
      * @param version the bytecode compatibility level
      */
@@ -961,9 +958,8 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Retrieves the compiler bytecode compatibility level.
-     * Defaults to the minimum officially supported bytecode
-     * version for any particular Groovy version.
+     * Retrieves the compiler bytecode compatibility level. Defaults to the minimum
+     * officially supported bytecode version for any particular Groovy version.
      *
      * @return bytecode compatibility level
      */
@@ -1086,111 +1082,34 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Check whether invoke dynamic enabled
-     * @return the result
+     * Checks if invoke dynamic is enabled.
      */
     public boolean isIndyEnabled() {
-        Boolean indyEnabled = this.getOptimizationOptions().get(INVOKEDYNAMIC);
-
-        if (null == indyEnabled) {
-            return false;
-        }
-
-        return indyEnabled;
+        Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
+        return Optional.ofNullable(indyEnabled).orElse(Boolean.FALSE).booleanValue();
     }
 
     /**
-     * Check whether groovydoc enabled
-     * @return the result
+     * Checks if groovydoc is enabled.
      */
     public boolean isGroovydocEnabled() {
-        Boolean groovydocEnabled = this.getOptimizationOptions().get(GROOVYDOC);
-
-        if (null == groovydocEnabled) {
-            return false;
-        }
-
-        return groovydocEnabled;
+        Boolean groovydocEnabled = getOptimizationOptions().get(GROOVYDOC);
+        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE).booleanValue();
     }
 
     /**
-     * Check whether runtime groovydoc enabled
-     * @return the result
+     * Checks if runtime groovydoc is enabled.
      */
     public boolean isRuntimeGroovydocEnabled() {
-        Boolean runtimeGroovydocEnabled = this.getOptimizationOptions().get(RUNTIME_GROOVYDOC);
-
-        if (null == runtimeGroovydocEnabled) {
-            return false;
-        }
-
-        return runtimeGroovydocEnabled;
+        Boolean runtimeGroovydocEnabled = getOptimizationOptions().get(RUNTIME_GROOVYDOC);
+        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE).booleanValue();
     }
 
     /**
-     * Check whether mem stub enabled
-     * @return the result
+     * Checks if in-memory stub creation is enabled.
      */
     public boolean isMemStubEnabled() {
-        Object memStubEnabled = this.getJointCompilationOptions().get(MEM_STUB);
-
-        if (null == memStubEnabled) {
-            return false;
-        }
-
-        return "true".equals(memStubEnabled.toString());
+        Object memStubEnabled = getJointCompilationOptions().get(MEM_STUB);
+        return Optional.ofNullable(memStubEnabled).map(value -> "true".equals(value.toString())).orElse(Boolean.FALSE).booleanValue();
     }
-
-
-//       See http://groovy.329449.n5.nabble.com/What-the-static-compile-by-default-tt5750118.html
-//           https://issues.apache.org/jira/browse/GROOVY-8543
-//
-//    {
-//        // this object initializer assures that `enableCompileStaticByDefault` must be invoked no matter which constructor called.
-//        if (getBooleanSafe("groovy.compile.static")) {
-//            enableCompileStaticByDefault();
-//        }
-//    }
-//
-//
-//    private void enableCompileStaticByDefault() {
-//        compilationCustomizers.add(
-//            new CompilationCustomizer(CompilePhase.CONVERSION) {
-//                @Override
-//                public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-//                    for (ClassNode cn : source.getAST().getClasses()) {
-//                        newClassCodeVisitor(source).visitClass(cn);
-//                    }
-//                }
-//
-//                private ClassCodeVisitorSupport newClassCodeVisitor(SourceUnit source) {
-//                    return new ClassCodeVisitorSupport() {
-//                        @Override
-//                        public void visitClass(ClassNode node) {
-//                            enableCompileStatic(node);
-//                        }
-//
-//                        private void enableCompileStatic(ClassNode classNode) {
-//                            if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)).isEmpty()) {
-//                                return;
-//                            }
-//                            if (!classNode.getAnnotations(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_DYNAMIC)).isEmpty()) {
-//                                return;
-//                            }
-//
-//                            classNode.addAnnotation(new AnnotationNode(ClassHelper.make(GROOVY_TRANSFORM_COMPILE_STATIC)));
-//                        }
-//
-//                        @Override
-//                        protected SourceUnit getSourceUnit() {
-//                            return source;
-//                        }
-//
-//                        private static final String GROOVY_TRANSFORM_COMPILE_STATIC = "groovy.transform.CompileStatic";
-//                        private static final String GROOVY_TRANSFORM_COMPILE_DYNAMIC = "groovy.transform.CompileDynamic";
-//                    };
-//                }
-//            }
-//        );
-//    }
 }
