@@ -23,30 +23,49 @@ import org.codehaus.groovy.util.ListHashMap;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
- * An interface to mark a node being able to handle metadata
+ * An interface to mark a node being able to handle metadata.
  */
+@SuppressWarnings({"unchecked", "rawtypes"})
 public interface NodeMetaDataHandler {
     /**
      * Gets the node meta data.
      *
-     * @param key - the meta data key
+     * @param key the meta data key
      * @return the node meta data value for this key
      */
     default <T> T getNodeMetaData(Object key) {
-        Map<?, ?> metaDataMap = this.getMetaDataMap();
-
+        Map metaDataMap = this.getMetaDataMap();
         if (metaDataMap == null) {
-            return (T) null;
+            return null;
         }
         return (T) metaDataMap.get(key);
     }
 
     /**
+     * Gets the node meta data.
+     *
+     * @param key the meta data key
+     * @param valFn the meta data value supplier
+     * @return the node meta data value for this key
+     */
+    default <T> T getNodeMetaData(Object key, Function<?, ? extends T> valFn) {
+        if (key == null) throw new GroovyBugError("Tried to get/set meta data with null key on " + this + ".");
+
+        Map metaDataMap = this.getMetaDataMap();
+        if (metaDataMap == null) {
+            metaDataMap = new ListHashMap();
+            this.setMetaDataMap(metaDataMap);
+        }
+        return (T) metaDataMap.computeIfAbsent(key, valFn);
+    }
+
+    /**
      * Copies all node meta data from the other node to this one
      *
-     * @param other - the other node
+     * @param other the other node
      */
     default void copyNodeMetaData(NodeMetaDataHandler other) {
         Map otherMetaDataMap = other.getMetaDataMap();
@@ -65,8 +84,8 @@ public interface NodeMetaDataHandler {
     /**
      * Sets the node meta data.
      *
-     * @param key   - the meta data key
-     * @param value - the meta data value
+     * @param key   the meta data key
+     * @param value the meta data value
      * @throws GroovyBugError if key is null or there is already meta
      *                        data under that key
      */
@@ -85,8 +104,8 @@ public interface NodeMetaDataHandler {
     /**
      * Sets the node meta data but allows overwriting values.
      *
-     * @param key   - the meta data key
-     * @param value - the meta data value
+     * @param key   the meta data key
+     * @param value the meta data value
      * @return the old node meta data value for this key
      * @throws GroovyBugError if key is null
      */
@@ -104,7 +123,7 @@ public interface NodeMetaDataHandler {
     /**
      * Removes a node meta data entry.
      *
-     * @param key - the meta data key
+     * @param key the meta data key
      * @throws GroovyBugError if the key is null
      */
     default void removeNodeMetaData(Object key) {
@@ -124,7 +143,6 @@ public interface NodeMetaDataHandler {
      */
     default Map<?, ?> getNodeMetaData() {
         Map metaDataMap = this.getMetaDataMap();
-
         if (metaDataMap == null) {
             return Collections.emptyMap();
         }
