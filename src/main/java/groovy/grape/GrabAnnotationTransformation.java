@@ -58,6 +58,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -201,9 +202,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             }
         }
 
-        List<Map<String,Object>> grabMaps = new ArrayList<Map<String,Object>>();
-        List<Map<String,Object>> grabMapsInit = new ArrayList<Map<String,Object>>();
-        List<Map<String,Object>> grabExcludeMaps = new ArrayList<Map<String,Object>>();
+        Collection<Map<String,Object>> grabMaps = new LinkedHashSet<>();
+        Collection<Map<String,Object>> grabMapsInit = new ArrayList<>();
+        Collection<Map<String,Object>> grabExcludeMaps = new ArrayList<>();
 
         for (ClassNode classNode : sourceUnit.getAST().getClasses()) {
             grabAnnotations = new ArrayList<AnnotationNode>();
@@ -387,7 +388,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
     }
 
-    private void callGrabAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, List<Map<String,Object>> grabMapsInit, List<Map<String, Object>> grabExcludeMaps) {
+    private void callGrabAsStaticInitIfNeeded(ClassNode classNode, ClassNode grapeClassNode, Collection<Map<String,Object>> grabMapsInit, Collection<Map<String, Object>> grabExcludeMaps) {
         List<Statement> grabInitializers = new ArrayList<Statement>();
         MapExpression basicArgs = new MapExpression();
         if (autoDownload != null)  {
@@ -400,7 +401,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
         if (systemProperties != null && !systemProperties.isEmpty()) {
             BlockStatement block = new BlockStatement();
-            for(Map.Entry e : systemProperties.entrySet()) {
+            for(Map.Entry<String, String> e : systemProperties.entrySet()) {
                 block.addStatement(stmt(callX(SYSTEM_CLASSNODE, "setProperty", args(constX(e.getKey()), constX(e.getValue())))));
             }
             StaticMethodCallExpression enabled = callX(SYSTEM_CLASSNODE, "getProperty", args(constX("groovy.grape.enable"), constX("true")));

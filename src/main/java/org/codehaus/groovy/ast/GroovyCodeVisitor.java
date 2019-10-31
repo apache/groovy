@@ -199,14 +199,6 @@ public interface GroovyCodeVisitor {
     default void visitEmptyExpression(EmptyExpression expression) {}
 
     default void visitListOfExpressions(List<? extends Expression> list) {
-        if (list == null) return;
-        for (Expression expression : list) {
-            if (expression instanceof SpreadExpression) {
-                Expression spread = ((SpreadExpression) expression).getExpression();
-                spread.visit(this);
-            } else {
-                expression.visit(this);
-            }
-        }
+        if (list != null) list.forEach(expr -> expr.visit(this));
     }
 }

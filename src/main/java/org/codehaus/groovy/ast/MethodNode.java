@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Represents a method declaration
+ * Represents a method declaration.
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
 
@@ -103,6 +103,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     public void setParameters(Parameter[] parameters) {
         invalidateCachedData();
         VariableScope scope = new VariableScope();
+        this.hasDefaultValue = false;
         this.parameters = parameters;
         if (parameters != null && parameters.length > 0) {
             for (Parameter para : parameters) {

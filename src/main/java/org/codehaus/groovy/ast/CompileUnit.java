@@ -24,8 +24,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.util.ListHashMap;
-import org.objectweb.asm.Opcodes;
 
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -55,7 +53,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     private final Map<String, SourceUnit> classNameToSource = new LinkedHashMap<>();
     private final Map<String, InnerClassNode> generatedInnerClasses = new LinkedHashMap<>();
     private final Map<String, ConstructedOuterNestedClassNode> classesToResolve = new LinkedHashMap<>();
-    private Map metaDataMap = null;
+    private Map metaDataMap;
 
     public CompileUnit(GroovyClassLoader classLoader, CompilerConfiguration config) {
         this(classLoader, null, config);
@@ -214,8 +212,8 @@ public class CompileUnit implements NodeMetaDataHandler {
     }
 
     @Override
-    public ListHashMap getMetaDataMap() {
-        return (ListHashMap) metaDataMap;
+    public Map<?, ?> getMetaDataMap() {
+        return metaDataMap;
     }
 
     @Override
@@ -224,7 +222,9 @@ public class CompileUnit implements NodeMetaDataHandler {
     }
 
     /**
-     * Represents a resolved type as a placeholder, SEE GROOVY-7812
+     * Represents a resolved type as a placeholder.
+     *
+     * @see GROOVY-7812
      */
     @Internal
     public static class ConstructedOuterNestedClassNode extends ClassNode {
@@ -232,9 +232,13 @@ public class CompileUnit implements NodeMetaDataHandler {
         private final List<BiConsumer<ConstructedOuterNestedClassNode, ClassNode>> setRedirectListenerList = new ArrayList<>();
 
         public ConstructedOuterNestedClassNode(ClassNode outer, String innerClassName) {
-            super(innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+            super(innerClassName, ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
             this.enclosingClassNode = outer;
             this.isPrimaryNode = false;
+        }
+
+        public ClassNode getEnclosingClassNode() {
+            return enclosingClassNode;
         }
 
         @Override
@@ -243,10 +247,6 @@ public class CompileUnit implements NodeMetaDataHandler {
                 setRedirectListener.accept(this, cn);
             }
             super.setRedirect(cn);
-        }
-
-        public ClassNode getEnclosingClassNode() {
-            return enclosingClassNode;
         }
 
         public void addSetRedirectListener(BiConsumer<ConstructedOuterNestedClassNode, ClassNode> setRedirectListener) {
