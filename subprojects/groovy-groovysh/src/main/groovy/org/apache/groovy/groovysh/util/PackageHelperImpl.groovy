@@ -18,52 +18,55 @@
  */
 package org.apache.groovy.groovysh.util
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
 
+import java.nio.file.InvalidPathException
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.prefs.PreferenceChangeEvent
 import java.util.prefs.PreferenceChangeListener
 import java.util.regex.Pattern
-import java.util.zip.ZipException
 
 /**
  * Helper class that crawls all items of the classpath for packages.
  * Retrieves from those sources the list of subpackages and classes on demand.
  */
-@CompileStatic
+@AutoFinal @CompileStatic
 class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
 
-    // Pattern for regular Classnames
+    protected static final Logger LOG = Logger.create(PackageHelperImpl)
+
+    /** Pattern for regular class names. */
     public static final Pattern NAME_PATTERN = ~('^[A-Z][^.\$_]+\$')
 
     private static final String CLASS_SUFFIX = '.class'
-    protected static final Logger LOG = Logger.create(PackageHelperImpl)
 
-    Map<String, CachedPackage> rootPackages = null
+    Map<String, CachedPackage> rootPackages
     final ClassLoader groovyClassLoader
 
-    PackageHelperImpl(final ClassLoader groovyClassLoader=null) {
+    PackageHelperImpl(ClassLoader groovyClassLoader = null) {
         this.groovyClassLoader = groovyClassLoader
         initializePackages()
         Preferences.addChangeListener(this)
     }
 
+    @Override
     void reset() {
         initializePackages()
     }
 
     private void initializePackages() {
-        if (! Boolean.valueOf(Preferences.get(IMPORT_COMPLETION_PREFERENCE_KEY))) {
+        if (!Boolean.valueOf(Preferences.get(IMPORT_COMPLETION_PREFERENCE_KEY))) {
             rootPackages = getPackages(this.groovyClassLoader)
         }
     }
 
     @Override
-    void preferenceChange(final PreferenceChangeEvent evt) {
+    void preferenceChange(PreferenceChangeEvent evt) {
         if (evt.key == IMPORT_COMPLETION_PREFERENCE_KEY) {
             if (Boolean.valueOf(evt.getNewValue())) {
                 rootPackages = null
@@ -73,9 +76,9 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
         }
     }
 
-    private static Map<String, CachedPackage> getPackages(final ClassLoader groovyClassLoader) throws IOException {
+    private static Map<String, CachedPackage> getPackages(ClassLoader groovyClassLoader) throws IOException {
         Map<String, CachedPackage> rootPackages = new HashMap()
-        Set<URL> urls = new HashSet<URL>()
+        Set<URL> urls = new HashSet<>()
 
         // classes in CLASSPATH
         for (ClassLoader loader = groovyClassLoader; loader != null; loader = loader.parent) {
@@ -88,11 +91,11 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
         }
 
         // System classes
-        Class[] systemClasses = [String, javax.swing.JFrame, GroovyObject] as Class[]
+        Class<?>[] systemClasses = [String, javax.swing.JFrame, GroovyObject] as Class[]
         boolean jigsaw = false
         systemClasses.each { Class systemClass ->
             // normal slash even in Windows
-            String classfileName = systemClass.name.replace('.', '/') + '.class'
+            String classfileName = systemClass.name.replace('.', '/') + CLASS_SUFFIX
             URL classURL = systemClass.getResource(classfileName)
             if (classURL == null) {
                 // this seems to work on Windows better than the earlier approach
@@ -138,10 +141,9 @@ class PackageHelperImpl implements PreferenceChangeListener, PackageHelper {
     }
 
     /**
-     * This method returns packages or classes listed from Jigsaw modules.
-     * It makes use of a GroovyShell in order to avoid a hard dependency
-     * to JDK 7+ when building the Groovysh module (uses nio2)
-     * @return
+     * Returns packages or classes listed from Jigsaw modules. It makes use of a
+     * GroovyShell in order to avoid a hard dependency to JDK 7+ when building
+     * the Groovysh module (uses nio2).
      */
     private static Set<String> getPackagesAndClassesFromJigsaw(URL jigsawURL, Closure<Boolean> predicate) {
         def shell = new GroovyShell()
@@ -200,8 +202,7 @@ Files.walkFileTree(fs.getPath('modules'),
         jigsawPackages
     }
 
-    static mergeNewPackages(final Collection<String> packageNames, final URL url,
-                            final Map<String, CachedPackage> rootPackages) {
+    static mergeNewPackages(Collection<String> packageNames, URL url, Map<String, CachedPackage> rootPackages) {
         StringTokenizer tokenizer
         packageNames.each { String packname ->
             tokenizer = new StringTokenizer(packname, '.')
@@ -239,46 +240,34 @@ Files.walkFileTree(fs.getPath('modules'),
     }
 
     /**
-     * Returns all packagenames found at URL, accepts jar files and folders
-     * @param url
-     * @return
+     * Returns all package names found at URL; accepts jar files and folders.
      */
-    static Collection<String> getPackageNames(final URL url) {
-        //log.debug(url)
-        String path = URLDecoder.decode(url.getFile(), 'UTF-8')
-        File urlfile = new File(path)
-        if (urlfile.isDirectory()) {
-            Set<String> packnames = new HashSet<String>()
-            collectPackageNamesFromFolderRecursive(urlfile, '', packnames)
-            return packnames
-        }
+    static Collection<String> getPackageNames(URL url) {
+        File urlFile = new File(URLDecoder.decode(url.file, 'UTF-8'))
 
-        if (urlfile.path.endsWith('.jar')) {
-            try {
-                JarFile jf = new JarFile(urlfile)
-                return getPackageNamesFromJar(jf)
-            } catch(ZipException ze) {
-                if (LOG.debugEnabled) {
-                    ze.printStackTrace()
-                }
-                LOG.debug("Error opening zipfile : '${url.getFile()}',  ${ze.toString()}")
-            } catch (FileNotFoundException fnfe) {
-                LOG.debug("Error opening file : '${url.getFile()}',  ${fnfe.toString()}")
+        if (urlFile.isDirectory()) {
+            return new HashSet<>().tap {
+                collectPackageNamesFromFolderRecursive(urlFile, '', it)
             }
         }
+
+        if (urlFile.path.endsWith('.jar')) {
+            try {
+                JarFile jarFile = new JarFile(urlFile)
+                return getPackageNamesFromJar(jarFile)
+            } catch (IOException | InvalidPathException e) {
+                if (LOG.isDebugEnabled()) e.printStackTrace()
+                LOG.warn("Error opening jar file : '${url.file}' : ${e.toString()}")
+            }
+        }
+
         return []
     }
 
     /**
      * Crawls a folder, iterates over subfolders, looking for class files.
-     * @param directory
-     * @param prefix
-     * @param packnames
-     * @return
      */
-    static Collection<String> collectPackageNamesFromFolderRecursive(final File directory, final String prefix,
-                                                                     final Set<String> packnames) {
-        //log.debug(directory)
+    static Collection<String> collectPackageNamesFromFolderRecursive(File directory, String prefix, Set<String> packnames) {
         File[] files = directory.listFiles()
         boolean packageAdded = false
 
@@ -300,9 +289,8 @@ Files.walkFileTree(fs.getPath('modules'),
         }
     }
 
-
-    static Collection<String> getPackageNamesFromJar(final JarFile jf) {
-        Set<String> packnames = new HashSet<String>()
+    static Collection<String> getPackageNamesFromJar(JarFile jf) {
+        Set<String> packnames = new HashSet<>()
         for (Enumeration e = jf.entries(); e.hasMoreElements();) {
             JarEntry entry = (JarEntry) e.nextElement()
 
@@ -326,27 +314,15 @@ Files.walkFileTree(fs.getPath('modules'),
         return packnames
     }
 
-    // following block does not work, because URLClassLoader.packages only ever returns SystemPackages
-    /*static Collection<String> getPackageNames(URL url) {
-        URLClassLoader urlLoader = new URLClassLoader([url] as URL[])
-        //log.debug(urlLoader.packages.getClass())
-
-        urlLoader.getPackages().collect {Package pack ->
-            pack.name
-        }
-    }*/
-
     /**
-     * returns the names of Classes and direct subpackages contained in a package
-     * @param packagename
-     * @return
+     * Returns the names of Classes and direct subpackages contained in a package.
      */
-    @CompileStatic
-    Set<String> getContents(final String packagename) {
-        if (! rootPackages) {
+    @Override
+    Set<String> getContents(String packagename) {
+        if (!rootPackages) {
             return [] as Set
         }
-        if (! packagename) {
+        if (!packagename) {
             return rootPackages.collect { String key, CachedPackage v -> key } as Set
         }
         String sanitizedPackageName
@@ -389,13 +365,10 @@ Files.walkFileTree(fs.getPath('modules'),
     }
 
     /**
-     * Copied from JLine 1.0 ClassNameCompletor
-     * @param urls
-     * @param packagename
-     * @return
+     * Copied from JLine 1.0 ClassNameCompletor.
      */
-    static Set<String> getClassnames(final Set<URL> urls, final String packagename) {
-        Set<String> classes = new TreeSet<String>()
+    static Set<String> getClassnames(Set<URL> urls, String packagename) {
+        Set<String> classes = new TreeSet<>()
         // normal slash even in Windows
         String pathname = packagename.replace('.', '/')
         for (Iterator<URL> it = urls.iterator(); it.hasNext();) {
@@ -481,7 +454,7 @@ class CachedPackage {
     Set<URL> sources
 
     CachedPackage(String name, Set<URL> sources) {
-        this.sources = sources
         this.name = name
+        this.sources = sources
     }
 }
