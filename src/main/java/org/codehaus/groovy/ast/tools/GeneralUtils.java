@@ -59,6 +59,7 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
@@ -781,6 +782,14 @@ public class GeneralUtils {
 
     public static CatchStatement catchS(Parameter variable, Statement code) {
         return new CatchStatement(variable, code);
+    }
+
+    public static TryCatchStatement tryCatchS(Statement tryStatement) {
+        return tryCatchS(tryStatement, EmptyStatement.INSTANCE);
+    }
+
+    public static TryCatchStatement tryCatchS(Statement tryStatement, Statement finallyStatement) {
+        return new TryCatchStatement(tryStatement, finallyStatement);
     }
 
     /**
