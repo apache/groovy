@@ -20,6 +20,7 @@ package org.codehaus.groovy.control;
 
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.objectweb.asm.Opcodes;
@@ -385,6 +386,20 @@ public class CompilerConfiguration {
     private BytecodeProcessor bytecodePostprocessor;
 
     public static final int ASM_API_VERSION = Opcodes.ASM7;
+
+    {
+        addDefaultImports();
+    }
+
+    private void addDefaultImports() {
+        ImportCustomizer importCustomizer = new ImportCustomizer();
+        importCustomizer.addImports(
+                "groovy.transform.TypeChecked",
+                "groovy.transform.CompileStatic",
+                "groovy.transform.CompileDynamic"
+        );
+        this.doAddCompilationCustomizers(importCustomizer);
+    }
 
     /**
      * Sets the compiler flags/settings to default values.
@@ -1038,6 +1053,10 @@ public class CompilerConfiguration {
      * @return this configuration instance
      */
     public CompilerConfiguration addCompilationCustomizers(CompilationCustomizer... customizers) {
+        return doAddCompilationCustomizers(customizers);
+    }
+
+    private CompilerConfiguration doAddCompilationCustomizers(CompilationCustomizer... customizers) {
         if (customizers == null) throw new IllegalArgumentException("provided customizers list must not be null");
         compilationCustomizers.addAll(Arrays.asList(customizers));
         return this;

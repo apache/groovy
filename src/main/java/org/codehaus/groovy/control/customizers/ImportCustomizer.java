@@ -50,6 +50,7 @@ public class ImportCustomizer extends CompilationCustomizer {
 
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
+        if (null == source) return;
         final ModuleNode ast = source.getAST();
         for (Import anImport : imports) {
             switch (anImport.type) {
