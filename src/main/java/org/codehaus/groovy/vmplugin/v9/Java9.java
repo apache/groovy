@@ -92,8 +92,9 @@ public class Java9 extends Java8 {
 
     public static MethodHandles.Lookup of(final Class<?> declaringClass) {
         try {
-            if (getPrivateLookup() != null) {
-                return MethodHandles.Lookup.class.cast(getPrivateLookup().invoke(null, declaringClass, MethodHandles.lookup()));
+            final Method privateLookup = getPrivateLookup();
+            if (privateLookup != null) {
+                return (MethodHandles.Lookup) privateLookup.invoke(null, declaringClass, MethodHandles.lookup());
             }
             return getLookupConstructor().newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
         } catch (final IllegalAccessException | InstantiationException e) {
@@ -110,15 +111,12 @@ public class Java9 extends Java8 {
 
     @Override
     public Object getInvokeSpecialHandle(Method method, Object receiver) {
-        if (getLookupConstructor() != null) {
-            Class declaringClass = method.getDeclaringClass();
-            try {
-                return of(declaringClass).unreflectSpecial(method, receiver.getClass()).bindTo(receiver);
-            } catch (ReflectiveOperationException e) {
-                throw new GroovyBugError(e);
-            }
+        final Class<?> receiverType = receiver.getClass();
+        try {
+            return of(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
+        } catch (ReflectiveOperationException e) {
+            return super.getInvokeSpecialHandle(method, receiver);
         }
-        return super.getInvokeSpecialHandle(method, receiver);
     }
 
     /**
