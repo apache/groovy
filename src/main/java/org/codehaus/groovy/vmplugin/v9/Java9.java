@@ -235,12 +235,16 @@ public class Java9 extends Java8 {
             return metaMethod;
         }
 
-        if (MULTIPLY.equals(metaMethod.getName())
-                && (1 == params.length && (Integer.class == params[0] || Long.class == params[0] || Short.class == params[0]))) {
-            try {
-                return new CachedMethod(BigInteger.class.getDeclaredMethod(MULTIPLY, BigInteger.class));
-            } catch (NoSuchMethodException e) {
-                throw new GroovyBugError("Failed to transform " + MULTIPLY + " method of BigInteger", e);
+        if (1 == params.length && MULTIPLY.equals(metaMethod.getName())) {
+            Class<?> param = params[0];
+            if (Long.class == param || long.class == param
+                    || Integer.class == param || int.class == param
+                    || Short.class == param || short.class == param) {
+                try {
+                    return new CachedMethod(BigInteger.class.getDeclaredMethod(MULTIPLY, BigInteger.class));
+                } catch (NoSuchMethodException e) {
+                    throw new GroovyBugError("Failed to transform " + MULTIPLY + " method of BigInteger", e);
+                }
             }
         }
 
