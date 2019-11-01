@@ -33,6 +33,7 @@ import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.util.Arrays;
+import junit.framework.AssertionFailedError;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -52,7 +53,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 public class NotYetImplementedASTTransformation extends AbstractASTTransformation {
 
     private static final ClassNode CATCH_TYPE = ClassHelper.make(Throwable.class);
-    private static final ClassNode THROW_TYPE = ClassHelper.make("junit.framework.AssertionFailedError"); // TODO: java.lang.AssertionError
+    private static final ClassNode THROW_TYPE = ClassHelper.make(AssertionFailedError.class); // TODO: java.lang.AssertionError
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes.length == 2 && nodes[0] instanceof AnnotationNode && nodes[1] instanceof MethodNode)) {
