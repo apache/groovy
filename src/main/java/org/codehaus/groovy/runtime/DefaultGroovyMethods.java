@@ -451,11 +451,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     if (groovyObject && field.getName().equals("metaClass")) {
                         continue;
                     }
-                    AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                        public Object run() {
-                            ReflectionUtils.trySetAccessible(field);
-                            return null;
-                        }
+                    AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+                        ReflectionUtils.trySetAccessible(field);
+                        return null;
                     });
                     buffer.append(" ");
                     buffer.append(field.getName());
