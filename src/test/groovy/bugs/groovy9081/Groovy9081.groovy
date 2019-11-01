@@ -19,7 +19,6 @@
 package groovy.bugs.groovy9081
 
 import groovy.bugs.groovy9081.somepkg.ProtectedConstructor
-import org.junit.Ignore
 import org.junit.Test
 
 import java.awt.Font
@@ -68,5 +67,20 @@ final class Groovy9081 {
     @Test
     void testAsType2() {
         [run: {}] as ProtectedConstructor
+    }
+
+    @Test
+    void testAccessPackagePrivateInnerClassMember() {
+        def m = new HashMap()
+        m.a = 69
+        m.entrySet().iterator().next().toString()
+    }
+
+    @Test
+    void testAccessPackagePrivateMethod() {
+        BigInteger a = 333
+        int b = 2
+        BigDecimal c = a * b
+        assert c == 666
     }
 }
