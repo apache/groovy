@@ -101,19 +101,17 @@ public class CachedClass {
 
         public CachedMethod[] initValue() {
             final Method[] declaredMethods;
-            declaredMethods = AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
-                public Method[] run() {
-                    try {
-                        Method[] dm = getTheClass().getDeclaredMethods();
-                        dm = Arrays.stream(dm)
-                                .filter(m -> checkCanSetAccessible(m, CachedClass.class))
-                                .toArray(Method[]::new);
+            declaredMethods = AccessController.doPrivileged((PrivilegedAction<Method[]>) () -> {
+                try {
+                    Method[] dm = getTheClass().getDeclaredMethods();
+                    dm = Arrays.stream(dm)
+                            .filter(m -> checkCanSetAccessible(m, CachedClass.class))
+                            .toArray(Method[]::new);
 //                           dm = (Method[]) ReflectionUtils.makeAccessible(dm);
-                        return dm;
-                    } catch (Throwable e) {
-                        // Typically, Android can throw ClassNotFoundException
-                        return EMPTY_METHOD_ARRAY;
-                    }
+                    return dm;
+                } catch (Throwable e) {
+                    // Typically, Android can throw ClassNotFoundException
+                    return EMPTY_METHOD_ARRAY;
                 }
             });
             List<CachedMethod> methods = new ArrayList<CachedMethod>(declaredMethods.length);

@@ -75,11 +75,7 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
     }
 
     public Constructor defineClassAndGetConstructor(final String name, final byte[] bytes) {
-        final Class cls = AccessController.doPrivileged( new PrivilegedAction<Class>(){
-            public Class run() {
-                return define(name, bytes);
-            }
-        });
+        final Class cls = AccessController.doPrivileged((PrivilegedAction<Class>) () -> define(name, bytes));
 
         if (cls != null) {
             try {

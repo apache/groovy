@@ -462,11 +462,7 @@ public class ClassInfo implements Finalizable {
         }
 
         public ClassLoaderForClassArtifacts initValue() {
-            return AccessController.doPrivileged(new PrivilegedAction<ClassLoaderForClassArtifacts>() {
-                public ClassLoaderForClassArtifacts run() {
-                    return new ClassLoaderForClassArtifacts(info.classRef.get());
-                }
-            });
+            return AccessController.doPrivileged((PrivilegedAction<ClassLoaderForClassArtifacts>) () -> new ClassLoaderForClassArtifacts(info.classRef.get()));
         }
     }
 
