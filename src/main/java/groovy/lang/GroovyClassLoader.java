@@ -109,18 +109,16 @@ public class GroovyClassLoader extends URLClassLoader {
 
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         public URL loadGroovySource(final String filename) throws MalformedURLException {
-            return AccessController.doPrivileged(new PrivilegedAction<URL>() {
-                public URL run() {
-                    for (String extension : config.getScriptExtensions()) {
-                        try {
-                            URL ret = getSourceFile(filename, extension);
-                            if (ret != null)
-                                return ret;
-                        } catch (Throwable t) { //
-                        }
+            return AccessController.doPrivileged((PrivilegedAction<URL>) () -> {
+                for (String extension : config.getScriptExtensions()) {
+                    try {
+                        URL ret = getSourceFile(filename, extension);
+                        if (ret != null)
+                            return ret;
+                    } catch (Throwable t) { //
                     }
-                    return null;
                 }
+                return null;
             });
         }
     };
@@ -253,11 +251,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
-            public GroovyCodeSource run() {
-                return new GroovyCodeSource(text, fileName, "/groovy/script");
-            }
-        });
+        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, fileName, "/groovy/script"));
         gcs.setCachable(false);
         return parseClass(gcs);
     }
@@ -279,14 +273,12 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     public Class parseClass(final Reader reader, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
-            public GroovyCodeSource run() {
-                try {
-                    String scriptText = IOGroovyMethods.getText(reader);
-                    return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
-                } catch (IOException e) {
-                    throw new RuntimeException("Impossible to read the content of the reader for file named: " + fileName, e);
-                }
+        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> {
+            try {
+                String scriptText = IOGroovyMethods.getText(reader);
+                return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
+            } catch (IOException e) {
+                throw new RuntimeException("Impossible to read the content of the reader for file named: " + fileName, e);
             }
         });
         return parseClass(gcs);
@@ -301,16 +293,14 @@ public class GroovyClassLoader extends URLClassLoader {
         // For generic input streams, provide a catch-all codebase of GroovyScript
         // Security for these classes can be administered via policy grants with
         // a codebase of file:groovy.script
-        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
-            public GroovyCodeSource run() {
-                try {
-                    String scriptText = config.getSourceEncoding() != null ?
-                            IOGroovyMethods.getText(in, config.getSourceEncoding()) :
-                            IOGroovyMethods.getText(in);
-                    return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
-                } catch (IOException e) {
-                    throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
-                }
+        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> {
+            try {
+                String scriptText = config.getSourceEncoding() != null ?
+                        IOGroovyMethods.getText(in, config.getSourceEncoding()) :
+                        IOGroovyMethods.getText(in);
+                return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
+            } catch (IOException e) {
+                throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
             }
         });
         return parseClass(gcs);
