@@ -117,6 +117,27 @@ final class NotYetImplementedTransformTest {
         assert output.wasSuccessful() : '@Test method marked with @NotYetImplemented must NOT throw an AssertionFailedError'
     }
 
+    @Test // GROOVY-8457
+    void testNotYetImplementedJUnit4Failure_atCompileStatic()  {
+        def output = shell.evaluate('''
+            import groovy.transform.CompileStatic
+            import groovy.test.NotYetImplemented
+            import org.junit.Test
+            import org.junit.runner.JUnitCore
+
+            @CompileStatic
+            class MyTests {
+                @NotYetImplemented @Test void testThatFails()  {
+                    assert false
+                }
+            }
+
+            new JUnitCore().run(MyTests)
+        ''')
+
+        assert output.wasSuccessful() : '@Test method marked with @CompileStatic and @NotYetImplemented must NOT throw an AssertionFailedError'
+    }
+
     @Test
     void testNotYetImplementedJUnit4Success() {
         def output = shell.evaluate('''
@@ -136,5 +157,27 @@ final class NotYetImplementedTransformTest {
 
         assert output.failureCount == 1 : '@Test method marked with @NotYetImplemented must throw an AssertionFailedError'
         assert output.failures.first().exception instanceof AssertionFailedError : '@Test method marked with @NotYetImplemented must throw an AssertionFailedError'
+    }
+
+    @Test // GROOVY-8457
+    void testNotYetImplementedJUnit4Success_atCompileStatic()  {
+        def output = shell.evaluate('''
+            import groovy.transform.CompileStatic
+            import groovy.test.NotYetImplemented
+            import org.junit.Test
+            import org.junit.runner.JUnitCore
+
+            @CompileStatic
+            class MyTests {
+                @NotYetImplemented @Test void testThatFails()  {
+                    assert true
+                }
+            }
+
+            new JUnitCore().run(MyTests)
+        ''')
+
+        assert output.failureCount == 1 : '@Test method marked with @CompileStatic and @NotYetImplemented must throw an AssertionFailedError'
+        assert output.failures.first().exception instanceof AssertionFailedError : '@Test method marked with @CompileStatic and @NotYetImplemented must throw an AssertionFailedError'
     }
 }
