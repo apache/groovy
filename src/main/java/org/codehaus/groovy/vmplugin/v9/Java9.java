@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.vmplugin.v9;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.Tuple;
@@ -92,14 +93,15 @@ public class Java9 extends Java8 {
 
     public static MethodHandles.Lookup of(final Class<?> declaringClass) {
         try {
-            if (getPrivateLookup() != null) {
-                return MethodHandles.Lookup.class.cast(getPrivateLookup().invoke(null, declaringClass, MethodHandles.lookup()));
+            final Method privateLookup = getPrivateLookup();
+            if (privateLookup != null) {
+                return (MethodHandles.Lookup) privateLookup.invoke(null, declaringClass, MethodHandles.lookup());
             }
             return getLookupConstructor().newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
         } catch (final IllegalAccessException | InstantiationException e) {
             throw new IllegalArgumentException(e);
         } catch (final InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new GroovyRuntimeException(e);
         }
     }
 
@@ -110,15 +112,12 @@ public class Java9 extends Java8 {
 
     @Override
     public Object getInvokeSpecialHandle(Method method, Object receiver) {
-        if (getLookupConstructor() != null) {
-            Class declaringClass = method.getDeclaringClass();
-            try {
-                return of(declaringClass).unreflectSpecial(method, receiver.getClass()).bindTo(receiver);
-            } catch (ReflectiveOperationException e) {
-                throw new GroovyBugError(e);
-            }
+        final Class<?> receiverType = receiver.getClass();
+        try {
+            return of(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
+        } catch (ReflectiveOperationException e) {
+            return super.getInvokeSpecialHandle(method, receiver);
         }
-        return super.getInvokeSpecialHandle(method, receiver);
     }
 
     /**
@@ -235,12 +234,16 @@ public class Java9 extends Java8 {
             return metaMethod;
         }
 
-        if (MULTIPLY.equals(metaMethod.getName())
-                && (1 == params.length && (Integer.class == params[0] || Long.class == params[0] || Short.class == params[0]))) {
-            try {
-                return new CachedMethod(BigInteger.class.getDeclaredMethod(MULTIPLY, BigInteger.class));
-            } catch (NoSuchMethodException e) {
-                throw new GroovyBugError("Failed to transform " + MULTIPLY + " method of BigInteger", e);
+        if (1 == params.length && MULTIPLY.equals(metaMethod.getName())) {
+            Class<?> param = params[0];
+            if (Long.class == param || long.class == param
+                    || Integer.class == param || int.class == param
+                    || Short.class == param || short.class == param) {
+                try {
+                    return new CachedMethod(BigInteger.class.getDeclaredMethod(MULTIPLY, BigInteger.class));
+                } catch (NoSuchMethodException e) {
+                    throw new GroovyBugError("Failed to transform " + MULTIPLY + " method of BigInteger", e);
+                }
             }
         }
 
