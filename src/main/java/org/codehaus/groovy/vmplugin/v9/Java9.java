@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.vmplugin.v9;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.Tuple;
@@ -100,7 +101,7 @@ public class Java9 extends Java8 {
         } catch (final IllegalAccessException | InstantiationException e) {
             throw new IllegalArgumentException(e);
         } catch (final InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new GroovyRuntimeException(e);
         }
     }
 
