@@ -99,9 +99,14 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testAsCoercionInterface() {
         def letters = ['a', 'b', 'c']
         def ol = new ObserverLike()
-        def o = new Observable()
+        def o = new Observable() {
+            @Override
+            synchronized void setChanged() {
+                super.setChanged()
+            }
+        }
         o.addObserver(ol as Observer) // addObserver takes Observer as param
-        letters.each{ o.changed = true; o.notifyObservers(it) }
+        letters.each{ o.setChanged(); o.notifyObservers(it) }
         assert ol.observed == letters
     }
 
