@@ -69,4 +69,11 @@ final class Groovy9081 {
     void testAsType2() {
         [run: {}] as ProtectedConstructor
     }
+
+    @Test
+    void testAccessPackagePrivateInnerClassMember() {
+        def m = new HashMap()
+        m.a = 69
+        m.entrySet().iterator().next().toString()
+    }
 }
