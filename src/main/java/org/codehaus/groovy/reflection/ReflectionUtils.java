@@ -184,11 +184,7 @@ public class ReflectionUtils {
     }
 
     public static Optional<AccessibleObject> makeAccessibleInPrivilegedAction(final AccessibleObject ao) {
-        return AccessController.doPrivileged(new PrivilegedAction<Optional<AccessibleObject>>() {
-            public Optional<AccessibleObject> run() {
-                return makeAccessible(ao);
-            }
-        });
+        return AccessController.doPrivileged((PrivilegedAction<Optional<AccessibleObject>>) () -> makeAccessible(ao));
     }
 
     // to be run in PrivilegedAction!
