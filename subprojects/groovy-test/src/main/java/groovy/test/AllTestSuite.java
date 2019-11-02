@@ -79,12 +79,7 @@ public class AllTestSuite extends TestSuite {
     private static final ClassLoader JAVA_LOADER = AllTestSuite.class.getClassLoader();
     private static final GroovyClassLoader GROOVY_LOADER =
             AccessController.doPrivileged(
-                    new PrivilegedAction<GroovyClassLoader>() {
-                        @Override
-                        public GroovyClassLoader run() {
-                            return new GroovyClassLoader(JAVA_LOADER);
-                        }
-                    }
+                    (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(JAVA_LOADER)
             );
 
     private static final String[] EMPTY_ARGS = new String[]{};
