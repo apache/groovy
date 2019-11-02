@@ -82,7 +82,6 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import javax.annotation.Nullable;
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
-import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
@@ -1626,14 +1625,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         CachedConstructor constructor = createCachedConstructor(arguments);
         List l = new ArrayList(constructors.toList());
-        Comparator comp = new Comparator() {
-            public int compare(Object arg0, Object arg1) {
-                CachedConstructor c0 = (CachedConstructor) arg0;
-                CachedConstructor c1 = (CachedConstructor) arg1;
-                String descriptor0 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c0.getNativeParameterTypes());
-                String descriptor1 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c1.getNativeParameterTypes());
-                return descriptor0.compareTo(descriptor1);
-            }
+        Comparator comp = (arg0, arg1) -> {
+            CachedConstructor c0 = (CachedConstructor) arg0;
+            CachedConstructor c1 = (CachedConstructor) arg1;
+            String descriptor0 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c0.getNativeParameterTypes());
+            String descriptor1 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c1.getNativeParameterTypes());
+            return descriptor0.compareTo(descriptor1);
         };
         Collections.sort(l, comp);
         int found = -1;
@@ -3404,17 +3401,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //     introspect
         try {
             if (isBeanDerivative(theClass)) {
-                info = (BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws IntrospectionException {
-                        return Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO);
-                    }
-                });
+                info = (BeanInfo) AccessController.doPrivileged((PrivilegedExceptionAction) () -> Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO));
             } else {
-                info = (BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws IntrospectionException {
-                        return Introspector.getBeanInfo(theClass);
-                    }
-                });
+                info = (BeanInfo) AccessController.doPrivileged((PrivilegedExceptionAction) () -> Introspector.getBeanInfo(theClass));
             }
         } catch (PrivilegedActionException pae) {
             throw new GroovyRuntimeException("exception during bean introspection", pae.getException());
@@ -3914,21 +3903,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         metaMethodIndex.clearCaches();
     }
 
-    private static final SingleKeyHashMap.Copier NAME_INDEX_COPIER = new SingleKeyHashMap.Copier() {
-        public Object copy(Object value) {
-            if (value instanceof FastArray) {
-                return ((FastArray) value).copy();
-            } else {
-                return value;
-            }
+    private static final SingleKeyHashMap.Copier NAME_INDEX_COPIER = value -> {
+        if (value instanceof FastArray) {
+            return ((FastArray) value).copy();
+        } else {
+            return value;
         }
     };
 
-    private static final SingleKeyHashMap.Copier METHOD_INDEX_COPIER = new SingleKeyHashMap.Copier() {
-        public Object copy(Object value) {
-            return SingleKeyHashMap.copy(new SingleKeyHashMap(false), (SingleKeyHashMap) value, NAME_INDEX_COPIER);
-        }
-    };
+    private static final SingleKeyHashMap.Copier METHOD_INDEX_COPIER = value -> SingleKeyHashMap.copy(new SingleKeyHashMap(false), (SingleKeyHashMap) value, NAME_INDEX_COPIER);
 
     static class MethodIndex extends Index {
         public MethodIndex(boolean b) {
