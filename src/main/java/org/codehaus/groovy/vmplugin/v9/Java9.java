@@ -168,6 +168,11 @@ public class Java9 extends Java8 {
     }
 
     @Override
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params) {
+        return transformMetaMethod(metaClass, metaMethod, params, ReflectionUtils.getCallingClass());
+    }
+
+    @Override
     public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
         if (!(metaMethod instanceof CachedMethod)) {
             return metaMethod;

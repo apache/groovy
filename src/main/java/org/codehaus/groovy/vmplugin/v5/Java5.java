@@ -591,6 +591,11 @@ public class Java5 implements VMPlugin {
         return metaMethod;
     }
 
+    @Override
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params) {
+        return metaMethod;
+    }
+
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
 }
 

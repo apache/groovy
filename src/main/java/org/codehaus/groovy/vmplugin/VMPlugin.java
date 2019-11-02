@@ -103,4 +103,14 @@ public interface VMPlugin {
      * @return the transformed meta method
      */
     MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller);
+
+    /**
+     * transform meta method.
+     *
+     * @param metaClass meta class
+     * @param metaMethod the original meta method
+     * @param params parameter types
+     * @return the transformed meta method
+     */
+    MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params);
 }

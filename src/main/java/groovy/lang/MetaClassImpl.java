@@ -80,7 +80,6 @@ import org.codehaus.groovy.util.SingleKeyHashMap;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import javax.annotation.Nullable;
-
 import java.beans.BeanInfo;
 import java.beans.EventSetDescriptor;
 import java.beans.IntrospectionException;
@@ -1263,7 +1262,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments));
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         } else {
             return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
@@ -1924,7 +1923,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //----------------------------------------------------------------------
             // executing the getter method
             //----------------------------------------------------------------------
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments));
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
@@ -2824,7 +2823,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 arguments[1] = newValue;
             }
 
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments), MetaClassImpl.class);
+            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments));
             transformedMetaMethod.doMethodInvoke(object, arguments);
             return;
         }
