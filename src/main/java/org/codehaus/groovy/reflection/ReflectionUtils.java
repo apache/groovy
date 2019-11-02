@@ -56,7 +56,11 @@ public class ReflectionUtils {
         IGNORED_PACKAGES.add("sun.reflect");
         IGNORED_PACKAGES.add("java.security");
         IGNORED_PACKAGES.add("java.lang.invoke");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v5");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v6");
         IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v7");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v8");
+        IGNORED_PACKAGES.add("org.codehaus.groovy.vmplugin.v9");
     }
 
     private static final ClassContextHelper HELPER = new ClassContextHelper();
@@ -113,19 +117,10 @@ public class ReflectionUtils {
         int depth = 0;
         try {
             Class c;
-            // this super class stuff is for Java 1.4 support only
-            // it isn't needed on a 5.0 VM
-            Class sc;
             do {
                 do {
                     c = classContext[depth++];
-                    if (c != null) {
-                        sc = c.getSuperclass();
-                    } else {
-                        sc = null;
-                    }
-                } while (classShouldBeIgnored(c, extraIgnoredPackages)
-                        || superClassShouldBeIgnored(sc));
+                } while (classShouldBeIgnored(c, extraIgnoredPackages));
             } while (c != null && matchLevel-- > 0 && depth<classContext.length);
             return c;
         } catch (Throwable t) {
@@ -211,10 +206,6 @@ public class ReflectionUtils {
             }
             return ret.toArray((AccessibleObject[]) Array.newInstance(aoa.getClass().getComponentType(), 0));
         }
-    }
-
-    private static boolean superClassShouldBeIgnored(Class sc) {
-        return ((sc != null) && (sc.getPackage() != null) && "org.codehaus.groovy.runtime.callsite".equals(sc.getPackage().getName()));
     }
 
     private static boolean classShouldBeIgnored(Class c, Collection<String> extraIgnoredPackages) {
