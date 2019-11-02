@@ -1074,7 +1074,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      */
     public static void traverse(final Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure)
             throws IOException {
-        traverse(self, new HashMap<String, Object>(), closure);
+        traverse(self, new HashMap<>(), closure);
     }
 
     /**
@@ -1110,7 +1110,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             final Iterator<Path> itr = stream.iterator();
-            List<Path> files = new LinkedList<Path>();
+            List<Path> files = new LinkedList<>();
             while (itr.hasNext()) {
                 files.add(itr.next());
             }

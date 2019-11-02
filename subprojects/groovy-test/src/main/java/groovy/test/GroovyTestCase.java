@@ -114,8 +114,8 @@ public class GroovyTestCase extends TestCase {
      * @param array    the array
      */
     protected void assertContains(char expected, char[] array) {
-        for (int i = 0; i < array.length; ++i) {
-            if (array[i] == expected) {
+        for (char c : array) {
+            if (c == expected) {
                 return;
             }
         }

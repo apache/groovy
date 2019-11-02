@@ -230,7 +230,7 @@ public class GroovyAssert extends org.junit.Assert {
     /**
      * NotYetImplemented Implementation
      */
-    private static final ThreadLocal<Boolean> notYetImplementedFlag = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> notYetImplementedFlag = new ThreadLocal<>();
 
     /**
      * From JUnit. Finds from the call stack the active running JUnit test case
