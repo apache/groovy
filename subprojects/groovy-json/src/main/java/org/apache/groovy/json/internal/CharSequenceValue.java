@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
 
 import static org.apache.groovy.json.internal.CharScanner.isInteger;
 import static org.apache.groovy.json.internal.CharScanner.parseIntFromTo;
@@ -157,7 +158,7 @@ public class CharSequenceValue implements Value, CharSequence {
         if (startIndex != value1.startIndex) return false;
         if (!Arrays.equals(buffer, value1.buffer)) return false;
         if (type != value1.type) return false;
-        return value != null ? value.equals(value1.value) : value1.value == null;
+        return Objects.equals(value, value1.value);
 
     }
 

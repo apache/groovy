@@ -52,12 +52,7 @@ public class GroovyTestSuite extends TestSuite {
 
     protected final GroovyClassLoader loader =
             AccessController.doPrivileged(
-                    new PrivilegedAction<GroovyClassLoader>() {
-                        @Override
-                        public GroovyClassLoader run() {
-                            return new GroovyClassLoader(GroovyTestSuite.class.getClassLoader());
-                        }
-                    }
+                    (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(GroovyTestSuite.class.getClassLoader())
             );
 
     public static void main(String[] args) {

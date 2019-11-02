@@ -224,13 +224,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
         } else if (File.class.isAssignableFrom(objectClass)) {
             Map<?, ?> properties = getObjectProperties(object);
             //Clean up all recursive references to File objects
-            Iterator<? extends Map.Entry<?, ?>> iterator = properties.entrySet().iterator();
-            while(iterator.hasNext()) {
-                Map.Entry<?,?> entry = iterator.next();
-                if(entry.getValue() instanceof File) {
-                    iterator.remove();
-                }
-            }
+            properties.entrySet().removeIf(entry -> entry.getValue() instanceof File);
             writeMap(properties, buffer);
         } else {
             Map<?, ?> properties = getObjectProperties(object);
