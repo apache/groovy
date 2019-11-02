@@ -93,7 +93,7 @@ public class ReflectionUtils {
      *         enough stackframes to satisfy matchLevel
      */
     public static Class getCallingClass(int matchLevel) {
-        return getCallingClass(matchLevel, Collections.EMPTY_SET);
+        return getCallingClass(matchLevel, Collections.emptySet());
     }
 
     /**
