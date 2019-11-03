@@ -37,8 +37,6 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -145,7 +143,8 @@ public class Java9 extends Java8 {
             throw new IllegalArgumentException("accessibleObject should be a member of type: " + accessibleObject);   // should not happen
         }
 
-        Class<?> declaringClass = ((Member) accessibleObject).getDeclaringClass();
+        Member member = (Member) accessibleObject;
+        Class<?> declaringClass = member.getDeclaringClass();
 
         Module callerModule = callerClass.getModule();
         Module declaringModule = declaringClass.getModule();
@@ -154,9 +153,7 @@ public class Java9 extends Java8 {
         if (callerModule == Object.class.getModule()) return true;
         if (!declaringModule.isNamed()) return true;
 
-        int modifiers = accessibleObject instanceof Executable
-                            ? ((Executable) accessibleObject).getModifiers()
-                            : ((Field) accessibleObject).getModifiers();
+        int modifiers = member.getModifiers();
 
         return checkAccessible(callerClass, declaringClass, modifiers, true);
     }
