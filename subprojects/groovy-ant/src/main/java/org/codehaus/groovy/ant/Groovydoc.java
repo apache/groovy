@@ -66,7 +66,7 @@ public class Groovydoc extends Task {
     private Boolean noVersionStamp;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
-    private final List<LinkArgument> links = new ArrayList<LinkArgument>();
+    private final List<LinkArgument> links = new ArrayList<>();
     private File overviewFile;
     private File styleSheetFile;
     // dev note: update javadoc comment for #setExtensions(String) if updating below
@@ -76,10 +76,10 @@ public class Groovydoc extends Task {
     private String fileEncoding;
 
     public Groovydoc() {
-        packageNames = new ArrayList<String>();
-        excludePackageNames = new ArrayList<String>();
+        packageNames = new ArrayList<>();
+        excludePackageNames = new ArrayList<>();
         packageSets = new ArrayList<DirSet>();
-        sourceFilesToDoc = new ArrayList<String>();
+        sourceFilesToDoc = new ArrayList<>();
         privateScope = false;
         protectedScope = false;
         publicScope = false;
@@ -335,7 +335,7 @@ public class Groovydoc extends Task {
      * @since 1.5
      */
     private void parsePackages(List<String> resultantPackages, Path sourcePath) {
-        List<String> addedPackages = new ArrayList<String>();
+        List<String> addedPackages = new ArrayList<>();
         List<DirSet> dirSets = new ArrayList<DirSet>(packageSets);
 
         // for each sourcePath entry, add a directoryset with includes
@@ -388,17 +388,15 @@ public class Groovydoc extends Task {
             for (String dir : dirs) {
                 // are there any groovy or java files in this directory?
                 File pd = new File(baseDir, dir);
-                String[] files = pd.list(new FilenameFilter() {
-                    public boolean accept(File dir1, String name) {
-                        if (!includeNoSourcePackages
-                                && name.equals("package.html")) return true;
-                        final StringTokenizer tokenizer = new StringTokenizer(extensions, ":");
-                        while (tokenizer.hasMoreTokens()) {
-                            String ext = tokenizer.nextToken();
-                            if (name.endsWith(ext)) return true;
-                        }
-                        return false;
+                String[] files = pd.list((dir1, name) -> {
+                    if (!includeNoSourcePackages
+                            && name.equals("package.html")) return true;
+                    final StringTokenizer tokenizer = new StringTokenizer(extensions, ":");
+                    while (tokenizer.hasMoreTokens()) {
+                        String ext = tokenizer.nextToken();
+                        if (name.endsWith(ext)) return true;
                     }
+                    return false;
                 });
 
                 for (String filename : files) {
@@ -431,7 +429,7 @@ public class Groovydoc extends Task {
     }
 
     public void execute() throws BuildException {
-        List<String> packagesToDoc = new ArrayList<String>();
+        List<String> packagesToDoc = new ArrayList<>();
         Path sourceDirs = new Path(getProject());
         Properties properties = new Properties();
         properties.setProperty("windowTitle", windowTitle);

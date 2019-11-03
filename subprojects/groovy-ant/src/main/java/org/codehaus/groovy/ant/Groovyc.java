@@ -201,7 +201,7 @@ public class Groovyc extends MatchingTask {
     private Javac javac;
     private boolean jointCompilation;
 
-    private final List<File> temporaryFiles = new ArrayList<File>(2);
+    private final List<File> temporaryFiles = new ArrayList<>(2);
     private File stubDir;
     private boolean keepStubs;
     private boolean forceLookupUnnamedFiles;
@@ -209,7 +209,7 @@ public class Groovyc extends MatchingTask {
     private String scriptBaseClass;
     private String configscript;
 
-    private Set<String> scriptExtensions = new LinkedHashSet<String>();
+    private Set<String> scriptExtensions = new LinkedHashSet<>();
 
     /**
      * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
@@ -884,7 +884,7 @@ public class Groovyc extends MatchingTask {
      */
     protected void resetFileLists() {
         compileList = EMPTY_FILE_ARRAY;
-        scriptExtensions = new LinkedHashSet<String>();
+        scriptExtensions = new LinkedHashSet<>();
     }
 
     /**
@@ -961,7 +961,7 @@ public class Groovyc extends MatchingTask {
     }
 
     private List<String> extractJointOptions(Path classpath) {
-        List<String> jointOptions = new ArrayList<String>();
+        List<String> jointOptions = new ArrayList<>();
         if (!jointCompilation) return jointOptions;
 
         // extract joint options, some get pushed up...
@@ -978,9 +978,7 @@ public class Groovyc extends MatchingTask {
                 jointOptions.add("-Fg" + level);
             } else if (key.contains("debugLevel")) {
                 // ignore, taken care of in debug
-            } else if ((key.contains("nowarn"))
-                    || (key.contains("verbose"))
-                    || (key.contains("deprecation"))) {
+            } else if (key.contains("verbose")) {
                 // false is default, so something to do only in true case
                 if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value))
                     jointOptions.add("-F" + key);
@@ -1268,7 +1266,7 @@ public class Groovyc extends MatchingTask {
             List<String> jointOptions = extractJointOptions(classpath);
 
             String separator = System.getProperty("file.separator");
-            List<String> commandLineList = new ArrayList<String>();
+            List<String> commandLineList = new ArrayList<>();
 
             doForkCommandLineList(commandLineList, classpath, separator);
             doNormalCommandLineList(commandLineList, jointOptions, classpath);
@@ -1372,19 +1370,10 @@ public class Groovyc extends MatchingTask {
 
         GroovyClassLoader loader =
                 AccessController.doPrivileged(
-                        new PrivilegedAction<GroovyClassLoader>() {
-                            @Override
-                            public GroovyClassLoader run() {
-                                return new GroovyClassLoader(parent, configuration);
-                            }
-                        });
+                        (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parent, configuration));
         if (!forceLookupUnnamedFiles) {
             // in normal case we don't need to do script lookups
-            loader.setResourceLoader(new GroovyResourceLoader() {
-                public URL loadGroovySource(String filename) throws MalformedURLException {
-                    return null;
-                }
-            });
+            loader.setResourceLoader(filename -> null);
         }
         return loader;
     }

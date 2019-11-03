@@ -100,8 +100,8 @@ public class CachingGroovyEngine extends GroovyEngine {
         if (parent == null)
             parent = GroovyShell.class.getClassLoader();
         setLoader(mgr, parent);
-        execScripts = new HashMap<Object, Class>();
-        evalScripts = new HashMap<Object, Class>();
+        execScripts = new HashMap<>();
+        evalScripts = new HashMap<>();
         context = shell.getContext();
         // create a shell
         // register the mgr with object name "bsf"
@@ -115,12 +115,10 @@ public class CachingGroovyEngine extends GroovyEngine {
     @SuppressWarnings("unchecked")
     private void setLoader(final BSFManager mgr, final ClassLoader finalParent) {
         this.loader =
-                (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        CompilerConfiguration configuration = new CompilerConfiguration();
-                        configuration.setClasspath(mgr.getClassPath());
-                        return new GroovyClassLoader(finalParent, configuration);
-                    }
+                (GroovyClassLoader) AccessController.doPrivileged((PrivilegedAction) () -> {
+                    CompilerConfiguration configuration = new CompilerConfiguration();
+                    configuration.setClasspath(mgr.getClassPath());
+                    return new GroovyClassLoader(finalParent, configuration);
                 });
     }
 }

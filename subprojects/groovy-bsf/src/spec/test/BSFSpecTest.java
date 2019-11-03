@@ -52,7 +52,7 @@ public class BSFSpecTest {
         // tag::bsf_apply[]
         BSFManager manager = new BSFManager();
         Vector<String> ignoreParamNames = null;
-        Vector<Integer> args = new Vector<Integer>();
+        Vector<Integer> args = new Vector<>();
         args.add(2);
         args.add(5);
         args.add(1);
