@@ -114,7 +114,7 @@ public class CompilerConfiguration {
     );
 
     /** The valid targetBytecode values. */
-    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
+    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[0]);
 
     /**
      * The default source encoding
