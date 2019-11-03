@@ -1191,7 +1191,7 @@ public abstract class StaticTypeCheckingSupport {
         return Arrays.stream(params).map(param -> {
             String name = param.getType().getUnresolvedName();
             Optional<GenericsType> value = genericsPlaceholderAndTypeMap.entrySet().stream()
-                .filter(e -> e.getKey().getName().equals(name)).findFirst().map(e -> e.getValue());
+                .filter(e -> e.getKey().getName().equals(name)).findFirst().map(Entry::getValue);
             ClassNode type = value.map(GenericsType::getType).orElseGet(() -> makeRawType(param.getType()));
 
             return new Parameter(type, param.getName());
