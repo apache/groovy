@@ -185,7 +185,7 @@ public class NodeList extends ArrayList {
     }
 
     public Node replaceNode(Closure c) {
-        if (size() <= 0 || size() > 1) {
+        if (size() != 1) {
             throw new GroovyRuntimeException(
                     "replaceNode() can only be used to replace a single node, but was applied to " + size() + " nodes");
         }
