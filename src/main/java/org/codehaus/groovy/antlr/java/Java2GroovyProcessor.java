@@ -38,16 +38,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
-import java.util.Iterator;
 import java.util.List;
 
 @Deprecated
 public class Java2GroovyProcessor {
 
     public static void processFiles(List<String> fileNames) throws Exception {
-        Iterator i = fileNames.iterator();
-        while (i.hasNext()) {
-            String filename = (String) i.next();
+        for (String filename : fileNames) {
             File f = new File(filename);
             String text = ResourceGroovyMethods.getText(f);
             System.out.println(convert(filename, text, true, true));

@@ -28,7 +28,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.io.PrintWriter;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -318,15 +317,14 @@ public class ErrorCollector implements Serializable {
 
     private void write(PrintWriter writer, Janitor janitor, List messages, String txt) {
         if (messages==null || messages.isEmpty()) return;
-        Iterator iterator = messages.iterator();
-        while (iterator.hasNext()) {
-            Message message = (Message) iterator.next();
+        for (Object o : messages) {
+            Message message = (Message) o;
             message.write(writer, janitor);
-            
-            if (configuration.getDebug() && (message instanceof SyntaxErrorMessage)){
+
+            if (configuration.getDebug() && (message instanceof SyntaxErrorMessage)) {
                 SyntaxErrorMessage sem = (SyntaxErrorMessage) message;
                 sem.getCause().printStackTrace(writer);
-            } 
+            }
             writer.println();
         }
 

@@ -60,8 +60,9 @@ public class CompositeVisitor implements Visitor{
     }
 
     public void setUp() {
-        Iterator itr = visitors.iterator();
-        while (itr.hasNext()) {((Visitor)itr.next()).setUp();}
+        for (Object visitor : visitors) {
+            ((Visitor) visitor).setUp();
+        }
     }
 
     public void visitAbstract(GroovySourceAST t, int visit) {
@@ -1160,18 +1161,21 @@ public class CompositeVisitor implements Visitor{
     }
 
     public void tearDown() {
-        Iterator itr = backToFrontVisitors.iterator();
-        while (itr.hasNext()) {((Visitor)itr.next()).tearDown();}
+        for (Object backToFrontVisitor : backToFrontVisitors) {
+            ((Visitor) backToFrontVisitor).tearDown();
+        }
     }
 
     public void push(GroovySourceAST t) {
-        Iterator itr = visitors.iterator();
-        while (itr.hasNext()) {((Visitor)itr.next()).push(t);}
+        for (Object visitor : visitors) {
+            ((Visitor) visitor).push(t);
+        }
     }
     public GroovySourceAST pop() {
         GroovySourceAST lastNodePopped = null;
-        Iterator itr = backToFrontVisitors.iterator();
-        while (itr.hasNext()) {lastNodePopped = (GroovySourceAST) ((Visitor)itr.next()).pop();}
+        for (Object backToFrontVisitor : backToFrontVisitors) {
+            lastNodePopped = (GroovySourceAST) ((Visitor) backToFrontVisitor).pop();
+        }
         return lastNodePopped;
     }
 }
