@@ -33,17 +33,15 @@ public class GroovySunClassLoader extends SunClassLoader {
     public static final SunClassLoader sunVM;
 
     static {
-            sunVM = AccessController.doPrivileged(new PrivilegedAction<SunClassLoader>() {
-                public SunClassLoader run() {
-                    try {
-                        if (SunClassLoader.sunVM != null) {
-                            return new GroovySunClassLoader();
-                        }
+            sunVM = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+                try {
+                    if (SunClassLoader.sunVM != null) {
+                        return new GroovySunClassLoader();
                     }
-                    catch (Throwable t) {//
-                    }
-                    return null;
                 }
+                catch (Throwable t) {//
+                }
+                return null;
             });
     }
 

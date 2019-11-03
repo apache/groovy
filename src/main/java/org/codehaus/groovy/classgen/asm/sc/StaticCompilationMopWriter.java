@@ -35,12 +35,7 @@ import java.util.LinkedList;
  */
 public class StaticCompilationMopWriter extends MopWriter {
 
-    public static final MopWriter.Factory FACTORY = new MopWriter.Factory() {
-        @Override
-        public MopWriter create(final WriterController controller) {
-            return new StaticCompilationMopWriter(controller);
-        }
-    };
+    public static final MopWriter.Factory FACTORY = controller -> new StaticCompilationMopWriter(controller);
 
     private final StaticTypesWriterController controller;
 

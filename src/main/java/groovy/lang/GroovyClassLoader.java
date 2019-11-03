@@ -325,12 +325,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
         return sourceCache.getAndPut(
                 cacheKey,
-                new EvictableCache.ValueProvider<String, Class>() {
-                    @Override
-                    public Class provide(String key) {
-                        return doParseClass(codeSource);
-                    }
-                },
+                key -> doParseClass(codeSource),
                 shouldCacheSource
         );
     }
@@ -666,11 +661,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the ClassCollector
      */
     protected ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
-        InnerLoader loader = AccessController.doPrivileged(new PrivilegedAction<InnerLoader>() {
-            public InnerLoader run() {
-                return new InnerLoader(GroovyClassLoader.this);
-            }
-        });
+        InnerLoader loader = AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(GroovyClassLoader.this));
         return new ClassCollector(loader, unit, su);
     }
 
@@ -1098,42 +1089,40 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #addURL(URL)
      */
     public void addClasspath(final String path) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
 
-                URI newURI;
-                try {
-                    newURI = new URI(path);
-                    // check if we can create a URL from that URI
-                    newURI.toURL();
-                } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
-                    // the URI has a false format, so lets try it with files ...
-                    newURI=new File(path).toURI();
-                }
+            URI newURI;
+            try {
+                newURI = new URI(path);
+                // check if we can create a URL from that URI
+                newURI.toURL();
+            } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
+                // the URI has a false format, so lets try it with files ...
+                newURI=new File(path).toURI();
+            }
 
-                URL[] urls = getURLs();
-                for (URL url : urls) {
-                    // Do not use URL.equals.  It uses the network to resolve names and compares ip addresses!
-                    // That is a violation of RFC and just plain evil.
-                    // http://michaelscharf.blogspot.com/2006/11/javaneturlequals-and-hashcode-make.html
-                    // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html#equals(java.lang.Object)
-                    // "Since hosts comparison requires name resolution, this operation is a blocking operation.
-                    // Note: The defined behavior for equals is known to be inconsistent with virtual hosting in HTTP."
-                    try {
-                        if (newURI.equals(url.toURI())) return null;
-                    } catch (URISyntaxException e) {
-                        // fail fast! if we got a malformed URI the Classloader has to tell it
-                        throw new RuntimeException( e );
-                    }
-                }
+            URL[] urls = getURLs();
+            for (URL url : urls) {
+                // Do not use URL.equals.  It uses the network to resolve names and compares ip addresses!
+                // That is a violation of RFC and just plain evil.
+                // http://michaelscharf.blogspot.com/2006/11/javaneturlequals-and-hashcode-make.html
+                // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html#equals(java.lang.Object)
+                // "Since hosts comparison requires name resolution, this operation is a blocking operation.
+                // Note: The defined behavior for equals is known to be inconsistent with virtual hosting in HTTP."
                 try {
-                    addURL(newURI.toURL());
-                } catch (MalformedURLException e) {
-                    // fail fast! if we got a malformed URL the Classloader has to tell it
+                    if (newURI.equals(url.toURI())) return null;
+                } catch (URISyntaxException e) {
+                    // fail fast! if we got a malformed URI the Classloader has to tell it
                     throw new RuntimeException( e );
                 }
-                return null;
             }
+            try {
+                addURL(newURI.toURL());
+            } catch (MalformedURLException e) {
+                // fail fast! if we got a malformed URL the Classloader has to tell it
+                throw new RuntimeException( e );
+            }
+            return null;
         });
     }
 

@@ -157,24 +157,21 @@ public class Grape {
 
     public static void grab(final Map<String, Object> args, final Map... dependencies) {
         if (enableGrapes) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    GrapeEngine instance = getInstance();
-                    if (instance != null) {
-                        if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
-                            args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
-                        }
-                        if (!args.containsKey(DISABLE_CHECKSUMS_SETTING)) {
-                            args.put(DISABLE_CHECKSUMS_SETTING, disableChecksums);
-                        }
-                        if (!args.containsKey(GrapeEngine.CALLEE_DEPTH)) {
-                            args.put(GrapeEngine.CALLEE_DEPTH, GrapeEngine.DEFAULT_CALLEE_DEPTH + 2);
-                        }
-                        instance.grab(args, dependencies);
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                GrapeEngine instance = getInstance();
+                if (instance != null) {
+                    if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
+                        args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
                     }
-                    return null;
+                    if (!args.containsKey(DISABLE_CHECKSUMS_SETTING)) {
+                        args.put(DISABLE_CHECKSUMS_SETTING, disableChecksums);
+                    }
+                    if (!args.containsKey(GrapeEngine.CALLEE_DEPTH)) {
+                        args.put(GrapeEngine.CALLEE_DEPTH, GrapeEngine.DEFAULT_CALLEE_DEPTH + 2);
+                    }
+                    instance.grab(args, dependencies);
                 }
+                return null;
             });
         }
     }

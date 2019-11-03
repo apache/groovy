@@ -115,11 +115,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
      * See Interceptor for details.
      */
     public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
-        return doCall(object, methodName, arguments, interceptor, new Callable() {
-            public Object call() {
-                return adaptee.invokeMethod(object, methodName, arguments);
-            }
-        });
+        return doCall(object, methodName, arguments, interceptor, () -> adaptee.invokeMethod(object, methodName, arguments));
     }
 
     /**
@@ -130,11 +126,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
      */
     @Override
     public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] arguments, final boolean isCallToSuper, final boolean fromInsideClass) {
-        return doCall(object, methodName, arguments, interceptor, new Callable() {
-            public Object call() {
-                return adaptee.invokeMethod(sender, object, methodName, arguments, isCallToSuper, fromInsideClass);
-            }
-        });
+        return doCall(object, methodName, arguments, interceptor, () -> adaptee.invokeMethod(sender, object, methodName, arguments, isCallToSuper, fromInsideClass));
     }
 
     /**
@@ -144,11 +136,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
      * See Interceptor for details.
      */
     public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
-        return doCall(object, methodName, arguments, interceptor, new Callable() {
-            public Object call() {
-                return adaptee.invokeStaticMethod(object, methodName, arguments);
-            }
-        });
+        return doCall(object, methodName, arguments, interceptor, () -> adaptee.invokeStaticMethod(object, methodName, arguments));
     }
 
     /**
@@ -158,11 +146,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
      * See Interceptor for details.
      */
     public Object invokeConstructor(final Object[] arguments) {
-        return doCall(theClass, "ctor", arguments, interceptor, new Callable() {
-            public Object call() {
-                return adaptee.invokeConstructor(arguments);
-            }
-        });
+        return doCall(theClass, "ctor", arguments, interceptor, () -> adaptee.invokeConstructor(arguments));
     }
 
     /**

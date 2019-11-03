@@ -135,25 +135,23 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         ClassInfo.getClassInfo(ExpandoMetaClass.class).setStrongMetaClass(emcMetaClass);
 
 
-        addNonRemovableMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener(){
-            public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
-                // The calls to DefaultMetaClassInfo.setPrimitiveMeta and sdyn.setBoolean need to be
-                // ordered. Even though metaClassInfo is thread-safe, it is included in the block
-                // so the meta classes are added to the queue in the same order.
-                synchronized (metaClassInfo) {
-                   metaClassInfo.add(cmcu.getNewMetaClass());
-                   DefaultMetaClassInfo.getNewConstantMetaClassVersioning();
-                   Class c = cmcu.getClassToUpdate();
-                   DefaultMetaClassInfo.setPrimitiveMeta(c, cmcu.getNewMetaClass()==null);
-                   Field sdyn;
-                   try {
-                       sdyn = c.getDeclaredField(Verifier.STATIC_METACLASS_BOOL);
-                       sdyn.setBoolean(null, cmcu.getNewMetaClass()!=null);
-                   } catch (Throwable e) {
-                       //DO NOTHING
-                   }
+        addNonRemovableMetaClassRegistryChangeEventListener(cmcu -> {
+            // The calls to DefaultMetaClassInfo.setPrimitiveMeta and sdyn.setBoolean need to be
+            // ordered. Even though metaClassInfo is thread-safe, it is included in the block
+            // so the meta classes are added to the queue in the same order.
+            synchronized (metaClassInfo) {
+               metaClassInfo.add(cmcu.getNewMetaClass());
+               DefaultMetaClassInfo.getNewConstantMetaClassVersioning();
+               Class c = cmcu.getClassToUpdate();
+               DefaultMetaClassInfo.setPrimitiveMeta(c, cmcu.getNewMetaClass()==null);
+               Field sdyn;
+               try {
+                   sdyn = c.getDeclaredField(Verifier.STATIC_METACLASS_BOOL);
+                   sdyn.setBoolean(null, cmcu.getNewMetaClass()!=null);
+               } catch (Throwable e) {
+                   //DO NOTHING
+               }
 
-                }
             }
         });
    }

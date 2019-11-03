@@ -247,14 +247,12 @@ public class ProxyGenerator {
     }
     
     private static final class CacheKey {
-        private static final Comparator<Class> INTERFACE_COMPARATOR = new Comparator<Class>() {
-            public int compare(final Class o1, final Class o2) {
-                // Traits order *must* be preserved
-                // See GROOVY-7285
-                if (Traits.isTrait(o1)) return -1;
-                if (Traits.isTrait(o2)) return 1;
-                return o1.getName().compareTo(o2.getName());
-            }
+        private static final Comparator<Class> INTERFACE_COMPARATOR = (o1, o2) -> {
+            // Traits order *must* be preserved
+            // See GROOVY-7285
+            if (Traits.isTrait(o1)) return -1;
+            if (Traits.isTrait(o2)) return 1;
+            return o1.getName().compareTo(o2.getName());
         };
         private final boolean emptyMethods;
         private final boolean useDelegate;

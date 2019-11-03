@@ -94,11 +94,7 @@ public class GroovyStarter {
             }
         }
         // create loader and execute main class
-        ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<RootLoader>() {
-            public RootLoader run() {
-                return new RootLoader(lc);
-            }
-        });
+        ClassLoader loader = AccessController.doPrivileged((PrivilegedAction<RootLoader>) () -> new RootLoader(lc));
         Method m=null;
         try {
             Class c = loader.loadClass(lc.getMainClass());

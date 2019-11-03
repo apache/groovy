@@ -178,11 +178,7 @@ public class SocketGroovyMethods extends DefaultGroovyMethodsSupport {
                                 @ClosureParams(value=SimpleType.class, options="java.net.Socket") final Closure closure) throws IOException {
         final Socket socket = serverSocket.accept();
         if (runInANewThread) {
-            new Thread(new Runnable() {
-                public void run() {
-                    invokeClosureWithSocket(socket, closure);
-                }
-            }).start();
+            new Thread(() -> invokeClosureWithSocket(socket, closure)).start();
         } else {
             invokeClosureWithSocket(socket, closure);
         }

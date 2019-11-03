@@ -41,15 +41,10 @@ public class ReevaluatingReference<T> {
     static {
         try {
             //TODO Jochen: move the findSpecial to a central place together with others to easy security configuration
-            FALLBACK_HANDLE = AccessController.doPrivileged(new PrivilegedExceptionAction<MethodHandle>() {
-                @Override
-                public MethodHandle run() throws Exception {
-                    return  MethodHandles.lookup().findSpecial(
-                            ReevaluatingReference.class, "replacePayLoad",
-                            MethodType.methodType(Object.class),
-                            ReevaluatingReference.class);
-                }
-            });
+            FALLBACK_HANDLE = AccessController.doPrivileged((PrivilegedExceptionAction<MethodHandle>) () -> MethodHandles.lookup().findSpecial(
+                    ReevaluatingReference.class, "replacePayLoad",
+                    MethodType.methodType(Object.class),
+                    ReevaluatingReference.class));
         } catch (PrivilegedActionException e) {
             throw new GroovyBugError(e);
         }

@@ -46,9 +46,7 @@ import java.util.List;
  */
 public class ReturnAdder {
 
-    private static final ReturnStatementListener DEFAULT_LISTENER = new ReturnStatementListener() {
-        public void returnStatementAdded(final ReturnStatement returnStatement) {
-        }
+    private static final ReturnStatementListener DEFAULT_LISTENER = returnStatement -> {
     };
 
     /**
@@ -165,12 +163,7 @@ public class ReturnAdder {
         if (statement instanceof TryCatchStatement) {
             TryCatchStatement trys = (TryCatchStatement) statement;
             final boolean[] missesReturn = new boolean[1];
-            new ReturnAdder(new ReturnStatementListener() {
-                @Override
-                public void returnStatementAdded(ReturnStatement returnStatement) {
-                    missesReturn[0] = true;
-                }
-            }).addReturnsIfNeeded(trys.getFinallyStatement(), scope);
+            new ReturnAdder(returnStatement -> missesReturn[0] = true).addReturnsIfNeeded(trys.getFinallyStatement(), scope);
             boolean hasFinally = !(trys.getFinallyStatement() instanceof EmptyStatement);
 
             // if there is no missing return in the finally block and the block exists

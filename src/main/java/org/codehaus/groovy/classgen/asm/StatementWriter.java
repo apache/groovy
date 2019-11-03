@@ -437,13 +437,10 @@ public class StatementWriter {
 
     private BlockRecorder makeBlockRecorder(Statement finallyStatement) {
         final BlockRecorder block = new BlockRecorder();
-        block.excludedStatement = new Runnable() {
-            @Override
-            public void run() {
-                controller.getCompileStack().pushBlockRecorderVisit(block);
-                finallyStatement.visit(controller.getAcg());
-                controller.getCompileStack().popBlockRecorderVisit(block);
-            }
+        block.excludedStatement = () -> {
+            controller.getCompileStack().pushBlockRecorderVisit(block);
+            finallyStatement.visit(controller.getAcg());
+            controller.getCompileStack().popBlockRecorderVisit(block);
         };
         controller.getCompileStack().pushBlockRecorder(block);
         return block;
@@ -553,12 +550,9 @@ public class StatementWriter {
         // if there is only a break/continue.
         mv.visitInsn(NOP);
 
-        Runnable finallyPart = new Runnable() {
-            @Override
-            public void run() {
-                mv.visitVarInsn(ALOAD, index);
-                mv.visitInsn(MONITOREXIT);
-            }
+        Runnable finallyPart = () -> {
+            mv.visitVarInsn(ALOAD, index);
+            mv.visitInsn(MONITOREXIT);
         };
         BlockRecorder fb = new BlockRecorder(finallyPart);
         fb.startRange(synchronizedStart);

@@ -123,22 +123,20 @@ public class GroovyCodeSource {
         //The calls below require access to user.dir - allow here since getName() and getCodeSource() are
         //package private and used only by the GroovyClassLoader.
         try {
-            Object[] info = AccessController.doPrivileged(new PrivilegedExceptionAction<Object[]>() {
-                public Object[] run() throws IOException {
-                    // retrieve the content of the file using the provided encoding
-                    if (encoding != null) {
-                        scriptText = ResourceGroovyMethods.getText(infile, encoding);
-                    } else {
-                        scriptText = ResourceGroovyMethods.getText(infile);
-                    }
-
-                    Object[] info = new Object[2];
-                    URL url = file.toURI().toURL();
-                    info[0] = url.toExternalForm();
-                    //toURI().toURL() will encode, but toURL() will not.
-                    info[1] = new CodeSource(url, (Certificate[]) null);
-                    return info;
+            Object[] info = AccessController.doPrivileged((PrivilegedExceptionAction<Object[]>) () -> {
+                // retrieve the content of the file using the provided encoding
+                if (encoding != null) {
+                    scriptText = ResourceGroovyMethods.getText(infile, encoding);
+                } else {
+                    scriptText = ResourceGroovyMethods.getText(infile);
                 }
+
+                Object[] info1 = new Object[2];
+                URL url = file.toURI().toURL();
+                info1[0] = url.toExternalForm();
+                //toURI().toURL() will encode, but toURL() will not.
+                info1[1] = new CodeSource(url, (Certificate[]) null);
+                return info1;
             });
 
             this.name = (String) info[0];

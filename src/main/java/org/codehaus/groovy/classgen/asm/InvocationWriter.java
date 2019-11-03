@@ -718,14 +718,12 @@ public class InvocationWriter {
     private static List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
         // sort in a new list to prevent side effects
         List<ConstructorNode> constructors = new ArrayList<ConstructorNode>(callNode.getDeclaredConstructors());
-        Comparator comp = new Comparator() {
-            public int compare(Object arg0, Object arg1) {
-                ConstructorNode c0 = (ConstructorNode) arg0;
-                ConstructorNode c1 = (ConstructorNode) arg1;
-                String descriptor0 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters());
-                String descriptor1 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
-                return descriptor0.compareTo(descriptor1);
-            }
+        Comparator comp = (arg0, arg1) -> {
+            ConstructorNode c0 = (ConstructorNode) arg0;
+            ConstructorNode c1 = (ConstructorNode) arg1;
+            String descriptor0 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters());
+            String descriptor1 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
+            return descriptor0.compareTo(descriptor1);
         };
         Collections.sort(constructors, comp);
         return constructors;
