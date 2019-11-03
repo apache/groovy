@@ -210,11 +210,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                             newParams
                     );
                     final CachedClass declClass = method.getDeclaringClass();
-                    List<MetaMethod> arr = map.get(declClass);
-                    if (arr == null) {
-                        arr = new ArrayList<MetaMethod>(4);
-                        map.put(declClass, arr);
-                    }
+                    List<MetaMethod> arr = map.computeIfAbsent(declClass, k -> new ArrayList<MetaMethod>(4));
                     arr.add(method);
                     instanceMethods.add(method);
                 }
@@ -231,11 +227,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && method.getAnnotation(Deprecated.class) == null) {
                     CachedClass[] paramTypes = method.getParameterTypes();
                     if (paramTypes.length > 0) {
-                        List<MetaMethod> arr = map.get(paramTypes[0]);
-                        if (arr == null) {
-                            arr = new ArrayList<MetaMethod>(4);
-                            map.put(paramTypes[0], arr);
-                        }
+                        List<MetaMethod> arr = map.computeIfAbsent(paramTypes[0], k -> new ArrayList<MetaMethod>(4));
                         if (useInstanceMethods) {
                             final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
                             arr.add(metaMethod);
@@ -255,11 +247,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         try {
             MetaMethod method = (MetaMethod) aClass.getDeclaredConstructor().newInstance();
             final CachedClass declClass = method.getDeclaringClass();
-            List<MetaMethod> arr = map.get(declClass);
-            if (arr == null) {
-                arr = new ArrayList<MetaMethod>(4);
-                map.put(declClass, arr);
-            }
+            List<MetaMethod> arr = map.computeIfAbsent(declClass, k -> new ArrayList<MetaMethod>(4));
             arr.add(method);
             instanceMethods.add(method);
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) { /* ignore */
@@ -527,11 +515,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             List<MetaMethod> metaMethods = module.getMetaMethods();
             for (MetaMethod metaMethod : metaMethods) {
                 CachedClass cachedClass = metaMethod.getDeclaringClass();
-                List<MetaMethod> methods = map.get(cachedClass);
-                if (methods == null) {
-                    methods = new ArrayList<MetaMethod>(4);
-                    map.put(cachedClass, methods);
-                }
+                List<MetaMethod> methods = map.computeIfAbsent(cachedClass, k -> new ArrayList<MetaMethod>(4));
                 methods.add(metaMethod);
                 if (metaMethod.isStatic()) {
                     staticMethods.add(metaMethod);

@@ -1145,11 +1145,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void pushInstanceOfTypeInfo(final Expression objectOfInstanceOf, final Expression typeExpression) {
         final Map<Object, List<ClassNode>> tempo = typeCheckingContext.temporaryIfBranchTypeInformation.peek();
         Object key = extractTemporaryTypeInfoKey(objectOfInstanceOf);
-        List<ClassNode> potentialTypes = tempo.get(key);
-        if (potentialTypes == null) {
-            potentialTypes = new LinkedList<ClassNode>();
-            tempo.put(key, potentialTypes);
-        }
+        List<ClassNode> potentialTypes = tempo.computeIfAbsent(key, k -> new LinkedList<ClassNode>());
         potentialTypes.add(typeExpression.getType());
     }
 
@@ -4225,11 +4221,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 ((Parameter) accessedVariable).putNodeMetaData(INFERRED_TYPE, cn);
             }
             if (var.isClosureSharedVariable() && cn != null) {
-                List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
-                if (assignedTypes == null) {
-                    assignedTypes = new LinkedList<ClassNode>();
-                    typeCheckingContext.closureSharedVariablesAssignmentTypes.put(var, assignedTypes);
-                }
+                List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<ClassNode>());
                 assignedTypes.add(cn);
             }
             if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {

@@ -140,10 +140,7 @@ public abstract class AsmDecompiler {
                     @Override
                     public AnnotationVisitor visitParameterAnnotation(int parameter, String desc, boolean visible) {
                         if (stub.parameterAnnotations == null) stub.parameterAnnotations = new HashMap<Integer, List<AnnotationStub>>(1);
-                        List<AnnotationStub> list = stub.parameterAnnotations.get(parameter);
-                        if (list == null) {
-                            stub.parameterAnnotations.put(parameter, list = new ArrayList<AnnotationStub>());
-                        }
+                        List<AnnotationStub> list = stub.parameterAnnotations.computeIfAbsent(parameter, k -> new ArrayList<AnnotationStub>());
                         AnnotationStub annotationStub = new AnnotationStub(desc);
                         list.add(annotationStub);
                         return readAnnotationMembers(annotationStub);
