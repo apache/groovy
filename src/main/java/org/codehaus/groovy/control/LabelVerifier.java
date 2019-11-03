@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
