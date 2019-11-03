@@ -224,7 +224,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     /**
      * Represents a resolved type as a placeholder.
      *
-     * @see GROOVY-7812
+     * @see <a href="https://issues.apache.org/jira/browse/GROOVY-7812">GROOVY-7812</a>
      */
     @Internal
     public static class ConstructedOuterNestedClassNode extends ClassNode {
