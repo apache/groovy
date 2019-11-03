@@ -100,9 +100,7 @@ public abstract class AbstractExtensionMethodCache {
     }
 
     private Map<String, List<MethodNode>> makeMethodsUnmodifiable(Map<String, List<MethodNode>> methods) {
-        for (Map.Entry<String, List<MethodNode>> entry : methods.entrySet()) {
-            methods.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
-        }
+        methods.replaceAll((k, v) -> Collections.unmodifiableList(v));
 
         return Collections.unmodifiableMap(methods);
     }
