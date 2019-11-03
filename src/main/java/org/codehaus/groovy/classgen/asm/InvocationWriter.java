@@ -810,8 +810,8 @@ public class InvocationWriter {
         Label defaultLabel = new Label();
         Label afterSwitch = new Label();
         mv.visitLookupSwitchInsn(defaultLabel, indices, targets);
-        for (int i = 0; i < targets.length; i++) {
-            mv.visitLabel(targets[i]);
+        for (Label target : targets) {
+            mv.visitLabel(target);
             // to keep the stack height, we need to leave
             // one Object[] on the stack as last element. At the
             // same time, we need the Object[] on top of the stack
@@ -845,13 +845,13 @@ public class InvocationWriter {
             // vargs need special attention and transformation though
             Parameter[] parameters = cn.getParameters();
             int lengthWithoutVargs = parameters.length;
-            if (parameters.length>0 && parameters[parameters.length-1].getType().isArray()) {
+            if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
                 lengthWithoutVargs--;
             }
             for (int p = 0; p < lengthWithoutVargs; p++) {
                 loadAndCastElement(operandStack, mv, parameters, p);
             }
-            if (parameters.length>lengthWithoutVargs) {
+            if (parameters.length > lengthWithoutVargs) {
                 ClassNode type = parameters[lengthWithoutVargs].getType();
                 BytecodeHelper.pushConstant(mv, lengthWithoutVargs);
                 controller.getAcg().visitClassExpression(new ClassExpression(type));
@@ -907,12 +907,11 @@ public class InvocationWriter {
     // we match only on the number of arguments, not anything else
     private static ConstructorNode getMatchingConstructor(List<ConstructorNode> constructors, List<Expression> argumentList) {
         ConstructorNode lastMatch = null;
-        for (int i=0; i<constructors.size(); i++) {
-            ConstructorNode cn = constructors.get(i);
+        for (ConstructorNode cn : constructors) {
             Parameter[] params = cn.getParameters();
             // if number of parameters does not match we have no match
-            if (argumentList.size()!=params.length) continue;
-            if (lastMatch==null) {
+            if (argumentList.size() != params.length) continue;
+            if (lastMatch == null) {
                 lastMatch = cn;
             } else {
                 // we already had a match so we don't make a direct call at all

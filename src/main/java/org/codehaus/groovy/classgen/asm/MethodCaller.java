@@ -75,8 +75,7 @@ public class MethodCaller implements Opcodes {
 
     protected Method getMethod() {
         Method[] methods = theClass.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
+        for (Method method : methods) {
             if (method.getName().equals(name)) {
                 return method;
             }

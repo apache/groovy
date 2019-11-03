@@ -68,8 +68,8 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                 }
                 else {
                     Object arr [] = (Object[]) o;
-                    for (int i = 0; i < arr.length; i++) {
-                        Entry<K,V> e = (Entry<K,V>) arr[i];
+                    for (Object value : arr) {
+                        Entry<K, V> e = (Entry<K, V>) value;
                         if (e != null && e.isEqual(key, hash)) {
                             return e.getValue();
                         }
@@ -91,8 +91,8 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                 }
                 else {
                     Object arr [] = (Object[]) o;
-                    for (int i = 0; i < arr.length; i++) {
-                        Entry<K,V> e = (Entry<K,V>) arr[i];
+                    for (Object item : arr) {
+                        Entry<K, V> e = (Entry<K, V>) item;
                         if (e != null && e.isEqual(key, hash)) {
                             return e;
                         }
@@ -129,8 +129,8 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                     }
                     else {
                         Object arr [] = (Object[]) o;
-                        for (int i = 0; i < arr.length; i++) {
-                            Entry e = (Entry) arr[i];
+                        for (Object item : arr) {
+                            Entry e = (Entry) item;
                             if (e != null && e.isEqual(key, hash)) {
                                 e.setValue(value);
                                 return e;

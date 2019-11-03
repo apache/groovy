@@ -46,33 +46,29 @@ class Main {
                 System.err.println("Parsing...");
 
                 // for each directory/file specified on the command line
-                for(int i=0; i< args.length;i++) {
-                    if ( args[i].equals("-showtree") ) {
+                for (String arg : args) {
+                    if (arg.equals("-showtree")) {
                         showTree = true;
                     }
                     //else if ( args[i].equals("-xml") ) {
                     //    xml = true;
                     //}
-                    else if ( args[i].equals("-verbose") ) {
+                    else if (arg.equals("-verbose")) {
                         verbose = true;
-                    }
-                    else if ( args[i].equals("-trace") ) {
+                    } else if (arg.equals("-trace")) {
                         GroovyRecognizer.tracing = true;
                         GroovyLexer.tracing = true;
-                    }
-                    else if ( args[i].equals("-traceParser") ) {
+                    } else if (arg.equals("-traceParser")) {
                         GroovyRecognizer.tracing = true;
-                    }
-                    else if ( args[i].equals("-traceLexer") ) {
+                    } else if (arg.equals("-traceLexer")) {
                         GroovyLexer.tracing = true;
+                    } else if (arg.equals("-whitespaceIncluded")) {
+                        whitespaceIncluded = true;
+                    } else {
+                        doFile(new File(arg)); // parse it
                     }
-                                        else if ( args[i].equals("-whitespaceIncluded") ) {
-                                            whitespaceIncluded = true;
-                                        }
-                                        else {
-                        doFile(new File(args[i])); // parse it
-                    }
-                } }
+                }
+            }
             else
                 System.err.println("Usage: java -jar groovyc.jar [-showtree] [-verbose] [-trace{,Lexer,Parser}]"+
                                    "<directory or file name>");
@@ -91,8 +87,7 @@ class Main {
         // If this is a directory, walk each file/dir in that directory
         if (f.isDirectory()) {
             String files[] = f.list();
-            for(int i=0; i < files.length; i++)
-                doFile(new File(f, files[i]));
+            for (String file : files) doFile(new File(f, file));
         }
 
         // otherwise, if this is a groovy file, parse it!

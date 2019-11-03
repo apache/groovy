@@ -43,7 +43,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
@@ -131,8 +130,8 @@ public class IndyGuardsFiltersAndSignatures {
      * with property map.
      */
     public static Object setBeanProperties(MetaClass mc, Object bean, Map properties) {
-        for (Iterator iter = properties.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Object o : properties.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
             String key = entry.getKey().toString();
 
             Object value = entry.getValue();

@@ -487,8 +487,8 @@ public class MetaMethodIndex {
         Entry[] table = this.table;
         int length = table.length;
 
-        for (int j = 0; j < length; j++) {
-            for (Entry e = table[j]; e != null; e = e.nextHashEntry) {
+        for (Entry entry : table) {
+            for (Entry e = entry; e != null; e = e.nextHashEntry) {
                 if (e.methods instanceof FastArray)
                     e.methodsForSuper = ((FastArray) e.methods).copy();
                 else

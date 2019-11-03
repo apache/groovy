@@ -49,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -1060,8 +1059,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @param modifiedSuperExpandos A list of modified super ExpandoMetaClass
      */
     public void refreshInheritedMethods(Set modifiedSuperExpandos) {
-        for (Iterator i = modifiedSuperExpandos.iterator(); i.hasNext();) {
-            ExpandoMetaClass superExpando = (ExpandoMetaClass) i.next();
+        for (Object modifiedSuperExpando : modifiedSuperExpandos) {
+            ExpandoMetaClass superExpando = (ExpandoMetaClass) modifiedSuperExpando;
             if (superExpando != this) {
                 refreshInheritedMethods(superExpando);
             }

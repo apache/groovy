@@ -389,8 +389,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     protected void fireConstantMetaClassUpdate(Object obj, Class c, final MetaClass oldMC, MetaClass newMc) {
         MetaClassRegistryChangeEventListener[]  listener = getMetaClassRegistryChangeEventListeners();
         MetaClassRegistryChangeEvent cmcu = new MetaClassRegistryChangeEvent(this, obj, c, oldMC, newMc);
-        for (int i = 0; i<listener.length; i++) {
-            listener[i].updateConstantMetaClass(cmcu);
+        for (MetaClassRegistryChangeEventListener metaClassRegistryChangeEventListener : listener) {
+            metaClassRegistryChangeEventListener.updateConstantMetaClass(cmcu);
         }
     }
 

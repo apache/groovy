@@ -91,8 +91,8 @@ public class ManagedConcurrentLinkedQueue<T> implements Iterable<T> {
      */
     public List<T> values() {
         List<T> result = new ArrayList<T>();
-        for (Iterator<T> itr = iterator(); itr.hasNext(); ) {
-            result.add(itr.next());
+        for (T t : this) {
+            result.add(t);
         }
         return result;
     }

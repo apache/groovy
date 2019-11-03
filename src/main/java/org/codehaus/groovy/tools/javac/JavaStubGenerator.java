@@ -611,9 +611,9 @@ public class JavaStubGenerator {
 
 
         // if all remaining exceptions are used in the stub we are good
-        outer: for (int i=0; i<superExceptions.length; i++) {
-            ClassNode superExc = superExceptions[i];
-            for (ClassNode stub:stubExceptions) {
+        outer:
+        for (ClassNode superExc : superExceptions) {
+            for (ClassNode stub : stubExceptions) {
                 if (stub.isDerivedFrom(superExc)) continue outer;
             }
             // not found
