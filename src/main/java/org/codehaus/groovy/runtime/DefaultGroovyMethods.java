@@ -9219,7 +9219,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> sort(Iterable<T> self, boolean mutate) {
         List<T> answer = mutate ? asList(self) : toList(self);
-        Collections.sort(answer, new NumberAwareComparator<T>());
+        answer.sort(new NumberAwareComparator<T>());
         return answer;
     }
 
@@ -9387,7 +9387,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> sort(Iterable<T> self, boolean mutate, Comparator<? super T> comparator) {
         List<T> list = mutate ? asList(self) : toList(self);
-        Collections.sort(list, comparator);
+        list.sort(comparator);
         return list;
     }
 
@@ -9581,9 +9581,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // use a comparator of one item or two
         int params = closure.getMaximumNumberOfParameters();
         if (params == 1) {
-            Collections.sort(list, new OrderBy<T>(closure));
+            list.sort(new OrderBy<T>(closure));
         } else {
-            Collections.sort(list, new ClosureComparator<T>(closure));
+            list.sort(new ClosureComparator<T>(closure));
         }
         return list;
     }
@@ -9649,7 +9649,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> toSorted(Iterable<T> self, Comparator<T> comparator) {
         List<T> list = toList(self);
-        Collections.sort(list, comparator);
+        list.sort(comparator);
         return list;
     }
 

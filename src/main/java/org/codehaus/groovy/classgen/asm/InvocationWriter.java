@@ -50,7 +50,6 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -725,7 +724,7 @@ public class InvocationWriter {
             String descriptor1 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
             return descriptor0.compareTo(descriptor1);
         };
-        Collections.sort(constructors, comp);
+        constructors.sort(comp);
         return constructors;
     }
 

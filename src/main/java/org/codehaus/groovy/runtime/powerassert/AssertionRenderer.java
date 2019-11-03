@@ -21,7 +21,6 @@ package org.codehaus.groovy.runtime.powerassert;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -71,9 +70,7 @@ public final class AssertionRenderer {
     private void sortValues() {
         // it's important to use a stable sort here, otherwise
         // renderValues() will skip the wrong values
-        Collections.sort(recorder.getValues(),
-                (v1, v2) -> v2.getColumn() - v1.getColumn()
-        );
+        recorder.getValues().sort((v1, v2) -> v2.getColumn() - v1.getColumn());
     }
 
     private void renderValues() {
