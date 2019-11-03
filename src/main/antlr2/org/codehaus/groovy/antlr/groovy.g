@@ -1128,24 +1128,31 @@ enumBlock  {Token first = LT(1);}
         {#enumBlock = #(create(OBJBLOCK,"OBJBLOCK",first,LT(1)), #enumBlock);}
     ;
 
-/** Guard for enumConstants.  */
+/** Guard for enumConstants. */
 enumConstantsStart
     :   annotationsOpt IDENT (LCURLY | LPAREN | nls (SEMI | COMMA | declarationStart | RCURLY))
     ;
 
-/** Comma-separated list of one or more enum constant definitions.  */
+/** Comma-separated list of one or more enum constant definitions. */
 enumConstants
     :
         enumConstant
         ( options {generateAmbigWarnings=false;} :
-            (nls ( options {generateAmbigWarnings=false;} : SEMI! | RCURLY | declarationStart | constructorStart)) => {break;}
+            (nls (SEMI | enumConstantsEnd)) => {break;} // GROOVY-4438, GROOVY-9184
         |
             nls! COMMA! (
+                (nls enumConstantsEnd) => {break;} // GROOVY-8507, GROOVY-9301
+            |
                 (nls annotationsOpt IDENT) => nls! enumConstant
             |
-                (nls (SEMI! | RCURLY | classField)) => {break;}
+                (nls classField) => {break;}
             )
         )*
+    ;
+
+enumConstantsEnd
+    options {generateAmbigWarnings=false;}
+    :   RCURLY | declarationStart | constructorStart | typeDefinitionStart
     ;
 
 // An annotation field
