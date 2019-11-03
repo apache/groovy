@@ -63,11 +63,9 @@ public class CachedClass {
         public CachedField[] initValue() {
             final Field[] declaredFields = AccessController.doPrivileged((PrivilegedAction<Field[]>) () -> {
                 Field[] df = getTheClass().getDeclaredFields();
-                df = Arrays.stream(df)
+                return Arrays.stream(df)
                         .filter(f -> checkCanSetAccessible(f, CachedClass.class))
                         .toArray(Field[]::new);
-//                    df = (Field[]) ReflectionUtils.makeAccessible(df);
-                return df;
             });
             CachedField[] fields = new CachedField[declaredFields.length];
             for (int i = 0; i != fields.length; ++i)
@@ -80,15 +78,12 @@ public class CachedClass {
         private static final long serialVersionUID = -5834446523983631635L;
 
         public CachedConstructor[] initValue() {
-            final Constructor[] declaredConstructors = (Constructor[])
-               AccessController.doPrivileged((PrivilegedAction<Constructor[]>) () -> {
-                   Constructor[] dc = getTheClass().getDeclaredConstructors();
-                   dc = Arrays.stream(dc)
-                           .filter(c -> checkCanSetAccessible(c, CachedClass.class))
-                           .toArray(Constructor[]::new);
-
-                   return dc;
-               });
+            final Constructor[] declaredConstructors = AccessController.doPrivileged((PrivilegedAction<Constructor[]>) () -> {
+                Constructor[] dc = getTheClass().getDeclaredConstructors();
+                return Arrays.stream(dc)
+                        .filter(c -> checkCanSetAccessible(c, CachedClass.class))
+                        .toArray(Constructor[]::new);
+            });
             CachedConstructor[] constructors = new CachedConstructor[declaredConstructors.length];
             for (int i = 0; i != constructors.length; ++i)
                 constructors[i] = new CachedConstructor(CachedClass.this, declaredConstructors[i]);
@@ -104,18 +99,16 @@ public class CachedClass {
             declaredMethods = AccessController.doPrivileged((PrivilegedAction<Method[]>) () -> {
                 try {
                     Method[] dm = getTheClass().getDeclaredMethods();
-                    dm = Arrays.stream(dm)
+                    return Arrays.stream(dm)
                             .filter(m -> checkCanSetAccessible(m, CachedClass.class))
                             .toArray(Method[]::new);
-//                           dm = (Method[]) ReflectionUtils.makeAccessible(dm);
-                    return dm;
                 } catch (Throwable e) {
                     // Typically, Android can throw ClassNotFoundException
                     return EMPTY_METHOD_ARRAY;
                 }
             });
-            List<CachedMethod> methods = new ArrayList<CachedMethod>(declaredMethods.length);
-            List<CachedMethod> mopMethods = new ArrayList<CachedMethod>(declaredMethods.length);
+            List<CachedMethod> methods = new ArrayList<>(declaredMethods.length);
+            List<CachedMethod> mopMethods = new ArrayList<>(declaredMethods.length);
             for (int i = 0; i != declaredMethods.length; ++i) {
                 final CachedMethod cachedMethod = new CachedMethod(CachedClass.this, declaredMethods[i]);
                 final String name = cachedMethod.getName();
@@ -175,7 +168,7 @@ public class CachedClass {
         private static final long serialVersionUID = 7166687623678851596L;
 
         public LinkedList<ClassInfo> initValue() {
-            Set<ClassInfo> res = new LinkedHashSet<ClassInfo> ();
+            Set<ClassInfo> res = new LinkedHashSet<>();
 
             res.add(classInfo);
 
@@ -189,7 +182,7 @@ public class CachedClass {
             if (isInterface)
               res.add(ReflectionCache.OBJECT_CLASS.classInfo);
 
-            return new LinkedList<ClassInfo> (res);
+            return new LinkedList<>(res);
         }
     };
 
@@ -204,7 +197,7 @@ public class CachedClass {
         private static final long serialVersionUID = 2139190436931329873L;
 
         public Set<CachedClass> initValue() {
-            Set<CachedClass> res = new HashSet<CachedClass> (0);
+            Set<CachedClass> res = new HashSet<>(0);
 
             Class[] classes = getTheClass().getInterfaces();
             for (Class cls : classes) {
@@ -218,7 +211,7 @@ public class CachedClass {
         private static final long serialVersionUID = 4060471819464086940L;
 
         public Set<CachedClass> initValue() {
-            Set<CachedClass> res = new HashSet<CachedClass> (0);
+            Set<CachedClass> res = new HashSet<>(0);
 
             if (getTheClass().isInterface())
               res.add(CachedClass.this);
@@ -308,12 +301,12 @@ public class CachedClass {
     public Object coerceArgument(Object argument) {
         return argument;
     }
-    
+
     public int getSuperClassDistance() {
-        if (distance>=0) return distance;
+        if (distance >= 0) return distance;
 
         int distance = 0;
-        for (Class klazz= getTheClass(); klazz != null; klazz = klazz.getSuperclass()) {
+        for (Class klazz = getTheClass(); klazz != null; klazz = klazz.getSuperclass()) {
             distance++;
         }
         this.distance = distance;
@@ -354,7 +347,7 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        List<MetaMethod> arr = new ArrayList<MetaMethod>(Arrays.asList(classInfo.newMetaMethods));
+        List<MetaMethod> arr = new ArrayList<>(Arrays.asList(classInfo.newMetaMethods));
 
         final MetaClass metaClass = classInfo.getStrongMetaClass();
         if (metaClass instanceof ExpandoMetaClass) {
@@ -442,7 +435,7 @@ public class CachedClass {
         if (metaClass != null) {
           if (metaClass.getClass() == MetaClassImpl.class) {
               classInfo.setStrongMetaClass(null);
-              List<MetaMethod> res = new ArrayList<MetaMethod>();
+              List<MetaMethod> res = new ArrayList<>();
               Collections.addAll(res, classInfo.newMetaMethods);
               res.addAll(arr);
               updateSetNewMopMethods(res);
@@ -474,12 +467,12 @@ public class CachedClass {
     }
 
     private void updateAddNewMopMethods(List<MetaMethod> arr) {
-        List<MetaMethod> res = new ArrayList<MetaMethod>();
+        List<MetaMethod> res = new ArrayList<>();
         res.addAll(Arrays.asList(classInfo.newMetaMethods));
         res.addAll(arr);
         classInfo.newMetaMethods = res.toArray(MetaMethod.EMPTY_ARRAY);
         Class theClass = classInfo.getCachedClass().getTheClass();
-        if (theClass==Closure.class || theClass==Class.class) {
+        if (theClass == Closure.class || theClass == Class.class) {
             ClosureMetaClass.resetCachedMetaClasses();
         }
     }
@@ -500,11 +493,12 @@ public class CachedClass {
         return hierarchy.get();
     }
 
-    public static class CachedMethodComparatorByName implements Comparator {
+    public static class CachedMethodComparatorByName implements Comparator<CachedMethod> {
         public static final Comparator INSTANCE = new CachedMethodComparatorByName();
 
-        public int compare(Object o1, Object o2) {
-              return ((CachedMethod)o1).getName().compareTo(((CachedMethod)o2).getName());
+        @Override
+        public int compare(CachedMethod o1, CachedMethod o2) {
+            return o1.getName().compareTo(o2.getName());
         }
     }
 
@@ -513,9 +507,9 @@ public class CachedClass {
 
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
-              return ((CachedMethod)o1).getName().compareTo((String)o2);
+                return ((CachedMethod) o1).getName().compareTo((String) o2);
             else
-              return ((String)o1).compareTo(((CachedMethod)o2).getName());
+                return ((String) o1).compareTo(((CachedMethod) o2).getName());
         }
     }
 
