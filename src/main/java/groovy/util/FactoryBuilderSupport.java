@@ -71,12 +71,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     public static final String CHILD_BUILDER = "_CHILD_BUILDER_";
     public static final String SCRIPT_CLASS_NAME = "_SCRIPT_CLASS_NAME_";
     private static final Logger LOG = Logger.getLogger(FactoryBuilderSupport.class.getName());
-    private static final Comparator<Method> METHOD_COMPARATOR = (o1, o2) -> {
-        int cmp = o1.getName().compareTo(o2.getName());
-        if (cmp != 0) return cmp;
-        cmp = o1.getParameterTypes().length - o2.getParameterTypes().length;
-        return cmp;
-    };
+    private static final Comparator<Method> METHOD_COMPARATOR = Comparator.comparing(Method::getName).thenComparingInt(o -> o.getParameterTypes().length);
 
     /**
      * Throws an exception if value is null.
