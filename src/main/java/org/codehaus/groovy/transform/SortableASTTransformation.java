@@ -235,7 +235,7 @@ public class SortableASTTransformation extends AbstractASTTransformation {
             checkComparable(pNode);
         }
         if (includes != null) {
-            Comparator<PropertyNode> includeComparator = (o1, o2) -> Integer.compare(includes.indexOf(o1.getName()), includes.indexOf(o2.getName()));
+            Comparator<PropertyNode> includeComparator = Comparator.comparingInt(o -> includes.indexOf(o.getName()));
             properties.sort(includeComparator);
         }
         return properties;
