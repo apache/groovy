@@ -48,7 +48,6 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -249,7 +248,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         if (includes != null) {
             Comparator<Parameter> includeComparator = (p1, p2) -> Integer.compare(includes.indexOf(p1.getName()), includes.indexOf(p2.getName()));
-            Collections.sort(params, includeComparator);
+            params.sort(includeComparator);
         }
 
         boolean hasMapCons = AnnotatedNodeUtils.hasAnnotation(cNode, MapConstructorASTTransformation.MY_TYPE);

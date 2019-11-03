@@ -1632,7 +1632,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             String descriptor1 = BytecodeHelper.getMethodDescriptor(Void.TYPE, c1.getNativeParameterTypes());
             return descriptor0.compareTo(descriptor1);
         };
-        Collections.sort(l, comp);
+        l.sort(comp);
         int found = -1;
         for (int i = 0; i < l.size(); i++) {
             if (l.get(i) != constructor) continue;
@@ -2347,7 +2347,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             // sort interfaces so that we may ensure a deterministic behaviour in case of
             // ambiguous fields (class implementing two interfaces using the same field)
             if (superInterfaces.size() > 1) {
-                Collections.sort(superInterfaces, CACHED_CLASS_NAME_COMPARATOR);
+                superInterfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
             }
 
             SingleKeyHashMap iPropertyIndex = classPropertyIndex.getNotNull(theCachedClass);
@@ -2368,7 +2368,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             // sort interfaces so that we may ensure a deterministic behaviour in case of
             // ambiguous fields (class implementing two interfaces using the same field)
             if (interfaces.size() > 1) {
-                Collections.sort(interfaces, CACHED_CLASS_NAME_COMPARATOR);
+                interfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
             }
 
             // if this an Array, then add the special read-only "length" property
