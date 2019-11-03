@@ -5917,12 +5917,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     protected static <K, T> void groupAnswer(final Map<K, List<T>> answer, T element, K value) {
-        List<T> groupedElements = answer.get(value);
-
-        if (null == groupedElements) {
-            groupedElements = new ArrayList<T>();
-            answer.put(value, groupedElements);
-        }
+        List<T> groupedElements = answer.computeIfAbsent(value, k -> new ArrayList<T>());
 
         groupedElements.add(element);
     }

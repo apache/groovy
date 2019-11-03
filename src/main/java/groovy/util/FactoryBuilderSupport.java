@@ -169,11 +169,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     private Set<String> getRegistrationGroup(String name) {
-        Set<String> group = registrationGroup.get(name);
-        if (group == null ) {
-            group = new TreeSet<String>();
-            registrationGroup.put(name, group);
-        }
+        Set<String> group = registrationGroup.computeIfAbsent(name, k -> new TreeSet<String>());
         return group;
     }
 

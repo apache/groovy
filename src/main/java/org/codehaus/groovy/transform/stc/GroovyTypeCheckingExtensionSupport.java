@@ -441,11 +441,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                 if (methodName == null) {
                     return InvokerHelper.invokeMethod(extension, name, args);
                 }
-                List<Closure> closures = extension.eventHandlers.get(methodName);
-                if (closures == null) {
-                    closures = new LinkedList<Closure>();
-                    extension.eventHandlers.put(methodName, closures);
-                }
+                List<Closure> closures = extension.eventHandlers.computeIfAbsent(methodName, k -> new LinkedList<Closure>());
                 closures.add((Closure) argsArray[0]);
                 return null;
             } else {
