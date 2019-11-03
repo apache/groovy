@@ -17,7 +17,6 @@ package org.apache.groovy.util.concurrentlinkedhashmap;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -235,10 +234,9 @@ public final class Weighers {
         return ((Collection<?>) values).size();
       }
       int size = 0;
-      for (Iterator<?> i = values.iterator(); i.hasNext();) {
-        i.next();
-        size++;
-      }
+        for (Object value : values) {
+            size++;
+        }
       return size;
     }
   }

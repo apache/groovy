@@ -572,42 +572,40 @@ public class ConcurrentReaderHashMap
      * reader thread that may be in the midst of traversing table
      * right now.)
      */
-    
-    for (int i = 0; i < oldCapacity ; i++) {
-      // We need to guarantee that any existing reads of old Map can
-      // proceed. So we cannot yet null out each bin.
-      Entry e = oldTable[i];
-      
-      if (e != null) {
-        int idx = e.hash & mask;
-        Entry next = e.next;
-        
-        //  Single node on list
-        if (next == null) 
-          newTable[idx] = e;
-        
-        else {    
-          // Reuse trailing consecutive sequence of all same bit
-          Entry lastRun = e;
-          int lastIdx = idx;
-          for (Entry last = next; last != null; last = last.next) {
-            int k = last.hash & mask;
-            if (k != lastIdx) {
-              lastIdx = k;
-              lastRun = last;
-            }
+
+      for (Entry e : oldTable) {
+          // We need to guarantee that any existing reads of old Map can
+          // proceed. So we cannot yet null out each bin.
+          if (e != null) {
+              int idx = e.hash & mask;
+              Entry next = e.next;
+
+              //  Single node on list
+              if (next == null)
+                  newTable[idx] = e;
+
+              else {
+                  // Reuse trailing consecutive sequence of all same bit
+                  Entry lastRun = e;
+                  int lastIdx = idx;
+                  for (Entry last = next; last != null; last = last.next) {
+                      int k = last.hash & mask;
+                      if (k != lastIdx) {
+                          lastIdx = k;
+                          lastRun = last;
+                      }
+                  }
+                  newTable[lastIdx] = lastRun;
+
+                  // Clone all remaining nodes
+                  for (Entry p = e; p != lastRun; p = p.next) {
+                      int k = p.hash & mask;
+                      newTable[k] = new Entry(p.hash, p.key,
+                              p.value, newTable[k]);
+                  }
+              }
           }
-          newTable[lastIdx] = lastRun;
-          
-          // Clone all remaining nodes
-          for (Entry p = e; p != lastRun; p = p.next) {
-            int k = p.hash & mask;
-            newTable[k] = new Entry(p.hash, p.key, 
-                                    p.value, newTable[k]);
-          }
-        }
       }
-    }
 
     table = newTable;
     recordModification(newTable);
@@ -716,12 +714,12 @@ public class ConcurrentReaderHashMap
     if (value == null) throw new NullPointerException();
 
     Entry tab[] = getTableForReading();
-    
-    for (int i = 0 ; i < tab.length; ++i) {
-      for (Entry e = tab[i] ; e != null ; e = e.next) 
-        if (value.equals(e.value))
-          return true;
-    }
+
+      for (Entry entry : tab) {
+          for (Entry e = entry; e != null; e = e.next)
+              if (value.equals(e.value))
+                  return true;
+      }
 
     return false;
   }
@@ -768,12 +766,12 @@ public class ConcurrentReaderHashMap
     while (n >= threshold)
       rehash();
 
-    for (Iterator it = t.entrySet().iterator(); it.hasNext();) {
-      Map.Entry entry = (Map.Entry) it.next();
-      Object key = entry.getKey();
-      Object value = entry.getValue();
-      put(key, value);
-    }
+      for (Object o : t.entrySet()) {
+          Map.Entry entry = (Map.Entry) o;
+          Object key = entry.getKey();
+          Object value = entry.getValue();
+          put(key, value);
+      }
   }
 
 
@@ -868,14 +866,12 @@ public class ConcurrentReaderHashMap
     }
     public Object[] toArray() {
       Collection c = new ArrayList();
-      for (Iterator i = iterator(); i.hasNext(); )
-          c.add(i.next());
+        for (Object o : this) c.add(o);
       return c.toArray();
     }
     public Object[] toArray(Object[] a) {
       Collection c = new ArrayList();
-      for (Iterator i = iterator(); i.hasNext(); )
-          c.add(i.next());
+        for (Object o : this) c.add(o);
       return c.toArray(a);
     }
   }
@@ -911,14 +907,12 @@ public class ConcurrentReaderHashMap
     }
     public Object[] toArray() {
       Collection c = new ArrayList();
-      for (Iterator i = iterator(); i.hasNext(); )
-          c.add(i.next());
+        for (Object o : this) c.add(o);
       return c.toArray();
     }
     public Object[] toArray(Object[] a) {
       Collection c = new ArrayList();
-      for (Iterator i = iterator(); i.hasNext(); )
-          c.add(i.next());
+        for (Object o : this) c.add(o);
       return c.toArray(a);
     }
   }
@@ -964,14 +958,12 @@ public class ConcurrentReaderHashMap
     }
     public Object[] toArray() {
       Collection c = new ArrayList();
-      for (Iterator i = iterator(); i.hasNext(); )
-          c.add(i.next());
+        for (Object o : this) c.add(o);
       return c.toArray();
     }
     public Object[] toArray(Object[] a) {
       Collection c = new ArrayList();
-      for (Iterator i = iterator(); i.hasNext(); )
-          c.add(i.next());
+        for (Object o : this) c.add(o);
       return c.toArray(a);
     }
   }

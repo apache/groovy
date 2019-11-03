@@ -414,9 +414,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // Add parameter names to the MethodVisitor (jdk8+ only)
         if (getCompileUnit().getConfig().getParameters()) {
-            for (int i = 0; i < parameters.length; i++) {
+            for (Parameter parameter : parameters) {
                 // TODO handle ACC_SYNTHETIC for enum method parameters?
-                mv.visitParameter(parameters[i].getName(), 0);
+                mv.visitParameter(parameter.getName(), 0);
             }
         }
 
@@ -860,8 +860,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             return arguments instanceof SpreadExpression;
         }
-        for (Iterator iter = args.iterator(); iter.hasNext();) {
-            if (iter.next() instanceof SpreadExpression) return true;
+        for (Object arg : args) {
+            if (arg instanceof SpreadExpression) return true;
         }
         return false;
     }
@@ -1600,8 +1600,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
 
         int i = 0;
-        for (Iterator iter = entries.iterator(); iter.hasNext();) {
-            Object object = iter.next();
+        for (Object object : entries) {
             MapEntryExpression entry = (MapEntryExpression) object;
 
             mv.visitInsn(DUP);
@@ -1699,8 +1698,8 @@ public class AsmClassGenerator extends ClassGenerator {
         int size = 0;
         int dimensions = 0;
         if (sizeExpression != null) {
-            for (Iterator iter = sizeExpression.iterator(); iter.hasNext();) {
-                Expression element = (Expression) iter.next();
+            for (Object o : sizeExpression) {
+                Expression element = (Expression) o;
                 if (element == ConstantExpression.EMPTY_EXPRESSION) break;
                 dimensions++;
                 // let's convert to an int
@@ -1915,8 +1914,7 @@ public class AsmClassGenerator extends ClassGenerator {
         MethodVisitor mv = controller.getMethodVisitor();
         List instructions = bytecodeSequence.getInstructions();
         int mark = controller.getOperandStack().getStackLength();
-        for (Iterator iterator = instructions.iterator(); iterator.hasNext();) {
-            Object part = iterator.next();
+        for (Object part : instructions) {
             if (part instanceof EmptyExpression) {
                 mv.visitInsn(ACONST_NULL);
             } else if (part instanceof Expression) {

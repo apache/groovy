@@ -721,8 +721,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 } else {
                     arr = ((FastArray) answer).copy();
                 }
-                for (Iterator iter = used.iterator(); iter.hasNext(); ) {
-                    MetaMethod element = (MetaMethod) iter.next();
+                for (Object o : used) {
+                    MetaMethod element = (MetaMethod) o;
                     if (!element.getDeclaringClass().getTheClass().isAssignableFrom(sender))
                         continue;
                     filterMatchingMethodForCategory(arr, element);
@@ -1821,8 +1821,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     public void setProperties(Object bean, Map map) {
         checkInitalised();
-        for (Iterator iter = map.entrySet().iterator(); iter.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Object o : map.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
             String key = entry.getKey().toString();
 
             Object value = entry.getValue();
@@ -2116,8 +2116,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static MetaMethod getCategoryMethodMissing(Class sender) {
         List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods("methodMissing");
         if (possibleGenericMethods != null) {
-            for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext(); ) {
-                MetaMethod mmethod = (MetaMethod) iter.next();
+            for (Object possibleGenericMethod : possibleGenericMethods) {
+                MetaMethod mmethod = (MetaMethod) possibleGenericMethod;
                 if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
                     continue;
 
@@ -2133,8 +2133,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
         List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(name);
         if (possibleGenericMethods != null) {
-            for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext(); ) {
-                MetaMethod mmethod = (MetaMethod) iter.next();
+            for (Object possibleGenericMethod : possibleGenericMethods) {
+                MetaMethod mmethod = (MetaMethod) possibleGenericMethod;
                 if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
                     continue;
 
@@ -2154,8 +2154,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static MetaMethod getCategoryMethodSetter(Class sender, String name, boolean useLongVersion) {
         List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(name);
         if (possibleGenericMethods != null) {
-            for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext(); ) {
-                MetaMethod mmethod = (MetaMethod) iter.next();
+            for (Object possibleGenericMethod : possibleGenericMethods) {
+                MetaMethod mmethod = (MetaMethod) possibleGenericMethod;
                 if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
                     continue;
 
@@ -2472,12 +2472,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void inheritStaticInterfaceFields(LinkedList superClasses, Set interfaces) {
-        for (Iterator interfaceIter = interfaces.iterator(); interfaceIter.hasNext(); ) {
-            CachedClass iclass = (CachedClass) interfaceIter.next();
+        for (Object anInterface : interfaces) {
+            CachedClass iclass = (CachedClass) anInterface;
             SingleKeyHashMap iPropertyIndex = classPropertyIndex.getNotNull(iclass);
             addFields(iclass, iPropertyIndex);
-            for (Iterator classIter = superClasses.iterator(); classIter.hasNext(); ) {
-                CachedClass sclass = (CachedClass) classIter.next();
+            for (Object superClass : superClasses) {
+                CachedClass sclass = (CachedClass) superClass;
                 if (!iclass.getTheClass().isAssignableFrom(sclass.getTheClass())) continue;
                 SingleKeyHashMap sPropertyIndex = classPropertyIndex.getNotNull(sclass);
                 copyNonPrivateFields(iPropertyIndex, sPropertyIndex, null);

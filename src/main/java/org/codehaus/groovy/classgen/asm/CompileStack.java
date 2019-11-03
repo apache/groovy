@@ -31,7 +31,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -239,8 +238,8 @@ public class CompileStack implements Opcodes {
     private void setEndLabels(){
         Label endLabel = new Label();
         controller.getMethodVisitor().visitLabel(endLabel);
-        for (Iterator iter = stackVariables.values().iterator(); iter.hasNext();) {
-            BytecodeVariable var = (BytecodeVariable) iter.next();
+        for (Object o : stackVariables.values()) {
+            BytecodeVariable var = (BytecodeVariable) o;
             var.setEndLabel(endLabel);
         }
         thisEndLabel = endLabel;
@@ -365,8 +364,8 @@ public class CompileStack implements Opcodes {
                 mv.visitLocalVariable("this", className, null, thisStartLabel, thisEndLabel, 0);
             }
 
-            for (Iterator iterator = usedVariables.iterator(); iterator.hasNext();) {
-                BytecodeVariable v = (BytecodeVariable) iterator.next();
+            for (Object usedVariable : usedVariables) {
+                BytecodeVariable v = (BytecodeVariable) usedVariable;
                 ClassNode t = v.getType();
                 if (v.isHolder()) t = ClassHelper.REFERENCE_TYPE;
                 String type = BytecodeHelper.getTypeDescription(t);

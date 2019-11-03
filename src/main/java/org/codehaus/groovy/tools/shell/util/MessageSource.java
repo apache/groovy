@@ -97,16 +97,15 @@ public class MessageSource
         MissingResourceException error = null;
         
         ResourceBundle[] bundles = getBundles();
-        
-        for (int i=0; i<bundles.length; i++) {
+
+        for (ResourceBundle bundle : bundles) {
             try {
-                return bundles[i].getString(code);
-            }
-            catch (MissingResourceException e) {
+                return bundle.getString(code);
+            } catch (MissingResourceException e) {
                 //
                 // FIXME: For now just save the first error, should really roll a new message with all of the details
                 //
-                
+
                 if (error != null) {
                     error = e;
                 }

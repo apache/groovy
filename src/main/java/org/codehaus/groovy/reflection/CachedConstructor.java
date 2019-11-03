@@ -47,8 +47,7 @@ public class CachedConstructor extends ParameterTypes {
 
     public static CachedConstructor find(Constructor constructor) {
         CachedConstructor[] constructors = ReflectionCache.getCachedClass(constructor.getDeclaringClass()).getConstructors();
-        for (int i = 0; i < constructors.length; i++) {
-            CachedConstructor cachedConstructor = constructors[i];
+        for (CachedConstructor cachedConstructor : constructors) {
             if (cachedConstructor.cachedConstructor.equals(constructor))
                 return cachedConstructor;
         }

@@ -799,8 +799,8 @@ public class ScriptBytecodeAdapter {
         List ret = new ArrayList();
         int argsPos = 0;
         int spreadPos = 0;
-        for (int pos = 0; pos < positions.length; pos++) {
-            for (; argsPos < positions[pos]; argsPos++) {
+        for (int position : positions) {
+            for (; argsPos < position; argsPos++) {
                 ret.add(args[argsPos]);
             }
             Object value = spreads[spreadPos];

@@ -54,8 +54,7 @@ public class JUnit4Utils {
                 } else {
                     Class testAnnotationClass = loader.loadClass("org.junit.Test");
                     Method[] methods = scriptClass.getMethods();
-                    for (int i = 0; i < methods.length; i++) {
-                        Method method = methods[i];
+                    for (Method method : methods) {
                         annotation = method.getAnnotation(testAnnotationClass);
                         if (annotation != null) {
                             isTest = true;
@@ -89,8 +88,7 @@ public class JUnit4Utils {
             System.out.print(", Failures: " + InvokerHelper.getProperty(result, "failureCount"));
             System.out.println(", Time: " + InvokerHelper.getProperty(result, "runTime"));
             List failures = (List) InvokerHelper.getProperty(result, "failures");
-            for (int i = 0; i < failures.size(); i++) {
-                Object f = failures.get(i);
+            for (Object f : failures) {
                 System.out.println("Test Failure: " + InvokerHelper.getProperty(f, "description"));
                 System.out.println(InvokerHelper.getProperty(f, "trace"));
             }

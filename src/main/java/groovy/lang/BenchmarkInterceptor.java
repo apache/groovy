@@ -107,14 +107,14 @@ public class BenchmarkInterceptor implements Interceptor {
      */
     public List statistic() {
         List result = new LinkedList();
-        for (Iterator iter = calls.keySet().iterator(); iter.hasNext();) {
+        for (Object o : calls.keySet()) {
             Object[] line = new Object[3];
             result.add(line);
-            line[0] = iter.next();
+            line[0] = o;
             List times = (List) calls.get(line[0]);
             line[1] = times.size() / 2;
             int accTime = 0;
-            for (Iterator it = times.iterator(); it.hasNext();) {
+            for (Iterator it = times.iterator(); it.hasNext(); ) {
                 Long start = (Long) it.next();
                 Long end = (Long) it.next();
                 accTime += end - start;

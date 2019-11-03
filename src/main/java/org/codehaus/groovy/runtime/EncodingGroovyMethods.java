@@ -317,9 +317,9 @@ public class EncodingGroovyMethods {
     public static Writable encodeHex(final byte[] data) {
         return new Writable() {
             public Writer writeTo(Writer out) throws IOException {
-                for (int i = 0; i < data.length; i++) {
+                for (byte datum : data) {
                     // convert byte into unsigned hex string
-                    String hexString = Integer.toHexString(data[i] & 0xFF);
+                    String hexString = Integer.toHexString(datum & 0xFF);
 
                     // add leading zero if the length of the string is one
                     if (hexString.length() < 2) {

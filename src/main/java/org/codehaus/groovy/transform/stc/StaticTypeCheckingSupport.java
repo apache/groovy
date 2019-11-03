@@ -978,8 +978,7 @@ public abstract class StaticTypeCheckingSupport {
         if (c.equals(interfaceClass)) return 0;
         ClassNode[] interfaces = c.getInterfaces();
         int max = -1;
-        for (int i = 0; i < interfaces.length; i++) {
-            final ClassNode anInterface = interfaces[i];
+        for (final ClassNode anInterface : interfaces) {
             int sub = getMaximumInterfaceDistance(anInterface, interfaceClass);
             // we need to keep the -1 to track the mismatch, a +1
             // by any means could let it look like a direct match

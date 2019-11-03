@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -66,10 +65,10 @@ public class BytecodeSequence extends Statement {
             gen.visitBytecodeSequence(this);
             return;
         }
-        for (Iterator iterator = instructions.iterator(); iterator.hasNext();) {
-            Object part = (Object) iterator.next();
+        for (BytecodeInstruction instruction : instructions) {
+            Object part = (Object) instruction;
             if (part instanceof ASTNode) {
-                ((ASTNode)part).visit(visitor);
+                ((ASTNode) part).visit(visitor);
             }
         }
     }

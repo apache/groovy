@@ -650,8 +650,8 @@ public class GenericsUtils {
                 ClassNode[] newUpper = upper;
                 if (upper != null && upper.length > 0) {
                     ClassNode[] upperCorrected = new ClassNode[upper.length];
-                    for (int j = 0; j < upper.length; j++) {
-                        upperCorrected[i] = correctToGenericsSpecRecurse(genericsSpec, upper[j]);
+                    for (ClassNode classNode : upper) {
+                        upperCorrected[i] = correctToGenericsSpecRecurse(genericsSpec, classNode);
                     }
                     upper = upperCorrected;
                 }

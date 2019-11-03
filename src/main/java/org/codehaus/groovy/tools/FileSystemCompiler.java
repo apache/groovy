@@ -299,8 +299,8 @@ public class FileSystemCompiler {
             file.delete();
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                deleteRecursive(files[i]);
+            for (File value : files) {
+                deleteRecursive(value);
             }
             file.delete();
         }
