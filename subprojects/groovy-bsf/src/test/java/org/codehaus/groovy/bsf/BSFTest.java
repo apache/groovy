@@ -86,7 +86,7 @@ public class BSFTest extends TestCase {
 
     public void testApply() throws Exception {
         Vector ignoreParamNames = null;
-        Vector<Integer> args = new Vector<Integer>();
+        Vector<Integer> args = new Vector<>();
         args.add(2);
         args.add(5);
         args.add(1);
