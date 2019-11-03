@@ -452,12 +452,7 @@ public class Groovy extends Java {
         final String scriptName = computeScriptName();
         final GroovyClassLoader classLoader =
                 AccessController.doPrivileged(
-                        new PrivilegedAction<GroovyClassLoader>() {
-                            @Override
-                            public GroovyClassLoader run() {
-                                return new GroovyClassLoader(baseClassLoader);
-                            }
-                        });
+                        (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(baseClassLoader));
         addClassPathes(classLoader);
         configureCompiler();
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
