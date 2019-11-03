@@ -184,7 +184,9 @@ public class Java9 extends Java8 {
 
         int methodModifiers = cachedMethod.getModifiers();
 
-        caller = ReflectionUtils.class; // "set accessible" are done via `org.codehaus.groovy.reflection.ReflectionUtils` as shown in warnings
+        if (null == caller) {
+            caller = ReflectionUtils.class; // "set accessible" are done via `org.codehaus.groovy.reflection.ReflectionUtils` as shown in warnings
+        }
 
         // if caller can access the method,
         // no need to transform the meta method
