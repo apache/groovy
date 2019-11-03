@@ -518,13 +518,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     public void visitMethodCallExpression(MethodCallExpression call) {
         if (call.isImplicitThis() && call.getMethod() instanceof ConstantExpression) {
             ConstantExpression methodNameConstant = (ConstantExpression) call.getMethod();
-            Object value = methodNameConstant.getText();
+            String methodName = methodNameConstant.getText();
 
-            if (!(value instanceof String)) {
-                throw new GroovyBugError("tried to make a method call with a non-String constant method name.");
+            if (methodName == null) {
+                throw new GroovyBugError("method name is null");
             }
 
-            String methodName = (String) value;
             Variable v = checkVariableNameForDeclaration(methodName, call);
             if (v != null && !(v instanceof DynamicVariable)) {
                 checkVariableContextAccess(v, call);
