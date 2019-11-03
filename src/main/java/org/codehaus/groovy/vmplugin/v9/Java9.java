@@ -202,10 +202,8 @@ public class Java9 extends Java8 {
 
             // GROOVY-9081 "3) Access public members of private class", e.g. Collections.unmodifiableMap([:]).toString()
             // try to find the visible method from its superclasses
-            List<Class<?>> superclassList = findSuperclasses(theClass);
-            List<Class<?>> classList = new LinkedList<>();
-            classList.add(theClass);
-            classList.addAll(superclassList);
+            List<Class<?>> classList = findSuperclasses(theClass);
+            classList.add(0, theClass);
 
             for (Class<?> sc : classList) {
                 Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, sc);
