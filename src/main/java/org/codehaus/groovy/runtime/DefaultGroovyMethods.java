@@ -6209,7 +6209,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self The array of values to add together
      * @return The sum of all of the items
-     * @see #sum(java.util.Iterable)
+     * @see #sum(java.util.Iterator)
      * @since 1.7.1
      */
     public static Object sum(Object[] self) {
