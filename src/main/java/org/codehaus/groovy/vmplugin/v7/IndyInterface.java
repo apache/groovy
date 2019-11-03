@@ -19,8 +19,6 @@
 package org.codehaus.groovy.vmplugin.v7;
 
 import groovy.lang.GroovySystem;
-import groovy.lang.MetaClassRegistryChangeEvent;
-import groovy.lang.MetaClassRegistryChangeEventListener;
 import org.codehaus.groovy.GroovyBugError;
 
 import java.lang.invoke.CallSite;
@@ -104,11 +102,7 @@ public class IndyInterface {
 
         protected static SwitchPoint switchPoint = new SwitchPoint();
         static {
-            GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener() {
-                public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
-                	invalidateSwitchPoints();
-                }
-            });
+            GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> invalidateSwitchPoints());
         }
 
         /**

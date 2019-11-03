@@ -47,12 +47,9 @@ public class Java7 extends Java6 {
             try {
                 if (!con.isAccessible()) {
                     final Constructor tmp = con;
-                    AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                        @Override
-                        public Object run() {
-                            ReflectionUtils.trySetAccessible(tmp);
-                            return null;
-                        }
+                    AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+                        ReflectionUtils.trySetAccessible(tmp);
+                        return null;
                     });
                 }
             } catch (SecurityException se) {
@@ -86,12 +83,9 @@ public class Java7 extends Java6 {
             return super.getInvokeSpecialHandle(method, receiver);
         }
         if (!method.isAccessible()) {
-            AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                @Override
-                public Object run() {
-                    ReflectionUtils.trySetAccessible(method);
-                    return null;
-                }
+            AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+                ReflectionUtils.trySetAccessible(method);
+                return null;
             });
         }
         Class declaringClass = method.getDeclaringClass();

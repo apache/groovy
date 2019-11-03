@@ -252,11 +252,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     }
 
     private static InnerLoader createInnerLoader(final ClassLoader parent, final Class[] interfaces) {
-        return AccessController.doPrivileged(new PrivilegedAction<InnerLoader>() {
-            public InnerLoader run() {
-                return new InnerLoader(parent, interfaces);
-            }
-        });
+        return AccessController.doPrivileged((PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
     }
 
     private InnerLoader findClassLoader(Class clazz, Class[] interfaces) {

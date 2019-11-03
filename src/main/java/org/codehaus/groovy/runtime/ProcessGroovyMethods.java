@@ -348,13 +348,11 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.2
      */
     public static void withWriter(final Process self, final Closure closure) {
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    IOGroovyMethods.withWriter(new BufferedOutputStream(getOut(self)), closure);
-                } catch (IOException e) {
-                    throw new GroovyRuntimeException("exception while reading process stream", e);
-                }
+        new Thread(() -> {
+            try {
+                IOGroovyMethods.withWriter(new BufferedOutputStream(getOut(self)), closure);
+            } catch (IOException e) {
+                throw new GroovyRuntimeException("exception while reading process stream", e);
             }
         }).start();
     }
@@ -370,13 +368,11 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.2
      */
     public static void withOutputStream(final Process self, final Closure closure) {
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    IOGroovyMethods.withStream(new BufferedOutputStream(getOut(self)), closure);
-                } catch (IOException e) {
-                    throw new GroovyRuntimeException("exception while reading process stream", e);
-                }
+        new Thread(() -> {
+            try {
+                IOGroovyMethods.withStream(new BufferedOutputStream(getOut(self)), closure);
+            } catch (IOException e) {
+                throw new GroovyRuntimeException("exception while reading process stream", e);
             }
         }).start();
     }
@@ -391,22 +387,20 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.2
      */
     public static Process pipeTo(final Process left, final Process right) throws IOException {
-        new Thread(new Runnable() {
-            public void run() {
-                InputStream in = new BufferedInputStream(getIn(left));
-                OutputStream out = new BufferedOutputStream(getOut(right));
-                byte[] buf = new byte[8192];
-                int next;
-                try {
-                    while ((next = in.read(buf)) != -1) {
-                        out.write(buf, 0, next);
-                    }
-                } catch (IOException e) {
-                    throw new GroovyRuntimeException("exception while reading process stream", e);
-                } finally {
-                    closeWithWarning(out);
-                    closeWithWarning(in);
+        new Thread(() -> {
+            InputStream in = new BufferedInputStream(getIn(left));
+            OutputStream out = new BufferedOutputStream(getOut(right));
+            byte[] buf = new byte[8192];
+            int next;
+            try {
+                while ((next = in.read(buf)) != -1) {
+                    out.write(buf, 0, next);
                 }
+            } catch (IOException e) {
+                throw new GroovyRuntimeException("exception while reading process stream", e);
+            } finally {
+                closeWithWarning(out);
+                closeWithWarning(in);
             }
         }).start();
         return right;

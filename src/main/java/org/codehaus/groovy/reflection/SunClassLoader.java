@@ -41,13 +41,11 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     static {
         SunClassLoader res;
         try {
-            res = AccessController.doPrivileged(new PrivilegedAction<SunClassLoader>() {
-                public SunClassLoader run() {
-                    try {
-                        return new SunClassLoader();
-                    } catch (Throwable e) {
-                        return null;
-                    }
+            res = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+                try {
+                    return new SunClassLoader();
+                } catch (Throwable e) {
+                    return null;
                 }
             });
         }

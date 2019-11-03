@@ -248,11 +248,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
 
         if (includes != null) {
-            Comparator<Parameter> includeComparator = new Comparator<Parameter>() {
-                public int compare(Parameter p1, Parameter p2) {
-                    return Integer.compare(includes.indexOf(p1.getName()), includes.indexOf(p2.getName()));
-                }
-            };
+            Comparator<Parameter> includeComparator = (p1, p2) -> Integer.compare(includes.indexOf(p1.getName()), includes.indexOf(p2.getName()));
             Collections.sort(params, includeComparator);
         }
 

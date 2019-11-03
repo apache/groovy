@@ -61,11 +61,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * with dependent scripts.
  */
 public class GroovyScriptEngine implements ResourceConnector {
-    private static final ClassLoader CL_STUB = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-        public ClassLoader run() {
-            return new ClassLoader() {};
-        }
-    });
+    private static final ClassLoader CL_STUB = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> new ClassLoader() {});
 
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
@@ -133,20 +129,18 @@ public class GroovyScriptEngine implements ResourceConnector {
 
         private void setResLoader() {
             final GroovyResourceLoader rl = getResourceLoader();
-            setResourceLoader(new GroovyResourceLoader() {
-                public URL loadGroovySource(String className) throws MalformedURLException {
-                    String filename;
-                    for (String extension : getConfig().getScriptExtensions()) {
-                        filename = className.replace('.', File.separatorChar) + "." + extension;
-                        try {
-                            URLConnection dependentScriptConn = rc.getResourceConnection(filename);
-                            return dependentScriptConn.getURL();
-                        } catch (ResourceException e) {
-                            //TODO: maybe do something here?
-                        }
+            setResourceLoader(className -> {
+                String filename;
+                for (String extension : getConfig().getScriptExtensions()) {
+                    filename = className.replace('.', File.separatorChar) + "." + extension;
+                    try {
+                        URLConnection dependentScriptConn = rc.getResourceConnection(filename);
+                        return dependentScriptConn.getURL();
+                    } catch (ResourceException e) {
+                        //TODO: maybe do something here?
                     }
-                    return rl.loadGroovySource(className);
                 }
+                return rl.loadGroovySource(className);
             });
         }
 
@@ -349,13 +343,11 @@ public class GroovyScriptEngine implements ResourceConnector {
      */
     private GroovyClassLoader initGroovyLoader() {
         GroovyClassLoader groovyClassLoader =
-                AccessController.doPrivileged(new PrivilegedAction<ScriptClassLoader>() {
-                    public ScriptClassLoader run() {
-                        if (parentLoader instanceof GroovyClassLoader) {
-                            return new ScriptClassLoader((GroovyClassLoader) parentLoader);
-                        } else {
-                            return new ScriptClassLoader(parentLoader, config);
-                        }
+                AccessController.doPrivileged((PrivilegedAction<ScriptClassLoader>) () -> {
+                    if (parentLoader instanceof GroovyClassLoader) {
+                        return new ScriptClassLoader((GroovyClassLoader) parentLoader);
+                    } else {
+                        return new ScriptClassLoader(parentLoader, config);
                     }
                 });
         for (URL root : roots) groovyClassLoader.addURL(root);

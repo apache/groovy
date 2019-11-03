@@ -100,11 +100,7 @@ public class GroovyShell extends GroovyObjectSupport {
             && ((GroovyClassLoader) parentLoader).hasCompatibleConfiguration(config)) {
           this.loader = (GroovyClassLoader) parentLoader;
         } else {
-          this.loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
-              public GroovyClassLoader run() {
-                  return new GroovyClassLoader(parentLoader,config);
-              }
-          });
+          this.loader = AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader,config));
         }
         this.context = binding;
         this.config = config;
@@ -212,11 +208,7 @@ public class GroovyShell extends GroovyObjectSupport {
         // if you are compiling the script because the JVM isn't executing the main method.
         Class scriptClass;
         try {
-            scriptClass = AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
-                public Class run() throws CompilationFailedException, IOException {
-                    return loader.parseClass(scriptFile);
-                }
-            });
+            scriptClass = AccessController.doPrivileged((PrivilegedExceptionAction<Class>) () -> loader.parseClass(scriptFile));
         } catch (PrivilegedActionException pae) {
             Exception e = pae.getException();
             if (e instanceof CompilationFailedException) {
@@ -347,11 +339,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args       the command line arguments to pass in
      */
     public Object run(final String scriptText, final String fileName, String[] args) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
-            public GroovyCodeSource run() {
-                return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
-            }
-        });
+        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE));
         return run(gcs, args);
     }
 
@@ -415,11 +403,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args     the command line arguments to pass in
      */
     public Object run(final Reader in, final String fileName, String[] args) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
-                    public GroovyCodeSource run() {
-                        return new GroovyCodeSource(in, fileName, DEFAULT_CODE_BASE);
-                    }
-        });
+        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(in, fileName, DEFAULT_CODE_BASE));
         Class scriptClass = parseClass(gcs);
         return runScriptOrMainOrTestOrRunnable(scriptClass, args);
     }
@@ -476,11 +460,7 @@ public class GroovyShell extends GroovyObjectSupport {
             sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
         }
 
-        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
-            public GroovyCodeSource run() {
-                return new GroovyCodeSource(scriptText, fileName, codeBase);
-            }
-        });
+        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(scriptText, fileName, codeBase));
 
         return evaluate(gcs);
     }
@@ -590,11 +570,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     public Script parse(final String scriptText, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
-            public GroovyCodeSource run() {
-                return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
-            }
-        });
+        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE));
         return parse(gcs);
     }
 

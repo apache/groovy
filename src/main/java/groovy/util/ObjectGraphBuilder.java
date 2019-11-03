@@ -152,13 +152,10 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             this.childPropertySetter = (ChildPropertySetter) childPropertySetter;
         } else if (childPropertySetter instanceof Closure) {
             final ObjectGraphBuilder self = this;
-            this.childPropertySetter = new ChildPropertySetter() {
-                public void setChild(Object parent, Object child, String parentName,
-                                     String propertyName) {
-                    Closure cls = (Closure) childPropertySetter;
-                    cls.setDelegate(self);
-                    cls.call(parent, child, parentName, propertyName);
-                }
+            this.childPropertySetter = (parent, child, parentName, propertyName) -> {
+                Closure cls = (Closure) childPropertySetter;
+                cls.setDelegate(self);
+                cls.call(parent, child, parentName, propertyName);
             };
         } else {
             this.childPropertySetter = new DefaultChildPropertySetter();
@@ -181,19 +178,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         if (classNameResolver instanceof ClassNameResolver) {
             this.classNameResolver = (ClassNameResolver) classNameResolver;
         } else if (classNameResolver instanceof String) {
-            this.classNameResolver = new ClassNameResolver() {
-                public String resolveClassname(String classname) {
-                    return makeClassName((String) classNameResolver, classname);
-                }
-            };
+            this.classNameResolver = classname -> makeClassName((String) classNameResolver, classname);
         } else if (classNameResolver instanceof Closure) {
             final ObjectGraphBuilder self = this;
-            this.classNameResolver = new ClassNameResolver() {
-                public String resolveClassname(String classname) {
-                    Closure cls = (Closure) classNameResolver;
-                    cls.setDelegate(self);
-                    return (String) cls.call(new Object[]{classname});
-                }
+            this.classNameResolver = classname -> {
+                Closure cls = (Closure) classNameResolver;
+                cls.setDelegate(self);
+                return (String) cls.call(new Object[]{classname});
             };
         } else if (classNameResolver instanceof Map) {
             Map classNameResolverOptions = (Map) classNameResolver;
@@ -229,19 +220,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         if (identifierResolver instanceof IdentifierResolver) {
             this.identifierResolver = (IdentifierResolver) identifierResolver;
         } else if (identifierResolver instanceof String) {
-            this.identifierResolver = new IdentifierResolver() {
-                public String getIdentifierFor(String nodeName) {
-                    return (String) identifierResolver;
-                }
-            };
+            this.identifierResolver = nodeName -> (String) identifierResolver;
         } else if (identifierResolver instanceof Closure) {
             final ObjectGraphBuilder self = this;
-            this.identifierResolver = new IdentifierResolver() {
-                public String getIdentifierFor(String nodeName) {
-                    Closure cls = (Closure) identifierResolver;
-                    cls.setDelegate(self);
-                    return (String) cls.call(new Object[]{nodeName});
-                }
+            this.identifierResolver = nodeName -> {
+                Closure cls = (Closure) identifierResolver;
+                cls.setDelegate(self);
+                return (String) cls.call(new Object[]{nodeName});
             };
         } else {
             this.identifierResolver = new DefaultIdentifierResolver();
@@ -265,13 +250,10 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             this.newInstanceResolver = (NewInstanceResolver) newInstanceResolver;
         } else if (newInstanceResolver instanceof Closure) {
             final ObjectGraphBuilder self = this;
-            this.newInstanceResolver = new NewInstanceResolver() {
-                public Object newInstance(Class klass, Map attributes)
-                        throws InstantiationException, IllegalAccessException {
-                    Closure cls = (Closure) newInstanceResolver;
-                    cls.setDelegate(self);
-                    return cls.call(klass, attributes);
-                }
+            this.newInstanceResolver = (klass, attributes) -> {
+                Closure cls = (Closure) newInstanceResolver;
+                cls.setDelegate(self);
+                return cls.call(klass, attributes);
             };
         } else {
             this.newInstanceResolver = new DefaultNewInstanceResolver();
@@ -287,19 +269,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         if (referenceResolver instanceof ReferenceResolver) {
             this.referenceResolver = (ReferenceResolver) referenceResolver;
         } else if (referenceResolver instanceof String) {
-            this.referenceResolver = new ReferenceResolver() {
-                public String getReferenceFor(String nodeName) {
-                    return (String) referenceResolver;
-                }
-            };
+            this.referenceResolver = nodeName -> (String) referenceResolver;
         } else if (referenceResolver instanceof Closure) {
             final ObjectGraphBuilder self = this;
-            this.referenceResolver = new ReferenceResolver() {
-                public String getReferenceFor(String nodeName) {
-                    Closure cls = (Closure) referenceResolver;
-                    cls.setDelegate(self);
-                    return (String) cls.call(new Object[]{nodeName});
-                }
+            this.referenceResolver = nodeName -> {
+                Closure cls = (Closure) referenceResolver;
+                cls.setDelegate(self);
+                return (String) cls.call(new Object[]{nodeName});
             };
         } else {
             this.referenceResolver = new DefaultReferenceResolver();

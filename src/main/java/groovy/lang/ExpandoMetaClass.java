@@ -846,27 +846,24 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @param newValue The properties initial value
      */
     public void registerBeanProperty(final String property, final Object newValue) {
-        performOperationOnMetaClass(new Callable() {
-            public void call() {
-                Class type = newValue == null ? Object.class : newValue.getClass();
+        performOperationOnMetaClass(() -> {
+            Class type = newValue == null ? Object.class : newValue.getClass();
 
-                MetaBeanProperty mbp = newValue instanceof MetaBeanProperty ? (MetaBeanProperty) newValue : new ThreadManagedMetaBeanProperty(theClass, property, type, newValue);
+            MetaBeanProperty mbp = newValue instanceof MetaBeanProperty ? (MetaBeanProperty) newValue : new ThreadManagedMetaBeanProperty(theClass, property, type, newValue);
 
-                final MetaMethod getter = mbp.getGetter();
-                final MethodKey getterKey = new DefaultCachedMethodKey(theClass, getter.getName(), CachedClass.EMPTY_ARRAY, false);
-                final MetaMethod setter = mbp.getSetter();
-                final MethodKey setterKey = new DefaultCachedMethodKey(theClass, setter.getName(), setter.getParameterTypes(), false);
-                addMetaMethod(getter);
-                addMetaMethod(setter);
+            final MetaMethod getter = mbp.getGetter();
+            final MethodKey getterKey = new DefaultCachedMethodKey(theClass, getter.getName(), CachedClass.EMPTY_ARRAY, false);
+            final MetaMethod setter = mbp.getSetter();
+            final MethodKey setterKey = new DefaultCachedMethodKey(theClass, setter.getName(), setter.getParameterTypes(), false);
+            addMetaMethod(getter);
+            addMetaMethod(setter);
 
-                expandoMethods.put(setterKey, setter);
-                expandoMethods.put(getterKey, getter);
-                expandoProperties.put(mbp.getName(), mbp);
+            expandoMethods.put(setterKey, setter);
+            expandoMethods.put(getterKey, getter);
+            expandoProperties.put(mbp.getName(), mbp);
 
-                addMetaBeanProperty(mbp);
-                performRegistryCallbacks();
-            }
-
+            addMetaBeanProperty(mbp);
+            performRegistryCallbacks();
         });
     }
 
@@ -877,32 +874,29 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      */
     public void registerInstanceMethod(final MetaMethod metaMethod) {
         final boolean inited = this.initCalled;
-        performOperationOnMetaClass(new Callable() {
-            public void call() {
-                String methodName = metaMethod.getName();
-                checkIfGroovyObjectMethod(metaMethod);
-                MethodKey key = new DefaultCachedMethodKey(theClass, methodName, metaMethod.getParameterTypes(), false);
+        performOperationOnMetaClass(() -> {
+            String methodName = metaMethod.getName();
+            checkIfGroovyObjectMethod(metaMethod);
+            MethodKey key = new DefaultCachedMethodKey(theClass, methodName, metaMethod.getParameterTypes(), false);
 
-                if (isInitialized()) {
-                    throw new RuntimeException("Already initialized, cannot add new method: " + metaMethod);
-                }
-                // we always adds meta methods to class itself
-                addMetaMethodToIndex(metaMethod, metaMethodIndex.getHeader(theClass));
-
-                dropMethodCache(methodName);
-                expandoMethods.put(key, metaMethod);
-
-                if (inited && isGetter(methodName, metaMethod.getParameterTypes())) {
-                    String propertyName = getPropertyForGetter(methodName);
-                    registerBeanPropertyForMethod(metaMethod, propertyName, true, false);
-
-                } else if (inited && isSetter(methodName, metaMethod.getParameterTypes())) {
-                    String propertyName = getPropertyForSetter(methodName);
-                    registerBeanPropertyForMethod(metaMethod, propertyName, false, false);
-                }
-                performRegistryCallbacks();
+            if (isInitialized()) {
+                throw new RuntimeException("Already initialized, cannot add new method: " + metaMethod);
             }
+            // we always adds meta methods to class itself
+            addMetaMethodToIndex(metaMethod, metaMethodIndex.getHeader(theClass));
 
+            dropMethodCache(methodName);
+            expandoMethods.put(key, metaMethod);
+
+            if (inited && isGetter(methodName, metaMethod.getParameterTypes())) {
+                String propertyName = getPropertyForGetter(methodName);
+                registerBeanPropertyForMethod(metaMethod, propertyName, true, false);
+
+            } else if (inited && isSetter(methodName, metaMethod.getParameterTypes())) {
+                String propertyName = getPropertyForSetter(methodName);
+                registerBeanPropertyForMethod(metaMethod, propertyName, false, false);
+            }
+            performRegistryCallbacks();
         });
     }
 
@@ -1002,49 +996,46 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @param callable The callable Closure
      */
     protected void registerStaticMethod(final String name, final Closure callable, final Class[] paramTypes) {
-        performOperationOnMetaClass(new Callable() {
-            public void call() {
-                String methodName;
-                if (name.equals(METHOD_MISSING))
-                    methodName = STATIC_METHOD_MISSING;
-                else if (name.equals(PROPERTY_MISSING))
-                    methodName = STATIC_PROPERTY_MISSING;
-                else
-                    methodName = name;
+        performOperationOnMetaClass(() -> {
+            String methodName;
+            if (name.equals(METHOD_MISSING))
+                methodName = STATIC_METHOD_MISSING;
+            else if (name.equals(PROPERTY_MISSING))
+                methodName = STATIC_PROPERTY_MISSING;
+            else
+                methodName = name;
 
-                ClosureStaticMetaMethod metaMethod = null;
+            ClosureStaticMetaMethod metaMethod = null;
 
-                if (paramTypes != null) {
-                    metaMethod = new ClosureStaticMetaMethod(methodName, theClass, callable, paramTypes);
-                } else {
-                    metaMethod = new ClosureStaticMetaMethod(methodName, theClass, callable);
-                }
-
-                if (methodName.equals(INVOKE_METHOD_METHOD) && callable.getParameterTypes().length == 2) {
-                    invokeStaticMethodMethod = metaMethod;
-                } else {
-                    if (methodName.equals(METHOD_MISSING)) {
-                        methodName = STATIC_METHOD_MISSING;
-                    }
-                    MethodKey key = new DefaultCachedMethodKey(theClass, methodName, metaMethod.getParameterTypes(), false);
-
-                    addMetaMethod(metaMethod);
-                    dropStaticMethodCache(methodName);
-//                    cacheStaticMethod(key,metaMethod);
-
-                    if (isGetter(methodName, metaMethod.getParameterTypes())) {
-                        String propertyName = getPropertyForGetter(methodName);
-                        registerBeanPropertyForMethod(metaMethod, propertyName, true, true);
-
-                    } else if (isSetter(methodName, metaMethod.getParameterTypes())) {
-                        String propertyName = getPropertyForSetter(methodName);
-                        registerBeanPropertyForMethod(metaMethod, propertyName, false, true);
-                    }
-                    performRegistryCallbacks();
-                    expandoMethods.put(key, metaMethod);
-                }
+            if (paramTypes != null) {
+                metaMethod = new ClosureStaticMetaMethod(methodName, theClass, callable, paramTypes);
+            } else {
+                metaMethod = new ClosureStaticMetaMethod(methodName, theClass, callable);
             }
 
+            if (methodName.equals(INVOKE_METHOD_METHOD) && callable.getParameterTypes().length == 2) {
+                invokeStaticMethodMethod = metaMethod;
+            } else {
+                if (methodName.equals(METHOD_MISSING)) {
+                    methodName = STATIC_METHOD_MISSING;
+                }
+                MethodKey key = new DefaultCachedMethodKey(theClass, methodName, metaMethod.getParameterTypes(), false);
+
+                addMetaMethod(metaMethod);
+                dropStaticMethodCache(methodName);
+//                    cacheStaticMethod(key,metaMethod);
+
+                if (isGetter(methodName, metaMethod.getParameterTypes())) {
+                    String propertyName = getPropertyForGetter(methodName);
+                    registerBeanPropertyForMethod(metaMethod, propertyName, true, true);
+
+                } else if (isSetter(methodName, metaMethod.getParameterTypes())) {
+                    String propertyName = getPropertyForSetter(methodName);
+                    registerBeanPropertyForMethod(metaMethod, propertyName, false, true);
+                }
+                performRegistryCallbacks();
+                expandoMethods.put(key, metaMethod);
+            }
         });
     }
 
