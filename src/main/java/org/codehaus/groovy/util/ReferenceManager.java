@@ -28,28 +28,26 @@ public class ReferenceManager {
         private volatile boolean shouldRun = true; 
         public ThreadedReferenceManager(ReferenceQueue queue) {
             super(queue);
-            thread = new Thread() {
-                public void run() {
-                    ReferenceQueue queue = getReferenceQueue();
-                    java.lang.ref.Reference r=null;
-                    while (shouldRun) {
-                        try {
-                            r = queue.remove(1000);
-                        }  catch (InterruptedException e) {
-                            break;
-                        }
-                        if (r==null) continue;
-                        
-                        if (r instanceof Reference) {
-                            Reference ref = (Reference) r;
-                            Finalizable holder = ref.getHandler();
-                            if (holder!=null) holder.finalizeReference();
-                        }                  
-                        r.clear();
-                        r=null;
+            thread = new Thread(() -> {
+                ReferenceQueue queue1 = getReferenceQueue();
+                java.lang.ref.Reference r=null;
+                while (shouldRun) {
+                    try {
+                        r = queue1.remove(1000);
+                    }  catch (InterruptedException e) {
+                        break;
                     }
+                    if (r==null) continue;
+
+                    if (r instanceof Reference) {
+                        Reference ref = (Reference) r;
+                        Finalizable holder = ref.getHandler();
+                        if (holder!=null) holder.finalizeReference();
+                    }
+                    r.clear();
+                    r=null;
                 }
-            };
+            });
             thread.setContextClassLoader(null);
             thread.setDaemon(true);
             thread.setName(ThreadedReferenceManager.class.getName());
