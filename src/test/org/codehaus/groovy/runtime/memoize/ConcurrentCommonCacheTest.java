@@ -61,12 +61,7 @@ public class ConcurrentCommonCacheTest {
         ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<>();
 
         EvictableCache.ValueProvider vp =
-                new EvictableCache.ValueProvider<String, String>() {
-            @Override
-            public String provide(String key) {
-                return "Chinese";
-            }
-        };
+                (EvictableCache.ValueProvider<String, String>) key -> "Chinese";
 
         Assert.assertEquals("Chinese", sc.getAndPut("language", vp,false));
         Assert.assertNull(sc.get("language"));

@@ -61,12 +61,7 @@ public class StampedCommonCacheTest {
         StampedCommonCache<String, String> sc = new StampedCommonCache<>();
 
         EvictableCache.ValueProvider vp =
-                new EvictableCache.ValueProvider<String, String>() {
-            @Override
-            public String provide(String key) {
-                return "Chinese";
-            }
-        };
+                (EvictableCache.ValueProvider<String, String>) key -> "Chinese";
 
         Assert.assertEquals("Chinese", sc.getAndPut("language", vp,false));
         Assert.assertNull(sc.get("language"));
