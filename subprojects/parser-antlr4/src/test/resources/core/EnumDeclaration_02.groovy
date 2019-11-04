@@ -68,3 +68,28 @@ enum F {
 enum G implements I<T> {
 
 }
+
+enum J {
+    A,
+    B,
+}
+
+enum K {
+    A,
+    B,
+    ;
+}
+
+enum Outer {
+    A, B
+    enum Inner{X, Y}
+}
+
+class TestClass {
+    enum OuterEnum {
+        VALUE,
+        enum InnerEnum {
+            A
+        }
+    }
+}
