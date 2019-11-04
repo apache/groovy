@@ -155,7 +155,6 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCaller spreadMap = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadMap");
     static final MethodCaller despreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "despreadList");
 
-
     // type conversions
     static final MethodCaller createListMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createList");
     static final MethodCaller createMapMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createMap");
@@ -2220,16 +2219,14 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void onLineNumber(ASTNode statement, String message) {
-        MethodVisitor mv = controller.getMethodVisitor();
+        if (statement == null || statement instanceof BlockStatement) return;
 
-        if (statement==null) return;
+        currentASTNode = statement;
         int line = statement.getLineNumber();
-        this.currentASTNode = statement;
-
-        if (line < 0) return;
-        if (!ASM_DEBUG && line==controller.getLineNumber()) return;
+        if (line < 0 || (!ASM_DEBUG && line == controller.getLineNumber())) return;
 
         controller.setLineNumber(line);
+        MethodVisitor mv = controller.getMethodVisitor();
         if (mv != null) {
             Label l = new Label();
             mv.visitLabel(l);
@@ -2255,5 +2252,4 @@ public class AsmClassGenerator extends ClassGenerator {
         mn.getUnit().addGeneratedInnerClass((InnerClassNode)innerClass);
         return innerClasses.add(innerClass);
     }
-
 }

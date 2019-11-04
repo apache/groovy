@@ -23,6 +23,8 @@ import groovy.lang.GroovyClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A base class for data structures that can collect messages and errors
  * during processing.
@@ -58,8 +60,7 @@ public abstract class ProcessingUnit {
      * Initializes the ProcessingUnit to the empty state.
      */
     public ProcessingUnit(final CompilerConfiguration configuration, final GroovyClassLoader classLoader, final ErrorCollector errorCollector) {
-        setConfiguration(configuration != null ? configuration : CompilerConfiguration.DEFAULT);
-        setClassLoader(classLoader);
+        setConfiguration(configuration != null ? configuration : CompilerConfiguration.DEFAULT); setClassLoader(classLoader);
         this.errorCollector = errorCollector != null ? errorCollector : new ErrorCollector(getConfiguration());
         configure(getConfiguration());
     }
@@ -82,7 +83,7 @@ public abstract class ProcessingUnit {
      * Sets the CompilerConfiguration for this ProcessingUnit.
      */
     public final void setConfiguration(CompilerConfiguration configuration) {
-        this.configuration = configuration;
+        this.configuration = requireNonNull(configuration);
     }
 
     /**
