@@ -61,12 +61,9 @@ public class SecurityTest extends SecurityTestSupport {
         // Use our privileged access in order to prevent checks lower in the call stack.  Otherwise we would have
         // to grant access to IDE unit test runners and unit test libs.  We only care about testing the call stack
         // higher upstream from this point of execution.
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                Security.setProperty("package.access", "javax.print");
-                return null;
-            }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            Security.setProperty("package.access", "javax.print");
+            return null;
         });
         //This should throw an ACE because its codeBase does not allow access to javax.print
         assertExecute(script, "/groovy/security/javax/print/deny", new RuntimePermission("accessClassInPackage.javax.print"));

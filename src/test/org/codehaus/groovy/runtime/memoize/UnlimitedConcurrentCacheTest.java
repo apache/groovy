@@ -62,12 +62,7 @@ public class UnlimitedConcurrentCacheTest {
         UnlimitedConcurrentCache<String, String> sc = new UnlimitedConcurrentCache<>();
 
         EvictableCache.ValueProvider vp =
-                new EvictableCache.ValueProvider<String, String>() {
-            @Override
-            public String provide(String key) {
-                return "Chinese";
-            }
-        };
+                (EvictableCache.ValueProvider<String, String>) key -> "Chinese";
 
         Assert.assertEquals("Chinese", sc.getAndPut("language", vp));
         Assert.assertEquals("Chinese", sc.get("language"));

@@ -38,11 +38,7 @@ public class TestDgmConverter extends TestCase {
         File dgmClassDirectory = new File(TestDgmConverter.class.getResource(REFERENCE_CLASS).toURI()).getParentFile();
 
         final File[] files = dgmClassDirectory.listFiles();
-        Arrays.sort(files, new Comparator<File>() {
-            public int compare(final File o1, final File o2) {
-                return String.CASE_INSENSITIVE_ORDER.compare(o1.getName(), o2.getName());
-            }
-        });
+        Arrays.sort(files, (o1, o2) -> String.CASE_INSENSITIVE_ORDER.compare(o1.getName(), o2.getName()));
         for (int i = 0; i < files.length; i++) {
             File file = files[i];
             final String name = file.getName();

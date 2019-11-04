@@ -60,12 +60,7 @@ public class CommonCacheTest {
         CommonCache<String, String> sc = new CommonCache<>();
 
         EvictableCache.ValueProvider vp =
-                new EvictableCache.ValueProvider<String, String>() {
-                    @Override
-                    public String provide(String key) {
-                        return "Chinese";
-                    }
-                };
+                (EvictableCache.ValueProvider<String, String>) key -> "Chinese";
 
         Assert.assertEquals("Chinese", sc.getAndPut("language", vp,false));
         Assert.assertNull(sc.get("language"));
