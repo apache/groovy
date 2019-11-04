@@ -16,11 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.parser.antlr4;
+package org.codehaus.groovy.ast;
 
 import org.apache.groovy.util.Maps;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotationNode;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Map;
@@ -43,7 +41,7 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.VOLATILE;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
- * Represents a modifier, which is better to place in the package org.codehaus.groovy.ast
+ * Represents a modifier
  * <p>
  * Created by Daniel.Sun on 2016/08/23.
  */

@@ -22,6 +22,7 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.codehaus.groovy.ast.ModifierNode;
 
 import java.util.Collections;
 import java.util.List;
