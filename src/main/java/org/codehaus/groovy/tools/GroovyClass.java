@@ -18,27 +18,22 @@
  */
 package org.codehaus.groovy.tools;
 
-public class GroovyClass
-{
-    public static final GroovyClass[] EMPTY_ARRAY = new GroovyClass[ 0 ];
+public class GroovyClass {
+    public static final GroovyClass[] EMPTY_ARRAY = {};
 
     private final String name;
     private final byte[] bytes;
 
-    public GroovyClass(String name,
-                       byte[] bytes)
-    {
+    public GroovyClass(String name, byte[] bytes) {
         this.name  = name;
         this.bytes = bytes;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return this.name;
     }
 
-    public byte[] getBytes()
-    {
+    public byte[] getBytes() {
         return this.bytes;
     }
 }

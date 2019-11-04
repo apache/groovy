@@ -28,9 +28,11 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.CompileUnit.ConstructedOuterNestedClassNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -84,8 +86,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 import static groovy.lang.Tuple.tuple;
-import static org.codehaus.groovy.ast.CompileUnit.ConstructedOuterNestedClassNode;
-import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 
 /**
@@ -470,7 +470,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         GenericsType genericsType = genericParameterNames.get(new GenericsTypeName(typeName));
         if (genericsType != null) {
             type.setRedirect(genericsType.getType());
-            type.setGenericsTypes(new GenericsType[] {genericsType});
+            type.setGenericsTypes(new GenericsType[]{genericsType});
             type.setGenericsPlaceHolder(true);
             return true;
         }
@@ -1155,7 +1155,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return be;
         }
         if (left instanceof ClassExpression && be.getOperation().isOneOf(
-                new int[] {Types.ARRAY_EXPRESSION, Types.SYNTH_LIST, Types.SYNTH_MAP})) {
+                new int[]{Types.ARRAY_EXPRESSION, Types.SYNTH_LIST, Types.SYNTH_MAP})) {
             if (be.getRightExpression() instanceof ListExpression) {
                 ListExpression list = (ListExpression) be.getRightExpression();
                 if (list.getExpressions().isEmpty()) {

@@ -72,7 +72,6 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
     private final SourceUnit sourceUnit;
 
-
     public EnumVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
     }
@@ -442,5 +441,4 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         InnerClassNode ic = (InnerClassNode) enumClass;
         return ic.getVariableScope() == null;
     }
-
 }

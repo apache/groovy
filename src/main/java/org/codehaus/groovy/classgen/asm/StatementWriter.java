@@ -215,7 +215,9 @@ public class StatementWriter {
 
         // visit increment
         mv.visitLabel(continueLabel);
-        for (int i = condIndex + 1; i < size; i++) {
+        // fix for being on the wrong line when debugging for loop
+        controller.getAcg().onLineNumber(loop, "increment condition");
+        for (int i = condIndex + 1; i < size; i += 1) {
             visitExpressionOfLoopStatement(expressions.get(i));
         }
 
