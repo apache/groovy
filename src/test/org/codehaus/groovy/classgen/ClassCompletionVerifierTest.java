@@ -81,7 +81,7 @@ public class ClassCompletionVerifierTest extends TestSupport {
 
     public void testDetectsAbstractPrivateMethod() throws Exception {
         ClassNode node = new ClassNode("X", ACC_ABSTRACT, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("y", ACC_PRIVATE | ACC_ABSTRACT, ClassHelper.VOID_TYPE, new Parameter[0], ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("y", ACC_PRIVATE | ACC_ABSTRACT, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         verifier.visitClass(node);
         checkErrorMessage(EXPECTED_ABSTRACT_PRIVATE_METHOD_ERROR_MESSAGE);
     }
