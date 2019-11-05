@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.GroovyRuntimeException;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
@@ -36,23 +34,22 @@ import java.lang.reflect.Modifier;
 
 public class CallSiteGenerator {
 
-    private static final String GRE = BytecodeHelper.getClassInternalName(ClassHelper.make(GroovyRuntimeException.class));
-    
-    private CallSiteGenerator () {}
-    
+    private CallSiteGenerator() {
+    }
+
     private static MethodVisitor writeMethod(ClassWriter cw, String name, int argumentCount, final String superClass, CachedMethod cachedMethod, String receiverType, String parameterDescription, boolean useArray) {
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "call" + name, "(L" + receiverType + ";" + parameterDescription + ")Ljava/lang/Object;", null, null);
         mv.visitCode();
-        
+
         final Label tryStart = new Label();
         mv.visitLabel(tryStart);
-        
+
         // call for checking if method is still valid
         for (int i = 0; i < argumentCount; ++i) mv.visitVarInsn(Opcodes.ALOAD, i);
         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, superClass, "checkCall", "(Ljava/lang/Object;" + parameterDescription + ")Z", false);
         Label l0 = new Label();
         mv.visitJumpInsn(Opcodes.IFEQ, l0);
-        
+
         // valid method branch
 
         Class callClass = cachedMethod.getDeclaringClass().getTheClass();
@@ -60,7 +57,7 @@ public class CallSiteGenerator {
 
         String type = BytecodeHelper.getClassInternalName(callClass.getName());
         String descriptor = BytecodeHelper.getMethodDescriptor(cachedMethod.getReturnType(), cachedMethod.getNativeParameterTypes());
-        
+
         // prepare call
         int invokeMethodCode = Opcodes.INVOKEVIRTUAL;
         if (cachedMethod.isStatic()) {
@@ -86,8 +83,8 @@ public class CallSiteGenerator {
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
             BytecodeHelper.doCast(mv, parameters[i]);
-        }        
-        
+        }
+
         // make call
         mv.visitMethodInsn(invokeMethodCode, type, cachedMethod.getName(), descriptor, useInterface);
 
@@ -99,7 +96,7 @@ public class CallSiteGenerator {
 
         // return
         mv.visitInsn(Opcodes.ARETURN);
-        
+
         // fall back after method change
         mv.visitLabel(l0);
         for (int i = 0; i < argumentCount; ++i) mv.visitVarInsn(Opcodes.ALOAD, i);
@@ -108,29 +105,28 @@ public class CallSiteGenerator {
         }
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;L" + receiverType + ";[Ljava/lang/Object;)Ljava/lang/Object;", false);
         mv.visitInsn(Opcodes.ARETURN);
-        
+
         // exception unwrapping for stackless exceptions
         final Label tryEnd = new Label();
         mv.visitLabel(tryEnd);
         final Label catchStart = new Label();
         mv.visitLabel(catchStart);
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "unwrap", "(Lgroovy/lang/GroovyRuntimeException;)Ljava/lang/Throwable;", false);
-        mv.visitInsn(Opcodes.ATHROW);        
-        mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, GRE);
-        
+        mv.visitInsn(Opcodes.ATHROW);
+        mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, "groovy/lang/GroovyRuntimeException");
+
         mv.visitMaxs(0, 0);
         mv.visitEnd();
         return mv;
     }
-    
 
     public static void genCallWithFixedParams(ClassWriter cw, String name, final String superClass, CachedMethod cachedMethod, String receiverType ) {
         if (cachedMethod.getParamsCount() > 4) return;
-        
+
         StringBuilder pdescb = new StringBuilder();
         final int pc = cachedMethod.getParamsCount();
         for (int i = 0; i != pc; ++i) pdescb.append("Ljava/lang/Object;");
-        
+
         writeMethod(cw,name,pc+2,superClass,cachedMethod,receiverType,pdescb.toString(),false);
     }
 
@@ -203,7 +199,7 @@ public class CallSiteGenerator {
         String internalName = name.replace('.', '/');
         classHeader(cw, internalName, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite");
         cw.visitField(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "__constructor__", "Ljava/lang/reflect/Constructor;", null, null);
- 
+
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", internalName);
 
         genCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod, "java/lang/Object");
@@ -232,7 +228,7 @@ public class CallSiteGenerator {
         final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genPogoMetaMethodSite(cachedMethod, cw, name);
-        
+
         return callSiteLoader.defineClassAndGetConstructor(name, bytes);
     }
 
@@ -244,7 +240,7 @@ public class CallSiteGenerator {
         final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genPojoMetaMethodSite(cachedMethod, cw, name);
-        
+
         return callSiteLoader.defineClassAndGetConstructor(name, bytes);
     }
 
@@ -256,7 +252,7 @@ public class CallSiteGenerator {
         final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genStaticMetaMethodSite(cachedMethod, cw, name);
-        
+
         return callSiteLoader.defineClassAndGetConstructor(name, bytes);
     }
 

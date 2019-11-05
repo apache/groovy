@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -48,17 +47,22 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
  * A helper class for bytecode generation with AsmClassGenerator.
  */
 public class BytecodeHelper implements Opcodes {
-    
-    private static String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
 
+    private static String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class);
+
+    /**
+     * @return the ASM internal name of the type
+     */
     public static String getClassInternalName(ClassNode t) {
-        if (t.isPrimaryClassNode() || t instanceof DecompiledClassNode) {
-            if (t.isArray()) return "[L"+getClassInternalName(t.getComponentType())+";";
-            return getClassInternalName(t.getName());
+        if (t.isArray()) {
+            return TypeUtil.getDescriptionByType(t);
         }
-        return getClassInternalName(t.getTypeClass());
+        return getClassInternalName(t.getName());
     }
 
+    /**
+     * @return the ASM internal name of the type
+     */
     public static String getClassInternalName(Class t) {
         return org.objectweb.asm.Type.getInternalName(t);
     }
@@ -70,26 +74,6 @@ public class BytecodeHelper implements Opcodes {
         return name.replace('.', '/');
     }
 
-    public static String getMethodDescriptor(ClassNode returnType, Parameter[] parameters) {
-        ClassNode[] parameterTypes = new ClassNode[parameters.length];
-        for (int i = 0; i < parameters.length; i++) {
-            parameterTypes[i] = parameters[i].getType();
-        }
-
-        return getMethodDescriptor(returnType, parameterTypes);
-    }
-
-    public static String getMethodDescriptor(ClassNode returnType, ClassNode[] parameterTypes) {
-        StringBuilder buffer = new StringBuilder(100);
-        buffer.append("(");
-        for (ClassNode parameterType : parameterTypes) {
-            buffer.append(getTypeDescription(parameterType));
-        }
-        buffer.append(")");
-        buffer.append(getTypeDescription(returnType));
-        return buffer.toString();
-    }
-
     /**
      * Returns a method descriptor for the given {@link org.codehaus.groovy.ast.MethodNode}.
      *
@@ -99,24 +83,45 @@ public class BytecodeHelper implements Opcodes {
     public static String getMethodDescriptor(MethodNode methodNode) {
         return getMethodDescriptor(methodNode.getReturnType(), methodNode.getParameters());
     }
-    
+
+    /**
+     * @return the ASM method type descriptor
+     */
+    public static String getMethodDescriptor(ClassNode returnType, Parameter[] parameters) {
+        ClassNode[] parameterTypes = new ClassNode[parameters.length];
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
+            parameterTypes[i] = parameters[i].getType();
+        }
+        return getMethodDescriptor(returnType, parameterTypes);
+    }
+
+    /**
+     * @return the ASM method type descriptor
+     */
+    public static String getMethodDescriptor(ClassNode returnType, ClassNode[] parameterTypes) {
+        StringBuilder buffer = new StringBuilder(100);
+        buffer.append('(');
+        for (ClassNode parameterType : parameterTypes) {
+            buffer.append(getTypeDescription(parameterType));
+        }
+        buffer.append(')');
+        buffer.append(getTypeDescription(returnType));
+        return buffer.toString();
+    }
+
     /**
      * @return the ASM method type descriptor
      */
     public static String getMethodDescriptor(Class returnType, Class[] paramTypes) {
         // lets avoid class loading
         StringBuilder buffer = new StringBuilder(100);
-        buffer.append("(");
+        buffer.append('(');
         for (Class paramType : paramTypes) {
             buffer.append(getTypeDescription(paramType));
         }
-        buffer.append(")");
+        buffer.append(')');
         buffer.append(getTypeDescription(returnType));
         return buffer.toString();
-    }
-
-    public static String getTypeDescription(Class c) {
-        return org.objectweb.asm.Type.getDescriptor(c);
     }
 
     /**
@@ -132,14 +137,16 @@ public class BytecodeHelper implements Opcodes {
      */
     public static String getClassLoadingTypeDescription(ClassNode c) {
         String desc = TypeUtil.getDescriptionByType(c);
-
         if (!c.isArray()) {
             if (desc.startsWith("L") && desc.endsWith(";")) {
                 desc = desc.substring(1, desc.length() - 1); // remove "L" and ";"
             }
         }
-
         return desc.replace('/', '.');
+    }
+
+    public static String getTypeDescription(Class c) {
+        return org.objectweb.asm.Type.getDescriptor(c);
     }
 
     /**
@@ -165,16 +172,12 @@ public class BytecodeHelper implements Opcodes {
         if (ClassHelper.isPrimitiveType(d.redirect())) {
             d = d.redirect();
         }
-
         String desc = TypeUtil.getDescriptionByType(d);
-
         if (!end && desc.endsWith(";")) {
             desc = desc.substring(0, desc.length() - 1);
         }
-
         return desc;
     }
-
 
     /**
      * @return an array of ASM internal names of the type
@@ -182,7 +185,7 @@ public class BytecodeHelper implements Opcodes {
     public static String[] getClassInternalNames(ClassNode[] names) {
         int size = names.length;
         String[] answer = new String[size];
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size; i += 1) {
             answer[i] = getClassInternalName(names[i]);
         }
         return answer;
@@ -218,7 +221,7 @@ public class BytecodeHelper implements Opcodes {
                 }
         }
     }
-    
+
     /**
      * Negate a boolean on stack.
      */
@@ -233,16 +236,6 @@ public class BytecodeHelper implements Opcodes {
         mv.visitInsn(ICONST_0);
         mv.visitLabel(endLabel);
     }
-
-    /**
-     * load a message on the stack and remove it right away. Good for put a mark in the generated bytecode for debugging purpose.
-     *
-     * @param msg
-     */
-    /*public void mark(String msg) {
-        mv.visitLdcInsn(msg);
-        mv.visitInsn(POP);
-    }*/
 
     /**
      * returns a name that Class.forName() can take. Notably for arrays:
@@ -280,10 +273,6 @@ public class BytecodeHelper implements Opcodes {
 
         return name.replace('/', '.');
     }
-
-    /*public void dup() {
-        mv.visitInsn(DUP);
-    }*/
 
     private static boolean hasGenerics(Parameter[] param) {
         if (param.length == 0) return false;
@@ -333,7 +322,6 @@ public class BytecodeHelper implements Opcodes {
                 if (anInterface.isUsingGenerics()) return true;
             }
         }
-
         return false;
     }
 
@@ -374,7 +362,6 @@ public class BytecodeHelper implements Opcodes {
             GenericsType gt = new GenericsType(type);
             writeGenericsBounds(ret, gt, false);
         }
-
         return ret.toString();
     }
 
@@ -443,8 +430,8 @@ public class BytecodeHelper implements Opcodes {
         } else {
             mv.visitTypeInsn(
                     CHECKCAST,
-                    type.isArray() ? 
-                            BytecodeHelper.getTypeDescription(type) : 
+                    type.isArray() ?
+                            BytecodeHelper.getTypeDescription(type) :
                             BytecodeHelper.getClassInternalName(type.getName()));
         }
     }
@@ -480,48 +467,60 @@ public class BytecodeHelper implements Opcodes {
         } else {
             mv.visitTypeInsn(
                     CHECKCAST,
-                    type.isArray() ? 
-                            BytecodeHelper.getTypeDescription(type) : 
+                    type.isArray() ?
+                            BytecodeHelper.getTypeDescription(type) :
                                 BytecodeHelper.getClassInternalName(type.getName()));
         }
     }
 
     /**
-     * Generates the bytecode to unbox the current value on the stack
-     */
-    public static void unbox(MethodVisitor mv, Class type) {
-        if (type.isPrimitive() && type != Void.TYPE) {
-            String returnString = "(Ljava/lang/Object;)" + BytecodeHelper.getTypeDescription(type);
-            mv.visitMethodInsn(INVOKESTATIC, DTT_CLASSNAME, type.getName() + "Unbox", returnString, false);
-        }
-    }
-
-    public static void unbox(MethodVisitor mv, ClassNode type) {
-        if (type.isPrimaryClassNode()) return;
-        unbox(mv, type.getTypeClass());
-    }
-
-    /**
-     * box top level operand
+     * Generates the bytecode to autobox the current value on the stack.
      */
     @Deprecated
     public static boolean box(MethodVisitor mv, ClassNode type) {
-        if (type.isPrimaryClassNode()) return false;
-        return box(mv, type.getTypeClass());
+        if (ClassHelper.isPrimitiveType(type) && !"void".equalsIgnoreCase(type.getName())) {
+            box(mv, BytecodeHelper.getTypeDescription(type));
+            return true;
+        }
+        return false;
     }
 
-    
     /**
-     * Generates the bytecode to autobox the current value on the stack
+     * Generates the bytecode to autobox the current value on the stack.
      */
     @Deprecated
     public static boolean box(MethodVisitor mv, Class type) {
         if (ReflectionCache.getCachedClass(type).isPrimitive && type != void.class) {
-            String returnString = "(" + BytecodeHelper.getTypeDescription(type) + ")Ljava/lang/Object;";
-            mv.visitMethodInsn(INVOKESTATIC, DTT_CLASSNAME, "box", returnString, false);
+            box(mv, BytecodeHelper.getTypeDescription(type));
             return true;
         }
         return false;
+    }
+
+    private static void box(MethodVisitor mv, String typeDescription) {
+        mv.visitMethodInsn(INVOKESTATIC, DTT_CLASSNAME, "box", "(" + typeDescription + ")Ljava/lang/Object;", false);
+    }
+
+    /**
+     * Generates the bytecode to unbox the current value on the stack.
+     */
+    public static void unbox(MethodVisitor mv, ClassNode type) {
+        if (ClassHelper.isPrimitiveType(type) && !"void".equalsIgnoreCase(type.getName())) {
+            unbox(mv, type.getName(), BytecodeHelper.getTypeDescription(type));
+        }
+    }
+
+    /**
+     * Generates the bytecode to unbox the current value on the stack.
+     */
+    public static void unbox(MethodVisitor mv, Class type) {
+        if (type.isPrimitive() && type != Void.TYPE) {
+            unbox(mv, type.getName(), BytecodeHelper.getTypeDescription(type));
+        }
+    }
+
+    private static void unbox(MethodVisitor mv, String typeName, String typeDescription) {
+        mv.visitMethodInsn(INVOKESTATIC, DTT_CLASSNAME, typeName + "Unbox", "(Ljava/lang/Object;)" + typeDescription, false);
     }
 
     /**
