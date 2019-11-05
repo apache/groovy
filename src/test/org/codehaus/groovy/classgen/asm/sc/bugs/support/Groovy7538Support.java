@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs.support;
 
+import java.util.Objects;
+
 /*
  * Test classes extracted and adapted from the AssertJ project.
  */
@@ -85,7 +87,7 @@ public class Groovy7538Support {
         }
 
         private static boolean equal(Object actual, Object other) {
-            return (actual == other) || (actual != null && actual.equals(other));
+            return Objects.equals(actual, other);
         }
     }
 

@@ -59,12 +59,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     final ClassLoader parentLoader = getClass().getClassLoader();
     protected final GroovyClassLoader loader =
             AccessController.doPrivileged(
-                    new PrivilegedAction<GroovyClassLoader>() {
-                        @Override
-                        public GroovyClassLoader run() {
-                            return new GroovyClassLoader(parentLoader);
-                        }
-                    }
+                    (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader)
             );
     final CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
     final ModuleNode module = new ModuleNode(unit);
@@ -153,12 +148,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
         log.info("About to execute script");
         log.info(text);
         GroovyCodeSource gcs = AccessController.doPrivileged(
-                new PrivilegedAction<GroovyCodeSource>() {
-                    @Override
-                    public GroovyCodeSource run() {
-                        return new GroovyCodeSource(text, scriptName, "/groovy/testSupport");
-                    }
-                }
+                (PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, scriptName, "/groovy/testSupport")
         );
         Class groovyClass = loader.parseClass(gcs);
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
