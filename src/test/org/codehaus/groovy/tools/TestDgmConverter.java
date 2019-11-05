@@ -52,11 +52,7 @@ public class TestDgmConverter extends TestCase {
                     final MetaMethod metaMethod = (MetaMethod) constructor.newInstance(null,null, null, null);
                 } catch (ClassNotFoundException e) {
                     fail("Failed to load " + className);
-                } catch (IllegalAccessException e) {
-                    fail("Failed to instantiate " + className);
-                } catch (InstantiationException e) {
-                    fail("Failed to instantiate " + className);
-                } catch (InvocationTargetException e) {
+                } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
                     fail("Failed to instantiate " + className);
                 }
             }
