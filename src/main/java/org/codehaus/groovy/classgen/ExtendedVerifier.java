@@ -172,7 +172,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             if (!visited.hasSourceRetention()) {
                 List<AnnotationNode> seen = nonSourceAnnotations.get(name);
                 if (seen == null) {
-                    seen = new ArrayList<AnnotationNode>();
+                    seen = new ArrayList<>();
                 }
                 seen.add(visited);
                 nonSourceAnnotations.put(name, seen);
@@ -182,8 +182,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             // Check if the annotation target is correct, unless it's the target annotating an annotation definition
             // defining on which target elements the annotation applies
             if (!isTargetAnnotation && !visited.isTargetAllowed(target)) {
-                addError("Annotation @" + name + " is not allowed on element "
-                        + AnnotationNode.targetToName(target), visited);
+                addError("Annotation @" + name + " is not allowed on element " + AnnotationNode.targetToName(target), visited);
             }
             visitDeprecation(node, visited);
             visitOverride(node, visited);
@@ -196,17 +195,12 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             if (next.getValue().size() > 1) {
                 ClassNode repeatable = null;
                 AnnotationNode repeatee = next.getValue().get(0);
-                List<AnnotationNode> repeateeAnnotations = repeatee.getClassNode().getAnnotations();
-                for (AnnotationNode anno : repeateeAnnotations) {
-                    ClassNode annoClassNode = anno.getClassNode();
-                    if (annoClassNode.getName().equals("java.lang.annotation.Repeatable")) {
+                for (AnnotationNode anno : repeatee.getClassNode().getAnnotations()) {
+                    if (anno.getClassNode().getName().equals("java.lang.annotation.Repeatable")) {
                         Expression value = anno.getMember("value");
-                        if (value instanceof ClassExpression) {
-                            ClassExpression ce = (ClassExpression) value;
-                            if (ce.getType() != null && ce.getType().isAnnotationDefinition()) {
-                                repeatable = ce.getType();
-                                break;
-                            }
+                        if (value instanceof ClassExpression && value.getType().isAnnotationDefinition()) {
+                            repeatable = value.getType();
+                            break;
                         }
                     }
                 }
@@ -226,11 +220,12 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                         }
                     }
 
-                    List<Expression> annos = new ArrayList<Expression>();
+                    List<Expression> annos = new ArrayList<>();
                     for (AnnotationNode an : next.getValue()) {
                         annos.add(new AnnotationConstantExpression(an));
                     }
                     collector.addMember("value", new ListExpression(annos));
+
                     node.addAnnotation(collector);
                     node.getAnnotations().removeAll(next.getValue());
                 }
