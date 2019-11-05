@@ -98,11 +98,17 @@ options {
 // starting point for parsing a groovy file
 compilationUnit
     :   nls
-        packageDeclaration? sep? statements? EOF
+        packageDeclaration? sep? scriptStatements? EOF
     ;
 
-statements
-    :   statement (sep statement)* sep?
+scriptStatements
+    :   scriptStatement (sep scriptStatement)* sep?
+    ;
+
+scriptStatement
+    :   importDeclaration // Import statement.  Can be used in any scope.  Has "import x as y" also.
+    |   typeDeclaration
+    |   statement
     ;
 
 packageDeclaration
@@ -667,12 +673,8 @@ statement
 
     |   identifier COLON nls statement                                                                      #labeledStmtAlt
 
-    // Import statement.  Can be used in any scope.  Has "import x as y" also.
-    |   importDeclaration                                                                                   #importStmtAlt
-
     |   assertStatement                                                                                     #assertStmtAlt
 
-    |   typeDeclaration                                                                                     #typeDeclarationStmtAlt
     |   localVariableDeclaration                                                                            #localVariableDeclarationStmtAlt
 
     // validate the method in the AstBuilder#visitMethodDeclaration, e.g. method without method body is not allowed
