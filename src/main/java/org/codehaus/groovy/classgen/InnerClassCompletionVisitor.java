@@ -168,12 +168,12 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
         }
     }
-    
+
     private void addDefaultMethods(InnerClassNode node) {
         final boolean isStatic = isStatic(node);
 
         ClassNode outerClass = node.getOuterClass();
-        final String classInternalName = org.codehaus.groovy.classgen.asm.BytecodeHelper.getClassInternalName(node);
+        final String classInternalName = BytecodeHelper.getClassInternalName(node);
         final String outerClassInternalName = getInternalName(outerClass, isStatic);
         final String outerClassDescriptor = getTypeDescriptor(outerClass, isStatic);
         final int objectDistance = getObjectDistance(outerClass);
