@@ -48,7 +48,7 @@ public class GroovyShellTest extends GroovyTestCase {
         GroovyShell shell = new GroovyShell();
         try {
             Object result = shell.evaluate(script1, "Test.groovy");
-            assertEquals(new Integer(1), result);
+            assertEquals(Integer.valueOf(1), result);
         }
         catch (Exception e) {
             fail(e.toString());
@@ -75,7 +75,7 @@ public class GroovyShellTest extends GroovyTestCase {
         GroovyShell shell = new GroovyShell(context);
         try {
             Object result = shell.evaluate(script2, "Test.groovy");
-            assertEquals(new Integer(2), result);
+            assertEquals(Integer.valueOf(2), result);
         }
         catch (Exception e) {
             fail(e.toString());
