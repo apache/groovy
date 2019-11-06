@@ -46,30 +46,26 @@ public class Groovy2365Bug extends Groovy2365Base {
 
                     // thread one: newInstance script foo
                     final boolean completed [] = new boolean[2] ;
-                    Thread thread1 = new Thread() {
-                        public void run() {
-                            try {
-                                Script script = (Script) script1Class.getDeclaredConstructor().newInstance();
-                                script.run();
-                                completed [0] = true;
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                    Thread thread1 = new Thread(() -> {
+                        try {
+                            Script script = (Script) script1Class.getDeclaredConstructor().newInstance();
+                            script.run();
+                            completed [0] = true;
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    };
+                    });
 
-                    Thread thread2 = new Thread() {
-                        public void run() {
-                            try {
-                                Class cls = groovyLoader.loadClass("Script2", true, true);
-                                Script script = (Script) cls.getDeclaredConstructor().newInstance();
-                                script.run();
-                                completed [1] = true;
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
+                    Thread thread2 = new Thread(() -> {
+                        try {
+                            Class cls = groovyLoader.loadClass("Script2", true, true);
+                            Script script = (Script) cls.getDeclaredConstructor().newInstance();
+                            script.run();
+                            completed [1] = true;
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    };
+                    });
 
                     // let's see if we get a deadlock
                     thread2.start();

@@ -171,7 +171,7 @@ public class CommonCacheTest {
 
     @Test
     public void testLruCache() {
-        CommonCache<String, String> sc = new CommonCache<String, String>(3);
+        CommonCache<String, String> sc = new CommonCache<>(3);
         sc.put("a", "1");
         sc.put("b", "2");
         sc.put("c", "3");
@@ -185,7 +185,7 @@ public class CommonCacheTest {
 
     @Test
     public void testFifoCache() {
-        CommonCache<String, String> sc = new CommonCache<String, String>(3, 3, EvictableCache.EvictionStrategy.FIFO);
+        CommonCache<String, String> sc = new CommonCache<>(3, 3, EvictableCache.EvictionStrategy.FIFO);
         sc.put("a", "1");
         sc.put("b", "2");
         sc.put("c", "3");

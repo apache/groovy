@@ -53,19 +53,19 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
     }
 
     public void testMatchesWithObject() throws Throwable {
-        assertMatches(new Integer(1), new Integer(1), true);
-        assertMatches(new Integer(1), new Integer(2), false);
+        assertMatches(Integer.valueOf(1), Integer.valueOf(1), true);
+        assertMatches(Integer.valueOf(1), Integer.valueOf(2), false);
     }
 
     public void testMatchesWithClass() throws Throwable {
-        assertMatches(new Integer(1), Integer.class, true);
-        assertMatches(new Integer(1), Number.class, true);
-        assertMatches(new Integer(1), Double.class, false);
+        assertMatches(Integer.valueOf(1), Integer.class, true);
+        assertMatches(Integer.valueOf(1), Number.class, true);
+        assertMatches(Integer.valueOf(1), Double.class, false);
     }
 
     public void testMatchesWithList() throws Throwable {
-        assertMatches(new Integer(1), Arrays.asList(new Object[]{new Integer(2), new Integer(1)}), true);
-        assertMatches(new Integer(1), Arrays.asList(new Object[]{new Integer(2), new Integer(3)}), false);
+        assertMatches(Integer.valueOf(1), Arrays.asList(new Object[]{Integer.valueOf(2), Integer.valueOf(1)}), true);
+        assertMatches(Integer.valueOf(1), Arrays.asList(new Object[]{Integer.valueOf(2), Integer.valueOf(3)}), false);
     }
 
     // Implementation methods

@@ -23,6 +23,6 @@ import java.util.Set;
 
 public class Groovy7365Support<A, B> {
     public Set<String> getStrings() {
-        return new LinkedHashSet<String>();
+        return new LinkedHashSet<>();
     }
 }

@@ -31,9 +31,7 @@ class A_GroovyReflector {
             CachedMethod m = CachedMethod.find(A.class.getDeclaredMethod("protectedMethod", new Class [0] ));
             Object[] arguments = new Object[0];
             m.setAccessible().invoke(new A(), arguments);
-        } catch (NoSuchMethodException e) {
-        } catch (IllegalAccessException e) {
-        } catch (InvocationTargetException e) {
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
         }
     }
 

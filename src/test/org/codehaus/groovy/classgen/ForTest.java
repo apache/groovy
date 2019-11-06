@@ -44,7 +44,7 @@ public class ForTest extends TestSupport {
         assertTrue("Managed to create bean", bean != null);
 
         System.out.println("################ Now about to invoke a method without looping");
-        Object value = new Integer(10000);
+        Object value = Integer.valueOf(10000);
 
         try {
             InvokerHelper.invokeMethod(bean, "oneParamDemo", new Object[]{value});
@@ -75,7 +75,7 @@ public class ForTest extends TestSupport {
         assertTrue("Managed to create bean", bean != null);
 
         System.out.println("################ Now about to invoke a method with looping");
-        Object[] array = {new Integer(1234), "abc", "def"};
+        Object[] array = {Integer.valueOf(1234), "abc", "def"};
 
         try {
             InvokerHelper.invokeMethod(bean, "iterateDemo", new Object[]{array});
@@ -107,7 +107,7 @@ public class ForTest extends TestSupport {
         assertTrue("Managed to create bean", bean != null);
 
         System.out.println("################ Now about to invoke a method with many parameters");
-        Object[] array = {new Integer(1000 * 1000), "foo-", "bar~"};
+        Object[] array = {Integer.valueOf(1000 * 1000), "foo-", "bar~"};
 
         try {
             InvokerHelper.invokeMethod(bean, "manyParamDemo", array);

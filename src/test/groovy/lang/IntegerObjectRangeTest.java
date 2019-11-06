@@ -28,7 +28,7 @@ public class IntegerObjectRangeTest extends NumberRangeTestCase {
      */
     @Override
     protected Range createRange(int from, int to) {
-        return new ObjectRange(new Integer(from), new Integer(to));
+        return new ObjectRange(Integer.valueOf(from), Integer.valueOf(to));
     }
 
     /**
@@ -36,7 +36,7 @@ public class IntegerObjectRangeTest extends NumberRangeTestCase {
      */
     @Override
     protected Comparable createValue(int value) {
-        return new Integer(value);
+        return Integer.valueOf(value);
     }
 
 }
