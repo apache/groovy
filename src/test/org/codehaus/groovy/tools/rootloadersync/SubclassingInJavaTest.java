@@ -34,8 +34,8 @@ public class SubclassingInJavaTest {
 
    @Test
    public void testGenericSubclassWithBafflingSymptom() {
-      OtherConcreteGenericJavaSubclass unrelatedInstance = new OtherConcreteGenericJavaSubclass(new HashSet<String>());
-      ConcreteGenericJavaSubclass instance = new ConcreteGenericJavaSubclass(new HashSet<String>());
+      OtherConcreteGenericJavaSubclass unrelatedInstance = new OtherConcreteGenericJavaSubclass(new HashSet<>());
+      ConcreteGenericJavaSubclass instance = new ConcreteGenericJavaSubclass(new HashSet<>());
       instance.addNote("abcd");
    }
 }

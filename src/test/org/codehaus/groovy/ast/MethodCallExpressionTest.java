@@ -38,7 +38,7 @@ public class MethodCallExpressionTest extends ASTTest {
      */
     private boolean visited;
 
-    private List<String> defaultScriptMethods = new ArrayList<String>();
+    private List<String> defaultScriptMethods = new ArrayList<>();
 
     private ClassCodeVisitorSupport methodCallVisitor = new ClassCodeVisitorSupport() {
 

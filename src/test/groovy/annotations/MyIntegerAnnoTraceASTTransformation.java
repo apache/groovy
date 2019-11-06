@@ -38,7 +38,7 @@ import java.util.List;
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class MyIntegerAnnoTraceASTTransformation implements ASTTransformation {
-    public static List<String> trace = new ArrayList<String>();
+    public static List<String> trace = new ArrayList<>();
 
     public void visit(ASTNode[] nodes, final SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {

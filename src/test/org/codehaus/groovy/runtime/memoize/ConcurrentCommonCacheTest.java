@@ -172,7 +172,7 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void testLruCache() {
-        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<String, String>(3);
+        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<>(3);
         sc.put("a", "1");
         sc.put("b", "2");
         sc.put("c", "3");
@@ -186,7 +186,7 @@ public class ConcurrentCommonCacheTest {
 
     @Test
     public void testFifoCache() {
-        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<String, String>(3, 3, EvictableCache.EvictionStrategy.FIFO);
+        ConcurrentCommonCache<String, String> sc = new ConcurrentCommonCache<>(3, 3, EvictableCache.EvictionStrategy.FIFO);
         sc.put("a", "1");
         sc.put("b", "2");
         sc.put("c", "3");

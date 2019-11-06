@@ -48,7 +48,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.sort;
  * mind, but these tests illustrate some of the possible ways to use them from Java.
  */
 public class ClosureJavaIntegrationTest extends TestCase {
-    Map<String, Integer> zoo = new LinkedHashMap<String, Integer>();
+    Map<String, Integer> zoo = new LinkedHashMap<>();
     List<String> animals = Arrays.asList("ant", "bear", "camel");
 
     @Override
@@ -64,7 +64,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testEachList() {
-        final List<Integer> result = new ArrayList<Integer>();
+        final List<Integer> result = new ArrayList<>();
         each(animals, new Closure(null) {
             public void doCall(String arg) {
                 result.add(arg.length());
@@ -74,7 +74,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testEachMap() {
-        final List<String> result = new ArrayList<String>();
+        final List<String> result = new ArrayList<>();
         each(zoo, new Closure(null) {
             public void doCall(String k, Integer v) {
                 result.add("k=" + k + ",v=" + v);
@@ -125,7 +125,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testFindAllAndCurry() {
-        Map<String, Integer> expected = new HashMap<String, Integer>(zoo);
+        Map<String, Integer> expected = new HashMap<>(zoo);
         expected.remove("Lions");
         Closure<Boolean> keyBiggerThan = new Closure<Boolean>(null) {
             public Boolean doCall(Map.Entry<String, Integer> e, Integer size) {
@@ -137,7 +137,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testListArithmetic() {
-        List<List> numLists = new ArrayList<List>();
+        List<List> numLists = new ArrayList<>();
         numLists.add(Arrays.asList(1, 2, 3));
         numLists.add(Arrays.asList(10, 20, 30));
         assertEquals(Arrays.asList(6, 60), collect(numLists, new Closure<Integer>(null) {
@@ -180,7 +180,7 @@ public class ClosureJavaIntegrationTest extends TestCase {
     }
 
     public void testTrampoline() {
-        final Reference<Closure<BigInteger>> ref = new Reference<Closure<BigInteger>>();
+        final Reference<Closure<BigInteger>> ref = new Reference<>();
         ref.set(new Closure<BigInteger>(null) {
             public Object doCall(Integer n, BigInteger total) {
                 return n > 1 ? ref.get().trampoline(n - 1, total.multiply(BigInteger.valueOf(n))) : total;

@@ -35,17 +35,17 @@ public class InvokeConstructorTest extends GroovyTestCase {
     }
 
     public void testInvokeConstructorOneParamWhichIsNull() throws Throwable {
-        assertConstructor(new DummyBean("Bob", new Integer(1707)), new Object[]{"Bob", new Integer(1707)});
+        assertConstructor(new DummyBean("Bob", Integer.valueOf(1707)), new Object[]{"Bob", Integer.valueOf(1707)});
     }
 
     public void testConstructorWithGStringCoercion() throws Throwable {
-        GString gstring = new GString(new Object[]{new Integer(123)}) {
+        GString gstring = new GString(new Object[]{Integer.valueOf(123)}) {
             public String[] getStrings() {
                 return new String[]{""};
             }
         };
 
-        Object expected = new Long(gstring.toString());
+        Object expected = Long.valueOf(gstring.toString());
 
         assertConstructor(expected, new Object[]{gstring});
     }
