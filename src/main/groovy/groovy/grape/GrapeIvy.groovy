@@ -447,23 +447,23 @@ class GrapeIvy implements GrapeEngine {
         addExcludesIfNeeded(args, md)
 
         for (IvyGrabRecord grabRecord : grabRecords) {
-            def conf = grabRecord.conf ?: ['*']
+            def confs = grabRecord.conf ?: ['*']
             DefaultDependencyDescriptor dd = (DefaultDependencyDescriptor) md.dependencies.find {
                 it.dependencyRevisionId == grabRecord.mrid
             }
             if (!dd) {
                 dd = new DefaultDependencyDescriptor(md, grabRecord.mrid, grabRecord.force, grabRecord.changing, grabRecord.transitive)
-                conf.each { dd.addDependencyConfiguration('default', it) }
+                confs.each { conf -> dd.addDependencyConfiguration('default', conf) }
                 md.addDependency(dd)
             }
 
-            // the optional configuration typically does not extend the default or master configuration, so prevent grabbing the main artifact
-            if (Collections.singleton('optional') == (conf as Set)) continue
-
-            // add artifact descriptor to dependency descriptor
-            def dad = new DefaultDependencyArtifactDescriptor(dd, grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier: grabRecord.classifier] : null)
-            conf.each { dad.addConfiguration(it) }
-            dd.addDependencyArtifact('default', dad)
+            if (grabRecord.classifier != null
+                    || (grabRecord.ext != null && grabRecord.ext != 'jar')
+                    || (grabRecord.type != null && grabRecord.type != 'jar')) {
+                // add artifact descriptor to dependency descriptor
+                def dad = new DefaultDependencyArtifactDescriptor(dd, grabRecord.mrid.name, grabRecord.type ?: 'jar', grabRecord.ext ?: 'jar', null, grabRecord.classifier ? [classifier: grabRecord.classifier] : null)
+                confs.each { conf -> dd.addDependencyArtifact(conf, dad) }
+            }
         }
 
         // resolve grab and dependencies
