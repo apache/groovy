@@ -22,10 +22,10 @@ import groovy.lang.Closure;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.control.io.ReaderSource;
+
 /**
  * Handy methods when working with Closure AST data structures.
  */
-
 public class ClosureUtils {
 
     /**
@@ -80,5 +80,4 @@ public class ClosureUtils {
     public static Parameter[] getParametersSafe(ClosureExpression ce) {
         return ce.getParameters() != null ? ce.getParameters() : Parameter.EMPTY_ARRAY;
     }
-
 }
