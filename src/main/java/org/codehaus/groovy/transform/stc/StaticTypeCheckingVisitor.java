@@ -1716,6 +1716,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             }
+
+            // GROOVY-7996: check if receiver implements get(String)/set(String,Object) or propertyMissing(String)
+            if (!testClass.isArray() && !isPrimitiveType(getUnwrapper(testClass))
+                    && pexp.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
+                MethodNode mopMethod;
+                if (readMode) {
+                    mopMethod = testClass.getMethod("get", new Parameter[]{new Parameter(STRING_TYPE, "name")});
+                } else {
+                    mopMethod = testClass.getMethod("set", new Parameter[]{new Parameter(STRING_TYPE, "name"), new Parameter(OBJECT_TYPE, "value")});
+                }
+                if (mopMethod == null) mopMethod = testClass.getMethod("propertyMissing", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
+
+                if (mopMethod != null) {
+                    pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
+                    pexp.removeNodeMetaData(DECLARATION_INFERRED_TYPE);
+                    pexp.removeNodeMetaData(INFERRED_TYPE);
+                    return true;
+                }
+            }
         }
 
         for (Receiver<String> receiver : receivers) {
