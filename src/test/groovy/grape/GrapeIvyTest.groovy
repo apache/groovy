@@ -209,7 +209,7 @@ final class GrapeIvyTest {
     }
 
     @Test
-    void testConf() {
+    void testConf1() {
         Set noJars = [
         ]
         Set coreJars = [
@@ -255,6 +255,60 @@ final class GrapeIvyTest {
         assert testJars - jars == testJars, 'assert that no test jars are present'
         assert optionalJars - jars == noJars, 'assert that all optional jars are present'
         assert jars == coreJars + optionalJars, 'assert that no extraneous jars are present'
+    }
+
+    @Test // GROOVY-8372
+    void testConf2() {
+        def tempDir = File.createTempDir()
+        def jarsDir = new File(tempDir, 'foo/bar/jars'); jarsDir.mkdirs()
+
+        new File(jarsDir, 'bar-1.2.3.jar').createNewFile()
+        new File(jarsDir, 'baz-1.2.3.jar').createNewFile()
+
+        new File(tempDir, 'ivysettings.xml').write '''\
+            <?xml version="1.0" encoding="UTF-8"?>
+            <ivysettings>
+                <caches useOrigin="true" />
+                <resolvers>
+                    <filesystem name="downloadGrapes">
+                        <ivy pattern="${ivy.settings.dir}/[organization]/[module]/ivy-[revision].xml" />
+                        <artifact pattern="${ivy.settings.dir}/[organization]/[module]/[type]s/[artifact]-[revision].[ext]" />
+                    </filesystem>
+                </resolvers>
+            </ivysettings>
+            '''.stripIndent()
+
+        new File(tempDir, 'foo/bar/ivy-1.2.3.xml').write '''\
+            <?xml version="1.0" encoding="UTF-8"?>
+            <ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+                <info organisation="foo" module="bar" revision="1.2.3" status="release" />
+                <configurations>
+                    <conf name="default" visibility="public" extends="master" />
+                    <conf name="master" visibility="public" />
+                    <conf name="other" visibility="public" />
+                </configurations>
+                <publications>
+                    <artifact name="bar" type="jar" ext="jar" conf="master" />
+                    <artifact name="baz" type="jar" ext="jar" conf="other" />
+                </publications>
+            </ivy-module>
+            '''.stripIndent()
+
+        System.setProperty('grape.config', tempDir.absolutePath + File.separator + 'ivysettings.xml')
+        try {
+            Grape.@instance = null
+            def loader = new GroovyClassLoader()
+            // request conf="other" which should resolve to artifact "baz-1.2.3.jar"
+            def uris = Grape.resolve(classLoader:loader, validate:false, [group:'foo', module:'bar', version:'1.2.3', conf:'other'])
+
+            def jars = uris.collect { uri -> uri.path.split('/')[-1] } as Set
+            assert 'baz-1.2.3.jar' in jars
+            assert 'bar-1.2.3.jar' !in jars
+        } finally {
+            System.clearProperty('grape.config')
+            Grape.@instance = null
+            tempDir.deleteDir()
+        }
     }
 
     @Test
