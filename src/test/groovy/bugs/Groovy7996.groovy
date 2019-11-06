@@ -18,16 +18,18 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
+import groovy.transform.CompileStatic
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+@CompileStatic
 final class Groovy7996 {
 
-    @Test @NotYetImplemented
+    @Test
     void testFieldAccessFromClosure1() {
-        assertScript '''
+        def err = shouldFail '''
             class Foo {
                 def build(@DelegatesTo(value=Foo, strategy=Closure.DELEGATE_FIRST) Closure block) {
                     this.with(block)
@@ -45,13 +47,15 @@ final class Groovy7996 {
                 boolean doStuff() {
                     Foo foo = new Foo()
                     foo.build {
-                        bar.isEmpty() // "ClassCastException: java.lang.String cannot be cast to java.util.List"
+                        bar.isEmpty() // ClassCastException: java.lang.String cannot be cast to java.util.List
                     }
                 }
             }
 
-            assert new Bar().doStuff()
+            new Bar().doStuff()
         '''
+
+        assert err =~ /Cannot find matching method java.lang.Object#isEmpty\(\)/
     }
 
     @Test
