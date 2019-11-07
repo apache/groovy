@@ -187,6 +187,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.findActualTypeByGenericsPlaceholderName;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeDeclaringAndActualGenericsTypeMap;
@@ -626,13 +627,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                 if (enclosingBinaryExpression != null) {
                     Expression leftExpression = enclosingBinaryExpression.getLeftExpression();
-                    Expression rightExpression = enclosingBinaryExpression.getRightExpression();
                     SetterInfo setterInfo = removeSetterInfo(leftExpression);
                     if (setterInfo != null) {
+                        Expression rightExpression = enclosingBinaryExpression.getRightExpression();
                         if (!ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo)) {
                             return;
                         }
-
                     }
                 }
             }
@@ -729,25 +729,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean tryVariableExpressionAsProperty(final VariableExpression vexp, final String dynName) {
-        VariableExpression implicitThis = varX("this");
-        PropertyExpression pe = new PropertyExpression(implicitThis, dynName);
-        pe.setImplicitThis(true);
-        if (visitPropertyExpressionSilent(pe, vexp)) {
-            ClassNode previousIt = vexp.getNodeMetaData(INFERRED_TYPE);
-            vexp.copyNodeMetaData(implicitThis);
-            vexp.putNodeMetaData(INFERRED_TYPE, previousIt);
-            storeType(vexp, getType(pe));
-            Object val = pe.getNodeMetaData(READONLY_PROPERTY);
+        PropertyExpression pexp = thisPropX(true, dynName);
+        if (visitPropertyExpressionSilent(pexp, vexp)) {
+            ClassNode propertyType = getType(pexp);
+            pexp.removeNodeMetaData(INFERRED_TYPE);
+
+            vexp.copyNodeMetaData(pexp.getObjectExpression());
+            Object val = pexp.getNodeMetaData(READONLY_PROPERTY);
             if (val != null) vexp.putNodeMetaData(READONLY_PROPERTY, val);
-            val = pe.getNodeMetaData(IMPLICIT_RECEIVER);
+            val = pexp.getNodeMetaData(IMPLICIT_RECEIVER);
             if (val != null) vexp.putNodeMetaData(IMPLICIT_RECEIVER, val);
+            val = pexp.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (val != null) vexp.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, val);
+
+            storeType(vexp, propertyType);
             return true;
         }
         return false;
     }
 
-    private boolean visitPropertyExpressionSilent(PropertyExpression pe, Expression lhsPart) {
-        return (existsProperty(pe, !isLHSOfEnclosingAssignment(lhsPart)));
+    private boolean visitPropertyExpressionSilent(final PropertyExpression pe, final Expression lhsPart) {
+        return existsProperty(pe, !isLHSOfEnclosingAssignment(lhsPart));
     }
 
     @Override
@@ -762,7 +764,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private boolean isLHSOfEnclosingAssignment(final Expression expression) {
-        final BinaryExpression ec = typeCheckingContext.getEnclosingBinaryExpression();
+        BinaryExpression ec = typeCheckingContext.getEnclosingBinaryExpression();
         return ec != null && ec.getLeftExpression() == expression && isAssignment(ec.getOperation().getType());
     }
 
@@ -4153,12 +4155,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return resultType;
     }
 
-    private static boolean isEmptyCollection(Expression expr) {
+    private static boolean isEmptyCollection(final Expression expr) {
         return (expr instanceof ListExpression && ((ListExpression) expr).getExpressions().size() == 0) ||
                 (expr instanceof MapExpression && ((MapExpression) expr).getMapEntryExpressions().size() == 0);
     }
 
-    private static boolean hasInferredReturnType(Expression expression) {
+    private static boolean hasInferredReturnType(final Expression expression) {
         ClassNode type = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
         return type != null && !type.getName().equals("java.lang.Object");
     }
@@ -4180,7 +4182,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     }
 
-    protected void storeType(Expression exp, ClassNode cn) {
+    protected void storeType(final Expression exp, ClassNode cn) {
         if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable() && isPrimitiveType(cn)) {
             cn = getWrapper(cn);
         } else if (exp instanceof MethodCallExpression && ((MethodCallExpression) exp).isSafe() && isPrimitiveType(cn)) {
@@ -4213,7 +4215,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         if (exp instanceof VariableExpression) {
             VariableExpression var = (VariableExpression) exp;
-            final Variable accessedVariable = var.getAccessedVariable();
+            Variable accessedVariable = var.getAccessedVariable();
             if (accessedVariable != exp && accessedVariable instanceof VariableExpression) {
                 storeType((VariableExpression) accessedVariable, cn);
             }

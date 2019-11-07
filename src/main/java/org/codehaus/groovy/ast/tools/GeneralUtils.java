@@ -730,12 +730,18 @@ public class GeneralUtils {
         return new BinaryExpression(lhv, PLUS, rhv);
     }
 
-    public static Expression propX(Expression owner, String property) {
+    public static PropertyExpression propX(Expression owner, String property) {
         return new PropertyExpression(owner, property);
     }
 
-    public static Expression propX(Expression owner, Expression property) {
+    public static PropertyExpression propX(Expression owner, Expression property) {
         return new PropertyExpression(owner, property);
+    }
+
+    public static PropertyExpression thisPropX(boolean implicit, String property) {
+        PropertyExpression pexp = propX(varX("this"), property);
+        pexp.setImplicitThis(implicit);
+        return pexp;
     }
 
     public static Statement returnS(Expression expr) {
@@ -919,5 +925,4 @@ public class GeneralUtils {
         return ((firstPackage == null && secondPackage == null) ||
                         firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
     }
-
 }
