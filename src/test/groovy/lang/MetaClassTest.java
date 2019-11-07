@@ -75,10 +75,10 @@ public class MetaClassTest extends GroovyTestCase {
 
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
 
-        assertEquals(metaClass.getProperty(dymmyClass, "x"), new Integer(0));
+        assertEquals(metaClass.getProperty(dymmyClass, "x"), Integer.valueOf(0));
         assertEquals(metaClass.getProperty(dymmyClass, "y"), "none");
 
-        metaClass.setProperty(dymmyClass, "x", new Integer(25));
+        metaClass.setProperty(dymmyClass, "x", Integer.valueOf(25));
         assertEquals(dymmyClass.x, 25);
 
         metaClass.setProperty(dymmyClass, "y", "newvalue");
@@ -88,7 +88,7 @@ public class MetaClassTest extends GroovyTestCase {
     public void testSetPropertyWithInt() {
         DymmyClass dymmyClass = new DymmyClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
-        metaClass.setProperty(dymmyClass, "anInt", new Integer(10));
+        metaClass.setProperty(dymmyClass, "anInt", Integer.valueOf(10));
     }
 
     public void testSetPropertyWithDoubleArray() {
@@ -120,7 +120,7 @@ public class MetaClassTest extends GroovyTestCase {
 
         // test Integer[]
         Integer[] integers = new Integer[]{
-                new Integer(0), new Integer(1), new Integer(2), new Integer(3)
+                Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(3)
         };
         metaClass.setProperty(dymmyClass, "integers", integers);
         assertEquals(integers, metaClass.getProperty(dymmyClass, "integers"));
@@ -132,8 +132,8 @@ public class MetaClassTest extends GroovyTestCase {
 
         // test list
         ArrayList list = new ArrayList();
-        list.add(new Integer(120));
-        list.add(new Integer(150));
+        list.add(Integer.valueOf(120));
+        list.add(Integer.valueOf(150));
 
         // test int[]
         metaClass.setProperty(dymmyClass, "ints", list);
