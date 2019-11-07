@@ -28,7 +28,7 @@ public class LongObjectRangeTest extends NumberRangeTestCase {
      */
     @Override
     protected Range createRange(int from, int to) {
-        return new ObjectRange(new Long(from), new Long(to));
+        return new ObjectRange(Long.valueOf(from), Long.valueOf(to));
     }
 
     /**
@@ -36,11 +36,11 @@ public class LongObjectRangeTest extends NumberRangeTestCase {
      */
     @Override
     protected Comparable createValue(int value) {
-        return new Long(value);
+        return Long.valueOf(value);
     }
 
     public void testSizeWithLongTo() {
-        assertEquals(3, new ObjectRange(new Integer(Integer.MAX_VALUE), new Long(Integer.MAX_VALUE + 2L)).size());
+        assertEquals(3, new ObjectRange(Integer.valueOf(Integer.MAX_VALUE), Long.valueOf(Integer.MAX_VALUE + 2L)).size());
     }
 
     // GROOVY-4973: Range made-up of from: Integer and to: Long should have 'from' promoted to type Long.

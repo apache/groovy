@@ -98,7 +98,7 @@ public abstract class NumberRangeTestCase extends TestCase {
      * Tests using different classes for 'from' and 'to'.
      */
     public void testDifferentClassesForFromAndTo() {
-        final Integer from = new Integer(1);
+        final Integer from = Integer.valueOf(1);
         final Comparable to = createValue(5);
         final Range range = new ObjectRange(from, to);
 

@@ -114,7 +114,7 @@ public class ObjectRangeTest extends TestCase {
     }
 
     public void testNullForFromOrToIsIllegal() {
-        Comparable dontcare = new Integer(0);
+        Comparable dontcare = Integer.valueOf(0);
         try {
             new ObjectRange((Comparable)null, dontcare);
             fail("Should have thrown IllegalArgumentException");
@@ -214,13 +214,13 @@ public class ObjectRangeTest extends TestCase {
     public void testContains() {
         Range r = createRange(10, 20);
 
-        assertTrue("contains 11", r.contains(new Integer(11)));
-        assertTrue("contains 10", r.contains(new Integer(10)));
-        assertTrue("contains 19", r.contains(new Integer(19)));
-        assertFalse("contains 9", r.contains(new Integer(9)));
-        assertFalse("contains 21", r.contains(new Integer(21)));
-        assertFalse("contains 100", r.contains(new Integer(100)));
-        assertFalse("contains -1", r.contains(new Integer(-1)));
+        assertTrue("contains 11", r.contains(Integer.valueOf(11)));
+        assertTrue("contains 10", r.contains(Integer.valueOf(10)));
+        assertTrue("contains 19", r.contains(Integer.valueOf(19)));
+        assertFalse("contains 9", r.contains(Integer.valueOf(9)));
+        assertFalse("contains 21", r.contains(Integer.valueOf(21)));
+        assertFalse("contains 100", r.contains(Integer.valueOf(100)));
+        assertFalse("contains -1", r.contains(Integer.valueOf(-1)));
 
         r = createRange(new BigDecimal("2.1"), new BigDecimal("10.0"));
 
@@ -234,8 +234,8 @@ public class ObjectRangeTest extends TestCase {
     }
 
     public void testContainsWithLikeNumbers() {
-        Range r = new ObjectRange(new Integer(1), new Short((short)3));
-        assertTrue("contains 2", r.contains(new Integer(2)));
+        Range r = new ObjectRange(Integer.valueOf(1), Short.valueOf((short) 3));
+        assertTrue("contains 2", r.contains(Integer.valueOf(2)));
         r = new ObjectRange(new Float(1.0), new Double(3.0));
         assertTrue("contains 2.0d", r.contains(new Double(2.0)));
         assertTrue("contains 2.0g", r.contains(new BigDecimal(2.0)));
@@ -245,7 +245,7 @@ public class ObjectRangeTest extends TestCase {
     }
 
     public void testContainsWithIncompatibleType() {
-        Range r = new ObjectRange(new Integer(1), new Short((short)3));
+        Range r = new ObjectRange(Integer.valueOf(1), Short.valueOf((short) 3));
         assertFalse("shouldn't contain string", r.contains("String"));
     }
 
@@ -327,14 +327,14 @@ public class ObjectRangeTest extends TestCase {
         int i = 4;
         for (Iterator it = r.iterator(); it.hasNext();) {
             i++;
-            assertEquals("equals to " + i, new Integer(i), (Integer) (it.next()));
+            assertEquals("equals to " + i, Integer.valueOf(i), (Integer) (it.next()));
         }
         assertEquals(11, i);
 
         i = 4;
         for (Iterator it = r.step(1).iterator(); it.hasNext();) {
             i++;
-            assertEquals("equals to " + i, new Integer(i), (Integer) (it.next()));
+            assertEquals("equals to " + i, Integer.valueOf(i), (Integer) (it.next()));
         }
         assertEquals(11, i);
 
@@ -376,7 +376,7 @@ public class ObjectRangeTest extends TestCase {
     }
 
     protected Range createRange(int from, int to) {
-        return new ObjectRange(new Integer(from), new Integer(to));
+        return new ObjectRange(Integer.valueOf(from), Integer.valueOf(to));
     }
 
     protected Range createRange(Comparable from, Comparable to) {
@@ -384,7 +384,7 @@ public class ObjectRangeTest extends TestCase {
     }
 
     protected void assertEquals(String msg, int expected, Object value) {
-        assertEquals(msg, new Integer(expected), value);
+        assertEquals(msg, Integer.valueOf(expected), value);
     }
 
 }
