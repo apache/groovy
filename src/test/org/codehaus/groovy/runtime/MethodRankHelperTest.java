@@ -81,7 +81,7 @@ public class MethodRankHelperTest extends TestCase {
     private Integer[] box(int[] ia) {
         Integer[] ret = new Integer[ia.length];
         for (int i = 0; i < ia.length; i++) {
-            ret[i] = new Integer(ia[i]);
+            ret[i] = Integer.valueOf(ia[i]);
         }
         return ret;
     }

@@ -40,9 +40,9 @@ public class MethodKeyTest extends TestCase {
 
     public void testTemporaryImplementation() throws Exception {
         MethodKey a = new DefaultMethodKey(Object.class, "foo", new Class[]{Object.class, Integer.class}, false);
-        MethodKey a2 = new TemporaryMethodKey(Object.class, "foo", new Object[]{new Object(), new Integer(1)}, false);
+        MethodKey a2 = new TemporaryMethodKey(Object.class, "foo", new Object[]{new Object(), Integer.valueOf(1)}, false);
         MethodKey b = new TemporaryMethodKey(Object.class, "foo", new Object[]{new Object()}, false);
-        MethodKey c = new TemporaryMethodKey(Object.class, "bar", new Object[]{new Object(), new Integer(1)}, false);
+        MethodKey c = new TemporaryMethodKey(Object.class, "bar", new Object[]{new Object(), Integer.valueOf(1)}, false);
 
         assertCompare(a, a, true);
         assertCompare(a, a2, true);

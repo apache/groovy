@@ -83,29 +83,29 @@ public class InvokerTest extends GroovyTestCase {
             }
         };
         assertAsBoolean(true, nonEmptyGString);
-        assertAsBoolean(true, new Integer(1234));
-        assertAsBoolean(false, new Integer(0));
+        assertAsBoolean(true, Integer.valueOf(1234));
+        assertAsBoolean(false, Integer.valueOf(0));
         assertAsBoolean(true, new Float(0.3f));
         assertAsBoolean(true, new Double(3.0f));
         assertAsBoolean(false, new Float(0.0f));
         assertAsBoolean(true, new Character((char) 1));
         assertAsBoolean(false, new Character((char) 0));
         assertAsBoolean(false, Collections.EMPTY_LIST);
-        assertAsBoolean(true, Arrays.asList(new Integer[]{new Integer(1)}));
+        assertAsBoolean(true, Arrays.asList(new Integer[]{Integer.valueOf(1)}));
     }
 
     public void testLessThan() {
-        assertTrue(ScriptBytecodeAdapter.compareLessThan(new Integer(1), new Integer(2)));
-        assertTrue(ScriptBytecodeAdapter.compareLessThanEqual(new Integer(2), new Integer(2)));
+        assertTrue(ScriptBytecodeAdapter.compareLessThan(Integer.valueOf(1), Integer.valueOf(2)));
+        assertTrue(ScriptBytecodeAdapter.compareLessThanEqual(Integer.valueOf(2), Integer.valueOf(2)));
     }
 
     public void testGreaterThan() {
-        assertTrue(ScriptBytecodeAdapter.compareGreaterThan(new Integer(3), new Integer(2)));
-        assertTrue(ScriptBytecodeAdapter.compareGreaterThanEqual(new Integer(2), new Integer(2)));
+        assertTrue(ScriptBytecodeAdapter.compareGreaterThan(Integer.valueOf(3), Integer.valueOf(2)));
+        assertTrue(ScriptBytecodeAdapter.compareGreaterThanEqual(Integer.valueOf(2), Integer.valueOf(2)));
     }
 
     public void testCompareTo() {
-        assertTrue(DefaultTypeTransformation.compareEqual("x", new Integer('x')));
+        assertTrue(DefaultTypeTransformation.compareEqual("x", Integer.valueOf('x')));
     }
 
     // Implementation methods
