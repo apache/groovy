@@ -94,6 +94,7 @@ class GrapeIvy implements GrapeEngine {
         // start ivy
         Message.defaultLogger = new DefaultMessageLogger(System.getProperty('ivy.message.logger.level', '-1') as int)
         settings = new IvySettings()
+        settings.setVariable('user.home.url', new File(System.getProperty('user.home')).toURI().toURL() as String)
 
         // configure settings
         def grapeConfig = localGrapeConfig
