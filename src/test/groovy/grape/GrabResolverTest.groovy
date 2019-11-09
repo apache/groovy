@@ -18,82 +18,95 @@
  */
 package groovy.grape
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
+import org.junit.AfterClass
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.Ignore
+import org.junit.Test
 
-class GrabResolverTest extends GroovyTestCase {
-    def originalGrapeRoot
-    def grapeRoot
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+@CompileStatic
+final class GrabResolverTest {
+
+    private static String originalGrapeRoot
+
+    @BeforeClass
+    static void setUpTestSuite() {
+        originalGrapeRoot = System.getProperty('grape.root')
+    }
+
+    @Before
     void setUp() {
-        Grape.@instance = null // isolate our test from other tests
+        Grape.@instance = null // isolate each test
 
-        // create a new grape root directory so as to insure a clean slate for this test
-        originalGrapeRoot = System.getProperty("grape.root")
-        grapeRoot = new File(System.getProperty("java.io.tmpdir"), "GrabResolverTest${System.currentTimeMillis()}")
+        // create a new grape root directory so as to insure a clean slate for each test
+        def grapeRoot = new File(System.getProperty('java.io.tmpdir'), "GrabResolverTest${System.currentTimeMillis()}")
+        System.setProperty('grape.root', grapeRoot.path)
         assert grapeRoot.mkdir()
         grapeRoot.deleteOnExit()
-        System.setProperty("grape.root", grapeRoot.path)
     }
 
-    void tearDown() {
+    @AfterClass
+    static void tearDownTestSuite() {
         if (originalGrapeRoot == null) {
-            // SDN bug: 4463345
-            System.getProperties().remove("grape.root")
+            System.clearProperty('grape.root')
         } else {
-            System.setProperty("grape.root", originalGrapeRoot)
+            System.setProperty('grape.root', originalGrapeRoot)
         }
 
-        Grape.@instance = null // isolate our test from other tests
+        Grape.@instance = null // isolate these tests from other tests
     }
 
-    void manualTestChecksumsCanBeDisabled() {
+    @Test @Ignore('manual')
+    void testChecksumsCanBeDisabled() {
         // TODO someone has cleaned up the checksum info in the public repos that this test
         // was relying on and so this test no longer fails unless you have the corrupt SHA1
         // value cached in your local grapes repo, change test to not rely on that fact and
         // then reinstate (use a local file repo?)
-        GroovyShell shell = new GroovyShell(new GroovyClassLoader())
-        shouldFail(RuntimeException) {
-            shell.evaluate """
+        shouldFail RuntimeException, '''
             @Grab('org.mvel:mvel2:2.1.3.Final')
             import org.mvel2.MVEL
             assert MVEL.name == 'org.mvel2.MVEL'
-            """
-        }
-        shell.evaluate """
-        @Grab('org.mvel:mvel2:2.1.3.Final')
-        @GrabConfig(disableChecksums=true)
-        import org.mvel2.MVEL
-        assert MVEL.name == 'org.mvel2.MVEL'
-        """
+        '''
+        assertScript '''
+            @Grab('org.mvel:mvel2:2.1.3.Final')
+            @GrabConfig(disableChecksums=true)
+            import org.mvel2.MVEL
+            assert MVEL.name == 'org.mvel2.MVEL'
+        '''
     }
 
+    @Test // NOTE: 'org.restlet:org.restlet:1.1.6' must not be in local m2 repository for this test to pass
     void testResolverDefinitionIsRequired() {
-        GroovyShell shell = new GroovyShell(new GroovyClassLoader())
-        shouldFail(CompilationFailedException) {
-            shell.evaluate("""
-                @Grab(group='org.restlet', module='org.restlet', version='1.1.6')
-                class AnnotationHost {}
-                import org.restlet.Application
-            """)
-        }
+        shouldFail CompilationFailedException, '''
+            @Grab(group='org.restlet', module='org.restlet', version='1.1.6')
+            import org.restlet.Application
+            class AnnotationHost {}
+            println 'hello world'
+        '''
     }
 
+    @Test
     void testResolverDefinitionResolvesDependency() {
-        GroovyShell shell = new GroovyShell(new GroovyClassLoader())
-        shell.evaluate("""
+        assertScript '''
             @GrabResolver(name='restlet.org', root='http://maven.restlet.org')
             @Grab(group='org.restlet', module='org.restlet', version='1.1.6')
             class AnnotationHost {}
-            assert org.restlet.Application.class.simpleName == 'Application'""")
+            assert org.restlet.Application.class.simpleName == 'Application'
+        '''
     }
 
+    @Test
     void testResolverDefinitionResolvesDependencyWithShorthand() {
-        GroovyShell shell = new GroovyShell(new GroovyClassLoader())
-        shell.evaluate("""
+        assertScript '''
             @GrabResolver('http://maven.restlet.org')
             @Grab('org.restlet:org.restlet:1.1.6')
             class AnnotationHost {}
-            assert org.restlet.Application.class.simpleName == 'Application'""")
+            assert org.restlet.Application.class.simpleName == 'Application'
+        '''
     }
 }
