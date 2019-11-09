@@ -567,18 +567,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void checkSuperCallFromClosure(Expression call, MethodNode directCallTarget) {
         if (call instanceof MethodCallExpression && typeCheckingContext.getEnclosingClosure() != null) {
             Expression objectExpression = ((MethodCallExpression) call).getObjectExpression();
-            if (objectExpression instanceof VariableExpression) {
-                VariableExpression var = (VariableExpression) objectExpression;
-                if (var.isSuperExpression()) {
-                    ClassNode current = typeCheckingContext.getEnclosingClassNode();
-                    LinkedList<MethodNode> list = current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED);
-                    if (list == null) {
-                        list = new LinkedList<MethodNode>();
-                        current.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, list);
-                    }
-                    list.add(directCallTarget);
-                    call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
+            if (isSuperExpression(objectExpression)) {
+                ClassNode current = typeCheckingContext.getEnclosingClassNode();
+                LinkedList<MethodNode> list = current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED);
+                if (list == null) {
+                    list = new LinkedList<MethodNode>();
+                    current.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, list);
                 }
+                list.add(directCallTarget);
+                call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
             }
         }
     }
@@ -2260,14 +2257,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode[] args = getArgumentTypes(argumentList);
         if (args.length > 0 &&
                 typeCheckingContext.getEnclosingClosure() != null &&
-                argumentList.getExpression(0) instanceof VariableExpression &&
-                ((VariableExpression) argumentList.getExpression(0)).isThisExpression() &&
-                call.getType() instanceof InnerClassNode &&
-                call.getType().getOuterClass().equals(args[0]) &&
+                isThisExpression(argumentList.getExpression(0)) &&
+                args[0].equals(call.getType().getOuterClass()) &&
                 !call.getType().isStaticClass()) {
             args[0] = CLOSURE_TYPE;
         }
-
 
         MethodNode node;
         if (looksLikeNamedArgConstructor(receiver, args)
@@ -3350,7 +3344,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             boolean callArgsVisited = false;
             if (isCallOnClosure) {
                 // this is a closure.call() call
-                if (objectExpression == VariableExpression.THIS_EXPRESSION) {
+                if (isThisExpression(objectExpression)) {
                     // isClosureCall() check verified earlier that a field exists
                     FieldNode field = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
                     GenericsType[] genericsTypes = field.getType().getGenericsTypes();
@@ -3394,6 +3388,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         storeType(call, data);
                     }
                 }
+
                 int nbOfArgs;
                 if (callArguments instanceof ArgumentListExpression) {
                     ArgumentListExpression list = (ArgumentListExpression) callArguments;
@@ -3426,8 +3421,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // if we are not in a static context but the current receiver is a static class, we must
                     // ensure that all methods are either static or declared by the current receiver or a superclass
                     if (!mn.isEmpty()
-                            && (typeCheckingContext.isInStaticContext || (receiverType.getModifiers() & Opcodes.ACC_STATIC) != 0)
-                            && (call.isImplicitThis() || (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isThisExpression()))) {
+                            && (call.isImplicitThis() || isThisExpression(objectExpression))
+                            && (typeCheckingContext.isInStaticContext || (receiverType.getModifiers() & Opcodes.ACC_STATIC) != 0)) {
                         // we create separate method lists just to be able to print out
                         // a nice error message to the user
                         // a method is accessible if it is static, or if we are not in a static context and it is
@@ -3490,15 +3485,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         }
 
                         ClassNode returnType = getType(directMethodCallCandidate);
-
                         if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, directMethodCallCandidate);
-                            ClassNode irtg = inferReturnTypeGenerics(
-                                    chosenReceiver.getType(),
-                                    directMethodCallCandidate,
-                                    callArguments,
-                                    call.getGenericsTypes());
-                            returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
+                            ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), directMethodCallCandidate, callArguments, call.getGenericsTypes());
+                            returnType = (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType);
                             callArgsVisited = true;
                         }
                         if (directMethodCallCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
@@ -3802,8 +3792,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
-        if (objectExpression instanceof ClosureExpression && ("call".equals(name) || "doCall".equals(name))) return true;
-        if (objectExpression == VariableExpression.THIS_EXPRESSION) {
+        if (objectExpression instanceof ClosureExpression && "call".equals(name) || "doCall".equals(name)) return true;
+        if (isThisExpression(objectExpression)) {
             FieldNode fieldNode = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
             if (fieldNode != null) {
                 ClassNode type = fieldNode.getType();
@@ -4833,15 +4823,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return node;
         }
         if (exp instanceof VariableExpression) {
-            final VariableExpression vexp = (VariableExpression) exp;
+            VariableExpression vexp = (VariableExpression) exp;
             ClassNode selfTrait = isTraitSelf(vexp);
             if (selfTrait != null) return makeSelf(selfTrait);
-            if (vexp == VariableExpression.THIS_EXPRESSION) return makeThis();
-            if (vexp == VariableExpression.SUPER_EXPRESSION) return makeSuper();
-            final Variable variable = vexp.getAccessedVariable();
+            if (vexp.isThisExpression()) return makeThis();
+            if (vexp.isSuperExpression()) return makeSuper();
+            Variable variable = vexp.getAccessedVariable();
             if (variable instanceof FieldNode) {
                 FieldNode fieldNode = (FieldNode) variable;
-
                 checkOrMarkPrivateAccess(vexp, fieldNode, isLHSOfEnclosingAssignment(vexp));
                 return getType(fieldNode);
             }
@@ -5073,6 +5062,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected static boolean isNullConstant(final Expression expression) {
         return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
+    }
+
+    protected static boolean isThisExpression(final Expression expression) {
+        return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
+    }
+
+    protected static boolean isSuperExpression(final Expression expression) {
+        return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
     }
 
     protected ClassNode inferMapExpressionType(final MapExpression map) {
