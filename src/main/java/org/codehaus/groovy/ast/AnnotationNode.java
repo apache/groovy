@@ -72,7 +72,7 @@ public class AnnotationNode extends ASTNode {
 
     private void assertMembers() {
         if (members == null) {
-             members = new LinkedHashMap<String, Expression>();
+             members = new LinkedHashMap<>();
         }
     }
 
