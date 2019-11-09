@@ -187,11 +187,6 @@ task docGDK {
     }
 }
 
-// apply javadoc fix tool to generated javadocs - ensures no vulnerability even on old JDK versions
-allprojects {
-    apply plugin: 'javadocHotfix'
-}
-
 javadocAll.options.source = '1.8'
 
 if (JavaVersion.current().isJava8Compatible()) {
