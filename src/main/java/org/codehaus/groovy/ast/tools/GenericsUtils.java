@@ -55,6 +55,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCorrectedClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
@@ -356,6 +357,7 @@ public class GenericsUtils {
         }
         if (type.isGenericsPlaceHolder() && !exclusions.contains(type.getUnresolvedName())) {
             String name = type.getGenericsTypes()[0].getName();
+            exclusions = plus(exclusions, name); // GROOVY-7722
             type = genericsSpec.get(name);
             if (type != null && type.isGenericsPlaceHolder() && type.getGenericsTypes() == null) {
                 ClassNode placeholder = ClassHelper.makeWithoutCaching(type.getUnresolvedName());
