@@ -866,12 +866,12 @@ public class ConcurrentReaderHashMap
     }
     public Object[] toArray() {
       Collection c = new ArrayList();
-        for (Object o : this) c.add(o);
+        c.addAll(this);
       return c.toArray();
     }
     public Object[] toArray(Object[] a) {
       Collection c = new ArrayList();
-        for (Object o : this) c.add(o);
+      c.addAll(this);
       return c.toArray(a);
     }
   }
@@ -907,12 +907,12 @@ public class ConcurrentReaderHashMap
     }
     public Object[] toArray() {
       Collection c = new ArrayList();
-        for (Object o : this) c.add(o);
+      c.addAll(this);
       return c.toArray();
     }
     public Object[] toArray(Object[] a) {
       Collection c = new ArrayList();
-        for (Object o : this) c.add(o);
+      c.addAll(this);
       return c.toArray(a);
     }
   }
@@ -958,12 +958,12 @@ public class ConcurrentReaderHashMap
     }
     public Object[] toArray() {
       Collection c = new ArrayList();
-        for (Object o : this) c.add(o);
+      c.addAll(this);
       return c.toArray();
     }
     public Object[] toArray(Object[] a) {
       Collection c = new ArrayList();
-        for (Object o : this) c.add(o);
+      c.addAll(this);
       return c.toArray(a);
     }
   }
