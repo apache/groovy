@@ -69,7 +69,7 @@ public class AstBuilderTransformation extends MethodCallTransformation {
      */
     private static class AstBuilderInvocationTrap extends MethodInvocationTrap {
 
-        private final List<String> factoryTargets = new ArrayList<String>();
+        private final List<String> factoryTargets = new ArrayList<>();
 
         /**
          * Creates the trap and captures all the ways in which a class may be referenced via imports.
@@ -121,7 +121,7 @@ public class AstBuilderTransformation extends MethodCallTransformation {
         }
 
         private static List<Expression> getNonClosureArguments(MethodCallExpression call) {
-            List<Expression> result = new ArrayList<Expression>();
+            List<Expression> result = new ArrayList<>();
             if (call.getArguments() instanceof TupleExpression) {
                 for (ASTNode node : ((TupleExpression) call.getArguments()).getExpressions()) {
                     if (!(node instanceof ClosureExpression)) {
