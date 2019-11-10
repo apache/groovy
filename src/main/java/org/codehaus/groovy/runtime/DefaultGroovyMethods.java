@@ -3762,7 +3762,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     @Deprecated
-    public static <T,E> List<T> collectMany(Collection<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
+    public static <T,E> List<T> collectMany(Collection<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany((Iterable)self, projection);
     }
 
@@ -3772,7 +3772,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.5
      */
     @Deprecated
-    public static <T,E> Collection<T> collectMany(Collection<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
+    public static <T,E> Collection<T> collectMany(Collection<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany((Iterable)self, collector, projection);
     }
 
@@ -3800,7 +3800,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #sum(java.util.Collection, groovy.lang.Closure)
      * @since 2.2.0
      */
-    public static <T,E> List<T> collectMany(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
+    public static <T,E> List<T> collectMany(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         return (List<T>) collectMany(self, new ArrayList<T>(), projection);
     }
 
@@ -3824,7 +3824,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) into it
      * @since 2.2.0
      */
-    public static <T,E> Collection<T> collectMany(Iterable<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
+    public static <T,E> Collection<T> collectMany(Iterable<E> self, Collection<T> collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         for (E next : self) {
             collector.addAll(projection.call(next));
         }
@@ -3847,7 +3847,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) to it
      * @since 1.8.8
      */
-    public static <T,K,V> Collection<T> collectMany(Map<K, V> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<Collection<? extends T>> projection) {
+    public static <T,K,V> Collection<T> collectMany(Map<K, V> self, Collection<T> collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             collector.addAll(callClosureForMapEntry(projection, entry));
         }
@@ -3869,7 +3869,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with the projected collections concatenated (flattened) to it
      * @since 1.8.8
      */
-    public static <T,K,V> Collection<T> collectMany(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<Collection<? extends T>> projection) {
+    public static <T,K,V> Collection<T> collectMany(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany(self, new ArrayList<T>(), projection);
     }
 
@@ -3889,7 +3889,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     @SuppressWarnings("unchecked")
-    public static <T,E> List<T> collectMany(E[] self, @ClosureParams(FirstParam.Component.class) Closure<Collection<? extends T>> projection) {
+    public static <T,E> List<T> collectMany(E[] self, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany((Iterable<E>)toList(self), projection);
     }
 
@@ -3909,7 +3909,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     @SuppressWarnings("unchecked")
-    public static <T,E> List<T> collectMany(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<Collection<? extends T>> projection) {
+    public static <T,E> List<T> collectMany(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         return collectMany((Iterable)toList(self), projection);
     }
 

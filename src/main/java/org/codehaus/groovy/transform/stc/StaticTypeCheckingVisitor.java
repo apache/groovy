@@ -3544,17 +3544,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             MethodNode target = (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (!callArgsVisited) {
                 visitMethodCallArguments(receiver, argumentList, true, target);
-                // GROOVY-6219
-                if (target != null) {
-                    List<Expression> argExpressions = argumentList.getExpressions();
-                    Parameter[] parameters = target.getParameters();
-                    for (int i = 0; i < argExpressions.size() && i < parameters.length; i += 1) {
-                        Expression arg = argExpressions.get(i);
-                        ClassNode aType = getType(arg), pType = parameters[i].getType();
-                        if (CLOSURE_TYPE.equals(aType) && CLOSURE_TYPE.equals(pType) && !isAssignableTo(aType, pType)) {
-                            addNoMatchingMethodError(receiver, name, getArgumentTypes(argumentList), call);
-                            call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-                        }
+            }
+            if (target != null) {
+                List<Expression> argExpressions = argumentList.getExpressions();
+                Parameter[] parameters = target.getParameters();
+                for (int i = 0; i < argExpressions.size() && i < parameters.length; i += 1) {
+                    Expression arg = argExpressions.get(i);
+                    ClassNode aType = getType(arg), pType = parameters[i].getType();
+                    if (CLOSURE_TYPE.equals(aType) && CLOSURE_TYPE.equals(pType) && !isAssignableTo(aType, pType)) {
+                        addNoMatchingMethodError(receiver, name, getArgumentTypes(argumentList), call);
+                        call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
                     }
                 }
             }
