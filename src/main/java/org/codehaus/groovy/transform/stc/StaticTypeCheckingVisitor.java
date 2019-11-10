@@ -1199,12 +1199,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return null;
         }
 
-        for (int i = 0, n = TUPLE_CLASSES.length; i < n; i++) {
-            Class tcn = TUPLE_CLASSES[i];
+        for (int i = 0, n = TUPLE_CLASSES.length; i < n; i += 1) {
+            Class<?> tcn = TUPLE_CLASSES[i];
             if (tcn.equals(cn.getTypeClass())) {
                 ListExpression listExpression = new ListExpression();
                 GenericsType[] genericsTypes = cn.getGenericsTypes();
-                for (int j = 0; j < i; j++) {
+                for (int j = 0; j < i; j += 1) {
                     // the index of element in tuple starts with 1
                     MethodCallExpression mce = new MethodCallExpression(rightExpression, "getV" + (j + 1), ArgumentListExpression.EMPTY_ARGUMENTS);
                     ClassNode elementType = (genericsTypes != null ? genericsTypes[j].getType() : OBJECT_TYPE);
@@ -2370,7 +2370,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         SharedVariableCollector collector = new SharedVariableCollector(getSourceUnit());
         collector.visitClosureExpression(expression);
         Set<VariableExpression> closureSharedExpressions = collector.getClosureSharedExpressions();
-        Map<VariableExpression, ListHashMap> typesBeforeVisit = null;
+        Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit = null;
         if (!closureSharedExpressions.isEmpty()) {
             typesBeforeVisit = new HashMap<>();
             saveVariableExpressionMetadata(closureSharedExpressions, typesBeforeVisit);
@@ -2433,11 +2433,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return (DelegationMetadata) expression.getNodeMetaData(DELEGATION_METADATA);
     }
 
-    protected void restoreVariableExpressionMetadata(final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
+    protected void restoreVariableExpressionMetadata(final Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit) {
         if (typesBeforeVisit != null) {
-            for (Map.Entry<VariableExpression, ListHashMap> entry : typesBeforeVisit.entrySet()) {
+            for (Map.Entry<VariableExpression, Map<StaticTypesMarker, Object>> entry : typesBeforeVisit.entrySet()) {
                 VariableExpression ve = entry.getKey();
-                ListHashMap metadata = entry.getValue();
+                Map<StaticTypesMarker, Object> metadata = entry.getValue();
                 for (StaticTypesMarker marker : StaticTypesMarker.values()) {
                     ve.removeNodeMetaData(marker);
                     Object value = metadata.get(marker);
@@ -2447,12 +2447,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    protected void saveVariableExpressionMetadata(final Set<VariableExpression> closureSharedExpressions, final Map<VariableExpression, ListHashMap> typesBeforeVisit) {
+    protected void saveVariableExpressionMetadata(final Set<VariableExpression> closureSharedExpressions, final Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit) {
         for (VariableExpression ve : closureSharedExpressions) {
             // GROOVY-6921: We must force a call to getType in order to update closure shared variable whose
             // types are inferred thanks to closure parameter type inference
             getType(ve);
-            ListHashMap<StaticTypesMarker, Object> metadata = new ListHashMap<StaticTypesMarker, Object>();
+            Map<StaticTypesMarker, Object> metadata = new ListHashMap<StaticTypesMarker, Object>();
             for (StaticTypesMarker marker : StaticTypesMarker.values()) {
                 Object value = ve.getNodeMetaData(marker);
                 if (value != null) {
@@ -3541,22 +3541,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             // now that a method has been chosen, we are allowed to visit the closures
+            MethodNode target = (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (!callArgsVisited) {
-                MethodNode mn = (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-                visitMethodCallArguments(receiver, argumentList, true, mn);
+                visitMethodCallArguments(receiver, argumentList, true, target);
                 // GROOVY-6219
-                if (mn != null) {
+                if (target != null) {
                     List<Expression> argExpressions = argumentList.getExpressions();
-                    Parameter[] parameters = mn.getParameters();
-                    for (int i = 0; i < argExpressions.size() && i < parameters.length; i++) {
+                    Parameter[] parameters = target.getParameters();
+                    for (int i = 0; i < argExpressions.size() && i < parameters.length; i += 1) {
                         Expression arg = argExpressions.get(i);
-                        ClassNode pType = parameters[i].getType();
-                        ClassNode aType = getType(arg);
-                        if (CLOSURE_TYPE.equals(pType) && CLOSURE_TYPE.equals(aType)) {
-                            if (!isAssignableTo(aType, pType)) {
-                                addNoMatchingMethodError(receiver, name, getArgumentTypes(argumentList), call);
-                                call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-                            }
+                        ClassNode aType = getType(arg), pType = parameters[i].getType();
+                        if (CLOSURE_TYPE.equals(aType) && CLOSURE_TYPE.equals(pType) && !isAssignableTo(aType, pType)) {
+                            addNoMatchingMethodError(receiver, name, getArgumentTypes(argumentList), call);
+                            call.removeNodeMetaData(DIRECT_METHOD_CALL_TARGET);
                         }
                     }
                 }
