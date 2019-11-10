@@ -18,34 +18,39 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-class Groovy8439Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy8439 {
+
+    @Test
     void testSTCGenerics() {
         assertScript '''
-        import groovy.transform.CompileStatic
-        @CompileStatic
-        class Test<T extends Task> {
-            static def something(Task task, Collection<BaseVariant> variants) {
-                variants.collectMany { it.sourceFolders }.collect { ConfigurableFileTree tree ->
-                    task.getBuildDir().toPath().relativize(tree.dir.toPath()).toString() + File.separator
+            @groovy.transform.CompileStatic
+            class Test<T extends Task> {
+                static def something(Task task, Collection<BaseVariant> variants) {
+                    variants.collectMany { it.sourceFolders }.collect { ConfigurableFileTree tree ->
+                        task.getBuildDir().toPath().relativize(tree.dir.toPath()).toString() + File.separator
+                    }
                 }
             }
-        }
-        
-        interface BaseVariant {
-            List<ConfigurableFileTree> getSourceFolders()
-        }
-        
-        interface ConfigurableFileTree {
-            File getDir()
-        }
-        
-        interface Task {
-            File getBuildDir()
-        }
-        
-        Test.something(null, [])
+
+            interface BaseVariant {
+                List<ConfigurableFileTree> getSourceFolders()
+            }
+
+            interface ConfigurableFileTree {
+                File getDir()
+            }
+
+            interface Task {
+                File getBuildDir()
+            }
+
+            Test.something(null, [])
         '''
     }
 }
