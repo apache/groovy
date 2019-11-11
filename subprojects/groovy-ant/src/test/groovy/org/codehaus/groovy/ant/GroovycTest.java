@@ -252,6 +252,13 @@ public class GroovycTest extends GroovyTestCase {
         ensureFails("noForkNoAntRuntime");
     }
 
+    // GROOVY-9197
+    public void testJointCompilationPropagatesClasspath() {
+        ensureNotPresent("MakesExternalReference");
+        project.executeTarget("jointForkedCompilation_ExternalJarOnClasspath");
+        ensureResultOK("MakesExternalReference");
+    }
+
     private void ensureExecutes(String target) {
         ensureNotPresent("GroovycTest1");
         project.executeTarget(target);
