@@ -795,14 +795,14 @@ class IvyGrabRecord {
     @Override
     boolean equals(Object that) {
         if (that instanceof IvyGrabRecord) {
-            return (this.mrid == that.mrid)
+            return ((this.mrid == that.mrid)
                 && (this.conf == that.conf)
                 && (this.changing == that.changing)
                 && (this.transitive == that.transitive)
                 && (this.force == that.force)
                 && (this.classifier == that.classifier)
                 && (this.ext == that.ext)
-                && (this.type == that.type)
+                && (this.type == that.type))
         }
     }
 }
