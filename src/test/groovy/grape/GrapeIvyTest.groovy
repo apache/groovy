@@ -303,7 +303,7 @@ final class GrapeIvyTest {
 
             def jars = uris.collect { uri -> uri.path.split('/')[-1] } as Set
             assert 'baz-1.2.3.jar' in jars
-            assert 'bar-1.2.3.jar' !in jars
+            assert !('bar-1.2.3.jar' in jars)
         } finally {
             System.clearProperty('grape.config')
             Grape.@instance = null
