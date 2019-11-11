@@ -806,12 +806,9 @@ public class JavaStubGenerator {
     }
 
     private void printReturn(PrintWriter out, ClassNode retType) {
-        String retName = retType.getName();
-        if (!retName.equals("void")) {
+        if (!ClassHelper.VOID_TYPE.equals(retType)) {
             out.print("return ");
-
             printDefaultValue(out, retType);
-
             out.print(";");
         }
     }
