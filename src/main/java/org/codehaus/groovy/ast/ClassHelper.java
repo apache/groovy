@@ -364,6 +364,7 @@ public class ClassHelper {
      * @see #make(String)
      */
     public static boolean isStaticConstantInitializerType(ClassNode cn) {
+        cn = cn.redirect();
         return cn == int_TYPE ||
                 cn == float_TYPE ||
                 cn == long_TYPE ||
@@ -376,6 +377,7 @@ public class ClassHelper {
     }
 
     public static boolean isNumberType(ClassNode cn) {
+        cn = cn.redirect();
         return cn == Byte_TYPE ||
                 cn == Short_TYPE ||
                 cn == Integer_TYPE ||
