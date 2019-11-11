@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
+import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
@@ -31,6 +32,7 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceExtensionHandler;
@@ -38,8 +40,8 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
-import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+import org.objectweb.asm.ClassVisitor;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -47,11 +49,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -67,17 +71,22 @@ import java.util.StringTokenizer;
  * <pre>
  * &lt;?xml version="1.0"?&gt;
  * &lt;project name="MyGroovyBuild" default="compile"&gt;
- *   &lt;property name="groovy.home" value="/Path/To/Groovy"/&gt;
+ *   &lt;property name="groovy.home" location="/Path/To/Groovy"/&gt;
  *   &lt;property name="groovy.version" value="X.Y.Z"/&gt;
- *   &lt;path id="groovy.classpath"&gt;
- *     &lt;fileset dir="${groovy.home}/lib"&gt;
- *       &lt;include name="groovy-*${groovy.version}.jar" /&gt;
- *     &lt;/fileset&gt;
- *   &lt;/path&gt;
- *   &lt;taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovy.classpath"/&gt;
+ *
+ *   &lt;taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc"&gt;
+ *     &lt;classpath&gt;
+ *       &lt;fileset file="${groovy.home}/lib/groovy-${groovy.version}.jar"/&gt;
+ *       &lt;fileset file="${groovy.home}/lib/groovy-ant-${groovy.version}.jar"/&gt;
+ *     &lt;/classpath&gt;
+ *   &lt;/taskdef&gt;
  *
  *   &lt;target name="compile" description="compile groovy sources"&gt;
- *     &lt;groovyc srcdir="src" listfiles="true" classpathref="groovy.classpath"/&gt;
+ *     &lt;groovyc srcdir="src" destdir="bin" fork="true" listfiles="true" includeantruntime="false"/&gt;
+ *       &lt;classpath&gt;
+ *         &lt;fileset dir="${groovy.home}/lib" includes="groovy-*${groovy.version}.jar" excludes="groovy-ant-${groovy.version}.jar"/&gt;
+ *       &lt;/classpath&gt;
+ *     &lt;/groovyc&gt;
  *   &lt;/target&gt;
  * &lt;/project&gt;
  * </pre>
@@ -85,13 +94,13 @@ import java.util.StringTokenizer;
  * This task can take the following arguments:
  * <ul>
  * <li>srcdir</li>
- * <li>scriptExtension</li>
- * <li>targetBytecode</li>
  * <li>destdir</li>
  * <li>sourcepath</li>
  * <li>sourcepathRef</li>
  * <li>classpath</li>
  * <li>classpathRef</li>
+ * <li>scriptExtension</li>
+ * <li>targetBytecode</li>
  * <li>listfiles</li>
  * <li>failonerror</li>
  * <li>proceed</li>
@@ -123,39 +132,42 @@ import java.util.StringTokenizer;
  * </ul>
  * Of these arguments, the <b>srcdir</b> and <b>destdir</b> are required.
  * <p>
- * <p>When this task executes, it will recursively scan srcdir and destdir looking for Groovy source files
- * to compile. This task makes its compile decision based on timestamp.
+ * When this task executes, it will recursively scan srcdir and destdir looking
+ * for Groovy source files to compile. This task makes its compile decision based
+ * on timestamp.
  * <p>
  * A more elaborate build file showing joint compilation:
  * <pre>
  * &lt;?xml version="1.0"?&gt;
  * &lt;project name="MyJointBuild" default="compile"&gt;
- *   &lt;property name="groovy.home" value="/Path/To/Groovy"/&gt;
+ *   &lt;property name="groovy.home" location="/Path/To/Groovy"/&gt;
  *   &lt;property name="groovy.version" value="X.Y.Z"/&gt;
  *
- *   &lt;path id="groovy.classpath"&gt;
+ *   &lt;path id="classpath.main"&gt;
  *     &lt;fileset dir="${groovy.home}/lib"&gt;
- *       &lt;include name="groovy-*${groovy.version}.jar" /&gt;
+ *       &lt;include name="groovy-*${groovy.version}.jar"/&gt;
+ *       &lt;exclude name="groovy-ant-${groovy.version}.jar"/&gt;
  *     &lt;/fileset&gt;
  *   &lt;/path&gt;
  *
- *   &lt;target name="clean" description="remove all built files"&gt;
- *     &lt;delete dir="classes" /&gt;
+ *   &lt;taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc"&gt;
+ *     &lt;classpath&gt;
+ *       &lt;fileset file="${groovy.home}/lib/groovy-${groovy.version}.jar"/&gt;
+ *       &lt;fileset file="${groovy.home}/lib/groovy-ant-${groovy.version}.jar"/&gt;
+ *     &lt;/classpath&gt;
+ *   &lt;/taskdef&gt;
+ *
+ *   &lt;target name="clean"&gt;
+ *     &lt;delete dir="bin" failonerror="false"/&gt;
  *   &lt;/target&gt;
  *
- *   &lt;target name="compile" depends="init" description="compile java and groovy sources"&gt;
- *     &lt;mkdir dir="classes" /&gt;
- *     &lt;groovyc destdir="classes" srcdir="src" listfiles="true" keepStubs="true" stubdir="stubs"&gt;
- *       &lt;javac debug="on" deprecation="true"/&gt;
- *       &lt;classpath&gt;
- *         &lt;fileset dir="classes"/&gt;
- *         &lt;path refid="groovy.classpath"/&gt;
- *       &lt;/classpath&gt;
+ *   &lt;target name="compile" depends="clean" description="compile java and groovy sources"&gt;
+ *     &lt;mkdir dir="bin"/&gt;
+ *
+ *     &lt;groovyc srcdir="src" destdir="bin" stubdir="stubs" keepStubs="true"
+ *      fork="true" includeantruntime="false" classpathref="classpath.main"&gt;
+ *       &lt;javac debug="true" source="1.8" target="1.8"/&gt;
  *     &lt;/groovyc&gt;
- *   &lt;/target&gt;
- *
- *   &lt;target name="init"&gt;
- *     &lt;taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovy.classpath"/&gt;
  *   &lt;/target&gt;
  * &lt;/project&gt;
  * </pre>
@@ -165,7 +177,7 @@ import java.util.StringTokenizer;
  * Can also be used from {@link groovy.ant.AntBuilder} to allow the build file to be scripted in Groovy.
  */
 public class Groovyc extends MatchingTask {
-    private static final URL[] EMPTY_URL_ARRAY = new URL[0];
+
     private static final File[] EMPTY_FILE_ARRAY = new File[0];
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
@@ -176,20 +188,20 @@ public class Groovyc extends MatchingTask {
     private Path compileClasspath;
     private Path compileSourcepath;
     private String encoding;
-    private boolean stacktrace = false;
-    private boolean verbose = false;
+    private boolean stacktrace;
+    private boolean verbose;
     private boolean includeAntRuntime = true;
-    private boolean includeJavaRuntime = false;
-    private boolean fork = false;
+    private boolean includeJavaRuntime;
+    private boolean fork;
     private File forkJavaHome;
-    private String forkedExecutable = null;
+    private String forkedExecutable;
     private String memoryInitialSize;
     private String memoryMaximumSize;
     private String scriptExtension = "*.groovy";
-    private String targetBytecode = null;
+    private String targetBytecode;
 
     protected boolean failOnError = true;
-    protected boolean listFiles = false;
+    protected boolean listFiles;
     protected File[] compileList = EMPTY_FILE_ARRAY;
 
     private String updatedProperty;
@@ -214,12 +226,12 @@ public class Groovyc extends MatchingTask {
     /**
      * If true, generates metadata for reflection on method parameter names (jdk8+ only).  Defaults to false.
      */
-    private boolean parameters = false;
+    private boolean parameters;
 
     /**
      * If true, enable preview Java features (JEP 12) (jdk12+ only). Defaults to false.
      */
-    private boolean previewFeatures = false;
+    private boolean previewFeatures;
 
     /**
      * Adds a path for source compilation.
@@ -1071,13 +1083,6 @@ public class Groovyc extends MatchingTask {
     }
 
     private void doForkCommandLineList(List<String> commandLineList, Path classpath, String separator) {
-        if (includeAntRuntime) {
-            classpath.addExisting(new Path(getProject()).concatSystemClasspath("last"));
-        }
-        if (includeJavaRuntime) {
-            classpath.addJavaRuntime();
-        }
-
         if (forkedExecutable != null && !forkedExecutable.isEmpty()) {
             commandLineList.add(forkedExecutable);
         } else {
@@ -1089,21 +1094,35 @@ public class Groovyc extends MatchingTask {
             }
             commandLineList.add(javaHome + separator + "bin" + separator + "java");
         }
-        commandLineList.add("-classpath");
-        commandLineList.add(getClasspathRelative(classpath));
 
-        String fileEncoding = System.getProperty("file.encoding");
-        if (fileEncoding != null && !fileEncoding.isEmpty()) {
-            commandLineList.add("-Dfile.encoding=" + fileEncoding);
+        String[] bootstrapClasspath;
+        ClassLoader loader = getClass().getClassLoader();
+        if (loader instanceof AntClassLoader) {
+            bootstrapClasspath = ((AntClassLoader) loader).getClasspath().split(File.pathSeparator);
+        } else {
+            Class<?>[] bootstrapClasses = {
+                FileSystemCompilerFacade.class,
+                FileSystemCompiler.class,
+                ParseTreeVisitor.class,
+                ClassVisitor.class,
+                CommandLine.class,
+            };
+            bootstrapClasspath = Arrays.stream(bootstrapClasses).map(Groovyc::getLocation)
+                .map(uri -> new File(uri).getAbsolutePath()).distinct().toArray(String[]::new);
         }
-        if (targetBytecode != null) {
-            commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
+        if (bootstrapClasspath.length > 0) {
+            commandLineList.add("-classpath");
+            commandLineList.add(getClasspathRelative(bootstrapClasspath));
         }
+
         if (memoryInitialSize != null && !memoryInitialSize.isEmpty()) {
             commandLineList.add("-Xms" + memoryInitialSize);
         }
         if (memoryMaximumSize != null && !memoryMaximumSize.isEmpty()) {
             commandLineList.add("-Xmx" + memoryMaximumSize);
+        }
+        if (targetBytecode != null) {
+            commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
         }
         if (!"*.groovy".equals(getScriptExtension())) {
             String tmpExtension = getScriptExtension();
@@ -1111,16 +1130,25 @@ public class Groovyc extends MatchingTask {
                 tmpExtension = tmpExtension.substring(1);
             commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
         }
+
         commandLineList.add(FileSystemCompilerFacade.class.getName());
+        commandLineList.add("--classpath");
+        if (includeAntRuntime) {
+            classpath.addExisting(new Path(getProject()).concatSystemClasspath("last"));
+        }
+        if (includeJavaRuntime) {
+            classpath.addJavaRuntime();
+        }
+        commandLineList.add(getClasspathRelative(classpath.list()));
         if (forceLookupUnnamedFiles) {
             commandLineList.add("--forceLookupUnnamedFiles");
         }
     }
 
-    private String getClasspathRelative(Path classpath) {
+    private String getClasspathRelative(String[] classpath) {
         String baseDir = getProject().getBaseDir().getAbsolutePath();
         StringBuilder sb = new StringBuilder();
-        for (String next : classpath.list()) {
+        for (String next : classpath) {
             if (sb.length() > 0) {
                 sb.append(File.pathSeparatorChar);
             }
@@ -1131,6 +1159,14 @@ public class Groovyc extends MatchingTask {
             }
         }
         return sb.toString();
+    }
+
+    private static URI getLocation(Class<?> clazz) {
+        try {
+            return clazz.getProtectionDomain().getCodeSource().getLocation().toURI();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -1214,7 +1250,7 @@ public class Groovyc extends MatchingTask {
     }
 
     private String[] makeCommandLine(List<String> commandLineList) {
-        log.verbose("Compilation arguments:\n" + DefaultGroovyMethods.join((Iterable<String>) commandLineList, "\n"));
+        log.info("Compilation arguments:\n" + DefaultGroovyMethods.join((Iterable<String>) commandLineList, "\n"));
         return commandLineList.toArray(EMPTY_STRING_ARRAY);
     }
 
@@ -1302,10 +1338,9 @@ public class Groovyc extends MatchingTask {
 
             Path classpath = Optional.ofNullable(getClasspath()).orElse(new Path(getProject()));
             List<String> jointOptions = extractJointOptions(classpath);
-            String separator = System.getProperty("file.separator");
             List<String> commandLineList = new ArrayList<>();
 
-            if (fork) doForkCommandLineList(commandLineList, classpath, separator);
+            if (fork) doForkCommandLineList(commandLineList, classpath, File.separator);
             doNormalCommandLineList(commandLineList, jointOptions, classpath);
             addSourceFiles(commandLineList);
 
@@ -1359,23 +1394,17 @@ public class Groovyc extends MatchingTask {
     }
 
     protected GroovyClassLoader buildClassLoaderFor() {
+        if (fork) {
+            throw new GroovyBugError("Cannot use Groovyc#buildClassLoaderFor() for forked compilation");
+        }
         // GROOVY-5044
-        if (!fork && !getIncludeantruntime()) {
+        if (!getIncludeantruntime()) {
             throw new IllegalArgumentException("The includeAntRuntime=false option is not compatible with fork=false");
         }
 
-        ClassLoader parent =
-                AccessController.doPrivileged(
-                        new PrivilegedAction<ClassLoader>() {
-                            @Override
-                            public ClassLoader run() {
-                                return getIncludeantruntime()
-                                        ? getClass().getClassLoader()
-                                        : new AntClassLoader(new RootLoader(EMPTY_URL_ARRAY, null), getProject(), getClasspath());
-                            }
-                        });
-        if (parent instanceof AntClassLoader) {
-            AntClassLoader antLoader = (AntClassLoader) parent;
+        ClassLoader loader = getClass().getClassLoader();
+        if (loader instanceof AntClassLoader) {
+            AntClassLoader antLoader = (AntClassLoader) loader;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
             List<String> classpath = configuration.getClasspath();
             /*
@@ -1406,13 +1435,13 @@ public class Groovyc extends MatchingTask {
             }
         }
 
-        GroovyClassLoader loader = AccessController.doPrivileged(
-                (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parent, configuration));
+        GroovyClassLoader groovyLoader = AccessController.doPrivileged(
+                (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(loader, configuration));
         if (!forceLookupUnnamedFiles) {
             // in normal case we don't need to do script lookups
-            loader.setResourceLoader(filename -> null);
+            groovyLoader.setResourceLoader(filename -> null);
         }
-        return loader;
+        return groovyLoader;
     }
 
     private Set<String> getScriptExtensions() {
@@ -1423,11 +1452,10 @@ public class Groovyc extends MatchingTask {
         if (scriptExtensions.isEmpty()) {
             scriptExtensions.add(getScriptExtension().substring(2)); // first extension will be the one set explicitly on <groovyc>
 
-            Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
-            final String[] pe = classpath.list();
+            Path classpath = Optional.ofNullable(getClasspath()).orElse(new Path(getProject()));
             try (GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader())) {
-                for (String file : pe) {
-                    loader.addClasspath(file);
+                for (String element : classpath.list()) {
+                    loader.addClasspath(element);
                 }
                 scriptExtensions.addAll(SourceExtensionHandler.getRegisteredExtensions(loader));
             } catch (IOException e) {
