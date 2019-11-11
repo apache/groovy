@@ -78,7 +78,7 @@
     </target>
 
     <target name="GroovycTest1_Joint_NoFork_NoClasspath">
-        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java">
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,GroovyTest2.java">
             <javac source="${javaVersion}" target="${javaVersion}" debug="true"/>
         </groovyc>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
@@ -86,7 +86,7 @@
     </target>
 
     <target name="GroovycTest1_Joint_NoFork_WithGroovyClasspath">
-        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java"
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,GroovycTest2.java"
                  classpathref="groovyMaterials">
             <javac source="${javaVersion}" target="${javaVersion}" debug="true"/>
         </groovyc>
@@ -104,7 +104,7 @@
     </target>
 
     <target name="GroovycTest1_Joint_NoFork_WithJavaClasspath">
-        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java">
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,GroovycTest2.java">
             <javac source="${javaVersion}" target="${javaVersion}" debug="true"/>
         </groovyc>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
@@ -112,7 +112,7 @@
     </target>
 
     <target name="GroovycTest1_Joint_NoFork_WithBothClasspath">
-        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java"
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,GroovycTest2.java"
                  classpathref="groovyMaterials">
             <javac source="${javaVersion}" target="${javaVersion}" debug="true"/>
         </groovyc>
@@ -121,7 +121,7 @@
     </target>
 
     <target name="GroovycTest1_Joint_ForkGroovy_NoClasspath">
-        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java" fork="true">
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,GroovycTest2.java" fork="true">
             <javac source="${javaVersion}" target="${javaVersion}" debug="true"/>
         </groovyc>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
@@ -129,8 +129,8 @@
     </target>
 
     <target name="GroovycTest1_Joint_ForkGroovy_WithGroovyClasspath">
-        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java"
-                 classpathref="groovyMaterials" fork="true">
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,GroovycTest2.java" fork="true"
+                 classpathref="groovyMaterials">
             <javac source="${javaVersion}" target="${javaVersion}" debug="true"/>
         </groovyc>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
@@ -138,7 +138,7 @@
     </target>
 
     <target name="GroovycTest1_Joint_ForkGroovy_WithJavaClasspath">
-        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java" fork="true">
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,GroovycTest2.java" fork="true">
             <javac source="${javaVersion}" target="${javaVersion}" debug="true"/>
         </groovyc>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
@@ -146,8 +146,8 @@
     </target>
 
     <target name="GroovycTest1_Joint_ForkGroovy_WithBothClasspath">
-        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java"
-                 classpathref="groovyMaterials" fork="true">
+        <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,GroovycTest2.java" fork="true"
+                 classpathref="groovyMaterials">
             <javac source="${javaVersion}" target="${javaVersion}" debug="true"/>
         </groovyc>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
@@ -191,7 +191,9 @@
         <delete quiet="true">
             <fileset dir="${destPath}/org/codehaus/groovy/ant">
                 <include name="GroovycTest1*.class"/>
+                <include name="GroovycTest2*.class"/>
                 <include name="IncorrectGenericsUsage.class"/>
+                <include name="MakesExternalReference.class"/>
             </fileset>
         </delete>
     </target>

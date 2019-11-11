@@ -24,14 +24,14 @@ import java.io.IOException;
 
 class GroovycTest2 {
     static void main(String[] args) throws IOException {
-        File f = new File("target/classes/test/org/codehaus/groovy/ant/GroovycTest2_Result.txt");
-        FileOutputStream fout = new FileOutputStream(f);
+        FileOutputStream fout = new FileOutputStream(
+            new File("target/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest2_Result.txt"));
         try {
             fout.write("OK.".getBytes());
         } finally {
             try {
                 fout.close();
-            } catch (IOException ioe) {
+            } catch (IOException ignore) {
             }
         }
     }

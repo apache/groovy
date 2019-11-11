@@ -19,7 +19,6 @@
 package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyResourceLoader;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
@@ -48,7 +47,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.AccessController;
@@ -58,6 +56,7 @@ import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -169,6 +168,7 @@ public class Groovyc extends MatchingTask {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
     private static final File[] EMPTY_FILE_ARRAY = new File[0];
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     private final LoggingHelper log = new LoggingHelper(this);
 
     private Path src;
@@ -297,7 +297,6 @@ public class Groovyc extends MatchingTask {
      * @param version the bytecode compatibility level
      */
     public void setTargetBytecode(String version) {
-
         for (String allowedJdk : CompilerConfiguration.ALLOWED_JDKS) {
             if (allowedJdk.equals(version)) {
                 this.targetBytecode = version;
@@ -966,10 +965,9 @@ public class Groovyc extends MatchingTask {
 
         // extract joint options, some get pushed up...
         RuntimeConfigurable rc = javac.getRuntimeConfigurableWrapper();
-        for (Object o1 : rc.getAttributeMap().entrySet()) {
-            final Map.Entry e = (Map.Entry) o1;
-            final String key = e.getKey().toString();
-            final String value = getProject().replaceProperties(e.getValue().toString());
+        for (Map.Entry<String, Object> e : rc.getAttributeMap().entrySet()) {
+            String key = e.getKey();
+            String value = getProject().replaceProperties(e.getValue().toString());
             if (key.contains("debug")) {
                 String level = "";
                 if (javac.getDebugLevel() != null) {
@@ -999,15 +997,14 @@ public class Groovyc extends MatchingTask {
 
         // ant's <javac> supports nested <compilerarg value=""> elements (there can be multiple of them)
         // for additional options to be passed to javac.
-        Enumeration children = rc.getChildren();
+        Enumeration<RuntimeConfigurable> children = rc.getChildren();
         while (children.hasMoreElements()) {
-            RuntimeConfigurable childrc = (RuntimeConfigurable) children.nextElement();
+            RuntimeConfigurable childrc = children.nextElement();
             if (childrc.getElementTag().equals("compilerarg")) {
-                for (Object o : childrc.getAttributeMap().entrySet()) {
-                    final Map.Entry e = (Map.Entry) o;
-                    final String key = e.getKey().toString();
+                for (Map.Entry<String, Object> e : childrc.getAttributeMap().entrySet()) {
+                    String key = e.getKey();
                     if (key.equals("value")) {
-                        final String value = getProject().replaceProperties(e.getValue().toString());
+                        String value = getProject().replaceProperties(e.getValue().toString());
                         StringTokenizer st = new StringTokenizer(value, " ");
                         while (st.hasMoreTokens()) {
                             String optionStr = st.nextToken();
@@ -1026,16 +1023,14 @@ public class Groovyc extends MatchingTask {
     }
 
     private void doForkCommandLineList(List<String> commandLineList, Path classpath, String separator) {
-        if (!fork) return;
-
         if (includeAntRuntime) {
-            classpath.addExisting((new Path(getProject())).concatSystemClasspath("last"));
+            classpath.addExisting(new Path(getProject()).concatSystemClasspath("last"));
         }
         if (includeJavaRuntime) {
             classpath.addJavaRuntime();
         }
 
-        if (forkedExecutable != null && !forkedExecutable.equals("")) {
+        if (forkedExecutable != null && !forkedExecutable.isEmpty()) {
             commandLineList.add(forkedExecutable);
         } else {
             String javaHome;
@@ -1049,18 +1044,17 @@ public class Groovyc extends MatchingTask {
         commandLineList.add("-classpath");
         commandLineList.add(getClasspathRelative(classpath));
 
-        final String fileEncodingProp = System.getProperty("file.encoding");
-        if ((fileEncodingProp != null) && !fileEncodingProp.equals("")) {
-            commandLineList.add("-Dfile.encoding=" + fileEncodingProp);
+        String fileEncoding = System.getProperty("file.encoding");
+        if (fileEncoding != null && !fileEncoding.isEmpty()) {
+            commandLineList.add("-Dfile.encoding=" + fileEncoding);
         }
         if (targetBytecode != null) {
             commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
         }
-
-        if ((memoryInitialSize != null) && !memoryInitialSize.equals("")) {
+        if (memoryInitialSize != null && !memoryInitialSize.isEmpty()) {
             commandLineList.add("-Xms" + memoryInitialSize);
         }
-        if ((memoryMaximumSize != null) && !memoryMaximumSize.equals("")) {
+        if (memoryMaximumSize != null && !memoryMaximumSize.isEmpty()) {
             commandLineList.add("-Xmx" + memoryMaximumSize);
         }
         if (!"*.groovy".equals(getScriptExtension())) {
@@ -1172,12 +1166,12 @@ public class Groovyc extends MatchingTask {
     }
 
     private String[] makeCommandLine(List<String> commandLineList) {
-        log.verbose("Compilation arguments:\n" + DefaultGroovyMethods.join((Iterable)commandLineList, "\n"));
+        log.verbose("Compilation arguments:\n" + DefaultGroovyMethods.join((Iterable<String>) commandLineList, "\n"));
         return commandLineList.toArray(EMPTY_STRING_ARRAY);
     }
 
     private void runForked(String[] commandLine) {
-        final Execute executor = new Execute();
+        Execute executor = new Execute();
         executor.setAntRun(getProject());
         executor.setWorkingDirectory(getProject().getBaseDir());
         executor.setCommandline(commandLine);
@@ -1186,7 +1180,7 @@ public class Groovyc extends MatchingTask {
         } catch (final IOException ioe) {
             throw new BuildException("Error running forked groovyc.", ioe);
         }
-        final int returnCode = executor.getExitValue();
+        int returnCode = executor.getExitValue();
         if (returnCode != 0) {
             taskSuccess = false;
             if (errorProperty != null) {
@@ -1212,28 +1206,23 @@ public class Groovyc extends MatchingTask {
             if (tmpExtension.startsWith("*."))
                 tmpExtension = tmpExtension.substring(1);
             configuration.setDefaultScriptExtension(tmpExtension);
-
-            // Load the file name list
-            String[] filenames = options.generateFileNames();
-            boolean fileNameErrors = filenames == null;
-
-            fileNameErrors = fileNameErrors || !FileSystemCompiler.validateFiles(filenames);
-
             if (targetBytecode != null) {
                 configuration.setTargetBytecode(targetBytecode);
             }
 
+            // Load the file name list
+            String[] fileNames = options.generateFileNames();
+            boolean fileNameErrors = (fileNames == null || !FileSystemCompiler.validateFiles(fileNames));
             if (!fileNameErrors) {
                 try (GroovyClassLoader loader = buildClassLoaderFor()) {
-                    FileSystemCompiler.doCompilation(configuration, makeCompileUnit(loader), filenames, forceLookupUnnamedFiles);
+                    FileSystemCompiler.doCompilation(configuration, makeCompileUnit(loader), fileNames, forceLookupUnnamedFiles);
                 }
             }
-
-        } catch (Exception re) {
-            Throwable t = re;
-            if ((re.getClass() == RuntimeException.class) && (re.getCause() != null)) {
+        } catch (Exception e) {
+            Throwable t = e;
+            if (e.getClass() == RuntimeException.class && e.getCause() != null) {
                 // unwrap to the real exception
-                t = re.getCause();
+                t = e.getCause();
             }
             Writer writer = new StringBuilderWriter();
             new ErrorReporter(t, false).write(new PrintWriter(writer));
@@ -1262,13 +1251,13 @@ public class Groovyc extends MatchingTask {
                     + (destDir != null ? " to " + destDir : ""));
 
             listFiles();
-            Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
-            List<String> jointOptions = extractJointOptions(classpath);
 
+            Path classpath = Optional.ofNullable(getClasspath()).orElse(new Path(getProject()));
+            List<String> jointOptions = extractJointOptions(classpath);
             String separator = System.getProperty("file.separator");
             List<String> commandLineList = new ArrayList<>();
 
-            doForkCommandLineList(commandLineList, classpath, separator);
+            if (fork) doForkCommandLineList(commandLineList, classpath, separator);
             doNormalCommandLineList(commandLineList, jointOptions, classpath);
             addSourceFiles(commandLineList);
 
@@ -1326,7 +1315,8 @@ public class Groovyc extends MatchingTask {
         if (!fork && !getIncludeantruntime()) {
             throw new IllegalArgumentException("The includeAntRuntime=false option is not compatible with fork=false");
         }
-        final ClassLoader parent =
+
+        ClassLoader parent =
                 AccessController.doPrivileged(
                         new PrivilegedAction<ClassLoader>() {
                             @Override
@@ -1368,9 +1358,8 @@ public class Groovyc extends MatchingTask {
             }
         }
 
-        GroovyClassLoader loader =
-                AccessController.doPrivileged(
-                        (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parent, configuration));
+        GroovyClassLoader loader = AccessController.doPrivileged(
+                (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parent, configuration));
         if (!forceLookupUnnamedFiles) {
             // in normal case we don't need to do script lookups
             loader.setResourceLoader(filename -> null);
@@ -1384,7 +1373,6 @@ public class Groovyc extends MatchingTask {
 
     private void loadRegisteredScriptExtensions() {
         if (scriptExtensions.isEmpty()) {
-
             scriptExtensions.add(getScriptExtension().substring(2)); // first extension will be the one set explicitly on <groovyc>
 
             Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
