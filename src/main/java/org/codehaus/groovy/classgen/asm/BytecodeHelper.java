@@ -478,7 +478,7 @@ public class BytecodeHelper implements Opcodes {
      */
     @Deprecated
     public static boolean box(MethodVisitor mv, ClassNode type) {
-        if (ClassHelper.isPrimitiveType(type) && !"void".equalsIgnoreCase(type.getName())) {
+        if (ClassHelper.isPrimitiveType(type) && !ClassHelper.VOID_TYPE.equals(type)) {
             box(mv, BytecodeHelper.getTypeDescription(type));
             return true;
         }
@@ -505,7 +505,7 @@ public class BytecodeHelper implements Opcodes {
      * Generates the bytecode to unbox the current value on the stack.
      */
     public static void unbox(MethodVisitor mv, ClassNode type) {
-        if (ClassHelper.isPrimitiveType(type) && !"void".equalsIgnoreCase(type.getName())) {
+        if (ClassHelper.isPrimitiveType(type) && !ClassHelper.VOID_TYPE.equals(type)) {
             unbox(mv, type.getName(), BytecodeHelper.getTypeDescription(type));
         }
     }

@@ -69,10 +69,9 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * This class is a Helper for ClassNode and classes handling ClassNodes.
- * It does contain a set of predefined ClassNodes for the most used
- * types and some code for cached ClassNode creation and basic
- * ClassNode handling
+ * Helper for {@link ClassNode} and classes handling them.  Contains a set of
+ * pre-defined instances for the most used types and some code for cached node
+ * creation and basic handling.
  */
 public class ClassHelper {
 
@@ -87,57 +86,68 @@ public class ClassHelper {
             Iterator.class, GeneratedClosure.class, GeneratedLambda.class, GroovyObjectSupport.class
     };
 
-    public static final Class[] TUPLE_CLASSES = new Class[] {
+    public static final Class[] TUPLE_CLASSES = new Class[]{
             Tuple0.class, Tuple1.class, Tuple2.class, Tuple3.class, Tuple4.class, Tuple5.class, Tuple6.class,
             Tuple7.class, Tuple8.class, Tuple9.class, Tuple10.class, Tuple11.class, Tuple12.class, Tuple13.class,
             Tuple14.class, Tuple15.class, Tuple16.class
     };
 
     private static final String[] primitiveClassNames = new String[]{
-            "", "boolean", "char", "byte", "short",
-            "int", "long", "double", "float", "void"
+            "", "boolean", "char", "byte", "short", "int", "long", "double", "float", "void"
     };
 
     public static final ClassNode
-            DYNAMIC_TYPE = makeCached(Object.class), OBJECT_TYPE = DYNAMIC_TYPE,
-            VOID_TYPE = makeCached(Void.TYPE),
+            DYNAMIC_TYPE = makeCached(Object.class),
+            OBJECT_TYPE = DYNAMIC_TYPE,
             CLOSURE_TYPE = makeCached(Closure.class),
-            GSTRING_TYPE = makeCached(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
-            TUPLE_TYPE = makeWithoutCaching(Tuple.class),
-            MAP_TYPE = makeWithoutCaching(Map.class), RANGE_TYPE = makeCached(Range.class),
-            PATTERN_TYPE = makeCached(Pattern.class), STRING_TYPE = makeCached(String.class),
-            SCRIPT_TYPE = makeCached(Script.class), REFERENCE_TYPE = makeWithoutCaching(Reference.class),
+            GSTRING_TYPE = makeCached(GString.class),
+            RANGE_TYPE = makeCached(Range.class),
+            PATTERN_TYPE = makeCached(Pattern.class),
+            STRING_TYPE = makeCached(String.class),
+            SCRIPT_TYPE = makeCached(Script.class),
             BINDING_TYPE = makeCached(Binding.class),
 
-    boolean_TYPE = makeCached(boolean.class), char_TYPE = makeCached(char.class),
-            byte_TYPE = makeCached(byte.class), int_TYPE = makeCached(int.class),
-            long_TYPE = makeCached(long.class), short_TYPE = makeCached(short.class),
-            double_TYPE = makeCached(double.class), float_TYPE = makeCached(float.class),
-            Byte_TYPE = makeCached(Byte.class), Short_TYPE = makeCached(Short.class),
-            Integer_TYPE = makeCached(Integer.class), Long_TYPE = makeCached(Long.class),
-            Character_TYPE = makeCached(Character.class), Float_TYPE = makeCached(Float.class),
-            Double_TYPE = makeCached(Double.class), Boolean_TYPE = makeCached(Boolean.class),
+            boolean_TYPE = makeCached(boolean.class),
+            char_TYPE = makeCached(char.class),
+            byte_TYPE = makeCached(byte.class),
+            int_TYPE = makeCached(int.class),
+            long_TYPE = makeCached(long.class),
+            short_TYPE = makeCached(short.class),
+            double_TYPE = makeCached(double.class),
+            float_TYPE = makeCached(float.class),
+            Byte_TYPE = makeCached(Byte.class),
+            Short_TYPE = makeCached(Short.class),
+            Integer_TYPE = makeCached(Integer.class),
+            Long_TYPE = makeCached(Long.class),
+            Character_TYPE = makeCached(Character.class),
+            Float_TYPE = makeCached(Float.class),
+            Double_TYPE = makeCached(Double.class),
+            Boolean_TYPE = makeCached(Boolean.class),
             BigInteger_TYPE = makeCached(java.math.BigInteger.class),
             BigDecimal_TYPE = makeCached(java.math.BigDecimal.class),
             Number_TYPE = makeCached(Number.class),
 
-    void_WRAPPER_TYPE = makeCached(Void.class), METACLASS_TYPE = makeCached(MetaClass.class),
+            VOID_TYPE = makeCached(Void.TYPE),
+            void_WRAPPER_TYPE = makeCached(Void.class),
+            METACLASS_TYPE = makeCached(MetaClass.class),
             Iterator_TYPE = makeCached(Iterator.class),
-            AUTOCLOSEABLE_TYPE = makeCached(AutoCloseable.class),
-
-    Enum_Type = makeWithoutCaching(Enum.class),
             Annotation_TYPE = makeCached(Annotation.class),
             ELEMENT_TYPE_TYPE = makeCached(ElementType.class),
+            AUTOCLOSEABLE_TYPE = makeCached(AutoCloseable.class),
 
-//    FunctionalInterface_Type = ClassHelper.makeCached(FunctionalInterface.class),
-
-    // uncached constants.
-    CLASS_Type = makeWithoutCaching(Class.class), COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),
-            GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),
-            GENERATED_LAMBDA_TYPE = makeWithoutCaching(GeneratedLambda.class),
-            GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class),
+            // uncached constants
+            MAP_TYPE = makeWithoutCaching(Map.class),
+            LIST_TYPE = makeWithoutCaching(List.class),
+            Enum_Type = makeWithoutCaching(Enum.class),
+            CLASS_Type = makeWithoutCaching(Class.class),
+            TUPLE_TYPE = makeWithoutCaching(Tuple.class),
+            REFERENCE_TYPE = makeWithoutCaching(Reference.class),
+            COMPARABLE_TYPE = makeWithoutCaching(Comparable.class),
             GROOVY_OBJECT_TYPE = makeWithoutCaching(GroovyObject.class),
-            GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class);
+            GENERATED_LAMBDA_TYPE = makeWithoutCaching(GeneratedLambda.class),
+            GENERATED_CLOSURE_Type = makeWithoutCaching(GeneratedClosure.class),
+            GROOVY_INTERCEPTABLE_TYPE = makeWithoutCaching(GroovyInterceptable.class),
+            GROOVY_OBJECT_SUPPORT_TYPE = makeWithoutCaching(GroovyObjectSupport.class);
 
     private static final ClassNode[] types = new ClassNode[]{
             OBJECT_TYPE,
@@ -154,8 +164,7 @@ public class ClassHelper {
             GROOVY_OBJECT_TYPE, GROOVY_INTERCEPTABLE_TYPE, Enum_Type, Annotation_TYPE
     };
 
-    private static final int ABSTRACT_STATIC_PRIVATE =
-            Modifier.ABSTRACT | Modifier.PRIVATE | Modifier.STATIC;
+    private static final int ABSTRACT_STATIC_PRIVATE = Opcodes.ACC_ABSTRACT | Opcodes.ACC_STATIC | Opcodes.ACC_PRIVATE;
     private static final int VISIBILITY = 5; // public|protected
 
     protected static final ClassNode[] EMPTY_TYPE_ARRAY = {};
@@ -168,10 +177,8 @@ public class ClassHelper {
         if (classNodeSoftReference == null || (classNode = classNodeSoftReference.get()) == null) {
             classNode = new ClassNode(c);
             ClassHelperCache.classCache.put(c, new SoftReference<ClassNode>(classNode));
-
             VMPluginFactory.getPlugin().setAdditionalClassInformation(classNode);
         }
-
         return classNode;
     }
 
@@ -189,7 +196,6 @@ public class ClassHelper {
         for (int i = 0; i < cns.length; i++) {
             cns[i] = make(classes[i]);
         }
-
         return cns;
     }
 
@@ -235,7 +241,6 @@ public class ClassHelper {
             return t;
         }
     }
-
 
     /**
      * Creates a ClassNode using a given class.
@@ -331,7 +336,6 @@ public class ClassHelper {
 
         return cn;
     }
-
 
     /**
      * Test to determine if a ClassNode is a primitive type.
