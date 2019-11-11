@@ -4171,7 +4171,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitTryCatchFinally(final TryCatchStatement statement) {
-        final List<CatchStatement> catchStatements = statement.getCatchStatements();
+        List<CatchStatement> catchStatements = statement.getCatchStatements();
         for (CatchStatement catchStatement : catchStatements) {
             ClassNode exceptionType = catchStatement.getExceptionType();
             typeCheckingContext.controlStructureVariables.put(catchStatement.getVariable(), exceptionType);
@@ -4183,16 +4183,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 typeCheckingContext.controlStructureVariables.remove(catchStatement.getVariable());
             }
         }
-
     }
 
     protected void storeType(final Expression exp, ClassNode cn) {
-        if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable() && isPrimitiveType(cn)) {
-            cn = getWrapper(cn);
-        } else if (exp instanceof MethodCallExpression && ((MethodCallExpression) exp).isSafe() && isPrimitiveType(cn)) {
-            cn = getWrapper(cn);
-        } else if (exp instanceof PropertyExpression && ((PropertyExpression) exp).isSafe() && isPrimitiveType(cn)) {
-            cn = getWrapper(cn);
+        if (cn != null && isPrimitiveType(cn)) {
+            if (exp instanceof VariableExpression && ((VariableExpression) exp).isClosureSharedVariable()) {
+                cn = getWrapper(cn);
+            } else if (exp instanceof MethodCallExpression && ((MethodCallExpression) exp).isSafe()) {
+                cn = getWrapper(cn);
+            } else if (exp instanceof PropertyExpression && ((PropertyExpression) exp).isSafe()) {
+                cn = getWrapper(cn);
+            }
         }
         if (cn == UNKNOWN_PARAMETER_TYPE) {
             // this can happen for example when "null" is used in an assignment or a method parameter.
