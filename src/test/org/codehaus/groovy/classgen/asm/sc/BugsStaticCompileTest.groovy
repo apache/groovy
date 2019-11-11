@@ -196,7 +196,7 @@ class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilationTest
             @groovy.transform.CompileStatic
             class Main {
                 void test() {
-                    @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
                         assert node.rightExpression.getNodeMetaData(INFERRED_TYPE).nameWithoutPackage == 'Sql'
                     })
                     def sql = Sql.newInstance("a", "b", "c", "d")
@@ -720,7 +720,7 @@ import groovy.transform.TypeCheckingMode
         shouldFailWithMessages '''
             def fieldMatcher = '[x=1] [a=b] [foo=bar]' =~ ~"\\\\[([^=\\\\[]+)=([^\\\\]]+)\\\\]"
             assert fieldMatcher instanceof java.util.regex.Matcher
-            @ASTTest(phase=INSTRUCTION_SELECTION, value = {
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE
             })
             def value = fieldMatcher[0]
@@ -1470,7 +1470,6 @@ println someInt
         assertScript '''
             import static java.nio.file.AccessMode.*
 
-            @groovy.transform.CompileStatic
             class Dummy {
                 static main() {
                     // more than 5 to match `of(E first, E[] rest)` variant
@@ -1479,6 +1478,34 @@ println someInt
             }
 
             assert Dummy.main() == [READ, WRITE, EXECUTE].toSet()
+        '''
+    }
+
+    void testNumberWrapperMultiAssign() {
+        assertScript '''
+            import org.codehaus.groovy.ast.CodeVisitorSupport
+            import org.codehaus.groovy.ast.expr.ConstantExpression
+
+            void test() {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    node.visit(new CodeVisitorSupport() {
+                        @Override
+                        void visitConstantExpression(ConstantExpression expr) {
+                            switch (expr.text) {
+                            case '123':
+                            case '456':
+                                assert ClassHelper.isNumberType(expr.type)
+                                break
+                            default:
+                                assert false : "unexpected constant: $expr"
+                            }
+                        }
+                    })
+                })
+                def (Integer i, Long j) = [123, 456L]
+            }
+
+            test()
         '''
     }
 }
