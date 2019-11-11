@@ -131,4 +131,47 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
         assertEquals "test method marked with @NotYetImplemented must throw an AssertionFailedError", 1, output.failureCount
         assertEquals "test method marked with @NotYetImplemented must throw an AssertionFailedError", AssertionFailedError, output.failures.first().exception.class
     }
+
+    // GROOVY-8457
+    void testNotYetImplementedJUnit4Failure_atCompileStatic()  {
+        def output = shell.evaluate('''
+            import groovy.transform.CompileStatic
+            import groovy.test.NotYetImplemented
+            import org.junit.Test
+            import org.junit.runner.JUnitCore
+
+            @CompileStatic
+            class MyTests {
+                @NotYetImplemented @Test void testThatFails()  {
+                    assert false
+                }
+            }
+
+            new JUnitCore().run(MyTests)
+        ''')
+
+        assert output.wasSuccessful() : '@CompileStatic @Test method with failing assertion marked with @NotYetImplemented should pass'
+    }
+
+
+    // GROOVY-8457
+    void testNotYetImplementedJUnit4Success_atCompileStatic() {
+        def output = shell.evaluate('''
+            import groovy.transform.CompileStatic
+            import groovy.test.NotYetImplemented
+            import org.junit.Test
+            import org.junit.runner.JUnitCore
+
+            @CompileStatic
+            class MyTests {
+                @NotYetImplemented @Test void testThatFails()  {
+                    assert true
+                }
+            }
+
+            new JUnitCore().run(MyTests)
+            assert output.failureCount == 1 : 'Passing @CompileStatic @Test method marked with @NotYetImplemented should fail'
+            assert output.failures.first().exception instanceof AssertionFailedError : 'Passing @CompileStatic @Test method marked with @NotYetImplemented should throw an AssertionFailedError'
+        ''')
+    }
 }
