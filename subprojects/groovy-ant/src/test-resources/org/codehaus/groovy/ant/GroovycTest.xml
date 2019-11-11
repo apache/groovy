@@ -187,6 +187,26 @@
         <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" fork="false" includeAntRuntime="false"/>
     </target>
 
+    <!-- GROOVY-9197 -->
+    <target name="jointForkedCompilation_ExternalJarOnClasspath">
+        <presetdef name="compile">
+            <groovyc fork="true" includeantruntime="false">
+                <javac debug="true" source="${javaVersion}" target="${javaVersion}"/>
+            </groovyc>
+        </presetdef>
+
+        <path id="the.classpath">
+            <path refid="groovyMaterials"/>
+            <fileset file="commons-lang3-3.4.jar"/>
+        </path>
+
+        <compile srcdir="${srcPath}" destdir="${destPath}" includes="MakesExternalReference.java">
+            <classpath refid="the.classpath"/>
+        </compile>
+
+        <java classname="org.codehaus.groovy.ant.MakesExternalReference" classpathref="the.classpath"/>
+    </target>
+
     <target name="clean">
         <delete quiet="true">
             <fileset dir="${destPath}/org/codehaus/groovy/ant">
