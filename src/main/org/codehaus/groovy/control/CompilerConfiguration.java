@@ -37,13 +37,7 @@ import java.util.StringTokenizer;
 
 /**
  * Compilation control flags and coordination stuff.
- *
- * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @author <a href="mailto:jim@pagesmiths.com">Jim White</a>
- * @author <a href="mailto:cedric.champeau@gmail.com">Cedric Champeau</a>
  */
-
 public class CompilerConfiguration {
 
     private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
@@ -62,19 +56,18 @@ public class CompilerConfiguration {
     /** This (<code>"1.8"</code>) is the value for targetBytecode to compile for a JDK 1.8. **/
     public static final String JDK8 = "1.8";
 
+    /** The valid targetBytecode values. */
+    public static final String[] ALLOWED_JDKS = {JDK4, JDK5, JDK6, JDK7, JDK8};
+
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5 or later JVM. **/
     public static final String POST_JDK5 = JDK5; // for backwards compatibility
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4 JVM. **/
     public static final String PRE_JDK5 = JDK4;
 
-    private static final String[] ALLOWED_JDKS = { JDK4, JDK5, JDK6, JDK7, JDK8 };
-
     @Deprecated
     public static final String CURRENT_JVM_VERSION = getMinBytecodeVersion();
 
-    // Static initializers are executed in text order,
-    // therefore we must do this one last!
     /**
      *  A convenience for getting a default configuration.  Do not modify it!
      *  See {@link #CompilerConfiguration(Properties)} for an example on how to
@@ -433,10 +426,10 @@ public class CompilerConfiguration {
         //
         text = configuration.getProperty("groovy.target.directory");
         if (text != null) setTargetDirectory(text);
-        
+
         text = configuration.getProperty("groovy.target.bytecode");
         if (text != null) setTargetBytecode(text);
-        
+
         //
         // Classpath
         //
@@ -729,11 +722,10 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Allow setting the bytecode compatibility. The parameter can take
-     * one of the values <tt>1.7</tt>, <tt>1.6</tt>, <tt>1.5</tt> or <tt>1.4</tt>.
-     * If wrong parameter then the value will default to VM determined version.
-     * 
-     * @param version the bytecode compatibility mode
+     * Allow setting the bytecode compatibility level. The parameter can take
+     * one of the values in {@link #ALLOWED_JDKS}.
+     *
+     * @param version the bytecode compatibility level
      */
     public void setTargetBytecode(String version) {
         for (String allowedJdk : ALLOWED_JDKS) {
@@ -744,24 +736,25 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Retrieves the compiler bytecode compatibility mode.
-     * 
-     * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     * Retrieves the compiler bytecode compatibility level.
+     * Defaults to the minimum officially supported bytecode
+     * version for any particular Groovy version.
+     *
+     * @return bytecode compatibility level
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
     }
-    
+
     private static String getMinBytecodeVersion() {
         try {
             Class.forName(JDK5_CLASSNAME_CHECK);
             return POST_JDK5;
-        } catch(Exception ex) {
-            // IGNORE
+        } catch(Exception ignore) {
         }
         return PRE_JDK5;
     }
-    
+
     /**
      * Gets the joint compilation options for this configuration.
      * @return the options
