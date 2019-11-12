@@ -162,15 +162,9 @@ import java.util.StringTokenizer;
  * &lt;/project&gt;
  * </pre>
  * <p>
- * Based heavily on the Javac implementation in Ant.
+ * Based on the implementation of the Javac task in Apache Ant.
  * <p>
  * Can also be used from {@link groovy.util.AntBuilder} to allow the build file to be scripted in Groovy.
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Hein Meling
- * @author <a href="mailto:russel.winder@concertant.com">Russel Winder</a>
- * @author Danno Ferrin
- * @author Paul King
  */
 public class Groovyc extends MatchingTask {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
@@ -286,20 +280,24 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Sets the bytecode compatibility mode
+     * Sets the bytecode compatibility level.
+     * The parameter can take one of the values in {@link CompilerConfiguration#ALLOWED_JDKS}.
      *
-     * @param version the bytecode compatibility mode
+     * @param version the bytecode compatibility level
      */
     public void setTargetBytecode(String version) {
-        if (CompilerConfiguration.PRE_JDK5.equals(version) || CompilerConfiguration.POST_JDK5.equals(version)) {
-            this.targetBytecode = version;
+        for (String allowedJdk : CompilerConfiguration.ALLOWED_JDKS) {
+            if (allowedJdk.equals(version)) {
+                this.targetBytecode = version;
+                break;
+            }
         }
     }
 
     /**
-     * Retrieves the compiler bytecode compatibility mode.
+     * Retrieves the compiler bytecode compatibility level.
      *
-     * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     * @return bytecode compatibility level. Can be one of the values in {@link CompilerConfiguration#ALLOWED_JDKS}.
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
