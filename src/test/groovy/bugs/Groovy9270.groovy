@@ -41,19 +41,6 @@ final class Groovy9270 {
     }
 
     @Test
-    void testInstanceOfPrimitive2() {
-        def err = shouldFail '''
-            void meth(obj) {
-                if (obj !instanceof int) {
-                    // ...
-                }
-            }
-        '''
-
-        assert err =~ / Cannot perform instanceof check against primitive type int/
-    }
-
-    @Test
     void testInstanceOfPrimitiveArray() {
         assertScript '''
             void meth(obj) {
