@@ -18,7 +18,7 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
+import groovy.transform.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
