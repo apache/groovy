@@ -116,7 +116,13 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
     }
 
     private static boolean isExisting(ClassNode classNode, Parameter[] params) {
-        return classNode.getDeclaredConstructors().stream().anyMatch(ctor -> matchingTypes(params, ctor.getParameters()));
+        List<ConstructorNode> declaredConstructors = classNode.getDeclaredConstructors();
+        for (ConstructorNode ctor : declaredConstructors) {
+            if (matchingTypes(params, ctor.getParameters())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean matchingTypes(Parameter[] params, Parameter[] existingParams) {
