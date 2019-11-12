@@ -52,7 +52,7 @@ import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -959,47 +959,68 @@ public class Groovyc extends MatchingTask {
         }
     }
 
+    /**
+     * If {@code groovyc} task includes a nested {@code javac} task, check for
+     * shareable configuration.  {@code FileSystemCompiler} supports several
+     * command-line arguments for configuring joint compilation:
+     * <ul>
+     * <li><tt>-j</tt> enables joint compile
+     * <li><tt>-F</tt> is used to pass flags
+     * <li><tt>-J</tt> is used to pass name=value pairs
+     * </ul>
+     * Joint compilation options are transferred from {@link FileSystemCompiler}
+     * to {@link CompilerConfiguration}'s jointCompileOptions property.  Flags
+     * are saved to key "flags" (with the inclusion of "parameters" if enabled
+     * on groovyc), pairs are saved to key "namedValues" and the key "memStub"
+     * may also be set to {@link Boolean#TRUE} to influence joint compilation.
+     *
+     * @see org.codehaus.groovy.tools.javac.JavacJavaCompiler
+     * @see javax.tools.JavaCompiler
+     */
     private List<String> extractJointOptions(Path classpath) {
         List<String> jointOptions = new ArrayList<>();
         if (!jointCompilation) return jointOptions;
 
-        // extract joint options, some get pushed up...
-        RuntimeConfigurable rc = javac.getRuntimeConfigurableWrapper();
-        for (Map.Entry<String, Object> e : rc.getAttributeMap().entrySet()) {
-            String key = e.getKey();
-            String value = getProject().replaceProperties(e.getValue().toString());
-            if (key.contains("debug")) {
-                String level = "";
-                if (javac.getDebugLevel() != null) {
-                    level = ":" + javac.getDebugLevel();
-                }
-                jointOptions.add("-Fg" + level);
-            } else if (key.contains("debugLevel")) {
-                // ignore, taken care of in debug
-            } else if (key.contains("verbose")) {
-                // false is default, so something to do only in true case
-                if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value))
-                    jointOptions.add("-F" + key);
-            } else if (key.contains("classpath")) {
-                classpath.add(javac.getClasspath());
-            } else if ((key.contains("depend"))
-                    || (key.contains("extdirs"))
-                    || (key.contains("encoding"))
-                    || (key.contains("source"))
-                    || (key.contains("target"))
-                    || (key.contains("verbose"))) { // already handling verbose but pass on too
-                jointOptions.add("-J" + key + "=" + value);
-            } else {
-                log.warn("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored");
-            }
-            // TODO includes? excludes?
+        // map "debug" and "debuglevel" to "-Fg"
+        if (javac.getDebug()) {
+            jointOptions.add("-Fg" + Optional.ofNullable(javac.getDebugLevel()).map(level -> ":" + level).orElse(""));
+        } else {
+            jointOptions.add("-Fg:none");
         }
 
-        // ant's <javac> supports nested <compilerarg value=""> elements (there can be multiple of them)
-        // for additional options to be passed to javac.
-        Enumeration<RuntimeConfigurable> children = rc.getChildren();
-        while (children.hasMoreElements()) {
-            RuntimeConfigurable childrc = children.nextElement();
+        // map "verbose" to "-Fverbose"
+        if (javac.getVerbose()) {
+            jointOptions.add("-Fverbose");
+        }
+
+        RuntimeConfigurable rc = javac.getRuntimeConfigurableWrapper();
+
+        for (Map.Entry<String, Object> e : rc.getAttributeMap().entrySet()) {
+            String key = e.getKey();
+            if (key.contains("encoding")
+                    || key.contains("extdirs")
+                    || key.contains("depend")
+                    || key.contains("source")
+                    || key.contains("target")) {
+                // map "encoding", etc. to "-Jkey=val"
+                jointOptions.add("-J" + key + "=" + getProject().replaceProperties(e.getValue().toString()));
+
+            } else if (key.contains("classpath")) {
+                if (key.startsWith("boot")) {
+                    // TODO: javac.getBootclasspath()
+                } else {
+                    classpath.add(javac.getClasspath());
+                }
+            } else if (!key.contains("debug") && !key.contains("verbose")) {
+                log.warn("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored.");
+            }
+            // TODO: modulepath, modulepathref, modulesourcepath, modulesourcepathref, upgrademodulepath, upgrademodulepathref
+            // TODO: release, deprecation, failonerror, nowarn, tempdir, nativeheaderdir, includes(file)? excludes(file)?
+        }
+
+        // Ant's <javac> supports nested <compilerarg value=""> elements (there
+        // can be multiple of them) for additional options to be passed to javac.
+        for (RuntimeConfigurable childrc : Collections.list(rc.getChildren())) {
             if (childrc.getElementTag().equals("compilerarg")) {
                 for (Map.Entry<String, Object> e : childrc.getAttributeMap().entrySet()) {
                     String key = e.getKey();
