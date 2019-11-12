@@ -136,7 +136,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
     void testNotYetImplementedJUnit4Failure_atCompileStatic()  {
         def output = shell.evaluate('''
             import groovy.transform.CompileStatic
-            import groovy.test.NotYetImplemented
+            import groovy.transform.NotYetImplemented
             import org.junit.Test
             import org.junit.runner.JUnitCore
 
@@ -158,7 +158,7 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
     void testNotYetImplementedJUnit4Success_atCompileStatic() {
         def output = shell.evaluate('''
             import groovy.transform.CompileStatic
-            import groovy.test.NotYetImplemented
+            import groovy.transform.NotYetImplemented
             import org.junit.Test
             import org.junit.runner.JUnitCore
 
@@ -170,8 +170,8 @@ class NotYetImplementedTransformTest extends GroovyShellTestCase {
             }
 
             new JUnitCore().run(MyTests)
-            assert output.failureCount == 1 : 'Passing @CompileStatic @Test method marked with @NotYetImplemented should fail'
-            assert output.failures.first().exception instanceof AssertionFailedError : 'Passing @CompileStatic @Test method marked with @NotYetImplemented should throw an AssertionFailedError'
         ''')
+        assert output.failureCount == 1 : 'Passing @CompileStatic @Test method marked with @NotYetImplemented should fail'
+        assert output.failures.first().exception instanceof AssertionFailedError : 'Passing @CompileStatic @Test method marked with @NotYetImplemented should throw an AssertionFailedError'
     }
 }
