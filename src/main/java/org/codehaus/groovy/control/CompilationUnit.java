@@ -794,24 +794,21 @@ public class CompilationUnit extends ProcessingUnit {
             return true;
         }
 
-        public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
+        public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
 
             optimizer.visitClass(classNode, source); // GROOVY-4272: repositioned it here from staticImport
 
             //
             // Run the Verifier on the outer class
             //
+            GroovyClassVisitor visitor = verifier;
             try {
-                verifier.visitClass(classNode);
+                visitor.visitClass(classNode);
             } catch (GroovyRuntimeException rpe) {
-                ASTNode node = rpe.getNode();
-                getErrorCollector().addError(
-                        new SyntaxException(rpe.getMessage(), node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                        source
-                );
+                getErrorCollector().addError(new SyntaxException(rpe.getMessage(), rpe.getNode()), source);
             }
 
-            GroovyClassVisitor visitor = new LabelVerifier(source);
+            visitor = new LabelVerifier(source);
             visitor.visitClass(classNode);
 
             visitor = new InstanceOfVerifier() {
@@ -825,11 +822,8 @@ public class CompilationUnit extends ProcessingUnit {
             visitor = new ClassCompletionVerifier(source);
             visitor.visitClass(classNode);
 
-            ClassCompletionVerifier completionVerifier = new ClassCompletionVerifier(source);
-            completionVerifier.visitClass(classNode);
-
-            ExtendedVerifier xverifier = new ExtendedVerifier(source);
-            xverifier.visitClass(classNode);
+            visitor = new ExtendedVerifier(source);
+            visitor.visitClass(classNode);
 
             // because the class may be generated even if a error was found
             // and that class may have an invalid format we fail here if needed
