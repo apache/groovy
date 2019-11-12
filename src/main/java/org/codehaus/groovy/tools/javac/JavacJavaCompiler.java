@@ -27,10 +27,6 @@ import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -41,9 +37,7 @@ import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -51,7 +45,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class JavacJavaCompiler implements JavaCompiler {
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     private static final Locale DEFAULT_LOCALE = Locale.ENGLISH;
     private final CompilerConfiguration config;
     private final Charset charset;
@@ -62,7 +56,7 @@ public class JavacJavaCompiler implements JavaCompiler {
     }
 
     public void compile(List<String> files, CompilationUnit cu) {
-        String[] javacParameters = makeParameters(cu.getClassLoader());
+        List<String> javacParameters = makeParameters(cu.getClassLoader());
         StringBuilderWriter javacOutput = new StringBuilderWriter();
         int javacReturnValue = 0;
         try {
@@ -78,7 +72,6 @@ public class JavacJavaCompiler implements JavaCompiler {
                 javacReturnValue = 1;
                 cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
             }
-
         } catch (Exception e) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         }
@@ -95,23 +88,21 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
     }
 
-    private boolean doCompileWithSystemJavaCompiler(CompilationUnit cu, List<String> files, String[] javacParameters, StringBuilderWriter javacOutput) throws IOException {
-        javax.tools.JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, DEFAULT_LOCALE, charset)) {
-            final Set<JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
+    private boolean doCompileWithSystemJavaCompiler(CompilationUnit cu, List<String> files, List<String> javacParameters, StringBuilderWriter javacOutput) throws IOException {
+        javax.tools.JavaCompiler compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        try (javax.tools.StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, DEFAULT_LOCALE, charset)) {
+            Set<javax.tools.JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
 
             // add java source files to compile
             fileManager.getJavaFileObjectsFromFiles(
-                    files.stream()
-                            .map(File::new)
-                            .collect(Collectors.toList())
+                    files.stream().map(File::new).collect(Collectors.toList())
             ).forEach(compilationUnitSet::add);
 
-            CompilationTask compilationTask = compiler.getTask(
+            javax.tools.JavaCompiler.CompilationTask compilationTask = compiler.getTask(
                     javacOutput,
                     fileManager,
                     null,
-                    Arrays.asList(javacParameters),
+                    javacParameters,
                     Collections.emptyList(),
                     compilationUnitSet
             );
@@ -133,72 +124,64 @@ public class JavacJavaCompiler implements JavaCompiler {
         cu.getErrorCollector().addFatalError(new SimpleMessage(header, cu));
     }
 
-    private String[] makeParameters(GroovyClassLoader parentClassLoader) {
-        Map options = config.getJointCompilationOptions();
-        LinkedList<String> paras = new LinkedList<String>();
+    private List<String> makeParameters(GroovyClassLoader parentClassLoader) {
+        Map<String, Object> options = config.getJointCompilationOptions();
+        List<String> params = new ArrayList<>();
 
         File target = config.getTargetDirectory();
         if (target == null) target = new File(".");
 
-        // defaults
-        paras.add("-d");
-        paras.add(target.getAbsolutePath());
+        params.add("-d");
+        params.add(target.getAbsolutePath());
 
-        // add flags
         String[] flags = (String[]) options.get("flags");
         if (flags != null) {
             for (String flag : flags) {
-                paras.add('-' + flag);
+                params.add("-" + flag);
             }
         }
 
         boolean hadClasspath = false;
-        // add namedValues
         String[] namedValues = (String[]) options.get("namedValues");
         if (namedValues != null) {
-            for (int i = 0; i < namedValues.length; i += 2) {
+            for (int i = 0, n = namedValues.length; i < n; i += 2) {
                 String name = namedValues[i];
                 if (name.equals("classpath")) hadClasspath = true;
-                paras.add('-' + name);
-                paras.add(namedValues[i + 1]);
+                params.add("-" + name);
+                params.add(namedValues[i + 1]);
             }
         }
 
         // append classpath if not already defined
         if (!hadClasspath) {
             // add all classpaths that compilation unit sees
-            List<String> paths = new ArrayList<String>(config.getClasspath());
-            ClassLoader cl = parentClassLoader;
-            while (cl != null) {
-                if (cl instanceof URLClassLoader) {
-                    for (URL u : ((URLClassLoader) cl).getURLs()) {
+            List<String> paths = new ArrayList<>(config.getClasspath());
+            ClassLoader loader = parentClassLoader;
+            while (loader != null) {
+                if (loader instanceof URLClassLoader) {
+                    for (URL u : ((URLClassLoader) loader).getURLs()) {
                         try {
                             paths.add(new File(u.toURI()).getPath());
-                        } catch (URISyntaxException e) {
-                            // ignore it
+                        } catch (URISyntaxException ignore) {
                         }
                     }
                 }
-                cl = cl.getParent();
+                loader = loader.getParent();
             }
 
             try {
-                CodeSource codeSource =
-                        AccessController.doPrivileged(
-                                (PrivilegedAction<CodeSource>) () -> GroovyObject.class.getProtectionDomain().getCodeSource()
-                        );
+                CodeSource codeSource = AccessController.doPrivileged(
+                        (PrivilegedAction<CodeSource>) () -> GroovyObject.class.getProtectionDomain().getCodeSource());
                 if (codeSource != null) {
                     paths.add(new File(codeSource.getLocation().toURI()).getPath());
                 }
-            } catch (URISyntaxException e) {
-                // ignore it
+            } catch (URISyntaxException ignore) {
             }
 
-            paras.add("-classpath");
-            paras.add(DefaultGroovyMethods.join((Iterable) paths, File.pathSeparator));
+            params.add("-classpath");
+            params.add(DefaultGroovyMethods.join((Iterable<String>) paths, File.pathSeparator));
         }
 
-        return paras.toArray(EMPTY_STRING_ARRAY);
+        return params;
     }
-
 }
