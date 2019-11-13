@@ -84,7 +84,7 @@ public class FileSystemCompiler {
      *
      * @since 2.5
      */
-    public static void displayHelp(final PrintWriter writer) {
+    public static void displayHelp(PrintWriter writer) {
         configureParser(new CompilationOptions()).usage(writer);
     }
 
@@ -102,7 +102,7 @@ public class FileSystemCompiler {
      *
      * @since 2.5
      */
-    public static void displayVersion(final PrintWriter writer) {
+    public static void displayVersion(PrintWriter writer) {
         for (String line : new VersionProvider().getVersion()) {
             writer.println(line);
         }
@@ -115,10 +115,10 @@ public class FileSystemCompiler {
             File file = new File(filename);
             if (!file.exists()) {
                 System.err.println("error: file not found: " + file);
-                ++errors;
+                errors += 1;
             } else if (!file.canRead()) {
                 System.err.println("error: file not readable: " + file);
-                ++errors;
+                errors += 1;
             }
         }
 
@@ -419,15 +419,15 @@ public class FileSystemCompiler {
 
             // joint compilation parameters
             if (jointCompilation) {
-                Map<String, Object> compilerOptions = new HashMap<String, Object>();
-                compilerOptions.put("namedValues", javacOptionsList());
-                compilerOptions.put("flags", flagsWithParameterMetaData());
+                Map<String, Object> compilerOptions = new HashMap<>();
+                compilerOptions.put("flags", javacFlags());
+                compilerOptions.put("namedValues", javacNamedValues());
                 configuration.setJointCompilationOptions(compilerOptions);
             }
 
             if (indy) {
-                configuration.getOptimizationOptions().put("int", false);
-                configuration.getOptimizationOptions().put("indy", true);
+                configuration.getOptimizationOptions().put("int", Boolean.FALSE);
+                configuration.getOptimizationOptions().put("indy", Boolean.TRUE);
             }
 
             final List<String> transformations = new ArrayList<>();
@@ -443,12 +443,12 @@ public class FileSystemCompiler {
 
             String configScripts = System.getProperty("groovy.starter.configscripts", null);
             if (configScript != null || (configScripts != null && !configScripts.isEmpty())) {
-                List<String> scripts = new ArrayList<String>();
+                List<String> scripts = new ArrayList<>();
                 if (configScript != null) {
                     scripts.add(configScript);
                 }
                 if (configScripts != null) {
-                    scripts.addAll(StringGroovyMethods.tokenize((CharSequence) configScripts, ','));
+                    scripts.addAll(StringGroovyMethods.tokenize(configScripts, ','));
                 }
                 processConfigScripts(scripts, configuration);
             }
@@ -460,26 +460,29 @@ public class FileSystemCompiler {
             return generateFileNamesFromOptions(files);
         }
 
-        String[] javacOptionsList() {
-            if (javacOptionsMap == null) {
-                return null;
+        private String[] javacNamedValues() {
+            List<String> result = new ArrayList<>();
+            if (javacOptionsMap != null) {
+                for (Map.Entry<String, String> entry : javacOptionsMap.entrySet()) {
+                    result.add(entry.getKey());
+                    result.add(entry.getValue());
+                }
             }
-            List<String> result = new ArrayList<String>();
-            for (Map.Entry<String, String> entry : javacOptionsMap.entrySet()) {
-                result.add(entry.getKey());
-                result.add(entry.getValue());
-            }
-            return result.toArray(new String[0]);
+            return result.isEmpty() ? null : result.toArray(new String[0]);
         }
 
-        String[] flagsWithParameterMetaData() {
-            if (flags == null) {
-                return null;
+        private String[] javacFlags() {
+            List<String> result = new ArrayList<>();
+            if (flags != null) {
+                result.addAll(flags);
             }
             if (parameterMetadata) {
-                flags.add("parameters");
+                result.add("parameters");
             }
-            return flags.toArray(new String[0]);
+            if (previewFeatures) {
+                result.add("-enable-preview");
+            }
+            return result.isEmpty() ? null : result.toArray(new String[0]);
         }
     }
 }

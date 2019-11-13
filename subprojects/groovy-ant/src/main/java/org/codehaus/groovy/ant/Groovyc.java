@@ -988,6 +988,16 @@ public class Groovyc extends MatchingTask {
             jointOptions.add("-Fg:none");
         }
 
+        // map "deprecation" to "-Fdeprecation"
+        if (javac.getDeprecation()) {
+            jointOptions.add("-Fdeprecation");
+        }
+
+        // map "nowarn" to "-Fnowarn"
+        if (javac.getNowarn()) {
+            jointOptions.add("-Fnowarn");
+        }
+
         // map "verbose" to "-Fverbose"
         if (javac.getVerbose()) {
             jointOptions.add("-Fverbose");
@@ -997,25 +1007,45 @@ public class Groovyc extends MatchingTask {
 
         for (Map.Entry<String, Object> e : rc.getAttributeMap().entrySet()) {
             String key = e.getKey();
-            if (key.contains("encoding")
-                    || key.contains("extdirs")
-                    || key.contains("depend")
-                    || key.contains("source")
-                    || key.contains("target")) {
-                // map "encoding", etc. to "-Jkey=val"
+            if (key.equals("depend")
+                    || key.equals("encoding")
+                    || key.equals("extdirs")
+                    || key.equals("nativeheaderdir")
+                    || key.equals("release")
+                    || key.equals("source")
+                    || key.equals("target")) {
+                switch (key) {
+                case "nativeheaderdir":
+                    key = "h"; break;
+                case "release":
+                    key = "-" + key; // to get "--" when passed to javac
+                }
+                // map "depend", "encoding", etc. to "-Jkey=val"
                 jointOptions.add("-J" + key + "=" + getProject().replaceProperties(e.getValue().toString()));
 
             } else if (key.contains("classpath")) {
                 if (key.startsWith("boot")) {
-                    // TODO: javac.getBootclasspath()
+                    // map "bootclasspath" or "bootclasspathref" to "-Jbootclasspath="
+                    jointOptions.add("-Jbootclasspath=" + javac.getBootclasspath());
                 } else {
+                    // map "classpath" or "classpathref" to "--classpath"
                     classpath.add(javac.getClasspath());
                 }
-            } else if (!key.contains("debug") && !key.contains("verbose")) {
+            } else if (key.contains("module") && key.contains("path")) {
+                if (key.startsWith("upgrade")) {
+                    // map "upgrademodulepath" or "upgrademodulepathref" to "-J-upgrade-module-path="
+                    jointOptions.add("-J-upgrade-module-path=" + javac.getUpgrademodulepath());
+                } else if (key.contains("source")) {
+                    // map "modulesourcepath" or "modulesourcepathref" to "-J-module-source-path="
+                    jointOptions.add("-J-module-source-path=" + javac.getModulesourcepath());
+                } else {
+                    // map "modulepath" or "modulepathref" to "-J-module-path="
+                    jointOptions.add("-J-module-path=" + javac.getModulepath());
+                }
+            } else if (!key.contains("debug") && !key.equals("deprecation") && !key.equals("nowarn") && !key.equals("verbose")) {
                 log.warn("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored.");
             }
-            // TODO: modulepath, modulepathref, modulesourcepath, modulesourcepathref, upgrademodulepath, upgrademodulepathref
-            // TODO: release, deprecation, failonerror, nowarn, tempdir, nativeheaderdir, includes(file)? excludes(file)?
+            // TODO: defaultexcludes, excludes(file)?, includes(file)?, includeDestClasses, tempdir
         }
 
         // Ant's <javac> supports nested <compilerarg value=""> elements (there
@@ -1028,12 +1058,9 @@ public class Groovyc extends MatchingTask {
                         String value = getProject().replaceProperties(e.getValue().toString());
                         StringTokenizer st = new StringTokenizer(value, " ");
                         while (st.hasMoreTokens()) {
-                            String optionStr = st.nextToken();
-                            String replaced = optionStr.replace("-X", "-FX");
-                            if (optionStr.equals(replaced)) {
-                                replaced = optionStr.replace("-W", "-FW"); // GROOVY-5063
-                            }
-                            jointOptions.add(replaced);
+                            String option = st.nextToken();
+                            // GROOVY-5063: map "-Werror", etc. to "-FWerror"
+                            jointOptions.add(option.replaceFirst("^-(W|X|proc:)", "-F$1"));
                         }
                     }
                 }
