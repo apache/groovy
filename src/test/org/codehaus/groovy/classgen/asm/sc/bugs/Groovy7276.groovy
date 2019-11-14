@@ -71,14 +71,16 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
 
     @NotYetImplemented // GROOVY-7304
     void testShouldGoThroughPrivateBridgeAccessorWithWriteAccess() {
-        assertScript '''
-            class Foo {
-                private int i = 1
-                def m() { new String().with { ++i } }
-            }
-            assert new Foo().m() == 2
-            class Bar extends Foo {}
-            assert new Bar().m() == 2
-        '''
+        ['++i', 'i++', 'i+=1', 'i=i+1'].each {
+            assertScript """
+                class Foo {
+                    private int i = 1
+                    def m() { new String().with { $it } }
+                }
+                assert new Foo().m() == 2
+                class Bar extends Foo {}
+                assert new Bar().m() == 2
+            """
+        }
     }
 }
