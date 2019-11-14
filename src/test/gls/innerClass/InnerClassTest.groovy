@@ -122,19 +122,61 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-8423
+    void testPrivateInnerClassHasPrivateModifier() {
+        assertScript '''
+            import static java.lang.reflect.Modifier.*
+
+            class A {
+                private class B {}
+            }
+
+            int modifiers = A.B.modifiers
+            assert isPrivate(modifiers)
+        '''
+    }
+
+    @Test // GROOVY-8423
+    void testProtectedInnerClassHasProtectedModifier() {
+        assertScript '''
+            import static java.lang.reflect.Modifier.*
+
+            class A {
+                protected class B {}
+            }
+
+            int modifiers = A.B.modifiers
+            assert isProtected(modifiers)
+        '''
+    }
+
+    @Test // GROOVY-8423
+    void testPackagePrivateInnerClassHasProtectedModifier() {
+        assertScript '''
+            import static java.lang.reflect.Modifier.*
+
+            class A {
+                @groovy.transform.PackageScope class B {}
+            }
+
+            int modifiers = A.B.modifiers
+            assert !isPrivate(modifiers) && !isProtected(modifiers) && !isPublic(modifiers)
+        '''
+    }
+
     @Test
     void testStaticInnerClass() {
         assertScript '''
-            import java.lang.reflect.Modifier
+            import static java.lang.reflect.Modifier.*
 
             class A {
-                static class B{}
+                static class B {}
             }
-            def x = new A.B()
-            assert x != null
+            def b = new A.B()
+            assert b != null
 
-            def mods = A.B.modifiers
-            assert Modifier.isPublic(mods)
+            int modifiers = A.B.modifiers
+            assert isPublic(modifiers)
         '''
     }
 
