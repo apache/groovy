@@ -75,16 +75,18 @@ Compiles Groovy source files and, if joint compilation option is used, Java sour
 Required taskdef
 ^^^^^^^^^^^^^^^^
 
-Assuming all the groovy jars you need are in _my.classpath_ (this will be `groovy-VERSION.jar`,
-`groovy-ant-VERSION.jar` plus any modules and transitive dependencies you might be using)
-you will need to declare this task at some point in the `build.xml` prior to the `groovyc` task being invoked.
+Assuming the groovy jars are in _groovy.libs_, you will need to declare this task
+at some point in the `build.xml` prior to the `groovyc` task being invoked.
 
 [source,xml]
-----------------------------------------------------
-<taskdef name="groovyc"
-         classname="org.codehaus.groovy.ant.Groovyc"
-         classpathref="my.classpath"/>
-----------------------------------------------------
+-----------------------------------------------------------------------
+<taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
+  <classpath>
+    <fileset file="${groovy.libs}/groovy-ant-VERSION.jar"/>
+    <fileset file="${groovy.libs}/groovy-VERSION.jar"/>
+  </classpath>
+</taskdef>
+-----------------------------------------------------------------------
 
 [[ThegroovycAntTask-groovycAttributes]]
 <groovyc> Attributes
@@ -166,6 +168,9 @@ you need to set this flag to true. Defaults to false. |No
 |parameters |Generates metadata for reflection on method parameter names on JDK 8 and above.
 Defaults to false. |No
 
+|previewFeatures |Enables the JEP preview features on JDK 12 and above.
+Defaults to false. |No
+
 |targetBytecode |Sets the bytecode compatibility level. |No
 
 |javahome |Sets the `java.home` value to use, default is the current JDK's home. |No
@@ -187,10 +192,14 @@ the compilation fails. |No
 *Example:*
 
 [source,xml]
-----
-<groovyc srcdir="src" destdir="target/classes">
-</groovyc>
-----
+-----------------------------------------------------------------------
+<path id="classpath.main">
+  <fileset dir="${groovy.libs}" includes="*.jar" excludes="groovy-ant-*.jar"/>
+  ...
+</path>
+<groovyc srcdir="${dir.sources}" destdir="${dir.classes}" classpathref="classpath.main"
+         fork="true" includeantruntime="false" configscript="config.groovy" targetBytecode="1.8"/>
+-----------------------------------------------------------------------
 
 
 [[ThegroovycAntTask-groovycNestedElements]]
@@ -201,48 +210,41 @@ the compilation fails. |No
 |==========================================================
 |element |kind |Required |Replaces Attribute
 |src |a path structure |Yes (unless srcdir is used) |srcdir
-|classpath |a path structure |No |classpath
-|javac |javac task |No |jointCompilationOptions
+|classpath |a path structure |No |classpath or classpathref
+|javac |javac task |No |N/A
 |==========================================================
 
 *Notes:*
 
 * For path structures see for example
 http://ant.apache.org/manual/using.html#path
-* For usages of the javac task see
+* For usages of the `javac` task see
 https://ant.apache.org/manual/Tasks/javac.html
-* The nested javac task behaves more or less as documented for the
-top-level `javac` task. `srcdir`, `destdir`, `classpath`, `encoding` for the
-nested `javac` task are taken from the enclosing `groovyc` task. If these
-attributes are specified then they are added, they do not replace. In
-fact, you should not attempt to overwrite the destination. Other
-attributes and nested elements are unaffected, for example `fork`,
-`memoryMaximumSize`, etc. may be used freely.
+* The nested `javac` task behaves more or less as documented for the top-level
+`javac` task. `srcdir`, `destdir`, `classpath`, `encoding` and `parameters`
+for the nested `javac` task are taken from the enclosing `groovyc` task. If
+these attributes are specified then they are added, they do not replace. In fact,
+you should not attempt to overwrite the destination. Other attributes and nested
+elements are unaffected, for example `fork`, `memoryMaximumSize`, etc. may be
+used freely.
 
 [[ThegroovycAntTask-JointCompilation]]
 Joint Compilation
 ^^^^^^^^^^^^^^^^^
 
-Joint compilation is enabled by using an embedded `javac` element, as shown in
-the following example:
+Joint compilation is enabled by using an embedded `javac` element, as shown in the following example:
 
 [source,xml]
-----
-<groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}">
+-----------------------------------------------------------------------
+<groovyc srcdir="${testSourceDirectory}" destdir="${testClassesDirectory}" targetBytecode="1.8">
   <classpath>
     <pathelement path="${mainClassesDirectory}"/>
     <pathelement path="${testClassesDirectory}"/>
     <path refid="testPath"/>
   </classpath>
-  <javac source="1.7" target="1.7" debug="on" />
+  <javac debug="true" source="1.8" target="1.8" />
 </groovyc>
-----
-
-It is rare to specify `srcdir` and `destdir`, the nested `javac` task is provided with the `srcdir`
-and `destdir` values from the enclosing `groovyc` task, and it is invariable
-the right thing to do just to leave this as is.
-To restate: the `javac` task gets the `srcdir`, `destdir` and `classpath` from
-the enclosing `groovyc` task.
+-----------------------------------------------------------------------
 
 More details about joint compilation can be found in the <<section-jointcompilation,joint compilation>> section.
 
