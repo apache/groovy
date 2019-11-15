@@ -3492,10 +3492,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                             storeType(call, returnType);
                             storeTargetMethod(call, directMethodCallCandidate);
-                            ClassNode declaringClass = directMethodCallCandidate.getDeclaringClass();
-                            if (declaringClass.isInterface() && directMethodCallCandidate.isStatic() && !(directMethodCallCandidate instanceof ExtensionMethodNode)) {
-                                typeCheckingContext.getEnclosingClassNode().putNodeMetaData(MINIMUM_BYTECODE_VERSION, Opcodes.V1_8);
-                            }
+
                             String data = chosenReceiver.getData();
                             if (data != null) {
                                 // the method which has been chosen is supposed to be a call on delegate or owner
@@ -3768,6 +3765,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected void storeTargetMethod(final Expression call, final MethodNode directMethodCallCandidate) {
         call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, directMethodCallCandidate);
+
+        if (directMethodCallCandidate != null
+                && directMethodCallCandidate.isStatic()
+                && directMethodCallCandidate.getDeclaringClass().isInterface()
+                && !(directMethodCallCandidate instanceof ExtensionMethodNode)) {
+            typeCheckingContext.getEnclosingClassNode().putNodeMetaData(MINIMUM_BYTECODE_VERSION, Opcodes.V1_8);
+        }
+
         checkOrMarkPrivateAccess(call, directMethodCallCandidate);
         checkSuperCallFromClosure(call, directMethodCallCandidate);
         extension.onMethodSelection(call, directMethodCallCandidate);
