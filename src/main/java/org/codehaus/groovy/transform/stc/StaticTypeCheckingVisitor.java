@@ -484,7 +484,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitClassExpression(final ClassExpression expression) {
         super.visitClassExpression(expression);
-        ClassNode cn = (ClassNode) expression.getNodeMetaData(INFERRED_TYPE);
+        ClassNode cn = expression.getNodeMetaData(INFERRED_TYPE);
         if (cn == null) {
             storeType(expression, getType(expression));
         }
@@ -636,7 +636,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // IMPLICIT_RECEIVER is handled elsewhere
                     // however other access needs to be fixed for private access
                     if (vexp.getNodeMetaData(IMPLICIT_RECEIVER) == null) {
-                        ClassNode owner = (ClassNode) vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+                        ClassNode owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
                         if (owner != null) {
                             FieldNode veFieldNode = owner.getField(vexp.getName());
                             if (veFieldNode != null) {
@@ -836,7 +836,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (op == KEYWORD_IN || op == COMPARE_NOT_IN) {
                 // in case of the "in" operator, the receiver and the arguments are reversed
                 // so we use the reversedExpression and get the target method from it
-                storeTargetMethod(expression, (MethodNode) reversedBinaryExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+                storeTargetMethod(expression, reversedBinaryExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
             } else if (op == LEFT_SQUARE_BRACKET
                     && leftExpression instanceof VariableExpression
                     && leftExpression.getNodeMetaData(INFERRED_TYPE) == null) {
@@ -2179,7 +2179,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 varX("{source}", source)
         );
         virtualDecl.visit(this);
-        ClassNode newlyInferred = (ClassNode) virtualDecl.getNodeMetaData(INFERRED_TYPE);
+        ClassNode newlyInferred = virtualDecl.getNodeMetaData(INFERRED_TYPE);
 
         return !missesGenericsTypes(newlyInferred) ? newlyInferred : null;
     }
@@ -2469,7 +2469,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             return;
         }
         if (!extension.beforeVisitMethod(node)) {
-            ErrorCollector collector = (ErrorCollector) node.getNodeMetaData(ERROR_COLLECTOR);
+            ErrorCollector collector = node.getNodeMetaData(ERROR_COLLECTOR);
             if (collector != null) {
                 typeCheckingContext.getErrorCollector().addCollectorContents(collector);
             } else {
@@ -2625,7 +2625,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     addAmbiguousErrorMessage(mn, name, args, call);
                 }
                 if (!callArgsVisited) {
-                    visitMethodCallArguments(receiver, argumentList, true, (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+                    visitMethodCallArguments(receiver, argumentList, true, call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
                 }
             }
         } finally {
@@ -2853,7 +2853,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // to the corresponding parameters of the SAM type method
         MethodNode methodForSAM = findSAM(classForSAM);
         ClassNode[] parameterTypesForSAM = extractTypesFromParameters(methodForSAM.getParameters());
-        ClassNode[] blockParameterTypes = (ClassNode[]) openBlock.getNodeMetaData(CLOSURE_ARGUMENTS);
+        ClassNode[] blockParameterTypes = openBlock.getNodeMetaData(CLOSURE_ARGUMENTS);
         if (blockParameterTypes == null) {
             Parameter[] p = openBlock.getParameters();
             if (p == null) {
@@ -3310,7 +3310,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 listNode.setGenericsTypes(new GenericsType[]{new GenericsType(wrapTypeIfNecessary(subcallReturnType))});
                 storeType(call, listNode);
                 // store target method
-                storeTargetMethod(call, (MethodNode) subcall.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+                storeTargetMethod(call, subcall.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
                 typeCheckingContext.popEnclosingMethodCall();
                 return;
             }
@@ -3528,7 +3528,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             // now that a method has been chosen, we are allowed to visit the closures
-            MethodNode target = (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (!callArgsVisited) {
                 visitMethodCallArguments(receiver, argumentList, true, target);
             }
@@ -4197,7 +4197,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // o = new Object() // and eventually an object !
             // in that case, the INFERRED_TYPE corresponds to the current inferred type, while
             // DECLARATION_INFERRED_TYPE is the type which should be used for the initial type declaration
-            ClassNode oldDIT = (ClassNode) exp.getNodeMetaData(DECLARATION_INFERRED_TYPE);
+            ClassNode oldDIT = exp.getNodeMetaData(DECLARATION_INFERRED_TYPE);
             if (oldDIT != null) {
                 exp.putNodeMetaData(DECLARATION_INFERRED_TYPE, cn == null ? oldDIT : lowestUpperBound(oldDIT, cn));
             } else {
@@ -4902,7 +4902,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return result;
             }
         } else if (exp instanceof MethodCall) {
-            MethodNode target = (MethodNode) exp.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            MethodNode target = exp.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (target != null) {
                 return getType(target);
             }
@@ -4912,7 +4912,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode getTypeFromClosureArguments(Parameter parameter, TypeCheckingContext.EnclosingClosure enclosingClosure) {
         ClosureExpression closureExpression = enclosingClosure.getClosureExpression();
-        ClassNode[] closureParamTypes = (ClassNode[]) closureExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
+        ClassNode[] closureParamTypes = closureExpression.getNodeMetaData(CLOSURE_ARGUMENTS);
         if (closureParamTypes == null) return null;
         final Parameter[] parameters = closureExpression.getParameters();
         String name = parameter.getName();
@@ -5570,7 +5570,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         List<ClassNode> classNodes = typeCheckingContext.closureSharedVariablesAssignmentTypes.get(var);
                         if (classNodes != null && classNodes.size() > 1) {
                             ClassNode lub = lowestUpperBound(classNodes);
-                            MethodNode methodNode = (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+                            MethodNode methodNode = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
                             // we must check that such a method exists on the LUB
                             Parameter[] parameters = methodNode.getParameters();
                             ClassNode[] params = extractTypesFromParameters(parameters);
@@ -5639,7 +5639,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Variable var = findTargetVariable(expression);
             if (var instanceof VariableExpression) {
                 VariableExpression ve = (VariableExpression) var;
-                varOrigType.put(ve, (ClassNode) ve.getNodeMetaData(INFERRED_TYPE));
+                varOrigType.put(ve, ve.getNodeMetaData(INFERRED_TYPE));
             }
         }
     }
