@@ -427,8 +427,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected boolean shouldSkipClassNode(final ClassNode node) {
-        if (isSkipMode(node)) return true;
-        return false;
+        return isSkipMode(node);
     }
 
     /**
