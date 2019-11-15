@@ -3705,27 +3705,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
         final ClassNode receiver = getType(objectExpression);
         List<Receiver<String>> owners = new LinkedList<>();
-        owners.add(Receiver.<String>make(receiver));
+        owners.add(Receiver.make(receiver));
         if (isClassClassNodeWrappingConcreteType(receiver)) {
             GenericsType clazzGT = receiver.getGenericsTypes()[0];
-            owners.add(0, Receiver.<String>make(clazzGT.getType()));
+            owners.add(0, Receiver.make(clazzGT.getType()));
         }
         if (receiver.isInterface()) {
-            owners.add(Receiver.<String>make(OBJECT_TYPE));
+            owners.add(Receiver.make(OBJECT_TYPE));
         }
         addSelfTypes(receiver, owners);
         if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
             List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
             if (potentialReceiverType != null) {
                 for (ClassNode node : potentialReceiverType) {
-                    owners.add(Receiver.<String>make(node));
+                    owners.add(Receiver.make(node));
                 }
             }
         }
         if (typeCheckingContext.lastImplicitItType != null
                 && objectExpression instanceof VariableExpression
                 && ((VariableExpression) objectExpression).getName().equals("it")) {
-            owners.add(Receiver.<String>make(typeCheckingContext.lastImplicitItType));
+            owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
         }
         if (typeCheckingContext.delegationMetadata != null
                 && objectExpression instanceof VariableExpression
@@ -3733,7 +3733,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
             owners.clear();
             List<Receiver<String>> enclosingClass = Collections.singletonList(
-                    Receiver.<String>make(typeCheckingContext.getEnclosingClassNode()));
+                    Receiver.make(typeCheckingContext.getEnclosingClassNode()));
             addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
         }
         return owners;
@@ -3742,7 +3742,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private static void addSelfTypes(final ClassNode receiver, final List<Receiver<String>> owners) {
         LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<>();
         for (ClassNode selfType : Traits.collectSelfTypes(receiver, selfTypes)) {
-            owners.add(Receiver.<String>make(selfType));
+            owners.add(Receiver.make(selfType));
         }
     }
 
@@ -5751,6 +5751,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
-        return variable.getOriginType();
+        return originType;
     }
 }
