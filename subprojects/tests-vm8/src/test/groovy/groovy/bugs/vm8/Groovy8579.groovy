@@ -18,19 +18,35 @@
  */
 package groovy.bugs.vm8
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy8579Bug extends GroovyTestCase {
-    void testCallToStaticInterfaceMethod() {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy8579 {
+
+    @Test
+    void testCallToStaticInterfaceMethod1() {
         assertScript '''
-            import groovy.transform.CompileStatic
-
-            @CompileStatic
-            Comparator myMethod() {
+            @groovy.transform.CompileStatic
+            Comparator test() {
                 Map.Entry.comparingByKey()
             }
 
-            assert myMethod() instanceof Comparator
+            assert test() instanceof Comparator
+        '''
+    }
+
+    @Test
+    void testCallToStaticInterfaceMethod2() {
+        assertScript '''
+            import static java.util.Map.Entry.comparingByKey
+
+            @groovy.transform.CompileStatic
+            Comparator test() {
+                comparingByKey()
+            }
+
+            assert test() instanceof Comparator
         '''
     }
 }
