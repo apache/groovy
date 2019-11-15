@@ -41,7 +41,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,6 +53,8 @@ import static groovy.ui.GroovyMain.processConfigScripts;
  * Command-line compiler (aka. <tt>groovyc</tt>).
  */
 public class FileSystemCompiler {
+
+    private static boolean displayStackTraceOnError;
     private final CompilationUnit unit;
 
     public FileSystemCompiler(CompilerConfiguration configuration) throws ConfigurationException {
@@ -70,38 +71,40 @@ public class FileSystemCompiler {
         }
     }
 
-    public void compile(String[] paths) throws Exception {
-        unit.addSources(paths);
-        unit.compile();
-    }
-
-    public void compile(File[] files) throws Exception {
-        unit.addSources(files);
-        unit.compile();
-    }
-
-    /** Prints the usage help message for {@link CompilationOptions} to stderr.
+    /**
+     * Prints the usage help message for {@link CompilationOptions} to stderr.
+     *
      * @see #displayHelp(PrintWriter)
-     * @since 2.5 */
+     * @since 2.5
+     */
     public static void displayHelp() {
         displayHelp(new PrintWriter(System.err, true));
     }
 
-    /** Prints the usage help message for the {@link CompilationOptions} to the specified PrintWriter.
-     * @since 2.5 */
-    public static void displayHelp(final PrintWriter writer) {
+    /**
+     * Prints the usage help message for the {@link CompilationOptions} to the specified PrintWriter.
+     *
+     * @since 2.5
+     */
+    public static void displayHelp(PrintWriter writer) {
         configureParser(new CompilationOptions()).usage(writer);
     }
 
-    /** Prints version information to stderr.
-     * @see #displayVersion(PrintWriter) */
+    /**
+     * Prints version information to stderr.
+     *
+     * @see #displayVersion(PrintWriter)
+     */
     public static void displayVersion() {
         displayVersion(new PrintWriter(System.err, true));
     }
 
-    /** Prints version information to the specified PrintWriter.
-     * @since 2.5 */
-    public static void displayVersion(final PrintWriter writer) {
+    /**
+     * Prints version information to the specified PrintWriter.
+     *
+     * @since 2.5
+     */
+    public static void displayVersion(PrintWriter writer) {
         for (String line : new VersionProvider().getVersion()) {
             writer.println(line);
         }
@@ -114,10 +117,10 @@ public class FileSystemCompiler {
             File file = new File(filename);
             if (!file.exists()) {
                 System.err.println("error: file not found: " + file);
-                ++errors;
+                errors += 1;
             } else if (!file.canRead()) {
                 System.err.println("error: file not readable: " + file);
-                ++errors;
+                errors += 1;
             }
         }
 
@@ -127,8 +130,6 @@ public class FileSystemCompiler {
     public static boolean validateFiles(String[] filenames) {
         return checkFiles(filenames) == 0;
     }
-
-    private static boolean displayStackTraceOnError = false;
 
     /**
      * Same as main(args) except that exceptions are thrown out instead of causing
@@ -152,18 +153,18 @@ public class FileSystemCompiler {
         displayStackTraceOnError = options.printStack;
         CompilerConfiguration configuration = options.toCompilerConfiguration();
 
-        // Load the file name list
-        String[] filenames = options.generateFileNames();
-        boolean fileNameErrors = filenames == null;
-        if (!fileNameErrors && (filenames.length == 0)) {
+        // load the file name list
+        String[] fileNames = options.generateFileNames();
+        boolean fileNameErrors = fileNames == null;
+        if (!fileNameErrors && (fileNames.length == 0)) {
             parser.usage(System.err);
             return;
         }
 
-        fileNameErrors = fileNameErrors && !validateFiles(filenames);
+        fileNameErrors = fileNameErrors && !validateFiles(fileNames);
 
         if (!fileNameErrors) {
-            doCompilation(configuration, null, filenames, lookupUnnamedFiles);
+            doCompilation(configuration, null, fileNames, lookupUnnamedFiles);
         }
     }
 
@@ -219,8 +220,7 @@ public class FileSystemCompiler {
         // if there are any joint compilation options set stubDir if not set
         try {
             if ((configuration.getJointCompilationOptions() != null)
-                && !configuration.getJointCompilationOptions().containsKey("stubDir"))
-            {
+                    && !configuration.getJointCompilationOptions().containsKey("stubDir")) {
                 tmpDir = DefaultGroovyStaticMethods.createTempDir(null, "groovy-generated-", "-java-source");
                 configuration.getJointCompilationOptions().put("stubDir", tmpDir);
             }
@@ -235,7 +235,8 @@ public class FileSystemCompiler {
                 }
             } else {
                 compiler.unit.getClassLoader().setResourceLoader(new GroovyResourceLoader() {
-                    public URL loadGroovySource(String filename) throws MalformedURLException {
+                    @Override
+                    public URL loadGroovySource(String filename) {
                         return null;
                     }
                 });
@@ -254,7 +255,7 @@ public class FileSystemCompiler {
         if (filenames == null) {
             return new String[0];
         }
-        List<String> fileList = new ArrayList<String>(filenames.size());
+        List<String> fileList = new ArrayList<>(filenames.size());
         boolean errors = false;
         for (String filename : filenames) {
             if (filename.startsWith("@")) {
@@ -289,12 +290,72 @@ public class FileSystemCompiler {
         }
     }
 
+    public static void deleteRecursive(File file) {
+        if (!file.exists()) {
+            return;
+        }
+        if (file.isDirectory()) {
+            for (File f : file.listFiles()) {
+                deleteRecursive(f);
+            }
+        }
+        file.delete();
+    }
+
+    public void compile(String[] paths) throws Exception {
+        unit.addSources(paths);
+        unit.compile();
+    }
+
+    public void compile(File[] files) throws Exception {
+        unit.addSources(files);
+        unit.compile();
+    }
+
     /**
-     * @since 2.5 */
+     * @deprecated use {@link #displayHelp(PrintWriter)} instead
+     */
+    @Deprecated
+    public static void displayHelp(Options options) {
+        final HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp(80, "groovyc [options] <source-files>", "options:", options, "");
+    }
+
+    // some methods to avoid binary incompatibility - don't gain us a lot but gives the user
+    // something slightly less cryptic than a NoSuchMethodError or an IncompatibleClassChangeError
+    @Deprecated
+    public static CompilerConfiguration generateCompilerConfigurationFromOptions(org.apache.commons.cli.CommandLine cli) {
+        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
+    }
+
+    @Deprecated
+    public static String[] generateFileNamesFromOptions(org.apache.commons.cli.CommandLine cli) {
+        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
+    }
+
+    @Deprecated
+    public static Options createCompilationOptions() {
+        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
+    }
+
+    /**
+     * Creates a temporary directory in the default temporary directory (as specified by the system
+     * property <i>java.io.tmpdir</i>.
+     *
+     * @deprecated Use {@link DefaultGroovyStaticMethods#createTempDir(java.io.File, String, String)} instead.
+     */
+    @Deprecated
+    public static File createTempDir() throws IOException {
+        return DefaultGroovyStaticMethods.createTempDir(null);
+    }
+
+    /**
+     * @since 2.5
+     */
     static class VersionProvider implements IVersionProvider {
         @Override
         public String[] getVersion() {
-            return new String[] {
+            return new String[]{
                     "Groovy compiler version " + GroovySystem.getVersion(),
                     "Copyright 2003-2019 The Apache Software Foundation. http://groovy-lang.org/",
                     "",
@@ -303,11 +364,9 @@ public class FileSystemCompiler {
     }
 
     /**
-     * @since 2.5 */
-    @Command(name = "groovyc",
-            customSynopsis = "groovyc [options] <source-files>",
-            sortOptions = false,
-            versionProvider = VersionProvider.class)
+     * @since 2.5
+     */
+    @Command(name = "groovyc", customSynopsis = "groovyc [options] <source-files>", sortOptions = false, versionProvider = VersionProvider.class)
     public static class CompilationOptions {
         // IMPLEMENTATION NOTE:
         // classpath must be the first argument, so that the `startGroovy(.bat)` script
@@ -361,43 +420,41 @@ public class FileSystemCompiler {
         @Option(names = {"-v", "--version"}, versionHelp = true, description = "Print version information and exit")
         private boolean versionRequested;
 
-        @Parameters(description = "The groovy source files to compile, or @-files containing a list of source files to compile",
-                    paramLabel = "<source-files>")
+        @Parameters(description = "The groovy source files to compile, or @-files containing a list of source files to compile", paramLabel = "<source-files>")
         private List<String> files;
 
         public CompilerConfiguration toCompilerConfiguration() throws IOException {
-            // Setup the configuration data
             CompilerConfiguration configuration = new CompilerConfiguration();
 
             if (classpath != null) {
                 configuration.setClasspath(classpath);
             }
 
-            if (targetDir != null && targetDir.getName().length() > 0) {
+            if (targetDir != null && !targetDir.getName().isEmpty()) {
                 configuration.setTargetDirectory(targetDir);
             }
 
             configuration.setParameters(parameterMetadata);
             configuration.setPreviewFeatures(previewFeatures);
-            configuration.setSourceEncoding(encoding);
             configuration.setScriptBaseClass(scriptBaseClass);
+            configuration.setSourceEncoding(encoding);
 
             // joint compilation parameters
             if (jointCompilation) {
-                Map<String, Object> compilerOptions = new HashMap<String, Object>();
-                compilerOptions.put("namedValues", javacOptionsList());
-                compilerOptions.put("flags", flagsWithParameterMetaData());
+                Map<String, Object> compilerOptions = new HashMap<>();
+                compilerOptions.put("flags", javacFlags());
+                compilerOptions.put("namedValues", javacNamedValues());
                 configuration.setJointCompilationOptions(compilerOptions);
             }
 
             if (indy) {
-                configuration.getOptimizationOptions().put("int", false);
-                configuration.getOptimizationOptions().put("indy", true);
+                configuration.getOptimizationOptions().put("int", Boolean.FALSE);
+                configuration.getOptimizationOptions().put("indy", Boolean.TRUE);
             }
 
             String configScripts = System.getProperty("groovy.starter.configscripts", null);
             if (configScript != null || (configScripts != null && !configScripts.isEmpty())) {
-                List<String> scripts = new ArrayList<String>();
+                List<String> scripts = new ArrayList<>();
                 if (configScript != null) {
                     scripts.add(configScript);
                 }
@@ -414,76 +471,29 @@ public class FileSystemCompiler {
             return generateFileNamesFromOptions(files);
         }
 
-        String[] javacOptionsList() {
-            if (javacOptionsMap == null) {
-                return null;
+        private String[] javacNamedValues() {
+            List<String> result = new ArrayList<>();
+            if (javacOptionsMap != null) {
+                for (Map.Entry<String, String> entry : javacOptionsMap.entrySet()) {
+                    result.add(entry.getKey());
+                    result.add(entry.getValue());
+                }
             }
-            List<String> result = new ArrayList<String>();
-            for (Map.Entry<String, String> entry : javacOptionsMap.entrySet()) {
-                result.add(entry.getKey());
-                result.add(entry.getValue());
-            }
-            return result.toArray(new String[0]);
+            return result.isEmpty() ? null : result.toArray(new String[0]);
         }
 
-        String[] flagsWithParameterMetaData() {
-            if (flags == null) {
-                return null;
+        private String[] javacFlags() {
+            List<String> result = new ArrayList<>();
+            if (flags != null) {
+                result.addAll(flags);
             }
             if (parameterMetadata) {
-                flags.add("parameters");
+                result.add("parameters");
             }
-            return flags.toArray(new String[0]);
-        }
-    }
-
-    /** @deprecated use {@link #displayHelp(PrintWriter)} instead */
-    @Deprecated
-    public static void displayHelp(final Options options) {
-        final HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(80, "groovyc [options] <source-files>", "options:", options, "");
-    }
-
-    // some methods to avoid binary incompatibility - don't gain us a lot but gives the user
-    // something slightly less cryptic than a NoSuchMethodError or an IncompatibleClassChangeError
-    @Deprecated
-    public static CompilerConfiguration generateCompilerConfigurationFromOptions(org.apache.commons.cli.CommandLine cli) throws IOException {
-        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
-    }
-
-    @Deprecated
-    public static String[] generateFileNamesFromOptions(org.apache.commons.cli.CommandLine cli) {
-        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
-    }
-
-    @Deprecated
-    public static Options createCompilationOptions() {
-        throw new DeprecationException("This method is not supported for Groovy 2.5+. Consider instead using the FileSystemCompiler.CompilationOptions class.");
-    }
-
-    /**
-     * Creates a temporary directory in the default temporary directory (as specified by the system
-     * property <i>java.io.tmpdir</i>.
-     *
-     * @deprecated Use {@link DefaultGroovyStaticMethods#createTempDir(java.io.File, String, String)} instead.
-     */
-    @Deprecated
-    public static File createTempDir() throws IOException {
-        return DefaultGroovyStaticMethods.createTempDir(null);
-    }
-
-    public static void deleteRecursive(File file) {
-        if (!file.exists()) {
-            return;
-        }
-        if (file.isFile()) {
-            file.delete();
-        } else if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                deleteRecursive(files[i]);
+            if (previewFeatures) {
+                result.add("-enable-preview");
             }
-            file.delete();
+            return result.isEmpty() ? null : result.toArray(new String[0]);
         }
     }
 }
