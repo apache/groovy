@@ -613,7 +613,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
-        final SecuringCodeVisitor visitor = new SecuringCodeVisitor();
+        final GroovyCodeVisitor visitor = createGroovyCodeVisitor();
         ast.getStatementBlock().visit(visitor);
         for (ClassNode clNode : ast.getClasses()) {
             if (clNode!=classNode) {
@@ -633,14 +633,18 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
     }
-    
-    private void checkMethodDefinitionAllowed(ClassNode owner) {
+
+    protected GroovyCodeVisitor createGroovyCodeVisitor() {
+        return new SecuringCodeVisitor();
+    }
+
+    protected void checkMethodDefinitionAllowed(ClassNode owner) {
         if (isMethodDefinitionAllowed) return;
         List<MethodNode> methods = filterMethods(owner);
         if (!methods.isEmpty()) throw new SecurityException("Method definitions are not allowed");
     }
-    
-    private static List<MethodNode> filterMethods(ClassNode owner) {
+
+    protected static List<MethodNode> filterMethods(ClassNode owner) {
         List<MethodNode> result = new LinkedList<MethodNode>();
         List<MethodNode> methods = owner.getMethods();
         for (MethodNode method : methods) {
@@ -652,7 +656,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return result;
     }
 
-    private void assertStarImportIsAllowed(final String packageName) {
+    protected void assertStarImportIsAllowed(final String packageName) {
         if (starImportsWhitelist != null && !starImportsWhitelist.contains(packageName)) {
             throw new SecurityException("Importing [" + packageName + "] is not allowed");
         }
@@ -661,7 +665,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
     }
 
-    private void assertImportIsAllowed(final String className) {
+    protected void assertImportIsAllowed(final String className) {
         if (importsWhitelist != null && !importsWhitelist.contains(className)) {
             if (starImportsWhitelist != null) {
                 // we should now check if the import is in the star imports
@@ -687,7 +691,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
     }
 
-    private void assertStaticImportIsAllowed(final String member, final String className) {
+    protected void assertStaticImportIsAllowed(final String member, final String className) {
         final String fqn = member.equals(className) ? member : className + "." + member;
         if (staticImportsWhitelist != null && !staticImportsWhitelist.contains(fqn)) {
             if (staticStarImportsWhitelist != null) {
@@ -715,7 +719,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * CodeVisitorSupport} class to make sure that future features of the language gets managed by this visitor. Thus,
      * adding a new feature would result in a compilation error if this visitor is not updated.
      */
-    private class SecuringCodeVisitor implements GroovyCodeVisitor {
+    protected class SecuringCodeVisitor implements GroovyCodeVisitor {
 
         /**
          * Checks that a given statement is either in the whitelist or not in the blacklist.
@@ -723,7 +727,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
          * @param statement the statement to be checked
          * @throws SecurityException if usage of this statement class is forbidden
          */
-        private void assertStatementAuthorized(final Statement statement) throws SecurityException {
+        protected void assertStatementAuthorized(final Statement statement) throws SecurityException {
             final Class<? extends Statement> clazz = statement.getClass();
             if (statementsBlacklist != null && statementsBlacklist.contains(clazz)) {
                 throw new SecurityException(clazz.getSimpleName() + "s are not allowed");
@@ -743,7 +747,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
          * @param expression the expression to be checked
          * @throws SecurityException if usage of this expression class is forbidden
          */
-        private void assertExpressionAuthorized(final Expression expression) throws SecurityException {
+        protected void assertExpressionAuthorized(final Expression expression) throws SecurityException {
             final Class<? extends Expression> clazz = expression.getClass();
             if (expressionsBlacklist != null && expressionsBlacklist.contains(clazz)) {
                 throw new SecurityException(clazz.getSimpleName() + "s are not allowed: " + expression.getText());
@@ -782,7 +786,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
-        private ClassNode getExpressionType(ClassNode objectExpressionType) {
+        protected ClassNode getExpressionType(ClassNode objectExpressionType) {
             return objectExpressionType.isArray() ? getExpressionType(objectExpressionType.getComponentType()) : objectExpressionType;
         }
 
@@ -792,7 +796,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
          * @param token the token to be checked
          * @throws SecurityException if usage of this token is forbidden
          */
-        private void assertTokenAuthorized(final Token token) throws SecurityException {
+        protected void assertTokenAuthorized(final Token token) throws SecurityException {
             final int value = token.getType();
             if (tokensBlacklist != null && tokensBlacklist.contains(value)) {
                 throw new SecurityException("Token " + token + " is not allowed");
@@ -801,6 +805,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitBlockStatement(final BlockStatement block) {
             assertStatementAuthorized(block);
             for (Statement statement : block.getStatements()) {
@@ -808,25 +813,28 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
-
+        @Override
         public void visitForLoop(final ForStatement forLoop) {
             assertStatementAuthorized(forLoop);
             forLoop.getCollectionExpression().visit(this);
             forLoop.getLoopBlock().visit(this);
         }
 
+        @Override
         public void visitWhileLoop(final WhileStatement loop) {
             assertStatementAuthorized(loop);
             loop.getBooleanExpression().visit(this);
             loop.getLoopBlock().visit(this);
         }
 
+        @Override
         public void visitDoWhileLoop(final DoWhileStatement loop) {
             assertStatementAuthorized(loop);
             loop.getBooleanExpression().visit(this);
             loop.getLoopBlock().visit(this);
         }
 
+        @Override
         public void visitIfElse(final IfStatement ifElse) {
             assertStatementAuthorized(ifElse);
             ifElse.getBooleanExpression().visit(this);
@@ -842,22 +850,26 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitExpressionStatement(final ExpressionStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        @Override
         public void visitReturnStatement(final ReturnStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        @Override
         public void visitAssertStatement(final AssertStatement statement) {
             assertStatementAuthorized(statement);
             statement.getBooleanExpression().visit(this);
             statement.getMessageExpression().visit(this);
         }
 
+        @Override
         public void visitTryCatchFinally(final TryCatchStatement statement) {
             assertStatementAuthorized(statement);
             statement.getTryStatement().visit(this);
@@ -878,6 +890,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             // noop
         }
 
+        @Override
         public void visitSwitch(final SwitchStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
@@ -887,36 +900,43 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             statement.getDefaultStatement().visit(this);
         }
 
+        @Override
         public void visitCaseStatement(final CaseStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
             statement.getCode().visit(this);
         }
 
+        @Override
         public void visitBreakStatement(final BreakStatement statement) {
             assertStatementAuthorized(statement);
         }
 
+        @Override
         public void visitContinueStatement(final ContinueStatement statement) {
             assertStatementAuthorized(statement);
         }
 
+        @Override
         public void visitThrowStatement(final ThrowStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        @Override
         public void visitSynchronizedStatement(final SynchronizedStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
             statement.getCode().visit(this);
         }
 
+        @Override
         public void visitCatchStatement(final CatchStatement statement) {
             assertStatementAuthorized(statement);
             statement.getCode().visit(this);
         }
 
+        @Override
         public void visitMethodCallExpression(final MethodCallExpression call) {
             assertExpressionAuthorized(call);
             Expression receiver = call.getObjectExpression();
@@ -932,6 +952,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             call.getArguments().visit(this);
         }
 
+        @Override
         public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
             assertExpressionAuthorized(call);
             final String typeName = call.getOwnerType().getName();
@@ -943,11 +964,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             call.getArguments().visit(this);
         }
 
+        @Override
         public void visitConstructorCallExpression(final ConstructorCallExpression call) {
             assertExpressionAuthorized(call);
             call.getArguments().visit(this);
         }
 
+        @Override
         public void visitTernaryExpression(final TernaryExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getBooleanExpression().visit(this);
@@ -955,11 +978,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getFalseExpression().visit(this);
         }
 
+        @Override
         public void visitShortTernaryExpression(final ElvisOperatorExpression expression) {
             assertExpressionAuthorized(expression);
             visitTernaryExpression(expression);
         }
 
+        @Override
         public void visitBinaryExpression(final BinaryExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
@@ -967,23 +992,27 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getRightExpression().visit(this);
         }
 
+        @Override
         public void visitPrefixExpression(final PrefixExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitPostfixExpression(final PostfixExpression expression) {
             assertExpressionAuthorized(expression);
             assertTokenAuthorized(expression.getOperation());
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitBooleanExpression(final BooleanExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitClosureExpression(final ClosureExpression expression) {
             assertExpressionAuthorized(expression);
             if (!isClosuresAllowed) throw new SecurityException("Closures are not allowed");
@@ -995,33 +1024,39 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             visitClosureExpression(expression);
         }
 
+        @Override
         public void visitTupleExpression(final TupleExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
         }
 
+        @Override
         public void visitMapExpression(final MapExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getMapEntryExpressions());
         }
 
+        @Override
         public void visitMapEntryExpression(final MapEntryExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getKeyExpression().visit(this);
             expression.getValueExpression().visit(this);
         }
 
+        @Override
         public void visitListExpression(final ListExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
         }
 
+        @Override
         public void visitRangeExpression(final RangeExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getFrom().visit(this);
             expression.getTo().visit(this);
         }
 
+        @Override
         public void visitPropertyExpression(final PropertyExpression expression) {
             assertExpressionAuthorized(expression);
             Expression receiver = expression.getObjectExpression();
@@ -1046,6 +1081,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitAttributeExpression(final AttributeExpression expression) {
             assertExpressionAuthorized(expression);
             Expression receiver = expression.getObjectExpression();
@@ -1060,10 +1096,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             checkConstantTypeIfNotMethodNameOrProperty(property);
         }
 
+        @Override
         public void visitFieldExpression(final FieldExpression expression) {
             assertExpressionAuthorized(expression);
         }
 
+        @Override
         public void visitMethodPointerExpression(final MethodPointerExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
@@ -1081,10 +1119,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitClassExpression(final ClassExpression expression) {
             assertExpressionAuthorized(expression);
         }
 
+        @Override
         public void visitVariableExpression(final VariableExpression expression) {
             assertExpressionAuthorized(expression);
             final String type = expression.getType().getName();
@@ -1096,6 +1136,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitDeclarationExpression(final DeclarationExpression expression) {
             assertExpressionAuthorized(expression);
             visitBinaryExpression(expression);
@@ -1113,64 +1154,76 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        @Override
         public void visitGStringExpression(final GStringExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getStrings());
             visitListOfExpressions(expression.getValues());
         }
 
+        @Override
         public void visitArrayExpression(final ArrayExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
             visitListOfExpressions(expression.getSizeExpression());
         }
 
+        @Override
         public void visitSpreadExpression(final SpreadExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitSpreadMapExpression(final SpreadMapExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitNotExpression(final NotExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitCastExpression(final CastExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        @Override
         public void visitArgumentlistExpression(final ArgumentListExpression expression) {
             assertExpressionAuthorized(expression);
             visitTupleExpression(expression);
         }
 
+        @Override
         public void visitClosureListExpression(final ClosureListExpression closureListExpression) {
             assertExpressionAuthorized(closureListExpression);
             if (!isClosuresAllowed) throw new SecurityException("Closures are not allowed");
             visitListOfExpressions(closureListExpression.getExpressions());
         }
 
+        @Override
         public void visitBytecodeExpression(final BytecodeExpression expression) {
             assertExpressionAuthorized(expression);
         }
