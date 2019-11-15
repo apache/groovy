@@ -183,53 +183,53 @@ import java.util.Map;
  */
 public class SecureASTCustomizer extends CompilationCustomizer {
 
-    private boolean isPackageAllowed = true;
-    private boolean isMethodDefinitionAllowed = true;
-    private boolean isClosuresAllowed = true;
+    protected boolean isPackageAllowed = true;
+    protected boolean isMethodDefinitionAllowed = true;
+    protected boolean isClosuresAllowed = true;
 
     // imports
-    private List<String> importsWhitelist;
-    private List<String> importsBlacklist;
+    protected List<String> importsWhitelist;
+    protected List<String> importsBlacklist;
 
     // static imports
-    private List<String> staticImportsWhitelist;
-    private List<String> staticImportsBlacklist;
+    protected List<String> staticImportsWhitelist;
+    protected List<String> staticImportsBlacklist;
 
     // star imports
-    private List<String> starImportsWhitelist;
-    private List<String> starImportsBlacklist;
+    protected List<String> starImportsWhitelist;
+    protected List<String> starImportsBlacklist;
 
     // static star imports
-    private List<String> staticStarImportsWhitelist;
-    private List<String> staticStarImportsBlacklist;
+    protected List<String> staticStarImportsWhitelist;
+    protected List<String> staticStarImportsBlacklist;
 
 
     // indirect import checks
     // if set to true, then security rules on imports will also be applied on classnodes.
     // Direct instantiation of classes without imports will therefore also fail if this option is enabled
-    private boolean isIndirectImportCheckEnabled;
+    protected boolean isIndirectImportCheckEnabled;
 
     // statements
-    private List<Class<? extends Statement>> statementsWhitelist;
-    private List<Class<? extends Statement>> statementsBlacklist;
-    private final List<StatementChecker> statementCheckers = new LinkedList<StatementChecker>();
+    protected List<Class<? extends Statement>> statementsWhitelist;
+    protected List<Class<? extends Statement>> statementsBlacklist;
+    protected final List<StatementChecker> statementCheckers = new LinkedList<StatementChecker>();
 
     // expressions
-    private List<Class<? extends Expression>> expressionsWhitelist;
-    private List<Class<? extends Expression>> expressionsBlacklist;
-    private final List<ExpressionChecker> expressionCheckers = new LinkedList<ExpressionChecker>();
+    protected List<Class<? extends Expression>> expressionsWhitelist;
+    protected List<Class<? extends Expression>> expressionsBlacklist;
+    protected final List<ExpressionChecker> expressionCheckers = new LinkedList<ExpressionChecker>();
 
     // tokens from Types
-    private List<Integer> tokensWhitelist;
-    private List<Integer> tokensBlacklist;
+    protected List<Integer> tokensWhitelist;
+    protected List<Integer> tokensBlacklist;
 
     // constant types
-    private List<String> constantTypesWhiteList;
-    private List<String> constantTypesBlackList;
+    protected List<String> constantTypesWhiteList;
+    protected List<String> constantTypesBlackList;
 
     // receivers
-    private List<String> receiversWhiteList;
-    private List<String> receiversBlackList;
+    protected List<String> receiversWhiteList;
+    protected List<String> receiversBlackList;
 
     public SecureASTCustomizer() {
         super(CompilePhase.CANONICALIZATION);
