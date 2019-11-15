@@ -513,21 +513,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    /**
-     * Checks valid cases for accessing a field from an inner class.
-     */
-    private String checkOrMarkInnerPropertyOwnerAccess(PropertyExpression source, boolean lhsOfAssignment, String delegationData) {
-        // check for reference to method, closure, for loop, try with, or catch block parameter from a non-nested closure
-        if (typeCheckingContext.getEnclosingClosureStack().size() == 1 && !"this".equals(source.getPropertyAsString())) {
-            if (!(source.getObjectExpression() instanceof VariableExpression &&
-                    ((VariableExpression) source.getObjectExpression()).getAccessedVariable() instanceof Parameter)) {
-                delegationData = "owner";
-                source.getObjectExpression().putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
-            }
-        }
-        return delegationData;
-    }
-
     private MethodNode findValidGetter(ClassNode classNode, String name) {
         MethodNode getterMethod = classNode.getGetterMethod(name);
         if (getterMethod != null && (getterMethod.isPublic() || getterMethod.isProtected())) {
@@ -1571,7 +1556,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     queue.add(current.getUnresolvedSuperClass());
                 }
             }
-            // GROOVY-5568, the property may be defined by DGM
+
+            // GROOVY-5568: the property may be defined by DGM
             List<ClassNode> dgmReceivers = new ArrayList<ClassNode>(2);
             dgmReceivers.add(testClass);
             if (isPrimitiveType(testClass)) dgmReceivers.add(getWrapper(testClass));
@@ -1592,6 +1578,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         if (readMode) storeTargetMethod(pexp, getter);
                         return true;
                     }
+                }
+            }
+
+            // GROOVY-7996: check if receiver implements get(String)/set(String,Object) or propertyMissing(String)
+            if (!testClass.isArray() && !isPrimitiveType(getUnwrapper(testClass))
+                    && pexp.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
+                MethodNode mopMethod;
+                if (readMode) {
+                    mopMethod = testClass.getMethod("get", new Parameter[]{new Parameter(STRING_TYPE, "name")});
+                } else {
+                    mopMethod = testClass.getMethod("set", new Parameter[]{new Parameter(STRING_TYPE, "name"), new Parameter(OBJECT_TYPE, "value")});
+                }
+                if (mopMethod == null) mopMethod = testClass.getMethod("propertyMissing", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
+
+                if (mopMethod != null) {
+                    pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
+                    pexp.removeNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
+                    pexp.removeNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+                    return true;
                 }
             }
         }
@@ -1738,21 +1743,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private boolean storeField(FieldNode field, boolean returnTrueIfFieldExists, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData, boolean lhsOfAssignment) {
         if (field == null || !returnTrueIfFieldExists) return false;
         if (visitor != null) visitor.visitField(field);
-        storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
-        if (field != null && !field.isStatic() && !field.isPrivate() && !"delegate".equals(delegationData)) {
-            delegationData = checkOrMarkInnerPropertyOwnerAccess(expressionToStoreOn, lhsOfAssignment, delegationData);
-        }
+        storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
         return true;
     }
 
-    private boolean storeProperty(PropertyNode propertyNode, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData) {
-        if (propertyNode == null) return false;
-        if (visitor != null) visitor.visitProperty(propertyNode);
-        storeWithResolve(propertyNode.getOriginType(), receiver, propertyNode.getDeclaringClass(), propertyNode.isStatic(), expressionToStoreOn);
+    private boolean storeProperty(PropertyNode property, PropertyExpression expressionToStoreOn, ClassNode receiver, ClassCodeVisitorSupport visitor, String delegationData) {
+        if (property == null) return false;
+        if (visitor != null) visitor.visitProperty(property);
+        storeWithResolve(property.getOriginType(), receiver, property.getDeclaringClass(), property.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, delegationData);
         }
