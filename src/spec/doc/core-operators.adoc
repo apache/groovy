@@ -439,8 +439,7 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_op_variant
 
 === Find operator
 
-Alternatively to building a pattern, you can directly use the find operator `=~` to build a `java.util.regex.Matcher`
-instance:
+Alternatively to building a pattern, you can use the find operator `=~` to directly create a `java.util.regex.Matcher` instance:
 
 [source,groovy]
 ----
@@ -448,10 +447,11 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=pattern_matcher_op
 ----
 <1> `=~` creates a matcher against the `text` variable, using the pattern on the right hand side
 <2> the return type of `=~` is a `Matcher`
-<3> equivalent to calling `if (!m.find())`
+<3> equivalent to calling `if (!m.find(0))`
 
 Since a `Matcher` coerces to a `boolean` by calling its `find` method, the `=~` operator is consistent with the simple
-use of Perl's `=~` operator, when it appears as a predicate (in `if`, `while`, etc.).
+use of Perl's `=~` operator, when it appears as a predicate (in `if`, `?:`, etc.). When the intent is to iterate over
+matches of the specified pattern (in `while`, etc.) call `find()` directly on the matcher or use the `iterator` DGM.
 
 === Match operator
 
