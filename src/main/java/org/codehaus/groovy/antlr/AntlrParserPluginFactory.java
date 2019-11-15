@@ -21,10 +21,9 @@ package org.codehaus.groovy.antlr;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.ParserPluginFactory;
 
-/**
- */
 @Deprecated
 public class AntlrParserPluginFactory extends ParserPluginFactory {
+    @Deprecated
     public ParserPlugin createParserPlugin() {
         return new AntlrParserPlugin();
     }
