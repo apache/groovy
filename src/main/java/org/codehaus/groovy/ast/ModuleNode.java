@@ -37,6 +37,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -87,7 +88,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     public List<ClassNode> getClasses() {
         if (createClassForStatements && (!statementBlock.isEmpty() || !methods.isEmpty() || isPackageInfo())) {
             ClassNode mainClass = createStatementsClass();
-            mainClassName = mainClass.getName(); 
+            mainClassName = mainClass.getName();
             createClassForStatements = false;
             classes.add(0, mainClass);
             mainClass.setModule(this);
@@ -233,7 +234,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
             setScriptBaseClassFromConfig(scriptDummy);
             return scriptDummy;
         }
-        
+
         String name = getPackageName();
         if (name == null) {
             name = "";
@@ -273,13 +274,13 @@ public class ModuleNode extends ASTNode implements Opcodes {
             }
         }
     }
-    
+
     protected ClassNode createStatementsClass() {
         ClassNode classNode = getScriptClassDummy();
         if (classNode.getName().endsWith("package-info")) {
             return classNode;
         }
-        
+
         handleMainMethodIfPresent(methods);
 
         // return new Foo(new ShellContext(args)).run()
@@ -346,7 +347,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     /*
-     * If a main method is provided by user, account for it under run() as scripts generate their own 'main' so they can run.  
+     * If a main method is provided by user, account for it under run() as scripts generate their own 'main' so they can run.
      */
     private void handleMainMethodIfPresent(List methods) {
         boolean found = false;
@@ -360,9 +361,8 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
                     argTypeMatches = (argType.equals(ClassHelper.OBJECT_TYPE) || argType.getName().contains("String[]"));
                     retTypeMatches = (retType == ClassHelper.VOID_TYPE || retType == ClassHelper.OBJECT_TYPE);
-                    
-                    if(retTypeMatches && argTypeMatches) {
-                        if(found) {
+                    if (retTypeMatches && argTypeMatches) {
+                        if (found) {
                             throw new RuntimeException("Repetitive main method found.");
                         } else {
                             found = true;
@@ -412,8 +412,8 @@ public class ModuleNode extends ASTNode implements Opcodes {
     public boolean isEmpty() {
         return classes.isEmpty() && statementBlock.getStatements().isEmpty();
     }
-    
-    public void sortClasses(){
+
+    public void sortClasses() {
         if (isEmpty()) return;
         List<ClassNode> classes = getClasses();
         LinkedList<ClassNode> sorted = new LinkedList<ClassNode>();
@@ -449,18 +449,19 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void addStaticImport(ClassNode type, String fieldName, String alias) {
-        addStaticImport(type, fieldName, alias, new ArrayList<AnnotationNode>());
+        addStaticImport(type, fieldName, alias, Collections.<AnnotationNode>emptyList());
     }
 
     public void addStaticImport(ClassNode type, String fieldName, String alias, List<AnnotationNode> annotations) {
         ImportNode node = new ImportNode(type, fieldName, alias);
         node.addAnnotations(annotations);
-        staticImports.put(alias, node);
+        ImportNode prev = staticImports.put(alias, node);
+        if (prev != null) staticImports.put(prev.toString(), prev);
         storeLastAddedImportNode(node);
     }
 
     public void addStaticStarImport(String name, ClassNode type) {
-        addStaticStarImport(name, type, new ArrayList<AnnotationNode>());
+        addStaticStarImport(name, type, Collections.<AnnotationNode>emptyList());
     }
 
     public void addStaticStarImport(String name, ClassNode type, List<AnnotationNode> annotations) {
