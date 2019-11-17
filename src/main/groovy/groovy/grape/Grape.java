@@ -186,7 +186,7 @@ public class Grape {
     public static URI[] resolve(Map<String, Object> args, Map... dependencies) {
         return resolve(args, null, dependencies);
     }
-    
+
     public static URI[] resolve(Map<String, Object> args, List depsInfo, Map... dependencies) {
         URI[] uris = null;
         if (enableGrapes) {
@@ -223,7 +223,7 @@ public class Grape {
         }
 
     }
-    
+
     public static void addResolver(Map<String, Object> args) {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
