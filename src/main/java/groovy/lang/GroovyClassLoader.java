@@ -630,8 +630,11 @@ public class GroovyClassLoader extends URLClassLoader {
 
         @Override
         public void close() throws IOException {
-            super.close();
-            delegate.close();
+            try {
+                super.close();
+            } finally {
+                delegate.close();
+            }
         }
 
         public long getTimeStamp() {
