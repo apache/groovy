@@ -265,9 +265,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         final Object o = getMethods(getTheClass(), name, false);
         if (o instanceof FastArray) {
             return ((FastArray) o).toList();
-        } else {
-            return Collections.singletonList(o);
         }
+        return Collections.singletonList(o);
     }
 
     /**
@@ -815,9 +814,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         if (arguments instanceof Object[]) {
             return invokeMethod(object, methodName, (Object[]) arguments);
-        } else {
-            return invokeMethod(object, methodName, new Object[]{arguments});
         }
+        return invokeMethod(object, methodName, new Object[]{arguments});
     }
 
     /**
@@ -851,9 +849,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (!isGetter) {
                     property.setProperty(instance, optionalValue);
                     return null;
-                } else {
-                    return property.getProperty(instance);
                 }
+                return property.getProperty(instance);
             }
             superClass = superClass.getCachedSuperClass();
         }
@@ -900,10 +897,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (metaProperty != null)
                 if (isGetter) {
                     return metaProperty.getProperty(instance);
-                } else {
-                    metaProperty.setProperty(instance, optionalValue);
-                    return null;
                 }
+                metaProperty.setProperty(instance, optionalValue);
+                return null;
         }
         throw new MissingPropertyExceptionNoStack(propertyName, theClass);
     }
@@ -1354,13 +1350,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // let's try use the cache to find the method
         if (!isCallToSuper && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             return getMethodWithoutCaching(sender, methodName, MetaClassHelper.convertToTypeArray(arguments), isCallToSuper);
-        } else {
-            final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
-            if (e == null)
-                return null;
-
-            return isCallToSuper ? getSuperMethodWithCaching(arguments, e) : getNormalMethodWithCaching(arguments, e);
         }
+        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
+        if (e == null) {
+            return null;
+        }
+
+        return isCallToSuper ? getSuperMethodWithCaching(arguments, e) : getNormalMethodWithCaching(arguments, e);
     }
 
     private static boolean sameClasses(Class[] params, Class[] arguments) {
@@ -1480,9 +1476,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             e.cachedStaticMethod = cacheEntry;
 
             return cacheEntry.method;
-        } else {
-            return pickStaticMethod(methodName, MetaClassHelper.convertToTypeArray(arguments));
         }
+        return pickStaticMethod(methodName, MetaClassHelper.convertToTypeArray(arguments));
     }
 
     public MetaMethod getMethodWithoutCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
@@ -1606,14 +1601,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments) {
         if (numberOfConstructors == -1) {
             return selectConstructorAndTransformArguments1(arguments);
-        } else {
-            // falling back to pre 2.1.9 selection algorithm
-            // in practice this branch will only be reached if the class calling this code is a Groovy class
-            // compiled with an earlier version of the Groovy compiler
-            return selectConstructorAndTransformArguments0(numberOfConstructors, arguments);
         }
-
-
+        // falling back to pre 2.1.9 selection algorithm
+        // in practice this branch will only be reached if the class calling this code is a Groovy class
+        // compiled with an earlier version of the Groovy compiler
+        return selectConstructorAndTransformArguments0(numberOfConstructors, arguments);
     }
 
     private int selectConstructorAndTransformArguments0(final int numberOfConstructors, Object[] arguments) {
@@ -1905,16 +1897,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (theClass != Class.class && object instanceof Class) {
                 MetaClass mc = registry.getMetaClass(Class.class);
                 return mc.getProperty(Class.class, object, name, useSuper, false);
-            } else if (object instanceof Collection) {
+            }
+            if (object instanceof Collection) {
                 return DefaultGroovyMethods.getAt((Collection) object, name);
-            } else if (object instanceof Object[]) {
+            }
+            if (object instanceof Object[]) {
                 return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
-            } else {
-                MetaMethod addListenerMethod = listeners.get(name);
-                if (addListenerMethod != null) {
-                    //TODO: one day we could try return the previously registered Closure listener for easy removal
-                    return null;
-                }
+            }
+            MetaMethod addListenerMethod = listeners.get(name);
+            if (addListenerMethod != null) {
+                //TODO: one day we could try return the previously registered Closure listener for easy removal
+                return null;
             }
         } else {
             //----------------------------------------------------------------------
@@ -1929,9 +1922,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         if (isStatic || object instanceof Class) {
             return invokeStaticMissingProperty(object, name, null, true);
-        } else {
-            return invokeMissingProperty(object, name, null, true);
         }
+        return invokeMissingProperty(object, name, null, true);
     }
 
     public MetaProperty getEffectiveGetMetaProperty(final Class sender, final Object object, String name, final boolean useSuper) {
@@ -2027,7 +2019,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     throw new UnsupportedOperationException();
                 }
             };
-        } else if (object instanceof Collection) {
+        }
+        if (object instanceof Collection) {
             return new MetaProperty(name, Object.class) {
                 public Object getProperty(Object object) {
                     return DefaultGroovyMethods.getAt((Collection) object, name);
@@ -2037,7 +2030,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     throw new UnsupportedOperationException();
                 }
             };
-        } else if (object instanceof Object[]) {
+        }
+        if (object instanceof Object[]) {
             return new MetaProperty(name, Object.class) {
                 public Object getProperty(Object object) {
                     return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
@@ -2047,20 +2041,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     throw new UnsupportedOperationException();
                 }
             };
-        } else {
-            MetaMethod addListenerMethod = listeners.get(name);
-            if (addListenerMethod != null) {
-                //TODO: one day we could try return the previously registered Closure listener for easy removal
-                return new MetaProperty(name, Object.class) {
-                    public Object getProperty(Object object) {
-                        return null;
-                    }
+        }
+        MetaMethod addListenerMethod = listeners.get(name);
+        if (addListenerMethod != null) {
+            //TODO: one day we could try return the previously registered Closure listener for easy removal
+            return new MetaProperty(name, Object.class) {
+                public Object getProperty(Object object) {
+                    return null;
+                }
 
-                    public void setProperty(Object object, Object newValue) {
-                        throw new UnsupportedOperationException();
-                    }
-                };
-            }
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
 
         //----------------------------------------------------------------------
@@ -2076,17 +2069,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     throw new UnsupportedOperationException();
                 }
             };
-        } else {
-            return new MetaProperty(name, Object.class) {
-                public Object getProperty(Object object) {
-                    return invokeMissingProperty(object, name, null, true);
-                }
-
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
-                }
-            };
         }
+        return new MetaProperty(name, Object.class) {
+            public Object getProperty(Object object) {
+                return invokeMissingProperty(object, name, null, true);
+            }
+
+            public void setProperty(Object object, Object newValue) {
+                throw new UnsupportedOperationException();
+            }
+        };
     }
 
     private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class senderForMP, final Class senderForCMG, final String name, final boolean useSuper, final boolean isStatic) {
