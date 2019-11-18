@@ -189,9 +189,8 @@ public class Grape {
         }
         if (grapes == null) {
             return Collections.emptyMap();
-        } else {
-            return grapes;
         }
+        return grapes;
     }
 
     public static URI[] resolve(Map<String, Object> args, Map... dependencies) {
@@ -214,9 +213,8 @@ public class Grape {
         }
         if (uris == null) {
             return EMPTY_URI_ARRAY;
-        } else {
-            return uris;
         }
+        return uris;
     }
 
     public static Map[] listDependencies(ClassLoader cl) {
@@ -229,10 +227,8 @@ public class Grape {
         }
         if (maps == null) {
             return EMPTY_MAP_ARRAY;
-        } else {
-            return maps;
         }
-
+        return maps;
     }
 
     public static void addResolver(Map<String, Object> args) {

@@ -1233,7 +1233,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         if (name.startsWith("get")) {
             name = name.substring(3);
             return isPropertyName(name);
-        } else if (name.startsWith("is")) {
+        }
+        if (name.startsWith("is")) {
             name = name.substring(2);
             return isPropertyName(name);
         }
@@ -1252,7 +1253,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         if (getterName.startsWith("get")) {
             String prop = getterName.substring(3);
             return MetaClassHelper.convertPropertyName(prop);
-        } else if (getterName.startsWith("is")) {
+        }
+        if (getterName.startsWith("is")) {
             String prop = getterName.substring(2);
             return MetaClassHelper.convertPropertyName(prop);
         }
