@@ -31,9 +31,6 @@ import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.ReferenceBundle;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -43,159 +40,139 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 import static org.codehaus.groovy.reflection.ReflectionUtils.checkCanSetAccessible;
 
-
 public class CachedClass {
-    private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
-    private final Class cachedClass;
-    public ClassInfo classInfo;
-    
+
+    public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
+
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
     private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>(softBundle) {
         private static final long serialVersionUID = 5450437842165410025L;
 
+        @Override
         public CachedField[] initValue() {
-            final Field[] declaredFields = AccessController.doPrivileged((PrivilegedAction<Field[]>) () -> {
-                Field[] df = getTheClass().getDeclaredFields();
-                return Arrays.stream(df)
-                        .filter(f -> checkCanSetAccessible(f, CachedClass.class))
-                        .toArray(Field[]::new);
-            });
-            CachedField[] fields = new CachedField[declaredFields.length];
-            for (int i = 0; i != fields.length; ++i)
-                fields[i] = new CachedField(declaredFields[i]);
-            return fields;
+            PrivilegedAction<CachedField[]> action = () -> {
+                return Arrays.stream(getTheClass().getDeclaredFields())
+                    .filter(f -> checkCanSetAccessible(f, CachedClass.class))
+                    .map(CachedField::new).toArray(CachedField[]::new);
+            };
+            return AccessController.doPrivileged(action);
         }
     };
 
     private LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
         private static final long serialVersionUID = -5834446523983631635L;
 
+        @Override
         public CachedConstructor[] initValue() {
-            final Constructor[] declaredConstructors = AccessController.doPrivileged((PrivilegedAction<Constructor[]>) () -> {
-                Constructor[] dc = getTheClass().getDeclaredConstructors();
-                return Arrays.stream(dc)
-                        .filter(c -> checkCanSetAccessible(c, CachedClass.class))
-                        .toArray(Constructor[]::new);
-            });
-            CachedConstructor[] constructors = new CachedConstructor[declaredConstructors.length];
-            for (int i = 0; i != constructors.length; ++i)
-                constructors[i] = new CachedConstructor(CachedClass.this, declaredConstructors[i]);
-            return constructors;
+            PrivilegedAction<CachedConstructor[]> action = () -> {
+                return Arrays.stream(getTheClass().getDeclaredConstructors())
+                    .filter(c -> checkCanSetAccessible(c, CachedClass.class))
+                    .map(c -> new CachedConstructor(CachedClass.this, c))
+                    .toArray(CachedConstructor[]::new);
+            };
+            return AccessController.doPrivileged(action);
         }
     };
 
     private final LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]>(softBundle) {
         private static final long serialVersionUID = 6347586066597418308L;
 
+        @Override
         public CachedMethod[] initValue() {
-            final Method[] declaredMethods;
-            declaredMethods = AccessController.doPrivileged((PrivilegedAction<Method[]>) () -> {
+            PrivilegedAction<CachedMethod[]> action = () -> {
                 try {
-                    Method[] dm = getTheClass().getDeclaredMethods();
-                    return Arrays.stream(dm)
-                            .filter(m -> checkCanSetAccessible(m, CachedClass.class))
-                            .toArray(Method[]::new);
-                } catch (Throwable e) {
-                    // Typically, Android can throw ClassNotFoundException
-                    return EMPTY_METHOD_ARRAY;
+                    return Arrays.stream(getTheClass().getDeclaredMethods())
+                        // skip synthetic methods inserted by JDK 1.5+ compilers
+                        .filter(m -> !m.isBridge() && m.getName().indexOf('+') < 0)
+                        .filter(m -> checkCanSetAccessible(m, CachedClass.class))
+                        .map(m -> new CachedMethod(CachedClass.this, m))
+                        .toArray(CachedMethod[]::new);
+                } catch (LinkageError e) {
+                    return CachedMethod.EMPTY_ARRAY;
                 }
-            });
+            };
+            CachedMethod[] declaredMethods = AccessController.doPrivileged(action);
+
             List<CachedMethod> methods = new ArrayList<>(declaredMethods.length);
             List<CachedMethod> mopMethods = new ArrayList<>(declaredMethods.length);
-            for (int i = 0; i != declaredMethods.length; ++i) {
-                final CachedMethod cachedMethod = new CachedMethod(CachedClass.this, declaredMethods[i]);
-                final String name = cachedMethod.getName();
-
-                if (declaredMethods[i].isBridge() || name.indexOf('+') >= 0) {
-                    // Skip Synthetic methods inserted by JDK 1.5 compilers and later
-                    continue;
-                } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
-                   continue;
-                }*/
-
-                if (name.startsWith("this$") || name.startsWith("super$"))
-                  mopMethods.add(cachedMethod);
-                else
-                  methods.add(cachedMethod);
+            for (CachedMethod method : declaredMethods) {
+                String name = method.getName();
+                if (name.startsWith("this$") || name.startsWith("super$")) {
+                    mopMethods.add(method);
+                } else {
+                    methods.add(method);
+                }
             }
-            CachedMethod[] resMethods = methods.toArray(CachedMethod.EMPTY_ARRAY);
-            Arrays.sort(resMethods);
+            Collections.sort(methods);
 
-            final CachedClass superClass = getCachedSuperClass();
+            CachedClass superClass = getCachedSuperClass();
             if (superClass != null) {
-                superClass.getMethods();
-                final CachedMethod[] superMopMethods = superClass.mopMethods;
-                mopMethods.addAll(Arrays.asList(superMopMethods));
+                superClass.getMethods(); // populate mopMethods
+                Collections.addAll(mopMethods, superClass.mopMethods);
             }
+            Collections.sort(mopMethods, CachedMethodComparatorByName.INSTANCE);
             CachedClass.this.mopMethods = mopMethods.toArray(CachedMethod.EMPTY_ARRAY);
-            Arrays.sort(CachedClass.this.mopMethods, CachedMethodComparatorByName.INSTANCE);
 
-            return resMethods;
+            return methods.toArray(CachedMethod.EMPTY_ARRAY);
         }
     };
 
     private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
         private static final long serialVersionUID = -4663740963306806058L;
 
+        @Override
         public CachedClass initValue() {
-            if (!isArray)
-              return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
-            else
-              if (cachedClass.getComponentType().isPrimitive() || cachedClass.getComponentType() == Object.class)
+            if (!isArray) {
+                return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
+            } else if (cachedClass.getComponentType().isPrimitive() || cachedClass.getComponentType() == Object.class) {
                 return ReflectionCache.OBJECT_CLASS;
-              else
+            } else {
                 return ReflectionCache.OBJECT_ARRAY_CLASS;
+            }
         }
     };
 
     private final LazyReference<CallSiteClassLoader> callSiteClassLoader = new LazyReference<CallSiteClassLoader>(softBundle) {
         private static final long serialVersionUID = 4410385968428074090L;
 
+        @Override
         public CallSiteClassLoader initValue() {
-            return
-               AccessController.doPrivileged((PrivilegedAction<CallSiteClassLoader>) () -> new CallSiteClassLoader(CachedClass.this.cachedClass));
+            return AccessController.doPrivileged((PrivilegedAction<CallSiteClassLoader>) () -> new CallSiteClassLoader(CachedClass.this.cachedClass));
         }
     };
 
-    private final LazyReference<LinkedList<ClassInfo>> hierarchy = new LazyReference<LinkedList<ClassInfo>>(softBundle) {
+    private final LazyReference<Collection<ClassInfo>> hierarchy = new LazyReference<Collection<ClassInfo>>(softBundle) {
         private static final long serialVersionUID = 7166687623678851596L;
 
-        public LinkedList<ClassInfo> initValue() {
+        @Override
+        public Collection<ClassInfo> initValue() {
             Set<ClassInfo> res = new LinkedHashSet<>();
-
             res.add(classInfo);
 
-            for (CachedClass iface : getDeclaredInterfaces())
-              res.addAll(iface.getHierarchy());
-
-            final CachedClass superClass = getCachedSuperClass();
-            if (superClass != null)
-              res.addAll(superClass.getHierarchy());
-
-            if (isInterface)
-              res.add(ReflectionCache.OBJECT_CLASS.classInfo);
-
-            return new LinkedList<>(res);
+            for (CachedClass iface : getDeclaredInterfaces()) {
+                res.addAll(iface.getHierarchy());
+            }
+            CachedClass superClass = getCachedSuperClass();
+            if (superClass != null) {
+                res.addAll(superClass.getHierarchy());
+            }
+            if (isInterface) {
+                res.add(ReflectionCache.OBJECT_CLASS.classInfo);
+            }
+            return res;
         }
     };
 
-    static final MetaMethod[] EMPTY = MetaMethod.EMPTY_ARRAY;
-
-    int hashCode;
-
-    public  CachedMethod[] mopMethods;
-    public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
-
-    private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> (softBundle) {
+    private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>>(softBundle) {
         private static final long serialVersionUID = 2139190436931329873L;
 
+        @Override
         public Set<CachedClass> initValue() {
             Set<CachedClass> res = new HashSet<>(0);
 
@@ -207,38 +184,43 @@ public class CachedClass {
         }
     };
 
-    private final LazyReference<Set<CachedClass>> interfaces = new LazyReference<Set<CachedClass>> (softBundle) {
+    private final LazyReference<Set<CachedClass>> interfaces = new LazyReference<Set<CachedClass>>(softBundle) {
         private static final long serialVersionUID = 4060471819464086940L;
 
+        @Override
         public Set<CachedClass> initValue() {
             Set<CachedClass> res = new HashSet<>(0);
 
-            if (getTheClass().isInterface())
-              res.add(CachedClass.this);
-
+            if (getTheClass().isInterface()) {
+                res.add(CachedClass.this);
+            }
             Class[] classes = getTheClass().getInterfaces();
             for (Class cls : classes) {
-                final CachedClass aClass = ReflectionCache.getCachedClass(cls);
+                CachedClass aClass = ReflectionCache.getCachedClass(cls);
                 if (!res.contains(aClass))
                     res.addAll(aClass.getInterfaces());
             }
 
-            final CachedClass superClass = getCachedSuperClass();
-            if (superClass != null)
-              res.addAll(superClass.getInterfaces());
-
+            CachedClass superClass = getCachedSuperClass();
+            if (superClass != null) {
+                res.addAll(superClass.getInterfaces());
+            }
             return res;
         }
     };
 
+    private final Class<?> cachedClass;
+    public ClassInfo classInfo;
     public final boolean isArray;
     public final boolean isPrimitive;
     public final int modifiers;
-    int distance = -1;
     public final boolean isInterface;
     public final boolean isNumber;
+    public CachedMethod[] mopMethods;
+    int distance = -1;
+    int hashCode;
 
-    public CachedClass(Class klazz, ClassInfo classInfo) {
+    public CachedClass(Class<?> klazz, ClassInfo classInfo) {
         cachedClass = klazz;
         this.classInfo = classInfo;
         isArray = klazz.isArray();
@@ -307,7 +289,7 @@ public class CachedClass {
 
         int distance = 0;
         for (Class klazz = getTheClass(); klazz != null; klazz = klazz.getSuperclass()) {
-            distance++;
+            distance += 1;
         }
         this.distance = distance;
         return distance;
@@ -329,7 +311,7 @@ public class CachedClass {
     public boolean isVoid() {
         return getTheClass() == void.class;
     }
-    
+
     public boolean isInterface() {
         return isInterface;
     }
@@ -513,6 +495,7 @@ public class CachedClass {
         }
     }
 
+    @Override
     public String toString() {
         return cachedClass.toString();
     }
