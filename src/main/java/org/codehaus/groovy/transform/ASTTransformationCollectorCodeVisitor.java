@@ -83,25 +83,29 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         if (nodeAnnotations.isEmpty()) return;
         super.visitAnnotations(node);
 
-        Map<Integer, AnnotationCollectorMode> modes = new LinkedHashMap<>();
-        Map<Integer, List<AnnotationNode>> existing = new LinkedHashMap<>();
-        Map<Integer, List<AnnotationNode>> replacements = new LinkedHashMap<>();
-        int index = 0;
-        for (AnnotationNode annotation : nodeAnnotations) {
-            findCollectedAnnotations(annotation, node, index, modes, existing, replacements);
-            index += 1;
-        }
-        for (Map.Entry<Integer, List<AnnotationNode>> entry : replacements.entrySet()) {
-            Integer replacementIndex = entry.getKey();
-            List<AnnotationNode> annotationNodeList = entry.getValue();
-            mergeCollectedAnnotations(modes.get(replacementIndex), existing, annotationNodeList);
-            existing.put(replacementIndex, annotationNodeList);
-        }
-        List<AnnotationNode> mergedList = new ArrayList<>();
-        existing.values().forEach(mergedList::addAll);
+        for (;;) {
+            Map<Integer, AnnotationCollectorMode> modes = new LinkedHashMap<>();
+            Map<Integer, List<AnnotationNode>> existing = new LinkedHashMap<>();
+            Map<Integer, List<AnnotationNode>> replacements = new LinkedHashMap<>();
+            int index = 0;
+            for (AnnotationNode annotation : nodeAnnotations) {
+                findCollectedAnnotations(annotation, node, index, modes, existing, replacements);
+                index += 1;
+            }
+            for (Map.Entry<Integer, List<AnnotationNode>> entry : replacements.entrySet()) {
+                Integer replacementIndex = entry.getKey();
+                List<AnnotationNode> annotationNodeList = entry.getValue();
+                mergeCollectedAnnotations(modes.get(replacementIndex), existing, annotationNodeList);
+                existing.put(replacementIndex, annotationNodeList);
+            }
+            List<AnnotationNode> mergedList = new ArrayList<>();
+            existing.values().forEach(mergedList::addAll);
+            if (mergedList.equals(nodeAnnotations)) break;
 
-        nodeAnnotations.clear();
-        nodeAnnotations.addAll(mergedList);
+            nodeAnnotations.clear();
+            nodeAnnotations.addAll(mergedList);
+            // GROOVY-9238: look again for collector annotations
+        }
 
         for (AnnotationNode annotation : nodeAnnotations) {
             Annotation transformClassAnnotation = getTransformClassAnnotation(annotation.getClassNode());
