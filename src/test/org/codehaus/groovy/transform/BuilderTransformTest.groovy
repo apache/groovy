@@ -774,7 +774,7 @@ class BuilderTransformTest extends CompilableTestSupport {
          '''
     }
 
-    void testInternalFieldsAreIncludedIfRequestedForInitializerStrategyStrategy_GROOVY6454() {
+    void testInternalFieldsAreIncludedIfRequestedForInitializerStrategy_GROOVY6454() {
         assertScript '''
             import groovy.transform.builder.*
 
@@ -806,5 +806,4 @@ class BuilderTransformTest extends CompilableTestSupport {
             assert new FooBuilder().name('Mary').build().name == 'John'
          '''
     }
-
 }

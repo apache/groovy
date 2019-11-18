@@ -72,6 +72,7 @@ public class CachedClass {
         public CachedConstructor[] initValue() {
             PrivilegedAction<CachedConstructor[]> action = () -> {
                 return Arrays.stream(getTheClass().getDeclaredConstructors())
+                    .filter(c -> !c.isSynthetic()) // GROOVY-9245: exclude inner class ctors
                     .filter(c -> checkCanSetAccessible(c, CachedClass.class))
                     .map(c -> new CachedConstructor(CachedClass.this, c))
                     .toArray(CachedConstructor[]::new);
