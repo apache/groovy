@@ -42,7 +42,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -51,67 +50,69 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * This visitor walks the AST tree and collects references to Annotations that
- * are annotated themselves by {@link GroovyASTTransformation}. Each such
- * annotation is added.
+ * Walks the AST and collects references to annotations that are annotated
+ * themselves by {@link GroovyASTTransformation}. Each such annotation is added.
  * <p>
  * This visitor is only intended to be executed once, during the
- * SEMANTIC_ANALYSIS phase of compilation.
+ * {@link CompilePhase#SEMANTIC_ANALYSIS} phase of compilation.
  */
 public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
-    private final SourceUnit source;
+
     private ClassNode classNode;
+    private final SourceUnit source;
     private final GroovyClassLoader transformLoader;
 
-    public ASTTransformationCollectorCodeVisitor(SourceUnit source, GroovyClassLoader transformLoader) {
+    public ASTTransformationCollectorCodeVisitor(final SourceUnit source, final GroovyClassLoader transformLoader) {
         this.source = source;
         this.transformLoader = transformLoader;
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
 
-    public void visitClass(ClassNode klassNode) {
-        ClassNode oldClass = classNode;
-        classNode = klassNode;
+    @Override
+    public void visitClass(final ClassNode classNode) {
+        ClassNode lastClass = this.classNode;
+        this.classNode = classNode;
         super.visitClass(classNode);
-        classNode = oldClass;
+        this.classNode = lastClass;
     }
 
-    /**
-     * If the annotation is annotated with {@link GroovyASTTransformation}
-     * the annotation is added to <code>stageVisitors</code> at the appropriate processor visitor.
-     *
-     * @param node the node to process
-     */
-    public void visitAnnotations(AnnotatedNode node) {
-        if (node.getAnnotations().isEmpty()) return;
+    @Override
+    public void visitAnnotations(final AnnotatedNode node) {
+        List<AnnotationNode> nodeAnnotations = node.getAnnotations();
+        if (nodeAnnotations.isEmpty()) return;
         super.visitAnnotations(node);
 
-        Map<Integer, List<AnnotationNode>> existing = new TreeMap<Integer, List<AnnotationNode>>();
-        Map<Integer, List<AnnotationNode>> replacements = new LinkedHashMap<Integer, List<AnnotationNode>>();
-        Map<Integer, AnnotationCollectorMode> modes = new LinkedHashMap<Integer, AnnotationCollectorMode>();
-        int index = 0;
-        for (AnnotationNode annotation : node.getAnnotations()) {
-            findCollectedAnnotations(annotation, node, index, modes, existing, replacements);
-            index++;
-        }
-        for (Map.Entry<Integer, List<AnnotationNode>> entry : replacements.entrySet()) {
-            Integer replacementIndex = entry.getKey();
-            List<AnnotationNode> annotationNodeList = entry.getValue();
-            mergeCollectedAnnotations(modes.get(replacementIndex), existing, annotationNodeList);
-            existing.put(replacementIndex, annotationNodeList);
-        }
-        List<AnnotationNode> mergedList = new ArrayList<AnnotationNode>();
-        for (List<AnnotationNode> next : existing.values()) {
-            mergedList.addAll(next);
+        for (;;) {
+            Map<Integer, List<AnnotationNode>> existing = new TreeMap<Integer, List<AnnotationNode>>();
+            Map<Integer, List<AnnotationNode>> replacements = new LinkedHashMap<Integer, List<AnnotationNode>>();
+            Map<Integer, AnnotationCollectorMode> modes = new LinkedHashMap<Integer, AnnotationCollectorMode>();
+            int index = 0;
+            for (AnnotationNode annotation : nodeAnnotations) {
+                findCollectedAnnotations(annotation, node, index, modes, existing, replacements);
+                index += 1;
+            }
+            for (Map.Entry<Integer, List<AnnotationNode>> entry : replacements.entrySet()) {
+                Integer replacementIndex = entry.getKey();
+                List<AnnotationNode> annotationNodeList = entry.getValue();
+                mergeCollectedAnnotations(modes.get(replacementIndex), existing, annotationNodeList);
+                existing.put(replacementIndex, annotationNodeList);
+            }
+            List<AnnotationNode> mergedList = new ArrayList<AnnotationNode>();
+            for (List<AnnotationNode> next : existing.values()) {
+                mergedList.addAll(next);
+            }
+            if (mergedList.equals(nodeAnnotations)) break;
+
+            nodeAnnotations.clear();
+            nodeAnnotations.addAll(mergedList);
+            // GROOVY-9238: look again for collector annotations
         }
 
-        node.getAnnotations().clear();
-        node.getAnnotations().addAll(mergedList);
-
-        for (AnnotationNode annotation : node.getAnnotations()) {
+        for (AnnotationNode annotation : nodeAnnotations) {
             Annotation transformClassAnnotation = getTransformClassAnnotation(annotation.getClassNode());
             if (transformClassAnnotation == null) {
                 // skip if there is no such annotation
@@ -121,8 +122,8 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private static void mergeCollectedAnnotations(AnnotationCollectorMode mode, Map<Integer, List<AnnotationNode>> existing, List<AnnotationNode> replacements) {
-        switch(mode) {
+    private static void mergeCollectedAnnotations(final AnnotationCollectorMode mode, final Map<Integer, List<AnnotationNode>> existing, final List<AnnotationNode> replacements) {
+        switch (mode) {
             case PREFER_COLLECTOR:
                 deleteExisting(false, existing, replacements);
                 break;
@@ -140,36 +141,33 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private static void deleteExisting(boolean mergeParams, Map<Integer, List<AnnotationNode>> existingMap, List<AnnotationNode> replacements) {
+    private static void deleteExisting(final boolean mergeParams, final Map<Integer, List<AnnotationNode>> existing, final List<AnnotationNode> replacements) {
         for (AnnotationNode replacement : replacements) {
-            for (Map.Entry<Integer, List<AnnotationNode>> entry : existingMap.entrySet()) {
-                Integer key = entry.getKey();
+            for (Map.Entry<Integer, List<AnnotationNode>> entry : existing.entrySet()) {
                 List<AnnotationNode> annotationNodes = new ArrayList<AnnotationNode>(entry.getValue());
-                Iterator<AnnotationNode> iterator = annotationNodes.iterator();
-                while (iterator.hasNext()) {
-                    AnnotationNode existing = iterator.next();
-                    if (replacement.getClassNode().getName().equals(existing.getClassNode().getName())) {
+                for (Iterator<AnnotationNode> iterator = annotationNodes.iterator(); iterator.hasNext();) {
+                    AnnotationNode annotation = iterator.next();
+                    if (replacement.getClassNode().getName().equals(annotation.getClassNode().getName())) {
                         if (mergeParams) {
-                            mergeParameters(replacement, existing);
+                            mergeParameters(replacement, annotation);
                         }
                         iterator.remove();
                     }
                 }
-                existingMap.put(key, annotationNodes);
+                entry.setValue(annotationNodes);
             }
         }
     }
 
-    private static void deleteReplacement(boolean mergeParams, Map<Integer, List<AnnotationNode>> existingMap, List<AnnotationNode> replacements) {
-        Iterator<AnnotationNode> nodeIterator = replacements.iterator();
-        while (nodeIterator.hasNext()) {
+    private static void deleteReplacement(final boolean mergeParams, final Map<Integer, List<AnnotationNode>> existing, final List<AnnotationNode> replacements) {
+        for (Iterator<AnnotationNode> nodeIterator = replacements.iterator(); nodeIterator.hasNext();) {
             boolean remove = false;
             AnnotationNode replacement = nodeIterator.next();
-            for (Map.Entry<Integer, List<AnnotationNode>> entry : existingMap.entrySet()) {
-                for (AnnotationNode existing : entry.getValue()) {
-                    if (replacement.getClassNode().getName().equals(existing.getClassNode().getName())) {
+            for (Map.Entry<Integer, List<AnnotationNode>> entry : existing.entrySet()) {
+                for (AnnotationNode annotation : entry.getValue()) {
+                    if (replacement.getClassNode().getName().equals(annotation.getClassNode().getName())) {
                         if (mergeParams) {
-                            mergeParameters(existing, replacement);
+                            mergeParameters(annotation, replacement);
                         }
                         remove = true;
                     }
@@ -181,7 +179,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private static void mergeParameters(AnnotationNode to, AnnotationNode from) {
+    private static void mergeParameters(final AnnotationNode to, final AnnotationNode from) {
         for (String name : from.getMembers().keySet()) {
             if (to.getMember(name) == null) {
                 to.setMember(name, from.getMember(name));
@@ -218,7 +216,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                 assertStringConstant(processorExp);
                 if (processorExp != null) {
                     String className = (String) ((ConstantExpression) processorExp).getValue();
-                    Class klass = loadTransformClass(className, aliasNode);
+                    Class<?> klass = loadTransformClass(className, aliasNode);
                     if (klass != null) {
                         try {
                             act = (AnnotationCollectorTransform) klass.getDeclaredConstructor().newInstance();
@@ -264,14 +262,14 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
 
         for (String transformClass : transformClassNames) {
-            Class klass = loadTransformClass(transformClass, annotation);
+            Class<?> klass = loadTransformClass(transformClass, annotation);
             if (klass != null) {
                 verifyAndAddTransform(annotation, klass);
             }
         }
     }
 
-    private Class loadTransformClass(String transformClass, AnnotationNode annotation) {
+    private Class<?> loadTransformClass(String transformClass, AnnotationNode annotation) {
         try {
             return transformLoader.loadClass(transformClass, false, true, false);
         } catch (ClassNotFoundException e) {
@@ -284,10 +282,10 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         return null;
     }
 
-    private void verifyAndAddTransform(AnnotationNode annotation, Class klass) {
+    private void verifyAndAddTransform(AnnotationNode annotation, Class<?> klass) {
         verifyClass(annotation, klass);
         verifyCompilePhase(annotation, klass);
-        addTransform(annotation, klass);
+        addTransform(annotation, (Class<? extends ASTTransformation>) klass);
     }
 
     private void verifyCompilePhase(AnnotationNode annotation, Class<?> klass) {
@@ -307,14 +305,14 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private void verifyClass(AnnotationNode annotation, Class klass) {
+    private void verifyClass(AnnotationNode annotation, Class<?> klass) {
         if (!ASTTransformation.class.isAssignableFrom(klass)) {
             source.getErrorCollector().addError(new SimpleMessage("Not an ASTTransformation: " +
                     klass.getName() + " declared by " + annotation.getClassNode().getName(), source));
         }
     }
 
-    private void addTransform(AnnotationNode annotation, Class klass) {
+    private void addTransform(AnnotationNode annotation, Class<? extends ASTTransformation> klass) {
         boolean apply = !Traits.isTrait(classNode) || klass == TraitASTTransformation.class;
         if (apply) {
             classNode.addTransform(klass, annotation);
@@ -342,11 +340,11 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         try {
             Method valueMethod = transformClassAnnotation.getClass().getMethod("value");
             String[] names = (String[]) valueMethod.invoke(transformClassAnnotation);
-            result.addAll(Arrays.asList(names));
+            Collections.addAll(result, names);
 
             Method classesMethod = transformClassAnnotation.getClass().getMethod("classes");
-            Class[] classes = (Class[]) classesMethod.invoke(transformClassAnnotation);
-            for (Class klass : classes) {
+            Class<?>[] classes = (Class[]) classesMethod.invoke(transformClassAnnotation);
+            for (Class<?> klass : classes) {
                 result.add(klass.getName());
             }
 
