@@ -94,25 +94,25 @@ public class ClassInfo implements Finalizable {
 
     private MetaClass strongMetaClass;
     private ManagedReference<MetaClass> weakMetaClass;
-    MetaMethod[] dgmMetaMethods = CachedClass.EMPTY;
-    MetaMethod[] newMetaMethods = CachedClass.EMPTY;
+    MetaMethod[] dgmMetaMethods = MetaMethod.EMPTY_ARRAY;
+    MetaMethod[] newMetaMethods = MetaMethod.EMPTY_ARRAY;
     private ManagedConcurrentMap<Object, MetaClass> perInstanceMetaClassMap;
-    
+
     private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
     private static final ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
-    
+
     private static final ManagedConcurrentLinkedQueue<ClassInfo> modifiedExpandos =
             new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
 
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
-		@Override
-		public ClassInfo computeValue(Class<?> type) {
-			ClassInfo ret = new ClassInfo(type);
-			globalClassSet.add(ret);
-			return ret;
-		}
-	});
-    
+        @Override
+        public ClassInfo computeValue(Class<?> type) {
+            ClassInfo ret = new ClassInfo(type);
+            globalClassSet.add(ret);
+            return ret;
+        }
+    });
+
     private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
     ClassInfo(Class klazz) {
@@ -210,7 +210,7 @@ public class ClassInfo implements Finalizable {
         // safe value here to avoid multiple reads with possibly
         // differing values due to concurrency
         MetaClass strongRef = strongMetaClass;
-        
+
         if (strongRef instanceof ExpandoMetaClass) {
             ((ExpandoMetaClass)strongRef).inRegistry = false;
             for (Iterator<ClassInfo> itr = modifiedExpandos.iterator(); itr.hasNext(); ) {
@@ -274,11 +274,11 @@ public class ClassInfo implements Finalizable {
     private MetaClass getMetaClassUnderLock() {
         MetaClass answer = getStrongMetaClass();
         if (answer!=null) return answer;
-        
+
         answer = getWeakMetaClass();
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         MetaClassRegistry.MetaClassCreationHandle mccHandle = metaClassRegistry.getMetaClassCreationHandler();
-        
+
         if (isValidWeakMetaClass(answer, mccHandle)) {
             return answer;
         }
@@ -293,7 +293,7 @@ public class ClassInfo implements Finalizable {
         }
         return answer;
     }
-    
+
     private static boolean isValidWeakMetaClass(MetaClass metaClass) {
         return isValidWeakMetaClass(metaClass, GroovySystem.getMetaClassRegistry().getMetaClassCreationHandler());
     }
@@ -366,7 +366,7 @@ public class ClassInfo implements Finalizable {
                 cachedClass = new BigDecimalCachedClass(klazz, classInfo);
             } else if (klazz == Long.class || klazz == Long.TYPE) {
                 cachedClass = new LongCachedClass(klazz, classInfo, klazz==Long.class);
-            } else if (klazz == Float.class || klazz == Float.TYPE) { 
+            } else if (klazz == Float.class || klazz == Float.TYPE) {
                 cachedClass = new FloatCachedClass(klazz, classInfo, klazz==Float.class);
             } else if (klazz == Short.class || klazz == Short.TYPE) {
                 cachedClass = new ShortCachedClass(klazz, classInfo, klazz==Short.class);
@@ -398,7 +398,7 @@ public class ClassInfo implements Finalizable {
         }
         return cachedClass;
     }
-    
+
     private static boolean isSAM(Class<?> c) {
         return CachedSAMClass.getSAMMethod(c) !=null;
     }
@@ -423,7 +423,7 @@ public class ClassInfo implements Finalizable {
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
-              perInstanceMetaClassMap = new ManagedConcurrentMap<Object, MetaClass>(ReferenceBundle.getWeakBundle()); 
+              perInstanceMetaClassMap = new ManagedConcurrentMap<Object, MetaClass>(ReferenceBundle.getWeakBundle());
 
             perInstanceMetaClassMap.put(obj, metaClass);
         }
@@ -474,24 +474,24 @@ public class ClassInfo implements Finalizable {
     }
 
     private static class GlobalClassSet {
-    	
-    	private final ManagedConcurrentLinkedQueue<ClassInfo> items = new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
-    	
-    	public int size(){
-		    return values().size();
-    	}
-    	
-    	public int fullSize(){
-		    return values().size();
-    	}
-    	
-    	public Collection<ClassInfo> values(){
-    	    return items.values();
-    	}
-    	
-    	public void add(ClassInfo value){
+
+        private final ManagedConcurrentLinkedQueue<ClassInfo> items = new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
+
+        public int size(){
+            return values().size();
+        }
+
+        public int fullSize(){
+            return values().size();
+        }
+
+        public Collection<ClassInfo> values(){
+            return items.values();
+        }
+
+        public void add(ClassInfo value){
             items.add(value);
-    	}
+        }
 
     }
 
