@@ -133,7 +133,6 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     public abstract static class UNSET {
     }
 
-    private static final int PUBLIC_STATIC = ACC_PUBLIC | ACC_STATIC;
     private static final Expression DEFAULT_INITIAL_VALUE = null;
     private static final ClassNode TUPLECONS_TYPE = ClassHelper.make(TupleConstructor.class);
 
@@ -176,13 +175,13 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
                     " processing: includes/excludes only allowed on classes", anno);
         }
         if (mNode instanceof ConstructorNode) {
-            mNode.setModifiers(ACC_PRIVATE | ACC_SYNTHETIC);
+            mNode.setModifiers(ACC_PRIVATE);
         } else {
-            if ((mNode.getModifiers() & ACC_STATIC) == 0) {
+            if (!mNode.isStatic()) {
                 transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
                         " processing: method builders only allowed on static methods", anno);
             }
-            mNode.setModifiers(ACC_PRIVATE | ACC_SYNTHETIC | ACC_STATIC);
+            mNode.setModifiers(ACC_SYNTHETIC | ACC_PRIVATE | ACC_STATIC);
         }
         ClassNode buildee = mNode.getDeclaringClass();
         Parameter[] parameters = mNode.getParameters();
@@ -226,7 +225,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static List<FieldNode> convertParamsToFields(ClassNode builder, Parameter[] parameters) {
         List<FieldNode> fieldNodes = new ArrayList<FieldNode>();
-        for(Parameter parameter: parameters) {
+        for (Parameter parameter: parameters) {
             Map<String,ClassNode> genericsSpec = createGenericsSpec(builder);
             ClassNode correctedType = correctToGenericsSpecRecurse(genericsSpec, parameter.getType());
             FieldNode fieldNode = new FieldNode(parameter.getName(), parameter.getModifiers(), correctedType, builder, DEFAULT_INITIAL_VALUE);
@@ -238,7 +237,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static ClassNode createInnerHelperClass(ClassNode buildee, String builderClassName, int fieldsSize) {
         final String fullName = buildee.getName() + "$" + builderClassName;
-        ClassNode builder = new InnerClassNode(buildee, fullName, PUBLIC_STATIC, OBJECT_TYPE);
+        ClassNode builder = new InnerClassNode(buildee, fullName, ACC_PUBLIC | ACC_STATIC, OBJECT_TYPE);
         GenericsType[] gtypes = new GenericsType[fieldsSize];
         for (int i = 0; i < gtypes.length; i++) {
             gtypes[i] = makePlaceholder(i);
@@ -251,7 +250,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
         final BlockStatement body = new BlockStatement();
         body.addStatement(returnS(callX(builder, buildMethodName)));
         ClassNode returnType = makeClassSafeWithGenerics(builder, unsetGenTypes(numFields));
-        return new MethodNode(builderMethodName, PUBLIC_STATIC, returnType, NO_PARAMS, NO_EXCEPTIONS, body);
+        return new MethodNode(builderMethodName, ACC_PUBLIC | ACC_STATIC, returnType, NO_PARAMS, NO_EXCEPTIONS, body);
     }
 
     private static GenericsType[] unsetGenTypes(int numFields) {
@@ -272,8 +271,8 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static void createBuilderConstructors(ClassNode builder, ClassNode buildee, List<FieldNode> fields) {
         addGeneratedConstructor(builder, ACC_PRIVATE, NO_PARAMS, NO_EXCEPTIONS, block(ctorSuperS()));
-        final BlockStatement body = new BlockStatement();
-        body.addStatement(ctorSuperS());
+
+        BlockStatement body = block(ctorSuperS());
         initializeFields(fields, body, false);
         addGeneratedConstructor(builder, ACC_PRIVATE, getParams(fields, buildee), NO_EXCEPTIONS, body);
     }
@@ -281,10 +280,9 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
     private static void createBuildeeConstructors(BuilderASTTransformation transform, ClassNode buildee, ClassNode builder, List<FieldNode> fields, boolean needsConstructor, boolean useSetters) {
         createInitializerConstructor(buildee, builder, fields);
         if (needsConstructor) {
-            final BlockStatement body = new BlockStatement();
-            body.addStatement(ctorSuperS());
+            BlockStatement body = block(ctorSuperS());
             initializeFields(fields, body, useSetters);
-            addGeneratedConstructor(buildee, ACC_PRIVATE | ACC_SYNTHETIC, getParams(fields, buildee), NO_EXCEPTIONS, body);
+            addGeneratedConstructor(buildee, ACC_PRIVATE, getParams(fields, buildee), NO_EXCEPTIONS, body);
         }
     }
 
@@ -296,7 +294,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
             argsList.add(propX(varX(initParam), fieldNode.getName()));
         }
         String newName = "$" + mNode.getName(); // can't have private and public methods of the same name, so rename original
-        addGeneratedMethod(buildee, mNode.getName(), PUBLIC_STATIC, mNode.getReturnType(), params(param(paramType, "initializer")), NO_EXCEPTIONS,
+        addGeneratedMethod(buildee, mNode.getName(), ACC_PUBLIC | ACC_STATIC, mNode.getReturnType(), params(param(paramType, "initializer")), NO_EXCEPTIONS,
                 block(stmt(callX(buildee, newName, args(argsList)))));
         renameMethod(buildee, mNode, newName);
     }
@@ -331,7 +329,7 @@ public class InitializerStrategy extends BuilderASTTransformation.AbstractBuilde
 
     private static MethodNode createBuildMethod(ClassNode builder, String buildMethodName, List<FieldNode> fields) {
         ClassNode returnType = makeClassSafeWithGenerics(builder, unsetGenTypes(fields.size()));
-        return new MethodNode(buildMethodName, PUBLIC_STATIC, returnType, NO_PARAMS, NO_EXCEPTIONS, block(returnS(ctorX(returnType))));
+        return new MethodNode(buildMethodName, ACC_PUBLIC | ACC_STATIC, returnType, NO_PARAMS, NO_EXCEPTIONS, block(returnS(ctorX(returnType))));
     }
 
     private MethodNode createBuilderMethodForField(ClassNode builder, List<FieldNode> fields, String prefix, int fieldPos) {
