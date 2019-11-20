@@ -582,7 +582,7 @@ public class GenericsUtils {
 
     public static ClassNode[] parseClassNodesFromString(final String option, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage) {
         try {
-            ModuleNode moduleNode = ParserPlugin.buildAST("Dummy<" + option + "> dummy;", compilationUnit.getClassLoader(), compilationUnit.getConfiguration(), null);
+            ModuleNode moduleNode = ParserPlugin.buildAST("Dummy<" + option + "> dummy;", compilationUnit.getConfiguration(), compilationUnit.getClassLoader(), null);
             DeclarationExpression dummyDeclaration = (DeclarationExpression) ((ExpressionStatement) moduleNode.getStatementBlock().getStatements().get(0)).getExpression();
 
             // the returned node is DummyNode<Param1, Param2, Param3, ...)
