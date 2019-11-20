@@ -22,6 +22,7 @@ import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.Reduction;
+import org.codehaus.groovy.util.CharSequenceReader;
 
 import java.io.Reader;
 
@@ -34,12 +35,11 @@ public interface ParserPlugin {
 
     ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException;
 
-    static ModuleNode buildAST(CharSequence sourceText, CompilerConfiguration config, GroovyClassLoader loader, ErrorCollector errors) throws CompilationFailedException {
-        SourceUnit sourceUnit = new SourceUnit("Script" + System.nanoTime() + ".groovy", sourceText.toString(), config, loader, errors);
-        sourceUnit.parse();
-        sourceUnit.completePhase();
-        sourceUnit.nextPhase();
-        sourceUnit.convert();
-        return sourceUnit.getAST();
+    static ModuleNode buildAST(CharSequence source, GroovyClassLoader loader, CompilerConfiguration config, ErrorCollector errors) throws ParserException {
+        String scriptName = "Script" + System.nanoTime() + ".groovy";
+        SourceUnit sourceUnit = new SourceUnit(scriptName, source.toString(), config, loader, errors);
+
+        ParserPlugin parserPlugin = config.getPluginFactory().createParserPlugin();
+        return parserPlugin.buildAST(sourceUnit, loader, parserPlugin.parseCST(sourceUnit, new CharSequenceReader(source)));
     }
 }
