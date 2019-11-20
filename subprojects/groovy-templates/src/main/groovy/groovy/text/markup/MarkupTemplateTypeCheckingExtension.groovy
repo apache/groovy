@@ -19,7 +19,6 @@
 package groovy.text.markup
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
 import org.codehaus.groovy.ast.ClassHelper
@@ -32,14 +31,14 @@ import org.codehaus.groovy.ast.expr.ArrayExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.EmptyStatement
-import org.codehaus.groovy.ast.tools.Antlr2Utils
-import org.codehaus.groovy.ast.tools.Antlr4Utils
-import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.control.ParserPlugin
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
@@ -175,11 +174,8 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
     @CompileStatic
     private static ClassNode buildNodeFromString(String option, TypeCheckingContext ctx) {
-        // for parsing just class names old and new parser should be the same but let's stick to the correct parser any way
-        boolean oldParserEnabled = CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory
-        ClassNode parsedNode = oldParserEnabled ?
-                Antlr2Utils.parse(option) :
-                Antlr4Utils.parse(option, CompilerConfiguration.DEFAULT)
+        def moduleNode = ParserPlugin.buildAST("Dummy<$option> dummy;", ctx.compilationUnit.classLoader, ctx.compilationUnit.configuration, ctx.errorCollector)
+        ClassNode parsedNode = ((DeclarationExpression) ((ExpressionStatement) moduleNode.statementBlock.statements[0]).expression).leftExpression.type
         ClassNode dummyClass = new ClassNode("dummy", 0, OBJECT_TYPE)
         dummyClass.setModule(new ModuleNode(ctx.source))
         MethodNode dummyMN = new MethodNode(

@@ -18,11 +18,9 @@
  */
 package org.codehaus.groovy.ast.tools;
 
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -30,9 +28,11 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
@@ -580,32 +580,24 @@ public class GenericsUtils {
         }
     }
 
-    public static ClassNode[] parseClassNodesFromString(
-            final String option,
-            final SourceUnit sourceUnit,
-            final CompilationUnit compilationUnit,
-            final MethodNode mn,
-            final ASTNode usage) {
-
+    public static ClassNode[] parseClassNodesFromString(final String option, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final MethodNode mn, final ASTNode usage) {
         try {
-            // for parsing just class names old and new parser should be the same but let's stick to the correct parser any way
-            boolean oldParserEnabled = compilationUnit.getConfiguration().getPluginFactory() instanceof AntlrParserPluginFactory;
-            ClassNode parsedNode = oldParserEnabled ?
-                    Antlr2Utils.parse(option) :
-                    Antlr4Utils.parse("DummyNode<" + option + ">", compilationUnit.getConfiguration());
+            ModuleNode moduleNode = ParserPlugin.buildAST("Dummy<" + option + "> dummy;", compilationUnit.getClassLoader(), compilationUnit.getConfiguration(), null);
+            DeclarationExpression dummyDeclaration = (DeclarationExpression) ((ExpressionStatement) moduleNode.getStatementBlock().getStatements().get(0)).getExpression();
 
             // the returned node is DummyNode<Param1, Param2, Param3, ...)
-            GenericsType[] parsedNodeGenericsTypes = parsedNode.getGenericsTypes();
-            if (parsedNodeGenericsTypes == null) {
+            ClassNode dummyNode = dummyDeclaration.getLeftExpression().getType();
+            GenericsType[] dummyNodeGenericsTypes = dummyNode.getGenericsTypes();
+            if (dummyNodeGenericsTypes == null) {
                 return null;
             }
-            ClassNode[] signature = new ClassNode[parsedNodeGenericsTypes.length];
-            for (int i = 0; i < parsedNodeGenericsTypes.length; i++) {
-                final GenericsType genericsType = parsedNodeGenericsTypes[i];
+            ClassNode[] signature = new ClassNode[dummyNodeGenericsTypes.length];
+            for (int i = 0, n = dummyNodeGenericsTypes.length; i < n; i += 1) {
+                final GenericsType genericsType = dummyNodeGenericsTypes[i];
                 signature[i] = resolveClassNode(sourceUnit, compilationUnit, mn, usage, genericsType.getType());
             }
             return signature;
-        } catch (GroovyRuntimeException e) {
+        } catch (Exception | LinkageError e) {
             sourceUnit.addError(new IncorrectTypeHintException(mn, e, usage.getLineNumber(), usage.getColumnNumber()));
         }
         return null;

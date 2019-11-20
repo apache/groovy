@@ -18,18 +18,10 @@
  */
 package org.apache.groovy.parser.antlr4;
 
-import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
@@ -40,9 +32,6 @@ import org.codehaus.groovy.syntax.Reduction;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.List;
 
 /**
  * A parser plugin for the new parser
@@ -87,56 +76,5 @@ public class Antlr4ParserPlugin implements ParserPlugin {
         AstBuilder builder = new AstBuilder(sourceUnit, compilerConfiguration);
 
         return builder.buildAST();
-    }
-
-    /**
-     * Create ClassNode instance for type string
-     *
-     * @param typeStr type string, e.g. List
-     * @return a {@link ClassNode} instance
-     * @since 3.0.0
-     */
-    public ClassNode makeType(String typeStr) {
-        SourceUnit sourceUnit =
-                new SourceUnit(
-                        "Script" + System.nanoTime(),
-                        "final " + typeStr + " v",
-                        compilerConfiguration,
-                        AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) GroovyClassLoader::new),
-                        new ErrorCollector(compilerConfiguration)
-                );
-        AstBuilder builder = new AstBuilder(sourceUnit, compilerConfiguration);
-        ModuleNode moduleNode = builder.buildAST();
-
-        List<Statement> statementList = moduleNode.getStatementBlock().getStatements();
-
-        Statement statement;
-        try {
-            statement = statementList.get(0);
-        } catch (IndexOutOfBoundsException e) {
-            throw new GroovyBugError(statementList + " is empty");
-        }
-
-        if (!(statement instanceof ExpressionStatement)) {
-            throw new GroovyBugError(statement + " is not an instance of ExpressionStatement");
-        }
-
-        ExpressionStatement expressionStatement = (ExpressionStatement) statement;
-        Expression expression = expressionStatement.getExpression();
-
-        if (!(expression instanceof DeclarationExpression)) {
-            throw new GroovyBugError(expression + " is not an instance of DeclarationExpression");
-        }
-
-        DeclarationExpression declarationExpression = (DeclarationExpression) expression;
-        Expression leftExpression = declarationExpression.getLeftExpression();
-
-        if (!(leftExpression instanceof VariableExpression)) {
-            throw new GroovyBugError(leftExpression + " is not an instance of VariableExpression");
-        }
-
-        VariableExpression variableExpression = (VariableExpression) leftExpression;
-
-        return variableExpression.getType();
     }
 }
