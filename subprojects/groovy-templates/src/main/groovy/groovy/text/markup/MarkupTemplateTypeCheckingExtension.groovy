@@ -174,7 +174,7 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
     @CompileStatic
     private static ClassNode buildNodeFromString(String option, TypeCheckingContext ctx) {
-        def moduleNode = ParserPlugin.buildAST("Dummy<$option> dummy;", ctx.compilationUnit.classLoader, ctx.compilationUnit.configuration, ctx.errorCollector)
+        def moduleNode = ParserPlugin.buildAST("Dummy<$option> dummy;", ctx.compilationUnit.configuration, ctx.compilationUnit.classLoader, ctx.errorCollector)
         ClassNode parsedNode = ((DeclarationExpression) ((ExpressionStatement) moduleNode.statementBlock.statements[0]).expression).leftExpression.type
         ClassNode dummyClass = new ClassNode("dummy", 0, OBJECT_TYPE)
         dummyClass.setModule(new ModuleNode(ctx.source))
