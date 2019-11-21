@@ -19,7 +19,6 @@
 
 -->
 <ivysettings>
-  <caches useOrigin="true"/>
   <settings defaultResolver="downloadGrapes"/>
   <resolvers>
     <chain name="downloadGrapes" returnFirst="true">
