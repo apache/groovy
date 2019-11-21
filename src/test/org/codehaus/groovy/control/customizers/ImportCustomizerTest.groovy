@@ -18,99 +18,161 @@
  */
 package org.codehaus.groovy.control.customizers
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.Before
+import org.junit.Test
 
 /**
- * Tests the import customizer.
+ * Tests for {@link ImportCustomizer}.
  */
-class ImportCustomizerTest extends GroovyTestCase {
-    CompilerConfiguration configuration
-    ImportCustomizer importCustomizer
+final class ImportCustomizerTest {
 
+    private final CompilerConfiguration configuration = new CompilerConfiguration()
+    private final ImportCustomizer importCustomizer = new ImportCustomizer()
+
+    @Before
     void setUp() {
-        configuration = new CompilerConfiguration()
-        importCustomizer = new ImportCustomizer()
         configuration.addCompilationCustomizers(importCustomizer)
     }
 
+    @Test
     void testAddImport() {
-        importCustomizer.addImports("java.util.concurrent.atomic.AtomicInteger")
+        importCustomizer.addImports('java.util.concurrent.atomic.AtomicInteger')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("new AtomicInteger(0)")
+        shell.evaluate('new AtomicInteger(0)')
         // no exception means success
     }
 
+    @Test
     void testAddImportWithAlias() {
-        importCustomizer.addImport("AI","java.util.concurrent.atomic.AtomicInteger")
+        importCustomizer.addImport('AI', 'java.util.concurrent.atomic.AtomicInteger')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("new AI(0)")
+        shell.evaluate('new AI(0)')
         // no exception means success
     }
 
+    @Test
     void testAddInnerClassImport() {
-        importCustomizer.addImports("org.codehaus.groovy.control.customizers.ImportCustomizerTest.Inner")
+        importCustomizer.addImports('org.codehaus.groovy.control.customizers.ImportCustomizerTest.Inner')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("new Inner()")
+        shell.evaluate('new Inner()')
         // no exception means success
     }
 
+    @Test
     void testAddInnerClassImport2() {
-        importCustomizer.addImports("org.codehaus.groovy.control.customizers.ImportCustomizerTest")
+        importCustomizer.addImports('org.codehaus.groovy.control.customizers.ImportCustomizerTest')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("new ImportCustomizerTest.Inner()")
+        shell.evaluate('new ImportCustomizerTest.Inner()')
         // no exception means success
     }
 
+    @Test
     void testAddStaticImport() {
-        importCustomizer.addStaticImport("java.lang.Math", "PI")
+        importCustomizer.addStaticImport('java.lang.Math', 'PI')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("PI")
+        shell.evaluate('PI')
         // no exception means success
     }
 
+    @Test
     void testAddStaticImportWithAlias() {
-        importCustomizer.addStaticImport("pi","java.lang.Math", "PI")
+        importCustomizer.addStaticImport('pi', 'java.lang.Math', 'PI')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("pi")
+        shell.evaluate('pi')
         // no exception means success
     }
 
+    @Test
     void testAddStaticStarImport() {
-        importCustomizer.addStaticStars("java.lang.Math")
+        importCustomizer.addStaticStars('java.lang.Math')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("PI")
+        shell.evaluate('PI')
         // no exception means success
     }
 
+    @Test
     void testAddStarImport() {
-        importCustomizer.addStarImports("java.util.concurrent.atomic")
+        importCustomizer.addStarImports('java.util.concurrent.atomic')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("new AtomicInteger(0)")
+        shell.evaluate('new AtomicInteger(0)')
         // no exception means success
     }
 
+    @Test
     void testAddImports() {
-        importCustomizer.addImports("java.util.concurrent.atomic.AtomicInteger","java.util.concurrent.atomic.AtomicLong")
+        importCustomizer.addImports('java.util.concurrent.atomic.AtomicInteger', 'java.util.concurrent.atomic.AtomicLong')
         def shell = new GroovyShell(configuration)
-        shell.evaluate("""new AtomicInteger(0)
-        new AtomicLong(0)""")
+        shell.evaluate('''
+            new AtomicInteger(0)
+            new AtomicLong(0)
+        ''')
         // no exception means success
     }
 
+    @Test
     void testAddImportsOnScriptEngine() {
-        File script = File.createTempFile('test', '.groovy')
-            script.deleteOnExit()
-            script.write """
+        importCustomizer.addImports('java.text.SimpleDateFormat')
+
+        def script = File.createTempFile('test', '.groovy')
+        script.deleteOnExit()
+        script.write '''
             println new SimpleDateFormat()
-        """
+        '''
+        // run script with script engine; this will not work if import customizer is not used
+        def scriptEngine = new GroovyScriptEngine(script.parent)
+        scriptEngine.config = configuration
+        scriptEngine.run(script.name, new Binding())
+    }
 
-        importCustomizer.addImports 'java.text.SimpleDateFormat'
+    @Test // GROOVY-8399
+    void testAddImportsOnModuleWithMultipleClasses() {
+        importCustomizer.addImports('java.text.SimpleDateFormat')
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''\
+            @groovy.transform.ASTTest({
+                def imports = node.module.imports*.text
+                assert imports == ['import java.text.SimpleDateFormat as SimpleDateFormat']
+            })
+            class A {
+                static class AA {
+                }
+            }
+            class B {
+                static class BB {
+                }
+            }
+            class C {
+                static class CC {
+                }
+            }
+            println new SimpleDateFormat()
+        ''')
+    }
 
-        // Run script with script engine: this will not work, import customizer is not used
-        GroovyScriptEngine scriptEngine = new GroovyScriptEngine(script.parent)
-        scriptEngine.setConfig configuration
-        scriptEngine.run script.name, new Binding()
+    @Test // GROOVY-8399
+    void testAddStarImportsOnModuleWithMultipleClasses() {
+        importCustomizer.addStarImports('java.text', 'groovy.transform')
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''\
+            @groovy.transform.ASTTest({
+                def imports = node.module.starImports*.text
+                assert imports == ['import java.text.*', 'import groovy.transform.*']
+            })
+            class A {
+                static class AA {
+                }
+            }
+            class B {
+                static class BB {
+                }
+            }
+            class C {
+                static class CC {
+                }
+            }
+            println new SimpleDateFormat()
+        ''')
     }
 
     protected static class Inner {}
