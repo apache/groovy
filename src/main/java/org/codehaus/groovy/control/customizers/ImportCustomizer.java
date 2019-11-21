@@ -22,7 +22,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -30,27 +29,31 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This compilation customizer allows addiing various types of imports to the compilation unit. Supports adding :
+ * This compilation customizer allows addiing various types of imports to the compilation unit. Supports adding:
  * <ul>
- *     <li>standard imports thanks to {@link #addImport(String)}, {@link #addImport(String, String)} or {@link #addImports(String...)}</li>
- *     <li>star imports thanks to {@link #addStarImport(String)} or {@link #addStarImports(String...)}</li>
- *     <li>static imports thanks to {@link #addStaticImport(String, String)} or {@link #addStaticImport(String, String, String)}</li>
- *     <li>static star imports thanks to {@link #addStaticStar(String)} or {@link #addStaticStars(String...)}</li>
+ *     <li>standard imports via {@link #addImports(String...)} or {@link #addImport(String, String)}</li>
+ *     <li>star imports via {@link #addStarImports(String...)}</li>
+ *     <li>static imports via {@link #addStaticImport(String, String)} or {@link #addStaticImport(String, String, String)}</li>
+ *     <li>static star imports via {@link #addStaticStars(String...)}</li>
  * </ul>
  *
  * @since 1.8.0
  */
 public class ImportCustomizer extends CompilationCustomizer {
 
-    private final List<Import> imports = new LinkedList<Import>();
+    private final List<Import> imports = new LinkedList<>();
 
     public ImportCustomizer() {
         super(CompilePhase.CONVERSION);
     }
 
     @Override
-    public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-        final ModuleNode ast = source.getAST();
+    public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
+        ModuleNode ast = source.getAST();
+
+        // GROOVY-8399: apply import customizations only once per module
+        if (!classNode.getName().equals(ast.getMainClassName())) return;
+
         for (Import anImport : imports) {
             switch (anImport.type) {
                 case regular:
@@ -75,8 +78,26 @@ public class ImportCustomizer extends CompilationCustomizer {
     }
 
     public ImportCustomizer addStaticImport(final String className, final String fieldName) {
-        final ClassNode node = ClassHelper.make(className);
-        imports.add(new Import(ImportType.staticImport, fieldName, node, fieldName));
+        imports.add(new Import(ImportType.staticImport, fieldName, ClassHelper.make(className), fieldName));
+        return this;
+    }
+
+    public ImportCustomizer addStaticImport(final String alias, final String className, final String fieldName) {
+        imports.add(new Import(ImportCustomizer.ImportType.staticImport, alias, ClassHelper.make(className), fieldName));
+        return this;
+    }
+
+    public ImportCustomizer addImports(final String... classNames) {
+        for (String className : classNames) {
+            addImport(className);
+        }
+        return this;
+    }
+
+    public ImportCustomizer addStarImports(final String... packageNames) {
+        for (String packageName : packageNames) {
+            addStarImport(packageName);
+        }
         return this;
     }
 
@@ -87,37 +108,19 @@ public class ImportCustomizer extends CompilationCustomizer {
         return this;
     }
 
-    public ImportCustomizer addStaticImport(final String alias, final String className, final String fieldName) {
-        imports.add(new Import(ImportCustomizer.ImportType.staticImport, alias, ClassHelper.make(className), fieldName));
-        return this;
-    }
-
-    public ImportCustomizer addImports(final String... imports) {
-            for (String anImport : imports) {
-                addImport(anImport);
-            }
-        return this;
-    }
-
-    public ImportCustomizer addStarImports(final String... packageNames) {
-            for (String packageName : packageNames) {
-                addStarImport(packageName);
-            }
-        return this;
-    }
+    //
 
     private void addImport(final String className) {
-        final ClassNode node = ClassHelper.make(className);
+        ClassNode node = ClassHelper.make(className);
         imports.add(new Import(ImportType.regular, node.getNameWithoutPackage(), node));
+    }
+
+    private void addStarImport(final String packageName) {
+        imports.add(new Import(ImportType.star, packageName.endsWith(".") ? packageName : packageName + "."));
     }
 
     private void addStaticStar(final String className) {
         imports.add(new Import(ImportCustomizer.ImportType.staticStar, className, ClassHelper.make(className)));
-    }
-
-    private void addStarImport(final String packagename) {
-        final String packageNameEndingWithDot = packagename.endsWith(".")?packagename:packagename+'.';
-        imports.add(new Import(ImportType.star,packageNameEndingWithDot));
     }
 
     // -------------------- Helper classes -------------------------
