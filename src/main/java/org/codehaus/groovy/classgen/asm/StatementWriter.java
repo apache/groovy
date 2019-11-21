@@ -97,7 +97,7 @@ public class StatementWriter {
 
         // GROOVY-7647
         if (block.getLastLineNumber() > 0
-                && !methodOrConstructorsLastReturnStatementExists(block) // GROOVY-9126
+                && !isMethodOrConstructorNonEmptyBlock(block) // GROOVY-9126
         ) {
             MethodVisitor mv = controller.getMethodVisitor();
             Label blockEnd = new Label();
@@ -108,7 +108,7 @@ public class StatementWriter {
         controller.getOperandStack().popDownTo(mark);
     }
 
-    private boolean methodOrConstructorsLastReturnStatementExists(BlockStatement block) {
+    private boolean isMethodOrConstructorNonEmptyBlock(BlockStatement block) {
         MethodNode methodNode = controller.getMethodNode();
         if (null == methodNode) {
             methodNode = controller.getConstructorNode();
@@ -118,9 +118,7 @@ public class StatementWriter {
             return false;
         }
 
-        List<Statement> statementList = block.getStatements();
-        final int size = statementList.size();
-        return size > 0 && statementList.get(size - 1) instanceof ReturnStatement;
+        return !block.getStatements().isEmpty();
     }
 
     public void writeForStatement(ForStatement loop) {
