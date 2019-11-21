@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -88,13 +89,16 @@ public class StatementWriter {
         int mark = controller.getOperandStack().getStackLength();
         CompileStack compileStack = controller.getCompileStack();
         compileStack.pushVariableScope(block.getVariableScope());
-        for (Statement statement : block.getStatements()) {
+        List<Statement> statementList = block.getStatements();
+        for (Statement statement : statementList) {
             statement.visit(controller.getAcg());
         }
         compileStack.pop();
 
         // GROOVY-7647
-        if (block.getLastLineNumber() > 0) {
+        if (block.getLastLineNumber() > 0
+                && !methodOrConstructorsLastReturnStatementExists(block) // GROOVY-9126
+        ) {
             MethodVisitor mv = controller.getMethodVisitor();
             Label blockEnd = new Label();
             mv.visitLabel(blockEnd);
@@ -102,6 +106,21 @@ public class StatementWriter {
         }
 
         controller.getOperandStack().popDownTo(mark);
+    }
+
+    private boolean methodOrConstructorsLastReturnStatementExists(BlockStatement block) {
+        MethodNode methodNode = controller.getMethodNode();
+        if (null == methodNode) {
+            methodNode = controller.getConstructorNode();
+        }
+
+        if (null == methodNode || block != methodNode.getCode()) { // check if the block is method/constructor's code
+            return false;
+        }
+
+        List<Statement> statementList = block.getStatements();
+        final int size = statementList.size();
+        return size > 0 && statementList.get(size - 1) instanceof ReturnStatement;
     }
 
     public void writeForStatement(ForStatement loop) {
