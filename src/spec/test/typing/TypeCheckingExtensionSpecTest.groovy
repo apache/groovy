@@ -421,7 +421,7 @@ runner.run()
 // tag::robot_runtime_error_cs[]
 java.lang.NoSuchMethodError: java.lang.Object.move()Ltyping/Robot;
 // end::robot_runtime_error_cs[]
-'''))
+''')) || err.contains('java.lang.NoSuchMethodError: \'typing.Robot java.lang.Object.move()\'')
     }
 
     void testRobotExamplePassesWithCompileStatic() {
