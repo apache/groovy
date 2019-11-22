@@ -282,7 +282,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return importsWhitelist;
     }
 
-    void setImportsWhitelist(final List<String> importsWhitelist) {
+    public void setImportsWhitelist(final List<String> importsWhitelist) {
         if (importsBlacklist != null || starImportsBlacklist != null || doubleStarImportsBlacklist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
