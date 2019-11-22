@@ -201,6 +201,32 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         }
     }
 
+    void testDoubleStarImportWhiteList() {
+        def shell = new GroovyShell(configuration)
+        customizer.doubleStarImportsWhitelist = ['java.util.**']
+        shell.evaluate("""
+            import java.util.ArrayList
+            new ArrayList()
+        """)
+
+        shell.evaluate("""
+            import java.util.concurrent.atomic.AtomicInteger
+            new AtomicInteger(0)
+        """)
+        shell.evaluate("""
+            import java.util.*
+            import java.util.concurrent.atomic.*
+            new ArrayList()
+            new AtomicInteger(0)
+        """)
+        assert hasSecurityException {
+            shell.evaluate("""
+            import java.math.BigDecimal
+            new BigDecimal("35")
+        """)
+        }
+    }
+
     void testStarImportWhiteListWithImportWhiteList() {
         def shell = new GroovyShell(configuration)
         customizer.importsWhitelist = ['java.util.concurrent.atomic.AtomicInteger']
@@ -212,6 +238,31 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         shell.evaluate("""
             import java.util.concurrent.atomic.AtomicInteger
             new AtomicInteger(0)
+        """)
+        assert hasSecurityException {
+            shell.evaluate("""
+            import java.util.concurrent.atomic.AtomicBoolean
+            new AtomicBoolean(false)
+        """)
+        }
+    }
+
+    void testDoubleStarImportWhiteListWithStarImportWhiteListWithImportWhiteList() {
+        def shell = new GroovyShell(configuration)
+        customizer.importsWhitelist = ['java.util.concurrent.atomic.AtomicInteger']
+        customizer.starImportsWhitelist = ['java.util.*']
+        customizer.doubleStarImportsWhitelist = ['java.math.**'];
+        shell.evaluate("""
+            import java.util.ArrayList
+            new ArrayList()
+        """)
+        shell.evaluate("""
+            import java.util.concurrent.atomic.AtomicInteger
+            new AtomicInteger(0)
+        """)
+        shell.evaluate("""
+            import java.math.BigDecimal
+            new BigDecimal("35")
         """)
         assert hasSecurityException {
             shell.evaluate("""
@@ -258,6 +309,49 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         }
     }
 
+    void testDoubleStarImportBlackList() {
+        def shell = new GroovyShell(configuration)
+        customizer.doubleStarImportsBlacklist = ['java.util.**']
+        shell.evaluate("""
+            import java.math.BigDecimal
+            new BigDecimal("35")
+        """)
+        assert hasSecurityException {
+            shell.evaluate("""
+            import java.util.LinkedList
+            new LinkedList()
+        """)
+        }
+    }
+
+    void testDoubleStarImportBlackListWithImportBlackList() {
+        def shell = new GroovyShell(configuration)
+        customizer.importsBlacklist = ['java.util.concurrent.atomic.AtomicBoolean']
+        customizer.starImportsBlacklist = ['java.util.*']
+        customizer.doubleStarImportsBlacklist = ['java.util.concurrent.**']
+        assert hasSecurityException {
+            shell.evaluate("""
+                 import java.util.ArrayList
+                 new ArrayList()
+             """)
+        }
+        assert hasSecurityException {
+            shell.evaluate("""
+             import java.util.concurrent.atomic.AtomicInteger
+             new AtomicInteger(0)
+         """)
+        }
+        assert hasSecurityException {
+            shell.evaluate("""
+             import java.util.concurrent.atomic.AtomicBoolean
+             new AtomicBoolean(false)
+         """)
+        }
+        shell.evaluate("""
+            import java.math.BigDecimal
+            new BigDecimal("35")
+        """)
+    }
 
     void testIndirectImportWhiteList() {
         def shell = new GroovyShell(configuration)
