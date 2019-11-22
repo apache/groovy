@@ -429,6 +429,49 @@ class SecureASTCustomizerTest extends GroovyTestCase {
         }
     }
 
+    void testStaticDoubleStarImportWhiteList() {
+        def shell = new GroovyShell(configuration)
+        customizer.staticDoubleStarImportsWhitelist = ['java.lang.Math.**']
+        shell.evaluate("""
+            import static java.lang.Math.PI
+            PI
+        """)
+        shell.evaluate("""
+            import static java.lang.Math.PI
+            import static java.lang.Math.cos
+            cos(PI)
+        """)
+        assert hasSecurityException {
+            shell.evaluate("""
+            import static java.util.Collections.*
+            sort([5,4,2])
+        """)
+        }
+    }
+
+
+    void testStaticDoubleStarImportBlackList() {
+        def shell = new GroovyShell(configuration)
+        customizer.staticDoubleStarImportsBlacklist = ['java.lang.Math.**']
+        assert hasSecurityException {
+                shell.evaluate("""
+                import static java.lang.Math.PI
+                PI
+            """)
+        }
+        assert hasSecurityException {
+                shell.evaluate("""
+                import static java.lang.Math.PI
+                import static java.lang.Math.cos
+                cos(PI)
+            """)
+        }
+        shell.evaluate("""
+            import static java.util.Collections.*
+            sort([5,4,2])
+        """)
+    }
+
     void testIndirectStaticImport() {
         def shell = new GroovyShell(configuration)
         customizer.staticImportsWhitelist = ['java.lang.Math.PI']
