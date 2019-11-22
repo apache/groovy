@@ -45,6 +45,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-      - name: Test Indy with Gradle
+      - name: Test with Gradle
         run: ./gradlew testWithIndy
         timeout-minutes: 60
