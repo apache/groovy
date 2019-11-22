@@ -18,6 +18,7 @@
  */
 package groovy.util
 
+import groovy.cli.commons.OptionAccessor
 import org.apache.commons.cli.CommandLineParser
 import org.apache.commons.cli.HelpFormatter
 
