@@ -24,50 +24,52 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 public class GroovySunClassLoader extends SunClassLoader {
-
     public static final SunClassLoader sunVM;
+    private static final String ABSTRACTCALLSITE_FULL_CLASS_NAME = "org.codehaus.groovy.runtime.callsite.AbstractCallSite";
 
     static {
-            sunVM = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
-                try {
-                    if (SunClassLoader.sunVM != null) {
-                        return new GroovySunClassLoader();
-                    }
+        sunVM = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+            try {
+                if (SunClassLoader.sunVM != null) {
+                    return new GroovySunClassLoader();
                 }
-                catch (Throwable t) {//
-                }
-                return null;
-            });
+            } catch (Throwable t) {
+            }
+            return null;
+        });
     }
 
-    protected GroovySunClassLoader () throws Throwable {
+    protected GroovySunClassLoader() throws Throwable {
         super();
-        loadAbstract ();
-        loadFromRes("org.codehaus.groovy.runtime.callsite.MetaClassSite");
-        loadFromRes("org.codehaus.groovy.runtime.callsite.MetaMethodSite");
-        loadFromRes("org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite");
-        loadFromRes("org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite");
-        loadFromRes("org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite");
+        loadAbstract();
+        loadFromResource("org.codehaus.groovy.runtime.callsite.MetaClassSite");
+        loadFromResource("org.codehaus.groovy.runtime.callsite.MetaMethodSite");
+        loadFromResource("org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite");
+        loadFromResource("org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite");
+        loadFromResource("org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite");
     }
 
     private void loadAbstract() throws IOException {
-        final InputStream asStream = GroovySunClassLoader.class.getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"));
-        ClassReader reader = new ClassReader(asStream);
-        final ClassWriter cw = new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
-        final ClassVisitor cv = new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, cw) {
-            public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-                super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
-            }            
-        };
-        reader.accept(cv, CompilerConfiguration.READ_MODE);
-        asStream.close();
-        define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
+        try (final InputStream asStream =
+                     new BufferedInputStream(
+                             GroovySunClassLoader.class.getClassLoader().getResourceAsStream(
+                                     resourceName(ABSTRACTCALLSITE_FULL_CLASS_NAME)))) {
+            ClassReader reader = new ClassReader(asStream);
+            final ClassWriter cw = new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
+            final ClassVisitor cv = new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, cw) {
+                public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                    super.visit(version, access, name, signature, SUN_REFLECT_GROOVYMAGIC, interfaces);
+                }
+            };
+            reader.accept(cv, CompilerConfiguration.READ_MODE);
+            define(cw.toByteArray(), ABSTRACTCALLSITE_FULL_CLASS_NAME);
+        }
     }
-
 }
