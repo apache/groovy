@@ -100,6 +100,7 @@ import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
@@ -3744,7 +3745,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && directMethodCallCandidate.isStatic()
                 && directMethodCallCandidate.getDeclaringClass().isInterface()
                 && !(directMethodCallCandidate instanceof ExtensionMethodNode)) {
-            typeCheckingContext.getEnclosingClassNode().putNodeMetaData(MINIMUM_BYTECODE_VERSION, Opcodes.V1_8);
+            typeCheckingContext.getEnclosingClassNode().putNodeMetaData(MINIMUM_BYTECODE_VERSION, CompilerConfiguration.BYTECODE_VERSION);
         }
 
         checkOrMarkPrivateAccess(call, directMethodCallCandidate);

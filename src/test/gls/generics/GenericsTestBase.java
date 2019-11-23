@@ -26,7 +26,10 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
-import org.objectweb.asm.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,7 +56,7 @@ public abstract class GenericsTestBase extends GroovyTestCase {
         protected Class createClass(byte[] code, ClassNode classNode) {
             ClassReader cr = new ClassReader(code);
             GenericsTester classVisitor = new GenericsTester(new org.objectweb.asm.tree.ClassNode());
-            cr.accept(classVisitor, ClassWriter.COMPUTE_MAXS);
+            cr.accept(classVisitor, CompilerConfiguration.READ_MODE);
             return super.createClass(code, classNode);
         }
     }

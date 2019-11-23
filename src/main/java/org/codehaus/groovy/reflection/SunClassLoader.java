@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -64,8 +65,8 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     }
 
     private void loadMagic() {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, "sun/reflect/GroovyMagic", null, "sun/reflect/MagicAccessorImpl", null);
+        ClassWriter cw = new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
+        cw.visit(CompilerConfiguration.BYTECODE_VERSION, Opcodes.ACC_PUBLIC, "sun/reflect/GroovyMagic", null, "sun/reflect/MagicAccessorImpl", null);
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);
@@ -81,8 +82,8 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     protected void loadFromRes(String name) throws IOException {
         final InputStream asStream = SunClassLoader.class.getClassLoader().getResourceAsStream(resName(name));
         ClassReader reader = new ClassReader(asStream);
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        reader.accept(cw, ClassWriter.COMPUTE_MAXS);
+        final ClassWriter cw = new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
+        reader.accept(cw, CompilerConfiguration.READ_MODE);
         asStream.close();
         define(cw.toByteArray(), name);
     }

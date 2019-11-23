@@ -71,7 +71,7 @@ public class WriterController {
     private StatementWriter statementWriter;
     private boolean fastPath = false;
     private TypeChooser typeChooser;
-    private int bytecodeVersion = Opcodes.V1_8;
+    private int bytecodeVersion = CompilerConfiguration.BYTECODE_VERSION;
     private int lineNumber = -1;
     private int helperMethodIndex = 0;
     private List<String> superMethodNames = new ArrayList<String>();

@@ -870,12 +870,7 @@ public class CompilationUnit extends ProcessingUnit {
     };
 
     protected ClassVisitor createClassVisitor() {
-        CompilerConfiguration config = getConfiguration();
-        int computeMaxStackAndFrames = ClassWriter.COMPUTE_MAXS;
-        if (CompilerConfiguration.isPostJDK7(config.getTargetBytecode()) || config.isIndyEnabled()) {
-            computeMaxStackAndFrames += ClassWriter.COMPUTE_FRAMES;
-        }
-        return new ClassWriter(computeMaxStackAndFrames) {
+        return new ClassWriter(CompilerConfiguration.COMPUTE_MODE) {
             private ClassNode getClassNode(String name) {
                 // try classes under compilation
                 CompileUnit cu = getAST();

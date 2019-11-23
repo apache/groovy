@@ -20,8 +20,8 @@ package org.codehaus.groovy.ant;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -100,7 +100,7 @@ public class VerifyClass extends MatchingTask {
                 //accept(cv);
             }
         };
-        cr.accept(new CheckClassAdapter(ca), ClassWriter.COMPUTE_MAXS);
+        cr.accept(new CheckClassAdapter(ca), CompilerConfiguration.READ_MODE);
         boolean failed = false;
 
         List methods = ca.methods;

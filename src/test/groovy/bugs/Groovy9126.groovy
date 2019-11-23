@@ -45,7 +45,12 @@ final class Groovy9126 extends AbstractBytecodeTestCase {
                  'IMUL',
                  'IRETURN',
                  'L1',
-                 'FRAME FULL [] [java/lang/Throwable]']
+                 'NOP',
+                 'NOP',
+                 'ATHROW',
+                 'LOCALVARIABLE this Lscript; L0 L1 0',
+                 'MAXSTACK = 2',
+                 'MAXLOCALS = 1']
         )
     }
 }

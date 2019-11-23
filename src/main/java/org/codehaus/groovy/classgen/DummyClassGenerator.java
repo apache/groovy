@@ -30,9 +30,9 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 /**
  * To generate a class that has all the fields and methods, except that fields are not initialized
@@ -72,7 +72,7 @@ public class DummyClassGenerator extends ClassGenerator {
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cv.visit(
-                    Opcodes.V1_3,
+                    CompilerConfiguration.BYTECODE_VERSION,
                     classNode.getModifiers(),
                     internalClassName,
                     (String) null,

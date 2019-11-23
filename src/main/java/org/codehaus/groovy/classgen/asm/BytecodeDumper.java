@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.control.BytecodeProcessor;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -44,7 +45,7 @@ public class BytecodeDumper implements BytecodeProcessor {
         PrintWriter pw = out instanceof PrintWriter ? (PrintWriter) out : new PrintWriter(out);
         TraceClassVisitor visitor = new TraceClassVisitor(pw);
         ClassReader reader = new ClassReader(original);
-        reader.accept(visitor, 0);
+        reader.accept(visitor, CompilerConfiguration.READ_MODE);
         return original;
     }
 

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools;
 
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
@@ -77,8 +78,8 @@ public class DgmConverter implements Opcodes {
             record.parameters = method.getNativeParameterTypes();
             record.className = className;
 
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-            cw.visit(V1_3, ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
+            ClassWriter cw = new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
+            cw.visit(CompilerConfiguration.BYTECODE_VERSION, ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
 
             createConstructor(cw);
 

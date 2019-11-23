@@ -22,6 +22,8 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
@@ -119,6 +121,9 @@ public class CompilerConfiguration {
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
 
     public static final int ASM_API_VERSION = Opcodes.ASM7;
+    public static final int BYTECODE_VERSION = Opcodes.V1_8;
+    public static final int COMPUTE_MODE = ClassWriter.COMPUTE_FRAMES;
+    public static final int READ_MODE = ClassReader.SKIP_FRAMES;
 
     /**
      * The default source encoding.
