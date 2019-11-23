@@ -58,7 +58,7 @@ public abstract class AnnotationsTestBase extends GroovyTestCase {
         protected Class createClass(byte[] code, ClassNode classNode) {
             ClassReader cr = new ClassReader(code);
             AnnotationsTester classVisitor = new AnnotationsTester(new org.objectweb.asm.tree.ClassNode());
-            cr.accept(classVisitor, CompilerConfiguration.READ_MODE);
+            cr.accept(classVisitor, CompilerConfiguration.ASM_PARSE_MODE);
             return super.createClass(code, classNode);
         }
     }

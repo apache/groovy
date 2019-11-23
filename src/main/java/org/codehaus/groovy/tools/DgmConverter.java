@@ -78,8 +78,8 @@ public class DgmConverter implements Opcodes {
             record.parameters = method.getNativeParameterTypes();
             record.className = className;
 
-            ClassWriter cw = new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
-            cw.visit(CompilerConfiguration.BYTECODE_VERSION, ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
+            ClassWriter cw = new ClassWriter(CompilerConfiguration.ASM_COMPUTE_MODE);
+            cw.visit(CompilerConfiguration.DEFAULT.getAsmTargetBytecode(), ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
 
             createConstructor(cw);
 

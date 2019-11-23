@@ -141,7 +141,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
         }, new PrintWriter(output))
         def cr = new ClassReader(bytes)
-        cr.accept(tcf, CompilerConfiguration.READ_MODE)
+        cr.accept(tcf, CompilerConfiguration.ASM_PARSE_MODE)
 
         def code = output.toString()
         sequence = new InstructionSequence(instructions: code.split('\n')*.trim())

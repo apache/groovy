@@ -3745,7 +3745,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && directMethodCallCandidate.isStatic()
                 && directMethodCallCandidate.getDeclaringClass().isInterface()
                 && !(directMethodCallCandidate instanceof ExtensionMethodNode)) {
-            typeCheckingContext.getEnclosingClassNode().putNodeMetaData(MINIMUM_BYTECODE_VERSION, CompilerConfiguration.BYTECODE_VERSION);
+            typeCheckingContext.getEnclosingClassNode().putNodeMetaData(MINIMUM_BYTECODE_VERSION, CompilerConfiguration.DEFAULT.getAsmTargetBytecode());
         }
 
         checkOrMarkPrivateAccess(call, directMethodCallCandidate);

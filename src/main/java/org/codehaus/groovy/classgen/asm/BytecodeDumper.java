@@ -45,7 +45,7 @@ public class BytecodeDumper implements BytecodeProcessor {
         PrintWriter pw = out instanceof PrintWriter ? (PrintWriter) out : new PrintWriter(out);
         TraceClassVisitor visitor = new TraceClassVisitor(pw);
         ClassReader reader = new ClassReader(original);
-        reader.accept(visitor, CompilerConfiguration.READ_MODE);
+        reader.accept(visitor, CompilerConfiguration.ASM_PARSE_MODE);
         return original;
     }
 

@@ -121,9 +121,8 @@ public class CompilerConfiguration {
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
 
     public static final int ASM_API_VERSION = Opcodes.ASM7;
-    public static final int BYTECODE_VERSION = Opcodes.V1_8;
-    public static final int COMPUTE_MODE = ClassWriter.COMPUTE_FRAMES;
-    public static final int READ_MODE = ClassReader.SKIP_FRAMES;
+    public static final int ASM_COMPUTE_MODE = ClassWriter.COMPUTE_FRAMES;
+    public static final int ASM_PARSE_MODE = ClassReader.SKIP_FRAMES;
 
     /**
      * The default source encoding.
@@ -364,6 +363,11 @@ public class CompilerConfiguration {
      * sets the bytecode version target
      */
     private String targetBytecode;
+
+    /**
+     * ASM bytecode version target
+     */
+    private int asmTargetBytecode;
 
     /**
      * Whether the bytecode version has preview features enabled (JEP 12)
@@ -961,6 +965,7 @@ public class CompilerConfiguration {
     private void setTargetBytecodeIfValid(String version) {
         if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(version)) {
             this.targetBytecode = version;
+            this.asmTargetBytecode = JDK_TO_BYTECODE_VERSION_MAP.get(this.targetBytecode);
         }
     }
 
@@ -972,6 +977,13 @@ public class CompilerConfiguration {
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
+    }
+
+    /**
+     * @return target bytecode version of ASM
+     */
+    public int getAsmTargetBytecode() {
+        return this.asmTargetBytecode;
     }
 
     /**

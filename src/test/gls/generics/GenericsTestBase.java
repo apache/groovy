@@ -56,7 +56,7 @@ public abstract class GenericsTestBase extends GroovyTestCase {
         protected Class createClass(byte[] code, ClassNode classNode) {
             ClassReader cr = new ClassReader(code);
             GenericsTester classVisitor = new GenericsTester(new org.objectweb.asm.tree.ClassNode());
-            cr.accept(classVisitor, CompilerConfiguration.READ_MODE);
+            cr.accept(classVisitor, CompilerConfiguration.ASM_PARSE_MODE);
             return super.createClass(code, classNode);
         }
     }

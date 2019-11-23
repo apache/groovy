@@ -100,7 +100,7 @@ public class VerifyClass extends MatchingTask {
                 //accept(cv);
             }
         };
-        cr.accept(new CheckClassAdapter(ca), CompilerConfiguration.READ_MODE);
+        cr.accept(new CheckClassAdapter(ca), CompilerConfiguration.ASM_PARSE_MODE);
         boolean failed = false;
 
         List methods = ca.methods;

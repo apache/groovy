@@ -72,7 +72,7 @@ public class DummyClassGenerator extends ClassGenerator {
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cv.visit(
-                    CompilerConfiguration.BYTECODE_VERSION,
+                    CompilerConfiguration.DEFAULT.getAsmTargetBytecode(),
                     classNode.getModifiers(),
                     internalClassName,
                     (String) null,

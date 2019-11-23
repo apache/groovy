@@ -78,7 +78,7 @@ public abstract class AsmDecompiler {
             DecompilingVisitor visitor = new DecompilingVisitor();
 
             try (InputStream stream = new BufferedInputStream(URLStreams.openUncachedStream(url))) {
-                new ClassReader(stream).accept(visitor, CompilerConfiguration.READ_MODE);
+                new ClassReader(stream).accept(visitor, CompilerConfiguration.ASM_PARSE_MODE);
             }
             stub = visitor.result;
             StubCache.map.put(uri, new SoftReference<ClassStub>(stub));

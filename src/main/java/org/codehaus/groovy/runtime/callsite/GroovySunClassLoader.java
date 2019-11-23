@@ -62,13 +62,13 @@ public class GroovySunClassLoader extends SunClassLoader {
                              GroovySunClassLoader.class.getClassLoader().getResourceAsStream(
                                      resourceName(ABSTRACTCALLSITE_FULL_CLASS_NAME)))) {
             ClassReader reader = new ClassReader(asStream);
-            final ClassWriter cw = new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
+            final ClassWriter cw = new ClassWriter(CompilerConfiguration.ASM_COMPUTE_MODE);
             final ClassVisitor cv = new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, cw) {
                 public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                     super.visit(version, access, name, signature, SUN_REFLECT_GROOVYMAGIC, interfaces);
                 }
             };
-            reader.accept(cv, CompilerConfiguration.READ_MODE);
+            reader.accept(cv, CompilerConfiguration.ASM_PARSE_MODE);
             define(cw.toByteArray(), ABSTRACTCALLSITE_FULL_CLASS_NAME);
         }
     }

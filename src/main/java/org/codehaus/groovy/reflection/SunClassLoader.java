@@ -68,8 +68,8 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     }
 
     private void loadMagic() {
-        ClassWriter cw = new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
-        cw.visit(CompilerConfiguration.BYTECODE_VERSION, Opcodes.ACC_PUBLIC, SUN_REFLECT_GROOVYMAGIC, null, SUN_REFLECT_MAGICACCESSORIMPL, null);
+        ClassWriter cw = new ClassWriter(CompilerConfiguration.ASM_COMPUTE_MODE);
+        cw.visit(CompilerConfiguration.DEFAULT.getAsmTargetBytecode(), Opcodes.ACC_PUBLIC, SUN_REFLECT_GROOVYMAGIC, null, SUN_REFLECT_MAGICACCESSORIMPL, null);
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
         mv.visitVarInsn(ALOAD, 0);

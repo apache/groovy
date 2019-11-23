@@ -870,7 +870,7 @@ public class CompilationUnit extends ProcessingUnit {
     };
 
     protected ClassVisitor createClassVisitor() {
-        return new ClassWriter(CompilerConfiguration.COMPUTE_MODE) {
+        return new ClassWriter(CompilerConfiguration.ASM_COMPUTE_MODE) {
             private ClassNode getClassNode(String name) {
                 // try classes under compilation
                 CompileUnit cu = getAST();

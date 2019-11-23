@@ -154,7 +154,7 @@ public class CallSiteGenerator {
     }
 
     private static void classHeader(ClassWriter cw, String internalName, String superName) {
-        cw.visit(CompilerConfiguration.BYTECODE_VERSION, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
+        cw.visit(CompilerConfiguration.DEFAULT.getAsmTargetBytecode(), Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
     }
 
     public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
@@ -209,7 +209,7 @@ public class CallSiteGenerator {
     }
 
     private static ClassWriter makeClassWriter() {
-        return new ClassWriter(CompilerConfiguration.COMPUTE_MODE);
+        return new ClassWriter(CompilerConfiguration.ASM_COMPUTE_MODE);
     }
 
     public static Constructor compilePogoMethod(CachedMethod cachedMethod) {
