@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.v7.GroovyClassValueJava7;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 class GroovyClassValueFactory {
 	/**
@@ -29,14 +29,7 @@ class GroovyClassValueFactory {
 	 * See https://bugs.openjdk.java.net/browse/JDK-8136353
 	 * This issue does not exist on IBM Java (J9) so use ClassValue by default on that JVM.
 	 */
-	private static final boolean USE_CLASSVALUE;
-	static {
-        String useClassValueDefault =
-				(VMPluginFactory.getPlugin().getVersion() >= 7 || "IBM J9 VM".equals(System.getProperty("java.vm.name")))
-						? "true" : "false";
-
-        USE_CLASSVALUE = Boolean.valueOf(System.getProperty("groovy.use.classvalue", useClassValueDefault));
-    }
+	private static final boolean USE_CLASSVALUE = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.use.classvalue", "true"));
 
 	public static <T> GroovyClassValue<T> createGroovyClassValue(ComputeValue<T> computeValue) {
 		return (USE_CLASSVALUE)

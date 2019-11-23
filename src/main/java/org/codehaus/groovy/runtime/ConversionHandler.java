@@ -42,15 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
     private final Object delegate;
     private static final long serialVersionUID = 1162833717190835227L;
-    private final ConcurrentHashMap<Method, Object> handleCache;
-    {
-        if (VMPluginFactory.getPlugin().getVersion() >= 7) {
-            handleCache = new ConcurrentHashMap<Method, Object>(16, 0.9f, 2);
-        } else {
-            handleCache = null;
-        }
-    }
-
+    private final ConcurrentHashMap<Method, Object> handleCache = new ConcurrentHashMap<>(16, 0.9f, 2);
     private MetaClass metaClass;
 
     /**
