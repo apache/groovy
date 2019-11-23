@@ -21,6 +21,7 @@ package groovy.lang;
 /**
  * Distinguish a parameter array from Object[].
  */
+@Deprecated
 public class ParameterArray {
 
     private final Object parameters;
