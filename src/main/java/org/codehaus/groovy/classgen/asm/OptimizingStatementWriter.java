@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -170,7 +169,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         if (fastPathData==null) {
             // normal mode with different paths
             // important is to not to have a fastpathblock here,
-            // otherwise the per expression statement improvement 
+            // otherwise the per expression statement improvement
             // is impossible
             super.writeBlockStatement(statement);
         } else {
@@ -346,15 +345,15 @@ public class OptimizingStatementWriter extends StatementWriter {
             super.writeExpressionStatement(statement);
         } else {
             StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
-            // we have to have handle DelcarationExpressions special, since their 
+            // we have to have handle DelcarationExpressions special, since their
             // entry should be outside the optimization path, we have to do that of
-            // course only if we are actually going to do two different paths, 
+            // course only if we are actually going to do two different paths,
             // otherwise it is not needed
             //
             // there are several cases to be considered now.
             // (1) no fast path possible, so just do super
-            // (2) fast path possible, and at path split point (meaning not in 
-            //     fast path and not in slow path). Here we have to extract the 
+            // (2) fast path possible, and at path split point (meaning not in
+            //     fast path and not in slow path). Here we have to extract the
             //     Declaration and replace by an assignment
             // (3) fast path possible and in slow or fastPath. Nothing to do here.
             //
@@ -808,13 +807,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (expression.getNodeMetaData(StatementMeta.class) != null) return;
             super.visitMethodCallExpression(expression);
 
-            Expression objectExpression = expression.getObjectExpression();
-            boolean setTarget = AsmClassGenerator.isThisExpression(objectExpression);
-            if (!setTarget) {
-                if (!(objectExpression instanceof ClassExpression)) return;
-                setTarget = objectExpression.equals(node); // XXX: comparing Expression and ClassNode
-            }
-            if (setTarget) {
+            if (AsmClassGenerator.isThisExpression(expression.getObjectExpression())) {
                 setMethodTarget(expression, expression.getMethodAsString(), expression.getArguments(), true);
             }
         }
