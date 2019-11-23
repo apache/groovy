@@ -193,6 +193,11 @@ public class AnnotationNode extends ASTNode {
     }
 
     @Override
+    public String toString() {
+        return super.toString() + "[" + getText() + "]";
+    }
+
+    @Override
     public String getText() {
         StringBuilder memberText = new StringBuilder();
         if (members != null) {
