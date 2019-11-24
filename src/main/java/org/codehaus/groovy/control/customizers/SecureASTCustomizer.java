@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.control.customizers;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -176,14 +175,14 @@ import java.util.Map;
  *             config.addCompilationCustomizers(imports, secure)
  *             GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
  *  </pre>
- *  
+ *
  * @since 1.8.0
  */
 public class SecureASTCustomizer extends CompilationCustomizer {
 
     private boolean isPackageAllowed = true;
-    private boolean isMethodDefinitionAllowed = true;
     private boolean isClosuresAllowed = true;
+    private boolean isMethodDefinitionAllowed = true;
 
     // imports
     private List<String> importsWhitelist;
@@ -201,7 +200,6 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     private List<String> staticStarImportsWhitelist;
     private List<String> staticStarImportsBlacklist;
 
-
     // indirect import checks
     // if set to true, then security rules on imports will also be applied on classnodes.
     // Direct instantiation of classes without imports will therefore also fail if this option is enabled
@@ -210,12 +208,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     // statements
     private List<Class<? extends Statement>> statementsWhitelist;
     private List<Class<? extends Statement>> statementsBlacklist;
-    private final List<StatementChecker> statementCheckers = new LinkedList<StatementChecker>();
+    private final List<StatementChecker> statementCheckers = new LinkedList<>();
 
     // expressions
     private List<Class<? extends Expression>> expressionsWhitelist;
     private List<Class<? extends Expression>> expressionsBlacklist;
-    private final List<ExpressionChecker> expressionCheckers = new LinkedList<ExpressionChecker>();
+    private final List<ExpressionChecker> expressionCheckers = new LinkedList<>();
 
     // tokens from Types
     private List<Integer> tokensWhitelist;
@@ -303,14 +301,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         if (this.importsWhitelist == null) importsWhitelist = Collections.emptyList();
     }
 
-    /**
-     * Ensures that every star import ends with .* as this is the expected syntax in import checks.
-     */
     private static List<String> normalizeStarImports(List<String> starImports) {
-        List<String> result = new ArrayList<String>(starImports.size());
+        List<String> result = new ArrayList<>(starImports.size());
         for (String starImport : starImports) {
             if (starImport.endsWith(".*")) {
                 result.add(starImport);
+            } else if (starImport.endsWith("**")) {
+                result.add(starImport.replaceFirst("\\*+$", ""));
             } else if (starImport.endsWith(".")) {
                 result.add(starImport + "*");
             } else {
@@ -493,7 +490,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * @param constantTypesWhiteList a list of classes.
      */
     public void setConstantTypesClassesWhiteList(final List<Class> constantTypesWhiteList) {
-        List<String> values = new LinkedList<String>();
+        List<String> values = new LinkedList<>();
         for (Class aClass : constantTypesWhiteList) {
             values.add(aClass.getName());
         }
@@ -506,7 +503,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * @param constantTypesBlackList a list of classes.
      */
     public void setConstantTypesClassesBlackList(final List<Class> constantTypesBlackList) {
-        List<String> values = new LinkedList<String>();
+        List<String> values = new LinkedList<>();
         for (Class aClass : constantTypesBlackList) {
             values.add(aClass.getName());
         }
@@ -519,8 +516,8 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
     /**
      * Sets the list of classes which deny method calls.
-     * 
-     * Please note that since Groovy is a dynamic language, and 
+     *
+     * Please note that since Groovy is a dynamic language, and
      * this class performs a static type check, it will be reletively
      * simple to bypass any blacklist unless the receivers blacklist contains, at
      * a minimum, Object, Script, GroovyShell, and Eval. Additionally,
@@ -543,7 +540,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * @param receiversBlacklist a list of classes.
      */
     public void setReceiversClassesBlackList(final List<Class> receiversBlacklist) {
-        List<String> values = new LinkedList<String>();
+        List<String> values = new LinkedList<>();
         for (Class aClass : receiversBlacklist) {
             values.add(aClass.getName());
         }
@@ -572,7 +569,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * @param receiversWhitelist a list of classes.
      */
     public void setReceiversClassesWhiteList(final List<Class> receiversWhitelist) {
-        List<String> values = new LinkedList<String>();
+        List<String> values = new LinkedList<>();
         for (Class aClass : receiversWhitelist) {
             values.add(aClass.getName());
         }
@@ -581,7 +578,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
 
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-        final ModuleNode ast = source.getAST();
+        ModuleNode ast = source.getAST();
         if (!isPackageAllowed && ast.getPackage() != null) {
             throw new SecurityException("Package definitions are not allowed");
         }
@@ -590,12 +587,10 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         // verify imports
         if (importsBlacklist != null || importsWhitelist != null || starImportsBlacklist != null || starImportsWhitelist != null) {
             for (ImportNode importNode : ast.getImports()) {
-                final String className = importNode.getClassName();
-                assertImportIsAllowed(className);
+                assertImportIsAllowed(importNode.getClassName());
             }
             for (ImportNode importNode : ast.getStarImports()) {
-                final String className = importNode.getPackageName();
-                assertStarImportIsAllowed(className + "*");
+                assertStarImportIsAllowed(importNode.getPackageName() + "*");
             }
         }
 
@@ -611,7 +606,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
-        final GroovyCodeVisitor visitor = createGroovyCodeVisitor();
+        GroovyCodeVisitor visitor = createGroovyCodeVisitor();
         ast.getStatementBlock().visit(visitor);
         for (ClassNode clNode : ast.getClasses()) {
             if (clNode!=classNode) {
@@ -627,7 +622,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         List<MethodNode> methods = filterMethods(classNode);
         if (isMethodDefinitionAllowed) {
             for (MethodNode method : methods) {
-                if (method.getDeclaringClass()==classNode && method.getCode() != null) method.getCode().visit(visitor);
+                if (method.getDeclaringClass() == classNode && method.getCode() != null) {
+                    method.getCode().visit(visitor);
+                }
             }
         }
     }
@@ -643,7 +640,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     protected static List<MethodNode> filterMethods(ClassNode owner) {
-        List<MethodNode> result = new LinkedList<MethodNode>();
+        List<MethodNode> result = new LinkedList<>();
         List<MethodNode> methods = owner.getMethods();
         for (MethodNode method : methods) {
             if (method.getDeclaringClass() == owner && !method.isSynthetic()) {
@@ -655,36 +652,39 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     protected void assertStarImportIsAllowed(final String packageName) {
-        if (starImportsWhitelist != null && !starImportsWhitelist.contains(packageName)) {
+        if (starImportsWhitelist != null && !(starImportsWhitelist.contains(packageName)
+                || starImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith))) {
             throw new SecurityException("Importing [" + packageName + "] is not allowed");
         }
-        if (starImportsBlacklist != null && starImportsBlacklist.contains(packageName)) {
+        if (starImportsBlacklist != null && (starImportsBlacklist.contains(packageName)
+                || starImportsBlacklist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith))) {
             throw new SecurityException("Importing [" + packageName + "] is not allowed");
         }
     }
 
     protected void assertImportIsAllowed(final String className) {
-        if (importsWhitelist != null && !importsWhitelist.contains(className)) {
+        if (importsWhitelist != null || starImportsWhitelist != null) {
+            if (importsWhitelist != null && importsWhitelist.contains(className)) {
+                return;
+            }
             if (starImportsWhitelist != null) {
-                // we should now check if the import is in the star imports
-                ClassNode node = ClassHelper.make(className);
-                final String packageName = node.getPackageName();
-                if (!starImportsWhitelist.contains(packageName + ".*")) {
-                    throw new SecurityException("Importing [" + className + "] is not allowed");
+                String packageName = className.substring(0, className.lastIndexOf('.') + 1) + "*";
+                if (starImportsWhitelist.contains(packageName)
+                        || starImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
+                    return;
                 }
-            } else {
+            }
+            throw new SecurityException("Importing [" + className + "] is not allowed");
+        } else {
+            if (importsBlacklist != null && importsBlacklist.contains(className)) {
                 throw new SecurityException("Importing [" + className + "] is not allowed");
             }
-        }
-        if (importsBlacklist != null && importsBlacklist.contains(className)) {
-            throw new SecurityException("Importing [" + className + "] is not allowed");
-        }
-        // check that there's no star import blacklist
-        if (starImportsBlacklist != null) {
-            ClassNode node = ClassHelper.make(className);
-            final String packageName = node.getPackageName();
-            if (starImportsBlacklist.contains(packageName + ".*")) {
-                throw new SecurityException("Importing [" + className + "] is not allowed");
+            if (starImportsBlacklist != null) {
+                String packageName = className.substring(0, className.lastIndexOf('.') + 1) + "*";
+                if (starImportsBlacklist.contains(packageName) ||
+                        starImportsBlacklist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
+                    throw new SecurityException("Importing [" + className + "] is not allowed");
+                }
             }
         }
     }
