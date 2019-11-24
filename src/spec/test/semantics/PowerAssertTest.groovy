@@ -18,17 +18,21 @@
  */
 package semantics
 
-import asciidoctor.Utils
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class PowerAssertTest extends GroovyTestCase {
+import static asciidoctor.Utils.stripAsciidocMarkup
+import static groovy.test.GroovyAssert.shouldFail
+
+final class PowerAssertTest {
+
+    @Test
     void testPowerAssert() {
-        def msg = shouldFail {
+        def err = shouldFail {
             //tag::assert_code_1[]
             assert 1+1 == 3
             //end::assert_code_1[]
         }
-        assert msg == Utils.stripAsciidocMarkup('''
+        assert err.message == stripAsciidocMarkup('''
 //tag::assert_error_1[]
 assert 1+1 == 3
         |  |
@@ -37,8 +41,9 @@ assert 1+1 == 3
 ''')
     }
 
+    @Test
     void testPowerAssert2() {
-        def msg = shouldFail {
+        def err = shouldFail {
             //tag::assert_code_2[]
             def x = 2
             def y = 7
@@ -47,7 +52,7 @@ assert 1+1 == 3
             assert calc(x,y) == [x,z].sum()
             //end::assert_code_2[]
         }
-        assert msg == Utils.stripAsciidocMarkup('''
+        assert err.message == stripAsciidocMarkup('''
 //tag::assert_error_2[]
 assert calc(x,y) == [x,z].sum()
        |    | |  |   | |  |
@@ -57,8 +62,9 @@ assert calc(x,y) == [x,z].sum()
 ''')
     }
 
+    @Test
     void testCustomAssertMessage() {
-        def msg = shouldFail {
+        def err = shouldFail {
             //tag::assert_code_3[]
             def x = 2
             def y = 7
@@ -67,7 +73,7 @@ assert calc(x,y) == [x,z].sum()
             assert calc(x,y) == z*z : 'Incorrect computation result'
             //end::assert_code_3[]
         }
-        assert msg == Utils.stripAsciidocMarkup('''
+        assert err.message == stripAsciidocMarkup('''
 //tag::assert_error_3[]
 Incorrect computation result. Expression: (calc.call(x, y) == (z * z)). Values: z = 5, z = 5
 //end::assert_error_3[]
