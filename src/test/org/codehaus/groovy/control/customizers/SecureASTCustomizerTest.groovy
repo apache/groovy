@@ -203,7 +203,7 @@ class SecureASTCustomizerTest extends GroovyTestCase {
 
     void testDoubleStarImportWhiteList() {
         def shell = new GroovyShell(configuration)
-        customizer.doubleStarImportsWhitelist = ['java.util.**']
+        customizer.starImportsWhitelist = ['java.util.**']
         shell.evaluate("""
             import java.util.ArrayList
             new ArrayList()
@@ -223,6 +223,21 @@ class SecureASTCustomizerTest extends GroovyTestCase {
             shell.evaluate("""
             import java.math.BigDecimal
             new BigDecimal("35")
+        """)
+        }
+    }
+
+    void testDoubleStarImportTruncation() {
+        def shell = new GroovyShell(configuration)
+        customizer.starImportsWhitelist = ['java.**']
+        shell.evaluate("""
+            import java.util.ArrayList
+            new ArrayList()
+        """)
+
+        assert hasSecurityException {
+            shell.evaluate("""
+            import javax.swing.Action
         """)
         }
     }
@@ -250,8 +265,7 @@ class SecureASTCustomizerTest extends GroovyTestCase {
     void testDoubleStarImportWhiteListWithStarImportWhiteListWithImportWhiteList() {
         def shell = new GroovyShell(configuration)
         customizer.importsWhitelist = ['java.util.concurrent.atomic.AtomicInteger']
-        customizer.starImportsWhitelist = ['java.util.*']
-        customizer.doubleStarImportsWhitelist = ['java.math.**'];
+        customizer.starImportsWhitelist = ['java.util.*', 'java.math.**']
         shell.evaluate("""
             import java.util.ArrayList
             new ArrayList()
@@ -311,7 +325,7 @@ class SecureASTCustomizerTest extends GroovyTestCase {
 
     void testDoubleStarImportBlackList() {
         def shell = new GroovyShell(configuration)
-        customizer.doubleStarImportsBlacklist = ['java.util.**']
+        customizer.starImportsBlacklist = ['java.util.**']
         shell.evaluate("""
             import java.math.BigDecimal
             new BigDecimal("35")
@@ -327,8 +341,7 @@ class SecureASTCustomizerTest extends GroovyTestCase {
     void testDoubleStarImportBlackListWithImportBlackList() {
         def shell = new GroovyShell(configuration)
         customizer.importsBlacklist = ['java.util.concurrent.atomic.AtomicBoolean']
-        customizer.starImportsBlacklist = ['java.util.*']
-        customizer.doubleStarImportsBlacklist = ['java.util.concurrent.**']
+        customizer.starImportsBlacklist = ['java.util.*', 'java.util.concurrent.**']
         assert hasSecurityException {
             shell.evaluate("""
                  import java.util.ArrayList

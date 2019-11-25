@@ -201,15 +201,6 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     private List<String> staticStarImportsWhitelist;
     private List<String> staticStarImportsBlacklist;
 
-    // double star imports
-    private List<String> doubleStarImportsWhitelist;
-    private List<String> doubleStarImportsBlacklist;
-
-    // static double star imports
-    private List<String> staticDoubleStarImportsWhitelist;
-    private List<String> staticDoubleStarImportsBlacklist;
-
-
     // indirect import checks
     // if set to true, then security rules on imports will also be applied on classnodes.
     // Direct instantiation of classes without imports will therefore also fail if this option is enabled
@@ -270,7 +261,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     public void setImportsBlacklist(final List<String> importsBlacklist) {
-        if (importsWhitelist != null || starImportsWhitelist != null || doubleStarImportsWhitelist != null) {
+        if (importsWhitelist != null || starImportsWhitelist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
         this.importsBlacklist = importsBlacklist;
@@ -280,16 +271,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return importsWhitelist;
     }
 
-    void setImportsWhitelist(final List<String> importsWhitelist) {
-        if (importsBlacklist != null || starImportsBlacklist != null || doubleStarImportsBlacklist != null) {
+    public void setImportsWhitelist(final List<String> importsWhitelist) {
+        if (importsBlacklist != null || starImportsBlacklist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
         this.importsWhitelist = importsWhitelist;
         if (this.starImportsWhitelist == null) {
             starImportsWhitelist = Collections.emptyList();
-        }
-        if (this.doubleStarImportsWhitelist == null) {
-            this.doubleStarImportsWhitelist = Collections.emptyList();
         }
     }
 
@@ -298,16 +286,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     public void setStarImportsBlacklist(final List<String> starImportsBlacklist) {
-        if (importsWhitelist != null || starImportsWhitelist != null || doubleStarImportsWhitelist != null) {
+        if (importsWhitelist != null || starImportsWhitelist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
         this.starImportsBlacklist = normalizeStarImports(starImportsBlacklist);
-        if (this.importsBlacklist == null) {
-            importsBlacklist = Collections.emptyList();
-        }
-        if (this.doubleStarImportsBlacklist == null) {
-            doubleStarImportsBlacklist = Collections.emptyList();
-        }
+        if (this.importsBlacklist == null) importsBlacklist = Collections.emptyList();
     }
 
     public List<String> getStarImportsWhitelist() {
@@ -315,16 +298,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     public void setStarImportsWhitelist(final List<String> starImportsWhitelist) {
-        if (importsBlacklist != null || starImportsBlacklist != null || doubleStarImportsBlacklist != null) {
+        if (importsBlacklist != null || starImportsBlacklist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
         this.starImportsWhitelist = normalizeStarImports(starImportsWhitelist);
-        if (this.importsWhitelist == null) {
-            importsWhitelist = Collections.emptyList();
-        }
-        if (this.doubleStarImportsWhitelist == null) {
-            this.doubleStarImportsWhitelist = Collections.emptyList();
-        }
+        if (this.importsWhitelist == null) importsWhitelist = Collections.emptyList();
     }
 
     /**
@@ -333,7 +311,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     private static List<String> normalizeStarImports(List<String> starImports) {
         List<String> result = new ArrayList<String>(starImports.size());
         for (String starImport : starImports) {
-            if (starImport.endsWith(".*")) {
+            if (starImport.endsWith(".*") || starImport.endsWith(".**")) {
                 result.add(starImport);
             } else if (starImport.endsWith(".")) {
                 result.add(starImport + "*");
@@ -349,17 +327,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     public void setStaticImportsBlacklist(final List<String> staticImportsBlacklist) {
-        if (staticImportsWhitelist != null || staticStarImportsWhitelist != null || staticDoubleStarImportsWhitelist != null) {
+        if (staticImportsWhitelist != null || staticStarImportsWhitelist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
         this.staticImportsBlacklist = staticImportsBlacklist;
         if (this.staticStarImportsBlacklist == null) {
             staticStarImportsBlacklist = Collections.emptyList();
         }
-        if (this.staticDoubleStarImportsBlacklist == null) {
-            this.staticDoubleStarImportsBlacklist = Collections.emptyList();
-        }
-
     }
 
     public List<String> getStaticImportsWhitelist() {
@@ -367,17 +341,13 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     public void setStaticImportsWhitelist(final List<String> staticImportsWhitelist) {
-        if (staticImportsBlacklist != null || staticStarImportsBlacklist != null || staticDoubleStarImportsWhitelist != null) {
+        if (staticImportsBlacklist != null || staticStarImportsBlacklist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
         this.staticImportsWhitelist = staticImportsWhitelist;
         if (this.staticStarImportsWhitelist == null) {
             staticStarImportsWhitelist = Collections.emptyList();
         }
-        if (this.staticDoubleStarImportsWhitelist == null) {
-            this.staticDoubleStarImportsWhitelist = Collections.emptyList();
-        }
-
     }
 
     public List<String> getStaticStarImportsBlacklist() {
@@ -385,16 +355,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     public void setStaticStarImportsBlacklist(final List<String> staticStarImportsBlacklist) {
-        if (staticImportsWhitelist != null || staticStarImportsWhitelist != null || staticDoubleStarImportsWhitelist != null) {
+        if (staticImportsWhitelist != null || staticStarImportsWhitelist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
         this.staticStarImportsBlacklist = normalizeStarImports(staticStarImportsBlacklist);
-        if (this.staticImportsBlacklist == null) {
-            this.staticImportsBlacklist = Collections.emptyList();
-        }
-        if (this.staticDoubleStarImportsBlacklist == null) {
-            this.staticDoubleStarImportsBlacklist = Collections.emptyList();
-        }
+        if (this.staticImportsBlacklist == null) this.staticImportsBlacklist = Collections.emptyList();
     }
 
     public List<String> getStaticStarImportsWhitelist() {
@@ -402,16 +367,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     public void setStaticStarImportsWhitelist(final List<String> staticStarImportsWhitelist) {
-        if (staticImportsBlacklist != null || staticStarImportsBlacklist != null || staticDoubleStarImportsBlacklist != null) {
+        if (staticImportsBlacklist != null || staticStarImportsBlacklist != null) {
             throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
         }
         this.staticStarImportsWhitelist = normalizeStarImports(staticStarImportsWhitelist);
-        if (this.staticImportsWhitelist == null) {
-            this.staticImportsWhitelist = Collections.emptyList();
-        }
-        if (this.staticDoubleStarImportsWhitelist == null) {
-            this.staticDoubleStarImportsWhitelist = Collections.emptyList();
-        }
+        if (this.staticImportsWhitelist == null) this.staticImportsWhitelist = Collections.emptyList();
     }
 
     public List<Class<? extends Expression>> getExpressionsBlacklist() {
@@ -636,8 +596,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         checkMethodDefinitionAllowed(classNode);
 
         // verify imports
-        if (importsBlacklist != null || importsWhitelist != null || starImportsBlacklist != null || starImportsWhitelist != null
-            || doubleStarImportsWhitelist != null || doubleStarImportsBlacklist != null) {
+        if (importsBlacklist != null || importsWhitelist != null || starImportsBlacklist != null || starImportsWhitelist != null) {
             for (ImportNode importNode : ast.getImports()) {
                 final String className = importNode.getClassName();
                 assertImportIsAllowed(className);
@@ -649,8 +608,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
 
         // verify static imports
-        if (staticImportsBlacklist != null || staticImportsWhitelist != null || staticStarImportsBlacklist != null || staticStarImportsWhitelist != null
-            || staticDoubleStarImportsBlacklist != null || staticDoubleStarImportsWhitelist != null) {
+        if (staticImportsBlacklist != null || staticImportsWhitelist != null || staticStarImportsBlacklist != null || staticStarImportsWhitelist != null) {
             for (Map.Entry<String, ImportNode> entry : ast.getStaticImports().entrySet()) {
                 final String className = entry.getValue().getClassName();
                 assertStaticImportIsAllowed(entry.getKey(), className);
@@ -705,64 +663,47 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     protected void assertStarImportIsAllowed(final String packageName) {
-        if (starImportsWhitelist != null) {
-            if (!starImportsWhitelist.contains(packageName)) {
-                assertPackageInDoubleStarWhitelist(packageName, packageName);
-            }
-        } else {
-            assertPackageInDoubleStarWhitelist(packageName, packageName);
-        }
-
-        if (starImportsBlacklist != null && starImportsBlacklist.contains(packageName)) {
+        if (starImportsWhitelist != null && !starImportsContains(starImportsWhitelist, packageName)) {
             throw new SecurityException("Importing [" + packageName + "] is not allowed");
         }
-        if (doubleStarImportsBlacklist != null && doubleStarListContains(doubleStarImportsBlacklist, packageName)) {
+
+        if (starImportsBlacklist != null && starImportsContains(starImportsBlacklist, packageName)) {
             throw new SecurityException("Importing [" + packageName + "] is not allowed");
         }
     }
 
+    protected boolean starImportsContains(List<String> starImports, final String packageName) {
+        if (starImports.contains(packageName)) {
+            return true;
+        }
+        return starImports.stream().
+            anyMatch(starImport -> starImport.endsWith(".**") && packageName.substring(0, packageName.length() -1).startsWith(starImport.substring(0, starImport.length() - 2)));
+    }
+
     protected void assertImportIsAllowed(final String className) {
         if (importsWhitelist != null && !importsWhitelist.contains(className)) {
-            // we should now check if the import is in the star imports
-            ClassNode node = ClassHelper.make(className);
-            final String packageName = node.getPackageName();
             if (starImportsWhitelist != null) {
-                if (!starImportsWhitelist.contains(packageName + ".*")) {
-                    assertPackageInDoubleStarWhitelist(className, packageName);
+                // we should now check if the import is in the star imports
+                ClassNode node = ClassHelper.make(className);
+                final String packageName = node.getPackageName();
+                if (!starImportsContains(starImportsWhitelist, packageName + ".*")) {
+                    throw new SecurityException("Importing [" + className + "] is not allowed");
                 }
             } else {
-                assertPackageInDoubleStarWhitelist(className, packageName);
+                throw new SecurityException("Importing [" + className + "] is not allowed");
             }
         }
         if (importsBlacklist != null && importsBlacklist.contains(className)) {
             throw new SecurityException("Importing [" + className + "] is not allowed");
         }
         // check that there's no star import blacklist
-        ClassNode node = ClassHelper.make(className);
-        final String packageName = node.getPackageName();
         if (starImportsBlacklist != null) {
-            if (starImportsBlacklist.contains(packageName + ".*")) {
+            ClassNode node = ClassHelper.make(className);
+            final String packageName = node.getPackageName();
+            if (starImportsContains(starImportsBlacklist, packageName + ".*")) {
                 throw new SecurityException("Importing [" + className + "] is not allowed");
             }
         }
-        if (doubleStarImportsBlacklist != null) {
-            if (doubleStarListContains(doubleStarImportsBlacklist, packageName)) {
-                throw new SecurityException("Importing [" + className + "] is not allowed");
-            }
-        }
-    }
-
-    private void assertPackageInDoubleStarWhitelist(String className, String packageName) {
-        if (doubleStarImportsWhitelist == null || !doubleStarListContains(doubleStarImportsWhitelist, packageName)) {
-            throw new SecurityException("Importing [" + className + "] is not allowed");
-        }
-    }
-
-    private boolean doubleStarListContains(List<String> doubleStarList, String packageName) {
-        for (String doubleStar : doubleStarList) {
-            if (packageName.startsWith(doubleStar)) return true;
-        }
-        return false;
     }
 
     protected void assertStaticImportIsAllowed(final String member, final String className) {
@@ -770,117 +711,19 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         if (staticImportsWhitelist != null && !staticImportsWhitelist.contains(fqn)) {
             if (staticStarImportsWhitelist != null) {
                 // we should now check if the import is in the star imports
-                if (!staticStarImportsWhitelist.contains(className + ".*")) {
-                    assertStaticDoubleStarWhitelistContains(className, fqn);
+                if (!starImportsContains(staticStarImportsWhitelist, className + ".*")) {
+                    throw new SecurityException("Importing [" + fqn + "] is not allowed");
                 }
             } else {
-                assertStaticDoubleStarWhitelistContains(className, fqn);
+                throw new SecurityException("Importing [" + fqn + "] is not allowed");
             }
         }
         if (staticImportsBlacklist != null && staticImportsBlacklist.contains(fqn)) {
             throw new SecurityException("Importing [" + fqn + "] is not allowed");
         }
         // check that there's no star import blacklist
-        if (staticStarImportsBlacklist != null) {
-            if (staticStarImportsBlacklist.contains(className + ".*")) {
-                throw new SecurityException("Importing [" + fqn + "] is not allowed");
-            }
-        }
-        if (staticDoubleStarImportsBlacklist != null) {
-            if (doubleStarListContains(staticDoubleStarImportsBlacklist, className)) {
-                throw new SecurityException("Importing [" + fqn + "] is not allowed");
-            }
-        }
-    }
-
-    private void assertStaticDoubleStarWhitelistContains(String className, String fqn) {
-        if (staticDoubleStarImportsWhitelist != null && !doubleStarListContains(staticDoubleStarImportsWhitelist, className)) {
+        if (staticStarImportsBlacklist != null && starImportsContains(staticStarImportsBlacklist, className + ".*")) {
             throw new SecurityException("Importing [" + fqn + "] is not allowed");
-        }
-    }
-
-    public List<String> getDoubleStarImportsWhitelist() {
-        return doubleStarImportsWhitelist;
-    }
-
-    public void setDoubleStarImportsWhitelist(List<String> doubleStarImportsWhitelist) {
-        if (staticImportsBlacklist != null || staticStarImportsBlacklist != null || staticDoubleStarImportsBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
-        }
-
-        this.doubleStarImportsWhitelist = removeDoubleStars(doubleStarImportsWhitelist);
-        if (this.importsWhitelist == null) {
-            this.importsWhitelist = Collections.emptyList();
-        }
-        if (this.starImportsWhitelist == null) {
-            this.starImportsWhitelist = Collections.emptyList();
-        }
-    }
-
-    private List<String> removeDoubleStars(List<String> doubleStarImports) {
-        ArrayList<String> removedDoubleStars = new ArrayList<>();
-        for (String doubleStarImport : doubleStarImports) {
-            if (doubleStarImport.endsWith(".**")) {
-                removedDoubleStars.add(doubleStarImport.substring(0, doubleStarImport.length() - 3));
-            } else if (doubleStarImport.endsWith(".*")) {
-                removedDoubleStars.add(doubleStarImport.substring(0, doubleStarImport.length() - 2));
-            } else if (doubleStarImport.endsWith(".")) {
-                removedDoubleStars.add(doubleStarImport.substring(0, doubleStarImport.length() - 1));
-            } else {
-                removedDoubleStars.add(doubleStarImport);
-            }
-        }
-        return removedDoubleStars;
-    }
-
-    public List<String> getDoubleStarImportsBlacklist() {
-        return doubleStarImportsBlacklist;
-    }
-
-    public void setDoubleStarImportsBlacklist(List<String> doubleStarImportsBlacklist) {
-        if (staticImportsWhitelist != null || staticStarImportsWhitelist != null || staticDoubleStarImportsWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
-        }
-        this.doubleStarImportsBlacklist = removeDoubleStars(doubleStarImportsBlacklist);
-        if (this.importsBlacklist == null) {
-            this.importsBlacklist = Collections.emptyList();
-        }
-        if (this.starImportsBlacklist == null) {
-            this.starImportsBlacklist = Collections.emptyList();
-        }
-    }
-
-    public List<String> getStaticDoubleStarImportsWhitelist() {
-        return staticDoubleStarImportsWhitelist;
-    }
-
-    public void setStaticDoubleStarImportsWhitelist(List<String> staticDoubleStarImportsWhitelist) {
-        if (staticImportsBlacklist != null || staticStarImportsBlacklist != null || staticDoubleStarImportsBlacklist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
-        }
-        this.staticDoubleStarImportsWhitelist = removeDoubleStars(staticDoubleStarImportsWhitelist);
-        if (this.staticStarImportsWhitelist == null) {
-            this.staticStarImportsWhitelist = Collections.emptyList();
-        }
-        if (this.staticImportsWhitelist == null) {
-            this.staticImportsWhitelist = Collections.emptyList();
-        }
-    }
-
-    public List<String> getStaticDoubleStarImportsBlacklist() {
-        return staticDoubleStarImportsBlacklist;
-    }
-
-    public void setStaticDoubleStarImportsBlacklist(List<String> staticDoubleStarImportsBlacklist) {
-        if (staticImportsWhitelist != null || staticStarImportsWhitelist != null || staticDoubleStarImportsWhitelist != null) {
-            throw new IllegalArgumentException("You are not allowed to set both whitelist and blacklist");
-        }
-        this.staticDoubleStarImportsBlacklist = removeDoubleStars(staticDoubleStarImportsBlacklist);
-        if (this.staticStarImportsBlacklist == null) {
-            this.staticStarImportsBlacklist = Collections.emptyList();
-        }
-        if (this.staticImportsBlacklist == null) {
-            this.staticImportsBlacklist = Collections.emptyList();
         }
     }
 
