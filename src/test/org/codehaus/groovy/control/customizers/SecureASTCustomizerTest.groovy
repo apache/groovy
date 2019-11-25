@@ -443,9 +443,9 @@ final class SecureASTCustomizerTest {
             ''')
         }
         shell.evaluate('''
-                import static java.util.Collections.*
-                sort([5,4,2])
-            ''')
+            import static java.util.Collections.*
+            sort([5,4,2])
+        ''')
     }
 
     @Test
