@@ -18,7 +18,6 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
 import org.junit.Test
 
@@ -27,7 +26,7 @@ import static groovy.test.GroovyAssert.assertScript
 @CompileStatic
 final class Groovy8762 {
 
-    @Test @NotYetImplemented
+    @Test
     void testExplicitThisObjectExpressionInInnerClassConstructor() {
         assertScript '''
             class Outer {
@@ -40,23 +39,15 @@ final class Groovy8762 {
                         this.y = i // NPE at groovy.bugs.Outer$Inner.<init>
                     }
 
+                    def doCall(... args) {
+                        return 42
+                    }
+
                     int getMaximumNumberOfParameters() {
                         throw new UnsupportedOperationException()
                     }
 
                     Class<?>[] getParameterTypes() {
-                        throw new UnsupportedOperationException()
-                    }
-
-                    Object call(Object... args) {
-                        throw new UnsupportedOperationException()
-                    }
-
-                    Object call(Object arguments) {
-                        throw new UnsupportedOperationException()
-                    }
-
-                    Object call() {
                         throw new UnsupportedOperationException()
                     }
                 }
@@ -66,7 +57,8 @@ final class Groovy8762 {
                 }
             }
 
-            assert new Outer().makeCallable()
+            def callback = new Outer().makeCallable()
+            assert callback() == 42
         '''
     }
 }
