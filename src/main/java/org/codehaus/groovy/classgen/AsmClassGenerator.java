@@ -1147,36 +1147,41 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     public void visitAttributeExpression(AttributeExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
-        ClassNode classNode = controller.getClassNode();
+        OperandStack operandStack = controller.getOperandStack();
+        int mark = operandStack.getStackLength() - 1;
+        boolean visited = false;
+
         // TODO: checking for isThisOrSuper is enough for AttributeExpression, but if this is moved into
         // visitAttributeOrProperty to handle attributes and properties equally, then the extended check should be done
         if (isThisOrSuper(objectExpression)) {
             // let's use the field expression if it's available
             String name = expression.getPropertyAsString();
             if (name != null) {
+                ClassNode classNode = controller.getClassNode();
                 FieldNode field = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
                 if (field != null) {
                     FieldExpression fldExp = new FieldExpression(field);
                     fldExp.setSourcePosition(expression.getProperty());
                     visitFieldExpression(fldExp);
-                    return;
+                    visited = true;
                 }
             }
         }
 
-        MethodCallerMultiAdapter adapter;
-        OperandStack operandStack = controller.getOperandStack();
-        int mark = operandStack.getStackLength() - 1;
-        if (controller.getCompileStack().isLHS()) {
-            adapter = setField;
-            if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
-            if (usesSuper(expression)) adapter = setFieldOnSuper;
-        } else {
-            adapter = getField;
-            if (isGroovyObject(objectExpression)) adapter = getGroovyObjectField;
-            if (usesSuper(expression)) adapter = getFieldOnSuper;
+        if (!visited) {
+            MethodCallerMultiAdapter adapter;
+            if (controller.getCompileStack().isLHS()) {
+                adapter = setField;
+                if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
+                if (usesSuper(expression)) adapter = setFieldOnSuper;
+            } else {
+                adapter = getField;
+                if (isGroovyObject(objectExpression)) adapter = getGroovyObjectField;
+                if (usesSuper(expression)) adapter = getFieldOnSuper;
+            }
+            visitAttributeOrProperty(expression, adapter);
         }
-        visitAttributeOrProperty(expression, adapter);
+
         if (controller.getCompileStack().isLHS()) {
             operandStack.remove(operandStack.getStackLength() - mark);
         } else {
@@ -1209,9 +1214,6 @@ public class AsmClassGenerator extends ClassGenerator {
             } else {
                 loadInstanceField(expression);
             }
-        }
-        if (!controller.getCompileStack().isLHS()) {
-            controller.getAssertionWriter().record(expression);
         }
     }
 
