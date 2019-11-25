@@ -18,43 +18,28 @@
  */
 package org.codehaus.groovy.syntax;
 
-import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
-import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
-import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
-import static org.codehaus.groovy.syntax.Types.BITWISE_OR_EQUAL;
-import static org.codehaus.groovy.syntax.Types.BITWISE_XOR;
-import static org.codehaus.groovy.syntax.Types.BITWISE_XOR_EQUAL;
-import static org.codehaus.groovy.syntax.Types.DIVIDE;
-import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
-import static org.codehaus.groovy.syntax.Types.INTDIV;
-import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
-import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT;
-import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT_EQUAL;
-import static org.codehaus.groovy.syntax.Types.LOGICAL_AND;
-import static org.codehaus.groovy.syntax.Types.LOGICAL_AND_EQUAL;
-import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
-import static org.codehaus.groovy.syntax.Types.LOGICAL_OR_EQUAL;
-import static org.codehaus.groovy.syntax.Types.MINUS;
-import static org.codehaus.groovy.syntax.Types.MINUS_EQUAL;
-import static org.codehaus.groovy.syntax.Types.MOD;
-import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
-import static org.codehaus.groovy.syntax.Types.MULTIPLY;
-import static org.codehaus.groovy.syntax.Types.MULTIPLY_EQUAL;
-import static org.codehaus.groovy.syntax.Types.PLUS;
-import static org.codehaus.groovy.syntax.Types.PLUS_EQUAL;
-import static org.codehaus.groovy.syntax.Types.POWER;
-import static org.codehaus.groovy.syntax.Types.POWER_EQUAL;
-import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
-import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
-import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
-import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
+import java.util.Optional;
 
 /**
  * Utility methods for working with Tokens.
- *
  */
 public class TokenUtil {
+
     private TokenUtil() {
+    }
+
+    public static Optional<Token> asAssignment(int op) {
+        switch (op) {
+            case Types.PLUS_PLUS:
+            case Types.PREFIX_PLUS_PLUS:
+            case Types.POSTFIX_PLUS_PLUS:
+                return Optional.of(Token.newSymbol(Types.PLUS_EQUAL, -1, -1));
+            case Types.MINUS_MINUS:
+            case Types.PREFIX_MINUS_MINUS:
+            case Types.POSTFIX_MINUS_MINUS:
+                return Optional.of(Token.newSymbol(Types.MINUS_EQUAL, -1, -1));
+        }
+        return Optional.empty();
     }
 
     /**
@@ -67,21 +52,21 @@ public class TokenUtil {
      */
     public static int removeAssignment(int op) {
         switch (op) {
-            case PLUS_EQUAL: return PLUS;
-            case MINUS_EQUAL: return MINUS;
-            case MULTIPLY_EQUAL: return MULTIPLY;
-            case LEFT_SHIFT_EQUAL: return LEFT_SHIFT;
-            case RIGHT_SHIFT_EQUAL: return RIGHT_SHIFT;
-            case RIGHT_SHIFT_UNSIGNED_EQUAL: return RIGHT_SHIFT_UNSIGNED;
-            case LOGICAL_OR_EQUAL: return LOGICAL_OR;
-            case LOGICAL_AND_EQUAL: return LOGICAL_AND;
-            case MOD_EQUAL: return MOD;
-            case DIVIDE_EQUAL: return DIVIDE;
-            case INTDIV_EQUAL: return INTDIV;
-            case POWER_EQUAL: return POWER;
-            case BITWISE_OR_EQUAL: return BITWISE_OR;
-            case BITWISE_AND_EQUAL: return BITWISE_AND;
-            case BITWISE_XOR_EQUAL: return BITWISE_XOR;
+            case Types.PLUS_EQUAL: return Types.PLUS;
+            case Types.MINUS_EQUAL: return Types.MINUS;
+            case Types.MULTIPLY_EQUAL: return Types.MULTIPLY;
+            case Types.LEFT_SHIFT_EQUAL: return Types.LEFT_SHIFT;
+            case Types.RIGHT_SHIFT_EQUAL: return Types.RIGHT_SHIFT;
+            case Types.RIGHT_SHIFT_UNSIGNED_EQUAL: return Types.RIGHT_SHIFT_UNSIGNED;
+            case Types.LOGICAL_OR_EQUAL: return Types.LOGICAL_OR;
+            case Types.LOGICAL_AND_EQUAL: return Types.LOGICAL_AND;
+            case Types.MOD_EQUAL: return Types.MOD;
+            case Types.DIVIDE_EQUAL: return Types.DIVIDE;
+            case Types.INTDIV_EQUAL: return Types.INTDIV;
+            case Types.POWER_EQUAL: return Types.POWER;
+            case Types.BITWISE_OR_EQUAL: return Types.BITWISE_OR;
+            case Types.BITWISE_AND_EQUAL: return Types.BITWISE_AND;
+            case Types.BITWISE_XOR_EQUAL: return Types.BITWISE_XOR;
             default: return op;
         }
     }

@@ -28,19 +28,19 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.stream.IntStream;
 
 
 public final class CallSiteArray {
-    public final CallSite[] array;
     public static final Object[] NOPARAM = new Object[0];
+    public final CallSite[] array;
     public final Class owner;
 
-    public CallSiteArray(Class owner, String [] names) {
+    public CallSiteArray(Class owner, final String[] names) {
         this.owner = owner;
-        array = new CallSite[names.length];
-        for (int i = 0; i < array.length; i++) {
-            array[i] = new AbstractCallSite(this, i, names[i]);
-        }
+        this.array = IntStream.range(0, names.length)
+                        .mapToObj(i -> new AbstractCallSite(this, i, names[i]))
+                        .toArray(CallSite[]::new);
     }
 
     public static Object defaultCall(CallSite callSite, Object receiver, Object[] args) throws Throwable {
@@ -60,7 +60,6 @@ public final class CallSiteArray {
     }
 
     private static CallSite createCallStaticSite(CallSite callSite, final Class receiver, Object[] args) {
-        CallSite site;
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             try {
                 Class.forName(receiver.getName(), true, receiver.getClassLoader());
@@ -70,25 +69,21 @@ public final class CallSiteArray {
             return null;
         });
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
-        if (metaClass instanceof MetaClassImpl) {
-            site = ((MetaClassImpl)metaClass).createStaticSite(callSite, args);
-        }
-        else
-          site = new StaticMetaClassSite(callSite, metaClass);
+        CallSite site =
+                metaClass instanceof MetaClassImpl
+                        ? ((MetaClassImpl) metaClass).createStaticSite(callSite, args)
+                        : new StaticMetaClassSite(callSite, metaClass);
 
         replaceCallSite(callSite, site);
         return site;
     }
 
     private static CallSite createCallConstructorSite(CallSite callSite, Class receiver, Object[] args) {
-       MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
-
-       CallSite site;
-       if (metaClass instanceof MetaClassImpl) {
-           site = ((MetaClassImpl)metaClass).createConstructorSite(callSite, args);
-       }
-       else
-         site = new MetaClassConstructorSite(callSite, metaClass);
+        MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
+        CallSite site =
+                metaClass instanceof MetaClassImpl
+                        ? ((MetaClassImpl) metaClass).createConstructorSite(callSite, args)
+                        : new MetaClassConstructorSite(callSite, metaClass);
 
         replaceCallSite(callSite, site);
         return site;
@@ -96,19 +91,18 @@ public final class CallSiteArray {
 
     private static CallSite createCallCurrentSite(CallSite callSite, GroovyObject receiver, Object[] args, Class sender) {
         CallSite site;
-        if (receiver instanceof GroovyInterceptable)
-          site = new PogoInterceptableSite(callSite);
-        else {
+        if (receiver instanceof GroovyInterceptable) {
+            site = new PogoInterceptableSite(callSite);
+        } else {
             MetaClass metaClass = receiver.getMetaClass();
-            if (receiver.getClass() != metaClass.getTheClass() && !metaClass.getTheClass().isInterface()) {
+            Class theClass = metaClass.getTheClass();
+            if (receiver.getClass() != theClass && !theClass.isInterface()) {
                 site = new PogoInterceptableSite(callSite);
+            } else if (metaClass instanceof MetaClassImpl) {
+                site = ((MetaClassImpl) metaClass).createPogoCallCurrentSite(callSite, sender, args);
+            } else {
+                site = new PogoMetaClassSite(callSite, metaClass);
             }
-            else
-                if (metaClass instanceof MetaClassImpl) {
-                    site = ((MetaClassImpl)metaClass).createPogoCallCurrentSite(callSite, sender, args);
-                }
-                else
-                  site = new PogoMetaClassSite(callSite, metaClass);
         }
 
         replaceCallSite(callSite, site);
@@ -131,15 +125,17 @@ public final class CallSiteArray {
         }
 
         ClassInfo info = ClassInfo.getClassInfo(klazz);
-        if (info.hasPerInstanceMetaClasses())
-          return new PerInstancePojoMetaClassSite(callSite, info);
-        else
-          return new PojoMetaClassSite(callSite, metaClass);
+        if (info.hasPerInstanceMetaClasses()) {
+            return new PerInstancePojoMetaClassSite(callSite, info);
+        } else {
+            return new PojoMetaClassSite(callSite, metaClass);
+        }
     }
 
     private static CallSite createPogoSite(CallSite callSite, Object receiver, Object[] args) {
-        if (receiver instanceof GroovyInterceptable)
-          return new PogoInterceptableSite(callSite);
+        if (receiver instanceof GroovyInterceptable) {
+            return new PogoInterceptableSite(callSite);
+        }
 
         MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
 
@@ -151,13 +147,14 @@ public final class CallSiteArray {
     }
 
     private static CallSite createCallSite(CallSite callSite, Object receiver, Object[] args) {
-        CallSite site;
-        if (receiver == null)
-          return new NullCallSite(callSite);
+        if (receiver == null) {
+            return new NullCallSite(callSite);
+        }
 
-        if (receiver instanceof Class)
-          site = createCallStaticSite(callSite, (Class) receiver, args);
-        else if (receiver instanceof GroovyObject) {
+        CallSite site;
+        if (receiver instanceof Class) {
+            site = createCallStaticSite(callSite, (Class) receiver, args);
+        } else if (receiver instanceof GroovyObject) {
             site = createPogoSite(callSite, receiver, args);
         } else {
             site = createPojoSite(callSite, receiver, args);
@@ -168,6 +165,6 @@ public final class CallSiteArray {
     }
 
     private static void replaceCallSite(CallSite oldSite, CallSite newSite) {
-        oldSite.getArray().array [oldSite.getIndex()] = newSite;
+        oldSite.getArray().array[oldSite.getIndex()] = newSite;
     }
 }

@@ -266,35 +266,42 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public Object getProperty(final String property) {
         if ("delegate".equals(property)) {
             return getDelegate();
-        } else if ("owner".equals(property)) {
+        }
+        if ("owner".equals(property)) {
             return getOwner();
-        } else if ("maximumNumberOfParameters".equals(property)) {
+        }
+        if ("maximumNumberOfParameters".equals(property)) {
             return getMaximumNumberOfParameters();
-        } else if ("parameterTypes".equals(property)) {
+        }
+        if ("parameterTypes".equals(property)) {
             return getParameterTypes();
-        } else if ("metaClass".equals(property)) {
+        }
+        if ("metaClass".equals(property)) {
             return getMetaClass();
-        } else if ("class".equals(property)) {
+        }
+        if ("class".equals(property)) {
             return getClass();
-        } else if ("directive".equals(property)) {
+        }
+        if ("directive".equals(property)) {
             return getDirective();
-        } else if ("resolveStrategy".equals(property)) {
+        }
+        if ("resolveStrategy".equals(property)) {
             return getResolveStrategy();
-        } else if ("thisObject".equals(property)) {
+        }
+        if ("thisObject".equals(property)) {
             return getThisObject();
-        } else {
-            switch(resolveStrategy) {
-                case DELEGATE_FIRST:
-                    return getPropertyDelegateFirst(property);
-                case DELEGATE_ONLY:
-                    return InvokerHelper.getProperty(this.delegate, property);
-                case OWNER_ONLY:
-                    return InvokerHelper.getProperty(this.owner, property);
-                case TO_SELF:
-                    return super.getProperty(property);
-                default:
-                    return getPropertyOwnerFirst(property);
-            }
+        }
+        switch(resolveStrategy) {
+            case DELEGATE_FIRST:
+                return getPropertyDelegateFirst(property);
+            case DELEGATE_ONLY:
+                return InvokerHelper.getProperty(this.delegate, property);
+            case OWNER_ONLY:
+                return InvokerHelper.getProperty(this.owner, property);
+            case TO_SELF:
+                return super.getProperty(property);
+            default:
+                return getPropertyOwnerFirst(property);
         }
     }
 
@@ -913,13 +920,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         public Object invokeMethod(String method, Object arguments) {
             if ("clone".equals(method)) {
                 return clone();
-            } else if ("curry".equals(method)) {
-                return curry((Object[]) arguments);
-            } else if ("asWritable".equals(method)) {
-                return asWritable();
-            } else {
-                return Closure.this.invokeMethod(method, arguments);
             }
+            if ("curry".equals(method)) {
+                return curry((Object[]) arguments);
+            }
+            if ("asWritable".equals(method)) {
+                return asWritable();
+            }
+            return Closure.this.invokeMethod(method, arguments);
         }
 
         /* (non-Javadoc)

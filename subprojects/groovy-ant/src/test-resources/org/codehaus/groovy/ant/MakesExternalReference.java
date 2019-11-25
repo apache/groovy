@@ -16,21 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+package org.codehaus.groovy.ant;
 
-ext {
-    jacksonVersion = '2.10.1'
-}
+import java.io.*;
 
-dependencies {
-    implementation rootProject
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
-    compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    testRuntime "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
-    implementation project(':groovy-json')
-    testImplementation project(':groovy-test')
-    testRuntime project(':groovy-ant') // for JavadocAssertionTests
-}
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-eclipse.classpath.file.whenMerged {
-    entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
+public class MakesExternalReference {
+    public static void main(String[] args) throws IOException {
+        FileOutputStream fout = new FileOutputStream(
+            new File("target/classes/groovy/test/org/codehaus/groovy/ant/MakesExternalReference_Result.txt"));
+        try {
+            assert !isEmpty(" ");
+            fout.write("OK.".getBytes());
+        } finally {
+            try {
+                fout.close();
+            } catch (IOException ignore) {
+            }
+        }
+    }
 }

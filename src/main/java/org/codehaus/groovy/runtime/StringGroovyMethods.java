@@ -78,16 +78,15 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * A string is coerced to false if it is of length 0,
      * and to true otherwise.
      *
-     * @param string the character sequence
+     * @param chars the character sequence
      * @return the boolean value
      * @since 1.7.0
      */
-    public static boolean asBoolean(CharSequence string) {
-        if (null == string) {
-            return false;
+    public static boolean asBoolean(CharSequence chars) {
+        if (chars != null) {
+            return chars.length() > 0;
         }
-
-        return string.length() > 0;
+        return false;
     }
 
     /**
@@ -98,12 +97,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Matcher matcher) {
-        if (null == matcher) {
-            return false;
+        if (matcher != null) {
+            RegexSupport.setLastMatcher(matcher);
+            return matcher.find(0); //GROOVY-8855
         }
-
-        RegexSupport.setLastMatcher(matcher);
-        return matcher.find();
+        return false;
     }
 
     /**
@@ -917,8 +915,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         if (matcher.find()) {
             if (hasGroup(matcher)) {
                 int count = matcher.groupCount();
-                List groups = new ArrayList(count);
-                for (int i = 0; i <= count; i++) {
+                List<String> groups = new ArrayList<>(count);
+                for (int i = 0; i <= count; i += 1) {
                     groups.add(matcher.group(i));
                 }
                 return InvokerHelper.toString(closure.call(groups));
@@ -1354,7 +1352,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         int counter = 0;
         matcher.reset();
         while (matcher.find()) {
-            counter++;
+            counter += 1;
         }
         return counter;
     }
@@ -1596,7 +1594,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.regex.Matcher#group()
      * @since 1.0
      */
-    public static Iterator iterator(final Matcher matcher) {
+    public static Iterator iterator(Matcher matcher) {
         matcher.reset();
         return new Iterator() {
             private boolean found /* = false */;
@@ -1627,7 +1625,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                     // are we using groups?
                     // yes, so return the specified group as list
                     List<String> list = new ArrayList<String>(matcher.groupCount());
-                    for (int i = 0; i <= matcher.groupCount(); i++) {
+                    for (int i = 0; i <= matcher.groupCount(); i += 1) {
                         list.add(matcher.group(i));
                     }
                     return list;
@@ -2464,13 +2462,13 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             matcher.reset();
         } else if (idx > 0) {
             matcher.reset();
-            for (int i = 0; i < idx; i++) {
+            for (int i = 0; i < idx; i += 1) {
                 matcher.find();
             }
         } else if (idx < 0) {
             matcher.reset();
             idx += getCount(matcher);
-            for (int i = 0; i < idx; i++) {
+            for (int i = 0; i < idx; i += 1) {
                 matcher.find();
             }
         }

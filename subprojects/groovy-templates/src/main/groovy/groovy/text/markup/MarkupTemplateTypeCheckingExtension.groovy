@@ -31,16 +31,16 @@ import org.codehaus.groovy.ast.expr.ArrayExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.EmptyStatement
-import org.codehaus.groovy.ast.tools.Antlr4Utils
-import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
+import org.codehaus.groovy.control.ParserPlugin
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
@@ -173,29 +173,23 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
 
     @CompileStatic
     private static ClassNode buildNodeFromString(String option, TypeCheckingContext ctx) {
-        ClassNode parsedNode = Antlr4Utils.parse(option, CompilerConfiguration.DEFAULT)
-        ClassNode dummyClass = new ClassNode("dummy", 0, OBJECT_TYPE)
-        dummyClass.setModule(new ModuleNode(ctx.source))
-        MethodNode dummyMN = new MethodNode(
-                "dummy",
-                0,
-                parsedNode,
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                EmptyStatement.INSTANCE
-        )
-        dummyClass.addMethod(dummyMN)
+        ModuleNode moduleNode = ParserPlugin.buildAST("$option dummy;", ctx.compilationUnit.configuration, ctx.compilationUnit.classLoader, ctx.errorCollector)
+        ClassNode optionNode = ((DeclarationExpression) ((ExpressionStatement) moduleNode.statementBlock.statements[0]).expression).leftExpression.type
+        ClassNode dummyClass = new ClassNode('dummy', 0, OBJECT_TYPE)
+        dummyClass.module = new ModuleNode(ctx.source)
+        MethodNode dummyMethod = new MethodNode('dummy', 0, optionNode, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE)
+        dummyClass.addMethod(dummyMethod)
         ResolveVisitor visitor = new ResolveVisitor(ctx.compilationUnit) {
             @Override
             void addError(final String msg, final ASTNode expr) {
-                ctx.errorCollector.addErrorAndContinue(new SyntaxErrorMessage(
+                ctx.errorCollector.addErrorAndContinue(
                         new SyntaxException(msg + '\n', expr.lineNumber, expr.columnNumber, expr.lastLineNumber, expr.lastColumnNumber),
-                        ctx.source)
+                        ctx.source
                 )
             }
         }
         visitor.startResolving(dummyClass, ctx.source)
-        return dummyMN.returnType
+        return dummyMethod.returnType
     }
 
     private static class BuilderMethodReplacer extends ClassCodeExpressionTransformer {

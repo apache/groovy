@@ -16,21 +16,36 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.vm8
+package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
+import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.Test
 
-class Groovy8579Bug extends GroovyTestCase {
-    void testCallToStaticInterfaceMethod() {
-        assertScript '''
-            import groovy.transform.CompileStatic
+import static groovy.test.GroovyAssert.assertScript
 
-            @CompileStatic
-            Comparator myMethod() {
-                Map.Entry.comparingByKey()
+@CompileStatic
+final class Groovy9126 extends AbstractBytecodeTestCase {
+
+    @Test
+    void testUnreachableBytecode() {
+        def bytecode = compile([method:'nonVoidMethod'],'''
+            @groovy.transform.CompileStatic
+            int nonVoidMethod() {
+                1 * 1
             }
+        ''')
 
-            assert myMethod() instanceof Comparator
-        '''
+        assert bytecode.hasStrictSequence(
+                ['public nonVoidMethod()I',
+                 'L0',
+                 'LINENUMBER 4 L0',
+                 'ICONST_1',
+                 'ICONST_1',
+                 'IMUL',
+                 'IRETURN',
+                 'L1',
+                 'FRAME FULL [] [java/lang/Throwable]']
+        )
     }
 }

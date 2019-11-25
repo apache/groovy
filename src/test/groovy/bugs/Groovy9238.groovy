@@ -16,21 +16,38 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ast.tools;
+package groovy.bugs
 
-import org.apache.groovy.parser.antlr4.Antlr4ParserPlugin;
-import org.apache.groovy.parser.antlr4.Antlr4PluginFactory;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.ParserPluginFactory;
+import groovy.transform.AnnotationCollector
+import groovy.transform.CompileStatic
+import groovy.transform.Immutable
+import org.junit.Test
 
-public class Antlr4Utils {
-    private Antlr4Utils() {
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy9238 {
+
+    @Test
+    void testAnnotationCollectorOfCollectedAnnotations() {
+        assertScript '''
+            import groovy.bugs.Groovy9238.Collector
+
+            @Collector
+            class Pogo9238 {
+              String string
+            }
+
+            def pogo = new Pogo9238('old')
+            pogo = pogo.copyWith(string: 'new')
+
+            assert pogo.string == 'new'
+        '''
     }
 
-    public static ClassNode parse(String option, CompilerConfiguration configuration) {
-        Antlr4PluginFactory antlr4PluginFactory = (Antlr4PluginFactory) ParserPluginFactory.antlr4(configuration);
-        Antlr4ParserPlugin antlr4ParserPlugin = (Antlr4ParserPlugin) antlr4PluginFactory.createParserPlugin();
-        return antlr4ParserPlugin.makeType(option);
+    @CompileStatic
+    @Immutable(copyWith=true) // this uses AnnotationCollector
+    @AnnotationCollector
+    @interface Collector {
     }
 }

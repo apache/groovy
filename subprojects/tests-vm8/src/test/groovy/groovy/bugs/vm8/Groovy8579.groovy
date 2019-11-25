@@ -16,33 +16,37 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.lang;
+package groovy.bugs.vm8
 
-/**
- * Distinguish a parameter array from Object[].
- */
-public class ParameterArray {
+import org.junit.Test
 
-    private final Object parameters;
+import static groovy.test.GroovyAssert.assertScript
 
-    public ParameterArray(Object data) {
-        parameters = packArray(data);
+final class Groovy8579 {
+
+    @Test
+    void testCallToStaticInterfaceMethod1() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            Comparator test() {
+                Map.Entry.comparingByKey()
+            }
+
+            assert test() instanceof Comparator
+        '''
     }
 
-    private static Object packArray(Object object) {
-        if (object instanceof Object[])
-            return (Object[]) object;
-        else
-            return object;
-    }
+    @Test
+    void testCallToStaticInterfaceMethod2() {
+        assertScript '''
+            import static java.util.Map.Entry.comparingByKey
 
-    public Object get() {
-        return parameters;
-    }
+            @groovy.transform.CompileStatic
+            Comparator test() {
+                comparingByKey()
+            }
 
-    public String toString() {
-        if (parameters == null)
-            return "<null parameter>";
-        return parameters.toString();
+            assert test() instanceof Comparator
+        '''
     }
 }

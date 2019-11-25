@@ -177,7 +177,6 @@ public class Java9 extends Java8 {
         }
 
         Class<?> declaringClass = methodDeclaringClass.getTheClass();
-        Class<?> theClass = metaClass.getTheClass();
 
         int methodModifiers = cachedMethod.getModifiers();
 
@@ -191,10 +190,13 @@ public class Java9 extends Java8 {
             return metaMethod;
         }
 
+        Class<?> theClass = metaClass.getTheClass();
         if (declaringClass == theClass) {
-            MetaMethod bigIntegerMetaMethod = transformBigIntegerMetaMethod(metaMethod, params, theClass);
-            if (bigIntegerMetaMethod != metaMethod) {
-                return bigIntegerMetaMethod;
+            if (BigInteger.class == theClass) {
+                MetaMethod bigIntegerMetaMethod = transformBigIntegerMetaMethod(metaMethod, params);
+                if (bigIntegerMetaMethod != metaMethod) {
+                    return bigIntegerMetaMethod;
+                }
             }
 
             // GROOVY-9081 "3) Access public members of private class", e.g. Collections.unmodifiableMap([:]).toString()
@@ -227,21 +229,13 @@ public class Java9 extends Java8 {
         return metaMethod;
     }
 
-    private static MetaMethod transformBigIntegerMetaMethod(MetaMethod metaMethod, Class<?>[] params, Class<?> theClass) {
-        if (BigInteger.class != theClass) {
-            return metaMethod;
-        }
-
+    private static MetaMethod transformBigIntegerMetaMethod(MetaMethod metaMethod, Class<?>[] params) {
         if (1 == params.length && MULTIPLY.equals(metaMethod.getName())) {
             Class<?> param = params[0];
             if (Long.class == param || long.class == param
                     || Integer.class == param || int.class == param
                     || Short.class == param || short.class == param) {
-                try {
-                    return new CachedMethod(BigInteger.class.getDeclaredMethod(MULTIPLY, BigInteger.class));
-                } catch (NoSuchMethodException e) {
-                    throw new GroovyBugError("Failed to transform " + MULTIPLY + " method of BigInteger", e);
-                }
+                return new CachedMethod(BigIntegerMultiplyMethodHolder.MULTIPLY_METHOD);
             }
         }
 
@@ -384,6 +378,16 @@ public class Java9 extends Java8 {
     }
 
     private static final String MULTIPLY = "multiply";
+    private static class BigIntegerMultiplyMethodHolder {
+        private static final Method MULTIPLY_METHOD;
+        static {
+            try {
+                MULTIPLY_METHOD = BigInteger.class.getDeclaredMethod(MULTIPLY, BigInteger.class);
+            } catch (NoSuchMethodException | SecurityException e) {
+                throw new GroovyBugError("Failed to find " + MULTIPLY + " method of BigInteger", e);
+            }
+        }
+    }
 
     private static String[] JAVA8_PACKAGES() {
         return new String[] {

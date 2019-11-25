@@ -18,85 +18,92 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-import static AssertionTestUtil.*
+import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.isRendered
 
 /**
  * Tests rendering of individual values.
  */
+final class ValueRenderingTest {
 
-class ValueRenderingTest extends GroovyTestCase {
+    @Test
     void testNullValue() {
-        isRendered """
+        isRendered '''
 assert x
        |
        null
-        """, {
+        ''', { ->
             def x = null
             assert x
         }
     }
 
+    @Test
     void testCharValue() {
-        isRendered """
+        isRendered '''
 assert x == null
        | |
        c false
-        """, {
+        ''', { ->
             def x = "c" as char
             assert x == null
         }
     }
 
+    @Test
     void testStringValue() {
-        isRendered """
+        isRendered '''
 assert x == null
        | |
        | false
        'foo'
-        """, {
+        ''', { ->
             def x = "foo"
             assert x == null
         }
     }
 
+    @Test
     void testMultiLineStringValue() {
-        isRendered """
+        isRendered '''
 assert null == x
             |  |
             |  'one\\ntwo\\rthree\\r\\nfour'
             false
-        """, {
+        ''', { ->
             def x = "one\ntwo\rthree\r\nfour"
             assert null == x
         }
     }
 
+    @Test
     void testPrimitiveArrayValue() {
-        isRendered """
+        isRendered '''
 assert x == null
        | |
        | false
        [1, 2]
-        """, {
+        ''', { ->
             def x = [1, 2] as int[]
             assert x == null
         }
     }
 
+    @Test
     void testObjectArrayValue() {
-        isRendered """
+        isRendered '''
 assert x == null
        | |
        | false
        ['one', 'two']
-        """, {
+        ''', { ->
             def x = ["one", "two"] as String[]
             assert x == null
         }
     }
 
+    @Test
     void testEmptyStringValue() {
         def x = new String()
 
@@ -105,11 +112,12 @@ assert x == null
        | |
        | false
        ''
-        ''', {
+        ''', { ->
             assert x == null
         }
     }
 
+    @Test
     void testEmptyStringBuilderValue() {
         def x = new StringBuilder()
 
@@ -118,11 +126,12 @@ assert x == null
        | |
        | false
        ""
-        ''', {
+        ''', { ->
             assert x == null
         }
     }
 
+    @Test
     void testEmptyStringBufferValue() {
         def x = new StringBuffer()
 
@@ -131,37 +140,40 @@ assert x == null
        | |
        | false
        ""
-        ''', {
+        ''', { ->
             assert x == null
         }
     }
 
+    @Test
     void testSingleLineToString() {
-        isRendered """
+        isRendered '''
 assert x == null
        | |
        | false
        single line
-        """, {
+        ''', { ->
             def x = new SingleLineToString()
             assert x == null
         }
     }
 
+    @Test
     void testMultiLineToString() {
-        isRendered """
+        isRendered '''
 assert x == null
        | |
        | false
        mul
        tiple
           lines
-        """, {
+        ''', { ->
             def x = new MultiLineToString()
             assert x == null
         }
     }
 
+    @Test
     void testNullToString() {
         def x = new NullToString()
 
@@ -170,11 +182,12 @@ assert x == null
        | |
        | false
        ${x.objectToString()} (toString() == null)
-        """, {
+        """, { ->
             assert x == null
         }
     }
 
+    @Test
     void testEmptyToString() {
         def x = new EmptyToString()
 
@@ -183,11 +196,12 @@ assert x == null
        | |
        | false
        ${x.objectToString()} (toString() == \"\")
-        """, {
+        """, { ->
             assert x == null
         }
     }
 
+    @Test
     void testThrowingToString() {
         def x = new ThrowingToString()
 
@@ -196,46 +210,53 @@ assert x == null
        | |
        | false
        ${x.objectToString()} (toString() threw java.lang.UnsupportedOperationException)
-        """, {
+        """, { ->
             assert x == null
         }
     }
-}
 
-@groovy.transform.PackageScope class SingleLineToString {
-    String toString() {
-        "single line"
-    }
-}
+    //--------------------------------------------------------------------------
 
-@groovy.transform.PackageScope class MultiLineToString {
-    String toString() {
-        "mul\ntiple\n   lines"
-    }
-}
-
-@groovy.transform.PackageScope class NullToString {
-    String objectToString() {
-        super.toString()
+    private static class SingleLineToString {
+        @Override
+        String toString() {
+            'single line'
+        }
     }
 
-    String toString() { null }
-}
-
-@groovy.transform.PackageScope class EmptyToString {
-    String objectToString() {
-        super.toString()
+    private static class MultiLineToString {
+        @Override
+        String toString() {
+            'mul\ntiple\n   lines'
+        }
     }
 
-    String toString() { "" }
-}
+    private static class NullToString {
+        String objectToString() {
+            super.toString()
+        }
 
-@groovy.transform.PackageScope class ThrowingToString {
-    String objectToString() {
-        super.toString()
+        @Override
+        String toString() { null }
     }
 
-    String toString() {
-        throw new UnsupportedOperationException()
+    private static class EmptyToString {
+        String objectToString() {
+            super.toString()
+        }
+
+        @Override
+        String toString() { '' }
+    }
+
+    private static class ThrowingToString {
+        String objectToString() {
+            super.toString()
+        }
+
+        @Override
+        String toString() {
+            throw new UnsupportedOperationException()
+        }
     }
 }

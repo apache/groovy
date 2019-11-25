@@ -962,18 +962,17 @@ public class AsmClassGenerator extends ClassGenerator {
                             && controller.isStaticContext()) {
                         // GROOVY-6183
                         ClassNode current = classNode.getSuperClass();
-                        while (field==null && current!=null) {
+                        while (field == null && current != null) {
                             field = current.getDeclaredField(name);
                             current = current.getSuperClass();
                         }
-                        if (field!=null && (field.isProtected() || field.isPublic())) {
+                        if (field != null && (field.isProtected() || field.isPublic())) {
                             visitFieldExpression(new FieldExpression(field));
                             return;
                         }
                     }
                 }
-                if (field != null && !privateSuperField) {
-                    // GROOVY-4497: don't visit super field if it is private
+                if (field != null && !privateSuperField) { // GROOVY-4497: don't visit super field if it is private
                     visitFieldExpression(new FieldExpression(field));
                     return;
                 }
@@ -1157,9 +1156,9 @@ public class AsmClassGenerator extends ClassGenerator {
             if (name != null) {
                 FieldNode field = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
                 if (field != null) {
-                    FieldExpression exp = new FieldExpression(field);
-                    exp.setSourcePosition(expression);
-                    visitFieldExpression(exp);
+                    FieldExpression fldExp = new FieldExpression(field);
+                    fldExp.setSourcePosition(expression.getProperty());
+                    visitFieldExpression(fldExp);
                     return;
                 }
             }
@@ -1178,17 +1177,17 @@ public class AsmClassGenerator extends ClassGenerator {
             if (usesSuper(expression)) adapter = getFieldOnSuper;
         }
         visitAttributeOrProperty(expression, adapter);
-        if (!controller.getCompileStack().isLHS()) {
-            controller.getAssertionWriter().record(expression.getProperty());
-        } else {
+        if (controller.getCompileStack().isLHS()) {
             operandStack.remove(operandStack.getStackLength() - mark);
+        } else {
+            controller.getAssertionWriter().record(expression.getProperty());
         }
     }
 
     private static boolean usesSuper(PropertyExpression pe) {
-        Expression expression = pe.getObjectExpression();
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
+        Expression objExp = pe.getObjectExpression();
+        if (objExp instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) objExp;
             String variable = varExp.getName();
             return variable.equals("super");
         }
@@ -1211,7 +1210,9 @@ public class AsmClassGenerator extends ClassGenerator {
                 loadInstanceField(expression);
             }
         }
-        if (controller.getCompileStack().isLHS()) controller.getAssertionWriter().record(expression);
+        if (!controller.getCompileStack().isLHS()) {
+            controller.getAssertionWriter().record(expression);
+        }
     }
 
     public void loadStaticField(FieldExpression fldExp) {
@@ -1348,7 +1349,9 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
         }
-        if (!controller.getCompileStack().isLHS()) controller.getAssertionWriter().record(expression);
+        if (!controller.getCompileStack().isLHS()) {
+            controller.getAssertionWriter().record(expression);
+        }
     }
 
     private void loadThis(VariableExpression thisExpression) {

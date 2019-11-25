@@ -21,8 +21,8 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [windows-2019]
-        java: ['12.0.2']
+        os: [ubuntu-18.04]
+        java: [8.0.232, 11.0.5]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
@@ -36,8 +36,8 @@ jobs:
   testWithIndy:
     strategy:
       matrix:
-        os: [windows-2019]
-        java: ['12.0.2']
+        os: [ubuntu-18.04]
+        java: [8.0.232, 11.0.5]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
@@ -45,6 +45,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-      - name: Test Indy with Gradle
+      - name: Test with Gradle
         run: ./gradlew testWithIndy
         timeout-minutes: 60
