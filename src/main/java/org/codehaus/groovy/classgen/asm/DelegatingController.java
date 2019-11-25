@@ -29,15 +29,16 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 /**
- * This class will delegate all calls to a WriterController given in the constructor. 
+ * This class will delegate all calls to a WriterController given in the constructor.
  */
 public class DelegatingController extends WriterController {
+
     private final WriterController delegationController;
-    
+
     public DelegatingController(WriterController normalController) {
         this.delegationController = normalController;
     }
-    
+
     @Override
     public void init(final AsmClassGenerator asmClassGenerator, final GeneratorContext gcon, final ClassVisitor cv, final ClassNode cn) {
         delegationController.init(asmClassGenerator, gcon, cv, cn);
@@ -52,37 +53,37 @@ public class DelegatingController extends WriterController {
     public void setConstructorNode(final ConstructorNode cn) {
         delegationController.setConstructorNode(cn);
     }
-    
+
     @Override
     public boolean isFastPath() {
         return delegationController.isFastPath();
     }
-    
+
     @Override
     public CallSiteWriter getCallSiteWriter() {
         return delegationController.getCallSiteWriter();
     }
-        
+
     @Override
     public StatementWriter getStatementWriter() {
-        return delegationController.getStatementWriter();            
+        return delegationController.getStatementWriter();
     }
-    
+
     @Override
     public TypeChooser getTypeChooser() {
         return delegationController.getTypeChooser();
     }
-    
+
     @Override
     public AsmClassGenerator getAcg() {
         return delegationController.getAcg();
     }
-    
+
     @Override
     public AssertionWriter getAssertionWriter() {
         return delegationController.getAssertionWriter();
     }
-    
+
     @Override
     public BinaryExpressionHelper getBinaryExpressionHelper() {
         return delegationController.getBinaryExpressionHelper();
@@ -97,17 +98,17 @@ public class DelegatingController extends WriterController {
     public String getClassName() {
         return delegationController.getClassName();
     }
-    
+
     @Override
     public ClassNode getClassNode() {
         return delegationController.getClassNode();
     }
-    
+
     @Override
     public ClassVisitor getClassVisitor() {
         return delegationController.getClassVisitor();
     }
-    
+
     @Override
     public ClosureWriter getClosureWriter() {
         return delegationController.getClosureWriter();
@@ -127,72 +128,72 @@ public class DelegatingController extends WriterController {
     public MethodReferenceExpressionWriter getMethodReferenceExpressionWriter() {
         return delegationController.getMethodReferenceExpressionWriter();
     }
-    
+
     @Override
     public CompileStack getCompileStack() {
         return delegationController.getCompileStack();
     }
-    
+
     @Override
     public ConstructorNode getConstructorNode() {
         return delegationController.getConstructorNode();
     }
-    
+
     @Override
     public GeneratorContext getContext() {
         return delegationController.getContext();
     }
-    
+
     @Override
     public ClassVisitor getCv() {
         return delegationController.getCv();
     }
-    
+
     @Override
     public InterfaceHelperClassNode getInterfaceClassLoadingClass() {
         return delegationController.getInterfaceClassLoadingClass();
     }
-    
+
     @Override
     public String getInternalBaseClassName() {
         return delegationController.getInternalBaseClassName();
     }
-    
+
     @Override
     public String getInternalClassName() {
         return delegationController.getInternalClassName();
     }
-    
+
     @Override
     public InvocationWriter getInvocationWriter() {
         return delegationController.getInvocationWriter();
     }
-    
+
     @Override
     public MethodNode getMethodNode() {
         return delegationController.getMethodNode();
     }
-    
+
     @Override
     public MethodVisitor getMethodVisitor() {
         return delegationController.getMethodVisitor();
     }
-    
+
     @Override
     public OperandStack getOperandStack() {
         return delegationController.getOperandStack();
     }
-    
+
     @Override
     public ClassNode getOutermostClass() {
         return delegationController.getOutermostClass();
     }
-    
+
     @Override
     public ClassNode getReturnType() {
         return delegationController.getReturnType();
     }
-    
+
     @Override
     public SourceUnit getSourceUnit() {
         return delegationController.getSourceUnit();
@@ -202,87 +203,82 @@ public class DelegatingController extends WriterController {
     public boolean isConstructor() {
         return delegationController.isConstructor();
     }
-    
+
     @Override
     public boolean isInClosure() {
         return delegationController.isInClosure();
     }
-    
+
     @Override
     public boolean isInClosureConstructor() {
         return delegationController.isInClosureConstructor();
     }
-    
+
     @Override
     public boolean isNotClinit() {
         return delegationController.isNotClinit();
     }
-    
+
     @Override
     public boolean isInScriptBody() {
         return delegationController.isInScriptBody();
     }
-    
-    @Override
-    public boolean isNotExplicitThisInClosure(boolean implicitThis) {
-        return delegationController.isNotExplicitThisInClosure(implicitThis);
-    }
-    
+
     @Override
     public boolean isStaticConstructor() {
         return delegationController.isStaticConstructor();
     }
-    
+
     @Override
     public boolean isStaticContext() {
         return delegationController.isStaticContext();
     }
-    
+
     @Override
     public boolean isStaticMethod() {
         return delegationController.isStaticMethod();
     }
-    
+
     @Override
     public void setInterfaceClassLoadingClass(InterfaceHelperClassNode ihc) {
         delegationController.setInterfaceClassLoadingClass(ihc);
     }
-    
+
     @Override
     public void setMethodVisitor(MethodVisitor methodVisitor) {
         delegationController.setMethodVisitor(methodVisitor);
     }
-    
+
     @Override
     public boolean shouldOptimizeForInt() {
         return delegationController.shouldOptimizeForInt();
     }
-    
+
     @Override
     public void switchToFastPath() {
         delegationController.switchToFastPath();
     }
-    
+
     @Override
     public void switchToSlowPath() {
         delegationController.switchToSlowPath();
     }
-    
+
     @Override
     public int getBytecodeVersion() {
         return delegationController.getBytecodeVersion();
     }
-    
+
     @Override
     public void setLineNumber(int n) {
         delegationController.setLineNumber(n);
     }
-    
+
     @Override
     public int getLineNumber() {
         return delegationController.getLineNumber();
     }
-    
+
     @Override
     public void resetLineNumber() {
         delegationController.resetLineNumber();
