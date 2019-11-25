@@ -284,13 +284,12 @@ public class WriterController {
 
     public boolean isInClosure() {
         return classNode.getOuterClass() != null
-                && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+                && classNode.getSuperClass().equals(ClassHelper.CLOSURE_TYPE)
+                && classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type);
     }
 
     public boolean isInClosureConstructor() {
-        return constructorNode != null
-                && classNode.getOuterClass() != null
-                && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+        return isConstructor() && isInClosure();
     }
 
     public boolean isStaticMethod() {
