@@ -934,7 +934,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     if (field != null && field.isPrivate()) {
                         privateSuperField = true;
                     }
-                } else if (controller.isNotExplicitThisInClosure(expression.isImplicitThis())) {
+                } else if (expression.isImplicitThis() || !controller.isInClosure()) {
                     field = classNode.getDeclaredField(name);
                     ClassNode outer = classNode.getOuterClass();
                     if (field == null && outer != null) {
