@@ -23,10 +23,13 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
+import org.codehaus.groovy.runtime.memoize.LRUCache;
+import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 
@@ -48,6 +51,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -176,13 +180,20 @@ public class Java9 extends Java8 {
             return metaMethod;
         }
 
+        MetaMethod result =
+                TRANSFORM_META_METHOD_CACHE.getAndPut(
+                        new TransformMetaMethodCacheKey(metaClass, metaMethod, params, null == caller ? ReflectionUtils.class : caller),
+                        k -> doTransformMetaMethod(k.metaClass, k.metaMethod, k.params, k.caller)
+                );
+
+        return result;
+    }
+
+    private MetaMethod doTransformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+        CachedMethod cachedMethod = (CachedMethod) metaMethod;
+        CachedClass methodDeclaringClass = cachedMethod.getDeclaringClass();
         Class<?> declaringClass = methodDeclaringClass.getTheClass();
-
         int methodModifiers = cachedMethod.getModifiers();
-
-        if (null == caller) {
-            caller = ReflectionUtils.class; // "set accessible" are done via `org.codehaus.groovy.reflection.ReflectionUtils` as shown in warnings
-        }
 
         // if caller can access the method,
         // no need to transform the meta method
@@ -386,6 +397,47 @@ public class Java9 extends Java8 {
             } catch (NoSuchMethodException | SecurityException e) {
                 throw new GroovyBugError("Failed to find " + MULTIPLY + " method of BigInteger", e);
             }
+        }
+    }
+
+    private static final MemoizeCache<TransformMetaMethodCacheKey, MetaMethod> TRANSFORM_META_METHOD_CACHE = new LRUCache<>(SystemUtil.getIntegerSafe("groovy.transformMetaMethodCache.size", 1024));
+    private static final class TransformMetaMethodCacheKey {
+        private final MetaClass metaClass;
+        private final MetaMethod metaMethod;
+        private final Class<?>[] params;
+        private final Class<?> caller;
+
+        private final Class<?> theClass;
+        private final Class<?> metaMethodDelcaringClass;
+        private final String metaMethodName;
+
+        public TransformMetaMethodCacheKey(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+            this.metaClass = metaClass;
+            this.metaMethod = metaMethod;
+            this.params = params;
+            this.caller = caller;
+
+            this.theClass = metaClass.getTheClass();
+            this.metaMethodDelcaringClass = metaMethod.getDeclaringClass().getTheClass();
+            this.metaMethodName = metaMethod.getName();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof TransformMetaMethodCacheKey)) return false;
+            TransformMetaMethodCacheKey that = (TransformMetaMethodCacheKey) o;
+            return theClass == that.theClass &&
+                    metaMethodDelcaringClass == that.metaMethodDelcaringClass &&
+                    metaMethod.isSame(that.metaMethod) &&
+                    Arrays.equals(params, that.params) &&
+                    caller == that.caller;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(theClass, metaMethodDelcaringClass, metaMethodName, caller);
+            return 31 * result + Arrays.hashCode(params);
         }
     }
 
