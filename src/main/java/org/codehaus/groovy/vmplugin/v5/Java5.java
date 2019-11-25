@@ -587,13 +587,13 @@ public class Java5 implements VMPlugin {
     }
 
     @Override
-    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?> caller) {
         return metaMethod;
     }
 
     @Override
-    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params) {
-        return transformMetaMethod(metaClass, metaMethod, params, null);
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod) {
+        return transformMetaMethod(metaClass, metaMethod,  null);
     }
 
     private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");

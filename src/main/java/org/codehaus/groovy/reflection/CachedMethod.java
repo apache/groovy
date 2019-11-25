@@ -95,23 +95,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     public final Object invoke(Object object, Object[] arguments) {
-        /*
-        CachedMethod transformedCachedMethod =
-                (CachedMethod) CallSiteHelper.transformMetaMethod(
-                        InvokerHelper.getMetaClass(object.getClass()),
-                        this,
-                        this.getPT(),
-                        CachedMethod.class);
-
-        Method cachedMethod = transformedCachedMethod.cachedMethod;
-
-        if (transformedCachedMethod == this) {
-            makeAccessibleIfNecessary();
-        } else {
-            ReflectionUtils.trySetAccessible(cachedMethod);
-        }
-        */
-
         makeAccessibleIfNecessary();
 
         try {

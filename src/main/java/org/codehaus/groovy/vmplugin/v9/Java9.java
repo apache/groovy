@@ -168,7 +168,7 @@ public class Java9 extends Java8 {
     }
 
     @Override
-    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?> caller) {
         if (!(metaMethod instanceof CachedMethod)) {
             return metaMethod;
         }
@@ -182,15 +182,14 @@ public class Java9 extends Java8 {
 
         MetaMethod result =
                 TRANSFORM_META_METHOD_CACHE.getAndPut(
-                        new TransformMetaMethodCacheKey(metaClass, metaMethod, params, null == caller ? ReflectionUtils.class : caller),
-                        k -> doTransformMetaMethod(k.metaClass, k.metaMethod, k.params, k.caller)
+                        new TransformMetaMethodCacheKey(metaClass, cachedMethod, null == caller ? ReflectionUtils.class : caller),
+                        k -> doTransformMetaMethod(k.metaClass, k.cachedMethod, k.caller)
                 );
 
         return result;
     }
 
-    private MetaMethod doTransformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
-        CachedMethod cachedMethod = (CachedMethod) metaMethod;
+    private MetaMethod doTransformMetaMethod(MetaClass metaClass, CachedMethod cachedMethod, Class<?> caller) {
         CachedClass methodDeclaringClass = cachedMethod.getDeclaringClass();
         Class<?> declaringClass = methodDeclaringClass.getTheClass();
         int methodModifiers = cachedMethod.getModifiers();
@@ -198,14 +197,15 @@ public class Java9 extends Java8 {
         // if caller can access the method,
         // no need to transform the meta method
         if (checkAccessible(caller, declaringClass, methodModifiers, false)) {
-            return metaMethod;
+            return cachedMethod;
         }
 
         Class<?> theClass = metaClass.getTheClass();
+        Class<?>[] params = cachedMethod.getPT();
         if (declaringClass == theClass) {
             if (BigInteger.class == theClass) {
-                MetaMethod bigIntegerMetaMethod = transformBigIntegerMetaMethod(metaMethod, params);
-                if (bigIntegerMetaMethod != metaMethod) {
+                MetaMethod bigIntegerMetaMethod = transformBigIntegerMetaMethod(cachedMethod, params);
+                if (bigIntegerMetaMethod != cachedMethod) {
                     return bigIntegerMetaMethod;
                 }
             }
@@ -216,13 +216,13 @@ public class Java9 extends Java8 {
             classList.add(0, theClass);
 
             for (Class<?> sc : classList) {
-                Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, sc);
+                Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(cachedMethod, params, caller, sc);
                 if (optionalMetaMethod.isPresent()) {
                     return optionalMetaMethod.get();
                 }
             }
 
-            return metaMethod;
+            return cachedMethod;
         }
 
         // if caller can not access the method,
@@ -231,13 +231,13 @@ public class Java9 extends Java8 {
         // e.g. StringBuilder sb = new StringBuilder(); sb.setLength(0);
         // `setLength` is the method of `AbstractStringBuilder`, which is `package-private`
         if (declaringClass.isAssignableFrom(theClass)) {
-            Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, theClass);
+            Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(cachedMethod, params, caller, theClass);
             if (optionalMetaMethod.isPresent()) {
                 return optionalMetaMethod.get();
             }
         }
 
-        return metaMethod;
+        return cachedMethod;
     }
 
     private static MetaMethod transformBigIntegerMetaMethod(MetaMethod metaMethod, Class<?>[] params) {
@@ -403,23 +403,25 @@ public class Java9 extends Java8 {
     private static final MemoizeCache<TransformMetaMethodCacheKey, MetaMethod> TRANSFORM_META_METHOD_CACHE = new LRUCache<>(SystemUtil.getIntegerSafe("groovy.transformMetaMethodCache.size", 1024));
     private static final class TransformMetaMethodCacheKey {
         private final MetaClass metaClass;
-        private final MetaMethod metaMethod;
-        private final Class<?>[] params;
+        private final CachedMethod cachedMethod;
         private final Class<?> caller;
 
         private final Class<?> theClass;
-        private final Class<?> metaMethodDelcaringClass;
-        private final String metaMethodName;
+        private final Class<?> cachedMethodDelcaringClass;
+        private final String cachedMethodName;
+        private final int cachedMethodModifiers;
+        private final Class<?> cachedMethodReturnType;
 
-        public TransformMetaMethodCacheKey(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+        public TransformMetaMethodCacheKey(MetaClass metaClass, CachedMethod cachedMethod, Class<?> caller) {
             this.metaClass = metaClass;
-            this.metaMethod = metaMethod;
-            this.params = params;
+            this.cachedMethod = cachedMethod;
             this.caller = caller;
 
             this.theClass = metaClass.getTheClass();
-            this.metaMethodDelcaringClass = metaMethod.getDeclaringClass().getTheClass();
-            this.metaMethodName = metaMethod.getName();
+            this.cachedMethodDelcaringClass = cachedMethod.getDeclaringClass().getTheClass();
+            this.cachedMethodName = cachedMethod.getName();
+            this.cachedMethodModifiers = cachedMethod.getModifiers();
+            this.cachedMethodReturnType = cachedMethod.getReturnType();
         }
 
         @Override
@@ -428,16 +430,15 @@ public class Java9 extends Java8 {
             if (!(o instanceof TransformMetaMethodCacheKey)) return false;
             TransformMetaMethodCacheKey that = (TransformMetaMethodCacheKey) o;
             return theClass == that.theClass &&
-                    metaMethodDelcaringClass == that.metaMethodDelcaringClass &&
-                    metaMethod.isSame(that.metaMethod) &&
-                    Arrays.equals(params, that.params) &&
+                    cachedMethodDelcaringClass == that.cachedMethodDelcaringClass &&
+                    cachedMethod.isMethod(that.cachedMethod) &&
                     caller == that.caller;
         }
 
         @Override
         public int hashCode() {
-            int result = Objects.hash(theClass, metaMethodDelcaringClass, metaMethodName, caller);
-            return 31 * result + Arrays.hashCode(params);
+            return Objects.hash(theClass, cachedMethodDelcaringClass, cachedMethodName,
+                    cachedMethodModifiers, cachedMethodReturnType, caller);
         }
     }
 
