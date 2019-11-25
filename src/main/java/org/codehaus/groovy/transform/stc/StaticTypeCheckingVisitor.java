@@ -4913,42 +4913,27 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private ClassNode getGenericsResolvedTypeOfFieldOrProperty(final AnnotatedNode an, final ClassNode type) {
         if (!type.isUsingGenerics()) return type;
         Map<GenericsTypeName, GenericsType> connections = new HashMap<>();
-        //TODO: inner classes mean a different this-type. This is ignored here!
+        // TODO: inner classes mean a different this-type. This is ignored here!
         extractGenericsConnections(connections, typeCheckingContext.getEnclosingClassNode(), an.getDeclaringClass());
         return applyGenericsContext(connections, type);
     }
 
-    private ClassNode makeSuper() {
-        ClassNode ret = typeCheckingContext.getEnclosingClassNode().getSuperClass();
-        if (typeCheckingContext.isInStaticContext) {
-            ClassNode staticRet = CLASS_Type.getPlainNodeReference();
-            GenericsType gt = new GenericsType(ret);
-            staticRet.setGenericsTypes(new GenericsType[]{gt});
-            ret = staticRet;
+    private static ClassNode makeSelf(final ClassNode trait) {
+        ClassNode selfType = trait;
+        Set<ClassNode> selfTypes = Traits.collectSelfTypes(selfType, new LinkedHashSet<>());
+        if (!selfTypes.isEmpty()) {
+            selfTypes.add(selfType);
+            selfType = new UnionTypeClassNode(selfTypes.toArray(ClassNode.EMPTY_ARRAY));
         }
-        return ret;
+        return selfType;
+    }
+
+    private ClassNode makeSuper() {
+        return makeType(typeCheckingContext.getEnclosingClassNode().getSuperClass(), typeCheckingContext.isInStaticContext);
     }
 
     private ClassNode makeThis() {
-        ClassNode ret = typeCheckingContext.getEnclosingClassNode();
-        if (typeCheckingContext.isInStaticContext) {
-            ClassNode staticRet = CLASS_Type.getPlainNodeReference();
-            GenericsType gt = new GenericsType(ret);
-            staticRet.setGenericsTypes(new GenericsType[]{gt});
-            ret = staticRet;
-        }
-        return ret;
-    }
-
-    private static ClassNode makeSelf(final ClassNode trait) {
-        ClassNode ret = trait;
-        LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<>();
-        Traits.collectSelfTypes(ret, selfTypes);
-        if (!selfTypes.isEmpty()) {
-            selfTypes.add(ret);
-            ret = new UnionTypeClassNode(selfTypes.toArray(ClassNode.EMPTY_ARRAY));
-        }
-        return ret;
+        return makeType(typeCheckingContext.getEnclosingClassNode(), typeCheckingContext.isInStaticContext);
     }
 
     /**
