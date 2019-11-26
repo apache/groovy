@@ -46,7 +46,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
-    void testShouldNotThrowStackOverflowWithSuper() {
+    void testShouldNotThrowStackOverflowWithSuper1() {
         assertScript '''
             class A {
                 private String field1 = 'test'
@@ -69,6 +69,26 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
             B b = new B()
 
             assert b.field1 == 'test 2'
+        '''
+    }
+
+    void testShouldNotThrowStackOverflowWithSuper2() {
+        assertScript '''
+            class A {
+                private String field = 'value'
+                String getField() { return field }
+                void setField(String value) { field = value }
+            }
+
+            class B extends A {
+                @Override
+                String getField() {
+                    super.@field = 'reset'
+                    return super.field
+                }
+            }
+
+            assert new B().field == 'reset'
         '''
     }
 }
