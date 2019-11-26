@@ -22,7 +22,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -40,7 +39,6 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.StatementMeta;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
@@ -50,7 +48,6 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -82,64 +79,43 @@ public class InvocationWriter {
     public static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
     public static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
     public static final MethodCaller castToVargsArray = MethodCaller.newStatic(DefaultTypeTransformation.class, "castToVargsArray");
-    private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE,"name")});
+    private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name")});
 
     // type conversions
-    private static final MethodCaller
-        asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType"),
-        castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType"),
-        castToClassMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToClass"),
-        castToStringMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToString"),
-        castToEnumMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToEnum");
+    private static final MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
+    private static final MethodCaller castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType");
+    private static final MethodCaller castToClassMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToClass");
+    private static final MethodCaller castToStringMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToString");
+    private static final MethodCaller castToEnumMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToEnum");
 
     // constructor calls with this() and super()
-    static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
+    private static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
 
     private final WriterController controller;
-    
-    public InvocationWriter(WriterController wc) {
-        this.controller = wc;
+
+    public InvocationWriter(final WriterController controller) {
+        this.controller = controller;
     }
 
-    private void makeInvokeMethodCall(MethodCallExpression call, boolean useSuper, MethodCallerMultiAdapter adapter) {
-        // receiver
-        // we operate on GroovyObject if possible
-        Expression objectExpression = call.getObjectExpression();
-        // message name
-        Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
-        if (useSuper) {
-            ClassNode classNode = controller.isInClosure() ? controller.getOutermostClass() : controller.getClassNode(); // GROOVY-4035 
-            ClassNode superClass = classNode.getSuperClass();
-            makeCall(call, new ClassExpression(superClass),
-                    objectExpression, messageName,
-                    call.getArguments(), adapter,
-                    call.isSafe(), call.isSpreadSafe(),
-                    false
-            );
-        } else {
-            makeCall(call, objectExpression, messageName,
-                    call.getArguments(), adapter,
-                    call.isSafe(), call.isSpreadSafe(),
-                    call.isImplicitThis()
-            );
+    public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, boolean safe, final boolean spreadSafe, boolean implicitThis) {
+        ClassNode sender = controller.getClassNode();
+        if (AsmClassGenerator.isSuperExpression(receiver) || (AsmClassGenerator.isThisExpression(receiver) && !implicitThis)) {
+            while (sender.isDerivedFrom(ClassHelper.CLOSURE_TYPE) && sender.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
+                sender = sender.getOuterClass();
+            }
+            if (AsmClassGenerator.isSuperExpression(receiver)) {
+                sender = sender.getSuperClass(); // GROOVY-4035
+                implicitThis = false; // prevent recursion
+                safe = false; // GROOVY-6045
+            }
         }
+
+        makeCall(origin, new ClassExpression(sender), receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
     }
-    
-    public void makeCall(
-            Expression origin,
-            Expression receiver, Expression message, Expression arguments,
-            MethodCallerMultiAdapter adapter,
-            boolean safe, boolean spreadSafe, boolean implicitThis
-    ) {
-        ClassNode cn = controller.getClassNode();
-        if (controller.isInClosure() && !implicitThis && AsmClassGenerator.isThisExpression(receiver)) cn=cn.getOuterClass();
-        makeCall(origin, new ClassExpression(cn), receiver, message, arguments,
-                adapter, safe, spreadSafe, implicitThis);
-    }
-    
-    protected boolean writeDirectMethodCall(MethodNode target, boolean implicitThis,  Expression receiver, TupleExpression args) {
-        if (target==null) return false;
-        
+
+    protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
+        if (target == null) return false;
+
         String methodName = target.getName();
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
@@ -152,20 +128,20 @@ public class InvocationWriter {
             opcode = INVOKESTATIC;
         } else if (declaringClass.isInterface()) {
             opcode = INVOKEINTERFACE;
-        } else if (target.isPrivate() || ((receiver instanceof VariableExpression && ((VariableExpression) receiver).isSuperExpression()))) {
+        } else if (target.isPrivate() || AsmClassGenerator.isSuperExpression(receiver)) {
             opcode = INVOKESPECIAL;
         }
 
         // handle receiver
         int argumentsToRemove = 0;
-        if (opcode!=INVOKESTATIC) {
-            if (receiver!=null) {
+        if (opcode != INVOKESTATIC) {
+            if (receiver != null) {
                 // load receiver if not static invocation
                 // todo: fix inner class case
                 if (implicitThis
+                        && classNode.getOuterClass() != null
                         && !classNode.isDerivedFrom(declaringClass)
-                        && !classNode.implementsInterface(declaringClass)
-                        && classNode instanceof InnerClassNode) {
+                        && !classNode.implementsInterface(declaringClass)) {
                     // we are calling an outer class method
                     compileStack.pushImplicitThis(false);
                     if (controller.isInClosure()) {
@@ -180,18 +156,18 @@ public class InvocationWriter {
                 }
                 operandStack.doGroovyCast(declaringClass);
                 compileStack.popImplicitThis();
-                argumentsToRemove++;
+                argumentsToRemove += 1;
             } else {
                 mv.visitIntInsn(ALOAD,0);
                 operandStack.push(classNode);
-                argumentsToRemove++;
+                argumentsToRemove += 1;
             }
         }
 
         int stackSize = operandStack.getStackLength();
 
         String owner = BytecodeHelper.getClassInternalName(declaringClass);
-        ClassNode receiverType = receiver!=null?controller.getTypeChooser().resolveType(receiver, classNode):declaringClass;
+        ClassNode receiverType = receiver != null ? controller.getTypeChooser().resolveType(receiver, classNode) : declaringClass;
         if (opcode == INVOKEVIRTUAL && ClassHelper.OBJECT_TYPE.equals(declaringClass)) {
             // avoid using a narrowed type if the method is defined on object because it can interfere
             // with delegate type inference in static compilation mode and trigger a ClassCastException
@@ -215,8 +191,7 @@ public class InvocationWriter {
                     && !receiverType.equals(declaringClass))
                     && receiverType.isDerivedFrom(declaringClass)
                     && !receiverType.getPackageName().equals(classNode.getPackageName())) {
-                // package private class, public method
-                // see GROOVY-6962
+                // GROOVY-6962: package private class, public method
                 owner = BytecodeHelper.getClassInternalName(receiverType);
             }
         }
@@ -226,7 +201,7 @@ public class InvocationWriter {
         String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), target.getParameters());
         mv.visitMethodInsn(opcode, owner, methodName, desc, declaringClass.isInterface());
         ClassNode ret = target.getReturnType().redirect();
-        if (ret==ClassHelper.VOID_TYPE) {
+        if (ret == ClassHelper.VOID_TYPE) {
             ret = ClassHelper.OBJECT_TYPE;
             mv.visitInsn(ACONST_NULL);
         }
@@ -236,33 +211,32 @@ public class InvocationWriter {
         return true;
     }
 
-    private boolean lastIsArray(List<Expression> argumentList, int pos) {
+    private boolean lastIsArray(final List<Expression> argumentList, final int pos) {
         Expression last = argumentList.get(pos);
         ClassNode type = controller.getTypeChooser().resolveType(last, controller.getClassNode());
         return type.isArray();
     }
-    
+
     // load arguments
-    protected void loadArguments(List<Expression> argumentList, Parameter[] para) {
-        if (para.length==0) return;
+    protected void loadArguments(final List<Expression> argumentList, final Parameter[] para) {
+        if (para.length == 0) return;
         ClassNode lastParaType = para[para.length - 1].getOriginType();
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
-        if (lastParaType.isArray()
-                && (argumentList.size()>para.length || argumentList.size()==para.length-1 || !lastIsArray(argumentList, para.length-1))) {
-            int stackLen = operandStack.getStackLength()+argumentList.size();
+        if (lastParaType.isArray() && (argumentList.size() > para.length
+                || argumentList.size() == para.length - 1 || !lastIsArray(argumentList, para.length - 1))) {
+            int stackLen = operandStack.getStackLength() + argumentList.size();
             MethodVisitor mv = controller.getMethodVisitor();
-            //mv = new org.objectweb.asm.util.TraceMethodVisitor(mv);
             controller.setMethodVisitor(mv);
             // varg call
             // first parameters as usual
-            for (int i = 0; i < para.length-1; i++) {
+            for (int i = 0, n = para.length - 1; i < n; i += 1) {
                 argumentList.get(i).visit(acg);
                 operandStack.doGroovyCast(para[i].getType());
             }
             // last parameters wrapped in an array
-            List<Expression> lastParams = new LinkedList<Expression>();
-            for (int i=para.length-1; i<argumentList.size();i++) {
+            List<Expression> lastParams = new LinkedList<>();
+            for (int i = para.length - 1, n = argumentList.size(); i < n; i += 1) {
                 lastParams.add(argumentList.get(i));
             }
             ArrayExpression array = new ArrayExpression(
@@ -271,31 +245,25 @@ public class InvocationWriter {
             );
             array.visit(acg);
             // adjust stack length
-            while (operandStack.getStackLength()<stackLen) {
+            while (operandStack.getStackLength() < stackLen) {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
             }
-            if (argumentList.size()==para.length-1) {
+            if (argumentList.size() == para.length - 1) {
                 operandStack.remove(1);
             }
         } else {
-            for (int i = 0; i < argumentList.size(); i++) {
+            for (int i = 0, n = argumentList.size(); i < n; i += 1) {
                 argumentList.get(i).visit(acg);
                 operandStack.doGroovyCast(para[i].getType());
             }
         }
     }
 
-    protected boolean makeDirectCall(
-        Expression origin, Expression receiver, 
-        Expression message, Expression arguments,
-        MethodCallerMultiAdapter adapter,
-        boolean implicitThis, boolean containsSpreadExpression
-    ) {
+    protected boolean makeDirectCall(Expression origin, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean implicitThis, boolean containsSpreadExpression) {
         if (makeClassForNameCall(origin, receiver, message, arguments)) return true;
 
         // optimization path
-        boolean fittingAdapter =   adapter == invokeMethodOnCurrent ||
-                                    adapter == invokeStaticMethod;
+        boolean fittingAdapter = adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod;
         if (fittingAdapter && controller.optimizeForInt && controller.isFastPath()) {
             String methodName = getMethodName(message);
             if (methodName != null) {
@@ -306,10 +274,10 @@ public class InvocationWriter {
                     args = new TupleExpression(receiver);
                 }
 
-                StatementMeta meta = null;
-                if (origin!=null) meta = origin.getNodeMetaData(StatementMeta.class);
+                OptimizingStatementWriter.StatementMeta meta = null;
+                if (origin != null) meta = origin.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
                 MethodNode mn = null;
-                if (meta!=null) mn = meta.target;
+                if (meta != null) mn = meta.target;
 
                 if (writeDirectMethodCall(mn, true, null, args)) return true;
             }
@@ -324,39 +292,23 @@ public class InvocationWriter {
         return false;
     }
 
-    protected boolean makeCachedCall(
-            Expression origin, ClassExpression sender,
-            Expression receiver, Expression message, Expression arguments,
-            MethodCallerMultiAdapter adapter,
-            boolean safe, boolean spreadSafe, boolean implicitThis,
-            boolean containsSpreadExpression
-    ) {
+    protected boolean makeCachedCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis, boolean containsSpreadExpression) {
         // prepare call site
         if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
             String methodName = getMethodName(message);
-
             if (methodName != null) {
-                controller.getCallSiteWriter().makeCallSite(
-                        receiver, methodName, arguments, safe, implicitThis, 
-                        adapter == invokeMethodOnCurrent, 
-                        adapter == invokeStaticMethod);
+                controller.getCallSiteWriter().makeCallSite(receiver, methodName, arguments, safe, implicitThis, adapter == invokeMethodOnCurrent, adapter == invokeStaticMethod);
                 return true;
             }
         }
         return false;
     }
-    
-    protected void makeUncachedCall(
-            Expression origin, ClassExpression sender,
-            Expression receiver, Expression message, Expression arguments,
-            MethodCallerMultiAdapter adapter,
-            boolean safe, boolean spreadSafe, boolean implicitThis,
-            boolean containsSpreadExpression
-    ) {
+
+    protected void makeUncachedCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis, boolean containsSpreadExpression) {
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
         AsmClassGenerator acg = controller.getAcg();
-        
+
         // ensure VariableArguments are read, not stored
         compileStack.pushLHS(false);
 
@@ -371,20 +323,19 @@ public class InvocationWriter {
         if (adapter == invokeMethodOnSuper && methodName != null) {
             controller.getSuperMethodNames().add(methodName);
         }
-        
+
         // receiver
         compileStack.pushImplicitThis(implicitThis);
         receiver.visit(acg);
         operandStack.box();
         compileStack.popImplicitThis();
-        
-        
+
         int operandsToRemove = 2;
         // message
         if (message != null) {
             message.visit(acg);
             operandStack.box();
-            operandsToRemove++;
+            operandsToRemove += 1;
         }
 
         // arguments
@@ -399,7 +350,7 @@ public class InvocationWriter {
         } else if (numberOfArguments > 0) {
             operandsToRemove += numberOfArguments;
             TupleExpression te = (TupleExpression) arguments;
-            for (int i = 0; i < numberOfArguments; i++) {
+            for (int i = 0; i < numberOfArguments; i += 1) {
                 Expression argument = te.getExpression(i);
                 argument.visit(acg);
                 operandStack.box();
@@ -407,19 +358,14 @@ public class InvocationWriter {
             }
         }
 
-        if (adapter==null) adapter = invokeMethod;
+        if (adapter == null) adapter = invokeMethod;
         adapter.call(controller.getMethodVisitor(), numberOfArguments, safe, spreadSafe);
 
         compileStack.popLHS();
-        operandStack.replace(ClassHelper.OBJECT_TYPE,operandsToRemove);
+        operandStack.replace(ClassHelper.OBJECT_TYPE, operandsToRemove);
     }
-    
-    protected void makeCall(
-            Expression origin, ClassExpression sender,
-            Expression receiver, Expression message, Expression arguments,
-            MethodCallerMultiAdapter adapter,
-            boolean safe, boolean spreadSafe, boolean implicitThis
-    ) {
+
+    protected void makeCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis) {
         // direct method call paths
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
 
@@ -435,18 +381,18 @@ public class InvocationWriter {
     /**
      * if Class.forName(x) is recognized, make a direct method call
      */
-    protected boolean makeClassForNameCall(Expression origin, Expression receiver, Expression message, Expression arguments) {
-        if (! (receiver instanceof ClassExpression)) return false;
+    protected boolean makeClassForNameCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments) {
+        if (!(receiver instanceof ClassExpression)) return false;
         ClassExpression ce = (ClassExpression) receiver;
         if (!ClassHelper.CLASS_Type.equals(ce.getType())) return false;
         String msg = getMethodName(message);
         if (!"forName".equals(msg)) return false;
         ArgumentListExpression ae = makeArgumentList(arguments);
-        if (ae.getExpressions().size()!=1) return false;
-        return writeDirectMethodCall(CLASS_FOR_NAME_STRING,false, receiver, ae);
+        if (ae.getExpressions().size() != 1) return false;
+        return writeDirectMethodCall(CLASS_FOR_NAME_STRING, false, receiver, ae);
     }
 
-    public static ArgumentListExpression makeArgumentList(Expression arguments) {
+    public static ArgumentListExpression makeArgumentList(final Expression arguments) {
         ArgumentListExpression ae;
         if (arguments instanceof ArgumentListExpression) {
             ae = (ArgumentListExpression) arguments;
@@ -460,14 +406,15 @@ public class InvocationWriter {
         return ae;
     }
 
-    protected String getMethodName(Expression message) {
+    protected String getMethodName(final Expression message) {
         String methodName = null;
         if (message instanceof CastExpression) {
             CastExpression msg = (CastExpression) message;
             if (msg.getType() == ClassHelper.STRING_TYPE) {
                 final Expression methodExpr = msg.getExpression();
-                if (methodExpr instanceof ConstantExpression)
-                  methodName = methodExpr.getText();
+                if (methodExpr instanceof ConstantExpression) {
+                    methodName = methodExpr.getText();
+                }
             }
         }
 
@@ -478,28 +425,6 @@ public class InvocationWriter {
         return methodName;
     }
 
-    private boolean isFunctionInterfaceCall(MethodCallExpression call) {
-        if (!"call".equals(call.getMethodAsString())) {
-            return false;
-        }
-
-        Expression objectExpression = call.getObjectExpression();
-
-        if (null == objectExpression) {
-            return false;
-        }
-
-        if (AsmClassGenerator.isThisExpression(objectExpression)) {
-            return false;
-        }
-
-        if (ClassHelper.isFunctionalInterface(objectExpression.getType())) {
-            return true;
-        }
-
-        return false;
-    }
-
     public void writeInvokeMethod(MethodCallExpression call) {
         if (isClosureCall(call)) {
             // let's invoke the closure method
@@ -508,54 +433,62 @@ public class InvocationWriter {
             if (isFunctionInterfaceCall(call)) {
                 call = transformToRealMethodCall(call);
             }
-
-            boolean isSuperMethodCall = usesSuper(call);
             MethodCallerMultiAdapter adapter = invokeMethod;
-            if (isSuperMethodCall && call.isSafe()) {
-                // safe is not necessary here because "super" is always not null
-                // but keeping the flag would trigger a VerifyError (see GROOVY-6045)
-                call.setSafe(false);
+            Expression objectExpression = call.getObjectExpression();
+            if (AsmClassGenerator.isSuperExpression(objectExpression)) {
+                adapter = invokeMethodOnSuper;
+            } else if (AsmClassGenerator.isThisExpression(objectExpression)) {
+                adapter = invokeMethodOnCurrent;
             }
-            if (AsmClassGenerator.isThisExpression(call.getObjectExpression())) adapter = invokeMethodOnCurrent;
-            if (isSuperMethodCall) adapter = invokeMethodOnSuper;
-            if (isStaticInvocation(call)) adapter = invokeStaticMethod;
-            makeInvokeMethodCall(call, isSuperMethodCall, adapter);
+            if (isStaticInvocation(call)) {
+                adapter = invokeStaticMethod;
+            }
+            Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
+            makeCall(call, objectExpression, messageName, call.getArguments(), adapter, call.isSafe(), call.isSpreadSafe(), call.isImplicitThis());
         }
     }
 
-    private MethodCallExpression transformToRealMethodCall(MethodCallExpression call) {
+    private static boolean isFunctionInterfaceCall(final MethodCallExpression call) {
+        if ("call".equals(call.getMethodAsString())) {
+            Expression objectExpression = call.getObjectExpression();
+            if (!AsmClassGenerator.isThisExpression(objectExpression)) {
+                return ClassHelper.isFunctionalInterface(objectExpression.getType());
+            }
+        }
+        return false;
+    }
+
+    private static MethodCallExpression transformToRealMethodCall(MethodCallExpression call) {
         ClassNode type = call.getObjectExpression().getType();
-        final MethodNode methodNode = ClassHelper.findSAM(type);
+        MethodNode methodNode = ClassHelper.findSAM(type);
 
         call = (MethodCallExpression) call.transformExpression(expression -> {
             if (!(expression instanceof ConstantExpression)) {
                 return expression;
             }
-
             return new ConstantExpression(methodNode.getName());
         });
         call.setMethodTarget(methodNode);
         return call;
     }
 
-    private boolean isClosureCall(MethodCallExpression call) {
+    private boolean isClosureCall(final MethodCallExpression call) {
         // are we a local variable?
         // it should not be an explicitly "this" qualified method call
         // and the current class should have a possible method
-
         ClassNode classNode = controller.getClassNode();
         String methodName = call.getMethodAsString();
-        if (methodName==null) return false;
+        if (methodName == null) return false;
         if (!call.isImplicitThis()) return false;
         if (!AsmClassGenerator.isThisExpression(call.getObjectExpression())) return false;
         FieldNode field = classNode.getDeclaredField(methodName);
         if (field == null) return false;
         if (isStaticInvocation(call) && !field.isStatic()) return false;
         Expression arguments = call.getArguments();
-        return ! classNode.hasPossibleMethod(methodName, arguments);
+        return !classNode.hasPossibleMethod(methodName, arguments);
     }
 
-    private void invokeClosure(Expression arguments, String methodName) {
+    private void invokeClosure(final Expression arguments, final String methodName) {
         AsmClassGenerator acg = controller.getAcg();
         acg.visitVariableExpression(new VariableExpression(methodName));
         controller.getOperandStack().box();
@@ -568,66 +501,52 @@ public class InvocationWriter {
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
     }
 
-    private boolean isStaticInvocation(MethodCallExpression call) {
+    private boolean isStaticInvocation(final MethodCallExpression call) {
         if (!AsmClassGenerator.isThisExpression(call.getObjectExpression())) return false;
         if (controller.isStaticMethod()) return true;
         return controller.isStaticContext() && !call.isImplicitThis();
     }
-    
-    private static boolean usesSuper(MethodCallExpression call) {
-        Expression expression = call.getObjectExpression();
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            String variable = varExp.getName();
-            return variable.equals("super");
-        }
-        return false;
+
+    public void writeInvokeStaticMethod(final StaticMethodCallExpression call) {
+        Expression receiver = new ClassExpression(call.getOwnerType());
+        Expression messageName = new ConstantExpression(call.getMethod());
+        makeCall(call, receiver, messageName, call.getArguments(), InvocationWriter.invokeStaticMethod, false, false, false);
     }
 
-    public void writeInvokeStaticMethod(StaticMethodCallExpression call) {
-        makeCall(call,
-                new ClassExpression(call.getOwnerType()),
-                new ConstantExpression(call.getMethod()),
-                call.getArguments(),
-                InvocationWriter.invokeStaticMethod,
-                false, false, false);
-    }
-    
-    private boolean writeDirectConstructorCall(ConstructorCallExpression call) {
+    private boolean writeDirectConstructorCall(final ConstructorCallExpression call) {
         if (!controller.isFastPath()) return false;
-        
-        StatementMeta meta = call.getNodeMetaData(StatementMeta.class);
+
+        OptimizingStatementWriter.StatementMeta meta = call.getNodeMetaData(OptimizingStatementWriter.StatementMeta.class);
         ConstructorNode cn = null;
-        if (meta!=null) cn = (ConstructorNode) meta.target;
-        if (cn==null) return false;
-        
+        if (meta != null) cn = (ConstructorNode) meta.target;
+        if (cn == null) return false;
+
         String ownerDescriptor = prepareConstructorCall(cn);
         TupleExpression args = makeArgumentList(call.getArguments());
         loadArguments(args.getExpressions(), cn.getParameters());
         finnishConstructorCall(cn, ownerDescriptor, args.getExpressions().size());
-        
+
         return true;
     }
-    
-    protected String prepareConstructorCall(ConstructorNode cn) {
+
+    protected String prepareConstructorCall(final ConstructorNode cn) {
         String owner = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
         MethodVisitor mv = controller.getMethodVisitor();
-        
         mv.visitTypeInsn(NEW, owner);
         mv.visitInsn(DUP);
         return owner;
     }
-    
-    protected void finnishConstructorCall(ConstructorNode cn, String ownerDescriptor, int argsToRemove) {
+
+    protected void finnishConstructorCall(final ConstructorNode cn, final String ownerDescriptor, final int argsToRemove) {
         String desc = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESPECIAL, ownerDescriptor, "<init>", desc, false);
-        
+
         controller.getOperandStack().remove(argsToRemove);
         controller.getOperandStack().push(cn.getDeclaringClass());
     }
 
-    protected void writeNormalConstructorCall(ConstructorCallExpression call) {
+    protected void writeNormalConstructorCall(final ConstructorCallExpression call) {
         Expression arguments = call.getArguments();
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
@@ -637,36 +556,33 @@ public class InvocationWriter {
             }
         }
 
-        Expression receiverClass = new ClassExpression(call.getType());
-        controller.getCallSiteWriter().makeCallSite(
-                receiverClass, CallSiteWriter.CONSTRUCTOR,
-                arguments, false, false, false,
-                false);
+        Expression receiver = new ClassExpression(call.getType());
+        controller.getCallSiteWriter().makeCallSite(receiver, CallSiteWriter.CONSTRUCTOR, arguments, false, false, false, false);
     }
-    
-    public void writeInvokeConstructor(ConstructorCallExpression call) {
+
+    public void writeInvokeConstructor(final ConstructorCallExpression call) {
         if (writeDirectConstructorCall(call)) return;
         if (writeAICCall(call)) return;
         writeNormalConstructorCall(call);
     }
 
-    protected boolean writeAICCall(ConstructorCallExpression call) {
+    protected boolean writeAICCall(final ConstructorCallExpression call) {
         if (!call.isUsingAnonymousInnerClass()) return false;
         ConstructorNode cn = call.getType().getDeclaredConstructors().get(0);
         OperandStack os = controller.getOperandStack();
-        
+
         String ownerDescriptor = prepareConstructorCall(cn);
-        
+
         List<Expression> args = makeArgumentList(call.getArguments()).getExpressions();
         Parameter[] params = cn.getParameters();
         // if a this appears as parameter here, then it should be
-        // not static, unless we are in a static method. But since 
+        // not static, unless we are in a static method. But since
         // ACG#visitVariableExpression does the opposite for this case, we
         // push here an explicit this. This should not have any negative effect
         // sine visiting a method call or property with implicit this will push
         // a new value for this again.
         controller.getCompileStack().pushImplicitThis(true);
-        for (int i=0; i<params.length; i++) {
+        for (int i = 0, n = params.length; i < n; i += 1) {
             Parameter p = params[i];
             Expression arg = args.get(i);
             if (arg instanceof VariableExpression) {
@@ -681,8 +597,8 @@ public class InvocationWriter {
         finnishConstructorCall(cn, ownerDescriptor, args.size());
         return true;
     }
-    
-    private void loadVariableWithReference(VariableExpression var) {
+
+    private void loadVariableWithReference(final VariableExpression var) {
         if (!var.isUseReferenceDirectly()) {
             var.visit(controller.getAcg());
         } else {
@@ -690,11 +606,11 @@ public class InvocationWriter {
         }
     }
 
-    public final void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
+    public final void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments) {
         makeSingleArgumentCall(receiver, message, arguments, false);
     }
 
-    public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments, boolean safe) {
+    public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments, final boolean safe) {
         controller.getCallSiteWriter().makeSingleArgumentCall(receiver, message, arguments, safe);
     }
 
@@ -704,7 +620,7 @@ public class InvocationWriter {
         controller.getCompileStack().pop();
     }
 
-    private void visitSpecialConstructorCall(ConstructorCallExpression call) {
+    private void visitSpecialConstructorCall(final ConstructorCallExpression call) {
         if (controller.getClosureWriter().addGeneratedClosureConstructorCall(call)) return;
         ClassNode callNode = controller.getClassNode();
         if (call.isSuperCall()) callNode = callNode.getSuperClass();
@@ -714,21 +630,18 @@ public class InvocationWriter {
         }
     }
 
-    private static List<ConstructorNode> sortConstructors(ConstructorCallExpression call, ClassNode callNode) {
+    private static List<ConstructorNode> sortConstructors(final ConstructorCallExpression call, final ClassNode callNode) {
         // sort in a new list to prevent side effects
-        List<ConstructorNode> constructors = new ArrayList<ConstructorNode>(callNode.getDeclaredConstructors());
-        Comparator comp = (arg0, arg1) -> {
-            ConstructorNode c0 = (ConstructorNode) arg0;
-            ConstructorNode c1 = (ConstructorNode) arg1;
+        List<ConstructorNode> constructors = new ArrayList<>(callNode.getDeclaredConstructors());
+        constructors.sort((c0, c1) -> {
             String descriptor0 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters());
             String descriptor1 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
             return descriptor0.compareTo(descriptor1);
-        };
-        constructors.sort(comp);
+        });
         return constructors;
     }
 
-    private boolean makeDirectConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
+    private boolean makeDirectConstructorCall(final List<ConstructorNode> constructors, final ConstructorCallExpression call, final ClassNode callNode) {
         if (!controller.isConstructor()) return false;
 
         Expression arguments = call.getArguments();
@@ -744,13 +657,13 @@ public class InvocationWriter {
         }
 
         ConstructorNode cn = getMatchingConstructor(constructors, argumentList);
-        if (cn==null) return false;
+        if (cn == null) return false;
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
         Parameter[] params = cn.getParameters();
 
         mv.visitVarInsn(ALOAD, 0);
-        for (int i=0; i<params.length; i++) {
+        for (int i = 0, n = params.length; i < n; i += 1) {
             Expression expression = argumentList.get(i);
             expression.visit(controller.getAcg());
             if (!AsmClassGenerator.isNullConstant(expression)) {
@@ -764,7 +677,7 @@ public class InvocationWriter {
         return true;
     }
 
-    private void makeMOPBasedConstructorCall(List<ConstructorNode> constructors, ConstructorCallExpression call, ClassNode callNode) {
+    private void makeMOPBasedConstructorCall(final List<ConstructorNode> constructors, final ConstructorCallExpression call, final ClassNode callNode) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
         call.getArguments().visit(controller.getAcg());
@@ -786,21 +699,21 @@ public class InvocationWriter {
             mv.visitTypeInsn(NEW, BytecodeHelper.getClassInternalName(callNode));
         }
         mv.visitInsn(SWAP);
-        TreeMap<Integer,ConstructorNode> sortedConstructors = new TreeMap<Integer, ConstructorNode>();
+        TreeMap<Integer,ConstructorNode> sortedConstructors = new TreeMap<>();
         for (ConstructorNode constructor : constructors) {
             String typeDescriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, constructor.getParameters());
             int hash = BytecodeHelper.hashCode(typeDescriptor);
             ConstructorNode sameHashNode = sortedConstructors.put(hash, constructor);
-            if (sameHashNode!=null) {
-                controller.getSourceUnit().addError(
-                        new SyntaxException("Unable to compile class "+controller.getClassNode().getName() + " due to hash collision in constructors", call.getLineNumber(), call.getColumnNumber()));
+            if (sameHashNode != null) {
+                controller.getSourceUnit().addError(new SyntaxException(
+                    "Unable to compile class "+controller.getClassNode().getName() + " due to hash collision in constructors", call.getLineNumber(), call.getColumnNumber()));
             }
         }
         Label[] targets = new Label[constructors.size()];
         int[] indices = new int[constructors.size()];
         Iterator<Integer> hashIt = sortedConstructors.keySet().iterator();
         Iterator<ConstructorNode> constructorIt = sortedConstructors.values().iterator();
-        for (int i = 0; i < targets.length; i++) {
+        for (int i = 0, n = targets.length; i < n; i += 1) {
             targets[i] = new Label();
             indices[i] = hashIt.next();
         }
@@ -845,9 +758,9 @@ public class InvocationWriter {
             Parameter[] parameters = cn.getParameters();
             int lengthWithoutVargs = parameters.length;
             if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
-                lengthWithoutVargs--;
+                lengthWithoutVargs -= 1;
             }
-            for (int p = 0; p < lengthWithoutVargs; p++) {
+            for (int p = 0; p < lengthWithoutVargs; p += 1) {
                 loadAndCastElement(operandStack, mv, parameters, p);
             }
             if (parameters.length > lengthWithoutVargs) {
@@ -891,7 +804,7 @@ public class InvocationWriter {
         mv.visitInsn(POP);
     }
 
-    private static void loadAndCastElement(OperandStack operandStack, MethodVisitor mv, Parameter[] parameters, int p) {
+    private static void loadAndCastElement(final OperandStack operandStack, final MethodVisitor mv, final Parameter[] parameters, final int p) {
         operandStack.push(ClassHelper.OBJECT_TYPE);
         mv.visitInsn(DUP);
         BytecodeHelper.pushConstant(mv, p);
@@ -904,7 +817,7 @@ public class InvocationWriter {
     }
 
     // we match only on the number of arguments, not anything else
-    private static ConstructorNode getMatchingConstructor(List<ConstructorNode> constructors, List<Expression> argumentList) {
+    private static ConstructorNode getMatchingConstructor(final List<ConstructorNode> constructors, final List<Expression> argumentList) {
         ConstructorNode lastMatch = null;
         for (ConstructorNode cn : constructors) {
             Parameter[] params = cn.getParameters();
@@ -921,7 +834,7 @@ public class InvocationWriter {
     }
 
     /**
-     * This converts sourceType to a non primitive by using Groovy casting.
+     * Converts sourceType to a non primitive by using Groovy casting.
      * sourceType might be a primitive
      * This might be done using SBA#castToType
      */
@@ -946,12 +859,12 @@ public class InvocationWriter {
         }
     }
 
-    public void castNonPrimitiveToBool(ClassNode last) {
+    public void castNonPrimitiveToBool(final ClassNode last) {
         MethodVisitor mv = controller.getMethodVisitor();
         BytecodeHelper.unbox(mv, ClassHelper.boolean_TYPE);
     }
 
-    public void coerce(ClassNode from, ClassNode target) {
+    public void coerce(final ClassNode from, final ClassNode target) {
         if (from.isDerivedFrom(target)) return;
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack os = controller.getOperandStack();
