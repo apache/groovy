@@ -1123,6 +1123,13 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (field != null) {
                     visitFieldExpression(new FieldExpression(field));
                     visited = true;
+                } else if (isSuperExpression(objectExpression)) {
+                    if (controller.getCompileStack().isLHS()) {
+                        setPropertyOfSuperClass(classNode, expression, controller.getMethodVisitor());
+                    } else {
+                        visitMethodCallExpression(new MethodCallExpression(objectExpression, "get" + capitalize(name), MethodCallExpression.NO_ARGUMENTS));
+                    }
+                    visited = true;
                 }
             }
         }
