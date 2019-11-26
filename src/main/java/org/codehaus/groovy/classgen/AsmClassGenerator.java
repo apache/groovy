@@ -2132,7 +2132,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
     }
 
-    private static boolean isSuperExpression(final Expression expression) {
+    public static boolean isSuperExpression(final Expression expression) {
         return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
     }
 
