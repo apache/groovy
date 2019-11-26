@@ -913,104 +913,27 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitAttributeOrProperty(PropertyExpression expression, MethodCallerMultiAdapter adapter) {
-        MethodVisitor mv = controller.getMethodVisitor();
-
-        Expression objectExpression = expression.getObjectExpression();
         ClassNode classNode = controller.getClassNode();
+        String propertyName = expression.getPropertyAsString();
+        Expression objectExpression = expression.getObjectExpression();
 
-        //TODO (blackdrag): this if branch needs a rework. There should be no direct method calls be produced, the
-        // handling of this/super could be much simplified (see visitAttributeExpression), the field accessibility check
-        // could be moved directly into the search, which would also no longer require the GroovyBugError then
-        // the outer class field access seems to be without any tests (if there are tests for that, then the code
-        // here is dead code)
-        if (isThisOrSuper(objectExpression)) {
-            // let's use the field expression if it's available
-            String name = expression.getPropertyAsString();
-            if (name != null) {
-                FieldNode field = null;
-                boolean privateSuperField = false;
-                if (isSuperExpression(objectExpression)) {
-                    field = classNode.getSuperClass().getDeclaredField(name);
-                    if (field != null && field.isPrivate()) {
-                        privateSuperField = true;
-                    }
-                } else if (expression.isImplicitThis() || !controller.isInClosure()) {
-                    field = classNode.getDeclaredField(name);
-                    ClassNode outer = classNode.getOuterClass();
-                    if (field == null && outer != null) {
-                        FieldNode outerClassField;
-                        do {
-                            outerClassField = outer.getDeclaredField(name);
-                            if (outerClassField!=null && outerClassField.isStatic() && outerClassField.isFinal()) {
-                                if (outer != classNode.getOuterClass() && outerClassField.isPrivate()) {
-                                    throw new GroovyBugError("Trying to access private constant field [" + outerClassField.getDeclaringClass() + "#" + outerClassField.getName() + "] from inner class");
-                                }
-                                PropertyExpression pexp = new PropertyExpression(
-                                        new ClassExpression(outer),
-                                        expression.getProperty()
-                                );
-                                pexp.getObjectExpression().setSourcePosition(objectExpression);
-                                pexp.visit(controller.getAcg());
-                                return;
-                            }
-                            outer = outer.getSuperClass();
-                        } while (outer != null);
-                    }
-                    if (field == null
-                            && expression instanceof AttributeExpression
-                            && isThisExpression(objectExpression)
-                            && controller.isStaticContext()) {
-                        // GROOVY-6183
-                        ClassNode current = classNode.getSuperClass();
-                        while (field == null && current != null) {
-                            field = current.getDeclaredField(name);
-                            current = current.getSuperClass();
-                        }
-                        if (field != null && (field.isProtected() || field.isPublic())) {
-                            visitFieldExpression(new FieldExpression(field));
-                            return;
-                        }
-                    }
-                }
-                if (field != null && !privateSuperField) { // GROOVY-4497: don't visit super field if it is private
-                    visitFieldExpression(new FieldExpression(field));
-                    return;
-                }
-                if (isSuperExpression(objectExpression)) {
-                    String prefix;
-                    if (controller.getCompileStack().isLHS()) {
-                        setPropertyOfSuperClass(classNode, expression, mv);
-                        return;
-                    } else {
-                        prefix = "get";
-                    }
-                    String propName = prefix + capitalize(name);
-                    visitMethodCallExpression(new MethodCallExpression(objectExpression, propName, MethodCallExpression.NO_ARGUMENTS));
-                    return;
-                }
-            }
-        }
-
-        String propName = expression.getPropertyAsString();
-        // TODO: add support for super here too
-        if (expression.getObjectExpression() instanceof ClassExpression && "this".equals(propName)) {
+        if (objectExpression instanceof ClassExpression && "this".equals(propertyName)) {
             // we have something like A.B.this, and need to make it
             // into this.this$0.this$0, where this.this$0 returns
             // A.B and this.this$0.this$0 return A.
             ClassNode type = objectExpression.getType();
-            ClassNode iterType = classNode;
-            if (controller.getCompileStack().isInSpecialConstructorCall() && classNode.getOuterClass() != null) {
-                boolean staticInnerClass = classNode.isStaticClass();
+            if (controller.getCompileStack().isInSpecialConstructorCall() && type.equals(classNode.getOuterClass())) {
                 // Outer.this in a special constructor call
-                if (classNode.getOuterClass().equals(type)) {
-                    ConstructorNode ctor = controller.getConstructorNode();
-                    Expression receiver = !staticInnerClass ? new VariableExpression(ctor.getParameters()[0]) : new ClassExpression(type);
-                    receiver.setSourcePosition(expression);
-                    receiver.visit(this);
-                    return;
-                }
+                ConstructorNode ctor = controller.getConstructorNode();
+                Expression receiver = !classNode.isStaticClass() ? new VariableExpression(ctor.getParameters()[0]) : new ClassExpression(type);
+                receiver.setSourcePosition(expression);
+                receiver.visit(this);
+                return;
             }
+
+            MethodVisitor mv = controller.getMethodVisitor();
             mv.visitVarInsn(ALOAD, 0);
+            ClassNode iterType = classNode;
             while (!iterType.equals(type)) {
                 String ownerName = BytecodeHelper.getClassInternalName(iterType);
                 if (iterType.getOuterClass() == null) break;
@@ -1018,7 +941,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 iterType = iterType.getOuterClass();
                 if (thisField == null) {
                     // closure within inner class
-                    while (iterType.isDerivedFrom(ClassHelper.CLOSURE_TYPE)) {
+                    while (iterType.isDerivedFrom(ClassHelper.CLOSURE_TYPE) && iterType.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
                         // GROOVY-8881: cater for closures within closures - getThisObject is already outer class of all closures
                         iterType = iterType.getOuterClass();
                     }
@@ -1040,14 +963,14 @@ public class AsmClassGenerator extends ClassGenerator {
             return;
         }
 
-        if (propName != null) {
+        if (propertyName != null) {
             // TODO: spread safe should be handled inside
             if (adapter == getProperty && !expression.isSpreadSafe()) {
-                controller.getCallSiteWriter().makeGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
+                controller.getCallSiteWriter().makeGetPropertySite(objectExpression, propertyName, expression.isSafe(), expression.isImplicitThis());
             } else if (adapter == getGroovyObjectProperty && !expression.isSpreadSafe()) {
-                controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
+                controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propertyName, expression.isSafe(), expression.isImplicitThis());
             } else {
-                controller.getCallSiteWriter().fallbackAttributeOrPropertySite(expression, objectExpression, propName, adapter);
+                controller.getCallSiteWriter().fallbackAttributeOrPropertySite(expression, objectExpression, propertyName, adapter);
             }
         } else {
             controller.getCallSiteWriter().fallbackAttributeOrPropertySite(expression, objectExpression, null, adapter);
@@ -1113,30 +1036,71 @@ public class AsmClassGenerator extends ClassGenerator {
         return objectExpressionType.isDerivedFromGroovyObject();
     }
 
-    private boolean isThisOrSuperInStaticContext(Expression objectExpression) {
-        return !controller.isInClosure() && controller.isStaticContext() && isThisOrSuper(objectExpression);
-    }
-
     @Override
     public void visitPropertyExpression(PropertyExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
         OperandStack operandStack = controller.getOperandStack();
         int mark = operandStack.getStackLength() - 1;
-        MethodCallerMultiAdapter adapter;
-        if (controller.getCompileStack().isLHS()) {
-            if (isGroovyObject(objectExpression) && !isThisOrSuperInStaticContext(objectExpression)) {
-                adapter = setGroovyObjectProperty;
-            } else {
-                adapter = setProperty;
-            }
-        } else {
-            if (isGroovyObject(objectExpression) && !isThisOrSuperInStaticContext(objectExpression)) {
-                adapter = getGroovyObjectProperty;
-            } else {
-                adapter = getProperty;
+        boolean visited = false;
+
+        if (isThisOrSuper(objectExpression)) {
+            String name = expression.getPropertyAsString();
+            if (name != null) {
+                FieldNode field = null;
+                boolean privateSuperField = false;
+                ClassNode classNode = controller.getClassNode();
+
+                if (isSuperExpression(objectExpression)) {
+                    field = classNode.getSuperClass().getDeclaredField(name);
+                    privateSuperField = (field != null && field.isPrivate());
+                } else if (expression.isImplicitThis() || !controller.isInClosure()) {
+                    field = classNode.getDeclaredField(name);
+
+                    ClassNode outer = classNode.getOuterClass();
+                    if (field == null && outer != null) {
+                        do {
+                            FieldNode outerClassField = outer.getDeclaredField(name);
+                            if (outerClassField != null && outerClassField.isStatic() && outerClassField.isFinal()) {
+                                if (outerClassField.isPrivate() && classNode.getOuterClass() != outer) {
+                                    throw new GroovyBugError("Trying to access private field [" + outerClassField.getDeclaringClass() + "#" + outerClassField.getName() + "] from inner class");
+                                }
+                                PropertyExpression staticOuterField = new PropertyExpression(new ClassExpression(outer), expression.getProperty());
+                                staticOuterField.getObjectExpression().setSourcePosition(objectExpression);
+                                staticOuterField.visit(controller.getAcg());
+                                return;
+                            }
+                            outer = outer.getSuperClass();
+                        } while (outer != null);
+                    }
+                }
+
+                if (field != null && !privateSuperField) { // GROOVY-4497: don't visit super field if it is private
+                    visitFieldExpression(new FieldExpression(field));
+                    visited = true;
+                } else if (isSuperExpression(objectExpression)) {
+                    if (controller.getCompileStack().isLHS()) {
+                        setPropertyOfSuperClass(classNode, expression, controller.getMethodVisitor());
+                    } else {
+                        visitMethodCallExpression(new MethodCallExpression(objectExpression, "get" + capitalize(name), MethodCallExpression.NO_ARGUMENTS));
+                    }
+                    visited = true;
+                }
             }
         }
-        visitAttributeOrProperty(expression, adapter);
+
+        if (!visited) {
+            boolean useMetaObjectProtocol = isGroovyObject(objectExpression)
+                    && (!isThisOrSuper(objectExpression) || !controller.isStaticContext() || controller.isInClosure());
+
+            MethodCallerMultiAdapter adapter;
+            if (controller.getCompileStack().isLHS()) {
+                adapter = useMetaObjectProtocol ? setGroovyObjectProperty : setProperty;
+            } else {
+                adapter = useMetaObjectProtocol ? getGroovyObjectProperty : getProperty;
+            }
+            visitAttributeOrProperty(expression, adapter);
+        }
+
         if (controller.getCompileStack().isLHS()) {
             operandStack.remove(operandStack.getStackLength() - mark);
         } else {
@@ -1151,18 +1115,13 @@ public class AsmClassGenerator extends ClassGenerator {
         int mark = operandStack.getStackLength() - 1;
         boolean visited = false;
 
-        // TODO: checking for isThisOrSuper is enough for AttributeExpression, but if this is moved into
-        // visitAttributeOrProperty to handle attributes and properties equally, then the extended check should be done
         if (isThisOrSuper(objectExpression)) {
-            // let's use the field expression if it's available
             String name = expression.getPropertyAsString();
             if (name != null) {
                 ClassNode classNode = controller.getClassNode();
                 FieldNode field = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
                 if (field != null) {
-                    FieldExpression fldExp = new FieldExpression(field);
-                    fldExp.setSourcePosition(expression.getProperty());
-                    visitFieldExpression(fldExp);
+                    visitFieldExpression(new FieldExpression(field));
                     visited = true;
                 }
             }
@@ -1172,12 +1131,12 @@ public class AsmClassGenerator extends ClassGenerator {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
                 adapter = setField;
-                if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
-                if (usesSuper(expression)) adapter = setFieldOnSuper;
+                if (isSuperExpression(objectExpression)) adapter = setFieldOnSuper;
+                else if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
             } else {
                 adapter = getField;
-                if (isGroovyObject(objectExpression)) adapter = getGroovyObjectField;
-                if (usesSuper(expression)) adapter = getFieldOnSuper;
+                if (isSuperExpression(objectExpression)) adapter = getFieldOnSuper;
+                else if (isGroovyObject(objectExpression)) adapter = getGroovyObjectField;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -1187,16 +1146,6 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             controller.getAssertionWriter().record(expression.getProperty());
         }
-    }
-
-    private static boolean usesSuper(PropertyExpression pe) {
-        Expression objExp = pe.getObjectExpression();
-        if (objExp instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) objExp;
-            String variable = varExp.getName();
-            return variable.equals("super");
-        }
-        return false;
     }
 
     @Override
