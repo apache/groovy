@@ -32,7 +32,7 @@ In Groovy we work with three kinds of objects: POJO, POGO and Groovy Interceptor
 
 - POJO - A regular Java object whose class can be written in Java or any other language for the JVM.
 - POGO - A Groovy object whose class is written in Groovy. It extends `java.lang.Object` and implements the gapi:groovy.lang.GroovyObject[] interface by default.
-- Groovy Interceptor - A Groovy object that implements the gapi:groovy.lang.GroovyInterceptable[] interface and has method-interception capability which is discussed in the <<core-metaprogramming.adoc#_groovyinterceptable,GroovyInterceptable>> section.
+- Groovy Interceptor - A Groovy object that implements the gapi:groovy.lang.GroovyInterceptable[] interface and has method-interception capability which is discussed in the <<_groovyinterceptable,GroovyInterceptable>> section.
 
 For every method call Groovy checks whether the object is a POJO or a POGO. For POJOs, Groovy fetches its `MetaClass` from the gapi:groovy.lang.MetaClassRegistry[] and delegates method invocation to it. For POGOs, Groovy takes more steps, as illustrated in the following figure:
 
@@ -63,7 +63,7 @@ public interface GroovyObject {
 
 ==== invokeMethod
 
-This method is primarily intended to be used in conjunction with the <<core-metaprogramming.adoc#_groovyinterceptable,GroovyInterceptable>>
+This method is primarily intended to be used in conjunction with the <<_groovyinterceptable,GroovyInterceptable>>
 interface or an object's `MetaClass` where it will intercept all method calls.
 
 It is also invoked when the method called is not present on a Groovy object. Here is a simple example using an
@@ -75,7 +75,7 @@ include::{projectdir}/src/spec/test/metaprogramming/GroovyObjectTest.groovy[tags
 ----
 
 However, the use of `invokeMethod` to intercept missing methods is discouraged.  In cases where the intent is to only
-intercept method calls in the case of a failed method dispatch use <<core-metaprogramming.adoc#_methodmissing,methodMissing>>
+intercept method calls in the case of a failed method dispatch use <<_methodmissing,methodMissing>>
 instead.
 
 ==== get/setProperty
@@ -110,7 +110,7 @@ someObject.metaClass = new OwnMetaClassImplementation()
 ----
 
 [NOTE]
-You can find an additional example in the <<core-metaprogramming.adoc#_groovyinterceptable,GroovyInterceptable>> topic.
+You can find an additional example in the <<_groovyinterceptable,GroovyInterceptable>> topic.
 
 === get/setAttribute
 
@@ -161,7 +161,7 @@ class GORM {
 }
 ----
 
-Notice how, if we find a method to invoke, we then dynamically register a new method on the fly using <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>.
+Notice how, if we find a method to invoke, we then dynamically register a new method on the fly using <<metaprogramming_emc,ExpandoMetaClass>>.
 This is so that the next time the same method is called it is more efficient. This way of using `methodMissing` does not have
 the overhead of `invokeMethod` _and_ is not expensive from the second call on.
 
@@ -190,7 +190,7 @@ performance.
 
 === static methodMissing
 
-Static variant of `methodMissing` method can be added via the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>
+Static variant of `methodMissing` method can be added via the <<metaprogramming_emc,ExpandoMetaClass>>
 or can be implemented at the class level with `$static_methodMissing` method.
 
 [source,groovy]
@@ -200,7 +200,7 @@ include::{projectdir}/src/spec/test/metaprogramming/StaticPropertyMissingAndMeth
 
 === static propertyMissing
 
-Static variant of `propertyMissing` method can be added via the <<core-metaprogramming.adoc#metaprogramming_emc,ExpandoMetaClass>>
+Static variant of `propertyMissing` method can be added via the <<metaprogramming_emc,ExpandoMetaClass>>
 or can be implemented at the class level with `$static_propertyMissing` method.
 
 [source,groovy]
@@ -244,7 +244,7 @@ include::{projectdir}/src/spec/test/metaprogramming/InterceptionThroughMetaClass
 ----
 
 [NOTE]
-Additional information about `MetaClass` can be found in the <<core-metaprogramming.adoc#_metaclasses,MetaClasses>> section.
+Additional information about `MetaClass` can be found in the <<_metaclasses,MetaClasses>> section.
 
 [[categories]]
 === Categories
@@ -358,8 +358,7 @@ Applying the `@Category` annotation has the advantage of being able to use insta
 first parameter. The target type class is given as an argument to the annotation instead.
 
 [NOTE]
-There is a distinct section on `@Category` in the
-<<core-metaprogramming.adoc#xform-Category,compile-time metaprogramming section>>.
+There is a distinct section on `@Category` in the <<xform-Category,compile-time metaprogramming section>>.
 
 === Metaclasses
 
@@ -864,8 +863,7 @@ and what are the disadvantages of this technique.
 Groovy comes with various AST transformations covering different needs: reducing boilerplate (code generation), implementing
 design patterns (delegation, ...), logging, declarative concurrency, cloning, safer scripting, tweaking the compilation,
 implementing Swing patterns, testing and eventually managing dependencies. If none of those AST transformations cover
-your needs, you can still implement your own, as show in section <<developing-ast-xforms,Developing your own AST
-transformations>>.
+your needs, you can still implement your own, as show in section <<developing-ast-xforms,Developing your own AST transformations>>.
 
 AST transformations can be separated into two categories:
 
@@ -2661,29 +2659,29 @@ Here, the `add` method will have final parameters but the `mult` method will rem
 [[xform-AnnotationCollector]]
 ===== `@groovy.transform.AnnotationCollector`
 
-`@AnnotationCollector` allows the creation of meta-annotations, which are described in a <<meta-annotations,dedicated section>>.
+`@AnnotationCollector` allows the creation of meta-annotations, which are described in a <<_meta_annotations,dedicated section>>.
 
 [[xform-TypeChecked]]
 ===== `@groovy.transform.TypeChecked`
 
-`@TypeChecked` activates compile-time type checking on your Groovy code. See <<section-typechecked,section on type checking>> for details.
+`@TypeChecked` activates compile-time type checking on your Groovy code. See <<static-type-checking,section on type checking>> for details.
 
 [[xform-CompileStatic]]
 ===== `@groovy.transform.CompileStatic`
 
-`@CompileStatic` activates static compilation on your Groovy code. See <<section-typechecked,section on type checking>> for details.
+`@CompileStatic` activates static compilation on your Groovy code. See <<static-type-checking,section on type checking>> for details.
 
 [[xform-CompileDynamic]]
 ===== `@groovy.transform.CompileDynamic`
 
-`@CompileDynamic` disables static compilation on parts of your Groovy code. See <<section-typechecked,section on type checking>> for details.
+`@CompileDynamic` disables static compilation on parts of your Groovy code. See <<static-type-checking,section on type checking>> for details.
 
 [[xform-DelegatesTo]]
 ===== `@groovy.lang.DelegatesTo`
 
 `@DelegatesTo` is not, technically speaking, an AST transformation. It is aimed at documenting code and helping the compiler in case you are
 using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compilation>>. The annotation is described thoroughly in the
-<<section-delegatesto,DSL section>> of this guide.
+<<core-domain-specific-languages.adoc#section-delegatesto,DSL section>> of this guide.
 
 [[xform-SelfType]]
 ===== `@groovy.transform.SelfType`
@@ -3059,7 +3057,7 @@ Global AST transformation are similar to local one with a major difference: they
 they are applied _globally_, that is to say on each class being compiled. It is therefore very important to limit their
 use to last resort, because it can have a significant impact on the compiler performance.
 
-Following the example of the <<transform-local, local AST transformation>>, imagine that we would like to trace all
+Following the example of the <<transform-local,local AST transformation>>, imagine that we would like to trace all
 methods, and not only those which are annotated with `@WithLogging`. Basically, we need this code to behave the same
 as the one annotated with `@WithLogging` before:
 
