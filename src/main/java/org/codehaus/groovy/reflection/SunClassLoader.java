@@ -79,12 +79,12 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     }
 
     protected void loadFromRes(String name) throws IOException {
-        final InputStream asStream = SunClassLoader.class.getClassLoader().getResourceAsStream(resName(name));
-        ClassReader reader = new ClassReader(asStream);
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        reader.accept(cw, ClassWriter.COMPUTE_MAXS);
-        asStream.close();
-        define(cw.toByteArray(), name);
+        try (final InputStream asStream = SunClassLoader.class.getClassLoader().getResourceAsStream(resName(name))) {
+            ClassReader reader = new ClassReader(asStream);
+            final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            reader.accept(cw, ClassWriter.COMPUTE_MAXS);
+            define(cw.toByteArray(), name);
+        }
     }
 
     protected static String resName(String s) {
