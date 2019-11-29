@@ -76,7 +76,7 @@ public class AstStringCompiler {
      * Performs the String source to {@link java.util.List} of statement {@link ASTNode}.
      *
      * @param script a Groovy script in String form
-     * @return {@link java.util.List} of {@link ASTNode}
+     * @return {@link java.util.List} of statement {@link ASTNode}
      * @since 3.0.0
      */
     public List<ASTNode> compile(String script) {
