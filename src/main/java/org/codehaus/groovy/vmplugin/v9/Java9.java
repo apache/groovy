@@ -164,7 +164,7 @@ public class Java9 extends Java8 {
     }
 
     @Override
-    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?>[] params, Class<?> caller) {
+    public MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?> caller) {
         if (!(metaMethod instanceof CachedMethod)) {
             return metaMethod;
         }
@@ -190,6 +190,7 @@ public class Java9 extends Java8 {
             return metaMethod;
         }
 
+        Class<?>[] params = cachedMethod.getPT();
         Class<?> theClass = metaClass.getTheClass();
         if (declaringClass == theClass) {
             if (BigInteger.class == theClass) {

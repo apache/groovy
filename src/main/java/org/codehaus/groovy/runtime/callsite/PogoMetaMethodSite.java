@@ -160,7 +160,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
         final Method reflect;
 
         public PogoCachedMethodSite(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params) {
-            super(site, metaClass, VM_PLUGIN.transformMetaMethod(metaClass, metaMethod, params), params);
+            super(site, metaClass, VM_PLUGIN.transformMetaMethod(metaClass, metaMethod), params);
             reflect = ((CachedMethod) super.metaMethod).setAccessible();
         }
 
