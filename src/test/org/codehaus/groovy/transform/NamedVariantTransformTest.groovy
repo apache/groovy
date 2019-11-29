@@ -18,13 +18,18 @@
  */
 package org.codehaus.groovy.transform
 
-import groovy.test.GroovyShellTestCase
+import groovy.transform.CompileStatic
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 /**
  * Tests for the {@code @NamedVariant} transformation.
  */
-class NamedVariantTransformTest extends GroovyShellTestCase {
+@CompileStatic
+final class NamedVariantTransformTest {
 
+    @Test
     void testNamedParam() {
         assertScript '''
             import groovy.transform.*
@@ -43,7 +48,7 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
 
             @NamedVariant
             String foo(a, @NamedParam String b2, @NamedDelegate Color shade, int c, @NamedParam(required=true) d, @NamedDelegate Animal pet) {
-              "$a $b2 $c $d ${pet.type?.toUpperCase()}:$pet.name $shade"
+                "$a $b2 $c $d ${pet.type?.toUpperCase()}:$pet.name $shade"
             }
 
             def result = foo(b2: 'b param', g: 12, b: 42, r: 12, 'foo', 42, d:true, type: 'Dog', name: 'Rover')
@@ -51,6 +56,7 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testNamedParamWithRename() {
         assertScript '''
             import groovy.transform.*
@@ -69,6 +75,7 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testNamedParamConstructor() {
         assertScript """
             import groovy.transform.*
@@ -77,9 +84,9 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
             class Color {
                 @NamedVariant
                 Color(@NamedParam int r, @NamedParam int g, @NamedParam int b) {
-                  this.r = r
-                  this.g = g
-                  this.b = b
+                    this.r = r
+                    this.g = g
+                    this.b = b
                 }
                 private int r, g, b
             }
@@ -88,6 +95,7 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testNamedParamConstructorVisibility() {
         assertScript """
             import groovy.transform.*
@@ -99,9 +107,9 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
                 @VisibilityOptions(PUBLIC)
                 @NamedVariant
                 private Color(@NamedParam int r, @NamedParam int g, @NamedParam int b) {
-                  this.r = r
-                  this.g = g
-                  this.b = b
+                    this.r = r
+                    this.g = g
+                    this.b = b
                 }
             }
 
@@ -111,6 +119,7 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
         """
     }
 
+    @Test
     void testNamedParamInnerClass() {
         assertScript '''
             import groovy.transform.*
@@ -145,14 +154,77 @@ class NamedVariantTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    @Test
     void testGeneratedMethodsSkipped() {
         assertScript '''
             import groovy.transform.*
             import static org.codehaus.groovy.transform.NamedVariantTransformTest.*
 
             @NamedVariant
-            def baz(@NamedDelegate Storm st, @NamedDelegate Switch sw) { st.front + sw.back }
+            def baz(@NamedDelegate Storm storm_, @NamedDelegate Switch switch_) { storm_.front + switch_.back }
             assert baz(front: 'Hello', back: 'World') == 'HelloWorld'
+        '''
+    }
+
+    @Test // GROOVY-9183
+    void testNamedDelegateWithPrimitiveValues() {
+        assertScript '''
+            import groovy.transform.*
+
+            class Color {
+                int r, g, b
+            }
+
+            @NamedVariant
+            Color makeColor(@NamedDelegate Color color) {
+                color
+            }
+
+            def color = makeColor(r: 128, g: 128)
+            assert color.r == 128
+            assert color.g == 128
+            assert color.b == 0
+        '''
+    }
+
+    @Test // GROOVY-9183
+    void testNamedDelegateWithPropertyDefaults() {
+        assertScript '''
+            import groovy.transform.*
+
+            class RowMapper {
+                final Settings settings
+
+                @NamedVariant
+                RowMapper(Settings settings) {
+                    this.settings = settings
+                }
+
+                @NamedVariant
+                static RowMapper parse(@NamedDelegate Settings settings, Reader reader) {
+                    // settings missing the initializer values from properties not passed as named arguments
+                    new RowMapper(settings).parseImpl(reader)
+                }
+
+                private RowMapper parseImpl(Reader source) {
+                    // do work here
+                    return this
+                }
+
+                @Immutable
+                static class Settings {
+                    String separator = ','
+                    Boolean headers = true
+                    Integer headersRow = 0
+                    Integer firstDataRow = 1
+                }
+            }
+
+            def mapper = RowMapper.parse(separator: '\t', new StringReader(''))
+
+            assert mapper.settings.headers == true
+            assert mapper.settings.headersRow == 0
+            assert mapper.settings.firstDataRow == 1
         '''
     }
 
