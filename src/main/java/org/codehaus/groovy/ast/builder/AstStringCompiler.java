@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 /**
  * This class handles converting Strings to ASTNode lists.
  */
-class AstStringCompiler {
+public class AstStringCompiler {
     /**
      * Performs the String source to {@link java.util.List} of {@link ASTNode}.
      *
@@ -44,6 +44,7 @@ class AstStringCompiler {
      * @param compilePhase
      *      the int based CompilePhase to compile it to.
      * @param statementsOnly
+     * @return {@link java.util.List} of {@link ASTNode}
      */
     public List<ASTNode> compile(String script, CompilePhase compilePhase, boolean statementsOnly) {
         final String scriptClassName = makeScriptClassName();
@@ -69,6 +70,17 @@ class AstStringCompiler {
         }, (o1, o2) -> o1);
 
         return result;
+    }
+
+    /**
+     * Performs the String source to {@link java.util.List} of statement {@link ASTNode}.
+     *
+     * @param script a Groovy script in String form
+     * @return {@link java.util.List} of {@link ASTNode}
+     * @since 3.0.0
+     */
+    public List<ASTNode> compile(String script) {
+        return this.compile(script, CompilePhase.CONVERSION, true);
     }
 
     private static String makeScriptClassName() {
