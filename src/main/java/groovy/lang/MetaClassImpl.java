@@ -1257,7 +1257,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments));
+            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method);
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         } else {
             return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
@@ -1913,7 +1913,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //----------------------------------------------------------------------
             // executing the getter method
             //----------------------------------------------------------------------
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments));
+            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method);
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
@@ -2812,7 +2812,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 arguments[1] = newValue;
             }
 
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method, MetaClassHelper.convertToTypeArray(arguments));
+            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method);
             transformedMetaMethod.doMethodInvoke(object, arguments);
             return;
         }
