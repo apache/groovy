@@ -146,12 +146,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private final Index classPropertyIndex = new MethodIndex();
     private final SingleKeyHashMap staticPropertyIndex = new SingleKeyHashMap();
-    private final Map<String, MetaMethod> listeners = new HashMap<String, MetaMethod>();
-    private final List<MetaMethod> allMethods = new ArrayList<MetaMethod>();
+    private final Map<String, MetaMethod> listeners = new HashMap<>();
+    private final List<MetaMethod> allMethods = new ArrayList<>();
     // we only need one of these that can be reused over and over.
     private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
     private final Index classPropertyIndexForSuper = new MethodIndex();
-    private final Set<MetaMethod> newGroovyMethodsSet = new HashSet<MetaMethod>();
+    private final Set<MetaMethod> newGroovyMethodsSet = new HashSet<>();
     private final MetaMethod[] myNewMetaMethods;
     private final MetaMethod[] additionalMetaMethods;
 
@@ -185,7 +185,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         metaMethodIndex = new MetaMethodIndex(theCachedClass);
         final MetaMethod[] metaMethods = theCachedClass.getNewMetaMethods();
         if (add != null && !(add.length == 0)) {
-            List<MetaMethod> arr = new ArrayList<MetaMethod>();
+            List<MetaMethod> arr = new ArrayList<>();
             arr.addAll(Arrays.asList(metaMethods));
             arr.addAll(Arrays.asList(add));
             myNewMetaMethods = arr.toArray(MetaMethod.EMPTY_ARRAY);
@@ -436,7 +436,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected LinkedList<CachedClass> getSuperClasses() {
-        LinkedList<CachedClass> superClasses = new LinkedList<CachedClass>();
+        LinkedList<CachedClass> superClasses = new LinkedList<>();
 
         if (theClass.isInterface()) {
             superClasses.addFirst(ReflectionCache.OBJECT_CLASS);
@@ -2102,7 +2102,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        return new Tuple2<MetaMethod, MetaProperty>(method, mp);
+        return new Tuple2<>(method, mp);
     }
 
     private static MetaMethod getCategoryMethodMissing(Class sender) {
@@ -2331,7 +2331,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     @SuppressWarnings("unchecked")
     private void setupProperties(PropertyDescriptor[] propertyDescriptors) {
         if (theCachedClass.isInterface) {
-            LinkedList<CachedClass> superClasses = new LinkedList<CachedClass>();
+            LinkedList<CachedClass> superClasses = new LinkedList<>();
             superClasses.add(ReflectionCache.OBJECT_CLASS);
             Set interfaces = theCachedClass.getInterfaces();
 
@@ -2356,7 +2356,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             makeStaticPropertyIndex();
         } else {
             LinkedList<CachedClass> superClasses = getSuperClasses();
-            LinkedList<CachedClass> interfaces = new LinkedList<CachedClass>(theCachedClass.getInterfaces());
+            LinkedList<CachedClass> interfaces = new LinkedList<>(theCachedClass.getInterfaces());
             // sort interfaces so that we may ensure a deterministic behaviour in case of
             // ambiguous fields (class implementing two interfaces using the same field)
             if (interfaces.size() > 1) {
@@ -2539,7 +2539,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static final ConcurrentMap<String, String> PROP_NAMES = new ConcurrentHashMap<String, String>(1024);
+    private static final ConcurrentMap<String, String> PROP_NAMES = new ConcurrentHashMap<>(1024);
 
     private static String getPropName(String methodName) {
         return PROP_NAMES.computeIfAbsent(methodName, k -> {
@@ -3454,7 +3454,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @return A list of MetaMethods
      */
     public List<MetaMethod> getMetaMethods() {
-        return new ArrayList<MetaMethod>(newGroovyMethodsSet);
+        return new ArrayList<>(newGroovyMethodsSet);
     }
 
     protected void dropStaticMethodCache(String name) {
