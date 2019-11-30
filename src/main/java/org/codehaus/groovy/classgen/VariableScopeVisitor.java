@@ -53,6 +53,7 @@ import org.codehaus.groovy.syntax.Types;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.function.BiConsumer;
 
 import static java.lang.reflect.Modifier.isFinal;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
@@ -64,7 +65,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode currentClass;
     private VariableScope currentScope;
-    private boolean inConstructor, isSpecialConstructorCall;
+    private boolean inClosure, inConstructor, inSpecialConstructorCall;
 
     private final SourceUnit source;
     private final boolean recurseInnerClasses;
@@ -73,11 +74,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private static class StateStackElement {
         final ClassNode clazz;
         final VariableScope scope;
-        final boolean inConstructor;
+        final boolean inClosure, inConstructor;
 
-        StateStackElement(final ClassNode currentClass, final VariableScope currentScope, final boolean inConstructor) {
+        StateStackElement(final ClassNode currentClass, final VariableScope currentScope, final boolean inClosure, final boolean inConstructor) {
             clazz = currentClass;
             scope = currentScope;
+            this.inClosure = inClosure;
             this.inConstructor = inConstructor;
         }
     }
@@ -97,12 +99,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         return source;
     }
 
-    // ------------------------------
+    //----------------------------------
     // helper methods
-    //------------------------------
+    //----------------------------------
 
     private void pushState(final boolean isStatic) {
-        stateStack.push(new StateStackElement(currentClass, currentScope, inConstructor));
+        stateStack.push(new StateStackElement(currentClass, currentScope, inClosure, inConstructor));
         currentScope = new VariableScope(currentScope);
         currentScope.setInStaticContext(isStatic);
     }
@@ -113,9 +115,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     private void popState() {
         StateStackElement state = stateStack.pop();
-        currentClass = state.clazz;
-        currentScope = state.scope;
-        inConstructor = state.inConstructor;
+        this.currentClass  = state.clazz;
+        this.currentScope  = state.scope;
+        this.inClosure     = state.inClosure;
+        this.inConstructor = state.inConstructor;
     }
 
     private void declare(final VariableExpression variable) {
@@ -124,14 +127,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         variable.setAccessedVariable(variable);
     }
 
-    private void declare(final Variable variable, final ASTNode expression) {
+    private void declare(final Variable variable, final ASTNode context) {
         String scopeType = "scope";
         String variableType = "variable";
 
-        if (expression.getClass() == FieldNode.class) {
+        if (context.getClass() == FieldNode.class) {
             scopeType = "class";
             variableType = "field";
-        } else if (expression.getClass() == PropertyNode.class) {
+        } else if (context.getClass() == PropertyNode.class) {
             scopeType = "class";
             variableType = "property";
         }
@@ -142,7 +145,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         msg.append(" of the name ").append(variable.getName());
 
         if (currentScope.getDeclaredVariable(variable.getName()) != null) {
-            addError(msg.toString(), expression);
+            addError(msg.toString(), context);
             return;
         }
 
@@ -154,7 +157,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
             if (scope.getDeclaredVariable(variable.getName()) != null) {
                 // variable already declared
-                addError(msg.toString(), expression);
+                addError(msg.toString(), context);
                 break;
             }
         }
@@ -194,44 +197,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         return findClassMember(cn.getOuterClass(), name);
     }
 
-    private static boolean isAnonymous(final ClassNode node) {
-        return (!node.isEnum() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous());
-    }
-
-    private void markClosureSharedVariables() {
-        for (Iterator<Variable> it = currentScope.getReferencedLocalVariablesIterator(); it.hasNext(); ) {
-            Variable variable = it.next();
-            variable.setClosureSharedVariable(true);
-        }
-    }
-
-    // -------------------------------
-    // different Variable-based checks
-    // -------------------------------
-
-    private void checkFinalFieldAccess(final Expression expression) {
-        if (expression instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) expression;
-            for (Expression tupleExpression : tuple.getExpressions()) {
-                checkForFinal(expression, (VariableExpression) tupleExpression);
-            }
-        } else if (expression instanceof VariableExpression) {
-            checkForFinal(expression, (VariableExpression) expression);
-        }
-        // currently not looking for PropertyExpression: dealt with at runtime using ReadOnlyPropertyException
-    }
-
-    private void checkForFinal(final Expression context, final VariableExpression expression) {
-        Variable variable = expression.getAccessedVariable();
-        if (variable != null) {
-            if (isFinal(variable.getModifiers()) && variable instanceof Parameter) {
-                addError("Cannot assign a value to final variable '" + variable.getName() + "'", context);
-            }
-            // TODO: handle local variables
-        }
-    }
-
-    private Variable checkVariableNameForDeclaration(final String name, final Expression expression) {
+    private Variable findVariableDeclaration(final String name) {
         if ("super".equals(name) || "this".equals(name)) return null;
 
         Variable variable = null;
@@ -263,7 +229,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (classScope != null) {
                 Variable member = findClassMember(classScope, name);
                 if (member != null) {
-                    boolean staticScope = (crossingStaticContext || isSpecialConstructorCall), staticMember = member.isInStaticContext();
+                    boolean staticScope = (crossingStaticContext || inSpecialConstructorCall), staticMember = member.isInStaticContext();
                     // prevent a static context (e.g. a static method) from accessing a non-static variable (e.g. a non-static field)
                     if (!(staticScope && !staticMember)) {
                         variable = member;
@@ -290,6 +256,43 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
 
         return variable;
+    }
+
+    private static boolean isAnonymous(final ClassNode node) {
+        return (!node.isEnum() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous());
+    }
+
+    private void markClosureSharedVariables() {
+        for (Iterator<Variable> it = currentScope.getReferencedLocalVariablesIterator(); it.hasNext(); ) {
+            Variable variable = it.next();
+            variable.setClosureSharedVariable(true);
+        }
+    }
+
+    //----------------------------------
+    // variable checks
+    //----------------------------------
+
+    private void checkFinalFieldAccess(final Expression expression) {
+        BiConsumer<VariableExpression, ASTNode> checkForFinal = (expr, node) -> {
+            Variable variable = expr.getAccessedVariable();
+            if (variable != null) {
+                if (isFinal(variable.getModifiers()) && variable instanceof Parameter) {
+                    addError("Cannot assign a value to final variable '" + variable.getName() + "'", node);
+                }
+                // TODO: handle local variables
+            }
+        };
+
+        if (expression instanceof VariableExpression) {
+            checkForFinal.accept((VariableExpression) expression, expression);
+        } else if (expression instanceof TupleExpression) {
+            TupleExpression tuple = (TupleExpression) expression;
+            for (Expression tupleExpression : tuple.getExpressions()) {
+                checkForFinal.accept((VariableExpression) tupleExpression, expression);
+            }
+        }
+        // currently not looking for PropertyExpression: dealt with at runtime using ReadOnlyPropertyException
     }
 
     /**
@@ -326,6 +329,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (isAnonymous(node)) return;
 
         pushState();
+        inClosure = false;
         currentClass = node;
         currentScope.setClassScope(node);
 
@@ -431,7 +435,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
         pushState();
-
+        inClosure = true;
         expression.setVariableScope(currentScope);
 
         if (expression.isParameterSpecified()) {
@@ -456,9 +460,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
-        isSpecialConstructorCall = expression.isSpecialCall();
+        boolean oldInSpecialCtorFlag = inSpecialConstructorCall;
+        inSpecialConstructorCall |= expression.isSpecialCall();
         super.visitConstructorCallExpression(expression);
-        isSpecialConstructorCall = false;
+        inSpecialConstructorCall = oldInSpecialCtorFlag;
+
         if (!expression.isUsingAnonymousInnerClass()) return;
 
         pushState();
@@ -516,7 +522,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     public void visitFieldExpression(final FieldExpression expression) {
         String name = expression.getFieldName();
         //TODO: change that to get the correct scope
-        Variable variable = checkVariableNameForDeclaration(name, expression);
+        Variable variable = findVariableDeclaration(name);
         checkVariableContextAccess(variable, expression);
     }
 
@@ -530,7 +536,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 throw new GroovyBugError("method name is null");
             }
 
-            Variable variable = checkVariableNameForDeclaration(methodName, expression);
+            Variable variable = findVariableDeclaration(methodName);
             if (variable != null && !(variable instanceof DynamicVariable)) {
                 checkVariableContextAccess(variable, expression);
             }
@@ -557,8 +563,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
-        String name = expression.getName();
-        Variable variable = checkVariableNameForDeclaration(name, expression);
+        Variable variable = findVariableDeclaration(expression.getName());
         if (variable == null) return;
         expression.setAccessedVariable(variable);
         checkVariableContextAccess(variable, expression);
