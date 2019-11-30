@@ -47,6 +47,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     private final Method cachedMethod;
     private int hashCode;
+    private CachedMethod transformedMethod;
 
     private static final MyComparator COMPARATOR = new MyComparator();
 
@@ -147,6 +148,14 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public boolean isStatic() {
         return MethodHelper.isStatic(cachedMethod);
+    }
+
+    public CachedMethod getTransformedMethod() {
+        return transformedMethod;
+    }
+
+    public void setTransformedMethod(CachedMethod transformedMethod) {
+        this.transformedMethod = transformedMethod;
     }
 
     public int compareTo(Object o) {
