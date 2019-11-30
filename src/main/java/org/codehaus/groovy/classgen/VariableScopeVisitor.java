@@ -234,40 +234,39 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private Variable checkVariableNameForDeclaration(final String name, final Expression expression) {
         if ("super".equals(name) || "this".equals(name)) return null;
 
+        Variable variable = null;
         VariableScope scope = currentScope;
-        Variable var = new DynamicVariable(name, currentScope.isInStaticContext());
-        Variable orig = var;
-        // try to find a declaration of a variable
         boolean crossingStaticContext = false;
+        // try to find a declaration of a variable
         while (true) {
             crossingStaticContext = (crossingStaticContext || scope.isInStaticContext());
 
-            Variable var1 = scope.getDeclaredVariable(var.getName());
-            if (var1 != null) {
-                var = var1;
+            Variable var = scope.getDeclaredVariable(name);
+            if (var != null) {
+                variable = var;
                 break;
             }
 
-            var1 = scope.getReferencedLocalVariable(var.getName());
-            if (var1 != null) {
-                var = var1;
+            var = scope.getReferencedLocalVariable(name);
+            if (var != null) {
+                variable = var;
                 break;
             }
 
-            var1 = scope.getReferencedClassVariable(var.getName());
-            if (var1 != null) {
-                var = var1;
+            var = scope.getReferencedClassVariable(name);
+            if (var != null) {
+                variable = var;
                 break;
             }
 
             ClassNode classScope = scope.getClassScope();
             if (classScope != null) {
-                Variable member = findClassMember(classScope, var.getName());
+                Variable member = findClassMember(classScope, name);
                 if (member != null) {
                     boolean staticScope = (crossingStaticContext || isSpecialConstructorCall), staticMember = member.isInStaticContext();
                     // prevent a static context (e.g. a static method) from accessing a non-static variable (e.g. a non-static field)
                     if (!(staticScope && !staticMember)) {
-                        var = member;
+                        variable = member;
                     }
                 }
                 // GROOVY-5961
@@ -275,22 +274,22 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             }
             scope = scope.getParent();
         }
-        if (var == orig && crossingStaticContext) {
-            var = new DynamicVariable(var.getName(), true);
+        if (variable == null) {
+            variable = new DynamicVariable(name, crossingStaticContext);
         }
 
         VariableScope end = scope;
         scope = currentScope;
         while (scope != end) {
             if (end.isClassScope() || (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name) == null)) {
-                scope.putReferencedClassVariable(var);
+                scope.putReferencedClassVariable(variable);
             } else {
-                scope.putReferencedLocalVariable(var);
+                scope.putReferencedLocalVariable(variable);
             }
             scope = scope.getParent();
         }
 
-        return var;
+        return variable;
     }
 
     /**
