@@ -259,7 +259,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private static boolean isAnonymous(final ClassNode node) {
-        return (!node.isEnum() && node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous());
+        return (node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous() && !node.isEnum());
     }
 
     private void markClosureSharedVariables() {
@@ -435,8 +435,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
         pushState();
-        inClosure = true;
         expression.setVariableScope(currentScope);
+        inClosure = !isAnonymous(currentScope.getParent().getClassScope());
 
         if (expression.isParameterSpecified()) {
             for (Parameter parameter : expression.getParameters()) {
