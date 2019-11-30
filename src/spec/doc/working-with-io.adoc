@@ -55,7 +55,7 @@ if you need to know the line number, you can use this variant:
 include::{projectdir}/src/spec/test/gdk/WorkingWithIOSpecTest.groovy[tags=print_file_lines2,indent=0]
 ----
 
-If for whatever reason the an exception is thrown in the `eachLine` body, the method makes sure that the resource
+If for whatever reason an exception is thrown in the `eachLine` body, the method makes sure that the resource
 is properly closed. This is true for all I/O resource methods that Groovy adds.
 
 For example in some cases you will prefer to use a `Reader`, but still benefit from the automatic resource management
