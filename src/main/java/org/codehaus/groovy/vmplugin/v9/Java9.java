@@ -176,13 +176,29 @@ public class Java9 extends Java8 {
             return metaMethod;
         }
 
-        Class<?> declaringClass = methodDeclaringClass.getTheClass();
-
-        int methodModifiers = cachedMethod.getModifiers();
-
         if (null == caller) {
             caller = ReflectionUtils.class; // "set accessible" are done via `org.codehaus.groovy.reflection.ReflectionUtils` as shown in warnings
         }
+
+        return getOrTransformMetaMethod(metaClass, caller, cachedMethod);
+    }
+
+    private CachedMethod getOrTransformMetaMethod(MetaClass metaClass, Class<?> caller, CachedMethod cachedMethod) {
+        CachedMethod transformedMethod = cachedMethod.getTransformedMethod();
+        if (null != transformedMethod) {
+            return transformedMethod;
+        }
+
+        transformedMethod = doTransformMetaMethod(metaClass, cachedMethod, caller);
+        cachedMethod.setTransformedMethod(transformedMethod);
+
+        return transformedMethod;
+    }
+
+    private CachedMethod doTransformMetaMethod(MetaClass metaClass, CachedMethod metaMethod, Class<?> caller) {
+        CachedClass methodDeclaringClass = metaMethod.getDeclaringClass();
+        Class<?> declaringClass = methodDeclaringClass.getTheClass();
+        int methodModifiers = metaMethod.getModifiers();
 
         // if caller can access the method,
         // no need to transform the meta method
@@ -190,11 +206,11 @@ public class Java9 extends Java8 {
             return metaMethod;
         }
 
-        Class<?>[] params = cachedMethod.getPT();
+        Class<?>[] params = metaMethod.getPT();
         Class<?> theClass = metaClass.getTheClass();
         if (declaringClass == theClass) {
             if (BigInteger.class == theClass) {
-                MetaMethod bigIntegerMetaMethod = transformBigIntegerMetaMethod(metaMethod, params);
+                CachedMethod bigIntegerMetaMethod = transformBigIntegerMetaMethod(metaMethod, params);
                 if (bigIntegerMetaMethod != metaMethod) {
                     return bigIntegerMetaMethod;
                 }
@@ -206,7 +222,7 @@ public class Java9 extends Java8 {
             classList.add(0, theClass);
 
             for (Class<?> sc : classList) {
-                Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, sc);
+                Optional<CachedMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, sc);
                 if (optionalMetaMethod.isPresent()) {
                     return optionalMetaMethod.get();
                 }
@@ -221,7 +237,7 @@ public class Java9 extends Java8 {
         // e.g. StringBuilder sb = new StringBuilder(); sb.setLength(0);
         // `setLength` is the method of `AbstractStringBuilder`, which is `package-private`
         if (declaringClass.isAssignableFrom(theClass)) {
-            Optional<MetaMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, theClass);
+            Optional<CachedMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, theClass);
             if (optionalMetaMethod.isPresent()) {
                 return optionalMetaMethod.get();
             }
@@ -230,7 +246,7 @@ public class Java9 extends Java8 {
         return metaMethod;
     }
 
-    private static MetaMethod transformBigIntegerMetaMethod(MetaMethod metaMethod, Class<?>[] params) {
+    private static CachedMethod transformBigIntegerMetaMethod(CachedMethod metaMethod, Class<?>[] params) {
         if (1 == params.length && MULTIPLY.equals(metaMethod.getName())) {
             Class<?> param = params[0];
             if (Long.class == param || long.class == param
@@ -243,9 +259,9 @@ public class Java9 extends Java8 {
         return metaMethod;
     }
 
-    private Optional<MetaMethod> getAccessibleMetaMethod(MetaMethod metaMethod, Class<?>[] params, Class<?> caller, Class<?> sc) {
-        List<MetaMethod> metaMethodList = getMetaMethods(metaMethod, params, sc);
-        for (MetaMethod mm : metaMethodList) {
+    private Optional<CachedMethod> getAccessibleMetaMethod(CachedMethod metaMethod, Class<?>[] params, Class<?> caller, Class<?> sc) {
+        List<CachedMethod> metaMethodList = getMetaMethods(metaMethod, params, sc);
+        for (CachedMethod mm : metaMethodList) {
             if (checkAccessible(caller, mm.getDeclaringClass().getTheClass(), mm.getModifiers(), false)) {
                 return Optional.of(mm);
             }
@@ -253,7 +269,7 @@ public class Java9 extends Java8 {
         return Optional.empty();
     }
 
-    private static List<MetaMethod> getMetaMethods(MetaMethod metaMethod, Class<?>[] params, Class<?> sc) {
+    private static List<CachedMethod> getMetaMethods(CachedMethod metaMethod, Class<?>[] params, Class<?> sc) {
         List<Method> optionalMethod = ReflectionUtils.getMethods(sc, metaMethod.getName(), params);
         return optionalMethod.stream().map(CachedMethod::new).collect(Collectors.toList());
     }
