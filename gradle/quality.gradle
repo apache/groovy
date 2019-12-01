@@ -41,7 +41,7 @@ allprojects {
     }
     
     dependencies {
-        codenarc "org.codenarc:CodeNarc:1.4"
+        codenarc "org.codenarc:CodeNarc:1.5"
         codenarc project(":groovy-templates")
     }
 
