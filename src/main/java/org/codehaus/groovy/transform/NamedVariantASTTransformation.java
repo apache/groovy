@@ -51,8 +51,9 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
-import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -190,8 +191,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         for (PropertyNode pNode : props) {
             String name = pNode.getName();
             // create entry [name: __namedArgs.getOrDefault('name', initialValue)]
-            Expression defaultValue = Optional.ofNullable(pNode.getInitialExpression()).orElseGet(() ->
-                    isNumberType(pNode.getType()) ? castX(getWrapper(pNode.getType()), constX(0)) : nullX());
+            Expression defaultValue = Optional.ofNullable(pNode.getInitialExpression()).orElseGet(() -> getDefaultExpression(pNode.getType()));
             entries.add(entryX(constX(name), callX(varX(mapParam), "getOrDefault", args(constX(name), defaultValue))));
             // create annotation @NamedParam(value='name', type=DelegateType)
             AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
@@ -202,6 +202,16 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         Expression delegateMap = mapX(entries);
         args.addExpression(castX(fromParam.getType(), delegateMap));
         return true;
+    }
+
+    private Expression getDefaultExpression(ClassNode pType) {
+        if (isPrimitiveType(pType)) {
+            if (boolean_TYPE.equals(pType)) {
+                return constX(Boolean.FALSE);
+            }
+            return castX(getWrapper(pType), constX(0));
+        }
+        return nullX();
     }
 
     private boolean hasDuplicates(final MethodNode mNode, final List<String> propNames, final String next) {
