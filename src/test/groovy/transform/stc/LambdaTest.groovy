@@ -329,6 +329,52 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    void testFunctionWithLocalVariables5() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Function
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                Function<Integer, String> f = p();
+                assert '#1' == f(1)
+            }
+        
+            static Function<Integer, String> p() {
+                String x = "#"
+                Function<Integer, String> f = (Integer e) -> x + e
+                return f
+            }
+        }
+        '''
+    }
+
+    void testFunctionWithLocalVariables6() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.stream.Collectors
+        import java.util.stream.Stream
+        import java.util.function.Function
+        
+        @CompileStatic
+        public class Test1 {
+            public static void main(String[] args) {
+                Function<Integer, String> f = new Test1().p();
+                assert '#1' == f(1)
+            }
+        
+            Function<Integer, String> p() {
+                String x = "#"
+                Function<Integer, String> f = (Integer e) -> x + e
+                return f
+            }
+        }
+        '''
+    }
+
     void testFunctionWithStaticMethodCall() {
         assertScript '''
         import groovy.transform.CompileStatic

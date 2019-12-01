@@ -22,7 +22,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
@@ -44,8 +43,9 @@ import java.util.Map;
 import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
 
 public class WriterController {
-    private static final String GROOVY_LOG_CLASSGEN = "groovy.log.classgen";
-    private final boolean LOG_CLASSGEN = getBooleanSafe(GROOVY_LOG_CLASSGEN);
+
+    private final boolean LOG_CLASSGEN = getBooleanSafe("groovy.log.classgen");
+
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;
     private CompileStack compileStack;
@@ -74,23 +74,23 @@ public class WriterController {
     private int bytecodeVersion = Opcodes.V1_8;
     private int lineNumber = -1;
     private int helperMethodIndex = 0;
-    private List<String> superMethodNames = new ArrayList<String>();
+    private List<String> superMethodNames = new ArrayList<>();
     private MethodPointerExpressionWriter methodPointerExpressionWriter;
     private MethodReferenceExpressionWriter methodReferenceExpressionWriter;
 
-    public void init(AsmClassGenerator asmClassGenerator, GeneratorContext gcon, ClassVisitor cv, ClassNode cn) {
+    public void init(final AsmClassGenerator asmClassGenerator, final GeneratorContext gcon, final ClassVisitor cv, final ClassNode cn) {
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
         Map<String,Boolean> optOptions = config.getOptimizationOptions();
-        boolean invokedynamic=false;
+        boolean invokedynamic = false;
         if (optOptions.isEmpty()) {
             // IGNORE
         } else if (Boolean.FALSE.equals(optOptions.get("all"))) {
-            optimizeForInt=false;
+            optimizeForInt = false;
             // set other optimizations options to false here
         } else {
-            if (Boolean.TRUE.equals(optOptions.get(CompilerConfiguration.INVOKEDYNAMIC))) invokedynamic=true;
-            if (Boolean.FALSE.equals(optOptions.get("int"))) optimizeForInt=false;
-            if (invokedynamic) optimizeForInt=false;
+            if (Boolean.TRUE.equals(optOptions.get(CompilerConfiguration.INVOKEDYNAMIC))) invokedynamic = true;
+            if (Boolean.FALSE.equals(optOptions.get("int"))) optimizeForInt = false;
+            if (invokedynamic) optimizeForInt = false;
             // set other optimizations options to false here
         }
         this.classNode = cn;
@@ -139,7 +139,7 @@ public class WriterController {
         this.typeChooser = new StatementMetaTypeChooser();
     }
 
-    private ClassVisitor createClassVisitor(ClassVisitor cv) {
+    private ClassVisitor createClassVisitor(final ClassVisitor cv) {
         if (!LOG_CLASSGEN) {
             return cv;
         }
@@ -167,7 +167,7 @@ public class WriterController {
         return acg;
     }
 
-    public void setMethodVisitor(MethodVisitor methodVisitor) {
+    public void setMethodVisitor(final MethodVisitor methodVisitor) {
         this.methodVisitor = methodVisitor;
     }
 
@@ -255,22 +255,18 @@ public class WriterController {
         return methodNode;
     }
 
-    public void setMethodNode(MethodNode mn) {
-        methodNode = mn;
-        constructorNode = null;
+    public void setMethodNode(final MethodNode methodNode) {
+        this.methodNode = methodNode;
+        this.constructorNode = null;
     }
 
     public ConstructorNode getConstructorNode(){
         return constructorNode;
     }
 
-    public void setConstructorNode(ConstructorNode cn) {
-        constructorNode = cn;
-        methodNode = null;
-    }
-
-    public boolean isNotClinit() {
-        return methodNode == null || !methodNode.getName().equals("<clinit>");
+    public void setConstructorNode(final ConstructorNode constructorNode) {
+        this.constructorNode = constructorNode;
+        this.methodNode = null;
     }
 
     public SourceUnit getSourceUnit() {
@@ -278,29 +274,23 @@ public class WriterController {
     }
 
     public boolean isStaticContext() {
-        if (compileStack!=null && compileStack.getScope()!=null) {
+        if (compileStack != null && compileStack.getScope() != null) {
             return compileStack.getScope().isInStaticContext();
         }
         if (!isInClosure()) return false;
-        if (constructorNode != null) return false;
-        return classNode.isStaticClass() || methodNode.isStatic();
+        if (isConstructor()) return false;
+        return classNode.isStaticClass() || isStaticMethod();
     }
 
     public boolean isInClosure() {
         return classNode.getOuterClass() != null
-                && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+                && classNode.getSuperClass().equals(ClassHelper.CLOSURE_TYPE)
+                && classNode.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type);
     }
 
     public boolean isInClosureConstructor() {
-        return constructorNode != null
-                && classNode.getOuterClass() != null
-                && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+        return isConstructor() && isInClosure();
     }
-
-    public boolean isNotExplicitThisInClosure(boolean implicitThis) {
-        return implicitThis || !isInClosure();
-    }
-
 
     public boolean isStaticMethod() {
         return methodNode != null && methodNode.isStatic();
@@ -316,12 +306,16 @@ public class WriterController {
         }
     }
 
+    public boolean isNotClinit() {
+        return methodNode == null || !methodNode.getName().equals("<clinit>");
+    }
+
     public boolean isStaticConstructor() {
         return methodNode != null && methodNode.getName().equals("<clinit>");
     }
 
     public boolean isConstructor() {
-        return constructorNode!=null;
+        return constructorNode != null;
     }
 
     /**
@@ -329,11 +323,7 @@ public class WriterController {
      *         local variables but are properties
      */
     public boolean isInScriptBody() {
-        if (classNode.isScriptBody()) {
-            return true;
-        } else {
-            return classNode.isScript() && methodNode != null && methodNode.getName().equals("run");
-        }
+        return classNode.isScriptBody() || (classNode.isScript() && methodNode != null && methodNode.getName().equals("run"));
     }
 
     public String getClassName() {
@@ -348,10 +338,8 @@ public class WriterController {
 
     public ClassNode getOutermostClass() {
         if (outermostClass == null) {
-            outermostClass = classNode;
-            while (outermostClass instanceof InnerClassNode) {
-                outermostClass = outermostClass.getOuterClass();
-            }
+            List<ClassNode> outers = classNode.getOuterClasses();
+            outermostClass = !outers.isEmpty() ? outers.get(outers.size() - 1) : classNode;
         }
         return outermostClass;
     }
@@ -360,7 +348,7 @@ public class WriterController {
         return context;
     }
 
-    public void setInterfaceClassLoadingClass(InterfaceHelperClassNode ihc) {
+    public void setInterfaceClassLoadingClass(final InterfaceHelperClassNode ihc) {
         interfaceClassLoadingClass = ihc;
     }
 
@@ -398,8 +386,8 @@ public class WriterController {
         return lineNumber;
     }
 
-    public void setLineNumber(int n) {
-        lineNumber = n;
+    public void setLineNumber(final int lineNumber) {
+        this.lineNumber = lineNumber;
     }
 
     public void resetLineNumber() {
@@ -407,11 +395,10 @@ public class WriterController {
     }
 
     public int getNextHelperMethodIndex() {
-        return helperMethodIndex++;
+        return helperMethodIndex += 1;
     }
 
     public List<String> getSuperMethodNames() {
         return superMethodNames;
     }
-
 }

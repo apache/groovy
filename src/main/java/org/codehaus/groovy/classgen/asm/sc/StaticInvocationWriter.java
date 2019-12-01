@@ -86,6 +86,7 @@ import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
 public class StaticInvocationWriter extends InvocationWriter {
+
     private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
     private static final Expression INVOKERHELPER_RECEIVER = new ClassExpression(INVOKERHELPER_CLASSNODE);
     private static final MethodNode INVOKERHELPER_INVOKEMETHOD = INVOKERHELPER_CLASSNODE.getMethod(
@@ -654,14 +655,12 @@ public class StaticInvocationWriter extends InvocationWriter {
             mv.visitInsn(ACONST_NULL);
             mv.visitLabel(endof);
         } else {
-            if ((adapter == AsmClassGenerator.getGroovyObjectField
-                    || adapter == AsmClassGenerator.getField ) && origin instanceof AttributeExpression) {
-                String pname = ((PropertyExpression) origin).getPropertyAsString();
+            if (origin instanceof AttributeExpression && (adapter == AsmClassGenerator.getField || adapter == AsmClassGenerator.getGroovyObjectField)) {
                 CallSiteWriter callSiteWriter = controller.getCallSiteWriter();
-                if (pname!=null && callSiteWriter instanceof StaticTypesCallSiteWriter) {
-                    StaticTypesCallSiteWriter stcsw = (StaticTypesCallSiteWriter) callSiteWriter;
-                    TypeChooser typeChooser = controller.getTypeChooser();
-                    if (stcsw.makeGetField(receiver, typeChooser.resolveType(receiver, controller.getClassNode()), pname, safe, false)) {
+                String fieldName = ((AttributeExpression) origin).getPropertyAsString();
+                if (fieldName != null && callSiteWriter instanceof StaticTypesCallSiteWriter) {
+                    ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+                    if (((StaticTypesCallSiteWriter) callSiteWriter).makeGetField(receiver, receiverType, fieldName, safe, false)) {
                         return;
                     }
                 }

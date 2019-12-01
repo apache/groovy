@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.SunClassLoader;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -56,17 +57,16 @@ public class GroovySunClassLoader extends SunClassLoader {
     }
 
     private void loadAbstract() throws IOException {
-        final InputStream asStream = GroovySunClassLoader.class.getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"));
-        ClassReader reader = new ClassReader(asStream);
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        final ClassVisitor cv = new ClassVisitor(4, cw) {
-            public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-                super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
-            }            
-        };
-        reader.accept(cv, ClassWriter.COMPUTE_MAXS);
-        asStream.close();
-        define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
+        try (final InputStream asStream = GroovySunClassLoader.class.getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"))) {
+            ClassReader reader = new ClassReader(asStream);
+            final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+            final ClassVisitor cv = new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, cw) {
+                public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+                    super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
+                }
+            };
+            reader.accept(cv, ClassWriter.COMPUTE_MAXS);
+            define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
+        }
     }
-
 }

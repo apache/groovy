@@ -664,7 +664,7 @@ public class InvokerHelper {
             if (verbose) {
                 String arg = escapeBackslashes((String) arguments)
                         .replaceAll("'", "\\\\'");    // single quotation mark
-                return "\'" + arg + "\'";
+                return "'" + arg + "'";
             } else {
                 return (String) arguments;
             }

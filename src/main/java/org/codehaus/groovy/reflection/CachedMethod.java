@@ -47,6 +47,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     private final Method cachedMethod;
     private int hashCode;
+    private CachedMethod transformedMethod;
 
     private static final MyComparator COMPARATOR = new MyComparator();
 
@@ -95,23 +96,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     public final Object invoke(Object object, Object[] arguments) {
-        /*
-        CachedMethod transformedCachedMethod =
-                (CachedMethod) CallSiteHelper.transformMetaMethod(
-                        InvokerHelper.getMetaClass(object.getClass()),
-                        this,
-                        this.getPT(),
-                        CachedMethod.class);
-
-        Method cachedMethod = transformedCachedMethod.cachedMethod;
-
-        if (transformedCachedMethod == this) {
-            makeAccessibleIfNecessary();
-        } else {
-            ReflectionUtils.trySetAccessible(cachedMethod);
-        }
-        */
-
         makeAccessibleIfNecessary();
 
         try {
@@ -164,6 +148,14 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public boolean isStatic() {
         return MethodHelper.isStatic(cachedMethod);
+    }
+
+    public CachedMethod getTransformedMethod() {
+        return transformedMethod;
+    }
+
+    public void setTransformedMethod(CachedMethod transformedMethod) {
+        this.transformedMethod = transformedMethod;
     }
 
     public int compareTo(Object o) {

@@ -131,33 +131,32 @@ import static org.apache.groovy.util.BeanUtils.capitalize;
  */
 public class AsmClassGenerator extends ClassGenerator {
 
-    // fields and properties
-    public static final MethodCallerMultiAdapter setField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setField", false, false);
-    public static final MethodCallerMultiAdapter getField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getField", false, false);
-    public static final MethodCallerMultiAdapter setGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectField", false, false);
-    public static final MethodCallerMultiAdapter getGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectField", false, false);
-    static final MethodCallerMultiAdapter setFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setFieldOnSuper", false, false);
-    static final MethodCallerMultiAdapter getFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getFieldOnSuper", false, false);
+    // fields
+    public  static final MethodCallerMultiAdapter setField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setField", false, false);
+    public  static final MethodCallerMultiAdapter getField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getField", false, false);
+  //private static final MethodCallerMultiAdapter setFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setFieldOnSuper", false, false);
+  //private static final MethodCallerMultiAdapter getFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getFieldOnSuper", false, false);
+    public  static final MethodCallerMultiAdapter setGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectField", false, false);
+    public  static final MethodCallerMultiAdapter getGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectField", false, false);
 
-    public static final MethodCallerMultiAdapter setProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setProperty", false, false);
-    static final MethodCallerMultiAdapter getProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getProperty", false, false);
-    static final MethodCallerMultiAdapter setGroovyObjectProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectProperty", false, false);
-    static final MethodCallerMultiAdapter getGroovyObjectProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectProperty", false, false);
-    static final MethodCallerMultiAdapter setPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setPropertyOnSuper", false, false);
-    static final MethodCallerMultiAdapter getPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getPropertyOnSuper", false, false);
+    // properties
+    public  static final MethodCallerMultiAdapter setProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setProperty", false, false);
+    private static final MethodCallerMultiAdapter getProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getProperty", false, false);
+  //private static final MethodCallerMultiAdapter setPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setPropertyOnSuper", false, false);
+  //private static final MethodCallerMultiAdapter getPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getPropertyOnSuper", false, false);
+    private static final MethodCallerMultiAdapter setGroovyObjectProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectProperty", false, false);
+    private static final MethodCallerMultiAdapter getGroovyObjectProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectProperty", false, false);
 
-     // spread expressions
-    static final MethodCaller spreadMap = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadMap");
-    static final MethodCaller despreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "despreadList");
+    // spread expressions
+    private static final MethodCaller spreadMap = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadMap");
+    private static final MethodCaller despreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "despreadList");
 
     // type conversions
-    static final MethodCaller createListMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createList");
-    static final MethodCaller createMapMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createMap");
-    static final MethodCaller createRangeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createRange");
-
-    // wrapper creation methods
-    static final MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
-    static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
+    private static final MethodCaller createMapMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createMap");
+    private static final MethodCaller createListMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createList");
+    private static final MethodCaller createRangeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createRange");
+    private static final MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
+    private static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
     private final Map<String, GenericsType> genericParameterNames = new HashMap<>();
     private final Map<String,ClassNode> referencedClasses = new HashMap<>();
@@ -176,7 +175,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private ClassVisitor classVisitor;
     private final String sourceFile;
 
-    public AsmClassGenerator(SourceUnit source, GeneratorContext context, ClassVisitor classVisitor, String sourceFile) {
+    public AsmClassGenerator(final SourceUnit source, final GeneratorContext context, final ClassVisitor classVisitor, final String sourceFile) {
         this.source = source;
         this.context = context;
         this.classVisitor = classVisitor;
@@ -196,7 +195,7 @@ public class AsmClassGenerator extends ClassGenerator {
     //--------------------------------------------------------------------------
 
     @Override
-    public void visitClass(ClassNode classNode) {
+    public void visitClass(final ClassNode classNode) {
         referencedClasses.clear();
         WriterControllerFactory factory = classNode.getNodeMetaData(WriterControllerFactory.class);
         WriterController normalController = new WriterController();
@@ -293,7 +292,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void makeInnerClassEntry(ClassNode cn) {
+    private void makeInnerClassEntry(final ClassNode cn) {
         if (!(cn instanceof InnerClassNode)) return;
         InnerClassNode innerClass = (InnerClassNode) cn;
         String innerClassName = innerClass.getName();
@@ -318,14 +317,14 @@ public class AsmClassGenerator extends ClassGenerator {
      * for what flags are allowed depending on the fact we are writing the inner class table
      * or the class itself
      */
-    private static int adjustedClassModifiersForInnerClassTable(ClassNode classNode) {
+    private static int adjustedClassModifiersForInnerClassTable(final ClassNode classNode) {
         int modifiers = classNode.getModifiers();
         modifiers = modifiers & ~ACC_SUPER;
         modifiers = fixInterfaceModifiers(classNode, modifiers);
         return modifiers;
     }
 
-    private static int fixInterfaceModifiers(ClassNode classNode, int modifiers) {
+    private static int fixInterfaceModifiers(final ClassNode classNode, int modifiers) {
         // (JLS §9.1.1.1). Such a class file must not have its ACC_FINAL, ACC_SUPER or ACC_ENUM flags set.
         if (classNode.isInterface()) {
             modifiers = modifiers & ~ACC_ENUM;
@@ -334,7 +333,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return modifiers;
     }
 
-    private static int fixInnerClassModifiers(ClassNode classNode, int modifiers) {
+    private static int fixInnerClassModifiers(final ClassNode classNode, int modifiers) {
         // on the inner class node itself, private/protected are not allowed
         if (classNode.getOuterClass() != null) {
             if ((modifiers & ACC_PRIVATE) != 0) {
@@ -355,7 +354,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * for what flags are allowed depending on the fact we are writing the inner class table
      * or the class itself
      */
-    private static int adjustedClassModifiersForClassWriting(ClassNode classNode) {
+    private static int adjustedClassModifiersForClassWriting(final ClassNode classNode) {
         int modifiers = classNode.getModifiers();
         boolean needsSuper = !classNode.isInterface();
         modifiers = needsSuper ? modifiers | ACC_SUPER : modifiers & ~ACC_SUPER;
@@ -366,13 +365,13 @@ public class AsmClassGenerator extends ClassGenerator {
         return modifiers;
     }
 
-    public void visitGenericType(GenericsType genericsType) {
+    public void visitGenericType(final GenericsType genericsType) {
         ClassNode type = genericsType.getType();
         genericParameterNames.put(type.getName(), genericsType);
     }
 
     @Override
-    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
+    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         controller.resetLineNumber();
         Parameter[] parameters = node.getParameters();
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
@@ -432,7 +431,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitEnd();
     }
 
-    private void visitStdMethod(MethodNode node, boolean isConstructor, Parameter[] parameters, Statement code) {
+    private void visitStdMethod(final MethodNode node, final boolean isConstructor, final Parameter[] parameters, final Statement code) {
         controller.getCompileStack().init(node.getVariableScope(), parameters);
         controller.getCallSiteWriter().makeSiteEntry();
 
@@ -487,7 +486,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
+    private void visitAnnotationDefaultExpression(final AnnotationVisitor av, final ClassNode type, final Expression exp) {
         if (exp instanceof ClosureExpression) {
             ClassNode closureClass = controller.getClosureWriter().getOrAddClosureClass((ClosureExpression) exp, ACC_PUBLIC);
             Type t = Type.getType(BytecodeHelper.getTypeDescription(closureClass));
@@ -527,7 +526,7 @@ public class AsmClassGenerator extends ClassGenerator {
         av.visitEnd();
     }
 
-    private void visitAnnotationDefault(MethodNode node, MethodVisitor mv) {
+    private void visitAnnotationDefault(final MethodNode node, final MethodVisitor mv) {
         if (!node.hasAnnotationDefault()) return;
         Expression exp = ((ReturnStatement) node.getCode()).getExpression();
         AnnotationVisitor av = mv.visitAnnotationDefault();
@@ -535,19 +534,19 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitConstructor(ConstructorNode node) {
+    public void visitConstructor(final ConstructorNode node) {
         controller.setConstructorNode(node);
         super.visitConstructor(node);
     }
 
     @Override
-    public void visitMethod(MethodNode node) {
+    public void visitMethod(final MethodNode node) {
         controller.setMethodNode(node);
         super.visitMethod(node);
     }
 
     @Override
-    public void visitField(FieldNode fieldNode) {
+    public void visitField(final FieldNode fieldNode) {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
         ClassNode t = fieldNode.getType();
         String signature = BytecodeHelper.getGenericsBounds(t);
@@ -579,7 +578,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitProperty(PropertyNode statement) {
+    public void visitProperty(final PropertyNode statement) {
         // the verifier created the field and the setter/getter methods, so here is
         // not really something to do
         onLineNumber(statement, "visitProperty:" + statement.getField().getName());
@@ -593,86 +592,86 @@ public class AsmClassGenerator extends ClassGenerator {
     //-------------------------------------------------------------------------
 
     @Override
-    protected void visitStatement(Statement statement) {
+    protected void visitStatement(final Statement statement) {
         throw new GroovyBugError("visitStatement should not be visited here.");
     }
 
     @Override
-    public void visitCatchStatement(CatchStatement statement) {
+    public void visitCatchStatement(final CatchStatement statement) {
         statement.getCode().visit(this);
     }
 
     @Override
-    public void visitBlockStatement(BlockStatement statement) {
+    public void visitBlockStatement(final BlockStatement statement) {
         controller.getStatementWriter().writeBlockStatement(statement);
     }
 
     @Override
-    public void visitForLoop(ForStatement statement) {
+    public void visitForLoop(final ForStatement statement) {
         controller.getStatementWriter().writeForStatement(statement);
     }
 
     @Override
-    public void visitWhileLoop( WhileStatement statement) {
+    public void visitWhileLoop(final WhileStatement statement) {
         controller.getStatementWriter().writeWhileLoop(statement);
     }
 
     @Override
-    public void visitDoWhileLoop(DoWhileStatement statement) {
+    public void visitDoWhileLoop(final DoWhileStatement statement) {
         controller.getStatementWriter().writeDoWhileLoop(statement);
     }
 
     @Override
-    public void visitIfElse(IfStatement statement) {
+    public void visitIfElse(final IfStatement statement) {
         controller.getStatementWriter().writeIfElse(statement);
     }
 
     @Override
-    public void visitAssertStatement(AssertStatement statement) {
+    public void visitAssertStatement(final AssertStatement statement) {
         controller.getStatementWriter().writeAssert(statement);
     }
 
     @Override
-    public void visitTryCatchFinally(TryCatchStatement statement) {
+    public void visitTryCatchFinally(final TryCatchStatement statement) {
         controller.getStatementWriter().writeTryCatchFinally(statement);
     }
 
     @Override
-    public void visitSwitch(SwitchStatement statement) {
+    public void visitSwitch(final SwitchStatement statement) {
         controller.getStatementWriter().writeSwitch(statement);
     }
 
     @Override
-    public void visitCaseStatement(CaseStatement statement) {
+    public void visitCaseStatement(final CaseStatement statement) {
     }
 
     @Override
-    public void visitBreakStatement(BreakStatement statement) {
+    public void visitBreakStatement(final BreakStatement statement) {
         controller.getStatementWriter().writeBreak(statement);
     }
 
     @Override
-    public void visitContinueStatement(ContinueStatement statement) {
+    public void visitContinueStatement(final ContinueStatement statement) {
         controller.getStatementWriter().writeContinue(statement);
     }
 
     @Override
-    public void visitSynchronizedStatement(SynchronizedStatement statement) {
+    public void visitSynchronizedStatement(final SynchronizedStatement statement) {
         controller.getStatementWriter().writeSynchronized(statement);
     }
 
     @Override
-    public void visitThrowStatement(ThrowStatement statement) {
+    public void visitThrowStatement(final ThrowStatement statement) {
         controller.getStatementWriter().writeThrow(statement);
     }
 
     @Override
-    public void visitReturnStatement(ReturnStatement statement) {
+    public void visitReturnStatement(final ReturnStatement statement) {
         controller.getStatementWriter().writeReturn(statement);
     }
 
     @Override
-    public void visitExpressionStatement(ExpressionStatement statement) {
+    public void visitExpressionStatement(final ExpressionStatement statement) {
         controller.getStatementWriter().writeExpressionStatement(statement);
     }
 
@@ -680,43 +679,43 @@ public class AsmClassGenerator extends ClassGenerator {
     //-------------------------------------------------------------------------
 
     @Override
-    public void visitTernaryExpression(TernaryExpression expression) {
+    public void visitTernaryExpression(final TernaryExpression expression) {
         onLineNumber(expression, "visitTernaryExpression");
         controller.getBinaryExpressionHelper().evaluateTernary(expression);
     }
 
     @Override
-    public void visitDeclarationExpression(DeclarationExpression expression) {
+    public void visitDeclarationExpression(final DeclarationExpression expression) {
         onLineNumber(expression, "visitDeclarationExpression: \"" + expression.getText() + "\"");
         controller.getBinaryExpressionHelper().evaluateEqual(expression,true);
     }
 
     @Override
-    public void visitBinaryExpression(BinaryExpression expression) {
+    public void visitBinaryExpression(final BinaryExpression expression) {
         onLineNumber(expression, "visitBinaryExpression: \"" + expression.getOperation().getText() + "\" ");
         controller.getBinaryExpressionHelper().eval(expression);
         controller.getAssertionWriter().record(expression.getOperation());
     }
 
     @Override
-    public void visitPostfixExpression(PostfixExpression expression) {
+    public void visitPostfixExpression(final PostfixExpression expression) {
         controller.getBinaryExpressionHelper().evaluatePostfixMethod(expression);
         controller.getAssertionWriter().record(expression);
     }
 
     @Override
-    public void visitPrefixExpression(PrefixExpression expression) {
+    public void visitPrefixExpression(final PrefixExpression expression) {
         controller.getBinaryExpressionHelper().evaluatePrefixMethod(expression);
         controller.getAssertionWriter().record(expression);
     }
 
     @Override
-    public void visitClosureExpression(ClosureExpression expression) {
+    public void visitClosureExpression(final ClosureExpression expression) {
         controller.getClosureWriter().writeClosure(expression);
     }
 
     @Override
-    public void visitLambdaExpression(LambdaExpression expression) {
+    public void visitLambdaExpression(final LambdaExpression expression) {
         controller.getLambdaWriter().writeLambda(expression);
     }
 
@@ -737,7 +736,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * @see <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#14152">Class field types</a>
      */
     @Override
-    public void visitConstantExpression(ConstantExpression expression) {
+    public void visitConstantExpression(final ConstantExpression expression) {
         final String constantName = expression.getConstantName();
         if (controller.isStaticConstructor() || constantName == null) {
             controller.getOperandStack().pushConstant(expression);
@@ -748,12 +747,12 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitSpreadExpression(SpreadExpression expression) {
+    public void visitSpreadExpression(final SpreadExpression expression) {
         throw new GroovyBugError("SpreadExpression should not be visited here");
     }
 
     @Override
-    public void visitSpreadMapExpression(SpreadMapExpression expression) {
+    public void visitSpreadMapExpression(final SpreadMapExpression expression) {
         Expression subExpression = expression.getExpression();
         // to not record the underlying MapExpression twice,
         // we disable the assertion tracker
@@ -767,32 +766,32 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitMethodPointerExpression(MethodPointerExpression expression) {
+    public void visitMethodPointerExpression(final MethodPointerExpression expression) {
         controller.getMethodPointerExpressionWriter().writeMethodPointerExpression(expression);
     }
 
     @Override
-    public void visitMethodReferenceExpression(MethodReferenceExpression expression) {
+    public void visitMethodReferenceExpression(final MethodReferenceExpression expression) {
         controller.getMethodReferenceExpressionWriter().writeMethodReferenceExpression(expression);
     }
 
     @Override
-    public void visitUnaryMinusExpression(UnaryMinusExpression expression) {
+    public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
         controller.getUnaryExpressionHelper().writeUnaryMinus(expression);
     }
 
     @Override
-    public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
+    public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
         controller.getUnaryExpressionHelper().writeUnaryPlus(expression);
     }
 
     @Override
-    public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
+    public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
         controller.getUnaryExpressionHelper().writeBitwiseNegate(expression);
     }
 
     @Override
-    public void visitCastExpression(CastExpression castExpression) {
+    public void visitCastExpression(final CastExpression castExpression) {
         ClassNode type = castExpression.getType();
         Expression subExpression = castExpression.getExpression();
         subExpression.visit(this);
@@ -816,12 +815,12 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitNotExpression(NotExpression expression) {
+    public void visitNotExpression(final NotExpression expression) {
         controller.getUnaryExpressionHelper().writeNotExpression(expression);
     }
 
     @Override
-    public void visitBooleanExpression(BooleanExpression expression) {
+    public void visitBooleanExpression(final BooleanExpression expression) {
         controller.getCompileStack().pushBooleanExpression();
         int mark = controller.getOperandStack().getStackLength();
         Expression inner = expression.getExpression();
@@ -831,21 +830,21 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitMethodCallExpression(MethodCallExpression call) {
+    public void visitMethodCallExpression(final MethodCallExpression call) {
         onLineNumber(call, "visitMethodCallExpression: \"" + call.getMethod() + "\":");
         controller.getInvocationWriter().writeInvokeMethod(call);
         controller.getAssertionWriter().record(call.getMethod());
     }
 
     @Override
-    public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+    public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
         onLineNumber(call, "visitStaticMethodCallExpression: \"" + call.getMethod() + "\":");
         controller.getInvocationWriter().writeInvokeStaticMethod(call);
         controller.getAssertionWriter().record(call);
     }
 
     @Override
-    public void visitConstructorCallExpression(ConstructorCallExpression call) {
+    public void visitConstructorCallExpression(final ConstructorCallExpression call) {
         onLineNumber(call, "visitConstructorCallExpression: \"" + call.getType().getName() + "\":");
 
         if (call.isSpecialCall()) {
@@ -856,7 +855,7 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getAssertionWriter().record(call);
     }
 
-    private static String makeFieldClassName(ClassNode type) {
+    private static String makeFieldClassName(final ClassNode type) {
         String internalName = BytecodeHelper.getClassInternalName(type);
         StringBuilder ret = new StringBuilder(internalName.length());
         for (int i = 0, n = internalName.length(); i < n; i += 1) {
@@ -872,7 +871,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return ret.toString();
     }
 
-    private static String getStaticFieldName(ClassNode type) {
+    private static String getStaticFieldName(final ClassNode type) {
         ClassNode componentType = type;
         StringBuilder prefix = new StringBuilder();
         for (; componentType.isArray(); componentType = componentType.getComponentType()) {
@@ -883,12 +882,12 @@ public class AsmClassGenerator extends ClassGenerator {
         return name;
     }
 
-    private static boolean isValidFieldNodeForByteCodeAccess(FieldNode fn, ClassNode accessingNode) {
+    private static boolean isValidFieldNodeForByteCodeAccess(final FieldNode fn, final ClassNode accessingNode) {
         if (fn == null) return false;
         ClassNode declaringClass = fn.getDeclaringClass();
         // same class is always allowed access
         if (fn.isPublic() || declaringClass.equals(accessingNode)) return true;
-        boolean samePackages = samePackages(declaringClass.getPackageName(), accessingNode.getPackageName());
+        boolean samePackages = Objects.equals(declaringClass.getPackageName(), accessingNode.getPackageName());
         // protected means same class or same package, or subclass
         if (fn.isProtected() && (samePackages || accessingNode.isDerivedFrom(declaringClass))) {
             return true;
@@ -900,7 +899,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return false;
     }
 
-    public static FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(ClassNode accessingNode, ClassNode current, String name, boolean skipCurrent) {
+    public static FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(final ClassNode accessingNode, final ClassNode current, final String name, final boolean skipCurrent) {
         if (!skipCurrent) {
             FieldNode currentClassField = current.getDeclaredField(name);
             if (isValidFieldNodeForByteCodeAccess(currentClassField, accessingNode)) return currentClassField;
@@ -912,105 +911,28 @@ public class AsmClassGenerator extends ClassGenerator {
         return null;
     }
 
-    private void visitAttributeOrProperty(PropertyExpression expression, MethodCallerMultiAdapter adapter) {
-        MethodVisitor mv = controller.getMethodVisitor();
-
-        Expression objectExpression = expression.getObjectExpression();
+    private void visitAttributeOrProperty(final PropertyExpression expression, final MethodCallerMultiAdapter adapter) {
         ClassNode classNode = controller.getClassNode();
+        String propertyName = expression.getPropertyAsString();
+        Expression objectExpression = expression.getObjectExpression();
 
-        //TODO (blackdrag): this if branch needs a rework. There should be no direct method calls be produced, the
-        // handling of this/super could be much simplified (see visitAttributeExpression), the field accessibility check
-        // could be moved directly into the search, which would also no longer require the GroovyBugError then
-        // the outer class field access seems to be without any tests (if there are tests for that, then the code
-        // here is dead code)
-        if (isThisOrSuper(objectExpression)) {
-            // let's use the field expression if it's available
-            String name = expression.getPropertyAsString();
-            if (name != null) {
-                FieldNode field = null;
-                boolean privateSuperField = false;
-                if (isSuperExpression(objectExpression)) {
-                    field = classNode.getSuperClass().getDeclaredField(name);
-                    if (field != null && field.isPrivate()) {
-                        privateSuperField = true;
-                    }
-                } else if (controller.isNotExplicitThisInClosure(expression.isImplicitThis())) {
-                    field = classNode.getDeclaredField(name);
-                    ClassNode outer = classNode.getOuterClass();
-                    if (field == null && outer != null) {
-                        FieldNode outerClassField;
-                        do {
-                            outerClassField = outer.getDeclaredField(name);
-                            if (outerClassField!=null && outerClassField.isStatic() && outerClassField.isFinal()) {
-                                if (outer != classNode.getOuterClass() && outerClassField.isPrivate()) {
-                                    throw new GroovyBugError("Trying to access private constant field [" + outerClassField.getDeclaringClass() + "#" + outerClassField.getName() + "] from inner class");
-                                }
-                                PropertyExpression pexp = new PropertyExpression(
-                                        new ClassExpression(outer),
-                                        expression.getProperty()
-                                );
-                                pexp.getObjectExpression().setSourcePosition(objectExpression);
-                                pexp.visit(controller.getAcg());
-                                return;
-                            }
-                            outer = outer.getSuperClass();
-                        } while (outer != null);
-                    }
-                    if (field == null
-                            && expression instanceof AttributeExpression
-                            && isThisExpression(objectExpression)
-                            && controller.isStaticContext()) {
-                        // GROOVY-6183
-                        ClassNode current = classNode.getSuperClass();
-                        while (field == null && current != null) {
-                            field = current.getDeclaredField(name);
-                            current = current.getSuperClass();
-                        }
-                        if (field != null && (field.isProtected() || field.isPublic())) {
-                            visitFieldExpression(new FieldExpression(field));
-                            return;
-                        }
-                    }
-                }
-                if (field != null && !privateSuperField) { // GROOVY-4497: don't visit super field if it is private
-                    visitFieldExpression(new FieldExpression(field));
-                    return;
-                }
-                if (isSuperExpression(objectExpression)) {
-                    String prefix;
-                    if (controller.getCompileStack().isLHS()) {
-                        setPropertyOfSuperClass(classNode, expression, mv);
-                        return;
-                    } else {
-                        prefix = "get";
-                    }
-                    String propName = prefix + capitalize(name);
-                    visitMethodCallExpression(new MethodCallExpression(objectExpression, propName, MethodCallExpression.NO_ARGUMENTS));
-                    return;
-                }
-            }
-        }
-
-        String propName = expression.getPropertyAsString();
-        // TODO: add support for super here too
-        if (expression.getObjectExpression() instanceof ClassExpression && "this".equals(propName)) {
+        if (objectExpression instanceof ClassExpression && "this".equals(propertyName)) {
             // we have something like A.B.this, and need to make it
             // into this.this$0.this$0, where this.this$0 returns
             // A.B and this.this$0.this$0 return A.
             ClassNode type = objectExpression.getType();
-            ClassNode iterType = classNode;
-            if (controller.getCompileStack().isInSpecialConstructorCall() && classNode.getOuterClass() != null) {
-                boolean staticInnerClass = classNode.isStaticClass();
+            if (controller.getCompileStack().isInSpecialConstructorCall() && type.equals(classNode.getOuterClass())) {
                 // Outer.this in a special constructor call
-                if (classNode.getOuterClass().equals(type)) {
-                    ConstructorNode ctor = controller.getConstructorNode();
-                    Expression receiver = !staticInnerClass ? new VariableExpression(ctor.getParameters()[0]) : new ClassExpression(type);
-                    receiver.setSourcePosition(expression);
-                    receiver.visit(this);
-                    return;
-                }
+                ConstructorNode ctor = controller.getConstructorNode();
+                Expression receiver = !classNode.isStaticClass() ? new VariableExpression(ctor.getParameters()[0]) : new ClassExpression(type);
+                receiver.setSourcePosition(expression);
+                receiver.visit(this);
+                return;
             }
+
+            MethodVisitor mv = controller.getMethodVisitor();
             mv.visitVarInsn(ALOAD, 0);
+            ClassNode iterType = classNode;
             while (!iterType.equals(type)) {
                 String ownerName = BytecodeHelper.getClassInternalName(iterType);
                 if (iterType.getOuterClass() == null) break;
@@ -1018,7 +940,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 iterType = iterType.getOuterClass();
                 if (thisField == null) {
                     // closure within inner class
-                    while (iterType.isDerivedFrom(ClassHelper.CLOSURE_TYPE)) {
+                    while (iterType.isDerivedFrom(ClassHelper.CLOSURE_TYPE) && iterType.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
                         // GROOVY-8881: cater for closures within closures - getThisObject is already outer class of all closures
                         iterType = iterType.getOuterClass();
                     }
@@ -1040,21 +962,21 @@ public class AsmClassGenerator extends ClassGenerator {
             return;
         }
 
-        if (propName != null) {
+        if (propertyName != null) {
             // TODO: spread safe should be handled inside
             if (adapter == getProperty && !expression.isSpreadSafe()) {
-                controller.getCallSiteWriter().makeGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
+                controller.getCallSiteWriter().makeGetPropertySite(objectExpression, propertyName, expression.isSafe(), expression.isImplicitThis());
             } else if (adapter == getGroovyObjectProperty && !expression.isSpreadSafe()) {
-                controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
+                controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propertyName, expression.isSafe(), expression.isImplicitThis());
             } else {
-                controller.getCallSiteWriter().fallbackAttributeOrPropertySite(expression, objectExpression, propName, adapter);
+                controller.getCallSiteWriter().fallbackAttributeOrPropertySite(expression, objectExpression, propertyName, adapter);
             }
         } else {
             controller.getCallSiteWriter().fallbackAttributeOrPropertySite(expression, objectExpression, null, adapter);
         }
     }
 
-    private void setPropertyOfSuperClass(ClassNode classNode, PropertyExpression expression, MethodVisitor mv) {
+    private void setPropertyOfSuperClass(final ClassNode classNode, final PropertyExpression expression, final MethodVisitor mv) {
         String fieldName = expression.getPropertyAsString();
         FieldNode fieldNode = classNode.getSuperClass().getField(fieldName);
 
@@ -1090,21 +1012,21 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private static boolean getterAndSetterExists(MethodNode setter, MethodNode getter) {
-        return null != setter && null != getter && setter.getDeclaringClass().equals(getter.getDeclaringClass());
+    private static boolean getterAndSetterExists(final MethodNode setter, final MethodNode getter) {
+        return setter != null && getter != null && setter.getDeclaringClass().equals(getter.getDeclaringClass());
     }
 
-    private static MethodNode findSetterOfSuperClass(ClassNode classNode, FieldNode fieldNode) {
+    private static MethodNode findSetterOfSuperClass(final ClassNode classNode, final FieldNode fieldNode) {
         String setterMethodName = "set" + capitalize(fieldNode.getName());
         return classNode.getSuperClass().getSetterMethod(setterMethodName);
     }
 
-    private static MethodNode findGetterOfSuperClass(ClassNode classNode, FieldNode fieldNode) {
+    private static MethodNode findGetterOfSuperClass(final ClassNode classNode, final FieldNode fieldNode) {
         String getterMethodName = "get" + capitalize(fieldNode.getName());
         return classNode.getSuperClass().getGetterMethod(getterMethodName);
     }
 
-    private boolean isGroovyObject(Expression objectExpression) {
+    private boolean isGroovyObject(final Expression objectExpression) {
         if (isThisExpression(objectExpression)) return true;
         if (objectExpression instanceof ClassExpression) return false;
 
@@ -1113,70 +1035,71 @@ public class AsmClassGenerator extends ClassGenerator {
         return objectExpressionType.isDerivedFromGroovyObject();
     }
 
-    private boolean isThisOrSuperInStaticContext(Expression objectExpression) {
-        return !controller.isInClosure() && controller.isStaticContext() && isThisOrSuper(objectExpression);
-    }
-
     @Override
-    public void visitPropertyExpression(PropertyExpression expression) {
+    public void visitPropertyExpression(final PropertyExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
         OperandStack operandStack = controller.getOperandStack();
         int mark = operandStack.getStackLength() - 1;
-        MethodCallerMultiAdapter adapter;
-        if (controller.getCompileStack().isLHS()) {
-            if (isGroovyObject(objectExpression) && !isThisOrSuperInStaticContext(objectExpression)) {
-                adapter = setGroovyObjectProperty;
-            } else {
-                adapter = setProperty;
-            }
-        } else {
-            if (isGroovyObject(objectExpression) && !isThisOrSuperInStaticContext(objectExpression)) {
-                adapter = getGroovyObjectProperty;
-            } else {
-                adapter = getProperty;
-            }
-        }
-        visitAttributeOrProperty(expression, adapter);
-        if (controller.getCompileStack().isLHS()) {
-            operandStack.remove(operandStack.getStackLength() - mark);
-        } else {
-            controller.getAssertionWriter().record(expression.getProperty());
-        }
-    }
+        boolean visited = false;
 
-    @Override
-    public void visitAttributeExpression(AttributeExpression expression) {
-        Expression objectExpression = expression.getObjectExpression();
-        ClassNode classNode = controller.getClassNode();
-        // TODO: checking for isThisOrSuper is enough for AttributeExpression, but if this is moved into
-        // visitAttributeOrProperty to handle attributes and properties equally, then the extended check should be done
         if (isThisOrSuper(objectExpression)) {
-            // let's use the field expression if it's available
             String name = expression.getPropertyAsString();
             if (name != null) {
-                FieldNode field = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
-                if (field != null) {
-                    FieldExpression fldExp = new FieldExpression(field);
-                    fldExp.setSourcePosition(expression.getProperty());
-                    visitFieldExpression(fldExp);
-                    return;
+                FieldNode field = null;
+                boolean privateSuperField = false;
+                ClassNode classNode = controller.getClassNode();
+
+                if (isSuperExpression(objectExpression)) {
+                    field = classNode.getSuperClass().getDeclaredField(name);
+                    privateSuperField = (field != null && field.isPrivate());
+                } else if (expression.isImplicitThis() || !controller.isInClosure()) {
+                    field = classNode.getDeclaredField(name);
+
+                    ClassNode outer = classNode.getOuterClass();
+                    if (field == null && outer != null) {
+                        do {
+                            FieldNode outerClassField = outer.getDeclaredField(name);
+                            if (outerClassField != null && outerClassField.isStatic() && outerClassField.isFinal()) {
+                                if (outerClassField.isPrivate() && classNode.getOuterClass() != outer) {
+                                    throw new GroovyBugError("Trying to access private field [" + outerClassField.getDeclaringClass() + "#" + outerClassField.getName() + "] from inner class");
+                                }
+                                PropertyExpression staticOuterField = new PropertyExpression(new ClassExpression(outer), expression.getProperty());
+                                staticOuterField.getObjectExpression().setSourcePosition(objectExpression);
+                                staticOuterField.visit(controller.getAcg());
+                                return;
+                            }
+                            outer = outer.getSuperClass();
+                        } while (outer != null);
+                    }
+                }
+
+                if (field != null && !privateSuperField) { // GROOVY-4497: don't visit super field if it is private
+                    visitFieldExpression(new FieldExpression(field));
+                    visited = true;
+                } else if (isSuperExpression(objectExpression)) {
+                    if (controller.getCompileStack().isLHS()) {
+                        setPropertyOfSuperClass(classNode, expression, controller.getMethodVisitor());
+                    } else {
+                        visitMethodCallExpression(new MethodCallExpression(objectExpression, "get" + capitalize(name), MethodCallExpression.NO_ARGUMENTS));
+                    }
+                    visited = true;
                 }
             }
         }
 
-        MethodCallerMultiAdapter adapter;
-        OperandStack operandStack = controller.getOperandStack();
-        int mark = operandStack.getStackLength() - 1;
-        if (controller.getCompileStack().isLHS()) {
-            adapter = setField;
-            if (isGroovyObject(objectExpression)) adapter = setGroovyObjectField;
-            if (usesSuper(expression)) adapter = setFieldOnSuper;
-        } else {
-            adapter = getField;
-            if (isGroovyObject(objectExpression)) adapter = getGroovyObjectField;
-            if (usesSuper(expression)) adapter = getFieldOnSuper;
+        if (!visited) {
+            boolean useMetaObjectProtocol = isGroovyObject(objectExpression)
+                    && (!isThisOrSuper(objectExpression) || !controller.isStaticContext() || controller.isInClosure());
+
+            MethodCallerMultiAdapter adapter;
+            if (controller.getCompileStack().isLHS()) {
+                adapter = useMetaObjectProtocol ? setGroovyObjectProperty : setProperty;
+            } else {
+                adapter = useMetaObjectProtocol ? getGroovyObjectProperty : getProperty;
+            }
+            visitAttributeOrProperty(expression, adapter);
         }
-        visitAttributeOrProperty(expression, adapter);
+
         if (controller.getCompileStack().isLHS()) {
             operandStack.remove(operandStack.getStackLength() - mark);
         } else {
@@ -1184,18 +1107,51 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private static boolean usesSuper(PropertyExpression pe) {
-        Expression objExp = pe.getObjectExpression();
-        if (objExp instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) objExp;
-            String variable = varExp.getName();
-            return variable.equals("super");
+    @Override
+    public void visitAttributeExpression(final AttributeExpression expression) {
+        Expression objectExpression = expression.getObjectExpression();
+        OperandStack operandStack = controller.getOperandStack();
+        int mark = operandStack.getStackLength() - 1;
+        boolean visited = false;
+
+        if (isThisOrSuper(objectExpression)) {
+            String name = expression.getPropertyAsString();
+            if (name != null) {
+                ClassNode classNode = controller.getClassNode();
+                FieldNode field = getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(classNode, classNode, name, isSuperExpression(objectExpression));
+                if (field != null) {
+                    visitFieldExpression(new FieldExpression(field));
+                    visited = true;
+                } else if (isSuperExpression(objectExpression)) {
+                    if (controller.getCompileStack().isLHS()) {
+                        setPropertyOfSuperClass(classNode, expression, controller.getMethodVisitor());
+                    } else {
+                        visitMethodCallExpression(new MethodCallExpression(objectExpression, "get" + capitalize(name), MethodCallExpression.NO_ARGUMENTS));
+                    }
+                    visited = true;
+                }
+            }
         }
-        return false;
+
+        if (!visited) {
+            MethodCallerMultiAdapter adapter;
+            if (controller.getCompileStack().isLHS()) {
+                adapter = isGroovyObject(objectExpression) ? setGroovyObjectField : setField;
+            } else {
+                adapter = isGroovyObject(objectExpression) ? getGroovyObjectField : getField;
+            }
+            visitAttributeOrProperty(expression, adapter);
+        }
+
+        if (controller.getCompileStack().isLHS()) {
+            operandStack.remove(operandStack.getStackLength() - mark);
+        } else {
+            controller.getAssertionWriter().record(expression.getProperty());
+        }
     }
 
     @Override
-    public void visitFieldExpression(FieldExpression expression) {
+    public void visitFieldExpression(final FieldExpression expression) {
         FieldNode field = expression.getField();
         if (field.isStatic()) {
             if (controller.getCompileStack().isLHS()) {
@@ -1210,12 +1166,9 @@ public class AsmClassGenerator extends ClassGenerator {
                 loadInstanceField(expression);
             }
         }
-        if (!controller.getCompileStack().isLHS()) {
-            controller.getAssertionWriter().record(expression);
-        }
     }
 
-    public void loadStaticField(FieldExpression fldExp) {
+    public void loadStaticField(final FieldExpression fldExp) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = fldExp.getField();
         boolean holder = field.isHolder() && !controller.isInClosureConstructor();
@@ -1237,7 +1190,7 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * RHS instance field. should move most of the code in the BytecodeHelper
      */
-    public void loadInstanceField(FieldExpression fldExp) {
+    public void loadInstanceField(final FieldExpression fldExp) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = fldExp.getField();
         boolean holder = field.isHolder() && !controller.isInClosureConstructor();
@@ -1257,7 +1210,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void storeThisInstanceField(FieldExpression expression) {
+    private void storeThisInstanceField(final FieldExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = expression.getField();
 
@@ -1290,7 +1243,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void storeStaticField(FieldExpression expression) {
+    private void storeStaticField(final FieldExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = expression.getField();
 
@@ -1310,11 +1263,8 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getOperandStack().remove(1);
     }
 
-    /**
-     * Visits a bare (unqualified) variable expression.
-     */
     @Override
-    public void visitVariableExpression(VariableExpression expression) {
+    public void visitVariableExpression(final VariableExpression expression) {
         String variableName = expression.getName();
 
         //-----------------------------------------------------------------------
@@ -1354,7 +1304,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void loadThis(VariableExpression thisExpression) {
+    private void loadThis(final VariableExpression thisExpression) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
         if (controller.isInClosure() && !controller.getCompileStack().isImplicitThis()) {
@@ -1371,7 +1321,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void processClassVariable(VariableExpression expression) {
+    private void processClassVariable(final VariableExpression expression) {
         if (passingParams && controller.isInScriptBody()) {
             //TODO: check if this part is actually used
             MethodVisitor mv = controller.getMethodVisitor();
@@ -1480,7 +1430,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitClassExpression(ClassExpression expression) {
+    public void visitClassExpression(final ClassExpression expression) {
         ClassNode type = expression.getType();
         MethodVisitor mv = controller.getMethodVisitor();
         if (BytecodeHelper.isClassLiteralPossible(type) || BytecodeHelper.isSameCompilationUnit(controller.getClassNode(), type)) {
@@ -1511,7 +1461,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitRangeExpression(RangeExpression expression) {
+    public void visitRangeExpression(final RangeExpression expression) {
         OperandStack operandStack = controller.getOperandStack();
         expression.getFrom().visit(this);
         operandStack.box();
@@ -1524,12 +1474,12 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitMapEntryExpression(MapEntryExpression expression) {
+    public void visitMapEntryExpression(final MapEntryExpression expression) {
         throw new GroovyBugError("MapEntryExpression should not be visited here");
     }
 
     @Override
-    public void visitMapExpression(MapExpression expression) {
+    public void visitMapExpression(final MapExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
 
         List<MapEntryExpression> entries = expression.getMapEntryExpressions();
@@ -1561,7 +1511,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitArgumentlistExpression(ArgumentListExpression ale) {
+    public void visitArgumentlistExpression(final ArgumentListExpression ale) {
         if (containsSpreadExpression(ale)) {
             despreadList(ale.getExpressions(), true);
         } else {
@@ -1569,7 +1519,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    public void despreadList(List<Expression> expressions, boolean wrap) {
+    public void despreadList(final List<Expression> expressions, final boolean wrap) {
         List<Expression> spreadIndexes = new ArrayList<>();
         List<Expression> spreadExpressions = new ArrayList<>();
         List<Expression> normalArguments = new ArrayList<>();
@@ -1595,11 +1545,11 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitTupleExpression(TupleExpression expression) {
+    public void visitTupleExpression(final TupleExpression expression) {
         visitTupleExpression(expression, false);
     }
 
-    void visitTupleExpression(TupleExpression expression, boolean useWrapper) {
+    void visitTupleExpression(final TupleExpression expression, final boolean useWrapper) {
         MethodVisitor mv = controller.getMethodVisitor();
         int size = expression.getExpressions().size();
 
@@ -1619,7 +1569,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    public void loadWrapper(Expression argument) {
+    public void loadWrapper(final Expression argument) {
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode goalClass = argument.getType();
         visitClassExpression(new ClassExpression(goalClass));
@@ -1632,7 +1582,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitArrayExpression(ArrayExpression expression) {
+    public void visitArrayExpression(final ArrayExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode elementType = expression.getElementType();
         String arrayTypeName = BytecodeHelper.getClassInternalName(elementType);
@@ -1708,7 +1658,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitClosureListExpression(ClosureListExpression expression) {
+    public void visitClosureListExpression(final ClosureListExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         controller.getCompileStack().pushVariableScope(expression.getVariableScope());
 
@@ -1848,13 +1798,13 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitBytecodeExpression(BytecodeExpression expression) {
+    public void visitBytecodeExpression(final BytecodeExpression expression) {
         expression.visit(controller.getMethodVisitor());
         controller.getOperandStack().push(expression.getType());
     }
 
     @Override
-    public void visitBytecodeSequence(BytecodeSequence bytecodeSequence) {
+    public void visitBytecodeSequence(final BytecodeSequence bytecodeSequence) {
         MethodVisitor mv = controller.getMethodVisitor();
         List instructions = bytecodeSequence.getInstructions();
         int mark = controller.getOperandStack().getStackLength();
@@ -1876,7 +1826,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitListExpression(ListExpression expression) {
+    public void visitListExpression(final ListExpression expression) {
         onLineNumber(expression, "ListExpression");
 
         int size = expression.getExpressions().size();
@@ -1941,7 +1891,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     @Override
-    public void visitGStringExpression(GStringExpression expression) {
+    public void visitGStringExpression(final GStringExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
 
         mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/GStringImpl");
@@ -1978,18 +1928,16 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getOperandStack().push(ClassHelper.GSTRING_TYPE);
     }
 
-    /**
-     * Note: ignore it. Annotation generation needs the current visitor.
-     */
     @Override
-    public void visitAnnotations(AnnotatedNode node) {
+    public void visitAnnotations(final AnnotatedNode node) {
+        // ignore it; annotation generation needs the current visitor
     }
 
-    private void visitAnnotations(AnnotatedNode targetNode, Object visitor) {
+    private void visitAnnotations(final AnnotatedNode targetNode, final Object visitor) {
         visitAnnotations(targetNode, targetNode, visitor);
     }
 
-    private void visitAnnotations(AnnotatedNode targetNode, AnnotatedNode sourceNode, Object visitor) {
+    private void visitAnnotations(final AnnotatedNode targetNode, final AnnotatedNode sourceNode, final Object visitor) {
         for (AnnotationNode an : sourceNode.getAnnotations()) {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
@@ -2001,7 +1949,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void visitParameterAnnotations(Parameter parameter, int paramNumber, MethodVisitor mv) {
+    private void visitParameterAnnotations(final Parameter parameter, final int paramNumber, final MethodVisitor mv) {
         for (AnnotationNode an : parameter.getAnnotations()) {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
@@ -2014,7 +1962,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private AnnotationVisitor getAnnotationVisitor(AnnotatedNode targetNode, AnnotationNode an, Object visitor) {
+    private AnnotationVisitor getAnnotationVisitor(final AnnotatedNode targetNode, final AnnotationNode an, final Object visitor) {
         final String annotationDescriptor = BytecodeHelper.getTypeDescription(an.getClassNode());
         if (targetNode instanceof MethodNode) {
             return ((MethodVisitor) visitor).visitAnnotation(annotationDescriptor, an.hasRuntimeRetention());
@@ -2028,11 +1976,12 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
-     * Generate the annotation attributes.
+     * Generates the annotation attributes.
+     *
      * @param an the node with an annotation
      * @param av the visitor to use
      */
-    private void visitAnnotationAttributes(AnnotationNode an, AnnotationVisitor av) {
+    private void visitAnnotationAttributes(final AnnotationNode an, final AnnotationVisitor av) {
         Map<String, Object> constantAttrs = new HashMap<>();
         Map<String, PropertyExpression> enumAttrs = new HashMap<>();
         Map<String, Object> atAttrs = new HashMap<>();
@@ -2076,7 +2025,7 @@ public class AsmClassGenerator extends ClassGenerator {
         visitArrayAttributes(an, arrayAttrs, av);
     }
 
-    private void visitArrayAttributes(AnnotationNode an, Map<String, ListExpression> arrayAttr, AnnotationVisitor av) {
+    private void visitArrayAttributes(final AnnotationNode an, final Map<String, ListExpression> arrayAttr, final AnnotationVisitor av) {
         if (arrayAttr.isEmpty()) return;
         for (Map.Entry<String, ListExpression> entry : arrayAttr.entrySet()) {
             AnnotationVisitor av2 = av.visitArray(entry.getKey());
@@ -2091,7 +2040,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private static int determineCommonArrayType(List<Expression> values) {
+    private static int determineCommonArrayType(final List<Expression> values) {
         Expression expr = values.get(0);
         int arrayElementType = -1;
         if (expr instanceof AnnotationConstantExpression) {
@@ -2106,7 +2055,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return arrayElementType;
     }
 
-    private void visitAnnotationArrayElement(Expression expr, int arrayElementType, AnnotationVisitor av) {
+    private void visitAnnotationArrayElement(final Expression expr, final int arrayElementType, final AnnotationVisitor av) {
         switch (arrayElementType) {
             case 1:
                 AnnotationNode atAttr = (AnnotationNode) ((AnnotationConstantExpression) expr).getValue();
@@ -2132,7 +2081,7 @@ public class AsmClassGenerator extends ClassGenerator {
     // Implementation methods
     //-------------------------------------------------------------------------
 
-    public static int argumentSize(Expression arguments) {
+    public static int argumentSize(final Expression arguments) {
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
             int size = tupleExpression.getExpressions().size();
@@ -2141,12 +2090,12 @@ public class AsmClassGenerator extends ClassGenerator {
         return 1;
     }
 
-    private static String[] buildExceptions(ClassNode[] exceptions) {
+    private static String[] buildExceptions(final ClassNode[] exceptions) {
         if (exceptions == null) return null;
         return Arrays.stream(exceptions).map(BytecodeHelper::getClassInternalName).toArray(String[]::new);
     }
 
-    private static boolean containsOnlyConstants(ListExpression list) {
+    private static boolean containsOnlyConstants(final ListExpression list) {
         for (Expression exp : list.getExpressions()) {
             if (exp instanceof ConstantExpression) continue;
             return false;
@@ -2154,7 +2103,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return true;
     }
 
-    public static boolean containsSpreadExpression(Expression arguments) {
+    public static boolean containsSpreadExpression(final Expression arguments) {
         List<Expression> args = null;
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
@@ -2175,28 +2124,24 @@ public class AsmClassGenerator extends ClassGenerator {
         return controller.getClassNode().getOuterClass() != null;
     }
 
-    public static boolean isNullConstant(Expression expression) {
+    public static boolean isNullConstant(final Expression expression) {
         return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
     }
 
-    public static boolean isThisExpression(Expression expression) {
+    public static boolean isThisExpression(final Expression expression) {
         return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
     }
 
-    private static boolean isSuperExpression(Expression expression) {
+    public static boolean isSuperExpression(final Expression expression) {
         return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
     }
 
-    private static boolean isThisOrSuper(Expression expression) {
+    private static boolean isThisOrSuper(final Expression expression) {
         return isThisExpression(expression) || isSuperExpression(expression);
     }
 
-    private static boolean isVargs(Parameter[] params) {
+    private static boolean isVargs(final Parameter[] params) {
         return (params.length > 0 && params[params.length - 1].getType().isArray());
-    }
-
-    private static boolean samePackages(String pkg1, String pkg2) {
-        return Objects.equals(pkg1, pkg2);
     }
 
     private CompileUnit getCompileUnit() {
@@ -2207,14 +2152,14 @@ public class AsmClassGenerator extends ClassGenerator {
         return answer;
     }
 
-    public boolean addInnerClass(ClassNode innerClass) {
+    public boolean addInnerClass(final ClassNode innerClass) {
         ModuleNode mn = controller.getClassNode().getModule();
         innerClass.setModule(mn);
         mn.getUnit().addGeneratedInnerClass((InnerClassNode)innerClass);
         return innerClasses.add(innerClass);
     }
 
-    public void onLineNumber(ASTNode statement, String message) {
+    public void onLineNumber(final ASTNode statement, final String message) {
         if (statement == null || statement instanceof BlockStatement) return;
 
         currentASTNode = statement;
@@ -2230,7 +2175,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    public void throwException(String s) {
-        throw new RuntimeParserException(s, currentASTNode);
+    public void throwException(final String message) {
+        throw new RuntimeParserException(message, currentASTNode);
     }
 }
