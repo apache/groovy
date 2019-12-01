@@ -13460,14 +13460,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (nlgnSort && (head instanceof Comparable)) {
             //n*LOG(n) version
             Set<T> answer;
-            if (Number.class.isInstance(head)) {
+            if (head instanceof Number) {
                 answer = new TreeSet<T>(numberComparator);
                 answer.addAll(self);
                 for (T t : self) {
-                    if (Number.class.isInstance(t)) {
+                    if (t instanceof Number) {
                         for (Object t2 : removeMe) {
-                            if (Number.class.isInstance(t2)) {
-                                if (numberComparator.compare(t, (T)t2) == 0)
+                            if (t2 instanceof Number) {
+                                if (numberComparator.compare(t, (T) t2) == 0)
                                     answer.remove(t);
                             }
                         }
