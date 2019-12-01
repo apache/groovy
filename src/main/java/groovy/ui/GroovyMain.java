@@ -195,7 +195,7 @@ public class GroovyMain {
         @Option(names = {"-e"}, paramLabel = "<script>", description = "Specify a command line script")
         private String script;
 
-        @Option(names = {"-i"}, arity = "0..1", paramLabel = "<extension>", description = "Modify files in place; create backup if extension is given (e.g. \'.bak\')")
+        @Option(names = {"-i"}, arity = "0..1", paramLabel = "<extension>", description = "Modify files in place; create backup if extension is given (e.g. '.bak')")
         private String extension;
 
         @Option(names = {"-n"}, description = "Process files line by line using implicit 'line' variable")
