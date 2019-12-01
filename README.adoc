@@ -50,7 +50,7 @@ image:{travis-build-icon}[travis build status, link={travis-ci}]
 image:{bintray-download-icon}[bintray download, link={bintray-latest-version-link}]
 image:{apache-groovy-twitter-icon}[follow on Twitter, link={apache-groovy-twitter-link}]
 
-{groovy-www}[Groovy] is a powerful, optionally typed and dynamic language, with static-typing and static compilation capabilities, for the Java platform aimed at multiplying developers’ productivity thanks to a concise, familiar and easy to learn syntax.
+{groovy-www}[Groovy] is a powerful, optionally typed and dynamic language, with static-typing and static compilation capabilities, for the Java platform aimed at multiplying developers productivity thanks to a concise, familiar and easy to learn syntax.
 
 It integrates smoothly with any Java program, and immediately delivers to your application powerful features, including scripting capabilities, Domain-Specific Language authoring, runtime and compile-time meta-programming and functional programming. 
 
@@ -88,7 +88,7 @@ Alternatively, you can download the source distribution and unpack it.
 
 If obtaining the source from the source distribution and you intend to build from source,
 you also need to https://gradle.org/downloads/[download] and install http://gradle.org/[Gradle] and
-use the downloaded Gradle to execute one bootstrap step.
+use it to execute one bootstrap step.
 
 ==== Bootstrapping Gradle
 
