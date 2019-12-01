@@ -820,7 +820,7 @@ public class MetaClassHelper {
                 value = value.substring(0, MAX_ARG_LEN - 2) + "..";
             }
             if (argument instanceof String) {
-                value = "\'" + value + "\'";
+                value = "'" + value + "'";
             }
         } catch (Exception e) {
             value = shortName(argument);
