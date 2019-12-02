@@ -49,6 +49,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 import static org.apache.groovy.ast.tools.VisibilityUtils.getVisibility;
+import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
@@ -205,13 +206,7 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
     }
 
     private Expression getDefaultExpression(ClassNode pType) {
-        if (isPrimitiveType(pType)) {
-            if (boolean_TYPE.equals(pType)) {
-                return constX(Boolean.FALSE);
-            }
-            return castX(getWrapper(pType), constX(0));
-        }
-        return nullX();
+        return Optional.ofNullable(getDefaultValueForPrimitive(pType)).orElse(nullX());
     }
 
     private boolean hasDuplicates(final MethodNode mNode, final List<String> propNames, final String next) {
