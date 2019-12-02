@@ -153,12 +153,12 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         mv.visitInvokeDynamicInsn(
                 abstractMethodNode.getName(),
                 createAbstractMethodDesc(functionalInterfaceType, typeOrTargetRef),
-                createBootstrapMethod(isInterface),
+                createBootstrapMethod(isInterface, false),
                 createBootstrapMethodArguments(
                         abstractMethodDesc,
                         methodRefMethod.isStatic() || isConstructorReference ? Opcodes.H_INVOKESTATIC : Opcodes.H_INVOKEVIRTUAL,
                         isConstructorReference ? controller.getClassNode() : typeOrTargetRefType,
-                        methodRefMethod)
+                        methodRefMethod, false)
         );
 
         if (isClassExpr) {

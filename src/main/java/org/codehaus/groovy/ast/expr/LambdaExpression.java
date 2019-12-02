@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
  * </pre>
  */
 public class LambdaExpression extends ClosureExpression {
+    private boolean serializable;
     public LambdaExpression(Parameter[] parameters, Statement code) {
         super(parameters, code);
     }
@@ -52,5 +53,13 @@ public class LambdaExpression extends ClosureExpression {
         } else {
             return "() -> { ... }";
         }
+    }
+
+    public boolean isSerializable() {
+        return serializable;
+    }
+
+    public void setSerializable(boolean serializable) {
+        this.serializable = serializable;
     }
 }
