@@ -56,11 +56,9 @@ public class CachedClass {
 
         @Override
         public CachedField[] initValue() {
-            PrivilegedAction<CachedField[]> action = () -> {
-                return Arrays.stream(getTheClass().getDeclaredFields())
-                    .filter(f -> checkCanSetAccessible(f, CachedClass.class))
-                    .map(CachedField::new).toArray(CachedField[]::new);
-            };
+            PrivilegedAction<CachedField[]> action = () -> Arrays.stream(getTheClass().getDeclaredFields())
+                .filter(f -> checkCanSetAccessible(f, CachedClass.class))
+                .map(CachedField::new).toArray(CachedField[]::new);
             return AccessController.doPrivileged(action);
         }
     };
@@ -70,13 +68,11 @@ public class CachedClass {
 
         @Override
         public CachedConstructor[] initValue() {
-            PrivilegedAction<CachedConstructor[]> action = () -> {
-                return Arrays.stream(getTheClass().getDeclaredConstructors())
-                    .filter(c -> !c.isSynthetic()) // GROOVY-9245: exclude inner class ctors
-                    .filter(c -> checkCanSetAccessible(c, CachedClass.class))
-                    .map(c -> new CachedConstructor(CachedClass.this, c))
-                    .toArray(CachedConstructor[]::new);
-            };
+            PrivilegedAction<CachedConstructor[]> action = () -> Arrays.stream(getTheClass().getDeclaredConstructors())
+                .filter(c -> !c.isSynthetic()) // GROOVY-9245: exclude inner class ctors
+                .filter(c -> checkCanSetAccessible(c, CachedClass.class))
+                .map(c -> new CachedConstructor(CachedClass.this, c))
+                .toArray(CachedConstructor[]::new);
             return AccessController.doPrivileged(action);
         }
     };
