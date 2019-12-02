@@ -415,6 +415,40 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
+    void testStaticDoubleStarImportWhiteList() {
+        customizer.staticStarImportsWhitelist = ['java.lang.**']
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('''
+            import static java.lang.Math.PI
+            import static java.lang.Math.cos
+            cos(PI)
+        ''')
+        assert hasSecurityException {
+            shell.evaluate('''
+                import static java.util.Collections.*
+                sort([5,4,2])
+            ''')
+        }
+    }
+
+    @Test
+    void testStaticDoubleStarImportBlackList() {
+        customizer.staticStarImportsBlacklist = ['java.lang.**']
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate('''
+                import static java.lang.Math.PI
+                import static java.lang.Math.cos
+                cos(PI)
+            ''')
+        }
+        shell.evaluate('''
+            import static java.util.Collections.*
+            sort([5,4,2])
+        ''')
+    }
+
+    @Test
     void testIndirectStaticImport() {
         customizer.staticImportsWhitelist = ['java.lang.Math.PI']
         customizer.indirectImportCheckEnabled = true
