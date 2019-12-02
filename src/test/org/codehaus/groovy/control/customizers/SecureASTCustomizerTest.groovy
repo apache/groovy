@@ -398,7 +398,7 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStaticStarImportWhiteList() {
+    void testStaticStarImportWhiteList1() {
         customizer.staticStarImportsWhitelist = ['java.lang.Math.*']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
@@ -415,7 +415,7 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStaticDoubleStarImportWhiteList() {
+    void testStaticStarImportWhiteList2() {
         customizer.staticStarImportsWhitelist = ['java.lang.**']
         def shell = new GroovyShell(configuration)
         shell.evaluate('''
@@ -432,7 +432,7 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
-    void testStaticDoubleStarImportBlackList() {
+    void testStaticStarImportBlackList1() {
         customizer.staticStarImportsBlacklist = ['java.lang.**']
         def shell = new GroovyShell(configuration)
         assert hasSecurityException {
