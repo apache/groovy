@@ -251,6 +251,17 @@ public class GeneralUtils {
      * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
      */
     public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied) {
+        copyAnnotatedNodeAnnotations(annotatedNode, copied, notCopied, true);
+    }
+
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * {@link groovy.transform.Generated} annotations will be copied if {@code includeGenerated} is true.
+     * <p>
+     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
+     */
+    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied, boolean includeGenerated) {
         List<AnnotationNode> annotationList = annotatedNode.getAnnotations();
         for (AnnotationNode annotation : annotationList)  {
 
@@ -259,6 +270,10 @@ public class GeneralUtils {
 
             if (hasClosureMember(annotation)) {
                 notCopied.add(annotation);
+                continue;
+            }
+
+            if (!includeGenerated && annotation.getClassNode().getName().equals("groovy.transform.Generated")) {
                 continue;
             }
 

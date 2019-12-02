@@ -828,6 +828,18 @@ assert foo.dm.x == '123'
             assert new BugsMe().length == 2
         '''
     }
+
+    // GROOVY-8825
+    void testDelegateToPrecompiledGroovyGeneratedMethod() {
+        assertScript '''
+            import org.codehaus.groovy.transform.CompiledClass8825
+            class B {
+                @Delegate(methodAnnotations = true)
+                private final CompiledClass8825 delegate = new CompiledClass8825()
+            }
+            assert new B().s == '456'
+        '''
+    }
 }
 
 interface DelegateFoo {
@@ -902,6 +914,10 @@ class Bar implements BarInt {
     public <T extends Throwable> T get(Class<T> clazz) throws Exception {
         clazz.newInstance()
     }
+}
+
+class CompiledClass8825 {
+    final String s = '456'
 }
 
 // DO NOT MOVE INSIDE THE TEST SCRIPT OR IT WILL NOT TEST
