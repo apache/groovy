@@ -1061,6 +1061,162 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    void testDeserialize3() {
+        assertScript '''
+        package tests.lambda
+        import java.util.function.Function
+        
+        @groovy.transform.CompileStatic
+        class Test1 implements Serializable {
+            private static final long serialVersionUID = -1L;
+            byte[] p() {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream {
+                        String c = 'a'
+                        SerializableFunction<Integer, String> f = (Integer e) -> c + e
+                        it.writeObject(f)
+                    }
+                    
+                    return out.toByteArray()
+            }
+            
+            static void main(String[] args) {
+                new ByteArrayInputStream(new Test1().p()).withObjectInputStream(Test1.class.classLoader) {
+                    SerializableFunction<Integer, String> f = (SerializableFunction<Integer, String>) it.readObject()
+                    assert 'a1' == f.apply(1)
+                }
+            }
+            
+            interface SerializableFunction<T, R> extends Function<T, R>, Serializable {}
+        }
+        '''
+    }
+
+    void testDeserialize4() {
+        assertScript '''
+        package tests.lambda
+        import java.util.function.Function
+        
+        @groovy.transform.CompileStatic
+        class Test1 implements Serializable {
+            private static final long serialVersionUID = -1L;
+            byte[] p() {
+                    def out = new ByteArrayOutputStream()
+                    String c = 'a'
+                    SerializableFunction<Integer, String> f = (Integer e) -> c + e
+                    out.withObjectOutputStream {
+                        it.writeObject(f)
+                    }
+                    
+                    return out.toByteArray()
+            }
+            
+            static void main(String[] args) {
+                new ByteArrayInputStream(new Test1().p()).withObjectInputStream(Test1.class.classLoader) {
+                    SerializableFunction<Integer, String> f = (SerializableFunction<Integer, String>) it.readObject()
+                    assert 'a1' == f.apply(1)
+                }
+            }
+            
+            interface SerializableFunction<T, R> extends Function<T, R>, Serializable {}
+        }
+        '''
+    }
+
+    void testDeserialize5() {
+        assertScript '''
+        package tests.lambda
+        import java.util.function.Function
+        
+        @groovy.transform.CompileStatic
+        class Test1 implements Serializable {
+            private static final long serialVersionUID = -1L;
+            static byte[] p() {
+                    def out = new ByteArrayOutputStream()
+                    String c = 'a'
+                    SerializableFunction<Integer, String> f = (Integer e) -> c + e
+                    out.withObjectOutputStream {
+                        it.writeObject(f)
+                    }
+                    
+                    return out.toByteArray()
+            }
+            
+            static void main(String[] args) {
+                new ByteArrayInputStream(Test1.p()).withObjectInputStream(Test1.class.classLoader) {
+                    SerializableFunction<Integer, String> f = (SerializableFunction<Integer, String>) it.readObject()
+                    assert 'a1' == f.apply(1)
+                }
+            }
+            
+            interface SerializableFunction<T, R> extends Function<T, R>, Serializable {}
+        }
+        '''
+    }
+
+    void testDeserialize6() {
+        assertScript '''
+        package tests.lambda
+        import java.util.function.Function
+        
+        @groovy.transform.CompileStatic
+        class Test1 implements Serializable {
+            private static final long serialVersionUID = -1L;
+            private String c = 'a'
+            
+            byte[] p() {
+                    def out = new ByteArrayOutputStream()
+                    SerializableFunction<Integer, String> f = (Integer e) -> c + e
+                    out.withObjectOutputStream {
+                        it.writeObject(f)
+                    }
+                    
+                    return out.toByteArray()
+            }
+            
+            static void main(String[] args) {
+                new ByteArrayInputStream(new Test1().p()).withObjectInputStream(Test1.class.classLoader) {
+                    SerializableFunction<Integer, String> f = (SerializableFunction<Integer, String>) it.readObject()
+                    assert 'a1' == f.apply(1)
+                }
+            }
+            
+            interface SerializableFunction<T, R> extends Function<T, R>, Serializable {}
+        }
+        '''
+    }
+
+    void testDeserialize7() {
+        assertScript '''
+        package tests.lambda
+        import java.util.function.Function
+        
+        @groovy.transform.CompileStatic
+        class Test1 implements Serializable {
+            private static final long serialVersionUID = -1L;
+            private static final String c = 'a'
+            static byte[] p() {
+                    def out = new ByteArrayOutputStream()
+                    SerializableFunction<Integer, String> f = (Integer e) -> c + e
+                    out.withObjectOutputStream {
+                        it.writeObject(f)
+                    }
+                    
+                    return out.toByteArray()
+            }
+            
+            static void main(String[] args) {
+                new ByteArrayInputStream(Test1.p()).withObjectInputStream(Test1.class.classLoader) {
+                    SerializableFunction<Integer, String> f = (SerializableFunction<Integer, String>) it.readObject()
+                    assert 'a1' == f.apply(1)
+                }
+            }
+            
+            interface SerializableFunction<T, R> extends Function<T, R>, Serializable {}
+        }
+        '''
+    }
+
     void testDeserializeNestedLambda() {
         assertScript '''
         import java.util.function.Function
