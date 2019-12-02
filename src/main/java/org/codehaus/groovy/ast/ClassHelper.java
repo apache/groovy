@@ -57,8 +57,10 @@ import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
+import java.lang.invoke.SerializedLambda;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -100,6 +102,7 @@ public class ClassHelper {
             DYNAMIC_TYPE = makeCached(Object.class),
             OBJECT_TYPE = DYNAMIC_TYPE,
             CLOSURE_TYPE = makeCached(Closure.class),
+            SERIALIZEDLAMBDA_TYPE = makeCached(SerializedLambda .class),
             GSTRING_TYPE = makeCached(GString.class),
             RANGE_TYPE = makeCached(Range.class),
             PATTERN_TYPE = makeCached(Pattern.class),
@@ -134,6 +137,7 @@ public class ClassHelper {
             Annotation_TYPE = makeCached(Annotation.class),
             ELEMENT_TYPE_TYPE = makeCached(ElementType.class),
             AUTOCLOSEABLE_TYPE = makeCached(AutoCloseable.class),
+            SERIALIZABLE_TYPE = makeCached(Serializable.class),
 
             // uncached constants
             MAP_TYPE = makeWithoutCaching(Map.class),
