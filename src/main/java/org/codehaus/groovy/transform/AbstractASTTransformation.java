@@ -67,9 +67,19 @@ public abstract class AbstractASTTransformation implements Opcodes, ASTTransform
      * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported for now.
      */
     protected List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, String myTypeName) {
+        return copyAnnotatedNodeAnnotations(annotatedNode, myTypeName, true);
+    }
+
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * <p>
+     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported for now.
+     */
+    protected List<AnnotationNode> copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, String myTypeName, boolean includeGenerated) {
         final List<AnnotationNode> copiedAnnotations = new ArrayList<>();
         final List<AnnotationNode> notCopied = new ArrayList<>();
-        GeneralUtils.copyAnnotatedNodeAnnotations(annotatedNode, copiedAnnotations, notCopied);
+        GeneralUtils.copyAnnotatedNodeAnnotations(annotatedNode, copiedAnnotations, notCopied, includeGenerated);
         for (AnnotationNode annotation : notCopied) {
             addError(myTypeName + " does not support keeping Closure annotation members.", annotation);
         }
