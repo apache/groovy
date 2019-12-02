@@ -694,7 +694,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         if (staticImportsWhitelist != null && !staticImportsWhitelist.contains(fqn)) {
             if (staticStarImportsWhitelist != null) {
                 // we should now check if the import is in the star imports
-                if (!staticStarImportsWhitelist.contains(className + ".*")) {
+                String packageName = className.substring(0, className.lastIndexOf('.') + 1) + "*";
+                if (!staticStarImportsWhitelist.contains(className + ".*") &&
+                    !staticStarImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                     throw new SecurityException("Importing [" + fqn + "] is not allowed");
                 }
             } else {
@@ -706,7 +708,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
         // check that there's no star import blacklist
         if (staticStarImportsBlacklist != null) {
-            if (staticStarImportsBlacklist.contains(className + ".*")) {
+            String packageName = className.substring(0, className.lastIndexOf('.') + 1) + "*";
+            if (staticStarImportsBlacklist.contains(className + ".*") ||
+                staticStarImportsBlacklist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                 throw new SecurityException("Importing [" + fqn + "] is not allowed");
             }
         }
