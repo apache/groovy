@@ -29,6 +29,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
@@ -60,7 +61,17 @@ public interface AbstractFunctionalInterfaceWriter {
         );
     }
 
-    default Handle createBootstrapMethod(boolean isInterface) {
+    default Handle createBootstrapMethod(boolean isInterface, boolean serializable) {
+        if (serializable) {
+            return new Handle(
+                    Opcodes.H_INVOKESTATIC,
+                    "java/lang/invoke/LambdaMetafactory",
+                    "altMetafactory",
+                    "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
+                    isInterface
+            );
+        }
+
         return new Handle(
                 Opcodes.H_INVOKESTATIC,
                 "java/lang/invoke/LambdaMetafactory",
@@ -70,20 +81,28 @@ public interface AbstractFunctionalInterfaceWriter {
         );
     }
 
-    default Object[] createBootstrapMethodArguments(String abstractMethodDesc, int insn, ClassNode methodOwnerClassNode, MethodNode methodNode) {
+    default Object[] createBootstrapMethodArguments(String abstractMethodDesc, int insn, ClassNode methodOwnerClassNode, MethodNode methodNode, boolean serializable) {
         Parameter[] parameters = methodNode.getNodeMetaData(ORIGINAL_PARAMETERS_WITH_EXACT_TYPE);
+        List<Object> argumentList = new LinkedList<>();
 
-        return new Object[]{
-                Type.getType(abstractMethodDesc),
+        argumentList.add(Type.getType(abstractMethodDesc));
+        argumentList.add(
                 new Handle(
                         insn,
                         BytecodeHelper.getClassInternalName(methodOwnerClassNode.getName()),
                         methodNode.getName(),
                         BytecodeHelper.getMethodDescriptor(methodNode),
                         methodOwnerClassNode.isInterface()
-                ),
-                Type.getType(BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), parameters))
-        };
+                )
+        );
+        argumentList.add(Type.getType(BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), parameters)));
+
+        if (serializable) {
+            argumentList.add(5);
+            argumentList.add(0);
+        }
+
+        return argumentList.toArray();
     }
 
     default ClassNode convertParameterType(ClassNode parameterType, ClassNode inferredType) {
