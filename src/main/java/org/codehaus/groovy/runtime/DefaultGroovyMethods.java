@@ -16620,10 +16620,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static float trunc(Float number, int precision) {
+        final double p = Math.pow(10, precision);
+        final double n = number.doubleValue() * p;
         if (number < 0f) {
-            return (float)(Math.ceil(number.doubleValue()*Math.pow(10,precision))/Math.pow(10,precision));
+            return (float) (Math.ceil(n) / p);
         }
-        return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision))/Math.pow(10,precision));
+        return (float) (Math.floor(n) / p);
     }
 
     /**
