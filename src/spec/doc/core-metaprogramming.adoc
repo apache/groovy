@@ -2659,22 +2659,22 @@ Here, the `add` method will have final parameters but the `mult` method will rem
 [[xform-AnnotationCollector]]
 ===== `@groovy.transform.AnnotationCollector`
 
-`@AnnotationCollector` allows the creation of meta-annotations, which are described in a <<_meta_annotations,dedicated section>>.
+`@AnnotationCollector` allows the creation of meta-annotations, which are described in a <<core-object-orientation#_meta_annotations,dedicated section>>.
 
 [[xform-TypeChecked]]
 ===== `@groovy.transform.TypeChecked`
 
-`@TypeChecked` activates compile-time type checking on your Groovy code. See <<static-type-checking,section on type checking>> for details.
+`@TypeChecked` activates compile-time type checking on your Groovy code. See <<core-semantics#static-type-checking,section on type checking>> for details.
 
 [[xform-CompileStatic]]
 ===== `@groovy.transform.CompileStatic`
 
-`@CompileStatic` activates static compilation on your Groovy code. See <<static-type-checking,section on type checking>> for details.
+`@CompileStatic` activates static compilation on your Groovy code. See <<core-semantics#static-type-checking,section on type checking>> for details.
 
 [[xform-CompileDynamic]]
 ===== `@groovy.transform.CompileDynamic`
 
-`@CompileDynamic` disables static compilation on parts of your Groovy code. See <<static-type-checking,section on type checking>> for details.
+`@CompileDynamic` disables static compilation on parts of your Groovy code. See <<core-semantics#static-type-checking,section on type checking>> for details.
 
 [[xform-DelegatesTo]]
 ===== `@groovy.lang.DelegatesTo`
@@ -2687,7 +2687,7 @@ using <<xform-TypeChecked,type checking>> or <<xform-CompileStatic, static compi
 ===== `@groovy.transform.SelfType`
 
 `@SelfType` is not an AST transformation but rather a marker interface used
-with traits. See the <<traits-selftype,traits documentation>> for further details.
+with traits. See the <<core-traits#traits-selftype,traits documentation>> for further details.
 
 ==== Swing patterns
 
@@ -2883,7 +2883,7 @@ include::{projectdir}/src/spec/test/TestingASTTransformsTest.groovy[tags=memoriz
 ===== `@groovy.lang.Grapes`
 
 `Grape` is a dependency management engine embedded into Groovy, relying on several annotations which are described
-thoroughly in this <<section-grape,section of the guide>>.
+thoroughly in this <<grape#section-grape,section of the guide>>.
 
 [[developing-ast-xforms]]
 === Developing AST transformations
