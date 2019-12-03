@@ -224,4 +224,19 @@ class InheritConstructorsTransformTest extends GroovyShellTestCase {
         assert message.contains('Cannot call OrderPublisher <RoundingMode>#<init>(java.util.Set <RoundingMode>) with arguments [java.util.HashSet <Date>]')
     }
 
+    // GROOVY-9323
+    void testAnnotationsCopiedForConstructorsFromPrecompiledClass() {
+        assertScript '''
+            @groovy.transform.InheritConstructors(constructorAnnotations=true)
+            class MyChildException extends org.codehaus.groovy.transform.MyException9323 {}
+
+            def annos = MyChildException.constructors[0].annotations*.annotationType().simpleName
+            assert annos.contains('Generated') && annos.contains('Deprecated')
+        '''
+    }
+}
+
+class MyException9323 extends RuntimeException {
+    @Deprecated
+    MyException9323() {}
 }

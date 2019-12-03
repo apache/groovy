@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
@@ -396,7 +397,8 @@ public class Java5 implements VMPlugin {
                 }
                 Parameter[] params = params1;
                 ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
-                classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
+                ConstructorNode cn = classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
+                setAnnotationMetaData(ctor.getAnnotations(), cn);
             }
 
             Class sc = clazz.getSuperclass();

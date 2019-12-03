@@ -96,7 +96,7 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         if (isExisting(classNode, params)) return;
         ConstructorNode added = addGeneratedConstructor(classNode, consNode.getModifiers(), params, consNode.getExceptions(), block(ctorSuperS(args(theArgs))));
         if (copyConstructorAnnotations) {
-            added.addAnnotations(copyAnnotatedNodeAnnotations(consNode, ANNOTATION));
+            added.addAnnotations(copyAnnotatedNodeAnnotations(consNode, ANNOTATION, false));
         }
     }
 
