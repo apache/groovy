@@ -21,7 +21,7 @@
 
 = Contributors
 
-The Groovy team would like to thank the contributors of this documentation (by alphabetical order):
+The Groovy team would like to thank the contributors of this documentation (in alphabetical order of last/surname):
 
 * https://github.com/mojavelinux[Dan Allen]
 * https://github.com/and-dmitry[Dmitry Andreychuk]
@@ -42,6 +42,7 @@ The Groovy team would like to thank the contributors of this documentation (by a
 * http://twitter.com/glaforge[Guillaume Laforge]
 * http://twitter.com/pledbrook[Peter Ledbrook]
 * http://grantmcconnaughey.github.io/[Grant McConnaughey]
+* https://github.com/eric-milles[Eric Milles]
 * https://github.com/dnahodil[David Nahodil]
 * https://github.com/jnorthr[James Northrop]
 * https://github.com/marcpa00[Marc Paquette]
@@ -50,6 +51,6 @@ The Groovy team would like to thank the contributors of this documentation (by a
 * https://github.com/shils[Shil Sinha]
 * https://github.com/stavytskyi[Maksym Stavytskyi]
 * https://twitter.com/asteingr[André Steingreß]
+* https://twitter.com/daniel_sun[Daniel Sun]
 * https://github.com/EPadronU[Edinson Padrón Urdaneta]
 * https://github.com/keeganwitt[Keegan Witt]
-* https://twitter.com/daniel_sun[Daniel Sun]
