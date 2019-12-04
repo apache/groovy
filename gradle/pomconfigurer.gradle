@@ -39,7 +39,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'glaforge'
                 name 'Guillaume Laforge'
-                organization 'SpringSource'
+                organization = 'Google'
                 roles {
                     role 'Project Manager'
                     role 'Despot'
@@ -50,7 +50,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'bob'
                 name 'bob mcwhirter'
                 email 'bob@werken.com'
-                organization 'The Werken Company'
+                organization = 'The Werken Company'
                 roles {
                     role 'Founder'
                 }
@@ -59,7 +59,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'jstrachan'
                 name 'James Strachan'
                 email 'james@coredevelopers.com'
-                organization 'Core Developers Network'
+                organization = 'Core Developers Network'
                 roles {
                     role 'Founder'
                 }
@@ -67,7 +67,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'joe'
                 name 'Joe Walnes'
-                organization 'ThoughtWorks'
+                organization = 'ThoughtWorks'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -75,7 +75,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'skizz'
                 name 'Chris Stevenson'
-                organization 'ThoughtWorks'
+                organization = 'ThoughtWorks'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -83,7 +83,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'jamiemc'
                 name 'Jamie McCrindle'
-                organization 'Three'
+                organization = 'Three'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -91,7 +91,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'mattf'
                 name 'Matt Foemmel'
-                organization 'ThoughtWorks'
+                organization = 'ThoughtWorks'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -143,7 +143,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'jwilson'
                 name 'John Wilson'
                 email 'tug@wilson.co.uk'
-                organization 'The Wilson Partnership'
+                organization = 'The Wilson Partnership'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -160,7 +160,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'ckl'
                 name 'Christiaan ten Klooster'
                 email 'ckl@dacelo.nl'
-                organization 'Dacelo WebDevelopment'
+                organization = 'Dacelo WebDevelopment'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -169,7 +169,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'goetze'
                 name 'Steve Goetze'
                 email 'goetze@dovetail.com'
-                organization 'Dovetailed Technologies, LLC'
+                organization = 'Dovetailed Technologies, LLC'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -178,7 +178,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'bran'
                 name 'Bing Ran'
                 email 'b55r@sina.com'
-                organization 'Leadingcare'
+                organization = 'Leadingcare'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -187,7 +187,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'jez'
                 name 'Jeremy Rayner'
                 email 'jeremy.rayner@gmail.com'
-                organization 'javanicus'
+                organization = 'javanicus'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -212,8 +212,8 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'russel'
                 name 'Russel Winder'
-                email 'russel@russel.org.uk'
-                organization 'Concertant LLP & It\'z Interactive Ltd'
+                email 'russel@winder.org.uk'
+                organization = 'Concertant LLP & It\'z Interactive Ltd'
                 roles {
                     role 'Developer'
                     role 'Founder of Gant'
@@ -231,7 +231,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'cstein'
                 name 'Christian Stein'
                 email 'sormuras@gmx.de'
-                organization 'CTSR.de'
+                organization = 'CTSR.de'
                 roles {
                     role 'Developer Emeritus'
                 }
@@ -239,8 +239,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'mittie'
                 name 'Dierk Koenig'
-                email 'dierk.koenig@canoo.com'
-                organization 'Canoo Engineering AG'
+                organization = 'Karakun AG'
                 roles {
                     role 'Developer'
                 }
@@ -249,7 +248,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'paulk'
                 name 'Paul King'
                 email 'paulk@asert.com.au'
-                organization 'ASERT, Australia'
+                organization = 'OCI, Australia'
                 roles {
                     role 'Developer'
                     role 'Despot'
@@ -312,7 +311,7 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 id 'jimwhite'
                 name 'Jim White'
                 email 'jim@pagesmiths.com'
-                organization 'IFCX.org'
+                organization = 'IFCX.org'
                 roles {
                     role 'Developer'
                 }
@@ -363,6 +362,28 @@ project.ext.pomConfigureClosureWithoutTweaks = {
                 roles {
                     role 'Developer'
                     role 'Despot'
+                }
+            }
+            developer {
+                id 'rpopma'
+                name 'Remko Popma'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'grocher'
+                name 'Graeme Rocher'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'emilles'
+                name 'Eric Milles'
+                organization = 'Thomson Reuters'
+                roles {
+                    role 'Developer'
                 }
             }
         }
