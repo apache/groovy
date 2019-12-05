@@ -1083,8 +1083,7 @@ class LambdaTest extends GroovyTestCase {
         import java.util.function.Function
         
         @groovy.transform.CompileStatic
-        class Test1 implements Serializable {
-            private static final long serialVersionUID = -1L;
+        class Test1 {
             static byte[] p() {
                     def out = new ByteArrayOutputStream()
                     String c = 'a'
@@ -1146,8 +1145,7 @@ class LambdaTest extends GroovyTestCase {
         import java.util.function.Function
         
         @groovy.transform.CompileStatic
-        class Test1 implements Serializable {
-            private static final long serialVersionUID = -1L;
+        class Test1 {
             private static final String c = 'a'
             static byte[] p() {
                     def out = new ByteArrayOutputStream()
@@ -1349,8 +1347,7 @@ class LambdaTest extends GroovyTestCase {
         interface SerializableFunction<T, R> extends Function<T, R>, Serializable {}
         
         @groovy.transform.CompileStatic
-        class Test1 implements Serializable {
-            private static final long serialVersionUID = -1L;
+        class Test1 {
             static p() {
                     def out1 = new ByteArrayOutputStream()
                     SerializableFunction<Integer, String> f1 = (Integer e) -> 'a' + e
