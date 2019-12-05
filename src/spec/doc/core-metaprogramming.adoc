@@ -423,7 +423,7 @@ assert f.BAR() == "BAR" // the new metaclass routes .BAR() to .bar() and upperca
 
 ===== Magic package
 
-It is possible to change the metaclass at startup time by giving the metaclass a specially crafted (magic) class name  and package name. In order to change the metaclass for `java.lang.Integer` it's enough to put a class `groovy.runtime.metaclass.java.lang.IntegerMetaClass` in the classpath. This is useful, for example,  when working with frameworks if you want to to metaclass changes before your code is executed by the framework. The general form of the magic package is `groovy.runtime.metaclass.[package].[class]MetaClass`. In the example below the `[package]` is `java.lang` and the `[class]` is `Integer`:
+It is possible to change the metaclass at startup time by giving the metaclass a specially crafted (magic) class name  and package name. In order to change the metaclass for `java.lang.Integer` it's enough to put a class `groovy.runtime.metaclass.java.lang.IntegerMetaClass` in the classpath. This is useful, for example,  when working with frameworks if you want to do metaclass changes before your code is executed by the framework. The general form of the magic package is `groovy.runtime.metaclass.[package].[class]MetaClass`. In the example below the `[package]` is `java.lang` and the `[class]` is `Integer`:
 
 
 [source,groovy]
