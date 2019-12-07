@@ -260,7 +260,6 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         } catch (Exception e) {
             return null;
         }
-
     }
 
 

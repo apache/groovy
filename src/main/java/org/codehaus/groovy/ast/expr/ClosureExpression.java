@@ -85,7 +85,7 @@ public class ClosureExpression extends Expression {
      * @return {@code true} if one or more explicit parameters are supplied
      */
     public boolean isParameterSpecified() {
-        return parameters != null && parameters.length > 0;
+        return (parameters != null && parameters.length > 0);
     }
 
     public VariableScope getVariableScope() {

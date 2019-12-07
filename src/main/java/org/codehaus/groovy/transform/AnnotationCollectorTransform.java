@@ -62,6 +62,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
 
 /**
  * This class is the base for any annotation alias processor.
+ *
  * @see AnnotationCollector
  * @see AnnotationCollectorTransform#visit(AnnotationNode, AnnotationNode, AnnotatedNode, SourceUnit)
  */

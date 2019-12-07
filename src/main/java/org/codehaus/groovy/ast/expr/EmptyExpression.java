@@ -37,7 +37,9 @@ public class EmptyExpression extends Expression {
     /**
      * @see EmptyExpression#INSTANCE
      */
-    public EmptyExpression() {}
+    public EmptyExpression() {
+        super();
+    }
 
     @Override
     public Expression transformExpression(ExpressionTransformer transformer) {

@@ -36,7 +36,7 @@ import static org.codehaus.groovy.ast.ClassHelper.GROOVY_OBJECT_TYPE;
  */
 public class GenericsType extends ASTNode {
     public static final GenericsType[] EMPTY_ARRAY = new GenericsType[0];
-    
+
     private final ClassNode[] upperBounds;
     private final ClassNode lowerBound;
     private ClassNode type;

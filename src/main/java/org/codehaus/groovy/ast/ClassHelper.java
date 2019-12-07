@@ -102,7 +102,6 @@ public class ClassHelper {
             DYNAMIC_TYPE = makeCached(Object.class),
             OBJECT_TYPE = DYNAMIC_TYPE,
             CLOSURE_TYPE = makeCached(Closure.class),
-            SERIALIZEDLAMBDA_TYPE = makeCached(SerializedLambda .class),
             GSTRING_TYPE = makeCached(GString.class),
             RANGE_TYPE = makeCached(Range.class),
             PATTERN_TYPE = makeCached(Pattern.class),
@@ -138,6 +137,7 @@ public class ClassHelper {
             ELEMENT_TYPE_TYPE = makeCached(ElementType.class),
             AUTOCLOSEABLE_TYPE = makeCached(AutoCloseable.class),
             SERIALIZABLE_TYPE = makeCached(Serializable.class),
+            SERIALIZEDLAMBDA_TYPE = makeCached(SerializedLambda.class),
 
             // uncached constants
             MAP_TYPE = makeWithoutCaching(Map.class),

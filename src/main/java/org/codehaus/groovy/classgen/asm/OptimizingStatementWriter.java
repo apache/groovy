@@ -755,8 +755,8 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (resultType != null) {
                 addMeta(expression).type = resultType;
                 opt.chainInvolvedType(resultType);
-                opt.chainInvolvedType(leftType);
                 opt.chainInvolvedType(rightType);
+                opt.chainInvolvedType(leftType);
             }
         }
 
@@ -781,16 +781,15 @@ public class OptimizingStatementWriter extends StatementWriter {
 
         @Override
         public void visitDeclarationExpression(final DeclarationExpression expression) {
-            Expression right = expression.getRightExpression();
-            right.visit(this);
+            Expression rightExpression = expression.getRightExpression();
+            rightExpression.visit(this);
 
             ClassNode leftType = typeChooser.resolveType(expression.getLeftExpression(), node);
-            Expression rightExpression = expression.getRightExpression();
             ClassNode rightType = optimizeDivWithIntOrLongTarget(rightExpression, leftType);
-            if (rightType == null) rightType = typeChooser.resolveType(expression.getRightExpression(), node);
+            if (rightType == null) rightType = typeChooser.resolveType(rightExpression, node);
             if (isPrimitiveType(leftType) && isPrimitiveType(rightType)) {
                 // if right is a constant, then we optimize only if it makes a block complete, so we set a maybe
-                if (right instanceof ConstantExpression) {
+                if (rightExpression instanceof ConstantExpression) {
                     opt.chainCanOptimize(true);
                 } else {
                     opt.chainShouldOptimize(true);
@@ -868,8 +867,7 @@ public class OptimizingStatementWriter extends StatementWriter {
 
             ClassNode originalResultType = typeChooser.resolveType(binExp, node);
             if (!originalResultType.equals(BigDecimal_TYPE)
-                    || !(isLongCategory(assignmentTartgetType)
-                    || isFloatingCategory(assignmentTartgetType))) {
+                    || !(isLongCategory(assignmentTartgetType) || isFloatingCategory(assignmentTartgetType))) {
                 return null;
             }
 

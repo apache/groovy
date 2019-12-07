@@ -18,21 +18,26 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
+import groovy.transform.AutoFinal
 import org.junit.Assert
 
 /**
  * Utility methods for testing power assertions.
  */
+@AutoFinal
+final class AssertionTestUtil {
 
-abstract class AssertionTestUtil {
-    static fails(Closure assertion) {
+    private AssertionTestUtil() {
+    }
+
+    static fails(Closure<Void> assertion) {
         try {
             assertion.call();
             Assert.fail("assertion should have failed but didn't")
         } catch (PowerAssertionError expected) {}
     }
 
-    static isNotTransformed(Closure failingAssertion) {
+    static isNotTransformed(Closure<Void> failingAssertion) {
         try {
             failingAssertion()
             throw new RuntimeException("assertion should have failed but didn't")
@@ -42,7 +47,7 @@ abstract class AssertionTestUtil {
         }
     }
 
-    static isRendered(String expectedRendering, Closure failingAssertion) {
+    static isRendered(String expectedRendering, Closure<Void> failingAssertion) {
         try {
             failingAssertion.call();
             Assert.fail("assertion should have failed but didn't")
