@@ -136,8 +136,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                 addDeserializeLambdaMethod();
             }
 
-            newGroovyLambdaWrapperAndLoad(lambdaWrapperClassNode, syntheticLambdaMethodNode, expression);
-            loadEnclosingClassInstance(syntheticLambdaMethodNode);
+            boolean accessingInstanceMembers = isAccessingInstanceMembersOfEnclosingClass(syntheticLambdaMethodNode);
+            newGroovyLambdaWrapperAndLoad(lambdaWrapperClassNode, expression, accessingInstanceMembers);
+            loadEnclosingClassInstance(accessingInstanceMembers);
         }
 
         MethodVisitor mv = controller.getMethodVisitor();
@@ -161,12 +162,12 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return new Parameter[]{new Parameter(ClassHelper.SERIALIZEDLAMBDA_TYPE, SERIALIZED_LAMBDA_PARAM_NAME)};
     }
 
-    private void loadEnclosingClassInstance(MethodNode syntheticLambdaMethodNode) {
+    private void loadEnclosingClassInstance(boolean accessingInstanceMembers) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
 
-        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !isAccessingInstanceMembers(syntheticLambdaMethodNode)) {
+        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !accessingInstanceMembers) {
             operandStack.pushConstant(ConstantExpression.NULL);
         } else {
             mv.visitVarInsn(ALOAD, 0);
@@ -174,7 +175,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
     }
 
-    private boolean isAccessingInstanceMembers(MethodNode syntheticLambdaMethodNode) {
+    private boolean isAccessingInstanceMembersOfEnclosingClass(MethodNode syntheticLambdaMethodNode) {
         ObjectHolder<Boolean> objectHolder = new ObjectHolder<>(false);
         ClassCodeVisitorSupport classCodeVisitorSupport = new ClassCodeVisitorSupport() {
             @Override
@@ -207,13 +208,13 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return objectHolder.getObject();
     }
 
-    private void newGroovyLambdaWrapperAndLoad(ClassNode lambdaWrapperClassNode, MethodNode syntheticLambdaMethodNode, LambdaExpression expression) {
+    private void newGroovyLambdaWrapperAndLoad(ClassNode lambdaWrapperClassNode, LambdaExpression expression, boolean accessingInstanceMembers) {
         MethodVisitor mv = controller.getMethodVisitor();
         String lambdaWrapperClassInternalName = BytecodeHelper.getClassInternalName(lambdaWrapperClassNode);
         mv.visitTypeInsn(NEW, lambdaWrapperClassInternalName);
         mv.visitInsn(DUP);
 
-        loadEnclosingClassInstance(syntheticLambdaMethodNode);
+        loadEnclosingClassInstance(accessingInstanceMembers);
         controller.getOperandStack().dup();
 
         loadSharedVariables(expression);
