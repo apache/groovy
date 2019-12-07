@@ -18,17 +18,32 @@
  */
 package json
 
-import groovy.test.GroovyTestCase
+import org.junit.BeforeClass
+import org.junit.Test
 
-class JsonBuilderTest extends GroovyTestCase {
+import static groovy.grape.Grape.resolve
+import static groovy.test.GroovyAssert.assertScript
 
+final class JsonBuilderTest {
+
+    @BeforeClass
+    static void setUpClass() {
+        // make sure files are installed locally
+        [
+            [groupId:'com.google.code.gson', artifactId:'gson', version:'2.3.1'],
+            [groupId:'net.javacrumbs.json-unit', artifactId:'json-unit', version:'1.5.6']
+        ].each { spec ->
+            resolve([autoDownload:true, classLoader:new GroovyClassLoader()], spec)
+        }
+    }
+
+    @Test
     void testJsonBuilder() {
         assertScript """
-            import groovy.json.*
-            @Grapes([
-                @Grab('com.google.code.gson:gson:2.3.1'), //required by json-unit
-                @Grab('net.javacrumbs.json-unit:json-unit:1.5.5')])
+            @Grab('com.google.code.gson:gson:2.3.1') // json-unit requires gson, jackson1, or jackson2
+            @Grab('net.javacrumbs.json-unit:json-unit:1.5.6')
             import net.javacrumbs.jsonunit.JsonAssert
+            import groovy.json.*
 
             // tag::json_string[]
             String carRecords = '''
@@ -48,14 +63,14 @@ class JsonBuilderTest extends GroovyTestCase {
                 }
             '''
             // end::json_string[]
-            
+
             // tag::json_builder[]
             JsonBuilder builder = new JsonBuilder()
             builder.records {
               car {
                     name 'HSV Maloo'
                     make 'Holden'
-                    year 2006 
+                    year 2006
                     country 'Australia'
                     record {
                         type 'speed'
@@ -65,7 +80,7 @@ class JsonBuilderTest extends GroovyTestCase {
             }
             String json = JsonOutput.prettyPrint(builder.toString())
             // end::json_builder[]
-            
+
             // tag::json_assert[]
             JsonAssert.assertJsonEquals(json, carRecords)
             // end::json_assert[]
