@@ -39,75 +39,74 @@ import java.util.List;
 public class ErrorCollector implements Serializable {
 
     private static final long serialVersionUID = 2844774170905056755L;
-    /**
-     * WarningMessages collected during processing
-     */
-    protected LinkedList warnings;
+
     /**
      * ErrorMessages collected during processing
      */
-    protected LinkedList errors;
+    protected LinkedList<Message> errors;
+
+    /**
+     * WarningMessages collected during processing
+     */
+    protected LinkedList<WarningMessage> warnings;
+
     /**
      * Configuration and other settings that control processing
      */
-    protected CompilerConfiguration configuration;
+    protected final CompilerConfiguration configuration;
 
     /**
      * Initialize the ErrorReporter.
      */
-    public ErrorCollector(CompilerConfiguration configuration) {
-        this.warnings = null;
-        this.errors = null;
-        
+    public ErrorCollector(final CompilerConfiguration configuration) {
         this.configuration = configuration;
     }
-    
-    public void addCollectorContents(ErrorCollector er) {
-        if (er.errors!=null) {
-            if (errors==null) {
-                errors = er.errors;
+
+    public void addCollectorContents(final ErrorCollector that) {
+        if (that.errors != null) {
+            if (this.errors == null) {
+                this.errors = that.errors;
             } else {
-                errors.addAll(er.errors);
+                this.errors.addAll(that.errors);
             }
         }
-        if (er.warnings!=null) {
-            if (warnings==null) {
-                warnings = er.warnings;
+        if (that.warnings != null) {
+            if (this.warnings == null) {
+                this.warnings = that.warnings;
             } else {
-                warnings.addAll(er.warnings);
-            }            
+                this.warnings.addAll(that.warnings);
+            }
         }
     }
 
-    public void addErrorAndContinue(SyntaxException error, SourceUnit source) throws CompilationFailedException {
+    public void addErrorAndContinue(final SyntaxException error, final SourceUnit source) throws CompilationFailedException {
         addErrorAndContinue(Message.create(error, source));
     }
-    
+
     /**
      * Adds an error to the message set, but does not cause a failure. The message is not required to have a source
-     * line and column specified, but it is best practice to try and include that information. 
+     * line and column specified, but it is best practice to try and include that information.
      */
-    public void addErrorAndContinue(Message message) {
-        if (this.errors == null) {
-            this.errors = new LinkedList();
+    public void addErrorAndContinue(final Message message) {
+        if (errors == null) {
+            errors = new LinkedList<>();
         }
-
-        this.errors.add(message);
+        errors.add(message);
     }
-    
+
     /**
      * Adds a non-fatal error to the message set, which may cause a failure if the error threshold is exceeded.
      * The message is not required to have a source line and column specified, but it is best practice to try
      * and include that information.
      */
-    public void addError(Message message) throws CompilationFailedException {
+    public void addError(final Message message) throws CompilationFailedException {
         addErrorAndContinue(message);
 
-        if (errors!=null && this.errors.size() >= configuration.getTolerance()) {
+        if (errors != null && errors.size() >= configuration.getTolerance()) {
             failIfErrors();
         }
     }
-    
+
     /**
      * Adds an optionally-fatal error to the message set.
      * The message is not required to have a source line and column specified, but it is best practice to try
@@ -115,52 +114,63 @@ public class ErrorCollector implements Serializable {
      * @param fatal
      *      if true then then processing will stop
      */
-    public void addError(Message message, boolean fatal) throws CompilationFailedException {
+    public void addError(final Message message, final boolean fatal) throws CompilationFailedException {
         if (fatal) {
             addFatalError(message);
-        }
-        else {
+        } else {
             addError(message);
         }
     }
 
-    
-    /**
-     * Convenience wrapper for addError().
-     */
-    public void addError(SyntaxException error, SourceUnit source) throws CompilationFailedException {
+    public void addError(final SyntaxException error, final SourceUnit source) throws CompilationFailedException {
         addError(Message.create(error, source), error.isFatal());
     }
 
+    public void addError(final String error, final CSTNode context, final SourceUnit source) throws CompilationFailedException {
+        addError(new LocatedMessage(error, context, source));
+    }
+
+    public void addException(final Exception exception, final SourceUnit source) throws CompilationFailedException {
+        addError(new ExceptionMessage(exception, configuration.getDebug(), source));
+        failIfErrors();
+    }
 
     /**
-     * Convenience wrapper for addError().
+     * Adds an error to the message set and throws CompilationFailedException.
      */
-    public void addError(String text, CSTNode context, SourceUnit source) throws CompilationFailedException {
-        addError(new LocatedMessage(text, context, source));
-    }
-    
-    
-    /**
-     * Adds a fatal exception to the message set and throws
-     * the unit as a PhaseFailedException.
-     */
-    public void addFatalError(Message message) throws CompilationFailedException {
+    public void addFatalError(final Message message) throws CompilationFailedException {
         addError(message);
         failIfErrors();
     }
 
-
-    public void addException(Exception cause, SourceUnit source) throws CompilationFailedException {
-        addError(new ExceptionMessage(cause,configuration.getDebug(),source));
-        failIfErrors();
+    /**
+     * Adds a warning to the message set.
+     */
+    public void addWarning(final WarningMessage message) {
+        if (message.isRelevant(configuration.getWarningLevel())) {
+            if (warnings == null) {
+                warnings = new LinkedList<>();
+            }
+            warnings.add(message);
+        }
     }
 
     /**
-     * Returns true if there are any errors pending.
+     * Adds a warning to the message set if it is relevant.
      */
-    public boolean hasErrors() {
-        return this.errors != null;
+    public void addWarning(final int importance, final String text, final CSTNode context, final SourceUnit source) {
+        if (WarningMessage.isRelevant(importance, configuration.getWarningLevel())) {
+            addWarning(new WarningMessage(importance, text, context, source));
+        }
+    }
+
+    /**
+     * Adds a warning to the message set if it is relevant.
+     */
+    public void addWarning(final int importance, final String text, final Object data, final CSTNode context, final SourceUnit source) {
+        if (WarningMessage.isRelevant(importance, configuration.getWarningLevel())) {
+            addWarning(new WarningMessage(importance, text, data, context, source));
+        }
     }
 
     /**
@@ -171,74 +181,97 @@ public class ErrorCollector implements Serializable {
     }
 
     /**
-     * Returns true if there are any warnings pending.
+     * Returns the number of errors.
      */
-    public boolean hasWarnings() {
-        return this.warnings != null;
+    public int getErrorCount() {
+        return (hasErrors() ? errors.size() : 0);
     }
-    
+
     /**
-     * Returns the list of warnings, or null if there are none.
+     * Returns the specified error message, or null.
      */
-    public List getWarnings() {
-        return this.warnings;
+    public Message getError(final int index) {
+        if (index < getErrorCount()) {
+            return errors.get(index);
+        }
+        return null;
     }
 
     /**
      * Returns the list of errors, or null if there are none.
      */
-    public List getErrors() {
-        return this.errors;
+    public List<? extends Message> getErrors() {
+        return errors;
+    }
+
+    /**
+     * Returns true if there are any errors pending.
+     */
+    public boolean hasErrors() {
+        return (errors != null);
     }
 
     /**
      * Returns the number of warnings.
      */
     public int getWarningCount() {
-        return ((this.warnings == null) ? 0 : this.warnings.size());
-    }
-
-    /**
-     * Returns the number of errors.
-     */
-    public int getErrorCount() {
-        return ((this.errors == null) ? 0 : this.errors.size());
+        return (hasWarnings() ? warnings.size() : 0);
     }
 
     /**
      * Returns the specified warning message, or null.
      */
-    public WarningMessage getWarning(int index) {
+    public WarningMessage getWarning(final int index) {
         if (index < getWarningCount()) {
-            return (WarningMessage) this.warnings.get(index);
+            return warnings.get(index);
         }
         return null;
     }
 
     /**
-     * Returns the specified error message, or null.
+     * Returns the list of warnings, or null if there are none.
      */
-    public Message getError(int index) {
-        if (index < getErrorCount()) {
-            return (Message) this.errors.get(index);
-        }
-        return null;
+    public List<WarningMessage> getWarnings() {
+        return warnings;
     }
 
     /**
-     * Returns the last error reported
+     * Returns true if there are any warnings pending.
+     */
+    public boolean hasWarnings() {
+        return (warnings != null);
+    }
+
+    //
+
+    /**
+     * Returns the last error reported.
      */
     public Message getLastError() {
-        return (Message) this.errors.getLast();
+        return errors.getLast();
     }
-    
-    /**
-     * Convenience routine to return the specified error's
-     * underlying SyntaxException, or null if it isn't one.
-     */
-    public SyntaxException getSyntaxError(int index) {
-        SyntaxException exception = null;
 
+    /**
+     * Returns the specified error's underlying Exception, or null if it isn't one.
+     */
+    public Exception getException(final int index) {
+        Exception exception = null;
+        Message message = getError(index);
+        if (message != null) {
+            if (message instanceof ExceptionMessage) {
+                exception = ((ExceptionMessage) message).getCause();
+            } else if (message instanceof SyntaxErrorMessage) {
+                exception = ((SyntaxErrorMessage) message).getCause();
+            }
+        }
+        return exception;
+    }
+
+    /**
+     * Returns the specified error's underlying SyntaxException, or null if it isn't one.
+     */
+    public SyntaxException getSyntaxError(final int index) {
+        SyntaxException exception = null;
         Message message = getError(index);
         if (message instanceof SyntaxErrorMessage) {
             exception = ((SyntaxErrorMessage) message).getCause();
@@ -247,99 +280,41 @@ public class ErrorCollector implements Serializable {
     }
 
     /**
-     * Convenience routine to return the specified error's
-     * underlying Exception, or null if it isn't one.
-     */
-    public Exception getException(int index) {
-        Exception exception = null;
-
-        Message message = getError(index);
-        if (message != null) {
-            if (message instanceof ExceptionMessage) {
-                exception = ((ExceptionMessage) message).getCause();
-            }
-            else if (message instanceof SyntaxErrorMessage) {
-                exception = ((SyntaxErrorMessage) message).getCause();
-            }
-        }
-        return exception;
-    }
-
-    /**
-     * Adds a WarningMessage to the message set.
-     */
-    public void addWarning(WarningMessage message) {
-        if (message.isRelevant(configuration.getWarningLevel())) {
-            if (this.warnings == null) {
-                this.warnings = new LinkedList();
-            }
-
-            this.warnings.add(message);
-        }
-    }
-
-
-    /**
-     * Convenience wrapper for addWarning() that won't create an object
-     * unless it is relevant.
-     */
-    public void addWarning(int importance, String text, CSTNode context, SourceUnit source) {
-        if (WarningMessage.isRelevant(importance, configuration.getWarningLevel())) {
-            addWarning(new WarningMessage(importance, text, context, source));
-        }
-    }
-    
-    
-    /**
-     * Convenience wrapper for addWarning() that won't create an object
-     * unless it is relevant.
-     */
-    public void addWarning(int importance, String text, Object data, CSTNode context, SourceUnit source) {
-        if (WarningMessage.isRelevant(importance, configuration.getWarningLevel())) {
-            addWarning(new WarningMessage(importance, text, data, context, source));
-        }
-    }
-   
-
-    /**
-     * Causes the current phase to fail by throwing a
-     * CompilationFailedException.
+     * Causes the current phase to fail by throwing a CompilationFailedException.
      */
     protected void failIfErrors() throws CompilationFailedException {
         if (hasErrors()) {
             throw new MultipleCompilationErrorsException(this);
         }
     }
-    
+
     //---------------------------------------------------------------------------
     // OUTPUT
 
+    private void write(final PrintWriter writer, final Janitor janitor, final List<? extends Message> messages, final String txt) {
+        if (messages == null || messages.isEmpty()) return;
 
-    private void write(PrintWriter writer, Janitor janitor, List messages, String txt) {
-        if (messages==null || messages.isEmpty()) return;
-        for (Object o : messages) {
-            Message message = (Message) o;
+        for (Message message : messages) {
             message.write(writer, janitor);
-
             if (configuration.getDebug() && (message instanceof SyntaxErrorMessage)) {
-                SyntaxErrorMessage sem = (SyntaxErrorMessage) message;
-                sem.getCause().printStackTrace(writer);
+                ((SyntaxErrorMessage) message).getCause().printStackTrace(writer);
             }
             writer.println();
         }
 
         writer.print(messages.size());
-        writer.print(" "+txt);
-        if (messages.size()>1) writer.print("s");
+        writer.print(" " + txt);
+        if (messages.size() > 1) {
+            writer.print("s");
+        }
         writer.println();
     }
-    
+
     /**
      * Writes error messages to the specified PrintWriter.
      */
-    public void write(PrintWriter writer, Janitor janitor) {
-        write(writer,janitor,warnings,"warning");
-        write(writer,janitor,errors,"error");
+    public void write(final PrintWriter writer, final Janitor janitor) {
+        write(writer, janitor, warnings, "warning");
+        write(writer, janitor, errors, "error");
     }
-
 }
