@@ -162,31 +162,31 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = ExtensionMethodCache.INSTANCE;
 
     protected static final Map<ClassNode, Integer> NUMBER_TYPES = Maps.of(
-            byte_TYPE, 0,
-            Byte_TYPE, 0,
-            short_TYPE, 1,
-            Short_TYPE, 1,
-            int_TYPE, 2,
+            byte_TYPE,    0,
+            Byte_TYPE,    0,
+            short_TYPE,   1,
+            Short_TYPE,   1,
+            int_TYPE,     2,
             Integer_TYPE, 2,
-            Long_TYPE, 3,
-            long_TYPE, 3,
-            float_TYPE, 4,
-            Float_TYPE, 4,
-            double_TYPE, 5,
-            Double_TYPE, 5
+            Long_TYPE,    3,
+            long_TYPE,    3,
+            float_TYPE,   4,
+            Float_TYPE,   4,
+            double_TYPE,  5,
+            Double_TYPE,  5
     );
 
     protected static final Map<String, Integer> NUMBER_OPS = Maps.of(
-            "plus", PLUS,
-            "minus", MINUS,
-            "multiply", MULTIPLY,
-            "div", DIVIDE,
-            "or", BITWISE_OR,
-            "and", BITWISE_AND,
-            "xor", BITWISE_XOR,
-            "mod", MOD,
-            "intdiv", INTDIV,
-            "leftShift", LEFT_SHIFT,
+            "plus",       PLUS,
+            "minus",      MINUS,
+            "multiply",   MULTIPLY,
+            "div",        DIVIDE,
+            "or",         BITWISE_OR,
+            "and",        BITWISE_AND,
+            "xor",        BITWISE_XOR,
+            "mod",        MOD,
+            "intdiv",     INTDIV,
+            "leftShift",  LEFT_SHIFT,
             "rightShift", RIGHT_SHIFT,
             "rightShiftUnsigned", RIGHT_SHIFT_UNSIGNED
     );
@@ -232,6 +232,10 @@ public abstract class StaticTypeCheckingSupport {
             return 1;
         }
     };
+
+    public static void clearExtensionMethodCache() {
+        EXTENSION_METHOD_CACHE.cache.clearAll();
+    }
 
     /**
      * Returns true for expressions of the form x[...]

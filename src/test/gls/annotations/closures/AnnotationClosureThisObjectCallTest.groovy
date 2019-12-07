@@ -18,7 +18,8 @@
  */
 package gls.annotations.closures
 
-class AnnotationClosureThisObjectCallTest extends AnnotationClosureExhaustiveTestSupport {
+final class AnnotationClosureThisObjectCallTest extends AnnotationClosureExhaustiveTestSupport {
+
     Class getAnnotationClass() { AnnWithClassElement }
 
     Class getAnnotatedClass() { CallOnThisObject }
@@ -33,6 +34,7 @@ class AnnotationClosureThisObjectCallTest extends AnnotationClosureExhaustiveTes
 
 @AnnWithClassElement(elem = { this.answer() })
 class CallOnThisObject {
+
     @AnnWithClassElement(elem = { this.answer() })
     private aField
 
@@ -41,6 +43,7 @@ class CallOnThisObject {
 
     @AnnWithClassElement(elem = { this.answer() })
     def aMethod(@AnnWithClassElement(elem = { this.answer() }) aParam) {
+
         @AnnWithClassElement(elem = { this.answer() })
         def aLocal
     }

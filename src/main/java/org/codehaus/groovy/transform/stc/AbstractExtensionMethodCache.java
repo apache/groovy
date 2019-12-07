@@ -45,7 +45,7 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
  * @since 3.0.0
  */
 public abstract class AbstractExtensionMethodCache {
-    private final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<>(new WeakHashMap<>());
+    final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<>(new WeakHashMap<>());
 
     public Map<String, List<MethodNode>> get(ClassLoader loader) {
         return cache.getAndPut(loader, this::getMethodsFromClassLoader);

@@ -119,8 +119,6 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-
-
             // invert the map, is now one to many
             transforms = new HashMap<ASTNode, List<ASTTransformation>>();
             for (Map.Entry<Class<? extends ASTTransformation>, Set<ASTNode>> entry : baseTransforms.entrySet()) {
@@ -204,7 +202,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
         compilationUnit.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTTransformationCollectorCodeVisitor collector = 
+                ASTTransformationCollectorCodeVisitor collector =
                     new ASTTransformationCollectorCodeVisitor(source, compilationUnit.getTransformLoader());
                 collector.visitClass(classNode);
             }
@@ -230,11 +228,11 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             }
         }
     }
-    
+
     public static void addGlobalTransformsAfterGrab(ASTTransformationsContext context) {
         doAddGlobalTransforms(context, false);
     }
-    
+
     public static void addGlobalTransforms(ASTTransformationsContext context) {
         doAddGlobalTransforms(context, true);
     }
@@ -293,7 +291,6 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                             compilationUnit.getErrorCollector().addError(new SimpleMessage(
                                     "IOException reading the service definition at "
                                             + service.toExternalForm() + " because of exception " + ioe.toString(), null));
-                            //noinspection UnnecessaryContinue
                             continue;
                         }
                     }
@@ -306,9 +303,9 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 null));
         }
 
-        // record the transforms found in the first scan, so that in the 2nd scan, phase operations 
-        // can be added for only for new transforms that have come in 
-        if(isFirstScan) {
+        // record the transforms found in the first scan, so that in the 2nd scan, phase operations
+        // can be added for only for new transforms that have come in
+        if (isFirstScan) {
             for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
                 context.getGlobalTransformNames().add(entry.getKey());
             }
@@ -319,14 +316,13 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             addPhaseOperationsForGlobalTransforms(context.getCompilationUnit(), transformNames, isFirstScan);
         }
     }
-    
+
     private static void addPhaseOperationsForGlobalTransforms(CompilationUnit compilationUnit,
             Map<String, URL> transformNames, boolean isFirstScan) {
         GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
         for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
             try {
                 Class gTransClass = transformLoader.loadClass(entry.getKey(), false, true, false);
-                //no inspection unchecked
                 GroovyASTTransformation transformAnnotation = (GroovyASTTransformation) gTransClass.getAnnotation(GroovyASTTransformation.class);
                 if (transformAnnotation == null) {
                     compilationUnit.getErrorCollector().addWarning(new WarningMessage(
@@ -347,8 +343,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         public void call(SourceUnit source) throws CompilationFailedException {
                             instance.visit(new ASTNode[] {source.getAST()}, source);
                         }
-                    }; 
-                    if(isFirstScan) {
+                    };
+                    if (isFirstScan) {
                         compilationUnit.addPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
                     } else {
                         compilationUnit.addNewPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
@@ -366,4 +362,3 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         }
     }
 }
-

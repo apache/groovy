@@ -24,15 +24,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Represents a variable scope. This is primarily used to determine variable sharing
- * across method and closure boundaries.
+ * Records declared and referenced variabes for a given scope.  Helps determine
+ * variable sharing across closure and method boundaries.
  */
-public class VariableScope  {
+public class VariableScope implements Cloneable {
 
     private VariableScope parent;
     private ClassNode classScope;
     private boolean inStaticContext;
-    private boolean resolvesDynamic;
 
     private Map<String, Variable> declaredVariables = Collections.emptyMap();
     private Map<String, Variable> referencedLocalVariables = Collections.emptyMap();
@@ -42,7 +41,7 @@ public class VariableScope  {
         super();
     }
 
-    public VariableScope(VariableScope parent) {
+    public VariableScope(final VariableScope parent) {
         this.parent = parent;
     }
 
@@ -51,7 +50,7 @@ public class VariableScope  {
     }
 
     public boolean isRoot() {
-        return parent == null;
+        return (parent == null);
     }
 
     /**
@@ -65,10 +64,10 @@ public class VariableScope  {
      * Returns true iff this scope corresponds to a class; as opposed to a method, "if" statement, block statement, etc.
      */
     public boolean isClassScope() {
-        return classScope != null;
+        return (classScope != null);
     }
 
-    public void setClassScope(ClassNode classScope) {
+    public void setClassScope(final ClassNode classScope) {
         this.classScope = classScope;
     }
 
@@ -76,29 +75,29 @@ public class VariableScope  {
         return inStaticContext;
     }
 
-    public void setInStaticContext(boolean inStaticContext) {
+    public void setInStaticContext(final boolean inStaticContext) {
         this.inStaticContext = inStaticContext;
     }
 
     //
 
-    public Variable getDeclaredVariable(String name) {
+    public Variable getDeclaredVariable(final String name) {
         return declaredVariables.get(name);
     }
 
-    public Variable getReferencedLocalVariable(String name) {
+    public Variable getReferencedLocalVariable(final String name) {
         return referencedLocalVariables.get(name);
     }
 
-    public Variable getReferencedClassVariable(String name) {
+    public Variable getReferencedClassVariable(final String name) {
         return referencedClassVariables.get(name);
     }
 
-    public boolean isReferencedLocalVariable(String name) {
+    public boolean isReferencedLocalVariable(final String name) {
         return referencedLocalVariables.containsKey(name);
     }
 
-    public boolean isReferencedClassVariable(String name) {
+    public boolean isReferencedClassVariable(final String name) {
         return referencedClassVariables.containsKey(name);
     }
 
@@ -159,25 +158,25 @@ public class VariableScope  {
         return getReferencedClassVariables().values().iterator();
     }
 
-    public void putDeclaredVariable(Variable var) {
+    public void putDeclaredVariable(final Variable var) {
         if (declaredVariables == Collections.EMPTY_MAP)
             declaredVariables = new LinkedHashMap<>();
         declaredVariables.put(var.getName(), var);
     }
 
-    public void putReferencedLocalVariable(Variable var) {
+    public void putReferencedLocalVariable(final Variable var) {
         if (referencedLocalVariables == Collections.EMPTY_MAP)
             referencedLocalVariables = new LinkedHashMap<>();
         referencedLocalVariables.put(var.getName(), var);
     }
 
-    public void putReferencedClassVariable(Variable var) {
+    public void putReferencedClassVariable(final Variable var) {
         if (referencedClassVariables == Collections.EMPTY_MAP)
             referencedClassVariables = new LinkedHashMap<>();
         referencedClassVariables.put(var.getName(), var);
     }
 
-    public Object removeReferencedClassVariable(String name) {
+    public Object removeReferencedClassVariable(final String name) {
         if (referencedClassVariables.isEmpty()) {
             return null;
         } else {
@@ -189,19 +188,18 @@ public class VariableScope  {
 
     // TODO: implement Cloneable and override Object.clone()
     public VariableScope copy() {
-        VariableScope copy = new VariableScope(parent);
-        copy.classScope = classScope;
-        copy.inStaticContext = inStaticContext;
-        copy.resolvesDynamic = resolvesDynamic;
-        if (!declaredVariables.isEmpty()) {
-            copy.declaredVariables = new LinkedHashMap<>(declaredVariables);
+        VariableScope that = new VariableScope(parent);
+        that.classScope = this.classScope;
+        that.inStaticContext = this.inStaticContext;
+        if (!this.declaredVariables.isEmpty()) {
+            that.declaredVariables = new LinkedHashMap<>(this.declaredVariables);
         }
-        if (!referencedLocalVariables.isEmpty()) {
-            copy.referencedLocalVariables = new LinkedHashMap<>(referencedLocalVariables);
+        if (!this.referencedLocalVariables.isEmpty()) {
+            that.referencedLocalVariables = new LinkedHashMap<>(this.referencedLocalVariables);
         }
-        if (!referencedClassVariables.isEmpty()) {
-            copy.referencedClassVariables = new LinkedHashMap<>(referencedClassVariables);
+        if (!this.referencedClassVariables.isEmpty()) {
+            that.referencedClassVariables = new LinkedHashMap<>(this.referencedClassVariables);
         }
-        return copy;
+        return that;
     }
 }

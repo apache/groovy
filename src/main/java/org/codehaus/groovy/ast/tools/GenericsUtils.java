@@ -482,8 +482,10 @@ public class GenericsUtils {
                         redirect = ClassHelper.OBJECT_TYPE;
                     }
                     if (redirect.isGenericsPlaceHolder()) {
+                        // "T extends U" or "T super U"
                         type = redirect;
                     } else {
+                        // "T" or "T extends Thing" or "T super Thing"
                         type = ClassHelper.makeWithoutCaching(name);
                         type.setGenericsPlaceHolder(true);
                         type.setRedirect(redirect);

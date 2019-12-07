@@ -127,7 +127,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public void addImport(String alias, ClassNode type) {
-        addImport(alias, type, new ArrayList<>());
+        addImport(alias, type, Collections.emptyList());
     }
 
     public void addImport(String alias, ClassNode type, List<AnnotationNode> annotations) {

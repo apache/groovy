@@ -55,8 +55,9 @@ import java.util.List;
 /**
  * This expression transformer is used internally by the {@link org.codehaus.groovy.transform.trait.TraitASTTransformation
  * trait} AST transformation to change the receiver of a message on "this" into a static method call on the trait helper
- * class. <p></p>
- * In a nutshell, code like the following method definition in a trait:<p></p> <code>void foo() { this.bar() }</code> is
+ * class.
+ * <p>
+ * In a nutshell, code like the following method definition in a trait: <code>void foo() { this.bar() }</code> is
  * transformed into: <code>void foo() { TraitHelper$bar(this) }</code>
  *
  * @since 2.3.0
@@ -204,7 +205,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 method,
                 ArgumentListExpression.EMPTY_ARGUMENTS
         );
-        mce.setSourcePosition(exp);
+        mce.setSourcePosition(exp instanceof PropertyExpression ? ((PropertyExpression) exp).getProperty() : exp);
         mce.setImplicitThis(false);
         return mce;
     }
@@ -348,7 +349,6 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         transformed.setImplicitThis(false);
         return transformed;
     }
-
 
     private Expression transformMethodCallOnThis(final MethodCallExpression call) {
         Expression method = call.getMethod();

@@ -21,7 +21,6 @@ package org.codehaus.groovy.ast.stmt;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
-import java.util.Collections;
 import java.util.Map;
 
 public class EmptyStatement extends Statement {
@@ -29,10 +28,8 @@ public class EmptyStatement extends Statement {
     /**
      * @see EmptyStatement#INSTANCE
      */
-    public EmptyStatement() {}
-
-    protected EmptyStatement(Map<?, ?> metaDataMap) {
-        super.setMetaDataMap(metaDataMap);
+    public EmptyStatement() {
+        super();
     }
 
     @Override
@@ -51,7 +48,7 @@ public class EmptyStatement extends Statement {
      * Immutable singleton that is recommended for use when source range or any
      * other occurrence-specific metadata is not needed.
      */
-    public static final EmptyStatement INSTANCE = new EmptyStatement(Collections.EMPTY_MAP) {
+    public static final EmptyStatement INSTANCE = new EmptyStatement() {
 
         private void throwUnsupportedOperationException() {
             throw new UnsupportedOperationException("EmptyStatement.INSTANCE is immutable");

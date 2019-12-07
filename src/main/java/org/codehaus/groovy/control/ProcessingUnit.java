@@ -73,7 +73,7 @@ public abstract class ProcessingUnit {
     }
 
     /**
-     * Get the CompilerConfiguration for this ProcessingUnit.
+     * Gets the CompilerConfiguration for this ProcessingUnit.
      */
     public CompilerConfiguration getConfiguration() {
         return configuration;
