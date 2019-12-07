@@ -558,11 +558,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     private static PropertyExpression newStaticPropertyX(ClassNode type, String name) {
-        return new PropertyExpression(new ClassExpression(type), name);
+        return new PropertyExpression(new ClassExpression(type.getPlainNodeReference()), name);
     }
 
     private static StaticMethodCallExpression newStaticMethodCallX(ClassNode type, String name, Expression args) {
-        return new StaticMethodCallExpression(type, name, args);
+        return new StaticMethodCallExpression(type.getPlainNodeReference(), name, args);
     }
 
     protected SourceUnit getSourceUnit() {
