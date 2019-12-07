@@ -19,6 +19,7 @@
 
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.apache.groovy.util.ObjectHolder;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -135,8 +136,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                 addDeserializeLambdaMethod();
             }
 
-            newGroovyLambdaWrapperAndLoad(lambdaWrapperClassNode, expression);
-            loadEnclosingClassInstance();
+            newGroovyLambdaWrapperAndLoad(lambdaWrapperClassNode, syntheticLambdaMethodNode, expression);
+            loadEnclosingClassInstance(syntheticLambdaMethodNode);
         }
 
         MethodVisitor mv = controller.getMethodVisitor();
@@ -160,12 +161,12 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return new Parameter[]{new Parameter(ClassHelper.SERIALIZEDLAMBDA_TYPE, SERIALIZED_LAMBDA_PARAM_NAME)};
     }
 
-    private void loadEnclosingClassInstance() {
+    private void loadEnclosingClassInstance(MethodNode syntheticLambdaMethodNode) {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
 
-        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall()) {
+        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !isAccessingInstanceMembers(syntheticLambdaMethodNode)) {
             operandStack.pushConstant(ConstantExpression.NULL);
         } else {
             mv.visitVarInsn(ALOAD, 0);
@@ -173,13 +174,46 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
     }
 
-    private void newGroovyLambdaWrapperAndLoad(ClassNode lambdaWrapperClassNode, LambdaExpression expression) {
+    private boolean isAccessingInstanceMembers(MethodNode syntheticLambdaMethodNode) {
+        ObjectHolder<Boolean> objectHolder = new ObjectHolder<>(false);
+        ClassCodeVisitorSupport classCodeVisitorSupport = new ClassCodeVisitorSupport() {
+            @Override
+            public void visitVariableExpression(VariableExpression expression) {
+                if (expression.isThisExpression()) {
+                    objectHolder.setObject(true);
+                }
+            }
+
+            @Override
+            public void visitMethodCallExpression(MethodCallExpression call) {
+                if (!call.getMethodTarget().isStatic()) {
+                    Expression objectExpression = call.getObjectExpression();
+                    if (objectExpression instanceof VariableExpression && ENCLOSING_THIS.equals(((VariableExpression) objectExpression).getName())) {
+                        objectHolder.setObject(true);
+                    }
+                }
+
+                super.visitMethodCallExpression(call);
+            }
+
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return null;
+            }
+        };
+
+        classCodeVisitorSupport.visitMethod(syntheticLambdaMethodNode);
+
+        return objectHolder.getObject();
+    }
+
+    private void newGroovyLambdaWrapperAndLoad(ClassNode lambdaWrapperClassNode, MethodNode syntheticLambdaMethodNode, LambdaExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         String lambdaWrapperClassInternalName = BytecodeHelper.getClassInternalName(lambdaWrapperClassNode);
         mv.visitTypeInsn(NEW, lambdaWrapperClassInternalName);
         mv.visitInsn(DUP);
 
-        loadEnclosingClassInstance();
+        loadEnclosingClassInstance(syntheticLambdaMethodNode);
         controller.getOperandStack().dup();
 
         loadSharedVariables(expression);
