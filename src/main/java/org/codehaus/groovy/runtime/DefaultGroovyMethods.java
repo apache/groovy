@@ -12121,7 +12121,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> shuffled(List<T> self) {
         List<T> copy = new ArrayList(self);
-        Collections.shuffle(self);
+        Collections.shuffle(copy);
         return copy;
     }
 
@@ -12142,7 +12142,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> shuffled(List<T> self, Random rnd) {
         List<T> copy = new ArrayList(self);
-        Collections.shuffle(self, rnd);
+        Collections.shuffle(copy, rnd);
         return copy;
     }
 
