@@ -21,14 +21,11 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
-class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
     @Override
     protected void setUp() {
         super.setUp()
-        removeCustomizer()
-    }
-
-    private void removeCustomizer() {
         def customizers = config.compilationCustomizers
         customizers.removeAll { it instanceof ASTTransformationCustomizer }
     }
@@ -352,6 +349,21 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase implemen
             }
             assert new Test().strInSCInner() == 'hi'
         '''
+
+        // GROOVY-9328
+        assertScript '''
+            class Test {
+                private String str() { 'hi' }
+
+                class Inner {
+                    @groovy.transform.CompileStatic
+                    String outerStr() { str() }
+                }
+
+                String strInSCInner() { new Inner().outerStr() }
+            }
+            assert new Test().strInSCInner() == 'hi'
+        '''
     }
 
     void testSCAICCanAccessPrivateFieldsOfNonSCOuterClass() {
@@ -377,9 +389,26 @@ class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase implemen
 
                 @groovy.transform.CompileStatic
                 String strInSCAIC() {
-                    new Object() {
-                        String outerStr() { str() }
-                    }.outerStr()
+                    def callable = new java.util.concurrent.Callable<String>() {
+                        @Override String call() { str() }
+                    }
+                    callable.call()
+                }
+            }
+            assert new Test().strInSCAIC() == 'hi'
+        '''
+
+        // GROOVY-9328
+        assertScript '''
+            class Test {
+                private String str() { 'hi' }
+
+                def strInSCAIC() {
+                    def callable = new java.util.concurrent.Callable<String>() {
+                        @groovy.transform.CompileStatic
+                        @Override String call() { str() }
+                    }
+                    callable.call()
                 }
             }
             assert new Test().strInSCAIC() == 'hi'
