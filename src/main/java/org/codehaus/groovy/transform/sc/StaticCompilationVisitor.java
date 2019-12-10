@@ -56,7 +56,6 @@ import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -154,16 +153,20 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     private void addDynamicOuterClassAccessorsCallback(final ClassNode outer) {
-        if (outer != null && !isStaticallyCompiled(outer) && outer.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK) == null) {
-            outer.putNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK, new CompilationUnit.PrimaryClassNodeOperation() {
-                @Override
-                public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                    if (classNode == outer) {
-                        addPrivateBridgeMethods(classNode);
-                        addPrivateFieldsAccessors(classNode);
+        if (outer != null) {
+            if (!isStaticallyCompiled(outer) && outer.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK) == null) {
+                outer.putNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK, new CompilationUnit.PrimaryClassNodeOperation() {
+                    @Override
+                    public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
+                        if (classNode == outer) {
+                            addPrivateBridgeMethods(classNode);
+                            addPrivateFieldsAccessors(classNode);
+                        }
                     }
-                }
-            });
+                });
+            }
+            // GROOVY-9328: apply to outer classes
+            addDynamicOuterClassAccessorsCallback(outer.getOuterClass());
         }
     }
 
@@ -187,7 +190,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         super.visitClass(node);
         addPrivateFieldAndMethodAccessors(node);
-        if (isStaticallyCompiled(node)) addDynamicOuterClassAccessorsCallback(node.getOuterClass());
+        if (isStaticallyCompiled(node)) {
+            ClassNode outerClass = node.getOuterClass();
+            addDynamicOuterClassAccessorsCallback(outerClass);
+        }
 
         classNode = previousClassNode;
     }
@@ -226,7 +232,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
         super.visitMethod(node);
         checkForConstructorWithCSButClassWithout(node);
-        if (isStaticallyCompiled(node)) addDynamicOuterClassAccessorsCallback(node.getDeclaringClass());
+        if (isStaticallyCompiled(node)) {
+            ClassNode declaringClass = node.getDeclaringClass();
+            addDynamicOuterClassAccessorsCallback(declaringClass);
+        }
     }
 
     /**
