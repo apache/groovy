@@ -33,6 +33,8 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew test
         timeout-minutes: 60
+        env:
+          GRADLE_SCANS_ACCEPT: yes
   testWithIndy:
     strategy:
       matrix:
@@ -48,3 +50,5 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew testWithIndy
         timeout-minutes: 60
+        env:
+          GRADLE_SCANS_ACCEPT: yes
