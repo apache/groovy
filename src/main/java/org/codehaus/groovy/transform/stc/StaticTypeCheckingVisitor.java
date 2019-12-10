@@ -109,7 +109,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
-import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
@@ -558,114 +557,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void checkSuperCallFromClosure(final Expression call, final MethodNode directCallTarget) {
-        if (call instanceof MethodCallExpression && typeCheckingContext.getEnclosingClosure() != null) {
-            Expression objectExpression = ((MethodCallExpression) call).getObjectExpression();
-            if (isSuperExpression(objectExpression)) {
-                ClassNode current = typeCheckingContext.getEnclosingClassNode();
-                current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED, x -> new LinkedList<>()).add(directCallTarget);
-                call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
-            }
-        }
-    }
-
-    /**
-     * Wrap type in Class&lt;&gt; if usingClass==true.
-     */
-    private static ClassNode makeType(final ClassNode cn, final boolean usingClass) {
-        if (usingClass) {
-            ClassNode clazzType = CLASS_Type.getPlainNodeReference();
-            clazzType.setGenericsTypes(new GenericsType[]{new GenericsType(cn)});
-            return clazzType;
-        } else {
-            return cn;
-        }
-    }
-
-    private boolean storeTypeForThis(final VariableExpression vexp) {
-        if (vexp == VariableExpression.THIS_EXPRESSION) return true;
-        if (!vexp.isThisExpression()) return false;
-        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        storeType(vexp, makeType(enclosingClassNode, typeCheckingContext.isInStaticContext));
-        return true;
-    }
-
-    private boolean storeTypeForSuper(final VariableExpression vexp) {
-        if (vexp == VariableExpression.SUPER_EXPRESSION) return true;
-        if (!vexp.isSuperExpression()) return false;
-        ClassNode superClassNode = typeCheckingContext.getEnclosingClassNode().getSuperClass();
-        storeType(vexp, makeType(superClassNode, typeCheckingContext.isInStaticContext));
-        return true;
-    }
-
     @Override
     public void visitVariableExpression(final VariableExpression vexp) {
         super.visitVariableExpression(vexp);
-
-        if (storeTypeForThis(vexp)) return;
         if (storeTypeForSuper(vexp)) return;
-        Variable accessedVariable = vexp.getAccessedVariable();
-        if (accessedVariable instanceof PropertyNode) {
-            // we must be careful, because the property node may be of a wrong type:
-            // if a class contains a getter and a setter of different types or
-            // overloaded setters, the type of the property node is arbitrary!
-            if (tryVariableExpressionAsProperty(vexp, vexp.getName())) {
-                BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
-                if (enclosingBinaryExpression != null) {
-                    Expression leftExpression = enclosingBinaryExpression.getLeftExpression();
-                    SetterInfo setterInfo = removeSetterInfo(leftExpression);
-                    if (setterInfo != null) {
-                        Expression rightExpression = enclosingBinaryExpression.getRightExpression();
-                        if (!ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo)) {
-                            return;
-                        }
-                    }
-                }
-            }
-        } else if (accessedVariable instanceof FieldNode) {
-            FieldNode fieldNode = (FieldNode) accessedVariable;
-
-            TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-            if (enclosingClosure != null) {
-                // GROOVY-8562
-                // when vexp has the same name as a property of the owner,
-                // the IMPLICIT_RECEIVER must be set in case it's the delegate
-                if (tryVariableExpressionAsProperty(vexp, vexp.getName())) {
-                    // IMPLICIT_RECEIVER is handled elsewhere
-                    // however other access needs to be fixed for private access
-                    if (vexp.getNodeMetaData(IMPLICIT_RECEIVER) == null) {
-                        ClassNode owner = vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
-                        if (owner != null) {
-                            FieldNode veFieldNode = owner.getField(vexp.getName());
-                            if (veFieldNode != null) {
-                                fieldNode = veFieldNode;
-                                boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
-                                vexp.setAccessedVariable(fieldNode);
-                                checkOrMarkPrivateAccess(vexp, fieldNode, lhsOfEnclosingAssignment);
-                            }
-                        }
-                    }
-                }
-            }
-
-            ClassNode actualType = findActualTypeByGenericsPlaceholderName(
-                    fieldNode.getOriginType().getUnresolvedName(),
-                    makeDeclaringAndActualGenericsTypeMap(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())
-            );
-
-            if (actualType != null) {
-                storeType(vexp, actualType);
-                return;
-            }
-        }
+        if (storeTypeForThis(vexp)) return;
+        String name = vexp.getName();
 
         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
         if (enclosingClosure != null) {
-            switch (vexp.getName()) {
+            switch (name) {
                 case "delegate":
-                    DelegationMetadata md = getDelegationMetadata(enclosingClosure.getClosureExpression());
-                    if (md != null) {
-                        storeType(vexp, md.getType());
+                    DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
+                    if (dm != null) {
+                        storeType(vexp, dm.getType());
                         return;
                     }
                     // falls through
@@ -681,49 +586,92 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
 
+        Variable accessedVariable = vexp.getAccessedVariable();
+        VariableExpression localVariableExpression = null;
         if (accessedVariable instanceof DynamicVariable) {
-            // a dynamic variable is either an undeclared variable
-            // or a member of a class used in a 'with'
-            DynamicVariable dyn = (DynamicVariable) accessedVariable;
-            // first, we must check the 'with' context
-            String dynName = dyn.getName();
-            if (tryVariableExpressionAsProperty(vexp, dynName)) return;
+            // a dynamic variable is either a class member used in a 'with' or an undeclared variable
+
+            if (tryVariableExpressionAsProperty(vexp, name)) return;
 
             if (!extension.handleUnresolvedVariableExpression(vexp)) {
-                addStaticTypeError("The variable [" + vexp.getName() + "] is undeclared.", vexp);
+                addStaticTypeError("The variable [" + name + "] is undeclared.", vexp);
             }
-        } else if (enclosingClosure == null) {
-            VariableExpression variable = null;
-            if (accessedVariable instanceof Parameter) {
-                variable = new ParameterVariableExpression((Parameter) accessedVariable);
-            } else if (accessedVariable instanceof VariableExpression) {
-                variable = (VariableExpression) accessedVariable;
-            }
-            if (variable != null) {
-                ClassNode inferredType = getInferredTypeFromTempInfo(variable, variable.getNodeMetaData(INFERRED_TYPE));
-                // instanceof applies, stash away the type, reusing key used elsewhere
-                if (inferredType != null && !inferredType.equals(OBJECT_TYPE)) {
-                    vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
+        } else if (accessedVariable instanceof FieldNode) {
+            if (enclosingClosure != null) {
+                tryVariableExpressionAsProperty(vexp, name);
+            } else {
+                // GROOVY-7691
+                FieldNode fieldNode = (FieldNode) accessedVariable;
+                ClassNode actualType = findActualTypeByGenericsPlaceholderName(
+                        fieldNode.getOriginType().getUnresolvedName(),
+                        makeDeclaringAndActualGenericsTypeMap(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())
+                );
+                if (actualType != null) {
+                    storeType(vexp, actualType);
                 }
             }
+        } else if (accessedVariable instanceof PropertyNode) {
+            // we must be careful, because the property node may be of a wrong type:
+            // if a class contains a getter and a setter of different types or
+            // overloaded setters, the type of the property node is arbitrary!
+            if (tryVariableExpressionAsProperty(vexp, name)) {
+                BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
+                if (enclosingBinaryExpression != null) {
+                    Expression leftExpression = enclosingBinaryExpression.getLeftExpression();
+                    SetterInfo setterInfo = removeSetterInfo(leftExpression);
+                    if (setterInfo != null) {
+                        Expression rightExpression = enclosingBinaryExpression.getRightExpression();
+                        if (!ensureValidSetter(vexp, leftExpression, rightExpression, setterInfo)) {
+                            return;
+                        }
+                    }
+                }
+            }
+        } else if (accessedVariable instanceof Parameter) {
+            if (enclosingClosure == null) {
+                localVariableExpression = new ParameterVariableExpression((Parameter) accessedVariable);
+            }
+        } else if (accessedVariable instanceof VariableExpression) {
+            if (enclosingClosure == null) {
+                localVariableExpression = (VariableExpression) accessedVariable;
+            }
         }
+
+        if (localVariableExpression != null) {
+            ClassNode inferredType = localVariableExpression.getNodeMetaData(INFERRED_TYPE);
+            inferredType = getInferredTypeFromTempInfo(localVariableExpression, inferredType);
+            if (inferredType != null && !inferredType.equals(OBJECT_TYPE)) {
+                vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
+            }
+        }
+    }
+
+    private boolean storeTypeForSuper(final VariableExpression vexp) {
+        if (vexp == VariableExpression.SUPER_EXPRESSION) return true;
+        if (!vexp.isSuperExpression()) return false;
+        ClassNode superClassNode = typeCheckingContext.getEnclosingClassNode().getSuperClass();
+        storeType(vexp, makeType(superClassNode, typeCheckingContext.isInStaticContext));
+        return true;
+    }
+
+    private boolean storeTypeForThis(final VariableExpression vexp) {
+        if (vexp == VariableExpression.THIS_EXPRESSION) return true;
+        if (!vexp.isThisExpression()) return false;
+        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
+        storeType(vexp, makeType(enclosingClassNode, typeCheckingContext.isInStaticContext));
+        return true;
     }
 
     private boolean tryVariableExpressionAsProperty(final VariableExpression vexp, final String dynName) {
         PropertyExpression pexp = thisPropX(true, dynName);
         if (visitPropertyExpressionSilent(pexp, vexp)) {
-            ClassNode propertyType = getType(pexp);
-            pexp.removeNodeMetaData(INFERRED_TYPE);
-
             vexp.copyNodeMetaData(pexp.getObjectExpression());
-            Object val = pexp.getNodeMetaData(READONLY_PROPERTY);
-            if (val != null) vexp.putNodeMetaData(READONLY_PROPERTY, val);
-            val = pexp.getNodeMetaData(IMPLICIT_RECEIVER);
-            if (val != null) vexp.putNodeMetaData(IMPLICIT_RECEIVER, val);
-            val = pexp.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-            if (val != null) vexp.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, val);
-
-            storeType(vexp, propertyType);
+            for (Object key : new Object[]{IMPLICIT_RECEIVER, READONLY_PROPERTY, PV_FIELDS_ACCESS, PV_FIELDS_MUTATION, DECLARATION_INFERRED_TYPE, DIRECT_METHOD_CALL_TARGET}) {
+                Object val = pexp.getNodeMetaData(key);
+                if (val != null) vexp.putNodeMetaData(key, val);
+            }
+            vexp.removeNodeMetaData(INFERRED_TYPE);
+            storeType(vexp, getType(pexp));
             return true;
         }
         return false;
@@ -3752,6 +3700,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         extension.onMethodSelection(call, directMethodCallCandidate);
     }
 
+    private void checkSuperCallFromClosure(final Expression call, final MethodNode directCallTarget) {
+        if (call instanceof MethodCallExpression && typeCheckingContext.getEnclosingClosure() != null) {
+            Expression objectExpression = ((MethodCallExpression) call).getObjectExpression();
+            if (isSuperExpression(objectExpression)) {
+                ClassNode current = typeCheckingContext.getEnclosingClassNode();
+                current.getNodeMetaData(SUPER_MOP_METHOD_REQUIRED, x -> new LinkedList<>()).add(directCallTarget);
+                call.putNodeMetaData(SUPER_MOP_METHOD_REQUIRED, current);
+            }
+        }
+    }
+
     protected boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
         if (objectExpression instanceof ClosureExpression && ("call".equals(name) || "doCall".equals(name))) return true;
         if (isThisExpression(objectExpression)) {
@@ -4934,6 +4893,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private ClassNode makeThis() {
         return makeType(typeCheckingContext.getEnclosingClassNode(), typeCheckingContext.isInStaticContext);
+    }
+
+    /**
+     * Wrap type in Class&lt;&gt; if usingClass==true.
+     */
+    private static ClassNode makeType(final ClassNode cn, final boolean usingClass) {
+        if (usingClass) {
+            ClassNode clazzType = CLASS_Type.getPlainNodeReference();
+            clazzType.setGenericsTypes(new GenericsType[]{new GenericsType(cn)});
+            return clazzType;
+        } else {
+            return cn;
+        }
     }
 
     /**
