@@ -20,11 +20,13 @@ package org.codehaus.groovy.transform.sc.transformers;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
+
 
 /**
  * Transformer for VariableExpression the bytecode backend wouldn't be able to
@@ -73,10 +75,34 @@ public class VariableExpressionTransformer {
 
     private static Expression tryTransformPrivateFieldAccess(VariableExpression expr) {
         FieldNode field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
+        FieldNode mutationField = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
         if (field == null) {
-            field = expr.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
+            field = mutationField;
         }
         if (field != null) {
+            ClassNode declaringClass = field.getDeclaringClass();
+            ClassNode originType = field.getOriginType();
+
+            // GROOVY-9332: Error occurred when accessing static field in lambda within static initialization block
+            if (field.isStatic()) {
+                ClassExpression receiver = new ClassExpression(declaringClass);
+                PropertyExpression pexp = new PropertyExpression(receiver, expr.getName());
+                pexp.setSourcePosition(expr);
+                pexp.getProperty().setSourcePosition(expr);
+
+                receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
+                receiver.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, declaringClass);
+                pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, originType);
+                pexp.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, originType);
+                pexp.putNodeMetaData(
+                        null == mutationField
+                                ? StaticTypesMarker.PV_FIELDS_ACCESS
+                                : StaticTypesMarker.PV_FIELDS_MUTATION,
+                        field);
+
+                return pexp;
+            }
+
             // access to a private field from a section of code that normally doesn't have access to it, like a
             // closure or an inner class
             VariableExpression receiver = new VariableExpression("this");
@@ -87,9 +113,9 @@ public class VariableExpressionTransformer {
             pexp.setImplicitThis(true);
             pexp.getProperty().setSourcePosition(expr);
             // put the receiver inferred type so that the class writer knows that it will have to call a bridge method
-            receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
+            receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
             // add inferred type information
-            pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getOriginType());
+            pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, originType);
             return pexp;
         }
         return null;

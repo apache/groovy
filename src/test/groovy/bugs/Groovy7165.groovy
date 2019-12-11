@@ -74,7 +74,7 @@ final class Groovy7165 {
             new B().test()
         '''
 
-        assert err =~ /MissingPropertyException: No such property: CONST for class: B/
+        assert err =~ /Access to A#CONST is forbidden/
     }
 
     @Test

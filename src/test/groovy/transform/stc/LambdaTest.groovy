@@ -975,6 +975,34 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-9332
+    void testStaticInitializeBlocks() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static sl
+                static int one = 1
+                static { sl = [1, 2, 3].stream().map(e -> e + one).toList() }
+            }
+            
+            assert [2, 3, 4] == Test1.sl
+        '''
+    }
+
+    void testStaticInitializeBlocks2() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static sl
+                static int acc = 1
+                static { sl = [1, 2, 3].stream().map(e -> acc += e).toList() }
+            }
+            
+            assert [2, 4, 7] == Test1.sl
+            assert 7 == Test1.acc
+        '''
+    }
+
     void testSerialize() {
         assertScript '''
         import java.util.function.Function
