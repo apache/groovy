@@ -282,7 +282,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         answer.setUsingGenerics(outerClass.isUsingGenerics());
         answer.setSourcePosition(expression);
 
-        addSerialVersionUIDField(answer);
+        if (expression.isSerializable()) {
+            addSerialVersionUIDField(answer);
+        }
 
         if (staticMethodOrInStaticClass) {
             answer.setStaticClass(true);
