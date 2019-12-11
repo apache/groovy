@@ -20,6 +20,7 @@ on: [push, pull_request]
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-18.04]
         java: [8.0.232, 11.0.5]
@@ -37,6 +38,7 @@ jobs:
           GRADLE_SCANS_ACCEPT: yes
   testWithIndy:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-18.04]
         java: [8.0.232, 11.0.5]
