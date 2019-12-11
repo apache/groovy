@@ -929,6 +929,26 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    void testNestedLambdaAccessingInstanceFields() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                private List<String> strList = ['a', 'e', 'f']
+                private Map<String, List<String>> strListHolder = ['strList': strList]
+                private String b = 'b'
+                def p() {
+                    ['abc', 'def', 'ghi'].stream().filter(e -> strList.stream().anyMatch(c -> e.contains(c + b))).toList()
+                }
+                def p2() {
+                    ['abc', 'def', 'ghi'].stream().filter(e -> strListHolder.strList.stream().anyMatch(c -> e.contains(c + b))).toList()
+                }
+            }
+            
+            assert ['abc'] == new Test1().p()
+            assert ['abc'] == new Test1().p2()
+        '''
+    }
+
     void testSerialize() {
         assertScript '''
         import java.util.function.Function
