@@ -995,6 +995,66 @@ class LambdaTest extends GroovyTestCase {
         '''
     }
 
+    void testAccessingThis() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        import java.util.function.Predicate
+        
+        @CompileStatic
+        public class Test4 {
+            public static void main(String[] args) {
+                new Test4().p();
+            }
+            
+            public Test4 thisVar = this;
+        
+            public void p() {
+                Predicate<Test4> predicate = (Test4 s) -> { this === s }
+                
+                assert predicate.test(thisVar)
+            }
+        }
+        '''
+    }
+
+    void testAccessingThis2() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        
+        @CompileStatic
+        public class Test4 {
+            public static void main(String[] args) {
+                new Test4().p();
+            }
+            
+            public String a = "a";
+        
+            public void p() {
+                assert ['a1', 'a2'] == [1, 2].stream().map(e -> this.a + e).toList();
+            }
+        }
+        '''
+    }
+
+    void testAccessingThis3() {
+        assertScript '''
+        import groovy.transform.CompileStatic
+        
+        @CompileStatic
+        public class Test4 {
+            public static void main(String[] args) {
+                new Test4().p();
+            }
+            
+            public String a() { "a" }
+        
+            public void p() {
+                assert ['a1', 'a2'] == [1, 2].stream().map(e -> this.a() + e).toList();
+            }
+        }
+        '''
+    }
+
     void testSerialize() {
         assertScript '''
         import java.util.function.Function

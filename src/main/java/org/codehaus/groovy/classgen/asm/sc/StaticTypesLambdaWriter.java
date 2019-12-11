@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.apache.groovy.util.ObjectHolder;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
@@ -180,7 +181,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         ClassCodeVisitorSupport classCodeVisitorSupport = new ClassCodeVisitorSupport() {
             @Override
             public void visitVariableExpression(VariableExpression expression) {
-                if (expression.isThisExpression()) {
+                if (ENCLOSING_THIS.equals(expression.getName())) {
                     objectHolder.setObject(true);
                 }
             }
@@ -299,7 +300,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         constructorNode.putNodeMetaData(IS_GENERATED_CONSTRUCTOR, Boolean.TRUE);
 
         Parameter enclosingThisParameter = syntheticLambdaMethodNode.getParameters()[0];
-        new TransformationVisitor(answer, enclosingThisParameter).visitMethod(syntheticLambdaMethodNode);
+        new LambdaBodyTransformer(answer, enclosingThisParameter).visitMethod(syntheticLambdaMethodNode);
 
         return answer;
     }
@@ -441,22 +442,29 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return staticTypesClosureWriter.createClosureClass(expression, mods);
     }
 
-    private static final class TransformationVisitor extends ClassCodeVisitorSupport {
+    private static final class LambdaBodyTransformer extends ClassCodeExpressionTransformer {
         private final CorrectAccessedVariableVisitor correctAccessedVariableVisitor;
         private final Parameter enclosingThisParameter;
 
-        public TransformationVisitor(InnerClassNode icn, Parameter enclosingThisParameter) {
+        public LambdaBodyTransformer(InnerClassNode icn, Parameter enclosingThisParameter) {
             this.correctAccessedVariableVisitor = new CorrectAccessedVariableVisitor(icn);
             this.enclosingThisParameter = enclosingThisParameter;
         }
 
         @Override
-        public void visitVariableExpression(VariableExpression expression) {
-            correctAccessedVariableVisitor.visitVariableExpression(expression);
+        public Expression transform(Expression exp) {
+            if (null == exp) return null;
+
+            if (exp.getClass() == VariableExpression.class) {
+                return transformVariableExpression((VariableExpression) exp);
+            } else if (exp.getClass() == MethodCallExpression.class) {
+                return transformMethodCallExpression((MethodCallExpression) exp);
+            }
+
+            return super.transform(exp);
         }
 
-        @Override
-        public void visitMethodCallExpression(MethodCallExpression call) {
+        private Expression transformMethodCallExpression(MethodCallExpression call) {
             if (!call.getMethodTarget().isStatic()) {
                 Expression objectExpression = call.getObjectExpression();
 
@@ -472,7 +480,17 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                 }
             }
 
-            super.visitMethodCallExpression(call);
+            return super.transform(call);
+        }
+
+        private Expression transformVariableExpression(VariableExpression ve) {
+            correctAccessedVariableVisitor.visitVariableExpression(ve);
+            if (ve.isThisExpression()) {
+                VariableExpression thisVariable = new VariableExpression(enclosingThisParameter);
+                thisVariable.setSourcePosition(ve);
+                return thisVariable;
+            }
+            return ve;
         }
 
         @Override
