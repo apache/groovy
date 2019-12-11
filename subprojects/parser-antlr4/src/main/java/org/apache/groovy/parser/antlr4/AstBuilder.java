@@ -3534,26 +3534,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     @Override
-    public Parameter[] visitStandardLambdaParameters(StandardLambdaParametersContext ctx) {
+    public Parameter[] visitStandardLambdaParameters(final StandardLambdaParametersContext ctx) {
         if (asBoolean(ctx.variableDeclaratorId())) {
-            return new Parameter[]{
-                    configureAST(
-                            new Parameter(
-                                    ClassHelper.OBJECT_TYPE,
-                                    this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName()
-                            ),
-                            ctx.variableDeclaratorId()
-                    )
-            };
+            VariableExpression variable = this.visitVariableDeclaratorId(ctx.variableDeclaratorId());
+            Parameter parameter = new Parameter(ClassHelper.OBJECT_TYPE, variable.getName());
+            configureAST(parameter, variable);
+            return new Parameter[]{parameter};
         }
 
         Parameter[] parameters = this.visitFormalParameters(ctx.formalParameters());
-
-        if (0 == parameters.length) {
-            return null;
-        }
-
-        return parameters;
+        return (parameters.length > 0 ? parameters : null);
     }
 
     @Override
