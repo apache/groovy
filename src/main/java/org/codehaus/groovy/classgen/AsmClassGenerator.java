@@ -940,7 +940,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 iterType = iterType.getOuterClass();
                 if (thisField == null) {
                     // closure within inner class
-                    while (iterType.isDerivedFrom(ClassHelper.CLOSURE_TYPE) && iterType.implementsInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
+                    while (iterType.isDerivedFrom(ClassHelper.CLOSURE_TYPE) && iterType.implementsAnyInterfaces(ClassHelper.GENERATED_CLOSURE_Type, ClassHelper.GENERATED_LAMBDA_TYPE)) {
                         // GROOVY-8881: cater for closures within closures - getThisObject is already outer class of all closures
                         iterType = iterType.getOuterClass();
                     }
