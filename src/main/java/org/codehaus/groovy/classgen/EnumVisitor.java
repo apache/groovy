@@ -56,69 +56,70 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 public class EnumVisitor extends ClassCodeVisitorSupport {
-    // some constants for modifiers
-    private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
-    private static final int PS = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
-    private static final int PUBLIC_FS = Opcodes.ACC_PUBLIC | FS;
-    private static final int PRIVATE_FS = Opcodes.ACC_PRIVATE | FS;
 
     private final SourceUnit sourceUnit;
 
-    public EnumVisitor(CompilationUnit cu, SourceUnit su) {
+    public EnumVisitor(final CompilationUnit cu, final SourceUnit su) {
         sourceUnit = su;
     }
 
-    public void visitClass(ClassNode node) {
-        if (!node.isEnum()) return;
-        completeEnum(node);
-    }
-
+    @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
-    private void completeEnum(ClassNode enumClass) {
-        boolean isAic = isAnonymousInnerClass(enumClass);
-        // create MIN_VALUE and MAX_VALUE fields
+    @Override
+    public void visitClass(final ClassNode node) {
+        if (!node.isEnum()) return;
+        completeEnum(node);
+    }
+
+    private void completeEnum(final ClassNode enumClass) {
         FieldNode minValue = null, maxValue = null, values = null;
 
+        boolean isAic = isAnonymousInnerClass(enumClass);
         if (!isAic) {
             ClassNode enumRef = enumClass.getPlainNodeReference();
 
-            // create values field
-            values = new FieldNode("$VALUES", PRIVATE_FS | Opcodes.ACC_SYNTHETIC, enumRef.makeArray(), enumClass, null);
+            // create $VALUES field
+            values = new FieldNode("$VALUES", ACC_FINAL | ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, enumRef.makeArray(), enumClass, null);
             values.setSynthetic(true);
 
             addMethods(enumClass, values);
             checkForAbstractMethods(enumClass);
 
             // create MIN_VALUE and MAX_VALUE fields
-            minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumRef, enumClass, null);
-            maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumRef, enumClass, null);
+            minValue = new FieldNode("MIN_VALUE", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, enumRef, enumClass, null);
+            maxValue = new FieldNode("MAX_VALUE", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, enumRef, enumClass, null);
         }
+
         addInit(enumClass, minValue, maxValue, values, isAic);
     }
 
-    private static void checkForAbstractMethods(ClassNode enumClass) {
-        List<MethodNode> methods = enumClass.getMethods();
-        for (MethodNode m : methods) {
-            if (m.isAbstract()) {
-                // make the class abstract also see Effective Java p.152
-                enumClass.setModifiers(enumClass.getModifiers() | Opcodes.ACC_ABSTRACT);
+    private static void checkForAbstractMethods(final ClassNode enumClass) {
+        for (MethodNode method : enumClass.getMethods()) {
+            if (method.isAbstract()) {
+                // make the class abstract also; see Effective Java p.152
+                enumClass.setModifiers(enumClass.getModifiers() | ACC_ABSTRACT);
                 break;
             }
         }
     }
 
-    private static void addMethods(ClassNode enumClass, FieldNode values) {
+    private static void addMethods(final ClassNode enumClass, final FieldNode values) {
         List<MethodNode> methods = enumClass.getMethods();
 
         boolean hasNext = false;
@@ -133,7 +134,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
         {
             // create values() method
-            MethodNode valuesMethod = new MethodNode("values", PUBLIC_FS, enumRef.makeArray(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+            MethodNode valuesMethod = new MethodNode("values", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, enumRef.makeArray(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
             valuesMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             MethodCallExpression cloneCall = new MethodCallExpression(new FieldExpression(values), "clone", MethodCallExpression.NO_ARGUMENTS);
@@ -152,7 +153,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             //     }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token ge = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
-            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("next", ACC_PUBLIC | ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -211,8 +212,8 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             //    }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token lt = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
-            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
-            nextMethod.setSynthetic(true);
+            MethodNode prevMethod = new MethodNode("previous", ACC_PUBLIC | ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+            prevMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
             ifStatement.addStatement(
@@ -263,14 +264,14 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                             new MethodCallExpression(new FieldExpression(values), "getAt", new VariableExpression("ordinal"))
                     )
             );
-            nextMethod.setCode(code);
-            enumClass.addMethod(nextMethod);
+            prevMethod.setCode(code);
+            enumClass.addMethod(prevMethod);
         }
 
         {
             // create valueOf
             Parameter stringParameter = new Parameter(ClassHelper.STRING_TYPE, "name");
-            MethodNode valueOfMethod = new MethodNode("valueOf", PS, enumRef, new Parameter[]{stringParameter}, ClassNode.EMPTY_ARRAY, null);
+            MethodNode valueOfMethod = new MethodNode("valueOf", ACC_PUBLIC | ACC_STATIC, enumRef, new Parameter[]{stringParameter}, ClassNode.EMPTY_ARRAY, null);
             ArgumentListExpression callArguments = new ArgumentListExpression();
             callArguments.addExpression(new ClassExpression(enumClass));
             callArguments.addExpression(new VariableExpression("name"));
@@ -287,15 +288,13 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void addInit(ClassNode enumClass, FieldNode minValue,
-                         FieldNode maxValue, FieldNode values,
-                         boolean isAic) {
+    private void addInit(final ClassNode enumClass, final FieldNode minValue, final FieldNode maxValue, final FieldNode values, final boolean isAic) {
         // constructor helper
         // This method is used instead of calling the constructor as
         // calling the constructor may require a table with MetaClass
         // selecting the constructor for each enum value. So instead we
         // use this method to have a central point for constructor selection
-        // and only one table. The whole construction is needed because 
+        // and only one table. The whole construction is needed because
         // Reflection forbids access to the enum constructor.
         // code:
         // def $INIT(Object[] para) {
@@ -303,7 +302,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         // }
         ClassNode enumRef = enumClass.getPlainNodeReference();
         Parameter[] parameter = new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "para")};
-        MethodNode initMethod = new MethodNode("$INIT", PUBLIC_FS | Opcodes.ACC_SYNTHETIC, enumRef, parameter, ClassNode.EMPTY_ARRAY, null);
+        MethodNode initMethod = new MethodNode("$INIT", ACC_FINAL | ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC, enumRef, parameter, ClassNode.EMPTY_ARRAY, null);
         initMethod.setSynthetic(true);
         ConstructorCallExpression cce = new ConstructorCallExpression(
                 ClassNode.THIS,
@@ -318,15 +317,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
         // static init
         List<FieldNode> fields = enumClass.getFields();
-        List<Expression> arrayInit = new ArrayList<Expression>();
+        List<Expression> arrayInit = new ArrayList<>();
         int value = -1;
         Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
-        List<Statement> block = new ArrayList<Statement>();
+        List<Statement> block = new ArrayList<>();
         FieldNode tempMin = null;
         FieldNode tempMax = null;
         for (FieldNode field : fields) {
-            if ((field.getModifiers() & Opcodes.ACC_ENUM) == 0) continue;
-            value++;
+            if (!field.isEnum()) continue;
+            value += 1;
             if (tempMin == null) tempMin = field;
             tempMax = field;
 
@@ -335,13 +334,13 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             args.addExpression(new ConstantExpression(field.getName()));
             args.addExpression(new ConstantExpression(value));
             if (field.getInitialExpression() == null) {
-                if ((enumClass.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
+                if (enumClass.isAbstract()) {
                     addError(field, "The enum constant " + field.getName() + " must override abstract methods from " + enumBase.getName() + ".");
                     continue;
                 }
             } else {
                 ListExpression oldArgs = (ListExpression) field.getInitialExpression();
-                List<MapEntryExpression> savedMapEntries = new ArrayList<MapEntryExpression>();
+                List<MapEntryExpression> savedMapEntries = new ArrayList<>();
                 for (Expression exp : oldArgs.getExpressions()) {
                     if (exp instanceof MapEntryExpression) {
                         savedMapEntries.add((MapEntryExpression) exp);
@@ -361,7 +360,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                         for (MethodNode methodNode : baseMethods) {
                             if (!methodNode.isAbstract()) continue;
                             MethodNode enumConstMethod = inner.getMethod(methodNode.getName(), methodNode.getParameters());
-                            if (enumConstMethod == null || (enumConstMethod.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
+                            if (enumConstMethod == null || enumConstMethod.isAbstract()) {
                                 addError(field, "Can't have an abstract method in enum constant " + field.getName() + ". Implement method '" + methodNode.getTypeDescriptor() + "'.");
                             }
                         }
@@ -372,7 +371,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                              * so that subclasses of enum generated for enum constants (aic) can provide
                              * their own $INIT method
                              */
-                            initMethod.setModifiers(initMethod.getModifiers() & ~Opcodes.ACC_FINAL);
+                            initMethod.setModifiers(initMethod.getModifiers() & ~ACC_FINAL);
                             continue;
                         }
                     }
@@ -429,16 +428,17 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         enumClass.addStaticInitializerStatements(block, true);
     }
 
-    private void addError(AnnotatedNode exp, String msg) {
-        sourceUnit.getErrorCollector().addErrorAndContinue(
+    private void addError(final AnnotatedNode exp, final String msg) {
+        getSourceUnit().getErrorCollector().addErrorAndContinue(
                 new SyntaxErrorMessage(
-                        new SyntaxException(msg + '\n', exp.getLineNumber(), exp.getColumnNumber(), exp.getLastLineNumber(), exp.getLastColumnNumber()), sourceUnit)
+                        new SyntaxException(msg + '\n', exp),
+                        getSourceUnit()
+                )
         );
     }
 
-    private static boolean isAnonymousInnerClass(ClassNode enumClass) {
+    private static boolean isAnonymousInnerClass(final ClassNode enumClass) {
         if (!(enumClass instanceof EnumConstantClassNode)) return false;
-        InnerClassNode ic = (InnerClassNode) enumClass;
-        return ic.getVariableScope() == null;
+        return (((EnumConstantClassNode) enumClass).getVariableScope() == null);
     }
 }

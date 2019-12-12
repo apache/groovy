@@ -34,7 +34,6 @@ import java.util.Arrays;
  * first parameter the destination class.
  */
 public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
-    private static final Object[] NO_ARGS = new Object[0];
 
     /**
      * This method is called by the ++ operator for enums. It will invoke
@@ -44,14 +43,13 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an Enum
      * @return the next defined enum from the enum class
      */
-    public static Object next(Enum self) {
-        final Method[] methods = self.getClass().getMethods();
-        for (Method method : methods) {
-            if (method.getName().equals("next") && method.getParameterTypes().length == 0) {
-                return InvokerHelper.invokeMethod(self, "next", NO_ARGS);
+    public static Object next(final Enum self) {
+        for (Method method : self.getClass().getMethods()) {
+            if (method.getName().equals("next") && method.getParameterCount() == 0) {
+                return InvokerHelper.invokeMethod(self, "next", InvokerHelper.EMPTY_ARGS);
             }
         }
-        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", NO_ARGS);
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", InvokerHelper.EMPTY_ARGS);
         int index = Arrays.asList(values).indexOf(self);
         return values[index < values.length - 1 ? index + 1 : 0];
     }
@@ -64,14 +62,13 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an Enum
      * @return the previous defined enum from the enum class
      */
-    public static Object previous(Enum self) {
-        final Method[] methods = self.getClass().getMethods();
-        for (Method method : methods) {
-            if (method.getName().equals("previous") && method.getParameterTypes().length == 0) {
-                return InvokerHelper.invokeMethod(self, "previous", NO_ARGS);
+    public static Object previous(final Enum self) {
+        for (Method method : self.getClass().getMethods()) {
+            if (method.getName().equals("previous") && method.getParameterCount() == 0) {
+                return InvokerHelper.invokeMethod(self, "previous", InvokerHelper.EMPTY_ARGS);
             }
         }
-        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", NO_ARGS);
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", InvokerHelper.EMPTY_ARGS);
         int index = Arrays.asList(values).indexOf(self);
         return values[index > 0 ? index - 1 : values.length - 1];
     }
@@ -82,7 +79,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param builder a StringBuilder
      * @return the length of the StringBuilder
      */
-    public static int size(StringBuilder builder) {
+    public static int size(final StringBuilder builder) {
         return builder.length();
     }
 
@@ -94,7 +91,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value a value to append
      * @return the StringBuilder on which this operation was invoked
      */
-    public static StringBuilder leftShift(StringBuilder self, Object value) {
+    public static StringBuilder leftShift(final StringBuilder self, final Object value) {
         if (value instanceof GString) {
             // Force the conversion of the GString to string now, or appending
             // is going to be extremely expensive, due to calls to GString#charAt,
@@ -115,7 +112,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param range a Range
      * @param value the object that's toString() will be inserted
      */
-    public static void putAt(StringBuilder self, IntRange range, Object value) {
+    public static void putAt(final StringBuilder self, final IntRange range, final Object value) {
         RangeInfo info = subListBorders(self.length(), range);
         self.replace(info.from, info.to, value.toString());
     }
@@ -127,7 +124,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param range a Range
      * @param value the object that's toString() will be inserted
      */
-    public static void putAt(StringBuilder self, EmptyRange range, Object value) {
+    public static void putAt(final StringBuilder self, final EmptyRange range, final Object value) {
         RangeInfo info = subListBorders(self.length(), range);
         self.replace(info.from, info.to, value.toString());
     }
@@ -139,8 +136,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value a String
      * @return a String
      */
-    public static String plus(StringBuilder self, String value) {
+    public static String plus(final StringBuilder self, final String value) {
         return self + value;
     }
-
 }
