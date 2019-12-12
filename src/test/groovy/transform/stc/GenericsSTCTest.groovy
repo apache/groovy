@@ -205,7 +205,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testLinkedListWithListArgumentAndWrongElementTypes() {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
-        ''', 'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <java.lang.Object extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
+        ''', 'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.List <java.lang.Integer>]'
     }
 
     void testCompatibleGenericAssignmentWithInference() {
@@ -534,7 +534,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = ['a','b','c']
             Collection<Integer> e = (Collection<Integer>) [1,2,3]
             boolean r = list.addAll(e)
-        ''', 'Cannot call java.util.List <java.lang.String>#addAll(java.util.Collection <java.lang.Object extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
+        ''', 'Cannot call java.util.List <java.lang.String>#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
@@ -1370,7 +1370,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Object> l = new ArrayList<>()
             assert foo(l) == 1
         ''',
-        '#foo(java.util.List <A extends A>) with arguments [java.util.ArrayList <java.lang.Object>]'
+        '#foo(java.util.List <? extends A>) with arguments [java.util.ArrayList <java.lang.Object>]'
     }
 
     void testMethodLevelGenericsForMethodCall() {
