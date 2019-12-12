@@ -74,7 +74,7 @@ public class GenericsType extends ASTNode {
 
         if (placeholder) visited.add(gt.getName());
 
-        StringBuilder ret = new StringBuilder(wildcard ? "?" : placeholder ? gt.getName() : genericsBounds(type, visited));
+        StringBuilder ret = new StringBuilder(wildcard || placeholder ? gt.getName() : genericsBounds(type, visited));
         if (lowerBound != null) {
             ret.append(" super ").append(genericsBounds(lowerBound, visited));
         } else if (upperBounds != null
@@ -145,7 +145,7 @@ public class GenericsType extends ASTNode {
     }
 
     public String getName() {
-        return name;
+        return (isWildcard() ? "?" : name);
     }
 
     public void setName(final String name) {

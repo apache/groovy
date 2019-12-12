@@ -3862,7 +3862,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
             GenericsType genericsType = new GenericsType(baseType, upperBounds, lowerBound);
             genericsType.setWildcard(true);
-            genericsType.setName(QUESTION_STR);
 
             return configureAST(genericsType, ctx);
         } else if (asBoolean(ctx.type())) {

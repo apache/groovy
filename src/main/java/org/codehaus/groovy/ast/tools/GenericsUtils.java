@@ -391,7 +391,6 @@ public class GenericsUtils {
                         lower = correctToGenericsSpecRecurse(genericsSpec, oldLower, exclusions);
                     }
                     GenericsType fixed = new GenericsType(oldgType.getType(), upper, lower);
-                    fixed.setName(oldgType.getName());
                     fixed.setWildcard(true);
                     newgTypes[i] = fixed;
                 } else if (oldgType.isPlaceholder()) {

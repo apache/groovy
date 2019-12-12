@@ -2917,7 +2917,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             } else {
                 gt = new GenericsType(base, null, null);
             }
-            gt.setName("?");
             gt.setWildcard(true);
         } else {
             ClassNode argument = makeTypeWithArguments(rootNode);
