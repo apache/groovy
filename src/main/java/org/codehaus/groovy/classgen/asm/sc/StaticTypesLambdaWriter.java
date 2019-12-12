@@ -34,7 +34,6 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -186,18 +185,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             }
 
             @Override
-            public void visitMethodCallExpression(MethodCallExpression call) {
-                if (!call.getMethodTarget().isStatic()) {
-                    Expression objectExpression = call.getObjectExpression();
-                    if (objectExpression instanceof VariableExpression && ENCLOSING_THIS.equals(((VariableExpression) objectExpression).getName())) {
-                        objectHolder.setObject(true);
-                    }
-                }
-
-                super.visitMethodCallExpression(call);
-            }
-
-            @Override
             protected SourceUnit getSourceUnit() {
                 return null;
             }
@@ -300,8 +287,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         ConstructorNode constructorNode = addConstructor(expression, localVariableParameters, answer, createBlockStatementForConstructor(expression, outerClass, classNode));
         constructorNode.putNodeMetaData(IS_GENERATED_CONSTRUCTOR, Boolean.TRUE);
 
-        Parameter enclosingThisParameter = syntheticLambdaMethodNode.getParameters()[0];
-        new TransformationVisitor(answer, enclosingThisParameter).visitMethod(syntheticLambdaMethodNode);
+        new LambdaBodyTransformationVisitor(answer).visitMethod(syntheticLambdaMethodNode);
 
         return answer;
     }
@@ -443,38 +429,16 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return staticTypesClosureWriter.createClosureClass(expression, mods);
     }
 
-    private static final class TransformationVisitor extends ClassCodeVisitorSupport {
+    private static final class LambdaBodyTransformationVisitor extends ClassCodeVisitorSupport {
         private final CorrectAccessedVariableVisitor correctAccessedVariableVisitor;
-        private final Parameter enclosingThisParameter;
 
-        public TransformationVisitor(InnerClassNode icn, Parameter enclosingThisParameter) {
+        public LambdaBodyTransformationVisitor(InnerClassNode icn) {
             this.correctAccessedVariableVisitor = new CorrectAccessedVariableVisitor(icn);
-            this.enclosingThisParameter = enclosingThisParameter;
         }
 
         @Override
         public void visitVariableExpression(VariableExpression expression) {
             correctAccessedVariableVisitor.visitVariableExpression(expression);
-        }
-
-        @Override
-        public void visitMethodCallExpression(MethodCallExpression call) {
-            if (!call.getMethodTarget().isStatic()) {
-                Expression objectExpression = call.getObjectExpression();
-
-                if (objectExpression instanceof VariableExpression) {
-                    VariableExpression originalObjectExpression = (VariableExpression) objectExpression;
-                    if (null == originalObjectExpression.getAccessedVariable()) {
-                        VariableExpression thisVariable = new VariableExpression(enclosingThisParameter);
-                        thisVariable.setSourcePosition(originalObjectExpression);
-
-                        call.setObjectExpression(thisVariable);
-                        call.setImplicitThis(false);
-                    }
-                }
-            }
-
-            super.visitMethodCallExpression(call);
         }
 
         @Override
