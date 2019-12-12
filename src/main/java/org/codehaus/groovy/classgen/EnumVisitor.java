@@ -60,6 +60,7 @@ import org.codehaus.groovy.syntax.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -141,7 +142,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             cloneCall.setMethodTarget(values.getType().getMethod("clone", Parameter.EMPTY_ARRAY));
             code.addStatement(new ReturnStatement(cloneCall));
             valuesMethod.setCode(code);
-            enumClass.addMethod(valuesMethod);
+            addGeneratedMethod(enumClass, valuesMethod);
         }
 
         if (!hasNext) {
@@ -153,7 +154,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             //     }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token ge = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
-            MethodNode nextMethod = new MethodNode("next", ACC_PUBLIC | ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("next", ACC_PUBLIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -200,7 +201,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                     )
             );
             nextMethod.setCode(code);
-            enumClass.addMethod(nextMethod);
+            addGeneratedMethod(enumClass, nextMethod);
         }
 
         if (!hasPrevious) {
@@ -212,7 +213,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             //    }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token lt = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
-            MethodNode prevMethod = new MethodNode("previous", ACC_PUBLIC | ACC_SYNTHETIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+            MethodNode prevMethod = new MethodNode("previous", ACC_PUBLIC, enumRef, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
             prevMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -265,7 +266,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                     )
             );
             prevMethod.setCode(code);
-            enumClass.addMethod(prevMethod);
+            addGeneratedMethod(enumClass, prevMethod);
         }
 
         {
@@ -284,7 +285,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             );
             valueOfMethod.setCode(code);
             valueOfMethod.setSynthetic(true);
-            enumClass.addMethod(valueOfMethod);
+            addGeneratedMethod(enumClass, valueOfMethod);
         }
     }
 
@@ -313,7 +314,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         BlockStatement code = new BlockStatement();
         code.addStatement(new ReturnStatement(cce));
         initMethod.setCode(code);
-        enumClass.addMethod(initMethod);
+        addGeneratedMethod(enumClass, initMethod);
 
         // static init
         List<FieldNode> fields = enumClass.getFields();
