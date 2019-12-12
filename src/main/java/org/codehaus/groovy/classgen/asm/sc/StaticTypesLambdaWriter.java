@@ -72,7 +72,6 @@ import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.H_INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.ICONST_0;
-import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
@@ -83,7 +82,6 @@ import static org.objectweb.asm.Opcodes.NEW;
 public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFunctionalInterfaceWriter {
     private static final String DO_CALL = "doCall";
     private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
-    private static final String ENCLOSING_THIS = "__enclosing_this";
     private static final String LAMBDA_THIS = "__lambda_this";
     private static final String INIT = "<init>";
     private static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
@@ -137,7 +135,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
             boolean accessingInstanceMembers = isAccessingInstanceMembersOfEnclosingClass(syntheticLambdaMethodNode);
             newGroovyLambdaWrapperAndLoad(lambdaWrapperClassNode, expression, accessingInstanceMembers);
-            loadEnclosingClassInstance(accessingInstanceMembers);
         }
 
         MethodVisitor mv = controller.getMethodVisitor();
@@ -154,7 +151,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             mv.visitTypeInsn(CHECKCAST, "java/io/Serializable");
         }
 
-        operandStack.replace(redirect, 2);
+        operandStack.replace(redirect, 1);
     }
 
     private Parameter[] createDeserializeLambdaMethodParams() {
@@ -238,7 +235,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     private String createAbstractMethodDesc(ClassNode functionalInterfaceType, ClassNode lambdaClassNode) {
         List<Parameter> lambdaSharedVariableList = new LinkedList<>();
 
-        prependEnclosingThis(lambdaSharedVariableList);
         prependParameter(lambdaSharedVariableList, LAMBDA_THIS, lambdaClassNode);
 
         return BytecodeHelper.getMethodDescriptor(functionalInterfaceType.redirect(), lambdaSharedVariableList.toArray(Parameter.EMPTY_ARRAY));
@@ -312,7 +308,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         removeInitialValues(localVariableParameters);
 
         List<Parameter> methodParameterList = new LinkedList<>(Arrays.asList(parametersWithExactType));
-        prependEnclosingThis(methodParameterList);
 
         MethodNode methodNode =
                 answer.addMethod(
@@ -328,10 +323,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         methodNode.setSourcePosition(expression);
 
         return methodNode;
-    }
-
-    private Parameter prependEnclosingThis(List<Parameter> methodParameterList) {
-        return prependParameter(methodParameterList, ENCLOSING_THIS, controller.getClassNode().getPlainNodeReference());
     }
 
     private Parameter[] createParametersWithExactType(LambdaExpression expression) {
@@ -390,7 +381,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                     @Override
                     public void visit(MethodVisitor mv) {
                         callGetCapturedArg(mv, ICONST_0, lambdaWrapperClassNode);
-                        callGetCapturedArg(mv, ICONST_1, classNode);
                     }
 
                     private void callGetCapturedArg(MethodVisitor mv, int capturedArgIndex, ClassNode resultType) {
