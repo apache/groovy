@@ -26,6 +26,7 @@
 package groovy.lang;
 
 import groovy.util.CharsetToolkit;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -115,7 +116,7 @@ public class GroovyClassLoader extends URLClassLoader {
                         URL ret = getSourceFile(filename, extension);
                         if (ret != null)
                             return ret;
-                    } catch (Throwable t) { //
+                    } catch (Throwable t) {
                     }
                 }
                 return null;
@@ -263,8 +264,11 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(String text) throws CompilationFailedException {
-        return parseClass(text, "script" + System.currentTimeMillis() +
-                Math.abs((long) text.hashCode()) + ".groovy");
+        try {
+            return parseClass(text, "Script_" + EncodingGroovyMethods.md5(text) + ".groovy");
+        } catch (NoSuchAlgorithmException e) {
+            throw new GroovyBugError("Failed to generate md5", e); // should never happen
+        }
     }
 
     public synchronized String generateScriptName() {
