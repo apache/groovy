@@ -95,7 +95,7 @@ public class StaticTypesWriterController extends DelegatingController {
     private void updateStaticCompileFlag(final MethodNode mn) {
         ClassNode classNode = getClassNode();
         AnnotatedNode node = mn;
-        boolean implementsGeneratedClosureOrGeneratedLambdaInterface = classNode.implementsAnyInterfaces(ClassHelper.GENERATED_CLOSURE_Type, ClassHelper.GENERATED_LAMBDA_TYPE);
+        boolean implementsGeneratedClosureOrGeneratedLambdaInterface = ClassHelper.isGeneratedFunction(classNode);
         if (implementsGeneratedClosureOrGeneratedLambdaInterface) {
             node = classNode.getOuterClass();
         }
