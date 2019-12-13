@@ -100,7 +100,7 @@ public class InvocationWriter {
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, boolean safe, final boolean spreadSafe, boolean implicitThis) {
         ClassNode sender = controller.getClassNode();
         if (AsmClassGenerator.isSuperExpression(receiver) || (AsmClassGenerator.isThisExpression(receiver) && !implicitThis)) {
-            while (sender.isDerivedFrom(ClassHelper.CLOSURE_TYPE) && ClassHelper.isGeneratedFunction(sender)) {
+            while (ClassHelper.isGeneratedFunction(sender)) {
                 sender = sender.getOuterClass();
             }
             if (AsmClassGenerator.isSuperExpression(receiver)) {
