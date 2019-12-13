@@ -157,6 +157,8 @@ public class GenericsUtils {
         GenericsType[] redirectGenericsTypes = node.redirect().getGenericsTypes();
         if (redirectGenericsTypes==null) redirectGenericsTypes = parameterized;
         if (parameterized.length != redirectGenericsTypes.length) return;
+
+        List<GenericsType> valueList = new ArrayList<GenericsType>();
         for (int i = 0; i < redirectGenericsTypes.length; i++) {
             GenericsType redirectType = redirectGenericsTypes[i];
             if (redirectType.isPlaceholder()) {
@@ -164,21 +166,25 @@ public class GenericsUtils {
                 if (!map.containsKey(name)) {
                     GenericsType value = parameterized[i];
                     map.put(name, value);
-                    if (value.isWildcard()) {
-                        ClassNode lowerBound = value.getLowerBound();
-                        if (lowerBound!=null) {
-                            extractPlaceholders(lowerBound, map);
-                        }
-                        ClassNode[] upperBounds = value.getUpperBounds();
-                        if (upperBounds!=null) {
-                            for (ClassNode upperBound : upperBounds) {
-                                extractPlaceholders(upperBound, map);
-                            }
-                        }
-                    } else if (!value.isPlaceholder()) {
-                        extractPlaceholders(value.getType(), map);
+                    valueList.add(value);
+                }
+            }
+        }
+
+        for (GenericsType value : valueList) {
+            if (value.isWildcard()) {
+                ClassNode lowerBound = value.getLowerBound();
+                if (lowerBound != null) {
+                    extractPlaceholders(lowerBound, map);
+                }
+                ClassNode[] upperBounds = value.getUpperBounds();
+                if (upperBounds != null) {
+                    for (ClassNode upperBound : upperBounds) {
+                        extractPlaceholders(upperBound, map);
                     }
                 }
+            } else if (!value.isPlaceholder()) {
+                extractPlaceholders(value.getType(), map);
             }
         }
     }
