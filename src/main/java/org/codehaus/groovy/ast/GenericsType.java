@@ -276,9 +276,8 @@ public class GenericsType extends ASTNode {
          */
         public boolean matches(final ClassNode classNode) {
             GenericsType[] genericsTypes = classNode.getGenericsTypes();
-            // diamond always matches
             if (genericsTypes != null && genericsTypes.length == 0) {
-                return true;
+                return true; // diamond always matches
             }
             if (classNode.isGenericsPlaceHolder()) {
                 // if the classnode we compare to is a generics placeholder (like <E>) then we
@@ -288,42 +287,46 @@ public class GenericsType extends ASTNode {
                 }
                 if (isWildcard()) {
                     if (getLowerBound() != null) {
-                        return genericsTypes[0].getName().equals(getLowerBound().getUnresolvedName());
+                        ClassNode lowerBound = getLowerBound();
+                        return genericsTypes[0].name.equals(lowerBound.getUnresolvedName());
                     }
                     if (getUpperBounds() != null) {
                         for (ClassNode upperBound : getUpperBounds()) {
-                            String name = upperBound.getGenericsTypes()[0].getName();
-                            if (genericsTypes[0].getName().equals(name)) {
+                            if (genericsTypes[0].name.equals(upperBound.getUnresolvedName())) {
                                 return true;
                             }
                         }
                         return false;
                     }
                 }
-                return genericsTypes[0].getName().equals(getName());
+                return genericsTypes[0].name.equals(name);
             }
             if (isWildcard() || isPlaceholder()) {
                 ClassNode lowerBound = getLowerBound();
                 ClassNode[] upperBounds = getUpperBounds();
                 // if the current generics spec is a wildcard spec or a placeholder spec
-                // then we must check upper and lower bounds
+                // then we must check lower and upper bounds
+                if (lowerBound != null) {
+                    // if a lower bound is declared, then we must perform the same checks that for an upper bound
+                    // but with reversed arguments
+                    if (!implementsInterfaceOrIsSubclassOf(lowerBound, classNode)) {
+                        return false;
+                    }
+                    return checkGenerics(classNode);
+                }
                 if (upperBounds != null) {
                     // check that the provided classnode is a subclass of all provided upper bounds
-                    boolean upIsOk = true;
-                    for (int i = 0, n = upperBounds.length; i < n && upIsOk; i += 1) {
-                        upIsOk = implementsInterfaceOrIsSubclassOf(classNode, upperBounds[i]);
+                    for (ClassNode upperBound : upperBounds) {
+                        if (!implementsInterfaceOrIsSubclassOf(classNode, upperBound)) {
+                            return false;
+                        }
                     }
                     // if the provided classnode is a subclass of the upper bound
                     // then check that the generic types supplied by the class node are compatible with
                     // this generics specification
                     // for example, we could have the spec saying List<String> but provided classnode
                     // saying List<Integer>
-                    return (upIsOk && checkGenerics(classNode));
-                }
-                if (lowerBound != null) {
-                    // if a lower bound is declared, then we must perform the same checks that for an upper bound
-                    // but with reversed arguments
-                    return (implementsInterfaceOrIsSubclassOf(lowerBound, classNode) && checkGenerics(classNode));
+                    return checkGenerics(classNode);
                 }
                 // If there are no bounds, the generic type is basically Object, and everything is compatible.
                 return true;
@@ -344,16 +347,16 @@ public class GenericsType extends ASTNode {
         private boolean checkGenerics(final ClassNode classNode) {
             ClassNode lowerBound = getLowerBound();
             ClassNode[] upperBounds = getUpperBounds();
+            if (lowerBound != null) {
+                if (!lowerBound.redirect().isUsingGenerics()) {
+                    return compareGenericsWithBound(classNode, lowerBound);
+                }
+            }
             if (upperBounds != null) {
                 for (ClassNode upperBound : upperBounds) {
                     if (!compareGenericsWithBound(classNode, upperBound)) {
                         return false;
                     }
-                }
-            }
-            if (lowerBound != null) {
-                if (!lowerBound.redirect().isUsingGenerics()) {
-                    return compareGenericsWithBound(classNode, lowerBound);
                 }
             }
             return true;
@@ -419,8 +422,8 @@ public class GenericsType extends ASTNode {
                 return true;
             }
             GenericsType[] redirectBoundGenericTypes = bound.redirect().getGenericsTypes();
-            Map<GenericsTypeName, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
             Map<GenericsTypeName, GenericsType> boundPlaceHolders = GenericsUtils.extractPlaceholders(bound);
+            Map<GenericsTypeName, GenericsType> classNodePlaceholders = GenericsUtils.extractPlaceholders(classNode);
             boolean match = true;
             for (int i = 0; redirectBoundGenericTypes != null && i < redirectBoundGenericTypes.length && match; i += 1) {
                 GenericsType redirectBoundType = redirectBoundGenericTypes[i];
