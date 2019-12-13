@@ -284,7 +284,6 @@ public class WriterController {
 
     public boolean isInClosure() {
         return classNode.getOuterClass() != null
-                && classNode.getSuperClass().equals(ClassHelper.CLOSURE_TYPE)
                 && ClassHelper.isGeneratedFunction(classNode);
     }
 
