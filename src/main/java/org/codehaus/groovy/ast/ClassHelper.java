@@ -68,6 +68,7 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -405,6 +406,17 @@ public class ClassHelper {
             if (cachedType == type) return true;
         }
         return false;
+    }
+
+    /**
+     * Check if the type is a generated function, i.e. closure/lambda
+     * @param type the type to check
+     * @return the check result
+     * @since 3.0.0
+     */
+    public static boolean isGeneratedFunction(ClassNode type) {
+        Objects.requireNonNull(type, "type should not be null");
+        return type.implementsAnyInterfaces(GENERATED_CLOSURE_Type, GENERATED_LAMBDA_TYPE);
     }
 
     static class ClassHelperCache {
