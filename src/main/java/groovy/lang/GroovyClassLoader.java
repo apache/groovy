@@ -288,28 +288,6 @@ public class GroovyClassLoader extends URLClassLoader {
         return parseClass(gcs);
     }
 
-    /**
-     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
-     * Use {@link #parseClass(Reader, String) parseClass} instead
-     */
-    @Deprecated
-    public Class parseClass(final InputStream in, final String fileName) throws CompilationFailedException {
-        // For generic input streams, provide a catch-all codebase of GroovyScript
-        // Security for these classes can be administered via policy grants with
-        // a codebase of file:groovy.script
-        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> {
-            try {
-                String scriptText = config.getSourceEncoding() != null ?
-                        IOGroovyMethods.getText(in, config.getSourceEncoding()) :
-                        IOGroovyMethods.getText(in);
-                return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
-            } catch (IOException e) {
-                throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
-            }
-        });
-        return parseClass(gcs);
-    }
-
     public Class parseClass(GroovyCodeSource codeSource) throws CompilationFailedException {
         return parseClass(codeSource, codeSource.isCachable());
     }
@@ -569,12 +547,6 @@ public class GroovyClassLoader extends URLClassLoader {
         @Override
         public Class parseClass(Reader reader, String fileName) throws CompilationFailedException {
             return delegate.parseClass(reader, fileName);
-        }
-
-        @Override
-        @Deprecated
-        public Class parseClass(InputStream in, String fileName) throws CompilationFailedException {
-            return delegate.parseClass(in, fileName);
         }
 
         @Override
