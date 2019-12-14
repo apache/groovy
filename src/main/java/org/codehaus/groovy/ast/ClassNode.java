@@ -1229,7 +1229,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             if (classNode.equals(this)) {
                 ret.append(" super ").append(classNode.getName());
             } else {
-                ret.append(" super ").append(classNode);
+                ret.append(" super ").append(classNode.toString(false));
             }
         }
         return ret.toString();
