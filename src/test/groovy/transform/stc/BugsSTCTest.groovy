@@ -151,13 +151,24 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
     void testGroovy7477NullGenericsType() {
         assertScript '''
-        class L<E> extends ArrayList<E> {
-            boolean removeIf(Comparator<? super E> filter) { }
-        }
-        L<String> items = ['foo', 'bar'] as L<String>
-        items.removeIf({a, b -> 1} as Comparator<?>)
-        assert items
+            class L<E> extends ArrayList<E> {
+                boolean removeIf(Comparator<? super E> filter) {
+                }
+            }
+            def items = ['foo', 'bar'] as L<String>
+            items.removeIf({a, b -> 1} as Comparator<String>)
+            assert items
         '''
+
+        shouldFailWithMessages '''
+            class L<E> extends ArrayList<E> {
+                boolean removeIf(Comparator<? super E> filter) {
+                }
+            }
+            L<String> items = ['foo', 'bar'] as L<String>
+            items.removeIf({a, b -> 1} as Comparator<?>)
+            assert items
+        ''', 'Cannot call L <String>#removeIf(java.util.Comparator <? super java.lang.String>) with arguments [java.util.Comparator <?>]'
     }
 
     void testGroovy5482ListsAndFlowTyping() {
