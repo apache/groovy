@@ -285,20 +285,15 @@ public class GenericsType extends ASTNode {
     }
 
     /**
-     * Iterates over each generics bound of this generics specification, and checks
-     * that the generics defined by the bound are compatible with the generics specified
-     * by the type.
-     * @param classNode the classnode the bounds should be compared with
-     * @return true if generics from bounds are compatible
+     * Compares the bounds of this generics specification against the given type
+     * for compatibility.  Ex: String would satisfy &lt;? extends CharSequence>.
      */
     private boolean checkGenerics(final ClassNode classNode) {
         ClassNode lowerBound = getLowerBound();
-        ClassNode[] upperBounds = getUpperBounds();
         if (lowerBound != null) {
-            if (!lowerBound.redirect().isUsingGenerics()) {
-                return compareGenericsWithBound(classNode, lowerBound);
-            }
+            return compareGenericsWithBound(classNode, lowerBound);
         }
+        ClassNode[] upperBounds = getUpperBounds();
         if (upperBounds != null) {
             for (ClassNode upperBound : upperBounds) {
                 if (!compareGenericsWithBound(classNode, upperBound)) {
