@@ -415,8 +415,17 @@ public class GenericsType extends ASTNode {
                                         // check for recursive generic typedef, like in <T extends Comparable<? super T>>
                                         gt = classNodePlaceholders.getOrDefault(new GenericsTypeName(gt.getName()), gt);
                                     }
-                                    match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
-
+                                    // GROOVY-6095, GROOVY-9338
+                                    if (classNodeType.isWildcard()) {
+                                        if (classNodeType.getLowerBound() != null
+                                                || classNodeType.getUpperBounds() != null) {
+                                            match = classNodeType.checkGenerics(gt.getType());
+                                        } else {
+                                            match = false; // "?" (from Comparable<?>) does not satisfy anything
+                                        }
+                                    } else {
+                                        match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
+                                    }
                                 } else if (redirectBoundType.getUpperBounds() != null) {
                                     // ex: class Comparable<Integer> <=> bound Comparable<? extends T & I>
                                     for (ClassNode upperBound : redirectBoundType.getUpperBounds()) {
@@ -425,9 +434,18 @@ public class GenericsType extends ASTNode {
                                             // check for recursive generic typedef, like in <T extends Comparable<? super T>>
                                             gt = classNodePlaceholders.getOrDefault(new GenericsTypeName(gt.getName()), gt);
                                         }
-                                        match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())
-                                                || classNodeType.isCompatibleWith(gt.getType()); // workaround for GROOVY-6095
-
+                                        // GROOVY-6095, GROOVY-9338
+                                        if (classNodeType.isWildcard()) {
+                                            if (classNodeType.getLowerBound() != null) {
+                                                match = gt.checkGenerics(classNodeType.getLowerBound());
+                                            } else if (classNodeType.getUpperBounds() != null) {
+                                                match = gt.checkGenerics(classNodeType.getUpperBounds()[0]);
+                                            } else {
+                                                match = false; // "?" (from Comparable<?>) does not satisfy anything
+                                            }
+                                        } else {
+                                            match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
+                                        }
                                         if (!match) break;
                                     }
                                 }
