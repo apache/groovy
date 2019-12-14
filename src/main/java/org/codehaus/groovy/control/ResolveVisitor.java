@@ -1613,15 +1613,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             } else {
                 if (!isWild) {
                     if (toDealWithGenerics) {
-                        GenericsType originalGt = genericParameterNames.get(gtn);
-                        genericParameterNames.put(gtn, type);
                         type.setPlaceholder(true);
-
-                        if (null == originalGt) {
-                            classNode.setRedirect(ClassHelper.OBJECT_TYPE);
-                        } else {
-                            classNode.setRedirect(originalGt.getType());
-                        }
+                        GenericsType last = genericParameterNames.put(gtn, type);
+                        classNode.setRedirect(last != null ? last.getType().redirect() : ClassHelper.OBJECT_TYPE);
                     }
                 }
             }

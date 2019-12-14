@@ -428,7 +428,15 @@ public class GenericsType extends ASTNode {
                                                     gt = classNodePlaceholders.get(gtn);
                                                 }
                                             }
-                                            match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
+                                            if (classNodeType.isWildcard()) {
+                                                if (classNodeType.getLowerBound() != null || classNodeType.getUpperBounds() != null) {
+                                                    match = classNodeType.new GenericsTypeMatcher().checkGenerics(gt.getType());
+                                                } else {
+                                                    match = false; // "?" (from Comparable<?>) does not satisfy anything
+                                                }
+                                            } else {
+                                                match = implementsInterfaceOrIsSubclassOf(gt.getType(), classNodeType.getType());
+                                            }
                                         }
                                         if (match && redirectBoundType.upperBounds!=null) {
                                             for (ClassNode upperBound : redirectBoundType.upperBounds) {
@@ -441,8 +449,18 @@ public class GenericsType extends ASTNode {
                                                         gt = classNodePlaceholders.get(gtn);
                                                     }
                                                 }
-                                                match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType())
-                                                         || classNodeType.isCompatibleWith(gt.getType()); // workaround for GROOVY-6095
+                                                // GROOVY-6095, GROOVY-9338
+                                                if (classNodeType.isWildcard()) {
+                                                    if (classNodeType.getLowerBound() != null) {
+                                                        match = gt.new GenericsTypeMatcher().checkGenerics(classNodeType.getLowerBound());
+                                                    } else if (classNodeType.getUpperBounds() != null) {
+                                                        match = gt.new GenericsTypeMatcher().checkGenerics(classNodeType.getUpperBounds()[0]);
+                                                    } else {
+                                                        match = false; // "?" (from Comparable<?>) does not satisfy anything
+                                                    }
+                                                } else {
+                                                    match = implementsInterfaceOrIsSubclassOf(classNodeType.getType(), gt.getType());
+                                                }
                                                 if (!match) break;
                                             }
                                         }
