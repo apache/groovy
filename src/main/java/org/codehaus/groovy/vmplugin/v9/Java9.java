@@ -222,7 +222,7 @@ public class Java9 extends Java8 {
             classList.add(0, theClass);
 
             for (Class<?> sc : classList) {
-                Optional<CachedMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, sc);
+                Optional<CachedMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, sc, true);
                 if (optionalMetaMethod.isPresent()) {
                     return optionalMetaMethod.get();
                 }
@@ -235,7 +235,7 @@ public class Java9 extends Java8 {
             // GROOVY-9081 Sub-class derives the protected members from public class, "Invoke the members on the sub class instances"
             // e.g. StringBuilder sb = new StringBuilder(); sb.setLength(0);
             // `setLength` is the method of `AbstractStringBuilder`, which is `package-private`
-            Optional<CachedMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, theClass);
+            Optional<CachedMethod> optionalMetaMethod = getAccessibleMetaMethod(metaMethod, params, caller, theClass, false);
             if (optionalMetaMethod.isPresent()) {
                 return optionalMetaMethod.get();
             }
@@ -257,8 +257,8 @@ public class Java9 extends Java8 {
         return metaMethod;
     }
 
-    private Optional<CachedMethod> getAccessibleMetaMethod(CachedMethod metaMethod, Class<?>[] params, Class<?> caller, Class<?> sc) {
-        List<CachedMethod> metaMethodList = getMetaMethods(metaMethod, params, sc);
+    private Optional<CachedMethod> getAccessibleMetaMethod(CachedMethod metaMethod, Class<?>[] params, Class<?> caller, Class<?> sc, boolean declared) {
+        List<CachedMethod> metaMethodList = getMetaMethods(metaMethod, params, sc, declared);
         for (CachedMethod mm : metaMethodList) {
             if (checkAccessible(caller, mm.getDeclaringClass().getTheClass(), mm.getModifiers(), false)) {
                 return Optional.of(mm);
@@ -267,9 +267,12 @@ public class Java9 extends Java8 {
         return Optional.empty();
     }
 
-    private static List<CachedMethod> getMetaMethods(CachedMethod metaMethod, Class<?>[] params, Class<?> sc) {
-        List<Method> optionalMethod = ReflectionUtils.getMethods(sc, metaMethod.getName(), params);
-        return optionalMethod.stream().map(CachedMethod::new).collect(Collectors.toList());
+    private static List<CachedMethod> getMetaMethods(CachedMethod metaMethod, Class<?>[] params, Class<?> sc, boolean declared) {
+        String metaMethodName = metaMethod.getName();
+        List<Method> optionalMethodList = declared
+                                            ? ReflectionUtils.getDeclaredMethods(sc, metaMethodName, params)
+                                            : ReflectionUtils.getMethods(sc, metaMethodName, params);
+        return optionalMethodList.stream().map(CachedMethod::new).collect(Collectors.toList());
     }
 
     @Override
