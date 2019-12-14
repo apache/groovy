@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * This class contains utility methods to determine which class called the
@@ -128,11 +129,21 @@ public class ReflectionUtils {
         }
     }
 
-    public static List<Method> getMethods(Class type, String name, Class<?>... parameterTypes) {
+    private static final Function<Class<?>, Method[]> GET_DECLARED_METHODS = Class::getDeclaredMethods;
+    public static List<Method> getDeclaredMethods(Class<?> type, String name, Class<?>... parameterTypes) {
+        return doGetMethods(type, name, parameterTypes, GET_DECLARED_METHODS);
+    }
+
+    private static final Function<Class<?>, Method[]> GET_METHODS = Class::getMethods;
+    public static List<Method> getMethods(Class<?> type, String name, Class<?>... parameterTypes) {
+        return doGetMethods(type, name, parameterTypes, GET_METHODS);
+    }
+
+    private static List<Method> doGetMethods(Class<?> type, String name, Class<?>[] parameterTypes, Function<? super Class<?>, ? extends Method[]> f) {
         List<Method> methodList = new LinkedList<>();
 
         out:
-        for (Method m : type.getMethods()) {
+        for (Method m : f.apply(type)) {
             if (!m.getName().equals(name)) {
                 continue;
             }
