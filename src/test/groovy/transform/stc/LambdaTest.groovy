@@ -165,18 +165,31 @@ final class LambdaTest {
     @Test
     void testConsumer() {
         assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
-                    [1, 2, 3].stream().forEach(e -> { System.out.println(e + 1); });
+                static void p() {
+                    [1, 2, 3].stream().forEach(e -> { System.out.println(e + 1); })
+                }
+            }
+        '''
+    }
+
+    @Test @NotYetImplemented // GROOVY-9340
+    void testConsumerWithSelfType() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static main(args) {
+                    p()
+                }
+
+                static void p() {
+                    java.util.function.Consumer<Test1> c = t -> null
+                    c.accept(this.newInstance())
                 }
             }
         '''
@@ -630,103 +643,106 @@ final class LambdaTest {
     }
 
     @Test
-    void testConsumerCall() {
+    void testConsumer1() {
         assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Consumer
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
-                }
-
-                public static void p() {
-                    int r = 1
-                    Consumer<Integer> c = (Integer e) -> { r += e }
-                    c(2)
-                    assert 3 == r
-                }
+            @groovy.transform.CompileStatic
+            void m() {
+                int a = 1
+                java.util.function.Consumer<Integer> c = i -> { a += i }
+                c.accept(2)
+                assert a == 3
             }
+            m()
         '''
     }
 
     @Test
-    void testConsumerCallWithoutExplicitTypeDef() {
+    void testConsumer2() {
         assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Consumer
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
-                }
-
-                public static void p() {
-                    int r = 1
-                    Consumer<Integer> c = e -> { r += e }
-                    c(2)
-                    assert 3 == r
-                }
+            @groovy.transform.CompileStatic
+            void m() {
+                int a = 1
+                java.util.function.Consumer<Integer> c = (i) -> { a += i }
+                c.accept(2)
+                assert a == 3
             }
+            m()
         '''
     }
 
     @Test
-    void testConsumerCall2() {
+    void testConsumer3() {
         assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Consumer
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    new Test1().p();
-                }
-
-                public void p() {
-                    int r = 1
-                    Consumer<Integer> c = (Integer e) -> { r += e }
-                    c(2)
-                    assert 3 == r
-                }
+            @groovy.transform.CompileStatic
+            void m() {
+                int a = 1
+                java.util.function.Consumer<Integer> c = (Integer i) -> { a += i }
+                c.accept(2)
+                assert a == 3
             }
+            m()
         '''
     }
 
     @Test
-    void testConsumerCall3() {
+    void testConsumer4() {
         assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.stream.Collectors
-            import java.util.stream.Stream
-            import java.util.function.Consumer
-
-            @CompileStatic
-            public class Test1 {
-                public static void main(String[] args) {
-                    p();
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static main(args) {
+                    p()
                 }
 
-                public static void p() {
-                    int r = 1
-                    Consumer<Integer> c = (Integer e) -> { r += e }
+                static void p() {
+                    int a = 1
+                    java.util.function.Consumer<Integer> c = e -> { a += e }
                     c.accept(2)
-                    assert 3 == r
+                    assert a == 3
                 }
             }
         '''
     }
 
     @Test
-    void testSamCall() {
+    void testConsumer5() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static main(args) {
+                    new Test1().p()
+                }
+
+                void p() {
+                    int a = 1
+                    java.util.function.Consumer<Integer> c = (Integer e) -> { a += e }
+                    c.accept(2)
+                    assert a == 3
+                }
+            }
+        '''
+    }
+
+    @Test
+    void testConsumer6() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static main(args) {
+                    p()
+                }
+
+                static void p() {
+                    int a = 1
+                    java.util.function.Consumer<Integer> c = (Integer e) -> { a += e }
+                    c(2)
+                    assert a == 3
+                }
+            }
+        '''
+    }
+
+    @Test
+    void testFunctionalInterface1() {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
@@ -752,7 +768,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testSamCallWithoutExplicitTypeDef() {
+    void testFunctionalInterface2() {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
@@ -778,7 +794,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testSamCall2() {
+    void testFunctionalInterface3() {
         assertScript '''
             import groovy.transform.CompileStatic
             import java.util.stream.Collectors
@@ -1050,18 +1066,15 @@ final class LambdaTest {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test @NotYetImplemented // GROOVY-9342
     void testStaticInitializeBlocks2() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Test1 {
-                static list
                 static int acc = 1
-                static { list = [1, 2, 3].stream().map(e -> acc += e).toList() }
+                static { [1, 2, 3].forEach(e -> acc += e) }
             }
-
-            assert [2, 4, 7] == Test1.list
-            assert 7 == Test1.acc
+            assert Test1.acc == 7
         '''
     }
 
@@ -1148,13 +1161,12 @@ final class LambdaTest {
             @groovy.transform.CompileStatic
             class Test1 {
                 def p() {
-                        def out = new ByteArrayOutputStream()
-                        out.withObjectOutputStream {
-                            SerializableFunction<Integer, String> f = ((Integer e) -> 'a' + e)
-                            it.writeObject(f)
-                        }
-
-                        return out.toByteArray()
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream {
+                        SerializableFunction<Integer, String> f = ((Integer e) -> 'a' + e)
+                        it.writeObject(f)
+                    }
+                    return out.toByteArray()
                 }
             }
 
@@ -1170,13 +1182,12 @@ final class LambdaTest {
             @groovy.transform.CompileStatic
             class Test1 {
                 def p() {
-                        def out = new ByteArrayOutputStream()
-                        out.withObjectOutputStream {
-                            Function<Integer, String> f = ((Integer e) -> 'a' + e)
-                            it.writeObject(f)
-                        }
-
-                        return out.toByteArray()
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream {
+                        Function<Integer, String> f = ((Integer e) -> 'a' + e)
+                        it.writeObject(f)
+                    }
+                    return out.toByteArray()
                 }
             }
 
@@ -1195,13 +1206,12 @@ final class LambdaTest {
             @groovy.transform.CompileStatic
             class Test1 {
                 byte[] p() {
-                        def out = new ByteArrayOutputStream()
-                        out.withObjectOutputStream {
-                            SerializableFunction<Integer, String> f = ((Integer e) -> 'a' + e)
-                            it.writeObject(f)
-                        }
-
-                        return out.toByteArray()
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream {
+                        SerializableFunction<Integer, String> f = ((Integer e) -> 'a' + e)
+                        it.writeObject(f)
+                    }
+                    return out.toByteArray()
                 }
 
                 static void main(String[] args) {
