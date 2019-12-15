@@ -1066,70 +1066,80 @@ final class LambdaTest {
     }
 
     @Test
-    void testAccessingThis() {
+    void testAccessingThis1() {
         assertScript '''
-            import groovy.transform.CompileStatic
-            import java.util.function.Predicate
+            @groovy.transform.CompileStatic
+            class ThisTest {
+                private final ThisTest that = this
 
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    new Test4().p();
-                }
-
-                public Test4 thisVar = this;
-
-                public void p() {
-                    Predicate<Test4> predicate = (Test4 s) -> { this === s }
-
-                    assert predicate.test(thisVar)
+                void m() {
+                    java.util.function.Predicate<ThisTest> p = (ThisTest t) -> {
+                        assert this === t
+                    }
+                    p.test(that)
+                    p.test(this)
                 }
             }
+            new ThisTest().m()
         '''
     }
 
-    @Test
+    @Test @NotYetImplemented
     void testAccessingThis2() {
         assertScript '''
-            import groovy.transform.CompileStatic
+            @groovy.transform.CompileStatic
+            class ThisTest {
+                private final ThisTest that = this
 
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    new Test4().p();
-                }
-
-                public String a = "a";
-
-                public void p() {
-                    assert ['a1', 'a2'] == [1, 2].stream().map(e -> this.a + e).toList();
+                void m() {
+                    java.util.function.Predicate<ThisTest> p1 = (ThisTest t1) -> {
+                        java.util.function.Predicate<ThisTest> p2 = (ThisTest t2) -> {
+                            assert this === t1 && this === t2
+                        }
+                        p2.test(t1)
+                    }
+                    p1.test(that)
+                    p1.test(this)
                 }
             }
+            new ThisTest().m()
         '''
     }
 
     @Test
     void testAccessingThis3() {
         assertScript '''
-            import groovy.transform.CompileStatic
+            @groovy.transform.CompileStatic
+            class ThisTest {
+                String p = 'a'
 
-            @CompileStatic
-            public class Test4 {
-                public static void main(String[] args) {
-                    new Test4().p();
-                }
-
-                public String a() { "a" }
-
-                public void p() {
-                    assert ['a1', 'a2'] == [1, 2].stream().map(e -> this.a() + e).toList();
+                void m() {
+                    def list = [1, 2].stream().map(e -> this.p + e).toList()
+                    assert list == ['a1', 'a2']
                 }
             }
+            new ThisTest().m()
         '''
     }
 
     @Test
-    void testSerialize() {
+    void testAccessingThis4() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class ThisTest {
+                String getP() { 'a' }
+
+                void m() {
+                    def list = [1, 2].stream().map(e -> this.p + e).toList()
+                    assert list == ['a1', 'a2']
+                }
+            }
+            new ThisTest().m()
+        '''
+    }
+
+    @Test
+    void testSerialize1() {
         assertScript '''
             import java.util.function.Function
 
@@ -1153,7 +1163,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testSerializeFailed() {
+    void testSerialize2() {
         def err = shouldFail NotSerializableException, '''
             import java.util.function.Function
 
@@ -1177,7 +1187,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserialize() {
+    void testDeserialize1() {
         assertScript '''
             package tests.lambda
             import java.util.function.Function
@@ -1207,7 +1217,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserializeLambdaInInitializeBlock() {
+    void testDeserialize1_InitializeBlock() {
         assertScript '''
             package tests.lambda
             import java.util.function.Function
@@ -1244,7 +1254,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserializeLambdaInInitializeBlockShouldFail() {
+    void testDeserialize1_InitializeBlockShouldFail() {
         def err = shouldFail NotSerializableException, '''
             package tests.lambda
             import java.util.function.Function
@@ -1401,7 +1411,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserialize6InstanceFields() {
+    void testDeserialize6_InstanceFields() {
         assertScript '''
             package tests.lambda
             import java.util.function.Function
@@ -1434,7 +1444,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserialize6InstanceFieldsShouldFail() {
+    void testDeserialize6_InstanceFieldsShouldFail() {
         def err = shouldFail NotSerializableException, '''
             package tests.lambda
             import java.util.function.Function
@@ -1468,7 +1478,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserialize6InstanceMethods() {
+    void testDeserialize6_InstanceMethods() {
         assertScript '''
             package tests.lambda
             import java.util.function.Function
@@ -1501,7 +1511,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserialize6InstanceMethodsShouldFail() {
+    void testDeserialize6_InstanceMethodsShouldFail() {
         def err = shouldFail NotSerializableException, '''
             package tests.lambda
             import java.util.function.Function
@@ -1535,7 +1545,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserialize7StaticFields() {
+    void testDeserialize7_StaticFields() {
         assertScript '''
             package tests.lambda
             import java.util.function.Function
@@ -1566,7 +1576,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserialize7StaticMethods() {
+    void testDeserialize7_StaticMethods() {
         assertScript '''
             package tests.lambda
             import java.util.function.Function
@@ -1597,7 +1607,7 @@ final class LambdaTest {
     }
 
     @Test
-    void testDeserializeNestedLambda() {
+    void testDeserializeNestedLambda1() {
         assertScript '''
             import java.util.function.Function
 
