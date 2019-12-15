@@ -1202,12 +1202,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 }
                 if (i + 1 < genericsType.getUpperBounds().length) ret.append(" & ");
             }
-        } else if (genericsType.getLowerBound() !=null) {
+        } else if (genericsType.getLowerBound() != null) {
             ClassNode classNode = genericsType.getLowerBound();
             if (classNode.equals(this)) {
                 ret.append(" super ").append(classNode.getName());
             } else {
-                ret.append(" super ").append(classNode);
+                ret.append(" super ").append(classNode.toString(false));
             }
         }
         return ret.toString();
