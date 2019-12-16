@@ -53,23 +53,17 @@ public class JavaStubCompilationUnit extends CompilationUnit {
         String encoding = configuration.getSourceEncoding();
         stubGenerator = new JavaStubGenerator(destDir, false, useJava5, encoding);
 
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
-                VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
-                scopeVisitor.visitClass(node);
-                new JavaAwareResolveVisitor(JavaStubCompilationUnit.this).startResolving(node, source);
-            }
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            new VariableScopeVisitor(source).visitClass(classNode);
+            new JavaAwareResolveVisitor(this).startResolving(classNode, source);
         }, Phases.CONVERSION);
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode node) throws CompilationFailedException {
-                try {
-                    stubGenerator.generateClass(node);
-                    stubCount++;
-                } catch (FileNotFoundException e) {
-                    source.addException(e);
-                }
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            try {
+                stubGenerator.generateClass(classNode);
+                stubCount += 1;
+            } catch (FileNotFoundException e) {
+                source.addException(e);
             }
         }, Phases.CONVERSION);
     }

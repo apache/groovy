@@ -72,8 +72,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
@@ -123,8 +123,6 @@ public class CompilationUnit extends ProcessingUnit {
 
     protected ClassNodeResolver classNodeResolver = new ClassNodeResolver();
     protected ResolveVisitor resolveVisitor = new ResolveVisitor(this);
-    protected OptimizerVisitor optimizer = new OptimizerVisitor(this);
-    protected Verifier verifier = new Verifier();
 
     /** The AST transformations state data. */
     protected ASTTransformationsContext astTransformationsContext;
@@ -164,9 +162,10 @@ public class CompilationUnit extends ProcessingUnit {
      * Initializes the CompilationUnit with a CodeSource for controlling
      * security stuff, a class loader for loading classes, and a class
      * loader for loading AST transformations.
-     * <b>Note</b> The transform loader must be
-     * able to load compiler classes. That means CompilationUnit.class.classLoader
-     * must be at last a parent to transformLoader. The other loader has no such constraint.
+     * <p>
+     * <b>Note</b>: The transform loader must be able to load compiler classes.
+     * That means {@link #classLoader} must be at last a parent to {@code transformLoader}.
+     * The other loader has no such constraint.
      *
      * @param transformLoader - the loader for transforms
      * @param loader          - loader used to resolve classes against during compilation
@@ -178,188 +177,165 @@ public class CompilationUnit extends ProcessingUnit {
         super(configuration, loader, null);
 
         this.astTransformationsContext = new ASTTransformationsContext(this, transformLoader);
-        this.ast = new CompileUnit(this.classLoader, codeSource, this.configuration);
+        this.ast = new CompileUnit(getClassLoader(), codeSource, getConfiguration());
 
         addPhaseOperations();
         applyCompilationCustomizers();
     }
 
     private void addPhaseOperations() {
-        addPhaseOperation(new SourceUnitOperation() {
-            @Override
-            public void call(final SourceUnit source) throws CompilationFailedException {
-                source.parse();
-            }
-        }, Phases.PARSING);
+        addPhaseOperation(SourceUnit::parse, Phases.PARSING);
 
-        addPhaseOperation(new SourceUnitOperation() {
-            @Override
-            public void call(final SourceUnit source) throws CompilationFailedException {
-                source.convert();
-                // add module to compile unit
-                getAST().addModule(source.getAST());
-
-                if (progressCallback != null) {
-                    progressCallback.call(source, phase);
-                }
-            }
+        addPhaseOperation(source -> {
+            source.convert();
+            // add module to compile unit
+            getAST().addModule(source.getAST());
+            Optional.ofNullable(getProgressCallback())
+                .ifPresent(callback -> callback.call(source, getPhase()));
         }, Phases.CONVERSION);
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                GroovyClassVisitor visitor = new EnumVisitor(CompilationUnit.this, source);
-                visitor.visitClass(classNode);
-            }
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            GroovyClassVisitor visitor = new EnumVisitor(this, source);
+            visitor.visitClass(classNode);
         }, Phases.CONVERSION);
 
         addPhaseOperation(resolve, Phases.SEMANTIC_ANALYSIS);
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                StaticImportVisitor visitor = new StaticImportVisitor();
-                visitor.visitClass(classNode, source);
-            }
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            GroovyClassVisitor visitor = new StaticImportVisitor(classNode, source);
+            visitor.visitClass(classNode);
         }, Phases.SEMANTIC_ANALYSIS);
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                GroovyClassVisitor visitor = new InnerClassVisitor(CompilationUnit.this, source);
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            GroovyClassVisitor visitor = new InnerClassVisitor(this, source);
+            visitor.visitClass(classNode);
+        }, Phases.SEMANTIC_ANALYSIS);
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            if (!classNode.isSynthetic()) {
+                GroovyClassVisitor visitor = new GenericsVisitor(source);
                 visitor.visitClass(classNode);
             }
         }, Phases.SEMANTIC_ANALYSIS);
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                if (!classNode.isSynthetic()) {
-                    GroovyClassVisitor visitor = new GenericsVisitor(source);
-                    visitor.visitClass(classNode);
-                }
-            }
-        }, Phases.SEMANTIC_ANALYSIS);
 
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                TraitComposer.doExtendTraits(classNode, source, CompilationUnit.this);
-            }
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            TraitComposer.doExtendTraits(classNode, source, this);
         }, Phases.CANONICALIZATION);
-        addPhaseOperation(new SourceUnitOperation() {
-            @Override
-            public void call(final SourceUnit source) throws CompilationFailedException {
-                List<ClassNode> classes = source.ast.getClasses();
-                for (ClassNode node : classes) {
-                    CompileUnit cu = node.getCompileUnit();
-                    for (Iterator<String> it = cu.iterateClassNodeToCompile(); it.hasNext(); ) {
-                        String name = it.next();
-                        StringBuilder message = new StringBuilder();
-                        message
-                                .append("Compilation incomplete: expected to find the class ")
-                                .append(name)
-                                .append(" in ")
-                                .append(source.getName());
-                        if (classes.isEmpty()) {
-                            message.append(", but the file seems not to contain any classes");
-                        } else {
-                            message.append(", but the file contains the classes: ");
-                            boolean first = true;
-                            for (ClassNode cn : classes) {
-                                if (!first) {
-                                    message.append(", ");
-                                } else {
-                                    first = false;
-                                }
-                                message.append(cn.getName());
-                            }
-                        }
 
-                        getErrorCollector().addErrorAndContinue(
-                                new SimpleMessage(message.toString(), CompilationUnit.this)
-                        );
-                        it.remove();
+        addPhaseOperation(source -> {
+            List<ClassNode> classes = source.getAST().getClasses();
+            for (ClassNode node : classes) {
+                CompileUnit cu = node.getCompileUnit();
+                for (Iterator<String> it = cu.iterateClassNodeToCompile(); it.hasNext(); ) {
+                    String name = it.next();
+                    StringBuilder message = new StringBuilder();
+                    message
+                            .append("Compilation incomplete: expected to find the class ")
+                            .append(name)
+                            .append(" in ")
+                            .append(source.getName());
+                    if (classes.isEmpty()) {
+                        message.append(", but the file seems not to contain any classes");
+                    } else {
+                        message.append(", but the file contains the classes: ");
+                        boolean first = true;
+                        for (ClassNode cn : classes) {
+                            if (first) {
+                                first = false;
+                            } else {
+                                message.append(", ");
+                            }
+                            message.append(cn.getName());
+                        }
                     }
+
+                    getErrorCollector().addErrorAndContinue(
+                            new SimpleMessage(message.toString(), this)
+                    );
+                    it.remove();
                 }
             }
         }, Phases.CANONICALIZATION);
 
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
 
-        addPhaseOperation(output);
+        addPhaseOperation(groovyClass -> {
+            String name = groovyClass.getName().replace('.', File.separatorChar) + ".class";
+            File path = new File(getConfiguration().getTargetDirectory(), name);
 
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                AnnotationCollectorTransform.ClassChanger xformer = new AnnotationCollectorTransform.ClassChanger();
-                xformer.transformClass(classNode);
+            // ensure the path is ready for the file
+            File directory = path.getParentFile();
+            if (directory != null && !directory.exists()) {
+                directory.mkdirs();
             }
+
+            // create the file and write out the data
+            try (FileOutputStream stream = new FileOutputStream(path)) {
+                byte[] bytes = groovyClass.getBytes();
+                stream.write(bytes, 0, bytes.length);
+            } catch (IOException e) {
+                getErrorCollector().addError(Message.create(e.getMessage(), this));
+            }
+        });
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            AnnotationCollectorTransform.ClassChanger xformer = new AnnotationCollectorTransform.ClassChanger();
+            xformer.transformClass(classNode);
         }, Phases.SEMANTIC_ANALYSIS);
         ASTTransformationVisitor.addPhaseOperations(this);
 
         // post-transform operations:
 
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                StaticVerifier verifier = new StaticVerifier();
-                verifier.visitClass(classNode, source);
-            }
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            StaticVerifier verifier = new StaticVerifier();
+            verifier.visitClass(classNode, source);
         }, Phases.SEMANTIC_ANALYSIS);
 
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                GroovyClassVisitor visitor = new InnerClassCompletionVisitor(CompilationUnit.this, source);
-                visitor.visitClass(classNode);
-            }
-        }, Phases.CANONICALIZATION);
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                GroovyClassVisitor visitor = new EnumCompletionVisitor(CompilationUnit.this, source);
-                visitor.visitClass(classNode);
-            }
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            GroovyClassVisitor visitor = new InnerClassCompletionVisitor(this, source);
+            visitor.visitClass(classNode);
+
+            visitor = new EnumCompletionVisitor(this, source);
+            visitor.visitClass(classNode);
         }, Phases.CANONICALIZATION);
 
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                Object callback = classNode.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK);
-                if (callback instanceof PrimaryClassNodeOperation) {
-                    ((PrimaryClassNodeOperation) callback).call(source, context, classNode);
-                    classNode.removeNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK);
-                }
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            Object callback = classNode.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK);
+            if (callback instanceof IPrimaryClassNodeOperation) {
+                ((IPrimaryClassNodeOperation) callback).call(source, context, classNode);
+                classNode.removeNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK);
             }
         }, Phases.INSTRUCTION_SELECTION);
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                // TODO: Could this be moved into org.codehaus.groovy.transform.sc.transformers.VariableExpressionTransformer?
-                new ClassCodeExpressionTransformer() {
-                    @Override
-                    protected SourceUnit getSourceUnit() {
-                        return source;
-                    }
 
-                    @Override
-                    public Expression transform(final Expression expression) {
-                        if (expression instanceof VariableExpression) {
-                            // check for "switch(enumType) { case CONST: ... }"
-                            ClassNode enumType = expression.getNodeMetaData(SWITCH_CONDITION_EXPRESSION_TYPE);
-                            if (enumType != null) {
-                                // replace "CONST" variable expression with "EnumType.CONST" property expression
-                                Expression propertyExpression = propX(classX(enumType), expression.getText());
-                                setSourcePosition(propertyExpression, expression);
-                                return propertyExpression;
-                            }
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            // TODO: Can this be moved into org.codehaus.groovy.transform.sc.transformers.VariableExpressionTransformer?
+            GroovyClassVisitor visitor = new ClassCodeExpressionTransformer() {
+                @Override
+                protected SourceUnit getSourceUnit() {
+                    return source;
+                }
+
+                @Override
+                public Expression transform(final Expression expression) {
+                    if (expression instanceof VariableExpression) {
+                        // check for "switch(enumType) { case CONST: ... }"
+                        ClassNode enumType = expression.getNodeMetaData(SWITCH_CONDITION_EXPRESSION_TYPE);
+                        if (enumType != null) {
+                            // replace "CONST" variable expression with "EnumType.CONST" property expression
+                            Expression propertyExpression = propX(classX(enumType), expression.getText());
+                            setSourcePosition(propertyExpression, expression);
+                            return propertyExpression;
                         }
-                        return expression;
                     }
-                }.visitClass(classNode);
-            }
+                    return expression;
+                }
+            };
+            visitor.visitClass(classNode);
         }, Phases.INSTRUCTION_SELECTION);
     }
 
     private void applyCompilationCustomizers() {
-        for (CompilationCustomizer customizer : configuration.getCompilationCustomizers()) {
+        for (CompilationCustomizer customizer : getConfiguration().getCompilationCustomizers()) {
             if (customizer instanceof CompilationUnitAware) {
                 ((CompilationUnitAware) customizer).setCompilationUnit(this);
             }
@@ -367,26 +343,26 @@ public class CompilationUnit extends ProcessingUnit {
         }
     }
 
-    public void addPhaseOperation(final GroovyClassOperation op) {
+    public void addPhaseOperation(final IGroovyClassOperation op) {
         phaseOperations[Phases.OUTPUT].addFirst(op);
     }
 
-    public void addPhaseOperation(final SourceUnitOperation op, final int phase) {
+    public void addPhaseOperation(final ISourceUnitOperation op, final int phase) {
         validatePhase(phase);
         phaseOperations[phase].add(op);
     }
 
-    public void addPhaseOperation(final PrimaryClassNodeOperation op, final int phase) {
+    public void addPhaseOperation(final IPrimaryClassNodeOperation op, final int phase) {
         validatePhase(phase);
         phaseOperations[phase].add(op);
     }
 
-    public void addFirstPhaseOperation(final PrimaryClassNodeOperation op, final int phase) {
+    public void addFirstPhaseOperation(final IPrimaryClassNodeOperation op, final int phase) {
         validatePhase(phase);
         phaseOperations[phase].addFirst(op);
     }
 
-    public void addNewPhaseOperation(final SourceUnitOperation op, final int phase) {
+    public void addNewPhaseOperation(final ISourceUnitOperation op, final int phase) {
         validatePhase(phase);
         newPhaseOperations[phase].add(op);
     }
@@ -404,7 +380,7 @@ public class CompilationUnit extends ProcessingUnit {
     @Override
     public void configure(final CompilerConfiguration configuration) {
         super.configure(configuration);
-        this.debug = this.configuration.getDebug();
+        this.debug = getConfiguration().getDebug();
         this.configured = true;
     }
 
@@ -435,16 +411,13 @@ public class CompilationUnit extends ProcessingUnit {
      */
     public ClassNode getClassNode(final String name) {
         ClassNode[] result = new ClassNode[1];
-        PrimaryClassNodeOperation handler = new PrimaryClassNodeOperation() {
-            @Override
-            public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-                if (classNode.getName().equals(name)) {
-                    result[0] = classNode;
-                }
+        IPrimaryClassNodeOperation handler = (source, context, classNode) -> {
+            if (classNode.getName().equals(name)) {
+                result[0] = classNode;
             }
         };
         try {
-            applyToPrimaryClassNodes(handler);
+            handler.doPhaseOperation(this);
         } catch (CompilationFailedException e) {
             if (debug) e.printStackTrace();
         }
@@ -506,26 +479,26 @@ public class CompilationUnit extends ProcessingUnit {
      * Adds a source file to the unit.
      */
     public SourceUnit addSource(final File file) {
-        return addSource(new SourceUnit(file, configuration, classLoader, getErrorCollector()));
+        return addSource(new SourceUnit(file, getConfiguration(), getClassLoader(), getErrorCollector()));
     }
 
     /**
      * Adds a source file to the unit.
      */
     public SourceUnit addSource(final URL url) {
-        return addSource(new SourceUnit(url, configuration, classLoader, getErrorCollector()));
+        return addSource(new SourceUnit(url, getConfiguration(), getClassLoader(), getErrorCollector()));
     }
 
     /**
      * Adds a InputStream source to the unit.
      */
     public SourceUnit addSource(final String name, final InputStream stream) {
-        ReaderSource source = new InputStreamReaderSource(stream, configuration);
-        return addSource(new SourceUnit(name, source, configuration, classLoader, getErrorCollector()));
+        ReaderSource source = new InputStreamReaderSource(stream, getConfiguration());
+        return addSource(new SourceUnit(name, source, getConfiguration(), getClassLoader(), getErrorCollector()));
     }
 
     public SourceUnit addSource(final String name, final String scriptText) {
-        return addSource(new SourceUnit(name, scriptText, configuration, classLoader, getErrorCollector()));
+        return addSource(new SourceUnit(name, scriptText, getConfiguration(), getClassLoader(), getErrorCollector()));
     }
 
     /**
@@ -533,7 +506,7 @@ public class CompilationUnit extends ProcessingUnit {
      */
     public SourceUnit addSource(final SourceUnit source) {
         String name = source.getName();
-        source.setClassLoader(this.classLoader);
+        source.setClassLoader(getClassLoader());
         for (SourceUnit su : queuedSources) {
             if (name.equals(su.getName())) return su;
         }
@@ -589,16 +562,16 @@ public class CompilationUnit extends ProcessingUnit {
         void call(ClassVisitor writer, ClassNode node) throws CompilationFailedException;
     }
 
+    public ClassgenCallback getClassgenCallback() {
+        return classgenCallback;
+    }
+
     /**
      * Sets a ClassgenCallback.  You can have only one, and setting
      * it to {@code null} removes any existing setting.
      */
     public void setClassgenCallback(final ClassgenCallback visitor) {
         this.classgenCallback = visitor;
-    }
-
-    public ClassgenCallback getClassgenCallback() {
-        return classgenCallback;
     }
 
     /**
@@ -612,6 +585,10 @@ public class CompilationUnit extends ProcessingUnit {
         void call(ProcessingUnit context, int phase) throws CompilationFailedException;
     }
 
+    public ProgressCallback getProgressCallback() {
+        return progressCallback;
+    }
+
     /**
      * Sets a ProgressCallback.  You can have only one, and setting
      * it to {@code null} removes any existing setting.
@@ -620,15 +597,11 @@ public class CompilationUnit extends ProcessingUnit {
         this.progressCallback = callback;
     }
 
-    public ProgressCallback getProgressCallback() {
-        return progressCallback;
-    }
-
     //---------------------------------------------------------------------------
     // ACTIONS
 
     /**
-     * Synonym for compile(Phases.ALL).
+     * Synonym for {@code compile(Phases.ALL)}.
      */
     public void compile() throws CompilationFailedException {
         compile(Phases.ALL);
@@ -656,9 +629,10 @@ public class CompilationUnit extends ProcessingUnit {
             // Grab processing may have brought in new AST transforms into various phases, process them as well
             processNewPhaseOperations(phase);
 
-            if (progressCallback != null) progressCallback.call(this, phase);
+            Optional.ofNullable(getProgressCallback())
+                .ifPresent(callback -> callback.call(this, phase));
             completePhase();
-            applyToSourceUnits(mark);
+            mark();
 
             if (dequeued()) continue;
 
@@ -669,7 +643,7 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }
 
-        errorCollector.failIfErrors();
+        getErrorCollector().failIfErrors();
     }
 
     private void processPhaseOperations(final int phase) {
@@ -735,56 +709,28 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Resolves all types.
      */
-    private final SourceUnitOperation resolve = new SourceUnitOperation() {
-        @Override
-        public void call(final SourceUnit source) throws CompilationFailedException {
-            List<ClassNode> classes = source.ast.getClasses();
-            for (ClassNode node : classes) {
-                VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
-                scopeVisitor.visitClass(node);
+    private final ISourceUnitOperation resolve = (final SourceUnit source) -> {
+        for (ClassNode classNode : source.getAST().getClasses()) {
+            GroovyClassVisitor visitor = new VariableScopeVisitor(source);
+            visitor.visitClass(classNode);
 
-                resolveVisitor.setClassNodeResolver(classNodeResolver);
-                resolveVisitor.startResolving(node, source);
-            }
-
-        }
-    };
-
-    private final GroovyClassOperation output = new GroovyClassOperation() {
-        @Override
-        public void call(final GroovyClass groovyClass) throws CompilationFailedException {
-            String name = groovyClass.getName().replace('.', File.separatorChar) + ".class";
-            File path = new File(configuration.getTargetDirectory(), name);
-
-            // ensure the path is ready for the file
-            File directory = path.getParentFile();
-            if (directory != null && !directory.exists()) {
-                directory.mkdirs();
-            }
-
-            // create the file and write out the data
-            byte[] bytes = groovyClass.getBytes();
-
-            try (FileOutputStream stream = new FileOutputStream(path)) {
-                stream.write(bytes, 0, bytes.length);
-            } catch (IOException e) {
-                getErrorCollector().addError(Message.create(e.getMessage(), CompilationUnit.this));
-            }
+            resolveVisitor.setClassNodeResolver(classNodeResolver);
+            resolveVisitor.startResolving(classNode, source);
         }
     };
 
     /**
-     * Runs classgen() on a single ClassNode.
+     * Runs {@link #classgen()} on a single {@code ClassNode}.
      */
-    private final PrimaryClassNodeOperation classgen = new PrimaryClassNodeOperation() {
+    private final IPrimaryClassNodeOperation classgen = new IPrimaryClassNodeOperation() {
         @Override
         public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-            optimizer.visitClass(classNode, source); // GROOVY-4272: repositioned it here from static import visitor
+            new OptimizerVisitor(CompilationUnit.this).visitClass(classNode, source); // GROOVY-4272: repositioned from static import visitor
 
             //
             // Run the Verifier on the outer class
             //
-            GroovyClassVisitor visitor = verifier;
+            GroovyClassVisitor visitor = new Verifier();
             try {
                 visitor.visitClass(classNode);
             } catch (RuntimeParserException rpe) {
@@ -808,8 +754,6 @@ public class CompilationUnit extends ProcessingUnit {
             visitor = new ExtendedVerifier(source);
             visitor.visitClass(classNode);
 
-            visitor = null;
-
             // because the class may be generated even if a error was found
             // and that class may have an invalid format we fail here if needed
             getErrorCollector().failIfErrors();
@@ -822,33 +766,34 @@ public class CompilationUnit extends ProcessingUnit {
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
             // only show the file name and its extension like javac does in its stacktraces rather than the full path
             // also takes care of both \ and / depending on the host compiling environment
-            if (sourceName != null)
+            if (sourceName != null) {
                 sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
-            AsmClassGenerator generator = new AsmClassGenerator(source, context, classVisitor, sourceName);
+            }
 
             //
             // Run the generation and create the class (if required)
             //
-            generator.visitClass(classNode);
+            visitor = new AsmClassGenerator(source, context, classVisitor, sourceName);
+            visitor.visitClass(classNode);
 
             byte[] bytes = ((ClassWriter) classVisitor).toByteArray();
-            generatedClasses.add(new GroovyClass(classNode.getName(), bytes));
+            getClasses().add(new GroovyClass(classNode.getName(), bytes));
 
             //
             // Handle any callback that's been set
             //
-            if (CompilationUnit.this.classgenCallback != null) {
-                classgenCallback.call(classVisitor, classNode);
-            }
+            Optional.ofNullable(getClassgenCallback())
+                .ifPresent(callback -> callback.call(classVisitor, classNode));
 
             //
             // Recurse for inner classes
             //
-            LinkedList<ClassNode> innerClasses = generator.getInnerClasses();
+            LinkedList<ClassNode> innerClasses = ((AsmClassGenerator) visitor).getInnerClasses();
             while (!innerClasses.isEmpty()) {
                 classgen.call(source, context, innerClasses.removeFirst());
             }
         }
+
         @Override
         public boolean needSortedInput() {
             return true;
@@ -866,10 +811,10 @@ public class CompilationUnit extends ProcessingUnit {
                 // try classes under compilation
                 CompileUnit cu = getAST();
                 ClassNode cn = cu.getClass(name);
-                if (cn!=null) return cn;
+                if (cn != null) return cn;
                 // try inner classes
                 cn = cu.getGeneratedInnerClass(name);
-                if (cn!=null) return cn;
+                if (cn != null) return cn;
                 ClassNodeResolver.LookupResult lookupResult = getClassNodeResolver().resolveName(name, CompilationUnit.this);
                 return lookupResult == null ? null : lookupResult.getClassNode();
             }
@@ -880,8 +825,8 @@ public class CompilationUnit extends ProcessingUnit {
                 if (c.isInterface() || d.isInterface()) return ClassHelper.OBJECT_TYPE;
                 do {
                     c = c.getSuperClass();
-                } while (c!=null && !d.isDerivedFrom(c));
-                if (c==null) return ClassHelper.OBJECT_TYPE;
+                } while (c != null && !d.isDerivedFrom(c));
+                if (c == null) return ClassHelper.OBJECT_TYPE;
                 return c;
             }
             @Override
@@ -900,115 +845,153 @@ public class CompilationUnit extends ProcessingUnit {
      * Updates the phase marker on all sources.
      */
     protected void mark() throws CompilationFailedException {
-        applyToSourceUnits(mark);
-    }
-
-    /**
-     * Marks a single SourceUnit with the current phase,
-     * if it isn't already there yet.
-     */
-    private final SourceUnitOperation mark = new SourceUnitOperation() {
-        @Override
-        public void call(final SourceUnit source) throws CompilationFailedException {
+        ISourceUnitOperation mark = (final SourceUnit source) -> {
             if (source.phase < phase) {
                 source.gotoPhase(phase);
             }
             if (source.phase == phase && phaseComplete && !source.phaseComplete) {
                 source.completePhase();
             }
-        }
-    };
+        };
+        mark.doPhaseOperation(this);
+    }
 
     //---------------------------------------------------------------------------
     // LOOP SIMPLIFICATION FOR SourceUnit OPERATIONS
 
     private interface PhaseOperation {
-        default void doPhaseOperation(final CompilationUnit unit) {
-            if (this instanceof SourceUnitOperation) {
-                unit.applyToSourceUnits((SourceUnitOperation) this);
-            } else if (this instanceof PrimaryClassNodeOperation) {
-                unit.applyToPrimaryClassNodes((PrimaryClassNodeOperation) this);
-            } else {
-                unit.applyToGeneratedGroovyClasses((GroovyClassOperation) this);
-            }
-        }
+        void doPhaseOperation(CompilationUnit unit);
     }
 
-    /**
-     * A callback interface for use in the applyToSourceUnits loop driver.
-     */
-    // TODO: convert to functional interface
-    public abstract static class SourceUnitOperation implements PhaseOperation {
-        public abstract void call(SourceUnit source) throws CompilationFailedException;
-    }
+    @FunctionalInterface
+    public interface ISourceUnitOperation extends PhaseOperation {
+        void call(SourceUnit source) throws CompilationFailedException;
 
-    /**
-     * A loop driver for applying operations to all SourceUnits.
-     * Automatically skips units that have already been processed
-     * through the current phase.
-     */
-    public void applyToSourceUnits(final SourceUnitOperation body) throws CompilationFailedException {
-        for (String name : sources.keySet()) {
-            SourceUnit source = sources.get(name);
-            if ((source.phase < phase) || (source.phase == phase && !source.phaseComplete)) {
-                try {
-                    body.call(source);
-                } catch (CompilationFailedException e) {
-                    throw e;
-                } catch (Exception e) {
-                    GroovyBugError gbe = new GroovyBugError(e);
-                    changeBugText(gbe, source);
-                    throw gbe;
-                } catch (GroovyBugError e) {
-                    changeBugText(e, source);
-                    throw e;
+        /**
+         * A loop driver for applying operations to all SourceUnits.
+         * Automatically skips units that have already been processed
+         * through the current phase.
+         */
+        @Override
+        default void doPhaseOperation(final CompilationUnit unit) throws CompilationFailedException {
+            for (String name : unit.sources.keySet()) {
+                SourceUnit source = unit.sources.get(name);
+                if (source.phase < unit.phase || (source.phase == unit.phase && !source.phaseComplete)) {
+                    try {
+                        this.call(source);
+                    } catch (CompilationFailedException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        GroovyBugError gbe = new GroovyBugError(e);
+                        unit.changeBugText(gbe, source);
+                        throw gbe;
+                    } catch (GroovyBugError e) {
+                        unit.changeBugText(e, source);
+                        throw e;
+                    }
                 }
             }
+            unit.getErrorCollector().failIfErrors();
         }
-        getErrorCollector().failIfErrors();
     }
 
     //---------------------------------------------------------------------------
     // LOOP SIMPLIFICATION FOR PRIMARY ClassNode OPERATIONS
 
-    /**
-     * An callback interface for use in the applyToPrimaryClassNodes loop driver.
-     */
-    // TODO: convert to functional interface
-    public abstract static class PrimaryClassNodeOperation implements PhaseOperation {
-        public abstract void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;
+    @FunctionalInterface
+    public interface IPrimaryClassNodeOperation extends PhaseOperation {
+        void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;
 
-        public boolean needSortedInput() {
+        /**
+         * A loop driver for applying operations to all primary ClassNodes in
+         * our AST.  Automatically skips units that have already been processed
+         * through the current phase.
+         */
+        @Override
+        default void doPhaseOperation(final CompilationUnit unit) throws CompilationFailedException {
+            for (ClassNode classNode : unit.getPrimaryClassNodes(this.needSortedInput())) {
+                SourceUnit context = null;
+                try {
+                    context = classNode.getModule().getContext();
+                    if (context == null || context.phase < unit.phase || (context.phase == unit.phase && !context.phaseComplete)) {
+                        int offset = 1;
+                        for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
+                            it.next();
+                            offset += 1;
+                        }
+                        this.call(context, new GeneratorContext(unit.getAST(), offset), classNode);
+                    }
+                } catch (CompilationFailedException e) {
+                    // fall through
+                } catch (NullPointerException npe) {
+                    GroovyBugError gbe = new GroovyBugError("unexpected NullPointerException", npe);
+                    unit.changeBugText(gbe, context);
+                    throw gbe;
+                } catch (GroovyBugError e) {
+                    unit.changeBugText(e, context);
+                    throw e;
+                } catch (NoClassDefFoundError | Exception e) {
+                    // effort to get more logging in case a dependency of a class is loaded
+                    // although it shouldn't have
+                    unit.convertUncaughtExceptionToCompilationError(e);
+                }
+            }
+            unit.getErrorCollector().failIfErrors();
+        }
+
+        default boolean needSortedInput() {
             return false;
         }
     }
 
-    // TODO: convert to functional interface
-    public abstract static class GroovyClassOperation implements PhaseOperation {
-        public abstract void call(GroovyClass groovyClass) throws CompilationFailedException;
+    @FunctionalInterface
+    public interface IGroovyClassOperation extends PhaseOperation {
+        void call(GroovyClass groovyClass) throws CompilationFailedException;
+
+        @Override
+        default void doPhaseOperation(final CompilationUnit unit) throws CompilationFailedException {
+            if (unit.phase != Phases.OUTPUT && !(unit.phase == Phases.CLASS_GENERATION && unit.phaseComplete)) {
+                throw new GroovyBugError("CompilationUnit not ready for output(). Current phase=" + unit.getPhaseDescription());
+            }
+
+            for (GroovyClass groovyClass : unit.getClasses()) {
+                try {
+                    this.call(groovyClass);
+                } catch (CompilationFailedException e) {
+                    // fall through
+                } catch (NullPointerException npe) {
+                    throw npe;
+                } catch (GroovyBugError e) {
+                    unit.changeBugText(e, null);
+                    throw e;
+                } catch (Exception e) {
+                    throw new GroovyBugError(e);
+                }
+            }
+            unit.getErrorCollector().failIfErrors();
+        }
     }
 
-    private static int getSuperClassCount(ClassNode element) {
+    private static int getSuperClassCount(ClassNode classNode) {
         int count = 0;
-        while (element != null) {
+        while (classNode != null) {
             count += 1;
-            element = element.getSuperClass();
+            classNode = classNode.getSuperClass();
         }
         return count;
     }
 
-    private int getSuperInterfaceCount(final ClassNode element) {
+    private static int getSuperInterfaceCount(final ClassNode classNode) {
         int count = 1;
-        ClassNode[] interfaces = element.getInterfaces();
-        for (ClassNode anInterface : interfaces) {
-            count = Math.max(count, getSuperInterfaceCount(anInterface) + 1);
+        for (ClassNode face : classNode.getInterfaces()) {
+            count = Math.max(count, getSuperInterfaceCount(face) + 1);
         }
         return count;
     }
 
     private List<ClassNode> getPrimaryClassNodes(final boolean sort) {
         List<ClassNode> unsorted = getAST().getModules().stream()
-            .flatMap(module -> module.getClasses().stream()).collect(Collectors.toList());
+            .flatMap(module -> module.getClasses().stream()).collect(toList());
 
         if (!sort) return unsorted;
 
@@ -1052,46 +1035,9 @@ public class CompilationUnit extends ProcessingUnit {
         return sorted;
     }
 
-    /**
-     * A loop driver for applying operations to all primary ClassNodes in
-     * our AST.  Automatically skips units that have already been processed
-     * through the current phase.
-     */
-    public void applyToPrimaryClassNodes(final PrimaryClassNodeOperation body) throws CompilationFailedException {
-        for (ClassNode classNode : getPrimaryClassNodes(body.needSortedInput())) {
-            SourceUnit context = null;
-            try {
-                context = classNode.getModule().getContext();
-                if (context == null || context.phase < phase || (context.phase == phase && !context.phaseComplete)) {
-                    int offset = 1;
-                    for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
-                        it.next();
-                        offset += 1;
-                    }
-                    body.call(context, new GeneratorContext(getAST(), offset), classNode);
-                }
-            } catch (CompilationFailedException e) {
-                // fall through, getErrorReporter().failIfErrors() will trigger
-            } catch (NullPointerException npe) {
-                GroovyBugError gbe = new GroovyBugError("unexpected NullPointerException", npe);
-                changeBugText(gbe, context);
-                throw gbe;
-            } catch (GroovyBugError e) {
-                changeBugText(e, context);
-                throw e;
-            } catch (NoClassDefFoundError | Exception e) {
-                // effort to get more logging in case a dependency of a class is loaded
-                // although it shouldn't have
-                convertUncaughtExceptionToCompilationError(e);
-            }
-        }
-
-        getErrorCollector().failIfErrors();
-    }
-
     private void convertUncaughtExceptionToCompilationError(final Throwable e) {
-        // check the exception for a nested compilation exception
         ErrorCollector nestedCollector = null;
+        // check the exception for a nested compilation exception
         for (Throwable next = e.getCause(); next != e && next != null; next = next.getCause()) {
             if (!(next instanceof MultipleCompilationErrorsException)) continue;
             MultipleCompilationErrorsException mcee = (MultipleCompilationErrorsException) next;
@@ -1103,37 +1049,50 @@ public class CompilationUnit extends ProcessingUnit {
             getErrorCollector().addCollectorContents(nestedCollector);
         } else {
             Exception err = e instanceof Exception?((Exception)e):new RuntimeException(e);
-            getErrorCollector().addError(new ExceptionMessage(err, configuration.getDebug(), this));
+            getErrorCollector().addError(new ExceptionMessage(err, debug, this));
         }
-    }
-
-    public void applyToGeneratedGroovyClasses(final GroovyClassOperation body) throws CompilationFailedException {
-        if (this.phase != Phases.OUTPUT && !(this.phase == Phases.CLASS_GENERATION && this.phaseComplete)) {
-            throw new GroovyBugError("CompilationUnit not ready for output(). Current phase=" + getPhaseDescription());
-        }
-
-        for (GroovyClass gclass : this.generatedClasses) {
-            //
-            // Get the class and calculate its filesystem name
-            //
-            try {
-                body.call(gclass);
-            } catch (CompilationFailedException e) {
-                // fall through, getErrorReporter().failIfErrors() will trigger
-            } catch (NullPointerException npe) {
-                throw npe;
-            } catch (GroovyBugError e) {
-                changeBugText(e, null);
-                throw e;
-            } catch (Exception e) {
-                throw new GroovyBugError(e);
-            }
-        }
-
-        getErrorCollector().failIfErrors();
     }
 
     private void changeBugText(final GroovyBugError e, final SourceUnit context) {
         e.setBugText("exception in phase '" + getPhaseDescription() + "' in source unit '" + (context != null ? context.getName() : "?") + "' " + e.getBugText());
+    }
+
+    //--------------------------------------------------------------------------
+
+    @Deprecated
+    public void addPhaseOperation(final GroovyClassOperation op) {
+        addPhaseOperation((IGroovyClassOperation) op);
+    }
+
+    @Deprecated
+    public void addPhaseOperation(final SourceUnitOperation op, final int phase) {
+        addPhaseOperation((ISourceUnitOperation) op, phase);
+    }
+
+    @Deprecated
+    public void addPhaseOperation(final PrimaryClassNodeOperation op, final int phase) {
+        addPhaseOperation((IPrimaryClassNodeOperation) op, phase);
+    }
+
+    @Deprecated
+    public void addFirstPhaseOperation(final PrimaryClassNodeOperation op, final int phase) {
+        addFirstPhaseOperation((IPrimaryClassNodeOperation) op, phase);
+    }
+
+    @Deprecated
+    public void addNewPhaseOperation(final SourceUnitOperation op, final int phase) {
+        addNewPhaseOperation((ISourceUnitOperation) op, phase);
+    }
+
+    @Deprecated
+    public abstract static class SourceUnitOperation implements ISourceUnitOperation {
+    }
+
+    @Deprecated
+    public abstract static class GroovyClassOperation implements IGroovyClassOperation {
+    }
+
+    @Deprecated
+    public abstract static class PrimaryClassNodeOperation implements IPrimaryClassNodeOperation {
     }
 }

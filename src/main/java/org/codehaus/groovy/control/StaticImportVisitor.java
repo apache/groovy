@@ -68,7 +68,7 @@ import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     private MethodNode currentMethod;
-    private SourceUnit source;
+    private SourceUnit sourceUnit;
     private boolean inSpecialConstructorCall;
     private boolean inClosure;
     private boolean inPropertyExpression;
@@ -77,10 +77,19 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private boolean inAnnotation;
     private boolean inLeftExpression;
 
-    public void visitClass(ClassNode node, SourceUnit source) {
-        this.currentClass = node;
-        this.source = source;
-        super.visitClass(node);
+    public StaticImportVisitor(final ClassNode classNode, final SourceUnit sourceUnit) {
+        this.currentClass = classNode;
+        this.sourceUnit = sourceUnit;
+    }
+
+    /**
+     * Call {@link #StaticImportVisitor(ClassNode,SourceUnit)} then {@link #visitClass(ClassNode)}.
+     */
+    @Deprecated
+    public void visitClass(final ClassNode classNode, final SourceUnit sourceUnit) {
+        this.currentClass = classNode;
+        this.sourceUnit = sourceUnit;
+        visitClass(classNode);
     }
 
     @Override
@@ -565,7 +574,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return new StaticMethodCallExpression(type.getPlainNodeReference(), name, args);
     }
 
+    @Override
     protected SourceUnit getSourceUnit() {
-        return source;
+        return sourceUnit;
     }
 }

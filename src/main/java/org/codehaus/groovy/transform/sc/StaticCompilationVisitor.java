@@ -49,14 +49,13 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
-import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationMopWriter;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
-import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilationUnit.IPrimaryClassNodeOperation;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
@@ -155,13 +154,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     private void addDynamicOuterClassAccessorsCallback(final ClassNode outer) {
         if (outer != null) {
             if (!isStaticallyCompiled(outer) && outer.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK) == null) {
-                outer.putNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK, new CompilationUnit.PrimaryClassNodeOperation() {
-                    @Override
-                    public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
-                        if (classNode == outer) {
-                            addPrivateBridgeMethods(classNode);
-                            addPrivateFieldsAccessors(classNode);
-                        }
+                outer.putNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK, (IPrimaryClassNodeOperation) (source, context, classNode) -> {
+                    if (classNode == outer) {
+                        addPrivateBridgeMethods(classNode);
+                        addPrivateFieldsAccessors(classNode);
                     }
                 });
             }

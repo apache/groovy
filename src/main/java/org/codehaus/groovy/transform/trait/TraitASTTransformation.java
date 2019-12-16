@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -47,7 +48,6 @@ import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -340,19 +340,16 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private void registerASTTransformations(final ClassNode helper) {
-        ASTTransformationCollectorCodeVisitor collector = new ASTTransformationCollectorCodeVisitor(
-                unit, compilationUnit.getTransformLoader()
-        );
-        collector.visitClass(helper);
+        {
+            GroovyClassVisitor visitor = new ASTTransformationCollectorCodeVisitor(unit, compilationUnit.getTransformLoader());
+            visitor.visitClass(helper);
+        }
         // Perform an additional phase which has to be done *after* type checking
-        compilationUnit.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
-                if (classNode==helper) {
-                    PostTypeCheckingExpressionReplacer replacer = new PostTypeCheckingExpressionReplacer(source);
-                    replacer.visitClass(helper);
-                }
-            }
+        compilationUnit.addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            if (classNode != helper) return;
+
+            GroovyClassVisitor visitor = new PostTypeCheckingExpressionReplacer(source);
+            visitor.visitClass(helper);
         }, CompilePhase.INSTRUCTION_SELECTION.getPhaseNumber());
     }
 

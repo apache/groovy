@@ -27,10 +27,10 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.ASTTransformationsContext;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.Phases;
@@ -197,18 +197,14 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
 
     public static void addPhaseOperations(final CompilationUnit compilationUnit) {
-        final ASTTransformationsContext context = compilationUnit.getASTTransformationsContext();
+        ASTTransformationsContext context = compilationUnit.getASTTransformationsContext();
         addGlobalTransforms(context);
 
-        compilationUnit.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
-            public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTTransformationCollectorCodeVisitor collector =
-                    new ASTTransformationCollectorCodeVisitor(source, compilationUnit.getTransformLoader());
-                collector.visitClass(classNode);
-            }
+        compilationUnit.addPhaseOperation((final SourceUnit source, final GeneratorContext ignore, final ClassNode classNode) -> {
+            GroovyClassVisitor visitor = new ASTTransformationCollectorCodeVisitor(source, compilationUnit.getTransformLoader());
+            visitor.visitClass(classNode);
         }, Phases.SEMANTIC_ANALYSIS);
         for (CompilePhase phase : CompilePhase.values()) {
-            final ASTTransformationVisitor visitor = new ASTTransformationVisitor(phase, context);
             switch (phase) {
                 case INITIALIZATION:
                 case PARSING:
@@ -217,11 +213,10 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                     break;
 
                 default:
-                    compilationUnit.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
-                        public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                            visitor.source = source;
-                            visitor.visitClass(classNode);
-                        }
+                    compilationUnit.addPhaseOperation((final SourceUnit source, final GeneratorContext ignore, final ClassNode classNode) -> {
+                        ASTTransformationVisitor visitor = new ASTTransformationVisitor(phase, context);
+                        visitor.source = source;
+                        visitor.visitClass(classNode);
                     }, phase.getPhaseNumber());
                     break;
 
@@ -322,8 +317,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
         for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
             try {
-                Class gTransClass = transformLoader.loadClass(entry.getKey(), false, true, false);
-                GroovyASTTransformation transformAnnotation = (GroovyASTTransformation) gTransClass.getAnnotation(GroovyASTTransformation.class);
+                Class<?> gTransClass = transformLoader.loadClass(entry.getKey(), false, true, false);
+                GroovyASTTransformation transformAnnotation = gTransClass.getAnnotation(GroovyASTTransformation.class);
                 if (transformAnnotation == null) {
                     compilationUnit.getErrorCollector().addWarning(new WarningMessage(
                         WarningMessage.POSSIBLE_ERRORS,
@@ -335,14 +330,12 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                     continue;
                 }
                 if (ASTTransformation.class.isAssignableFrom(gTransClass)) {
-                    final ASTTransformation instance = (ASTTransformation)gTransClass.getDeclaredConstructor().newInstance();
+                    ASTTransformation instance = (ASTTransformation) gTransClass.getDeclaredConstructor().newInstance();
                     if (instance instanceof CompilationUnitAware) {
                         ((CompilationUnitAware)instance).setCompilationUnit(compilationUnit);
                     }
-                    CompilationUnit.SourceUnitOperation suOp = new CompilationUnit.SourceUnitOperation() {
-                        public void call(SourceUnit source) throws CompilationFailedException {
-                            instance.visit(new ASTNode[] {source.getAST()}, source);
-                        }
+                    CompilationUnit.ISourceUnitOperation suOp = source -> {
+                        instance.visit(new ASTNode[] {source.getAST()}, source);
                     };
                     if (isFirstScan) {
                         compilationUnit.addPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());

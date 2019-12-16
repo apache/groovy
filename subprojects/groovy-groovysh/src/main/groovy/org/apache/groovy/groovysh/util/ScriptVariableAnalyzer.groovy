@@ -69,10 +69,10 @@ class ScriptVariableAnalyzer {
     }
 
     /**
-     * custom PrimaryClassNodeOperation
+     * custom IPrimaryClassNodeOperation
      * to be able to hook our code visitor
      */
-    static class VisitorSourceOperation extends CompilationUnit.PrimaryClassNodeOperation {
+    static class VisitorSourceOperation implements CompilationUnit.IPrimaryClassNodeOperation {
 
         final GroovyClassVisitor visitor
 
