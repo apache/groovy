@@ -98,7 +98,6 @@ import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.classgen.asm.BytecodeHelper
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 
@@ -275,7 +274,7 @@ class ScriptToTreeNodeAdapter {
 /**
  * This Node Operation builds up a root tree node for the viewer.
  */
-class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
+class TreeNodeBuildingNodeOperation implements CompilationUnit.IPrimaryClassNodeOperation {
 
     final root
     final sourceCollected = new AtomicBoolean(false)

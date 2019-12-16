@@ -270,13 +270,15 @@ class GroovyClassLoaderTestCustomGCL extends GroovyClassLoader {
     }
 }
 
-class GroovyClassLoaderTestPropertyAdder extends CompilationUnit.PrimaryClassNodeOperation {
+class GroovyClassLoaderTestPropertyAdder implements CompilationUnit.IPrimaryClassNodeOperation {
+    @Override
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         classNode.addProperty("id", ClassNode.ACC_PUBLIC, ClassHelper.long_TYPE, null, null, null)
     }
 }
 
 class GroovyClassLoaderTestCustomPhaseOperation extends GroovyClassLoader {
+    @Override
     CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
         def cu = super.createCompilationUnit(config, source)
         cu.addPhaseOperation(new GroovyClassLoaderTestPropertyAdder(), Phases.CONVERSION)

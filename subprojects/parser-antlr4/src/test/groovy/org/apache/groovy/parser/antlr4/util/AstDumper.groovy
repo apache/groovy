@@ -147,7 +147,7 @@ class AstDumper {
  * An adapter from ASTNode tree to source code.
  */
 @CompileStatic
-class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation implements GroovyCodeVisitor, GroovyClassVisitor {
+class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperation, GroovyClassVisitor, GroovyCodeVisitor {
 
     private final Writer _out
     Stack<String> classNameStack = new Stack<String>()
@@ -164,6 +164,7 @@ class AstNodeToScriptVisitor extends CompilationUnit.PrimaryClassNodeOperation i
         this.scriptHasBeenVisited = false
     }
 
+    @Override
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
 
         visitPackage(source?.getAST()?.getPackage())

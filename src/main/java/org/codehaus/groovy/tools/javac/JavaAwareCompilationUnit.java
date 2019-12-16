@@ -20,6 +20,7 @@ package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
@@ -75,35 +76,24 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         this.stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5, encoding);
         this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
 
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
-                if (!javaSources.isEmpty()) {
-                    VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
-                    scopeVisitor.visitClass(node);
-                    new JavaAwareResolveVisitor(JavaAwareCompilationUnit.this).startResolving(node, source);
-                    AnnotationConstantsVisitor acv = new AnnotationConstantsVisitor();
-                    acv.visitClass(node, source);
-                }
-            }
-        }, Phases.CONVERSION);
-        addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
-            @Override
-            public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTTransformationCollectorCodeVisitor collector =
-                        new ASTTransformationCollectorCodeVisitor(source, JavaAwareCompilationUnit.this.getTransformLoader());
-                collector.visitClass(classNode);
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            if (!javaSources.isEmpty()) {
+                new VariableScopeVisitor(source).visitClass(classNode);
+                new JavaAwareResolveVisitor(this).startResolving(classNode, source);
+                new AnnotationConstantsVisitor().visitClass(classNode, source);
             }
         }, Phases.CONVERSION);
 
-        addPhaseOperation(new PrimaryClassNodeOperation() {
-            @Override
-            public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                try {
-                    if (!javaSources.isEmpty()) stubGenerator.generateClass(classNode);
-                } catch (FileNotFoundException fnfe) {
-                    source.addException(fnfe);
-                }
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            GroovyClassVisitor visitor = new ASTTransformationCollectorCodeVisitor(source, getTransformLoader());
+            visitor.visitClass(classNode);
+        }, Phases.CONVERSION);
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            try {
+                if (!javaSources.isEmpty()) stubGenerator.generateClass(classNode);
+            } catch (FileNotFoundException fnfe) {
+                source.addException(fnfe);
             }
         }, Phases.CONVERSION);
     }

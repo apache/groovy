@@ -22,7 +22,6 @@ import groovy.transform.PackageScope
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
@@ -104,15 +103,16 @@ class TestHarnessClassLoader extends GroovyClassLoader {
  * Operation exists so that an AstTransformation can be run against the SourceUnit.
  */
 @PackageScope
-class TestHarnessOperation extends PrimaryClassNodeOperation {
+class TestHarnessOperation implements CompilationUnit.IPrimaryClassNodeOperation {
 
     private final ASTTransformation transform
 
-    TestHarnessOperation(transform) {
+    TestHarnessOperation(ASTTransformation transform) {
         this.transform = transform
     }
 
+    @Override
     void call(SourceUnit source, GeneratorContext ignoredContext, ClassNode ignoredNode) {
-        transform.visit(null, source)
+        this.transform.visit(null, source)
     }
 }

@@ -25,7 +25,6 @@ import groovy.lang.GroovyResourceLoader;
 import groovy.lang.Script;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -166,16 +165,12 @@ public class GroovyScriptEngine implements ResourceConnector {
             // remove all old entries including the "." entry
             cache.clear();
 
-            cu.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
-                @Override
-                public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode)
-                        throws CompilationFailedException {
-                    // GROOVY-4013: If it is an inner class, tracking its dependencies doesn't really
-                    // serve any purpose and also interferes with the caching done to track dependencies
-                    if (classNode instanceof InnerClassNode) return;
-                    DependencyTracker dt = new DependencyTracker(source, cache, precompiledEntries);
-                    dt.visitClass(classNode);
-                }
+            cu.addPhaseOperation((final SourceUnit sourceUnit, final GeneratorContext context, final ClassNode classNode) -> {
+               // GROOVY-4013: If it is an inner class, tracking its dependencies doesn't really
+               // serve any purpose and also interferes with the caching done to track dependencies
+               if (classNode.getOuterClass() != null) return;
+               DependencyTracker dt = new DependencyTracker(sourceUnit, cache, precompiledEntries);
+               dt.visitClass(classNode);
             }, Phases.CLASS_GENERATION);
 
             cu.setClassNodeResolver(new ClassNodeResolver() {

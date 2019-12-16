@@ -20,7 +20,6 @@ package org.codehaus.groovy
 
 import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.Phases
@@ -53,7 +52,8 @@ class ClosureAndInnerClassNodeStructureTest extends GroovyTestCase {
 
         def classNodes = [:]
 
-        cu.addPhaseOperation(new PrimaryClassNodeOperation() {
+        cu.addPhaseOperation(new CompilationUnit.IPrimaryClassNodeOperation() {
+            @Override
             void call(SourceUnit source, GeneratorContext context, ClassNode cn) {
                 def recurse = { ClassNode node ->
                     classNodes[node.name] = node

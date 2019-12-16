@@ -18,39 +18,32 @@
  */
 package org.codehaus.groovy.tools.gse;
 
-import java.io.StringBufferInputStream;
-import java.util.Set;
-
+import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 
-import groovy.test.GroovyTestCase;
+import java.io.StringBufferInputStream;
+import java.util.Set;
 
 @SuppressWarnings("deprecation")
 public class DependencyTest extends GroovyTestCase {
     private CompilationUnit cu;
     StringSetMap cache;
-    
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        cu = new CompilationUnit();
         cache = new StringSetMap();
-        cu.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
-            @Override
-            public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) 
-                throws CompilationFailedException 
-            {   
-                DependencyTracker dt = new DependencyTracker(source,cache);
-                dt.visitClass(classNode);
-            }
+        cu = new CompilationUnit();
+        cu.addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            DependencyTracker dt = new DependencyTracker(source, cache);
+            dt.visitClass(classNode);
         }, Phases.CLASS_GENERATION);
     }
-    
+
     public void testDep(){
         cu.addSource("testDep.gtest", new StringBufferInputStream(
                 "class C1 {}\n" +
@@ -64,22 +57,22 @@ public class DependencyTest extends GroovyTestCase {
         assertEquals(cache.get("C1").size(),1);
         assertEquals(cache.get("C2").size(),1);
         assertEquals(cache.get("C3").size(),1);
-        
+
         Set<String> dep = cache.get("A1");
         assertEquals(dep.size(),2);
         assertTrue(dep.contains("C1"));
-        
+
         dep = cache.get("A2");
         assertEquals(dep.size(),2);
         assertTrue(dep.contains("C2"));
-        
+
         dep = cache.get("A3");
         assertEquals(dep.size(),4);
         assertTrue(dep.contains("C1"));
         assertTrue(dep.contains("C2"));
         assertTrue(dep.contains("C3"));
     }
-    
+
     public void testTransitiveDep(){
         cu.addSource("testTransitiveDep.gtest", new StringBufferInputStream(
                 "class A1 {}\n" +
@@ -88,19 +81,19 @@ public class DependencyTest extends GroovyTestCase {
         ));
         cu.compile(Phases.CLASS_GENERATION);
         cache.makeTransitiveHull();
-         
+
         Set<String> dep = cache.get("A1");
         assertEquals(dep.size(),1);
-        
+
         dep = cache.get("A2");
         assertEquals(dep.size(),2);
         assertTrue(dep.contains("A1"));
-        
+
         dep = cache.get("A3");
         assertEquals(dep.size(),3);
         assertTrue(dep.contains("A1"));
         assertTrue(dep.contains("A2"));
     }
-    
+
 
 }

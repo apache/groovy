@@ -29,10 +29,10 @@ import org.codehaus.groovy.control.CompilePhase;
  *
  * @since 1.8.0
  */
-public abstract class CompilationCustomizer extends CompilationUnit.PrimaryClassNodeOperation {
+public abstract class CompilationCustomizer implements CompilationUnit.IPrimaryClassNodeOperation {
     private final CompilePhase phase;
 
-    public CompilationCustomizer(CompilePhase phase) {
+    public CompilationCustomizer(final CompilePhase phase) {
         this.phase = phase;
     }
 
