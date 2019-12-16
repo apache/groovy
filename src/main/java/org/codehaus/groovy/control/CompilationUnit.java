@@ -92,8 +92,8 @@ public class CompilationUnit extends ProcessingUnit {
     /** The classes generated during classgen. */
     private List<GroovyClass> generatedClasses = new ArrayList<>();
 
-    private Deque[] phaseOperations;
-    private Deque[] newPhaseOperations;
+    private Deque<PhaseOperation>[] phaseOperations;
+    private Deque<PhaseOperation>[] newPhaseOperations;
     {
         final int n = Phases.ALL + 1;
         phaseOperations = new Deque[n];
@@ -565,7 +565,7 @@ public class CompilationUnit extends ProcessingUnit {
         while (throughPhase >= phase && phase <= Phases.ALL) {
 
             if (phase == Phases.SEMANTIC_ANALYSIS) {
-                doPhaseOperation(resolve);
+                resolve.doPhaseOperation(this);
                 if (dequeued()) continue;
             }
 
@@ -590,33 +590,23 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     private void processPhaseOperations(final int phase) {
-        for (Object op : phaseOperations[phase]) {
-            doPhaseOperation(op);
+        for (PhaseOperation op : phaseOperations[phase]) {
+            op.doPhaseOperation(this);
         }
     }
 
     private void processNewPhaseOperations(final int phase) {
         recordPhaseOpsInAllOtherPhases(phase);
-        LinkedList currentPhaseNewOps = newPhaseOperations[phase];
+        Deque<PhaseOperation> currentPhaseNewOps = newPhaseOperations[phase];
         while (!currentPhaseNewOps.isEmpty()) {
-            Object operation = currentPhaseNewOps.removeFirst();
-            // push this operation to master list and then process it.
+            PhaseOperation operation = currentPhaseNewOps.removeFirst();
+            // push this operation to master list and then process it
             phaseOperations[phase].add(operation);
-            doPhaseOperation(operation);
+            operation.doPhaseOperation(this);
             // if this operation has brought in more phase ops for ast transforms, keep recording them
             // in master list of other phases and keep processing them for this phase
             recordPhaseOpsInAllOtherPhases(phase);
             currentPhaseNewOps = newPhaseOperations[phase];
-        }
-    }
-
-    private void doPhaseOperation(final Object operation) {
-        if (operation instanceof PrimaryClassNodeOperation) {
-            applyToPrimaryClassNodes((PrimaryClassNodeOperation) operation);
-        } else if (operation instanceof SourceUnitOperation) {
-            applyToSourceUnits((SourceUnitOperation) operation);
-        } else {
-            applyToGeneratedGroovyClasses((GroovyClassOperation) operation);
         }
     }
 
@@ -917,11 +907,23 @@ public class CompilationUnit extends ProcessingUnit {
     //---------------------------------------------------------------------------
     // LOOP SIMPLIFICATION FOR SourceUnit OPERATIONS
 
+    private interface PhaseOperation {
+        default void doPhaseOperation(final CompilationUnit unit) {
+            if (this instanceof SourceUnitOperation) {
+                unit.applyToSourceUnits((SourceUnitOperation) this);
+            } else if (this instanceof PrimaryClassNodeOperation) {
+                unit.applyToPrimaryClassNodes((PrimaryClassNodeOperation) this);
+            } else {
+                unit.applyToGeneratedGroovyClasses((GroovyClassOperation) this);
+            }
+        }
+    }
+
     /**
      * A callback interface for use in the applyToSourceUnits loop driver.
      */
     // TODO: convert to functional interface
-    public abstract static class SourceUnitOperation {
+    public abstract static class SourceUnitOperation implements PhaseOperation {
         public abstract void call(SourceUnit source) throws CompilationFailedException;
     }
 
@@ -958,7 +960,7 @@ public class CompilationUnit extends ProcessingUnit {
      * An callback interface for use in the applyToPrimaryClassNodes loop driver.
      */
     // TODO: convert to functional interface
-    public abstract static class PrimaryClassNodeOperation {
+    public abstract static class PrimaryClassNodeOperation implements PhaseOperation {
         public abstract void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;
 
         public boolean needSortedInput() {
@@ -967,7 +969,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     // TODO: convert to functional interface
-    public abstract static class GroovyClassOperation {
+    public abstract static class GroovyClassOperation implements PhaseOperation {
         public abstract void call(GroovyClass groovyClass) throws CompilationFailedException;
     }
 
