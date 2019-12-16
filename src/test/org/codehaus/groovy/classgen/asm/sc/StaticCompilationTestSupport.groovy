@@ -121,8 +121,7 @@ trait StaticCompilationTestSupport {
         void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
             def unit = testCase.compilationUnit
             if (!unit) return
-            List<GroovyClass> classes = unit.generatedClasses
-            classes.each { GroovyClass groovyClass ->
+            unit.classes.each { GroovyClass groovyClass ->
                 StringWriter stringWriter = new StringWriter()
                 try {
                     ClassReader cr = new ClassReader(groovyClass.bytes)
@@ -135,5 +134,4 @@ trait StaticCompilationTestSupport {
             }
         }
     }
-
 }

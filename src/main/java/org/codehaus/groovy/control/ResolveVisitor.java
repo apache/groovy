@@ -248,6 +248,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     public ResolveVisitor(final CompilationUnit compilationUnit) {
         this.compilationUnit = compilationUnit;
+        // TODO: CompilationUnit.ClassNodeResolver?
         setClassNodeResolver(new ClassNodeResolver());
     }
 
