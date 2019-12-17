@@ -129,14 +129,12 @@ public class ReflectionUtils {
         }
     }
 
-    private static final Function<Class<?>, Method[]> GET_DECLARED_METHODS = Class::getDeclaredMethods;
     public static List<Method> getDeclaredMethods(Class<?> type, String name, Class<?>... parameterTypes) {
-        return doGetMethods(type, name, parameterTypes, GET_DECLARED_METHODS);
+        return doGetMethods(type, name, parameterTypes, Class::getDeclaredMethods);
     }
 
-    private static final Function<Class<?>, Method[]> GET_METHODS = Class::getMethods;
     public static List<Method> getMethods(Class<?> type, String name, Class<?>... parameterTypes) {
-        return doGetMethods(type, name, parameterTypes, GET_METHODS);
+        return doGetMethods(type, name, parameterTypes, Class::getMethods);
     }
 
     private static List<Method> doGetMethods(Class<?> type, String name, Class<?>[] parameterTypes, Function<? super Class<?>, ? extends Method[]> f) {
