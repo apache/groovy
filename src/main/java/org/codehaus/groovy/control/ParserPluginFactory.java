@@ -34,7 +34,7 @@ public abstract class ParserPluginFactory {
     }
 
     /**
-     * Previously, created the ANTLR 2.7 parser, now throws an exception.
+     * Creates the ANTLR 2 parser.
      *
      * @throws UnsupportedOperationException always
      */

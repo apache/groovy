@@ -68,7 +68,6 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -408,29 +407,27 @@ public class ClassHelper {
         return false;
     }
 
-    /**
-     * Check if the type is a generated function, i.e. closure/lambda
-     * @param type the type to check
-     * @return the check result
-     * @since 3.0.0
-     */
-    public static boolean isGeneratedFunction(ClassNode type) {
-        Objects.requireNonNull(type, "type should not be null");
-        return type.implementsAnyInterfaces(GENERATED_CLOSURE_Type, GENERATED_LAMBDA_TYPE);
-    }
-
     static class ClassHelperCache {
         static ManagedConcurrentMap<Class, SoftReference<ClassNode>> classCache = new ManagedConcurrentMap<Class, SoftReference<ClassNode>>(ReferenceBundle.getWeakBundle());
     }
 
-    public static boolean isSAMType(ClassNode type) {
+    public static boolean isSAMType(final ClassNode type) {
         return findSAM(type) != null;
     }
 
-    public static boolean isFunctionalInterface(ClassNode type) {
+    public static boolean isFunctionalInterface(final ClassNode type) {
         // Functional interface must be an interface at first, or the following exception will occur:
         // java.lang.invoke.LambdaConversionException: Functional interface SamCallable is not an interface
         return type.isInterface() && isSAMType(type);
+    }
+
+    /**
+     * Checks if the type is a generated function, i.e. closure or lambda.
+     *
+     * @since 3.0.0
+     */
+    public static boolean isGeneratedFunction(final ClassNode type) {
+        return type.implementsAnyInterfaces(GENERATED_CLOSURE_Type, GENERATED_LAMBDA_TYPE);
     }
 
     /**
@@ -439,7 +436,7 @@ public class ClassHelper {
      * @param type a type for which to search for a single abstract method
      * @return the method node if type is a SAM type, null otherwise
      */
-    public static MethodNode findSAM(ClassNode type) {
+    public static MethodNode findSAM(final ClassNode type) {
         if (!Modifier.isAbstract(type.getModifiers())) return null;
         if (type.isInterface()) {
             List<MethodNode> methods;

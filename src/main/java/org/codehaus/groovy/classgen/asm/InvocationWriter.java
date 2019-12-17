@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import static org.objectweb.asm.Opcodes.AALOAD;
@@ -187,10 +188,8 @@ public class InvocationWriter {
                     mv.visitTypeInsn(CHECKCAST, owner);
                 }
             } else if (target.isPublic()
-                    && (!Modifier.isPublic(declaringClass.getModifiers())
-                    && !receiverType.equals(declaringClass))
-                    && receiverType.isDerivedFrom(declaringClass)
-                    && !receiverType.getPackageName().equals(classNode.getPackageName())) {
+                    && (!receiverType.equals(declaringClass) && !Modifier.isPublic(declaringClass.getModifiers()))
+                    && receiverType.isDerivedFrom(declaringClass) && !Objects.equals(receiverType.getPackageName(), classNode.getPackageName())) {
                 // GROOVY-6962: package private class, public method
                 owner = BytecodeHelper.getClassInternalName(receiverType);
             }
