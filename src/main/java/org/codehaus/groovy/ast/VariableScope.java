@@ -27,7 +27,7 @@ import java.util.Map;
  * Records declared and referenced variabes for a given scope.  Helps determine
  * variable sharing across closure and method boundaries.
  */
-public class VariableScope implements Cloneable {
+public class VariableScope {
 
     private VariableScope parent;
     private ClassNode classScope;
@@ -186,7 +186,6 @@ public class VariableScope implements Cloneable {
 
     //
 
-    // TODO: implement Cloneable and override Object.clone()
     public VariableScope copy() {
         VariableScope that = new VariableScope(parent);
         that.classScope = this.classScope;

@@ -332,10 +332,10 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 if (ASTTransformation.class.isAssignableFrom(gTransClass)) {
                     ASTTransformation instance = (ASTTransformation) gTransClass.getDeclaredConstructor().newInstance();
                     if (instance instanceof CompilationUnitAware) {
-                        ((CompilationUnitAware)instance).setCompilationUnit(compilationUnit);
+                        ((CompilationUnitAware) instance).setCompilationUnit(compilationUnit);
                     }
                     CompilationUnit.ISourceUnitOperation suOp = source -> {
-                        instance.visit(new ASTNode[] {source.getAST()}, source);
+                        instance.visit(new ASTNode[]{source.getAST()}, source);
                     };
                     if (isFirstScan) {
                         compilationUnit.addPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
