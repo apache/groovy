@@ -22,15 +22,16 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 
 public class LambdaWriter extends ClosureWriter {
-    public LambdaWriter(WriterController wc) {
-        super(wc);
+
+    public LambdaWriter(final WriterController controller) {
+        super(controller);
     }
 
-    public void writeLambda(LambdaExpression expression) {
+    public void writeLambda(final LambdaExpression expression) {
         super.writeClosure(expression);
     }
 
-    protected Parameter[] getLambdaSharedVariables(LambdaExpression expression) {
+    protected Parameter[] getLambdaSharedVariables(final LambdaExpression expression) {
         return super.getClosureSharedVariables(expression);
     }
 }
