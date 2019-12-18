@@ -677,7 +677,7 @@ public class CompilationUnit extends ProcessingUnit {
         }
     }
 
-    private void sortClasses() throws CompilationFailedException {
+    private void sortClasses() {
         for (ModuleNode module : getAST().getModules()) {
             module.sortClasses();
         }

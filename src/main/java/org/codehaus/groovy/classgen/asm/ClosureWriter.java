@@ -70,17 +70,14 @@ public class ClosureWriter {
 
     protected interface UseExistingReference {}
 
-    private final Map<Expression,ClassNode> closureClassMap;
-    private final WriterController controller;
-    private final WriterControllerFactory factory;
+    protected final WriterController controller;
+    private final Map<Expression,ClassNode> closureClasses = new HashMap<>();
 
-    public ClosureWriter(WriterController wc) {
-        this.controller = wc;
-        closureClassMap = new HashMap<Expression,ClassNode>();
-        factory = normalController -> controller;
+    public ClosureWriter(final WriterController controller) {
+        this.controller = controller;
     }
 
-    public void writeClosure(ClosureExpression expression) {
+    public void writeClosure(final ClosureExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode classNode = controller.getClassNode();
@@ -94,8 +91,8 @@ public class ClosureWriter {
         }
         ClassNode closureClass = getOrAddClosureClass(expression, mods);
         String closureClassinternalName = BytecodeHelper.getClassInternalName(closureClass);
-        List constructors = closureClass.getDeclaredConstructors();
-        ConstructorNode node = (ConstructorNode) constructors.get(0);
+        List<ConstructorNode> constructors = closureClass.getDeclaredConstructors();
+        ConstructorNode node = constructors.get(0);
 
         Parameter[] localVariableParams = node.getParameters();
 
@@ -128,13 +125,13 @@ public class ClosureWriter {
         mv.visitMethodInsn(INVOKESPECIAL, closureClassinternalName, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams), false);
         controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE, localVariableParams.length);
     }
-    
-    public static void loadReference(String name, WriterController controller) {
+
+    public static void loadReference(final String name, final WriterController controller) {
         CompileStack compileStack = controller.getCompileStack();
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode classNode = controller.getClassNode();
         AsmClassGenerator acg = controller.getAcg();
-        
+
         // compileStack.containsVariable(name) means to ask if the variable is already declared
         // compileStack.getScope().isReferencedClassVariable(name) means to ask if the variable is a field
         // If it is no field and is not yet declared, then it is either a closure shared variable or
@@ -158,19 +155,19 @@ public class ClosureWriter {
         }
     }
 
-    public ClassNode getOrAddClosureClass(ClosureExpression expression, int mods) {
-        ClassNode closureClass = closureClassMap.get(expression);
+    public ClassNode getOrAddClosureClass(final ClosureExpression expression, final int modifiers) {
+        ClassNode closureClass = closureClasses.get(expression);
         if (closureClass == null) {
-            closureClass = createClosureClass(expression, mods);
-            closureClassMap.put(expression, closureClass);
+            closureClass = createClosureClass(expression, modifiers);
+            closureClasses.put(expression, closureClass);
             controller.getAcg().addInnerClass(closureClass);
             closureClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
-            closureClass.putNodeMetaData(WriterControllerFactory.class, factory);
+            closureClass.putNodeMetaData(WriterControllerFactory.class, (WriterControllerFactory) x -> controller);
         }
         return closureClass;
     }
 
-    private static boolean classNodeUsesReferences(ClassNode classNode) {
+    private static boolean classNodeUsesReferences(final ClassNode classNode) {
         boolean ret = classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
         if (ret) return ret;
         if (classNode instanceof InnerClassNode) {
@@ -179,11 +176,10 @@ public class ClosureWriter {
         }
         return false;
     }
-    
-    protected ClassNode createClosureClass(ClosureExpression expression, int mods) {
+
+    protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         ClassNode classNode = controller.getClassNode();
         ClassNode outerClass = controller.getOutermostClass();
-//        MethodNode methodNode = controller.getMethodNode();
         String name = genClosureClassName();
         boolean staticMethodOrInStaticClass = controller.isStaticMethod() || classNode.isStaticClass();
 
@@ -201,7 +197,7 @@ public class ClosureWriter {
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
         removeInitialValues(localVariableParams);
 
-        InnerClassNode answer = new InnerClassNode(classNode, name, mods, ClassHelper.CLOSURE_TYPE.getPlainNodeReference()); 
+        InnerClassNode answer = new InnerClassNode(classNode, name, modifiers, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
         answer.setEnclosingMethod(controller.getMethodNode());
         answer.setSynthetic(true);
         answer.setUsingGenerics(outerClass.isUsingGenerics());
@@ -253,13 +249,13 @@ public class ClosureWriter {
         addFieldsAndGettersForLocalVariables(answer, localVariableParams);
 
         addConstructor(expression, localVariableParams, answer, block);
-        
+
         correctAccessedVariable(answer,expression);
-        
+
         return answer;
     }
 
-    protected ConstructorNode addConstructor(ClosureExpression expression, Parameter[] localVariableParams, InnerClassNode answer, BlockStatement block) {
+    protected ConstructorNode addConstructor(final ClosureExpression expression, final Parameter[] localVariableParams, final InnerClassNode answer, final BlockStatement block) {
         Parameter[] params = new Parameter[2 + localVariableParams.length];
         params[0] = new Parameter(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
         params[1] = new Parameter(ClassHelper.OBJECT_TYPE, THIS_OBJECT);
@@ -271,7 +267,7 @@ public class ClosureWriter {
         return constructorNode;
     }
 
-    protected void addFieldsAndGettersForLocalVariables(InnerClassNode answer, Parameter[] localVariableParams) {
+    protected void addFieldsAndGettersForLocalVariables(final InnerClassNode answer, final Parameter[] localVariableParams) {
         for (Parameter param : localVariableParams) {
             String paramName = param.getName();
             ClassNode type = param.getType();
@@ -298,7 +294,7 @@ public class ClosureWriter {
         }
     }
 
-    protected BlockStatement createBlockStatementForConstructor(ClosureExpression expression, ClassNode outerClass, ClassNode thisClassNode) {
+    protected BlockStatement createBlockStatementForConstructor(final ClosureExpression expression, final ClassNode outerClass, final ClassNode thisClassNode) {
         BlockStatement block = new BlockStatement();
         // this block does not get a source position, because we don't
         // want this synthetic constructor to show up in corbertura reports
@@ -329,12 +325,12 @@ public class ClosureWriter {
     protected static class CorrectAccessedVariableVisitor extends CodeVisitorSupport {
         private InnerClassNode icn;
 
-        public CorrectAccessedVariableVisitor(InnerClassNode icn) {
+        public CorrectAccessedVariableVisitor(final InnerClassNode icn) {
             this.icn = icn;
         }
 
         @Override
-        public void visitVariableExpression(VariableExpression expression) {
+        public void visitVariableExpression(final VariableExpression expression) {
             Variable v = expression.getAccessedVariable();
             if (v == null) return;
             if (!(v instanceof FieldNode)) return;
@@ -346,7 +342,7 @@ public class ClosureWriter {
         }
     }
 
-    private static void correctAccessedVariable(final InnerClassNode closureClass, ClosureExpression ce) {
+    private static void correctAccessedVariable(final InnerClassNode closureClass, final ClosureExpression ce) {
         new CorrectAccessedVariableVisitor(closureClass).visitClosureExpression(ce);
     }
 
@@ -357,7 +353,7 @@ public class ClosureWriter {
      * same method, in this case the constructor. A closure should not
      * have more than one constructor!
      */
-    protected static void removeInitialValues(Parameter[] params) {
+    protected static void removeInitialValues(final Parameter[] params) {
         for (int i = 0; i < params.length; i++) {
             if (params[i].hasInitialExpression()) {
                 Parameter p = new Parameter(params[i].getType(), params[i].getName());
@@ -367,13 +363,13 @@ public class ClosureWriter {
         }
     }
 
-    public boolean addGeneratedClosureConstructorCall(ConstructorCallExpression call) {
+    public boolean addGeneratedClosureConstructorCall(final ConstructorCallExpression call) {
         ClassNode classNode = controller.getClassNode();
         if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) return false;
 
         AsmClassGenerator acg = controller.getAcg();
         OperandStack operandStack = controller.getOperandStack();
-        
+
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
         ClassNode callNode = classNode.getSuperClass();
@@ -391,12 +387,12 @@ public class ClosureWriter {
         return true;
     }
 
-    protected Parameter[] getClosureSharedVariables(ClosureExpression ce) {
+    protected Parameter[] getClosureSharedVariables(final ClosureExpression ce) {
         VariableScope scope = ce.getVariableScope();
         Parameter[] ret = new Parameter[scope.getReferencedLocalVariablesCount()];
         int index = 0;
-        for (Iterator iter = scope.getReferencedLocalVariablesIterator(); iter.hasNext();) {
-            Variable element = (org.codehaus.groovy.ast.Variable) iter.next();
+        for (Iterator<Variable> iter = scope.getReferencedLocalVariablesIterator(); iter.hasNext();) {
+            Variable element = iter.next();
             Parameter p = new Parameter(element.getType(), element.getName());
             p.setOriginType(element.getOriginType());
             p.setClosureSharedVariable(element.isClosureSharedVariable());
@@ -405,8 +401,8 @@ public class ClosureWriter {
         }
         return ret;
     }
-    
-    private void loadThis() {
+
+    protected void loadThis() {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
         if (controller.isInClosure()) {
