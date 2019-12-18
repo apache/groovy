@@ -113,7 +113,7 @@ public class CompilationUnit extends ProcessingUnit {
 
     /** Controls behavior of {@link #classgen()} and other routines. */
     protected boolean debug;
-    /** True after the first {@link #configure()} operation. */
+    /** True after the first {@link #configure(CompilerConfiguration)} operation. */
     protected boolean configured;
 
     /** A callback for use during {@link #classgen()} */
