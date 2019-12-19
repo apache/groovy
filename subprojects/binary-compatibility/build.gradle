@@ -18,9 +18,22 @@
  */
 import me.champeau.gradle.japicmp.JapicmpTask
 
-plugins {
-    id "me.champeau.gradle.japicmp" version "0.2.8"
+//plugins {
+//    id "me.champeau.gradle.japicmp" version "0.2.8"
+//}
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    dependencies {
+        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.2.8'
+        classpath 'com.google.guava:guava:27.0-jre'
+    }
 }
+apply plugin: 'me.champeau.gradle.japicmp'
 
 def checkBinaryCompatibility = tasks.register("checkBinaryCompatibility") {
     description = "Generates binary compatibility reports"
@@ -32,12 +45,10 @@ tasks.check {
 
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.
 Set excludeModules = [
-        "groovy-cli-picocli", "groovy-cli-commons", "groovy-dateutil", "groovy-datetime", "groovy-jaxb",
-        "groovy-macro", "groovy-json-direct", "groovy-test-junit5", "groovy-yaml", "performance", "tests-vm8",
-        "binary-compatibility"
+        "groovy-json-direct", "groovy-yaml", "performance", "tests-vm8", "binary-compatibility"
 ]
 
-def compatibilityBaselineVersion = "2.4.15"
+def compatibilityBaselineVersion = "2.5.8"
 
 def thisProject = project
 
