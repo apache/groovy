@@ -31,9 +31,11 @@ import org.objectweb.asm.tree.analysis.SimpleVerifier;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -94,18 +96,24 @@ public class VerifyClass extends MatchingTask {
     }
 
     private boolean readClass(String clazz) throws IOException {
-        ClassReader cr = new ClassReader(new FileInputStream(clazz));
-        ClassNode ca = new ClassNode() {
-            public void visitEnd() {
-                //accept(cv);
-            }
-        };
-        cr.accept(new CheckClassAdapter(ca), ClassWriter.COMPUTE_MAXS);
-        boolean failed = false;
+        ClassNode ca;
+        try (final InputStream inputStream =
+                     new BufferedInputStream(
+                             new FileInputStream(clazz))) {
+            ClassReader cr = new ClassReader(inputStream);
+            ca = new ClassNode() {
+                @Override
+                public void visitEnd() {
+                    //accept(cv);
+                }
+            };
+            cr.accept(new CheckClassAdapter(ca), ClassWriter.COMPUTE_MAXS);
+        }
 
-        List methods = ca.methods;
-        for (int i = 0; i < methods.size(); ++i) {
-            MethodNode method = (MethodNode) methods.get(i);
+        boolean failed = false;
+        List<MethodNode> methods = ca.methods;
+        for (int i = 0, n = methods.size(); i < n; ++i) {
+            MethodNode method = methods.get(i);
             if (method.instructions.size() > 0) {
                 Analyzer a = new Analyzer(new SimpleVerifier());
                 try {

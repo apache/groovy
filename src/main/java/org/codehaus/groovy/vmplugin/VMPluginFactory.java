@@ -18,7 +18,13 @@
  */
 package org.codehaus.groovy.vmplugin;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.vmplugin.v7.Java7;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Factory class to get functionality based on the VM version.
@@ -26,6 +32,7 @@ import org.codehaus.groovy.vmplugin.v7.Java7;
  * runtime.
  */
 public class VMPluginFactory {
+    private static final Logger LOGGER = Logger.getLogger(VMPluginFactory.class.getName());
 
     private static final String JDK8_CLASSNAME_CHECK = "java.util.Optional";
     private static final String JDK9_CLASSNAME_CHECK = "java.lang.Module";
@@ -33,7 +40,7 @@ public class VMPluginFactory {
     private static final String JDK8_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v8.Java8";
     private static final String JDK9_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v9.Java9";
 
-    private static final VMPlugin plugin;
+    private static final VMPlugin PLUGIN;
 
     static {
         VMPlugin target = createPlugin(JDK9_CLASSNAME_CHECK, JDK9_PLUGIN_NAME);
@@ -43,20 +50,29 @@ public class VMPluginFactory {
                 target = new Java7();
             }
         }
-        plugin = target;
+
+        PLUGIN = target;
     }
 
     public static VMPlugin getPlugin() {
-        return plugin;
+        return PLUGIN;
     }
 
-    private static VMPlugin createPlugin(String classNameCheck, String pluginName) {
-        try {
-            ClassLoader loader = VMPluginFactory.class.getClassLoader();
-            loader.loadClass(classNameCheck);
-            return (VMPlugin) loader.loadClass(pluginName).getDeclaredConstructor().newInstance();
-        } catch (Throwable ex) {
-            return null;
-        }
+    private static VMPlugin createPlugin(final String classNameCheck, final String pluginName) {
+        return AccessController.doPrivileged((PrivilegedAction<VMPlugin>) () -> {
+            try {
+                ClassLoader loader = VMPluginFactory.class.getClassLoader();
+                loader.loadClass(classNameCheck);
+                return (VMPlugin) loader.loadClass(pluginName).getDeclaredConstructor().newInstance();
+            } catch (Throwable t) {
+                if (LOGGER.isLoggable(Level.FINE)) {
+                    LOGGER.fine("Trying to create VM plugin `" + pluginName + "` by checking `" + classNameCheck
+                            + "`, but failed:\n" + DefaultGroovyMethods.asString(t)
+                    );
+                }
+
+                return null;
+            }
+        });
     }
 }
