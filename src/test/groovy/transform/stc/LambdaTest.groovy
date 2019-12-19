@@ -1031,7 +1031,7 @@ final class LambdaTest {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test
     void testNestedLambdaAccessingInstanceFields() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -1097,7 +1097,7 @@ final class LambdaTest {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test
     void testAccessingThis2() {
         assertScript '''
             @groovy.transform.CompileStatic
