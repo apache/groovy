@@ -1053,7 +1053,7 @@ final class LambdaTest {
     }
 
     @Test // GROOVY-9332
-    void testStaticInitializeBlocks() {
+    void testStaticInitializeBlocks1() {
         assertScript '''
             @groovy.transform.CompileStatic
             class Test1 {
@@ -1073,6 +1073,18 @@ final class LambdaTest {
             class Test1 {
                 static int acc = 1
                 static { [1, 2, 3].forEach(e -> acc += e) }
+            }
+            assert Test1.acc == 7
+        '''
+    }
+
+    @Test // GROOVY-9342
+    void testStaticInitializeBlocks3() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Test1 {
+                static int acc = 1
+                static { [1, 2, 3].forEach((Integer i) -> acc += i) }
             }
             assert Test1.acc == 7
         '''

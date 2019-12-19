@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.builder.AstStringCompiler;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -60,6 +59,7 @@ import static org.codehaus.groovy.ast.ClassHelper.SERIALIZABLE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SERIALIZEDLAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.findSAM;
+import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -175,7 +175,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         mv.visitInsn(DUP);
 
         if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !accessingInstanceMembers) {
-            operandStack.pushConstant(ConstantExpression.NULL);
+            ClassNode classNode = controller.getClassNode();
+            while (isGeneratedFunction(classNode)) {
+                classNode = classNode.getOuterClass();
+            }
+            classX(classNode).visit(controller.getAcg());
         } else {
             loadThis();
         }
@@ -209,9 +213,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return lambdaSharedVariableParameters;
     }
 
-    private String createAbstractMethodDesc(final ClassNode functionalInterface, final ClassNode lambdaClassNode) {
+    private String createAbstractMethodDesc(final ClassNode functionalInterface, final ClassNode lambdaClass) {
         List<Parameter> lambdaSharedVariables = new LinkedList<>();
-        prependParameter(lambdaSharedVariables, "__lambda_this", lambdaClassNode);
+        prependParameter(lambdaSharedVariables, "__lambda_this", lambdaClass);
         return BytecodeHelper.getMethodDescriptor(functionalInterface, lambdaSharedVariables.toArray(Parameter.EMPTY_ARRAY));
     }
 

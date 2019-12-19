@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
@@ -41,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
+import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 
 public class WriterController {
 
@@ -283,8 +283,7 @@ public class WriterController {
     }
 
     public boolean isInClosure() {
-        return classNode.getOuterClass() != null
-                && ClassHelper.isGeneratedFunction(classNode);
+        return classNode.getOuterClass() != null && isGeneratedFunction(classNode);
     }
 
     public boolean isInClosureConstructor() {
