@@ -972,22 +972,15 @@ public class GenericsUtils {
     }
 
     /**
-     * Get the actual type according to the placeholder name
+     * Gets the actual type according to the placeholder name.
      *
-     * @param placeholderName the placeholder name, e.g. T, E
+     * @param placeholderName the placeholder name (i.e. "T", "E", etc.)
      * @param genericsPlaceholderAndTypeMap the result of {@link #makeDeclaringAndActualGenericsTypeMap(ClassNode, ClassNode)}
-     * @return the actual type
      */
-    public static ClassNode findActualTypeByGenericsPlaceholderName(String placeholderName, Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
-        for (Map.Entry<GenericsType, GenericsType> entry : genericsPlaceholderAndTypeMap.entrySet()) {
-            GenericsType declaringGenericsType = entry.getKey();
-
-            if (placeholderName.equals(declaringGenericsType.getName())) {
-                return entry.getValue().getType().redirect();
-            }
-        }
-
-        return null;
+    public static ClassNode findActualTypeByGenericsPlaceholderName(final String placeholderName, final Map<GenericsType, GenericsType> genericsPlaceholderAndTypeMap) {
+        return genericsPlaceholderAndTypeMap.entrySet().stream()
+                .filter(entry -> entry.getKey().getName().equals(placeholderName))
+                .map(entry -> entry.getValue().getType()).findFirst().orElse(null);
     }
 
     private static class ParameterizedTypeCacheKey {
@@ -1003,6 +996,7 @@ public class GenericsUtils {
             return genericsClass;
         }
 
+        @SuppressWarnings("unused")
         public void setGenericsClass(ClassNode genericsClass) {
             this.genericsClass = genericsClass;
         }
@@ -1011,6 +1005,7 @@ public class GenericsUtils {
             return actualType;
         }
 
+        @SuppressWarnings("unused")
         public void setActualType(ClassNode actualType) {
             this.actualType = actualType;
         }

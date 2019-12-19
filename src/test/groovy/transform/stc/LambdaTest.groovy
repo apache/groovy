@@ -178,7 +178,7 @@ final class LambdaTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9340
+    @Test // GROOVY-9340
     void testConsumerWithSelfType() {
         assertScript '''
             @groovy.transform.CompileStatic
