@@ -177,8 +177,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !accessingInstanceMembers) {
             operandStack.pushConstant(ConstantExpression.NULL);
         } else {
-            mv.visitVarInsn(ALOAD, 0);
-            operandStack.push(controller.getClassNode());
+            loadThis();
         }
 
         operandStack.dup();
