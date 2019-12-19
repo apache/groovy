@@ -741,6 +741,21 @@ final class LambdaTest {
         '''
     }
 
+    @Test // GROOVY-9347
+    void testConsumer7() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void test() {
+                int sum = 0
+                java.util.function.Consumer<? super Integer> add = i -> sum += i
+
+                [1, 2, 3].forEach(add)
+                assert sum == 6
+            }
+            test()
+        '''
+    }
+
     @Test
     void testFunctionalInterface1() {
         assertScript '''
@@ -1066,7 +1081,7 @@ final class LambdaTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9342
+    @Test @NotYetImplemented // GROOVY-9347
     void testStaticInitializeBlocks2() {
         assertScript '''
             @groovy.transform.CompileStatic
