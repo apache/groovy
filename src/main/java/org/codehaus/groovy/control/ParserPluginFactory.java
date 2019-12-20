@@ -35,7 +35,8 @@ public abstract class ParserPluginFactory {
     }
 
     /**
-     * creates the ANTLR 2.7 parser
+     * Creates the ANTLR 2 parser.
+     *
      * @return the factory for the parser
      */
     @Deprecated
