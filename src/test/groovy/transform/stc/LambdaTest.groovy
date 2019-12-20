@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
 import org.junit.Test
 
@@ -1081,7 +1080,7 @@ final class LambdaTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9347
+    @Test // GROOVY-9347
     void testStaticInitializeBlocks2() {
         assertScript '''
             @groovy.transform.CompileStatic
