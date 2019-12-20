@@ -1090,6 +1090,11 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     @Deprecated
+    public void applyToSourceUnits(final SourceUnitOperation op) throws CompilationFailedException {
+        op.doPhaseOperation(this);
+    }
+
+    @Deprecated
     public abstract static class SourceUnitOperation implements ISourceUnitOperation {
     }
 
