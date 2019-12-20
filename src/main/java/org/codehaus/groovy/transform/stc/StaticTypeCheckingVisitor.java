@@ -248,6 +248,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDG
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCorrectedClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getGenericsWithoutArray;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getOperationName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -2749,7 +2750,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     private void inferSAMType(final Parameter param, final ClassNode receiver, final MethodNode methodWithSAMParameter, final ArgumentListExpression originalMethodCallArguments, final ClosureExpression openBlock) {
         // first we try to get as much information about the declaration class through the receiver
         Map<GenericsTypeName, GenericsType> targetMethodConnections = new HashMap<>();
-        extractGenericsConnections(targetMethodConnections, receiver, receiver.redirect());
+        for (ClassNode face : receiver.getAllInterfaces()) {
+            extractGenericsConnections(targetMethodConnections, getCorrectedClassNode(receiver, face, true), face.redirect());
+        }
+        if (!receiver.isInterface()) {
+            extractGenericsConnections(targetMethodConnections, receiver, receiver.redirect());
+        }
 
         // then we use the method with the SAM-type parameter to get more information about the declaration
         Parameter[] parametersOfMethodContainingSAM = methodWithSAMParameter.getParameters();
