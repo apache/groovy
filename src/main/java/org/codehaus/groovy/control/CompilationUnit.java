@@ -1058,6 +1058,10 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     //--------------------------------------------------------------------------
+    @Deprecated // IntelliJ IDEA depends on the API
+    public void applyToPrimaryClassNodes(final PrimaryClassNodeOperation op) throws CompilationFailedException {
+        op.doPhaseOperation(this);
+    }
 
     @Deprecated
     public void addPhaseOperation(final GroovyClassOperation op) {
