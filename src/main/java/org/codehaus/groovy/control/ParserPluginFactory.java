@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control;
 
 import org.apache.groovy.parser.antlr4.Antlr4PluginFactory;
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory;
 
 /**
  * A factory of parser plugin instances.
@@ -34,13 +35,12 @@ public abstract class ParserPluginFactory {
     }
 
     /**
-     * Creates the ANTLR 2 parser.
-     *
-     * @throws UnsupportedOperationException always
+     * creates the ANTLR 2.7 parser
+     * @return the factory for the parser
      */
     @Deprecated
     public static ParserPluginFactory antlr2() {
-        throw new UnsupportedOperationException("The Antlr2-based parser is no longer supported");
+        return new AntlrParserPluginFactory();
     }
 
     public abstract ParserPlugin createParserPlugin();
