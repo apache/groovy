@@ -867,7 +867,7 @@ public class GenericsUtils {
     private static Map<GenericsType, GenericsType> connectGenericsTypes(Map<GenericsType, GenericsType> genericsTypeMap) {
         Map<GenericsType, GenericsType> result = new LinkedHashMap<>();
 
-        outter:
+        outer:
         for (Map.Entry<GenericsType, GenericsType> entry : genericsTypeMap.entrySet()) {
             GenericsType key = entry.getKey();
             GenericsType value = entry.getValue();
@@ -877,7 +877,7 @@ public class GenericsUtils {
                     GenericsType genericsTypeMapEntryValue = genericsTypeMapEntry.getValue();
                     if (!genericsTypeMapEntryValue.isPlaceholder() && (genericsTypeMapEntry.getKey().getName().equals(value.getName()))) {
                         result.put(key, genericsTypeMapEntryValue); // connected to actual type
-                        continue outter;
+                        continue outer;
                     }
                 }
             }
