@@ -727,9 +727,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
         typeCheckingContext.pushEnclosingBinaryExpression(expression);
         try {
+            int op = expression.getOperation().getType();
             Expression leftExpression = expression.getLeftExpression();
             Expression rightExpression = expression.getRightExpression();
-            int op = expression.getOperation().getType();
+
             leftExpression.visit(this);
             SetterInfo setterInfo = removeSetterInfo(leftExpression);
             ClassNode lType = null;
@@ -739,21 +740,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             } else {
                 lType = getType(leftExpression);
-
-                Expression constructedRightExpression = rightExpression;
-
-                boolean isMethodRefRHS = (rightExpression instanceof MethodReferenceExpression && isFunctionalInterface(lType));
-                if (isMethodRefRHS) {
-                    constructedRightExpression = constructLambdaExpressionForMethodReference(lType);
-                }
-
-                inferParameterAndReturnTypesOfClosureOnRHS(lType, constructedRightExpression, op);
-
-                if (isMethodRefRHS) {
-                    LambdaExpression lambdaExpression = (LambdaExpression) constructedRightExpression;
+                boolean isFunctionalInterface = isFunctionalInterface(lType);
+                if (isFunctionalInterface && rightExpression instanceof MethodReferenceExpression) {
+                    LambdaExpression lambdaExpression = constructLambdaExpressionForMethodReference(lType);
+                    if (op == ASSIGN) {
+                        inferParameterAndReturnTypesOfClosureOnRHS(lType, lambdaExpression);
+                    }
                     rightExpression.putNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION, lambdaExpression);
-                    rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS,
-                            Arrays.stream(lambdaExpression.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new));
+                    rightExpression.putNodeMetaData(CLOSURE_ARGUMENTS, Arrays.stream(lambdaExpression.getParameters()).map(Parameter::getType).toArray(ClassNode[]::new));
+
+                } else if (op == ASSIGN && isFunctionalInterface && rightExpression instanceof ClosureExpression) {
+                    inferParameterAndReturnTypesOfClosureOnRHS(lType, (ClosureExpression) rightExpression);
                 }
 
                 rightExpression.visit(this);
@@ -913,29 +910,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void inferParameterAndReturnTypesOfClosureOnRHS(final ClassNode lType, final Expression rightExpression, final int op) {
-        if (ASSIGN == op) {
-            if (rightExpression instanceof ClosureExpression && isFunctionalInterface(lType)) {
-                Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lType);
-                ClassNode[] paramTypes = typeInfo.getV1();
-                ClosureExpression closureExpression = ((ClosureExpression) rightExpression);
-                Parameter[] closureParameters = getParametersSafe(closureExpression);
+    private void inferParameterAndReturnTypesOfClosureOnRHS(final ClassNode lhsType, final ClosureExpression rhsExpression) {
+        Tuple2<ClassNode[], ClassNode> typeInfo = GenericsUtils.parameterizeSAM(lhsType);
+        Parameter[] closureParameters = getParametersSafe(rhsExpression);
+        ClassNode[] parameterTypes = typeInfo.getV1();
 
-                if (paramTypes.length == closureParameters.length) {
-                    for (int i = 0, n = closureParameters.length; i < n; i++) {
-                        Parameter parameter = closureParameters[i];
-                        if (parameter.isDynamicTyped()) {
-                            parameter.setType(paramTypes[i]);
-                            parameter.setOriginType(paramTypes[i]);
-                        }
-                    }
-                } else {
-                    addStaticTypeError("Wrong number of parameters: ", closureExpression);
+        int n = closureParameters.length;
+        if (n == parameterTypes.length) {
+            for (int i = 0; i < n; i += 1) {
+                Parameter parameter = closureParameters[i];
+                if (parameter.isDynamicTyped()) {
+                    parameter.setType(parameterTypes[i]);
+                    parameter.setOriginType(parameterTypes[i]);
                 }
-
-                storeInferredReturnType(rightExpression, typeInfo.getV2());
             }
+        } else {
+            addStaticTypeError("Wrong number of parameters: ", rhsExpression);
         }
+
+        storeInferredReturnType(rhsExpression, typeInfo.getV2());
     }
 
     /**
@@ -2743,84 +2736,82 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * In a method call with SAM coercion the inference is to be understood as a
+     * two phase process.  We have the normal method call to the target method
+     * with the closure argument and we have the SAM method that will be called
+     * inside the normal target method.  To infer correctly we have to "simulate"
+     * this process. We know the call to the closure will be done through the SAM
+     * type, so the SAM type generics deliver information about the Closure.  At
+     * the same time the SAM class is used in the target method parameter,
+     * providing a connection from the SAM type and the target method's class.
+     */
     private void inferSAMType(final Parameter param, final ClassNode receiver, final MethodNode methodWithSAMParameter, final ArgumentListExpression originalMethodCallArguments, final ClosureExpression openBlock) {
-        // In a method call with SAM coercion the inference is to be
-        // understood as a two phase process. We have the normal method call
-        // to the target method with the closure argument and we have the
-        // SAM method that will be called inside the normal target method.
-        // To infer correctly we have to "simulate" this process. We know the
-        // call to the closure will be done through the SAM type, so the SAM
-        // type generics deliver information about the Closure. At the same
-        // time the SAM class is used in the target method parameter,
-        // providing a connection from the SAM type and the target method
-        // declaration class.
+        // first we try to get as much information about the declaration class through the receiver
+        Map<GenericsTypeName, GenericsType> targetMethodConnections = new HashMap<>();
+        extractGenericsConnections(targetMethodConnections, receiver, receiver.redirect());
 
-        // First we try to get as much information about the declaration
-        // class through the receiver
-        Map<GenericsTypeName, GenericsType> targetMethodDeclarationClassConnections = new HashMap<>();
-        extractGenericsConnections(targetMethodDeclarationClassConnections, receiver, receiver.redirect());
-        // then we use the method with the SAM parameter to get more information about the declaration
+        // then we use the method with the SAM-type parameter to get more information about the declaration
         Parameter[] parametersOfMethodContainingSAM = methodWithSAMParameter.getParameters();
-        for (int i = 0; i < parametersOfMethodContainingSAM.length; i++) {
+        for (int i = 0, n = parametersOfMethodContainingSAM.length; i < n; i += 1) {
+            ClassNode parameterType = parametersOfMethodContainingSAM[i].getType();
             // potentially skip empty varargs
-            if (i == parametersOfMethodContainingSAM.length - 1
-                    && i == originalMethodCallArguments.getExpressions().size()
-                    && parametersOfMethodContainingSAM[i].getType().isArray())
+            if (i == (n - 1) && i == originalMethodCallArguments.getExpressions().size() && parameterType.isArray()) {
                 continue;
+            }
             Expression callArg = originalMethodCallArguments.getExpression(i);
             // we look at the closure later in detail, so skip it here
-            if (callArg == openBlock) continue;
-            ClassNode parameterType = parametersOfMethodContainingSAM[i].getType();
-            extractGenericsConnections(targetMethodDeclarationClassConnections, getType(callArg), parameterType);
+            if (callArg == openBlock) {
+                continue;
+            }
+            extractGenericsConnections(targetMethodConnections, getType(callArg), parameterType);
         }
 
         // To make a connection to the SAM class we use that new information
         // to replace the generics in the SAM type parameter of the target
         // method and than that to make the connections to the SAM type generics
-        ClassNode paramTypeWithReceiverInformation = applyGenericsContext(targetMethodDeclarationClassConnections, param.getOriginType());
-        Map<GenericsTypeName, GenericsType> SAMTypeConnections = new HashMap<>();
-        ClassNode classForSAM = paramTypeWithReceiverInformation.redirect();
-        extractGenericsConnections(SAMTypeConnections, paramTypeWithReceiverInformation, classForSAM);
+        ClassNode paramTypeWithReceiverInformation = applyGenericsContext(targetMethodConnections, param.getOriginType());
+        Map<GenericsTypeName, GenericsType> samTypeConnections = new HashMap<>();
+        ClassNode samTypeRedirect = paramTypeWithReceiverInformation.redirect();
+        extractGenericsConnections(samTypeConnections, paramTypeWithReceiverInformation, samTypeRedirect);
 
         // should the open block provide final information we apply that
         // to the corresponding parameters of the SAM type method
-        MethodNode methodForSAM = findSAM(classForSAM);
-        ClassNode[] parameterTypesForSAM = extractTypesFromParameters(methodForSAM.getParameters());
-        ClassNode[] blockParameterTypes = openBlock.getNodeMetaData(CLOSURE_ARGUMENTS);
-        if (blockParameterTypes == null) {
+        MethodNode abstractMethod = findSAM(samTypeRedirect);
+        ClassNode[] abstractMethodParamTypes = extractTypesFromParameters(abstractMethod.getParameters());
+        ClassNode[] blockParamTypes = openBlock.getNodeMetaData(CLOSURE_ARGUMENTS);
+        if (blockParamTypes == null) {
             Parameter[] p = openBlock.getParameters();
             if (p == null) {
                 // zero parameter closure e.g. { -> println 'no args' }
-                blockParameterTypes = ClassNode.EMPTY_ARRAY;
-            } else if (p.length == 0 && parameterTypesForSAM.length != 0) {
+                blockParamTypes = ClassNode.EMPTY_ARRAY;
+            } else if (p.length == 0 && abstractMethodParamTypes.length != 0) {
                 // implicit it
-                blockParameterTypes = parameterTypesForSAM;
+                blockParamTypes = abstractMethodParamTypes;
             } else {
-                blockParameterTypes = new ClassNode[p.length];
-                for (int i = 0; i < p.length; i++) {
+                blockParamTypes = new ClassNode[p.length];
+                for (int i = 0, n = p.length; i < n; i += 1) {
                     if (p[i] != null && !p[i].isDynamicTyped()) {
-                        blockParameterTypes[i] = p[i].getType();
+                        blockParamTypes[i] = p[i].getType();
                     } else {
-                        blockParameterTypes[i] = typeOrNull(parameterTypesForSAM, i);
+                        blockParamTypes[i] = typeOrNull(abstractMethodParamTypes, i);
                     }
                 }
             }
         }
-        for (int i = 0; i < blockParameterTypes.length; i++) {
-            extractGenericsConnections(SAMTypeConnections, blockParameterTypes[i], typeOrNull(parameterTypesForSAM, i));
+        for (int i = 0, n = blockParamTypes.length; i < n; i += 1) {
+            extractGenericsConnections(samTypeConnections, blockParamTypes[i], typeOrNull(abstractMethodParamTypes, i));
         }
 
-        // and finally we apply the generics information to the parameters and
+        // finally apply the generics information to the parameters and
         // store the type of parameter and block type as meta information
-        for (int i = 0; i < blockParameterTypes.length; i++) {
-            ClassNode resolvedParameter =
-                    applyGenericsContext(SAMTypeConnections, typeOrNull(parameterTypesForSAM, i));
-            blockParameterTypes[i] = resolvedParameter;
+        for (int i = 0, n = blockParamTypes.length; i < n; i += 1) {
+            blockParamTypes[i] = applyGenericsContext(samTypeConnections, typeOrNull(abstractMethodParamTypes, i));
         }
 
-        tryToInferUnresolvedBlockParameterType(paramTypeWithReceiverInformation, methodForSAM, blockParameterTypes);
+        tryToInferUnresolvedBlockParameterType(paramTypeWithReceiverInformation, abstractMethod, blockParamTypes);
 
-        openBlock.putNodeMetaData(CLOSURE_ARGUMENTS, blockParameterTypes);
+        openBlock.putNodeMetaData(CLOSURE_ARGUMENTS, blockParamTypes);
     }
 
     private void tryToInferUnresolvedBlockParameterType(final ClassNode paramTypeWithReceiverInformation, final MethodNode methodForSAM, final ClassNode[] blockParameterTypes) {
@@ -3212,7 +3203,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         // if the call expression is a spread operator call, then we must make sure that
         // the call is made on a collection type
         if (call.isSpreadSafe()) {
-            //TODO check if this should not be change to iterator based call logic
+            // TODO: check if this should not be change to iterator based call logic
             ClassNode expressionType = getType(objectExpression);
             if (!implementsInterfaceOrIsSubclassOf(expressionType, Collection_TYPE) && !expressionType.isArray()) {
                 addStaticTypeError("Spread operator can only be used on collection types", objectExpression);
@@ -3243,7 +3234,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         checkForbiddenSpreadArgument(argumentList);
 
         // for arguments, we need to visit closures *after* the method has been chosen
-
 
         ClassNode receiver = getType(objectExpression);
         visitMethodCallArguments(receiver, argumentList, false, null);

@@ -18,149 +18,159 @@
  */
 package gls.generics
 
-import gls.CompilableTestSupport
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-// GROOVY-6167
-class GenericsUsageOrderingTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+@CompileStatic
+final class GenericsUsageOrderingTest {
+
+    @Test
     void testGroovy6167() {
-        shouldCompile '''
-        public class Foo<T extends List<X>, X extends Number> {}
+        assertScript '''
+            class Foo<T extends List<X>, X extends Number> {
+            }
+            assert true
         '''
     }
 
+    @Test
     void testIncompatibleType1() {
-        def errMsg = shouldFail '''
-        @groovy.transform.CompileStatic
-        public class Foo<T extends List<X>, X extends Number> {
-            static void main(String[] args) {
-                def f = new Foo<ArrayList<String>, String>()
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            class Foo<T extends List<X>, X extends Number> {
+                static main(args) {
+                    def f = new Foo<ArrayList<String>, String>()
+                }
             }
-        }
         '''
-
-        assert errMsg.contains('The type String is not a valid substitute for the bounded parameter <X extends java.lang.Number>')
+        assert err.message.contains('The type String is not a valid substitute for the bounded parameter <X extends java.lang.Number>')
     }
 
+    @Test
     void testIncompatibleType2() {
-        def errMsg = shouldFail '''
-        @groovy.transform.CompileStatic
-        public class Foo<T extends List<X>, X extends Number> {
-            static void main(String[] args) {
-                def f = new Foo<HashSet<Integer>, Integer>()
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            class Foo<T extends List<X>, X extends Number> {
+                static main(args) {
+                    def f = new Foo<HashSet<Integer>, Integer>()
+                }
             }
-        }
         '''
-
-        assert errMsg.contains('The type HashSet is not a valid substitute for the bounded parameter <T extends java.util.List<X>>')
+        assert err.message.contains('The type HashSet is not a valid substitute for the bounded parameter <T extends java.util.List<X>>')
     }
 
+    @Test
     void testParameter() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        public class Foo<T extends List<X>, X extends Number> {
-            X getFirstElement(T t) {
-                X x = t.get(0)
-                return x
-            }
+            @groovy.transform.CompileStatic
+            class Foo<T extends List<X>, X extends Number> {
+                X getFirstElement(T t) {
+                    X x = t.get(0)
+                    return x
+                }
 
-            static void main(String[] args) {
-                def f = new Foo<ArrayList<Integer>, Integer>()
-                def list = new ArrayList<Integer>()
-                list.add(123)
-                assert 123 == f.getFirstElement(list)
+                static main(args) {
+                    def f = new Foo<ArrayList<Integer>, Integer>()
+                    def list = new ArrayList<Integer>()
+                    list.add(123)
+                    assert f.getFirstElement(list) == 123
+                }
             }
-        }
         '''
     }
 
+    @Test
     void testVariable() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        public class Foo<T extends List<X>, X extends Number> {
-            X getFirstElement() {
-                def list = new ArrayList<Integer>()
-                list.add(123)
-                T t = list
-                X x = t.get(0)
-                return x
-            }
+            @groovy.transform.CompileStatic
+            class Foo<T extends List<X>, X extends Number> {
+                X getFirstElement() {
+                    def list = new ArrayList<Integer>()
+                    list.add(123)
+                    T t = list
+                    X x = t.get(0)
+                    return x
+                }
 
-            static void main(String[] args) {
-                def f = new Foo<ArrayList<Integer>, Integer>()
-                assert 123 == f.getFirstElement()
+                static main(args) {
+                    def f = new Foo<ArrayList<Integer>, Integer>()
+                    assert f.getFirstElement() == 123
+                }
             }
-        }
         '''
     }
 
+    @Test
     void testField() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        public class Foo<T extends List<X>, X extends Number> {
-            T t
+            @groovy.transform.CompileStatic
+            class Foo<T extends List<X>, X extends Number> {
+                T t
 
-            {
-                def list = new ArrayList<Integer>()
-                list.add(123)
-                t = list
-            }
+                {
+                    def list = new ArrayList<Integer>()
+                    list.add(123)
+                    t = list
+                }
 
-            X getFirstElement() {
-                X x = t.get(0)
-                return x
-            }
+                X getFirstElement() {
+                    X x = t.get(0)
+                    return x
+                }
 
-            static void main(String[] args) {
-                def f = new Foo<ArrayList<Integer>, Integer>()
-                assert 123 == f.getFirstElement()
+                static main(args) {
+                    def f = new Foo<ArrayList<Integer>, Integer>()
+                    assert f.getFirstElement() == 123
+                }
             }
-        }
         '''
     }
 
+    @Test
     void testParameter2() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        public class Foo<T extends List<X>, X extends Number> {
-            X getFirstElement(List<X> list) {
-                X x = list.get(0)
+            @groovy.transform.CompileStatic
+            class Foo<T extends List<X>, X extends Number> {
+                X getFirstElement(List<X> list) {
+                    X x = list.get(0)
+                    assert Number == x.getClass().getGenericSuperclass()
+                    return x
+                }
 
-                assert Number == x.getClass().getGenericSuperclass()
+                Number getFirstNumber(T t) {
+                    return getFirstElement(t)
+                }
 
-                return x
+                static main(args) {
+                    def f = new Foo<ArrayList<Integer>, Integer>()
+                    def list = new ArrayList<Integer>()
+                    list.add(123)
+                    assert f.getFirstNumber(list) == 123
+                }
             }
-
-            Number getFirstNumber(T t) {
-                return getFirstElement(t)
-            }
-
-            static void main(String[] args) {
-                def f = new Foo<ArrayList<Integer>, Integer>()
-                def list = new ArrayList<Integer>()
-                list.add(123)
-                assert 123 == f.getFirstNumber(list)
-            }
-        }
         '''
     }
 
+    @Test
     void testParameterAndVariable() {
         assertScript '''
-        @groovy.transform.CompileStatic
-        public class Foo<T extends List<X>, X extends Number> {
-            X getFirstElement(List<X> t) {
-                X x = t.get(0)
-                return x
-            }
+            @groovy.transform.CompileStatic
+            class Foo<T extends List<X>, X extends Number> {
+                X getFirstElement(List<X> t) {
+                    X x = t.get(0)
+                    return x
+                }
 
-            static void main(String[] args) {
-                def f = new Foo<ArrayList<Integer>, Integer>()
-                def list = new ArrayList<Integer>()
-                list.add(123)
-                assert 123 == f.getFirstElement(list)
+                static main(args) {
+                    def f = new Foo<ArrayList<Integer>, Integer>()
+                    def list = new ArrayList<Integer>()
+                    list.add(123)
+                    assert f.getFirstElement(list) == 123
+                }
             }
-        }
         '''
     }
-
 }
