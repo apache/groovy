@@ -205,13 +205,13 @@ public class DelegatingController extends WriterController {
     }
 
     @Override
-    public boolean isInClosure() {
-        return delegationController.isInClosure();
+    public boolean isInGeneratedFunction() {
+        return delegationController.isInGeneratedFunction();
     }
 
     @Override
-    public boolean isInClosureConstructor() {
-        return delegationController.isInClosureConstructor();
+    public boolean isInGeneratedFunctionConstructor() {
+        return delegationController.isInGeneratedFunctionConstructor();
     }
 
     @Override

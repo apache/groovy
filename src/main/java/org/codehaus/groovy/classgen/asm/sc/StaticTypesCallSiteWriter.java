@@ -388,7 +388,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         ClassNode outerClass = receiverType.getOuterClass();
         if (field == null && implicitThis && outerClass != null && !receiverType.isStaticClass()) {
             Expression pexp;
-            if (controller.isInClosure()) {
+            if (controller.isInGeneratedFunction()) {
                 MethodCallExpression mce = new MethodCallExpression(
                         new VariableExpression("this"),
                         "getThisObject",
@@ -434,7 +434,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
         ClassNode receiverType = typeChooser.resolveType(receiver, classNode);
-        if (receiver instanceof VariableExpression && ((VariableExpression) receiver).isThisExpression() && !controller.isInClosure()) {
+        if (receiver instanceof VariableExpression && ((VariableExpression) receiver).isThisExpression() && !controller.isInGeneratedFunction()) {
             receiverType = classNode;
         }
 

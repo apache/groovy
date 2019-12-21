@@ -244,7 +244,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (bridge != null) {
             Expression fixedReceiver = receiver;
             if (implicitThis) {
-                if (!controller.isInClosure()) {
+                if (!controller.isInGeneratedFunction()) {
                     fixedReceiver = new PropertyExpression(new ClassExpression(lookupClassNode), "this");
                 } else if (thisClass != null) {
                     ClassNode current = thisClass.getOuterClass();
@@ -292,7 +292,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                     isThisOrSuper = ((VariableExpression) receiver).isThisExpression() || ((VariableExpression) receiver).isSuperExpression();
                 }
                 Expression fixedReceiver = null;
-                if (isThisOrSuper && classNode instanceof InnerClassNode && controller.isInClosure()) {
+                if (isThisOrSuper && classNode instanceof InnerClassNode && controller.isInGeneratedFunction()) {
                     ClassNode current = classNode.getOuterClass();
                     fixedReceiver = new VariableExpression("thisObject", current);
                     // adjust for multiple levels of nesting if needed
@@ -332,7 +332,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             ClassNode classNode = controller.getClassNode();
             if (classNode.isDerivedFrom(ClassHelper.CLOSURE_TYPE)
-                    && controller.isInClosure()
+                    && controller.isInGeneratedFunction()
                     && !target.isPublic()
                     && target.getDeclaringClass() != classNode) {
                 if (!tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
@@ -379,7 +379,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 if (implicitThis
                         && !classNode.isDerivedFrom(target.getDeclaringClass())
                         && !classNode.implementsInterface(target.getDeclaringClass())
-                        && classNode instanceof InnerClassNode && controller.isInClosure()) {
+                        && classNode instanceof InnerClassNode && controller.isInGeneratedFunction()) {
                     ClassNode current = classNode.getOuterClass();
                     fixedReceiver = new VariableExpression("thisObject", current);
                     // adjust for multiple levels of nesting if needed
