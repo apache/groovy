@@ -145,7 +145,7 @@ public class InvocationWriter {
                         && !classNode.implementsInterface(declaringClass)) {
                     // we are calling an outer class method
                     compileStack.pushImplicitThis(false);
-                    if (controller.isInClosure()) {
+                    if (controller.isInGeneratedFunction()) {
                         new VariableExpression("thisObject").visit(controller.getAcg());
                     } else {
                         Expression expr = new PropertyExpression(new ClassExpression(declaringClass), "this");

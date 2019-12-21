@@ -311,7 +311,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 call.visit(controller.getAcg());
                 return true;
             }
-            if (isThisExpression && !controller.isInClosure()) {
+            if (isThisExpression && !controller.isInGeneratedFunction()) {
                 receiverType = controller.getClassNode();
             }
             if (makeSetPrivateFieldWithBridgeMethod(receiver, receiverType, property, arguments, safe, spreadSafe, implicitThis)) return true;
@@ -326,7 +326,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         ClassNode outerClass = receiverType.getOuterClass();
         if (field == null && implicitThis && outerClass != null && !receiverType.isStaticClass()) {
             Expression pexp;
-            if (controller.isInClosure()) {
+            if (controller.isInGeneratedFunction()) {
                 MethodCallExpression mce = new MethodCallExpression(
                     new VariableExpression("this"),
                     "getThisObject",

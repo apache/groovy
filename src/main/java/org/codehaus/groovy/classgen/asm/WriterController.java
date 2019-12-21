@@ -277,17 +277,17 @@ public class WriterController {
         if (compileStack != null && compileStack.getScope() != null) {
             return compileStack.getScope().isInStaticContext();
         }
-        if (!isInClosure()) return false;
+        if (!isInGeneratedFunction()) return false;
         if (isConstructor()) return false;
         return classNode.isStaticClass() || isStaticMethod();
     }
 
-    public boolean isInClosure() {
+    public boolean isInGeneratedFunction() {
         return classNode.getOuterClass() != null && isGeneratedFunction(classNode);
     }
 
-    public boolean isInClosureConstructor() {
-        return isConstructor() && isInClosure();
+    public boolean isInGeneratedFunctionConstructor() {
+        return isConstructor() && isInGeneratedFunction();
     }
 
     public boolean isStaticMethod() {

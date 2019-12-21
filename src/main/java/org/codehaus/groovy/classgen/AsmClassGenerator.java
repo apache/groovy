@@ -1052,7 +1052,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (isSuperExpression(objectExpression)) {
                     field = classNode.getSuperClass().getDeclaredField(name);
                     privateSuperField = (field != null && field.isPrivate());
-                } else if (expression.isImplicitThis() || !controller.isInClosure()) {
+                } else if (expression.isImplicitThis() || !controller.isInGeneratedFunction()) {
                     field = classNode.getDeclaredField(name);
 
                     ClassNode outer = classNode.getOuterClass();
@@ -1089,7 +1089,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         if (!visited) {
             boolean useMetaObjectProtocol = isGroovyObject(objectExpression)
-                    && (!isThisOrSuper(objectExpression) || !controller.isStaticContext() || controller.isInClosure());
+                    && (!isThisOrSuper(objectExpression) || !controller.isStaticContext() || controller.isInGeneratedFunction());
 
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
@@ -1171,7 +1171,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void loadStaticField(final FieldExpression fldExp) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = fldExp.getField();
-        boolean holder = field.isHolder() && !controller.isInClosureConstructor();
+        boolean holder = field.isHolder() && !controller.isInGeneratedFunctionConstructor();
         ClassNode type = field.getType();
 
         String ownerName = (field.getOwner().equals(controller.getClassNode()))
@@ -1193,7 +1193,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void loadInstanceField(final FieldExpression fldExp) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = fldExp.getField();
-        boolean holder = field.isHolder() && !controller.isInClosureConstructor();
+        boolean holder = field.isHolder() && !controller.isInGeneratedFunctionConstructor();
         ClassNode type = field.getType();
         String ownerName = (field.getOwner().equals(controller.getClassNode()))
                 ? controller.getInternalClassName()
@@ -1247,7 +1247,7 @@ public class AsmClassGenerator extends ClassGenerator {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = expression.getField();
 
-        boolean holder = field.isHolder() && !controller.isInClosureConstructor();
+        boolean holder = field.isHolder() && !controller.isInGeneratedFunctionConstructor();
         controller.getOperandStack().doGroovyCast(field);
 
         String ownerName = (field.getOwner().equals(controller.getClassNode()))
@@ -1275,7 +1275,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         if (expression.isThisExpression()) {
             if (controller.isStaticMethod() || (!controller.getCompileStack().isImplicitThis() && controller.isStaticContext())) {
-                if (controller.isInClosure()) classNode = controller.getOutermostClass();
+                if (controller.isInGeneratedFunction()) classNode = controller.getOutermostClass();
                 visitClassExpression(new ClassExpression(classNode));
             } else {
                 loadThis(expression);
@@ -1307,7 +1307,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private void loadThis(final VariableExpression thisExpression) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
-        if (controller.isInClosure() && !controller.getCompileStack().isImplicitThis()) {
+        if (controller.isInGeneratedFunction() && !controller.getCompileStack().isImplicitThis()) {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
             ClassNode expectedType = thisExpression!=null?controller.getTypeChooser().resolveType(thisExpression, controller.getOutermostClass()):null;
             if (!ClassHelper.OBJECT_TYPE.equals(expectedType) && !ClassHelper.isPrimitiveType(expectedType)) {

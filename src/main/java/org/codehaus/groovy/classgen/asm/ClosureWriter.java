@@ -405,7 +405,7 @@ public class ClosureWriter {
     protected void loadThis() {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
-        if (controller.isInClosure()) {
+        if (controller.isInGeneratedFunction()) {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
         } else {
