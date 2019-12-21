@@ -21,6 +21,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.AbstractList;
@@ -48,8 +49,9 @@ import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus.plus;
  *
  * @since 2.5.0
  */
-public class NumberRange extends AbstractList<Comparable> implements Range<Comparable> {
+public class NumberRange extends AbstractList<Comparable> implements Range<Comparable>, Serializable {
 
+    private static final long serialVersionUID = 5107424833653948484L;
     /**
      * The first value in the range.
      */
