@@ -200,7 +200,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         operandStack.replace(CLOSURE_TYPE, lambdaClassConstructorParameters.length);
     }
 
-    private Parameter[] loadSharedVariables(final LambdaExpression expression) {
+    private void loadSharedVariables(final LambdaExpression expression) {
         Parameter[] lambdaSharedVariableParameters = expression.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
 
         for (Parameter parameter : lambdaSharedVariableParameters) {
@@ -209,8 +209,6 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
                 parameter.setNodeMetaData(UseExistingReference.class, Boolean.TRUE);
             }
         }
-
-        return lambdaSharedVariableParameters;
     }
 
     private String createAbstractMethodDesc(final ClassNode functionalInterface, final ClassNode lambdaClass) {
