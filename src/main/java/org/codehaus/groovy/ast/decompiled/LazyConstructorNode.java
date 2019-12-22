@@ -39,7 +39,7 @@ import java.util.function.Supplier;
 /**
  * Represents lazy constructor node, which will be initialized only when accessed
  *
- * @since 3.0.0
+ * @since 2.5.9
  */
 public class LazyConstructorNode extends ConstructorNode {
     private final Supplier<ConstructorNode> constructorNodeSupplier;
