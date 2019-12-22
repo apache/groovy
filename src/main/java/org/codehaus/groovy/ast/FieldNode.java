@@ -43,6 +43,8 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
         return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, fldType, ClassHelper.make(theClass), null);
     }
 
+    protected FieldNode() {}
+
     public FieldNode(String name, int modifiers, ClassNode type, ClassNode owner, Expression initialValueExpression) {
         this.name = name;
         this.modifiers = modifiers;

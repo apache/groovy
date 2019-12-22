@@ -31,7 +31,7 @@ import java.util.List;
 public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public static final String SCRIPT_BODY_METHOD_KEY = "org.codehaus.groovy.ast.MethodNode.isScriptBody";
-    private final String name;
+    private String name;
     private int modifiers;
     private boolean syntheticPublic;
     private ClassNode returnType;
@@ -40,8 +40,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
-    private final ClassNode[] exceptions;
-    private final boolean staticConstructor;
+    private ClassNode[] exceptions;
+    private boolean staticConstructor;
 
     // type spec for generics
     private GenericsType[] genericsTypes = null;
@@ -49,6 +49,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     // cached data
     String typeDescriptor;
+
+    protected MethodNode() {}
 
     public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         this.name = name;

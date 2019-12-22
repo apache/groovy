@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
  * Represents a constructor declaration
  */
 public class ConstructorNode extends MethodNode {
+    protected ConstructorNode() {}
 
     public ConstructorNode(int modifiers, Statement code) {
         this(modifiers, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
