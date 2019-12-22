@@ -4166,17 +4166,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         Expression leftExpression = expr.getLeftExpression();
         Expression rightExpression = expr.getRightExpression();
 
-        if (op == ASSIGN || op == ASSIGNMENT_OPERATOR || op == ELVIS_EQUAL) {
-            if (rightRedirect.isDerivedFrom(CLOSURE_TYPE) && isSAMType(leftRedirect)) {
+        if (op == EQUAL || op == ELVIS_EQUAL) {
+            if (rightRedirect.isDerivedFrom(CLOSURE_TYPE)) {
                 ClosureExpression closureExpression = null;
                 if (rightExpression instanceof ClosureExpression) {
                     closureExpression = (ClosureExpression) rightExpression;
                 } else if (rightExpression instanceof MethodReferenceExpression) {
                     closureExpression = rightExpression.getNodeMetaData(CONSTRUCTED_LAMBDA_EXPRESSION);
                 }
-
                 if (closureExpression != null) {
-                    return inferSAMTypeGenericsInAssignment(left, findSAM(left), right, closureExpression);
+                    MethodNode abstractMethod = findSAM(left);
+                    if (abstractMethod != null) {
+                        return inferSAMTypeGenericsInAssignment(left, abstractMethod, right, closureExpression);
+                    }
                 }
             }
 
