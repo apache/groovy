@@ -39,7 +39,7 @@ import java.util.function.Supplier;
 /**
  * Represents lazy method node, which will be initialized only when accessed
  *
- * @since 3.0.0
+ * @since 2.5.9
  */
 public class LazyMethodNode extends MethodNode {
     private final Supplier<MethodNode> methodNodeSupplier;

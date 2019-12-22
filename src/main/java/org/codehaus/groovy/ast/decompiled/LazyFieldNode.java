@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 /**
  * Represents lazy field node, which will be initialized only when accessed
  *
- * @since 3.0.0
+ * @since 2.5.9
  */
 public class LazyFieldNode extends FieldNode {
     private final Supplier<FieldNode> fieldNodeSupplier;
