@@ -16,10 +16,20 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ast;
+package org.codehaus.groovy.ast.decompiled;
 
 import groovy.lang.groovydoc.Groovydoc;
-import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.NodeMetaDataHandler;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.util.List;
 import java.util.Map;
@@ -27,39 +37,51 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Represents lazy field node, which will be initialized only when accessed
+ * Represents lazy constructor node, which will be initialized only when accessed
  *
  * @since 3.0.0
  */
-public class LazyFieldNode extends FieldNode {
-    private final Supplier<FieldNode> fieldNodeSupplier;
-    private FieldNode delegate;
+public class LazyConstructorNode extends ConstructorNode {
+    private final Supplier<ConstructorNode> constructorNodeSupplier;
+    private ConstructorNode delegate;
     private boolean initialized;
 
-    private String name;
-
-    public LazyFieldNode(Supplier<FieldNode> fieldNodeSupplier, String name) {
-        this.fieldNodeSupplier = fieldNodeSupplier;
-        this.name = name;
+    public LazyConstructorNode(Supplier<ConstructorNode> constructorNodeSupplier) {
+        this.constructorNodeSupplier = constructorNodeSupplier;
     }
 
     private void init() {
         if (initialized) return;
-        delegate = fieldNodeSupplier.get();
+        delegate = constructorNodeSupplier.get();
 
         ClassNode declaringClass = super.getDeclaringClass();
         if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
-
-        ClassNode owner = super.getOwner();
-        if (null != owner) delegate.setOwner(owner);
 
         initialized = true;
     }
 
     @Override
-    public Expression getInitialExpression() {
+    public boolean firstStatementIsSpecialConstructorCall() {
         init();
-        return delegate.getInitialExpression();
+        return delegate.firstStatementIsSpecialConstructorCall();
+    }
+
+    @Override
+    public String getTypeDescriptor() {
+        init();
+        return delegate.getTypeDescriptor();
+    }
+
+    @Override
+    public Statement getCode() {
+        init();
+        return delegate.getCode();
+    }
+
+    @Override
+    public void setCode(Statement code) {
+        init();
+        delegate.setCode(code);
     }
 
     @Override
@@ -69,62 +91,81 @@ public class LazyFieldNode extends FieldNode {
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public ClassNode getType() {
-        init();
-        return delegate.getType();
-    }
-
-    @Override
-    public void setType(ClassNode type) {
-        init();
-        delegate.setType(type);
-    }
-
-    @Override
-    public ClassNode getOwner() {
-        init();
-        return delegate.getOwner();
-    }
-
-    @Override
-    public boolean isHolder() {
-        init();
-        return delegate.isHolder();
-    }
-
-    @Override
-    public void setHolder(boolean holder) {
-        init();
-        delegate.setHolder(holder);
-    }
-
-    @Override
-    public boolean isDynamicTyped() {
-        init();
-        return delegate.isDynamicTyped();
-    }
-
-    @Override
     public void setModifiers(int modifiers) {
         init();
         delegate.setModifiers(modifiers);
     }
 
     @Override
-    public boolean isStatic() {
+    public String getName() {
         init();
-        return delegate.isStatic();
+        return delegate.getName();
     }
 
     @Override
-    public boolean isEnum() {
+    public Parameter[] getParameters() {
         init();
-        return delegate.isEnum();
+        return delegate.getParameters();
+    }
+
+    @Override
+    public void setParameters(Parameter[] parameters) {
+        init();
+        delegate.setParameters(parameters);
+    }
+
+    @Override
+    public boolean hasDefaultValue() {
+        init();
+        return delegate.hasDefaultValue();
+    }
+
+    @Override
+    public ClassNode getReturnType() {
+        init();
+        return delegate.getReturnType();
+    }
+
+    @Override
+    public void setReturnType(ClassNode returnType) {
+        init();
+        delegate.setReturnType(returnType);
+    }
+
+    @Override
+    public boolean isDynamicReturnType() {
+        init();
+        return delegate.isDynamicReturnType();
+    }
+
+    @Override
+    public boolean isVoidMethod() {
+        init();
+        return delegate.isVoidMethod();
+    }
+
+    @Override
+    public VariableScope getVariableScope() {
+        init();
+        return delegate.getVariableScope();
+    }
+
+    @Override
+    public void setVariableScope(VariableScope variableScope) {
+        init();
+        delegate.setVariableScope(variableScope);
+    }
+
+    @Override
+    public boolean isAbstract() {
+        init();
+        return delegate.isAbstract();
+    }
+
+    @Override
+    public boolean isDefault() {
+        init();
+        return delegate.isDefault();
     }
 
     @Override
@@ -134,9 +175,9 @@ public class LazyFieldNode extends FieldNode {
     }
 
     @Override
-    public boolean isVolatile() {
+    public boolean isStatic() {
         init();
-        return delegate.isVolatile();
+        return delegate.isStatic();
     }
 
     @Override
@@ -146,76 +187,99 @@ public class LazyFieldNode extends FieldNode {
     }
 
     @Override
-    public boolean isProtected() {
-        init();
-        return delegate.isProtected();
-    }
-
-    @Override
     public boolean isPrivate() {
         init();
         return delegate.isPrivate();
     }
 
     @Override
-    public void setOwner(ClassNode owner) {
-        super.setOwner(owner);
+    public boolean isProtected() {
+        init();
+        return delegate.isProtected();
     }
 
     @Override
-    public boolean hasInitialExpression() {
+    public boolean isPackageScope() {
         init();
-        return delegate.hasInitialExpression();
+        return delegate.isPackageScope();
     }
 
     @Override
-    public boolean isInStaticContext() {
+    public ClassNode[] getExceptions() {
         init();
-        return delegate.isInStaticContext();
+        return delegate.getExceptions();
     }
 
     @Override
-    public Expression getInitialValueExpression() {
+    public Statement getFirstStatement() {
         init();
-        return delegate.getInitialValueExpression();
+        return delegate.getFirstStatement();
     }
 
     @Override
-    public void setInitialValueExpression(Expression initialValueExpression) {
+    public GenericsType[] getGenericsTypes() {
         init();
-        delegate.setInitialValueExpression(initialValueExpression);
+        return delegate.getGenericsTypes();
     }
 
     @Override
-    @Deprecated
-    public boolean isClosureSharedVariable() {
+    public void setGenericsTypes(GenericsType[] genericsTypes) {
         init();
-        return delegate.isClosureSharedVariable();
+        delegate.setGenericsTypes(genericsTypes);
     }
 
     @Override
-    @Deprecated
-    public void setClosureSharedVariable(boolean inClosure) {
+    public boolean hasAnnotationDefault() {
         init();
-        delegate.setClosureSharedVariable(inClosure);
+        return delegate.hasAnnotationDefault();
     }
 
     @Override
-    public ClassNode getOriginType() {
+    public void setAnnotationDefault(boolean hasDefaultValue) {
         init();
-        return delegate.getOriginType();
+        delegate.setAnnotationDefault(hasDefaultValue);
     }
 
     @Override
-    public void setOriginType(ClassNode cn) {
+    public boolean isScriptBody() {
         init();
-        delegate.setOriginType(cn);
+        return delegate.isScriptBody();
     }
 
     @Override
-    public void rename(String name) {
+    public void setIsScriptBody() {
         init();
-        delegate.rename(name);
+        delegate.setIsScriptBody();
+    }
+
+    @Override
+    public boolean isStaticConstructor() {
+        init();
+        return delegate.isStaticConstructor();
+    }
+
+    @Override
+    public boolean isSyntheticPublic() {
+        init();
+        return delegate.isSyntheticPublic();
+    }
+
+    @Override
+    public void setSyntheticPublic(boolean syntheticPublic) {
+        init();
+        delegate.setSyntheticPublic(syntheticPublic);
+    }
+
+    @Override
+    public String getText() {
+        init();
+        return delegate.getText();
+    }
+
+    @Override
+    public String toString() {
+        init();
+        return delegate.toString();
     }
 
     @Override
@@ -293,12 +357,6 @@ public class LazyFieldNode extends FieldNode {
     public void visit(GroovyCodeVisitor visitor) {
         init();
         delegate.visit(visitor);
-    }
-
-    @Override
-    public String getText() {
-        init();
-        return delegate.getText();
     }
 
     @Override
