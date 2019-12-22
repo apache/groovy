@@ -1007,21 +1007,22 @@ public abstract class StaticTypeCheckingSupport {
      */
     public static boolean isUsingUncheckedGenerics(final ClassNode node) {
         if (node.isArray()) return isUsingUncheckedGenerics(node.getComponentType());
-        if (node.isUsingGenerics()) {
-            GenericsType[] genericsTypes = node.getGenericsTypes();
-            if (genericsTypes != null) {
-                for (GenericsType genericsType : genericsTypes) {
-                    if (genericsType.isPlaceholder()) {
-                        return true;
-                    } else {
-                        if (isUsingUncheckedGenerics(genericsType.getType())) {
-                            return true;
-                        }
+        GenericsType[] genericsTypes = node.getGenericsTypes();
+        if (genericsTypes != null) {
+            for (GenericsType genericsType : genericsTypes) {
+                if (genericsType.isPlaceholder()) return true;
+                if (genericsType.isWildcard()) {
+                    ClassNode lowerBound = genericsType.getLowerBound();
+                    ClassNode[] upperBounds = genericsType.getUpperBounds();
+                    if (lowerBound != null) {
+                        if (lowerBound.isGenericsPlaceHolder() || isUsingUncheckedGenerics(lowerBound)) return true;
+                    } else if (upperBounds != null) {
+                        if (upperBounds[0].isGenericsPlaceHolder() || isUsingUncheckedGenerics(upperBounds[0])) return true;
                     }
+                } else {
+                    if (isUsingUncheckedGenerics(genericsType.getType())) return true;
                 }
             }
-        } else {
-            return false;
         }
         return false;
     }
@@ -2146,6 +2147,15 @@ public abstract class StaticTypeCheckingSupport {
         if (cnTypes != null) {
             for (GenericsType genericsType : cnTypes) {
                 if (genericsType.isPlaceholder()) return true;
+                if (genericsType.isWildcard()) {
+                    ClassNode lowerBound = genericsType.getLowerBound();
+                    ClassNode[] upperBounds = genericsType.getUpperBounds();
+                    if (lowerBound != null) {
+                        if (lowerBound.isGenericsPlaceHolder() || missesGenericsTypes(lowerBound)) return true;
+                    } else if (upperBounds != null) {
+                        if (upperBounds[0].isGenericsPlaceHolder() || missesGenericsTypes(upperBounds[0])) return true;
+                    }
+                }
             }
         }
         return false;
