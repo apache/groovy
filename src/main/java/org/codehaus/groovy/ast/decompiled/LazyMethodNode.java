@@ -16,9 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ast;
+package org.codehaus.groovy.ast.decompiled;
 
 import groovy.lang.groovydoc.Groovydoc;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.NodeMetaDataHandler;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.util.List;
@@ -27,33 +37,30 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Represents lazy constructor node, which will be initialized only when accessed
+ * Represents lazy method node, which will be initialized only when accessed
  *
  * @since 3.0.0
  */
-public class LazyConstructorNode extends ConstructorNode {
-    private final Supplier<ConstructorNode> constructorNodeSupplier;
-    private ConstructorNode delegate;
+public class LazyMethodNode extends MethodNode {
+    private final Supplier<MethodNode> methodNodeSupplier;
+    private MethodNode delegate;
     private boolean initialized;
 
-    public LazyConstructorNode(Supplier<ConstructorNode> constructorNodeSupplier) {
-        this.constructorNodeSupplier = constructorNodeSupplier;
+    private String name;
+
+    public LazyMethodNode(Supplier<MethodNode> methodNodeSupplier, String name) {
+        this.methodNodeSupplier = methodNodeSupplier;
+        this.name = name;
     }
 
     private void init() {
         if (initialized) return;
-        delegate = constructorNodeSupplier.get();
+        delegate = methodNodeSupplier.get();
 
         ClassNode declaringClass = super.getDeclaringClass();
         if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
 
         initialized = true;
-    }
-
-    @Override
-    public boolean firstStatementIsSpecialConstructorCall() {
-        init();
-        return delegate.firstStatementIsSpecialConstructorCall();
     }
 
     @Override
@@ -88,8 +95,7 @@ public class LazyConstructorNode extends ConstructorNode {
 
     @Override
     public String getName() {
-        init();
-        return delegate.getName();
+        return name;
     }
 
     @Override
