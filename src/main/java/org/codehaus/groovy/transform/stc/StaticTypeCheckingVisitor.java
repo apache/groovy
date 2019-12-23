@@ -394,53 +394,48 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitClass(final ClassNode node) {
         if (shouldSkipClassNode(node)) return;
-        if (extension.beforeVisitClass(node)) {
-            extension.afterVisitClass(node);
-            return;
-        }
-        Object type = node.getNodeMetaData(INFERRED_TYPE);
-        if (type != null) {
-            // transformation has already been run on this class node
-            // so we'll use a silent collector in order not to duplicate errors
-            typeCheckingContext.pushErrorCollector();
-        }
-        typeCheckingContext.pushEnclosingClassNode(node);
-        Set<MethodNode> oldVisitedMethod = typeCheckingContext.alreadyVisitedMethods;
-        typeCheckingContext.alreadyVisitedMethods = new LinkedHashSet<>();
-        super.visitClass(node);
-        Iterator<InnerClassNode> innerClasses = node.getInnerClasses();
-        while (innerClasses.hasNext()) {
-            InnerClassNode innerClassNode = innerClasses.next();
-            visitClass(innerClassNode);
-        }
-        typeCheckingContext.alreadyVisitedMethods = oldVisitedMethod;
-        node.putNodeMetaData(INFERRED_TYPE, node);
-        // mark all methods as visited. We can't do this in visitMethod because the type checker
-        // works in a two pass sequence and we don't want to skip the second pass
-        for (MethodNode methodNode : node.getMethods()) {
-            methodNode.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE);
-        }
-        for (ConstructorNode constructorNode : node.getDeclaredConstructors()) {
-            constructorNode.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE);
+        if (!extension.beforeVisitClass(node)) {
+            Object type = node.getNodeMetaData(INFERRED_TYPE);
+            if (type != null) {
+                // transformation has already been run on this class node
+                // so use a silent collector in order not to duplicate errors
+                typeCheckingContext.pushErrorCollector();
+            }
+            typeCheckingContext.pushEnclosingClassNode(node);
+            Set<MethodNode> oldSet = typeCheckingContext.alreadyVisitedMethods;
+            typeCheckingContext.alreadyVisitedMethods = new LinkedHashSet<>();
+
+            super.visitClass(node);
+            node.getInnerClasses().forEachRemaining(this::visitClass);
+
+            typeCheckingContext.alreadyVisitedMethods = oldSet;
+            typeCheckingContext.popEnclosingClassNode();
+            if (type != null) {
+                typeCheckingContext.popErrorCollector();
+            }
+
+            node.putNodeMetaData(INFERRED_TYPE, node);
+            // mark all methods as visited. We can't do this in visitMethod because the type checker
+            // works in a two pass sequence and we don't want to skip the second pass
+            node.getMethods().forEach(n -> n.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE));
+            node.getDeclaredConstructors().forEach(n -> n.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE));
         }
         extension.afterVisitClass(node);
     }
 
-    protected boolean shouldSkipClassNode(final ClassNode node) {
-        return isSkipMode(node);
-    }
-
     /**
-     * Returns the list of type checking annotations class nodes. Subclasses may override this method
-     * in order to provide additional classes which must be looked up when checking if a method or
-     * a class node should be skipped.
+     * Returns array of type checking annotations. Subclasses may override this
+     * method in order to provide additional types which must be looked up when
+     * checking if a method or a class node should be skipped.
      * <p>
      * The default implementation returns {@link TypeChecked}.
-     *
-     * @return array of class nodes
      */
     protected ClassNode[] getTypeCheckingAnnotations() {
         return TYPECHECKING_ANNOTATIONS;
+    }
+
+    protected boolean shouldSkipClassNode(final ClassNode node) {
+        return isSkipMode(node);
     }
 
     public boolean isSkipMode(final AnnotatedNode node) {
@@ -465,19 +460,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (node instanceof MethodNode) {
             return isSkipMode(node.getDeclaringClass());
         }
-        if (isSkippedInnerClass(node)) return true;
-        return false;
+        return isSkippedInnerClass(node);
     }
 
     /**
-     * Test if a node is an inner class node, and if it is, then checks if the enclosing method is skipped.
+     * Tests if a node is an inner class node, and if it is, then checks if the enclosing method is skipped.
      *
      * @return true if the inner class node should be skipped
      */
     protected boolean isSkippedInnerClass(final AnnotatedNode node) {
-        if (!(node instanceof InnerClassNode)) return false;
-        MethodNode enclosingMethod = ((InnerClassNode) node).getEnclosingMethod();
-        return enclosingMethod != null && isSkipMode(enclosingMethod);
+        if (node instanceof ClassNode) {
+            ClassNode type = (ClassNode) node;
+            if (type.getOuterClass() != null) {
+                MethodNode enclosingMethod = type.getEnclosingMethod();
+                if (enclosingMethod != null && isSkipMode(enclosingMethod)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -2210,6 +2211,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (node != null) storeTargetMethod(call, node);
         }
+
         extension.afterMethodCall(call);
     }
 
