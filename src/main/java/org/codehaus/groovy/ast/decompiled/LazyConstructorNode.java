@@ -41,23 +41,20 @@ import java.util.function.Supplier;
  *
  * @since 2.5.9
  */
-public class LazyConstructorNode extends ConstructorNode {
+class LazyConstructorNode extends ConstructorNode {
     private final Supplier<ConstructorNode> constructorNodeSupplier;
     private ConstructorNode delegate;
-    private boolean initialized;
 
     public LazyConstructorNode(Supplier<ConstructorNode> constructorNodeSupplier) {
         this.constructorNodeSupplier = constructorNodeSupplier;
     }
 
     private void init() {
-        if (initialized) return;
+        if (null != delegate) return;
         delegate = constructorNodeSupplier.get();
 
         ClassNode declaringClass = super.getDeclaringClass();
         if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
-
-        initialized = true;
     }
 
     @Override
