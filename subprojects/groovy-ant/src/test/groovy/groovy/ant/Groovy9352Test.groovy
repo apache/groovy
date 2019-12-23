@@ -51,12 +51,15 @@ class Groovy9352Test extends AntTestCase {
                            private Gson gson;
                            private Gson gson2 = new SubGson();
                            private List<Gson> gsonList;
+                           @GsonAnnotation
                            private List<? extends Gson> gsonList2 = new ArrayList<SubGson>();
                            
+                           @GsonAnnotation
                            private Producer(Gson p) {}
                            private Producer(int p) throws Gson {}
                            private Producer() { gson = new Gson(); }
                            
+                           @GsonAnnotation
                            private void bar(Gson p) {}
                            private Gson bar() { return null;}
                            private void bar(int p) throws Gson {}
@@ -73,6 +76,18 @@ class Groovy9352Test extends AntTestCase {
                         class SubGson extends Gson {
                         }
                     ''')
+                    'GsonAnnotation.java'('''
+                        package p2;
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        import java.lang.annotation.Target;
+                        
+                        @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
+                        @Retention(RetentionPolicy.RUNTIME)
+                        @interface GsonAnnotation {
+                        }
+                    ''')
                 }
             }
 
@@ -84,11 +99,14 @@ class Groovy9352Test extends AntTestCase {
                 javac()
             }
 
-            // 2) delete `Gson` and `SubGson` related files: "Gson.java", "Gson.class", "SubGson.java" and "SubGson.class"
+            // 2) delete `Gson`, `SubGson`, `GsonAnnotation` related files:
+            // "Gson.java", "Gson.class", "SubGson.java", "SubGson.class", "GsonAnnotation.java", "GsonAnnotation.class"
             assert new File(ant.project.baseDir,"src/p2/Gson.java").delete()
             assert new File(ant.project.baseDir,"build/p2/Gson.class").delete()
             assert new File(ant.project.baseDir,"src/p2/SubGson.java").delete()
             assert new File(ant.project.baseDir,"build/p2/SubGson.class").delete()
+            assert new File(ant.project.baseDir,"src/p2/GsonAnnotation.java").delete()
+            assert new File(ant.project.baseDir,"build/p2/GsonAnnotation.class").delete()
 
             // 3) compile the Groovy source code
             ant.groovyc(srcdir: 'src', destdir: 'build', includes: 'p1/*'){
