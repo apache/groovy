@@ -38,10 +38,9 @@ import java.util.Map;
  *
  * @since 2.5.9
  */
-public class LazyMethodNode extends MethodNode {
+class LazyMethodNode extends MethodNode {
     private final Supplier<MethodNode> methodNodeSupplier;
     private MethodNode delegate;
-    private boolean initialized;
 
     private String name;
 
@@ -51,13 +50,11 @@ public class LazyMethodNode extends MethodNode {
     }
 
     private void init() {
-        if (initialized) return;
+        if (null != delegate) return;
         delegate = methodNodeSupplier.get();
 
         ClassNode declaringClass = super.getDeclaringClass();
         if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
-
-        initialized = true;
     }
 
     @Override
