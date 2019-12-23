@@ -38,10 +38,9 @@ import java.util.function.Supplier;
  *
  * @since 2.5.9
  */
-public class LazyFieldNode extends FieldNode {
+class LazyFieldNode extends FieldNode {
     private final Supplier<FieldNode> fieldNodeSupplier;
     private FieldNode delegate;
-    private boolean initialized;
 
     private String name;
 
@@ -51,7 +50,7 @@ public class LazyFieldNode extends FieldNode {
     }
 
     private void init() {
-        if (initialized) return;
+        if (null != delegate) return;
         delegate = fieldNodeSupplier.get();
 
         ClassNode declaringClass = super.getDeclaringClass();
@@ -59,8 +58,6 @@ public class LazyFieldNode extends FieldNode {
 
         ClassNode owner = super.getOwner();
         if (null != owner) delegate.setOwner(owner);
-
-        initialized = true;
     }
 
     @Override
