@@ -175,15 +175,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
         ClassNode previousClassNode = classNode; classNode = node;
 
-        for (Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses(); innerClasses.hasNext(); ) {
-            InnerClassNode innerClassNode = innerClasses.next();
+        classNode.getInnerClasses().forEachRemaining(innerClassNode -> {
             boolean innerStaticCompile = !(skip || isSkippedInnerClass(innerClassNode));
             innerClassNode.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.valueOf(innerStaticCompile));
             innerClassNode.putNodeMetaData(WriterControllerFactory.class, node.getNodeMetaData(WriterControllerFactory.class));
             if (innerStaticCompile && !anyMethodSkip(innerClassNode)) {
                 innerClassNode.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
             }
-        }
+        });
         super.visitClass(node);
         addPrivateFieldAndMethodAccessors(node);
         if (isStaticallyCompiled(node)) {
@@ -414,19 +413,16 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (target == null && call.getLineNumber() > 0) {
             addError("Target constructor for constructor call expression hasn't been set", call);
-        } else {
-            if (target==null) {
-                // try to find a target
-                ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
-                List<Expression> expressions = argumentListExpression.getExpressions();
-                ClassNode[] args = new ClassNode[expressions.size()];
-                for (int i = 0, n = args.length; i < n; i += 1) {
-                    args[i] = typeChooser.resolveType(expressions.get(i), classNode);
-                }
-                MethodNode constructor = findMethodOrFail(call, call.isSuperCall() ? classNode.getSuperClass() : classNode, "<init>", args);
-                call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, constructor);
-                target = constructor;
+        } else if (target == null) {
+            // try to find a target
+            ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
+            List<Expression> expressions = argumentListExpression.getExpressions();
+            ClassNode[] args = new ClassNode[expressions.size()];
+            for (int i = 0, n = args.length; i < n; i += 1) {
+                args[i] = typeChooser.resolveType(expressions.get(i), classNode);
             }
+            target = findMethodOrFail(call, call.isSuperCall() ? classNode.getSuperClass() : classNode, "<init>", args);
+            call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, target);
         }
         if (target != null) {
             memorizeInitialExpressions(target);
