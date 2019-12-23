@@ -435,7 +435,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected boolean shouldSkipClassNode(final ClassNode node) {
-        return isSkipMode(node);
+        return Boolean.TRUE.equals(node.getNodeMetaData(StaticTypeCheckingVisitor.class)) || isSkipMode(node);
     }
 
     public boolean isSkipMode(final AnnotatedNode node) {
@@ -2210,6 +2210,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 typeCheckMethodsWithGenericsOrFail(receiver, args, node, call);
             }
             if (node != null) storeTargetMethod(call, node);
+        }
+
+        // GROOVY-9327: check for AIC in STC method with non-STC enclosing class
+        if (call.isUsingAnonymousInnerClass()) {
+            Set<MethodNode> methods = typeCheckingContext.methodsToBeVisited;
+            if (!methods.isEmpty()) { // indicates specific methods have STC
+                typeCheckingContext.methodsToBeVisited = Collections.emptySet();
+
+                ClassNode anonType = call.getType();
+                visitClass(anonType); // visit anon. inner class inline with method
+                anonType.putNodeMetaData(StaticTypeCheckingVisitor.class, Boolean.TRUE);
+
+                typeCheckingContext.methodsToBeVisited = methods;
+            }
         }
 
         extension.afterMethodCall(call);
