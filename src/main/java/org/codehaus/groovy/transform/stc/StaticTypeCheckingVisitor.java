@@ -2215,14 +2215,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         extension.afterMethodCall(call);
     }
 
-    private boolean looksLikeNamedArgConstructor(final ClassNode receiver, final ClassNode[] args) {
-        return (args.length == 1 || args.length == 2 && isInnerConstructor(receiver, args[0]))
-                && implementsInterfaceOrIsSubclassOf(args[args.length - 1], MAP_TYPE);
-    }
-
-    private boolean isInnerConstructor(final ClassNode receiver, final ClassNode parent) {
-        return receiver.isRedirectNode() && receiver.redirect() instanceof InnerClassNode &&
-                receiver.redirect().getOuterClass().equals(parent);
+    private boolean looksLikeNamedArgConstructor(final ClassNode receiver, final ClassNode[] argumentTypes) {
+        if (argumentTypes.length == 1 || argumentTypes.length == 2 && argumentTypes[0].equals(receiver.getOuterClass())) {
+            return argumentTypes[argumentTypes.length - 1].implementsInterface(MAP_TYPE);
+        }
+        return false;
     }
 
     protected MethodNode typeCheckMapConstructor(final ConstructorCallExpression call, final ClassNode receiver, final Expression arguments) {
