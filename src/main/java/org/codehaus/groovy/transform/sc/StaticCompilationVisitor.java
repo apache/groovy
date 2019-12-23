@@ -437,11 +437,18 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
 
+        // GROOVY-9327: propagate compilation disposition to anon. inner class
+        if (call.isUsingAnonymousInnerClass() && call.getType().getNodeMetaData(StaticTypeCheckingVisitor.class) != null) {
+            ClassNode anonType = call.getType();
+            anonType.putNodeMetaData(STATIC_COMPILE_NODE, anonType.getEnclosingMethod().getNodeMetaData(STATIC_COMPILE_NODE));
+            anonType.putNodeMetaData(WriterControllerFactory.class, anonType.getOuterClass().getNodeMetaData(WriterControllerFactory.class));
+        }
+
         MethodNode target = (MethodNode) call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
-        if (target==null && call.getLineNumber()>0) {
+        if (target == null && call.getLineNumber() > 0) {
             addError("Target constructor for constructor call expression hasn't been set", call);
         } else {
-            if (target==null) {
+            if (target == null) {
                 // try to find a target
                 ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
                 List<Expression> expressions = argumentListExpression.getExpressions();
@@ -454,7 +461,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 target = constructor;
             }
         }
-        if (target!=null) {
+        if (target != null) {
             memorizeInitialExpressions(target);
         }
     }
