@@ -410,6 +410,12 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
 
+        if (call.isUsingAnonymousInnerClass() && call.getType().getNodeMetaData(StaticTypeCheckingVisitor.class) != null) {
+            ClassNode anonType = call.getType();
+            anonType.putNodeMetaData(STATIC_COMPILE_NODE, anonType.getEnclosingMethod().getNodeMetaData(STATIC_COMPILE_NODE));
+            anonType.putNodeMetaData(WriterControllerFactory.class, anonType.getOuterClass().getNodeMetaData(WriterControllerFactory.class));
+        }
+
         MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (target == null && call.getLineNumber() > 0) {
             addError("Target constructor for constructor call expression hasn't been set", call);

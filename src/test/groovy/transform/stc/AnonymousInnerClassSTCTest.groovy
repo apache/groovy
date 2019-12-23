@@ -122,9 +122,10 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
                   }
                 }
                 s.size()
-            }'''
+            }
+        '''
     }
-    
+
     void testAICInAICInStaticMethod() {
         assertScript '''
             class A {
