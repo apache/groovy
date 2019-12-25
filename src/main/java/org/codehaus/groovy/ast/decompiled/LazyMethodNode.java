@@ -45,7 +45,9 @@ class LazyMethodNode extends MethodNode {
     private final Supplier<MethodNode> methodNodeSupplier;
     private MethodNode delegate;
 
-    private String name;
+    private final String name;
+
+    private volatile boolean initialized;
 
     public LazyMethodNode(Supplier<MethodNode> methodNodeSupplier, String name) {
         this.methodNodeSupplier = methodNodeSupplier;
@@ -53,11 +55,17 @@ class LazyMethodNode extends MethodNode {
     }
 
     private void init() {
-        if (null != delegate) return;
-        delegate = methodNodeSupplier.get();
+        if (initialized) return;
 
-        ClassNode declaringClass = super.getDeclaringClass();
-        if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
+        synchronized (this) {
+            if (initialized) return;
+            delegate = methodNodeSupplier.get();
+
+            ClassNode declaringClass = super.getDeclaringClass();
+            if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
+
+            initialized = true;
+        }
     }
 
     @Override
