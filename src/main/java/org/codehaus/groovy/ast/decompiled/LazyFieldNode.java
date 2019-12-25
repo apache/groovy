@@ -39,7 +39,9 @@ class LazyFieldNode extends FieldNode {
     private final Supplier<FieldNode> fieldNodeSupplier;
     private FieldNode delegate;
 
-    private String name;
+    private final String name;
+
+    private volatile boolean initialized;
 
     public LazyFieldNode(Supplier<FieldNode> fieldNodeSupplier, String name) {
         this.fieldNodeSupplier = fieldNodeSupplier;
@@ -47,14 +49,20 @@ class LazyFieldNode extends FieldNode {
     }
 
     private void init() {
-        if (null != delegate) return;
-        delegate = fieldNodeSupplier.get();
+        if (initialized) return;
 
-        ClassNode declaringClass = super.getDeclaringClass();
-        if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
+        synchronized (this) {
+            if (initialized) return;
+            delegate = fieldNodeSupplier.get();
 
-        ClassNode owner = super.getOwner();
-        if (null != owner) delegate.setOwner(owner);
+            ClassNode declaringClass = super.getDeclaringClass();
+            if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
+
+            ClassNode owner = super.getOwner();
+            if (null != owner) delegate.setOwner(owner);
+
+            initialized = true;
+        }
     }
 
     @Override

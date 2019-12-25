@@ -42,16 +42,24 @@ class LazyConstructorNode extends ConstructorNode {
     private final Supplier<ConstructorNode> constructorNodeSupplier;
     private ConstructorNode delegate;
 
+    private volatile boolean initialized;
+
     public LazyConstructorNode(Supplier<ConstructorNode> constructorNodeSupplier) {
         this.constructorNodeSupplier = constructorNodeSupplier;
     }
 
     private void init() {
-        if (null != delegate) return;
-        delegate = constructorNodeSupplier.get();
+        if (initialized) return;
 
-        ClassNode declaringClass = super.getDeclaringClass();
-        if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
+        synchronized (this) {
+            if (initialized) return;
+            delegate = constructorNodeSupplier.get();
+
+            ClassNode declaringClass = super.getDeclaringClass();
+            if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
+
+            initialized = true;
+        }
     }
 
     @Override
