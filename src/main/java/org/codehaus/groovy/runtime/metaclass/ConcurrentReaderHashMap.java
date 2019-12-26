@@ -763,7 +763,7 @@ public class ConcurrentReaderHashMap
     // Expand enough to hold at least n elements without resizing.
     // We can only resize table by factor of two at a time.
     // It is faster to rehash with fewer elements, so do it now.
-    while (n >= threshold)
+    while (n >= threshold) {
       rehash();
 
       for (Object o : t.entrySet()) {
@@ -772,6 +772,7 @@ public class ConcurrentReaderHashMap
           Object value = entry.getValue();
           put(key, value);
       }
+    }
   }
 
 
