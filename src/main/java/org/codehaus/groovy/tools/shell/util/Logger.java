@@ -30,7 +30,7 @@ import static org.fusesource.jansi.Ansi.ansi;
  * Provides a very, very basic logging API.
  */
 public final class Logger {
-    public static IO io;
+    public static volatile IO io;
     public final String name;
 
     private Logger(final String name) {
