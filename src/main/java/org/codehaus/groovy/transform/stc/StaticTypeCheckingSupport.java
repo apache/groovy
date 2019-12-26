@@ -1285,7 +1285,7 @@ public abstract class StaticTypeCheckingSupport {
      * Given a parameter, builds a new parameter for which the known generics placeholders are resolved.
      *
      * @param genericFromReceiver      resolved generics from the receiver of the message
-     * @param placeholdersFromContext, resolved generics from the method context
+     * @param placeholdersFromContext  resolved generics from the method context
      * @param methodParameter          the method parameter for which we want to resolve generic types
      * @param paramType                the (unresolved) type of the method parameter
      * @return a new parameter with the same name and type as the original one, but with resolved generic types
