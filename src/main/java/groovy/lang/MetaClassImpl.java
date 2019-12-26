@@ -894,12 +894,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         if (instance instanceof Class && theClass != Class.class) {
             final MetaProperty metaProperty = InvokerHelper.getMetaClass(Class.class).hasProperty(instance, propertyName);
-            if (metaProperty != null)
+            if (metaProperty != null) {
                 if (isGetter) {
                     return metaProperty.getProperty(instance);
                 }
                 metaProperty.setProperty(instance, optionalValue);
                 return null;
+            }
         }
         throw new MissingPropertyExceptionNoStack(propertyName, theClass);
     }
