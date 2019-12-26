@@ -49,7 +49,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         this.model = model;
     }
 
-    public Object getModel() {
+    public synchronized Object getModel() {
         return model;
     }
 
