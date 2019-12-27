@@ -405,4 +405,10 @@ class LazyFieldNode extends FieldNode {
         lazyInit();
         return delegate.hashCode();
     }
+
+    @Override
+    public String toString() {
+        lazyInit();
+        return delegate.toString();
+    }
 }

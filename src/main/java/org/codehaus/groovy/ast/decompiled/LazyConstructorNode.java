@@ -207,12 +207,6 @@ class LazyConstructorNode extends ConstructorNode {
     }
 
     @Override
-    public String toString() {
-        lazyInit();
-        return delegate.toString();
-    }
-
-    @Override
     public void setReturnType(ClassNode returnType) {
         lazyInit();
         delegate.setReturnType(returnType);
@@ -449,5 +443,11 @@ class LazyConstructorNode extends ConstructorNode {
     public int hashCode() {
         lazyInit();
         return delegate.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        lazyInit();
+        return delegate.toString();
     }
 }

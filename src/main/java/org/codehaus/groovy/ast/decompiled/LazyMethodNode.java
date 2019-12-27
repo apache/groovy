@@ -203,12 +203,6 @@ class LazyMethodNode extends MethodNode {
     }
 
     @Override
-    public String toString() {
-        lazyInit();
-        return delegate.toString();
-    }
-
-    @Override
     public void setReturnType(ClassNode returnType) {
         lazyInit();
         delegate.setReturnType(returnType);
@@ -445,5 +439,11 @@ class LazyMethodNode extends MethodNode {
     public int hashCode() {
         lazyInit();
         return delegate.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        lazyInit();
+        return delegate.toString();
     }
 }
