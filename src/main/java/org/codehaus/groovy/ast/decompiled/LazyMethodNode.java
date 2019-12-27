@@ -281,12 +281,6 @@ class LazyMethodNode extends MethodNode implements LazyInitializable {
     }
 
     @Override
-    public String toString() {
-        lazyInit();
-        return delegate.toString();
-    }
-
-    @Override
     public List<AnnotationNode> getAnnotations() {
         lazyInit();
         return delegate.getAnnotations();
@@ -445,6 +439,12 @@ class LazyMethodNode extends MethodNode implements LazyInitializable {
     public boolean equals(Object obj) {
         lazyInit();
         return delegate.equals(obj);
+    }
+
+    @Override
+    public String toString() {
+        lazyInit();
+        return delegate.toString();
     }
 
     @Override

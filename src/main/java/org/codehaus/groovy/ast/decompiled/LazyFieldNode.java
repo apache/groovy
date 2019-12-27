@@ -401,6 +401,12 @@ class LazyFieldNode extends FieldNode implements LazyInitializable {
     }
 
     @Override
+    public String toString() {
+        lazyInit();
+        return delegate.toString();
+    }
+
+    @Override
     public <T> T getNodeMetaData(Object key) {
         lazyInit();
         return delegate.getNodeMetaData(key);
