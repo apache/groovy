@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.groovy.util.concurrentlinkedhashmap;
+package org.apache.groovy.util.concurrent.concurrentlinkedhashmap;
 
 import org.apache.groovy.util.ObjectHolder;
 
@@ -47,9 +47,9 @@ import java.util.function.Function;
 
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
-import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.IDLE;
-import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.PROCESSING;
-import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.REQUIRED;
+import static org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.IDLE;
+import static org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.PROCESSING;
+import static org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap.DrainStatus.REQUIRED;
 
 /**
  * A hash table supporting full concurrency of retrievals, adjustable expected
@@ -70,7 +70,7 @@ import static org.apache.groovy.util.concurrentlinkedhashmap.ConcurrentLinkedHas
  * modifies its weight requires that an update operation is performed on the
  * map.
  * <p>
- * An {@link EvictionListener} may be supplied for notification when an entry
+ * An {@link org.apache.groovy.util.concurrent.concurrentlinkedhashmap.EvictionListener} may be supplied for notification when an entry
  * is evicted from the map. This listener is invoked on a caller's thread and
  * will not block other threads from operating on the map. An implementation
  * should be aware that the caller's thread will not expect long execution
@@ -205,7 +205,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   // These fields provide support for notifying a listener.
   final Queue<Node<K, V>> pendingNotifications;
-  final EvictionListener<K, V> listener;
+  final org.apache.groovy.util.concurrent.concurrentlinkedhashmap.EvictionListener<K, V> listener;
 
   transient Set<K> keySet;
   transient Collection<V> values;
@@ -1024,7 +1024,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     try {
       drainBuffers();
 
-      final int initialCapacity = (weigher == Weighers.entrySingleton())
+      final int initialCapacity = (weigher == org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.entrySingleton())
           ? Math.min(limit, (int) weightedSize())
           : 16;
       final Set<K> keys = new LinkedHashSet<K>(initialCapacity);
@@ -1134,7 +1134,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     try {
       drainBuffers();
 
-      final int initialCapacity = (weigher == Weighers.entrySingleton())
+      final int initialCapacity = (weigher == org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.entrySingleton())
           ? Math.min(limit, (int) weightedSize())
           : 16;
       final Map<K, V> map = new LinkedHashMap<K, V>(initialCapacity);
@@ -1510,7 +1510,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   }
 
   /** A listener that ignores all notifications. */
-  enum DiscardingListener implements EvictionListener<Object, Object> {
+  enum DiscardingListener implements org.apache.groovy.util.concurrent.concurrentlinkedhashmap.EvictionListener<Object, Object> {
     INSTANCE;
 
     @Override public void onEviction(Object key, Object value) {}
@@ -1537,7 +1537,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
    */
   static final class SerializationProxy<K, V> implements Serializable {
     final EntryWeigher<? super K, ? super V> weigher;
-    final EvictionListener<K, V> listener;
+    final org.apache.groovy.util.concurrent.concurrentlinkedhashmap.EvictionListener<K, V> listener;
     final int concurrencyLevel;
     final Map<K, V> data;
     final long capacity;
@@ -1581,7 +1581,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     static final int DEFAULT_CONCURRENCY_LEVEL = 16;
     static final int DEFAULT_INITIAL_CAPACITY = 16;
 
-    EvictionListener<K, V> listener;
+    org.apache.groovy.util.concurrent.concurrentlinkedhashmap.EvictionListener<K, V> listener;
     EntryWeigher<? super K, ? super V> weigher;
 
     int concurrencyLevel;
@@ -1591,10 +1591,10 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     @SuppressWarnings("unchecked")
     public Builder() {
       capacity = -1;
-      weigher = Weighers.entrySingleton();
+      weigher = org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.entrySingleton();
       initialCapacity = DEFAULT_INITIAL_CAPACITY;
       concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
-      listener = (EvictionListener<K, V>) DiscardingListener.INSTANCE;
+      listener = (org.apache.groovy.util.concurrent.concurrentlinkedhashmap.EvictionListener<K, V>) DiscardingListener.INSTANCE;
     }
 
     /**
@@ -1664,9 +1664,9 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
      * @throws NullPointerException if the weigher is null
      */
     public Builder<K, V> weigher(Weigher<? super V> weigher) {
-      this.weigher = (weigher == Weighers.singleton())
-          ? Weighers.<K, V>entrySingleton()
-          : new BoundedEntryWeigher<K, V>(Weighers.asEntryWeigher(weigher));
+      this.weigher = (weigher == org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.singleton())
+          ? org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.<K, V>entrySingleton()
+          : new BoundedEntryWeigher<K, V>(org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.asEntryWeigher(weigher));
       return this;
     }
 
@@ -1679,7 +1679,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
      * @throws NullPointerException if the weigher is null
      */
     public Builder<K, V> weigher(EntryWeigher<? super K, ? super V> weigher) {
-      this.weigher = (weigher == Weighers.entrySingleton())
+      this.weigher = (weigher == org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.entrySingleton())
           ? Weighers.<K, V>entrySingleton()
           : new BoundedEntryWeigher<K, V>(weigher);
       return this;

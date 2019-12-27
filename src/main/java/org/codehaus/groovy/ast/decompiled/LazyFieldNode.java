@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import groovy.lang.groovydoc.Groovydoc;
+import org.apache.groovy.util.concurrent.LazyInitializable;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -38,7 +39,7 @@ import java.util.function.Supplier;
  *
  * @since 2.5.9
  */
-class LazyFieldNode extends FieldNode {
+class LazyFieldNode extends FieldNode implements LazyInitializable {
     private final Supplier<FieldNode> fieldNodeSupplier;
     private FieldNode delegate;
 
@@ -51,32 +52,34 @@ class LazyFieldNode extends FieldNode {
         this.name = name;
     }
 
-    private void init() {
-        if (initialized) return;
+    @Override
+    public void doInit() {
+        delegate = fieldNodeSupplier.get();
 
-        synchronized (this) {
-            if (initialized) return;
-            delegate = fieldNodeSupplier.get();
+        ClassNode declaringClass = super.getDeclaringClass();
+        if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
 
-            ClassNode declaringClass = super.getDeclaringClass();
-            if (null != declaringClass) delegate.setDeclaringClass(declaringClass);
-
-            ClassNode owner = super.getOwner();
-            if (null != owner) delegate.setOwner(owner);
-
-            initialized = true;
-        }
+        ClassNode owner = super.getOwner();
+        if (null != owner) delegate.setOwner(owner);
+    }
+    @Override
+    public boolean isInitialized() {
+        return initialized;
+    }
+    @Override
+    public void setInitialized(boolean initialized) {
+        this.initialized = initialized;
     }
 
     @Override
     public Expression getInitialExpression() {
-        init();
+        lazyInit();
         return delegate.getInitialExpression();
     }
 
     @Override
     public int getModifiers() {
-        init();
+        lazyInit();
         return delegate.getModifiers();
     }
 
@@ -87,85 +90,85 @@ class LazyFieldNode extends FieldNode {
 
     @Override
     public ClassNode getType() {
-        init();
+        lazyInit();
         return delegate.getType();
     }
 
     @Override
     public void setType(ClassNode type) {
-        init();
+        lazyInit();
         delegate.setType(type);
     }
 
     @Override
     public ClassNode getOwner() {
-        init();
+        lazyInit();
         return delegate.getOwner();
     }
 
     @Override
     public boolean isHolder() {
-        init();
+        lazyInit();
         return delegate.isHolder();
     }
 
     @Override
     public void setHolder(boolean holder) {
-        init();
+        lazyInit();
         delegate.setHolder(holder);
     }
 
     @Override
     public boolean isDynamicTyped() {
-        init();
+        lazyInit();
         return delegate.isDynamicTyped();
     }
 
     @Override
     public void setModifiers(int modifiers) {
-        init();
+        lazyInit();
         delegate.setModifiers(modifiers);
     }
 
     @Override
     public boolean isStatic() {
-        init();
+        lazyInit();
         return delegate.isStatic();
     }
 
     @Override
     public boolean isEnum() {
-        init();
+        lazyInit();
         return delegate.isEnum();
     }
 
     @Override
     public boolean isFinal() {
-        init();
+        lazyInit();
         return delegate.isFinal();
     }
 
     @Override
     public boolean isVolatile() {
-        init();
+        lazyInit();
         return delegate.isVolatile();
     }
 
     @Override
     public boolean isPublic() {
-        init();
+        lazyInit();
         return delegate.isPublic();
     }
 
     @Override
     public boolean isProtected() {
-        init();
+        lazyInit();
         return delegate.isProtected();
     }
 
     @Override
     public boolean isPrivate() {
-        init();
+        lazyInit();
         return delegate.isPrivate();
     }
 
@@ -176,87 +179,87 @@ class LazyFieldNode extends FieldNode {
 
     @Override
     public boolean hasInitialExpression() {
-        init();
+        lazyInit();
         return delegate.hasInitialExpression();
     }
 
     @Override
     public boolean isInStaticContext() {
-        init();
+        lazyInit();
         return delegate.isInStaticContext();
     }
 
     @Override
     public Expression getInitialValueExpression() {
-        init();
+        lazyInit();
         return delegate.getInitialValueExpression();
     }
 
     @Override
     public void setInitialValueExpression(Expression initialValueExpression) {
-        init();
+        lazyInit();
         delegate.setInitialValueExpression(initialValueExpression);
     }
 
     @Override
     @Deprecated
     public boolean isClosureSharedVariable() {
-        init();
+        lazyInit();
         return delegate.isClosureSharedVariable();
     }
 
     @Override
     @Deprecated
     public void setClosureSharedVariable(boolean inClosure) {
-        init();
+        lazyInit();
         delegate.setClosureSharedVariable(inClosure);
     }
 
     @Override
     public ClassNode getOriginType() {
-        init();
+        lazyInit();
         return delegate.getOriginType();
     }
 
     @Override
     public void setOriginType(ClassNode cn) {
-        init();
+        lazyInit();
         delegate.setOriginType(cn);
     }
 
     @Override
     public void rename(String name) {
-        init();
+        lazyInit();
         delegate.rename(name);
     }
 
     @Override
     public List<AnnotationNode> getAnnotations() {
-        init();
+        lazyInit();
         return delegate.getAnnotations();
     }
 
     @Override
     public List<AnnotationNode> getAnnotations(ClassNode type) {
-        init();
+        lazyInit();
         return delegate.getAnnotations(type);
     }
 
     @Override
     public void addAnnotation(AnnotationNode annotation) {
-        init();
+        lazyInit();
         delegate.addAnnotation(annotation);
     }
 
     @Override
     public void addAnnotations(List<AnnotationNode> annotations) {
-        init();
+        lazyInit();
         delegate.addAnnotations(annotations);
     }
 
     @Override
     public ClassNode getDeclaringClass() {
-        init();
+        lazyInit();
         return delegate.getDeclaringClass();
     }
 
@@ -267,175 +270,175 @@ class LazyFieldNode extends FieldNode {
 
     @Override
     public Groovydoc getGroovydoc() {
-        init();
+        lazyInit();
         return delegate.getGroovydoc();
     }
 
     @Override
     public AnnotatedNode getInstance() {
-        init();
+        lazyInit();
         return delegate.getInstance();
     }
 
     @Override
     public boolean hasNoRealSourcePosition() {
-        init();
+        lazyInit();
         return delegate.hasNoRealSourcePosition();
     }
 
     @Override
     public void setHasNoRealSourcePosition(boolean hasNoRealSourcePosition) {
-        init();
+        lazyInit();
         delegate.setHasNoRealSourcePosition(hasNoRealSourcePosition);
     }
 
     @Override
     public boolean isSynthetic() {
-        init();
+        lazyInit();
         return delegate.isSynthetic();
     }
 
     @Override
     public void setSynthetic(boolean synthetic) {
-        init();
+        lazyInit();
         delegate.setSynthetic(synthetic);
     }
 
     @Override
     public void visit(GroovyCodeVisitor visitor) {
-        init();
+        lazyInit();
         delegate.visit(visitor);
     }
 
     @Override
     public String getText() {
-        init();
+        lazyInit();
         return delegate.getText();
     }
 
     @Override
     public int getLineNumber() {
-        init();
+        lazyInit();
         return delegate.getLineNumber();
     }
 
     @Override
     public void setLineNumber(int lineNumber) {
-        init();
+        lazyInit();
         delegate.setLineNumber(lineNumber);
     }
 
     @Override
     public int getColumnNumber() {
-        init();
+        lazyInit();
         return delegate.getColumnNumber();
     }
 
     @Override
     public void setColumnNumber(int columnNumber) {
-        init();
+        lazyInit();
         delegate.setColumnNumber(columnNumber);
     }
 
     @Override
     public int getLastLineNumber() {
-        init();
+        lazyInit();
         return delegate.getLastLineNumber();
     }
 
     @Override
     public void setLastLineNumber(int lastLineNumber) {
-        init();
+        lazyInit();
         delegate.setLastLineNumber(lastLineNumber);
     }
 
     @Override
     public int getLastColumnNumber() {
-        init();
+        lazyInit();
         return delegate.getLastColumnNumber();
     }
 
     @Override
     public void setLastColumnNumber(int lastColumnNumber) {
-        init();
+        lazyInit();
         delegate.setLastColumnNumber(lastColumnNumber);
     }
 
     @Override
     public void setSourcePosition(ASTNode node) {
-        init();
+        lazyInit();
         delegate.setSourcePosition(node);
     }
 
     @Override
     public void copyNodeMetaData(ASTNode other) {
-        init();
+        lazyInit();
         delegate.copyNodeMetaData(other);
     }
 
     @Override
     public Map<?, ?> getMetaDataMap() {
-        init();
+        lazyInit();
         return delegate.getMetaDataMap();
     }
 
     @Override
     public void setMetaDataMap(Map<?, ?> metaDataMap) {
-        init();
+        lazyInit();
         delegate.setMetaDataMap(metaDataMap);
     }
 
     @Override
     public int hashCode() {
-        init();
+        lazyInit();
         return delegate.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
-        init();
+        lazyInit();
         return delegate.equals(obj);
     }
 
     @Override
     public <T> T getNodeMetaData(Object key) {
-        init();
+        lazyInit();
         return delegate.getNodeMetaData(key);
     }
 
     @Override
     public <T> T getNodeMetaData(Object key, Function<?, ? extends T> valFn) {
-        init();
+        lazyInit();
         return delegate.getNodeMetaData(key, valFn);
     }
 
     @Override
     public void copyNodeMetaData(NodeMetaDataHandler other) {
-        init();
+        lazyInit();
         delegate.copyNodeMetaData(other);
     }
 
     @Override
     public void setNodeMetaData(Object key, Object value) {
-        init();
+        lazyInit();
         delegate.setNodeMetaData(key, value);
     }
 
     @Override
     public Object putNodeMetaData(Object key, Object value) {
-        init();
+        lazyInit();
         return delegate.putNodeMetaData(key, value);
     }
 
     @Override
     public void removeNodeMetaData(Object key) {
-        init();
+        lazyInit();
         delegate.removeNodeMetaData(key);
     }
 
     @Override
     public Map<?, ?> getNodeMetaData() {
-        init();
+        lazyInit();
         return delegate.getNodeMetaData();
     }
 }
