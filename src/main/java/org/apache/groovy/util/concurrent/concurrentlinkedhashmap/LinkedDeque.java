@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.groovy.util.concurrentlinkedhashmap;
+package org.apache.groovy.util.concurrent.concurrentlinkedhashmap;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.AbstractCollection;

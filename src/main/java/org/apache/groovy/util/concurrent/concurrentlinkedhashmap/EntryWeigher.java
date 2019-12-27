@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.groovy.util.concurrentlinkedhashmap;
+package org.apache.groovy.util.concurrent.concurrentlinkedhashmap;
 
 import javax.annotation.concurrent.ThreadSafe;
 
 /**
- * A class that can determine the weight of a value. The total weight threshold
+ * A class that can determine the weight of an entry. The total weight threshold
  * is used to determine when an eviction is required.
  *
  * @see <a href="http://code.google.com/p/concurrentlinkedhashmap/">
  *      http://code.google.com/p/concurrentlinkedhashmap/</a>
  */
 @ThreadSafe
-public interface Weigher<V> {
+public interface EntryWeigher<K, V> {
 
   /**
-   * Measures an object's weight to determine how many units of capacity that
-   * the value consumes. A value must consume a minimum of one unit.
+   * Measures an entry's weight to determine how many units of capacity that
+   * the key and value consumes. An entry must consume a minimum of one unit.
    *
-   * @param value the object to weigh
-   * @return the object's weight
+   * @param key the key to weigh
+   * @param value the value to weigh
+   * @return the entry's weight
    */
-  int weightOf(V value);
+  int weightOf(K key, V value);
 }

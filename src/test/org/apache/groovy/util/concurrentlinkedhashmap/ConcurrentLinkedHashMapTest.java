@@ -19,6 +19,7 @@
 
 package org.apache.groovy.util.concurrentlinkedhashmap;
 
+import org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 import org.junit.Test;
 
 import java.util.TreeSet;
@@ -31,7 +32,7 @@ import static org.junit.Assert.assertNotEquals;
 public class ConcurrentLinkedHashMapTest {
     @Test
     public void computeIfAbsent() {
-        ConcurrentLinkedHashMap m = new ConcurrentLinkedHashMap.Builder<>()
+        org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap m = new org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap.Builder<>()
                 .maximumWeightedCapacity(3)
                 .build();
 
@@ -51,7 +52,7 @@ public class ConcurrentLinkedHashMapTest {
 
     @Test
     public void computeIfAbsentConcurrently() throws InterruptedException {
-        final ConcurrentLinkedHashMap m = new ConcurrentLinkedHashMap.Builder<>()
+        final org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap m = new ConcurrentLinkedHashMap.Builder<>()
                 .maximumWeightedCapacity(3)
                 .build();
 
