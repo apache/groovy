@@ -392,6 +392,12 @@ class LazyFieldNode extends FieldNode {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        init();
+        return delegate.equals(obj);
+    }
+
+    @Override
     public <T> T getNodeMetaData(Object key) {
         init();
         return delegate.getNodeMetaData(key);
