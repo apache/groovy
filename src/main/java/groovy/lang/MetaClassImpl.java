@@ -109,6 +109,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.apache.groovy.util.Arrays.merge;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.reflection.ReflectionCache.isAssignableFrom;
 
@@ -184,11 +185,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         this.registry = GroovySystem.getMetaClassRegistry();
         metaMethodIndex = new MetaMethodIndex(theCachedClass);
         final MetaMethod[] metaMethods = theCachedClass.getNewMetaMethods();
-        if (add != null && !(add.length == 0)) {
-            List<MetaMethod> arr = new ArrayList<>();
-            arr.addAll(Arrays.asList(metaMethods));
-            arr.addAll(Arrays.asList(add));
-            myNewMetaMethods = arr.toArray(MetaMethod.EMPTY_ARRAY);
+        if (add != null && add.length != 0) {
+            myNewMetaMethods = merge(metaMethods, add);
             additionalMetaMethods = metaMethods;
         } else {
             myNewMetaMethods = metaMethods;
