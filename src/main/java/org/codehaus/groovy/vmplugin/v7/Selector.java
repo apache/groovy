@@ -501,6 +501,7 @@ public abstract class Selector {
      * calls as well as getProperty calls.
      */
     private static class MethodSelector extends Selector {
+        private static final Object[] SINGLE_NULL_ARRAY = { null };
         protected MetaClass mc;
         private boolean isCategoryMethod;
         public MethodSelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
@@ -752,8 +753,7 @@ public abstract class Selector {
             if (!isVargs) {
                 if (spread && useMetaClass) return;
                 if (params.length==2 && args.length==1) {
-                    //TODO: this Object[] can be constant
-                    handle = MethodHandles.insertArguments(handle, 1, new Object[]{null});
+                    handle = MethodHandles.insertArguments(handle, 1, SINGLE_NULL_ARRAY);
                 }
                 return;
             }
