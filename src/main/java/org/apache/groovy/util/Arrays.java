@@ -28,7 +28,7 @@ import java.lang.reflect.Array;
 public class Arrays {
 
     /**
-     * Concatenate arrays
+     * Concatenate arrays and ignore null array
      *
      * @param arrays arrays to merge
      * @param <T> array component type
@@ -36,13 +36,20 @@ public class Arrays {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] concat(T[]... arrays) {
-        if (0 == arrays.length) return null;
+        if (null == arrays || 0 == arrays.length) return null;
 
-        int resultLength = java.util.Arrays.stream(arrays).map(e -> e.length).reduce(0, Integer::sum);
+        int resultLength =
+                java.util.Arrays.stream(arrays)
+                        .filter(e -> null != e)
+                        .map(e -> e.length)
+                        .reduce(0, Integer::sum);
         T[] resultArray = (T[]) Array.newInstance(arrays[0].getClass().getComponentType(), resultLength);
 
         for (int i = 0, n = arrays.length, curr = 0; i < n; i++) {
             T[] array = arrays[i];
+
+            if (null == array) continue;
+
             int length = array.length;
             System.arraycopy(array, 0, resultArray, curr, length);
             curr += length;
