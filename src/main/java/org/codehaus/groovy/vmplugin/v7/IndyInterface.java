@@ -52,7 +52,7 @@ public class IndyInterface {
         /**
          * Enum for easy differentiation between call types
          */
-        public static enum CALL_TYPES {
+        public enum CALL_TYPES {
             /**Method invocation type*/         METHOD("invoke"), 
             /**Constructor invocation type*/    INIT("init"), 
             /**Get property invocation type*/   GET("getProperty"), 
@@ -60,7 +60,7 @@ public class IndyInterface {
             /**Cast invocation type*/           CAST("cast");
             /**The name of the call site type*/
             private final String name;
-            private CALL_TYPES(String callSiteName) {
+            CALL_TYPES(String callSiteName) {
                 this.name = callSiteName;
             }
             /** Returns the name of the call site type */
