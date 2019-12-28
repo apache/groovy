@@ -23,36 +23,41 @@ import org.junit.Test;
 
 public class ArraysTest {
     @Test
-    public void testMerge0() {
-        try {
-            Integer[] result = Arrays.merge();
-            Assert.fail("should throw IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("arrays should not be empty"));
-        }
+    public void testConcat0() {
+        Assert.assertNull(Arrays.concat());
     }
 
     @Test
-    public void testMerge1() {
+    public void testConcat1() {
         Integer[] a = new Integer[] {1, 2};
-        Integer[] result = Arrays.merge(a);
+        Integer[] result = Arrays.concat(a);
+        Assert.assertNotSame(a, result);
         Assert.assertArrayEquals(new Integer[] {1, 2}, result);
     }
 
     @Test
-    public void testMerge2() {
+    public void testConcat2() {
+        Integer[] a = new Integer[] {1, 2};
+        Integer[] b = new Integer[0];
+        Integer[] result = Arrays.concat(a, b);
+        Assert.assertNotSame(a, result);
+        Assert.assertArrayEquals(new Integer[] {1, 2}, result);
+    }
+
+    @Test
+    public void testConcat3() {
         Integer[] a = new Integer[] {1, 2};
         Integer[] b = new Integer[] {3, 4};
-        Integer[] result = Arrays.merge(a, b);
+        Integer[] result = Arrays.concat(a, b);
         Assert.assertArrayEquals(new Integer[] {1, 2, 3, 4}, result);
     }
 
     @Test
-    public void testMerge3() {
+    public void testConcat4() {
         Integer[] a = new Integer[] {1, 2};
         Integer[] b = new Integer[] {3, 4};
         Integer[] c = new Integer[] {5, 6, 7, 8, 9};
-        Integer[] result = Arrays.merge(a, b, c);
+        Integer[] result = Arrays.concat(a, b, c);
         Assert.assertArrayEquals(new Integer[] {1, 2, 3, 4, 5, 6, 7, 8, 9}, result);
     }
 }

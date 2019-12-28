@@ -28,16 +28,15 @@ import java.lang.reflect.Array;
 public class Arrays {
 
     /**
-     * Merge arrays
+     * Concatenate arrays
      *
      * @param arrays arrays to merge
-     * @param <T> array type
-     * @return the merged array
+     * @param <T> array component type
+     * @return the concatenated array
      */
     @SuppressWarnings("unchecked")
-    public static <T> T[] merge(T[]... arrays) {
-        if (0 == arrays.length) throw new IllegalArgumentException("arrays should not be empty");
-        if (1 == arrays.length) return arrays[0];
+    public static <T> T[] concat(T[]... arrays) {
+        if (0 == arrays.length) return null;
 
         int resultLength = java.util.Arrays.stream(arrays).map(e -> e.length).reduce(0, Integer::sum);
         T[] resultArray = (T[]) Array.newInstance(arrays[0].getClass().getComponentType(), resultLength);
