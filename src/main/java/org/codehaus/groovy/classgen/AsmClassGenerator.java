@@ -158,7 +158,6 @@ public class AsmClassGenerator extends ClassGenerator {
     private static final MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
     private static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
-    private final Map<String, GenericsType> genericParameterNames = new HashMap<>();
     private final Map<String,ClassNode> referencedClasses = new HashMap<>();
     private boolean passingParams;
 
@@ -366,8 +365,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitGenericType(final GenericsType genericsType) {
-        ClassNode type = genericsType.getType();
-        genericParameterNames.put(type.getName(), genericsType);
     }
 
     @Override
