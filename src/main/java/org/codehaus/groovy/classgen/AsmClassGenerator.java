@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -362,9 +361,6 @@ public class AsmClassGenerator extends ClassGenerator {
         modifiers = fixInnerClassModifiers(classNode, modifiers);
         modifiers = fixInterfaceModifiers(classNode, modifiers);
         return modifiers;
-    }
-
-    public void visitGenericType(final GenericsType genericsType) {
     }
 
     @Override
