@@ -157,42 +157,6 @@ public class IndyInterface {
         }
 
         /**
-         * bootstrap method for method calls with "this" as receiver
-         * @deprecated since Groovy 2.1.0
-         */
-        @Deprecated
-        public static CallSite bootstrapCurrent(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, true, false);
-        }
-
-        /**
-         * bootstrap method for method calls with "this" as receiver safe
-         * @deprecated since Groovy 2.1.0
-         */
-        @Deprecated
-        public static CallSite bootstrapCurrentSafe(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, true, false);
-        }
-        
-        /**
-         * bootstrap method for standard method calls
-         * @deprecated since Groovy 2.1.0
-         */
-        @Deprecated
-        public static CallSite bootstrap(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, false, false, false);
-        }
-        
-        /**
-         * bootstrap method for null safe standard method calls
-         * @deprecated since Groovy 2.1.0
-         */
-        @Deprecated
-        public static CallSite bootstrapSafe(Lookup caller, String name, MethodType type) {
-            return realBootstrap(caller, name, CALL_TYPES.METHOD.ordinal(), type, true, false, false);
-        }
-
-        /**
          * backing bootstrap method with all parameters
          */
         private static CallSite realBootstrap(Lookup caller, String name, int callID, MethodType type, boolean safe, boolean thisCall, boolean spreadCall) {
