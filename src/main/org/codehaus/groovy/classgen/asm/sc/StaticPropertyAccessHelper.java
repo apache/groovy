@@ -30,63 +30,57 @@ import org.codehaus.groovy.transform.sc.TemporaryVariableExpression;
 import java.util.Arrays;
 
 /**
- * Contains helper methods aimed at facilitating the generation of statically compiled bytecode for property access.
+ * Facilitates the generation of statically-compiled bytecode for property access.
  *
- * @author Cédric Champeau
  * @since 2.4.0
  */
 public abstract class StaticPropertyAccessHelper {
+
     public static Expression transformToSetterCall(
-            Expression receiver,
-            MethodNode setterMethod,
-            final Expression arguments,
-            boolean implicitThis,
-            boolean safe,
-            boolean spreadSafe,
-            boolean requiresReturnValue,
-            Expression location) {
+            final Expression receiver,
+            final MethodNode setterMethod,
+            final Expression argument,
+            final boolean implicitThis,
+            final boolean safe,
+            final boolean spreadSafe,
+            final boolean requiresReturnValue,
+            final Expression propertyExpression) {
         if (requiresReturnValue) {
-            TemporaryVariableExpression tmp = new TemporaryVariableExpression(arguments);
+            TemporaryVariableExpression tmp = new TemporaryVariableExpression(argument);
             PoppingMethodCallExpression call = new PoppingMethodCallExpression(receiver, setterMethod, tmp);
-            call.setImplicitThis(implicitThis);
             call.setSafe(safe);
             call.setSpreadSafe(spreadSafe);
-            call.setSourcePosition(location);
-            PoppingListOfExpressionsExpression result = new PoppingListOfExpressionsExpression(tmp, call);
-            result.setSourcePosition(location);
-            return result;
+            call.setImplicitThis(implicitThis);
+            call.setSourcePosition(propertyExpression);
+            PoppingListOfExpressionsExpression list = new PoppingListOfExpressionsExpression(tmp, call);
+            list.setSourcePosition(propertyExpression);
+            return list;
         } else {
-            MethodCallExpression call = new MethodCallExpression(
-                    receiver,
-                    setterMethod.getName(),
-                    arguments
-            );
-            call.setImplicitThis(implicitThis);
+            MethodCallExpression call = new MethodCallExpression(receiver, setterMethod.getName(), argument);
             call.setSafe(safe);
             call.setSpreadSafe(spreadSafe);
+            call.setImplicitThis(implicitThis);
             call.setMethodTarget(setterMethod);
-            call.setSourcePosition(location);
+            call.setSourcePosition(propertyExpression);
             return call;
         }
     }
 
     private static class PoppingListOfExpressionsExpression extends ListOfExpressionsExpression {
+
         private final TemporaryVariableExpression tmp;
         private final PoppingMethodCallExpression call;
 
         public PoppingListOfExpressionsExpression(final TemporaryVariableExpression tmp, final PoppingMethodCallExpression call) {
-            super(Arrays.asList(
-                    tmp,
-                    call
-            ));
+            super(Arrays.asList(tmp, call));
             this.tmp = tmp;
             this.call = call;
         }
 
         @Override
         public Expression transformExpression(final ExpressionTransformer transformer) {
-            PoppingMethodCallExpression tcall = (PoppingMethodCallExpression) call.transformExpression(transformer);
-            return new PoppingListOfExpressionsExpression(tcall.tmp, tcall);
+            PoppingMethodCallExpression call = (PoppingMethodCallExpression) this.call.transformExpression(transformer);
+            return new PoppingListOfExpressionsExpression(call.tmp, call);
         }
 
         @Override
@@ -99,26 +93,24 @@ public abstract class StaticPropertyAccessHelper {
     }
 
     private static class PoppingMethodCallExpression extends MethodCallExpression {
-        private final Expression receiver;
-        private final MethodNode setter;
+
         private final TemporaryVariableExpression tmp;
 
         public PoppingMethodCallExpression(final Expression receiver, final MethodNode setterMethod, final TemporaryVariableExpression tmp) {
             super(receiver, setterMethod.getName(), tmp);
-            this.receiver = receiver;
-            this.setter = setterMethod;
-            this.tmp = tmp;
             setMethodTarget(setterMethod);
+            this.tmp = tmp;
         }
 
         @Override
         public Expression transformExpression(final ExpressionTransformer transformer) {
-            PoppingMethodCallExpression trn = new PoppingMethodCallExpression(receiver.transformExpression(transformer), setter, (TemporaryVariableExpression) tmp.transformExpression(transformer));
-            trn.copyNodeMetaData(this);
-            trn.setImplicitThis(isImplicitThis());
-            trn.setSafe(isSafe());
-            trn.setSpreadSafe(isSpreadSafe());
-            return trn;
+            PoppingMethodCallExpression call = new PoppingMethodCallExpression(getObjectExpression().transformExpression(transformer), getMethodTarget(), (TemporaryVariableExpression) tmp.transformExpression(transformer));
+            call.copyNodeMetaData(this);
+            call.setSourcePosition(this);
+            call.setSafe(isSafe());
+            call.setSpreadSafe(isSpreadSafe());
+            call.setImplicitThis(isImplicitThis());
+            return call;
         }
 
         @Override
