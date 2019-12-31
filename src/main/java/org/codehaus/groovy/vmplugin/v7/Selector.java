@@ -51,7 +51,7 @@ import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
-import org.codehaus.groovy.vmplugin.v7.IndyInterface.CALL_TYPES;
+import org.codehaus.groovy.vmplugin.v7.IndyInterface.CallType;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -113,16 +113,16 @@ public abstract class Selector {
     public boolean thisCall;
     public Class selectionBase;
     public boolean catchException = true;
-    public CALL_TYPES callType;
+    public CallType callType;
 
     /** Cache values for read-only access */
-    private static final CALL_TYPES[] CALL_TYPES_VALUES = CALL_TYPES.values();
+    private static final CallType[] CALL_TYPE_VALUES = CallType.values();
 
     /**
      * Returns the Selector
      */
     public static Selector getSelector(MutableCallSite callSite, Class sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
-        CALL_TYPES callType = CALL_TYPES_VALUES[callID];
+        CallType callType = CALL_TYPE_VALUES[callID];
         switch (callType) {
             case INIT: return new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             case METHOD: return new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
@@ -156,7 +156,7 @@ public abstract class Selector {
         private final Class<?> staticSourceType, staticTargetType;
 
         public CastSelector(MutableCallSite callSite, Object[] arguments) {
-            super(callSite, Selector.class, "", CALL_TYPES.CAST, false, false, false, arguments);
+            super(callSite, Selector.class, "", CallType.CAST, false, false, false, arguments);
             this.staticSourceType = callSite.type().parameterType(0);
             this.staticTargetType = callSite.type().returnType();
         }
@@ -279,7 +279,7 @@ public abstract class Selector {
     private static class PropertySelector extends MethodSelector {
         private boolean insertName = false;
 
-        public PropertySelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+        public PropertySelector(MutableCallSite callSite, Class sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
@@ -380,7 +380,7 @@ public abstract class Selector {
     private static class InitSelector extends MethodSelector {
         private boolean beanConstructor;
 
-        public InitSelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+        public InitSelector(MutableCallSite callSite, Class sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
@@ -504,7 +504,7 @@ public abstract class Selector {
         private static final Object[] SINGLE_NULL_ARRAY = { null };
         protected MetaClass mc;
         private boolean isCategoryMethod;
-        public MethodSelector(MutableCallSite callSite, Class sender, String methodName, CALL_TYPES callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
+        public MethodSelector(MutableCallSite callSite, Class sender, String methodName, CallType callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
             this.callType = callType;
             this.targetType = callSite.type();
             this.name = methodName;
@@ -989,7 +989,7 @@ public abstract class Selector {
                 getMetaClass();
                 if (LOG_ENABLED) LOG.info("meta class is "+mc);
                 setSelectionBase();
-                MetaClassImpl mci = getMetaClassImpl(mc, callType != CALL_TYPES.GET);
+                MetaClassImpl mci = getMetaClassImpl(mc, callType != CallType.GET);
                 chooseMeta(mci);
                 setHandleForMetaMethod();
                 setMetaClassCallHandleIfNedded(mci!=null);
