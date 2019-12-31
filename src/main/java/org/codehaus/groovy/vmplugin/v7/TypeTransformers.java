@@ -44,25 +44,26 @@ import java.util.Map;
  * This class contains several transformers for used during method invocation.
  */
 public class TypeTransformers {
-	private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static final MethodHandle 
-        TO_STRING, TO_BYTE,   TO_INT,     TO_LONG,    TO_SHORT,
-        TO_FLOAT,  TO_DOUBLE, TO_BIG_INT, AS_ARRAY,
-        TO_REFLECTIVE_PROXY, TO_GENERATED_PROXY, TO_SAMTRAIT_PROXY,
-        DOUBLE_TO_BIG_DEC, DOUBLE_TO_BIG_DEC_WITH_CONVERSION, LONG_TO_BIG_DEC, BIG_INT_TO_BIG_DEC;
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final MethodHandle
+            TO_STRING, TO_BYTE, TO_INT, TO_LONG, TO_SHORT,
+            TO_FLOAT, TO_DOUBLE, TO_BIG_INT, AS_ARRAY,
+            TO_REFLECTIVE_PROXY, TO_GENERATED_PROXY, TO_SAMTRAIT_PROXY,
+            DOUBLE_TO_BIG_DEC, DOUBLE_TO_BIG_DEC_WITH_CONVERSION, LONG_TO_BIG_DEC, BIG_INT_TO_BIG_DEC;
+
     static {
         try {
-            TO_STRING   = LOOKUP.findVirtual(Object.class, "toString",      MethodType.methodType(String.class));
-            TO_BYTE     = LOOKUP.findVirtual(Number.class, "byteValue",     MethodType.methodType(Byte.TYPE));
-            TO_SHORT    = LOOKUP.findVirtual(Number.class, "shortValue",    MethodType.methodType(Short.TYPE));
-            TO_INT      = LOOKUP.findVirtual(Number.class, "intValue",      MethodType.methodType(Integer.TYPE));
-            TO_LONG     = LOOKUP.findVirtual(Number.class, "longValue",     MethodType.methodType(Long.TYPE));
-            TO_FLOAT    = LOOKUP.findVirtual(Number.class, "floatValue",    MethodType.methodType(Float.TYPE));
-            TO_DOUBLE   = LOOKUP.findVirtual(Number.class, "doubleValue",   MethodType.methodType(Double.TYPE));
+            TO_STRING = LOOKUP.findVirtual(Object.class, "toString", MethodType.methodType(String.class));
+            TO_BYTE = LOOKUP.findVirtual(Number.class, "byteValue", MethodType.methodType(Byte.TYPE));
+            TO_SHORT = LOOKUP.findVirtual(Number.class, "shortValue", MethodType.methodType(Short.TYPE));
+            TO_INT = LOOKUP.findVirtual(Number.class, "intValue", MethodType.methodType(Integer.TYPE));
+            TO_LONG = LOOKUP.findVirtual(Number.class, "longValue", MethodType.methodType(Long.TYPE));
+            TO_FLOAT = LOOKUP.findVirtual(Number.class, "floatValue", MethodType.methodType(Float.TYPE));
+            TO_DOUBLE = LOOKUP.findVirtual(Number.class, "doubleValue", MethodType.methodType(Double.TYPE));
 
             // BigDecimal conversion is done by using the double value
             DOUBLE_TO_BIG_DEC = LOOKUP.findConstructor(BigDecimal.class, MethodType.methodType(Void.TYPE, Double.TYPE));
-            DOUBLE_TO_BIG_DEC_WITH_CONVERSION  = MethodHandles.filterReturnValue(TO_DOUBLE, DOUBLE_TO_BIG_DEC);
+            DOUBLE_TO_BIG_DEC_WITH_CONVERSION = MethodHandles.filterReturnValue(TO_DOUBLE, DOUBLE_TO_BIG_DEC);
 
             // BigDecimal conversion is done by using the double value
             LONG_TO_BIG_DEC = LOOKUP.findConstructor(BigDecimal.class, MethodType.methodType(Void.TYPE, Long.TYPE));
@@ -73,13 +74,13 @@ public class TypeTransformers {
 
             // BigInteger conversion is done by using the string representation
             MethodHandle tmp = LOOKUP.findConstructor(BigInteger.class, MethodType.methodType(Void.TYPE, String.class));
-            TO_BIG_INT  = MethodHandles.filterReturnValue(TO_STRING, tmp);
+            TO_BIG_INT = MethodHandles.filterReturnValue(TO_STRING, tmp);
 
             // generic array to array conversion
             AS_ARRAY = LOOKUP.findStatic(DefaultTypeTransformation.class, "asArray", MethodType.methodType(Object.class, Object.class, Class.class));
 
             // reflective proxy generation, since we need a ConvertedClosure but have only a normal Closure, we need to create that wrapper object as well
-            MethodHandle newProxyInstance = LOOKUP.findStatic(Proxy.class, "newProxyInstance", 
+            MethodHandle newProxyInstance = LOOKUP.findStatic(Proxy.class, "newProxyInstance",
                     MethodType.methodType(Object.class, ClassLoader.class, Class[].class, InvocationHandler.class));
             MethodHandle newConvertedClosure = LOOKUP.findConstructor(ConvertedClosure.class, MethodType.methodType(Void.TYPE, Closure.class, String.class));
             // prepare target newProxyInstance for fold to drop additional arguments needed by newConvertedClosure
@@ -106,7 +107,7 @@ public class TypeTransformers {
                 MethodHandle map = LOOKUP.findStatic(Collections.class, "singletonMap",
                         MethodType.methodType(Map.class, Object.class, Object.class));
                 newProxyInstance = LOOKUP.findVirtual(ProxyGenerator.class, "instantiateAggregate",
-                        MethodType.methodType(GroovyObject.class,Map.class, List.class));
+                        MethodType.methodType(GroovyObject.class, Map.class, List.class));
                 newOrder = newProxyInstance.type().dropParameterTypes(1, 2);
                 newOrder = newOrder.insertParameterTypes(0, Map.class, Object.class, Object.class);
                 tmp = MethodHandles.permuteArguments(newProxyInstance, newOrder, 3, 0, 4);
@@ -124,7 +125,7 @@ public class TypeTransformers {
      * array transformations and number based transformations
      */
     protected static MethodHandle addTransformer(MethodHandle handle, int pos, Object arg, Class parameter) {
-        MethodHandle transformer=null;
+        MethodHandle transformer = null;
         if (arg instanceof GString) {
             transformer = TO_STRING;
         } else if (arg instanceof Closure) {
@@ -132,15 +133,16 @@ public class TypeTransformers {
         } else if (Number.class.isAssignableFrom(parameter)) {
             transformer = selectNumberTransformer(parameter, arg);
         } else if (parameter.isArray()) {
-            transformer =  MethodHandles.insertArguments(AS_ARRAY, 1, parameter);
+            transformer = MethodHandles.insertArguments(AS_ARRAY, 1, parameter);
         }
-        if (transformer==null) throw new GroovyBugError("Unknown transformation for argument "+arg+" at position "+pos+" with "+arg.getClass()+" for parameter of type "+parameter);
+        if (transformer == null)
+            throw new GroovyBugError("Unknown transformation for argument " + arg + " at position " + pos + " with " + arg.getClass() + " for parameter of type " + parameter);
         return applyUnsharpFilter(handle, pos, transformer);
     }
 
     /**
      * creates a method handle able to transform the given Closure into a SAM type
-     * if the given parameter is a SAM type 
+     * if the given parameter is a SAM type
      */
     private static MethodHandle createSAMTransform(Object arg, Class parameter) {
         Method method = CachedSAMClass.getSAMMethod(parameter);
@@ -169,10 +171,10 @@ public class TypeTransformers {
             // input is the closure, the method name, the class loader and the 
             // class[]. All of that but the closure must be provided here  
             MethodHandle ret = TO_REFLECTIVE_PROXY;
-            ret = MethodHandles.insertArguments(ret, 1, 
-                        method.getName(),
-                        arg.getClass().getClassLoader(),
-                        new Class[]{parameter});
+            ret = MethodHandles.insertArguments(ret, 1,
+                    method.getName(),
+                    arg.getClass().getClassLoader(),
+                    new Class[]{parameter});
             return ret;
         } else {
             // the following code will basically do this:
@@ -193,7 +195,7 @@ public class TypeTransformers {
     /**
      * Apply a transformer as filter.
      * The filter may not match exactly in the types. In this case needed
-     * additional type transformations are done by {@link MethodHandle#asType(MethodType)} 
+     * additional type transformations are done by {@link MethodHandle#asType(MethodType)}
      */
     public static MethodHandle applyUnsharpFilter(MethodHandle handle, int pos, MethodHandle transformer) {
         MethodType type = transformer.type();
@@ -215,7 +217,7 @@ public class TypeTransformers {
             return TO_BYTE;
         } else if (param == Character.class || param == Integer.class) {
             return TO_INT;
-        } else  if (param == Long.class) {
+        } else if (param == Long.class) {
             return TO_LONG;
         } else if (param == Float.class) {
             return TO_FLOAT;
@@ -236,7 +238,7 @@ public class TypeTransformers {
         } else if (param == Short.class) {
             return TO_SHORT;
         } else {
-             return null;
+            return null;
         }
     }
 }

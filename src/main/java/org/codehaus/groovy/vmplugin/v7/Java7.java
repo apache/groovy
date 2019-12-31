@@ -31,14 +31,15 @@ import java.security.PrivilegedAction;
 
 /**
  * Java 7 based functions.
- *
+ * <p>
  * For crude customization, you can add your own methods to your own version and place it on the classpath ahead of this one.
  */
 public class Java7 extends Java6 {
     private static class LookupHolder {
         private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
+
         static {
-            Constructor<MethodHandles.Lookup> con = null;
+            Constructor<MethodHandles.Lookup> con;
             try {
                 con = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
             } catch (NoSuchMethodException e) {
@@ -69,7 +70,7 @@ public class Java7 extends Java6 {
 
     @Override
     public void invalidateCallSites() {
-    	IndyInterface.invalidateSwitchPoints();
+        IndyInterface.invalidateSwitchPoints();
     }
 
     @Override
