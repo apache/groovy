@@ -54,37 +54,35 @@ import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
 public class IndyGuardsFiltersAndSignatures {
 
     private static final MethodType
-        ZERO_GUARD          = MethodType.methodType(boolean.class),
-        OBJECT_GUARD        = MethodType.methodType(boolean.class, Object.class),
-        CLASS1_GUARD        = MethodType.methodType(boolean.class, Class.class, Object.class),
-        METACLASS1_GUARD    = MethodType.methodType(boolean.class, MetaClass.class, Object.class),
-        
-        GRE_GUARD           = MethodType.methodType(Object.class, GroovyRuntimeException.class),
-        
-        OBJECT_FILTER       = MethodType.methodType(Object.class, Object.class),
+            ZERO_GUARD = MethodType.methodType(boolean.class),
+            OBJECT_GUARD = MethodType.methodType(boolean.class, Object.class),
+            CLASS1_GUARD = MethodType.methodType(boolean.class, Class.class, Object.class),
+            METACLASS1_GUARD = MethodType.methodType(boolean.class, MetaClass.class, Object.class),
 
-        BOUND_INVOKER       = MethodType.methodType(Object.class, Object[].class),
-        ANO_INVOKER         = MethodType.methodType(Object.class, Object.class, Object[].class),
-        INVOKER             = MethodType.methodType(Object.class, Object.class, String.class, Object[].class),
-        GET_INVOKER         = MethodType.methodType(Object.class, String.class)
-        ;
+    GRE_GUARD = MethodType.methodType(Object.class, GroovyRuntimeException.class),
 
-    protected static final MethodHandle 
-        SAME_CLASS,         UNWRAP_METHOD,
-        SAME_MC,            IS_NULL,
-        UNWRAP_EXCEPTION,   META_METHOD_INVOKER,
-        GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,
-        HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
-        BEAN_CONSTRUCTOR_PROPERTY_SETTER,
-        META_PROPERTY_GETTER,
-        SLOW_META_CLASS_FIND, META_CLASS_INVOKE_STATIC_METHOD,
-        MOP_GET, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
-        INTERCEPTABLE_INVOKER,
-        CLASS_FOR_NAME, BOOLEAN_IDENTITY, 
-        DTT_CAST_TO_TYPE, SAM_CONVERSION,
-        HASHSET_CONSTRUCTOR, ARRAYLIST_CONSTRUCTOR, GROOVY_CAST_EXCEPTION,
-        EQUALS
-        ;
+    OBJECT_FILTER = MethodType.methodType(Object.class, Object.class),
+
+    BOUND_INVOKER = MethodType.methodType(Object.class, Object[].class),
+            ANO_INVOKER = MethodType.methodType(Object.class, Object.class, Object[].class),
+            INVOKER = MethodType.methodType(Object.class, Object.class, String.class, Object[].class),
+            GET_INVOKER = MethodType.methodType(Object.class, String.class);
+
+    protected static final MethodHandle
+            SAME_CLASS, UNWRAP_METHOD,
+            SAME_MC, IS_NULL,
+            UNWRAP_EXCEPTION, META_METHOD_INVOKER,
+            GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,
+            HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
+            BEAN_CONSTRUCTOR_PROPERTY_SETTER,
+            META_PROPERTY_GETTER,
+            SLOW_META_CLASS_FIND, META_CLASS_INVOKE_STATIC_METHOD,
+            MOP_GET, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
+            INTERCEPTABLE_INVOKER,
+            CLASS_FOR_NAME, BOOLEAN_IDENTITY,
+            DTT_CAST_TO_TYPE, SAM_CONVERSION,
+            HASHSET_CONSTRUCTOR, ARRAYLIST_CONSTRUCTOR, GROOVY_CAST_EXCEPTION,
+            EQUALS;
 
     static {
         try {
@@ -111,7 +109,7 @@ public class IndyGuardsFiltersAndSignatures {
             CLASS_FOR_NAME = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
 
             BOOLEAN_IDENTITY = MethodHandles.identity(Boolean.class);
-            DTT_CAST_TO_TYPE = LOOKUP.findStatic(DefaultTypeTransformation.class, "castToType", MethodType.methodType(Object.class,Object.class,Class.class));
+            DTT_CAST_TO_TYPE = LOOKUP.findStatic(DefaultTypeTransformation.class, "castToType", MethodType.methodType(Object.class, Object.class, Class.class));
             SAM_CONVERSION = LOOKUP.findStatic(CachedSAMClass.class, "coerceToSAM", MethodType.methodType(Object.class, Closure.class, Method.class, Class.class));
             HASHSET_CONSTRUCTOR = LOOKUP.findConstructor(HashSet.class, MethodType.methodType(void.class, Collection.class));
             ARRAYLIST_CONSTRUCTOR = LOOKUP.findConstructor(ArrayList.class, MethodType.methodType(void.class, Collection.class));
@@ -144,22 +142,22 @@ public class IndyGuardsFiltersAndSignatures {
      * {@link GroovyObject#invokeMethod(String, Object)} path as fallback.
      * This method is called by the handle as exception handler in case the
      * selected method causes a MissingMethodExecutionFailed, where
-     * we will just give through the exception, and a normal 
+     * we will just give through the exception, and a normal
      * MissingMethodException where we call {@link GroovyObject#invokeMethod(String, Object)}
      * if receiver class, the type transported by the exception and the name
-     * for the method stored in the exception and our current method name 
+     * for the method stored in the exception and our current method name
      * are equal.
      * Should those conditions not apply we just rethrow the exception.
      */
     public static Object invokeGroovyObjectInvoker(MissingMethodException e, Object receiver, String name, Object[] args) {
         if (e instanceof MissingMethodExecutionFailed) {
-            throw (MissingMethodException)e.getCause();
+            throw (MissingMethodException) e.getCause();
         } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
             //TODO: we should consider calling this one directly for MetaClassImpl,
             //      then we save the new method selection
 
             // in case there's nothing else, invoke the object's own invokeMethod()
-            return ((GroovyObject)receiver).invokeMethod(name, args);
+            return ((GroovyObject) receiver).invokeMethod(name, args);
         } else {
             throw e;
         }
@@ -167,7 +165,7 @@ public class IndyGuardsFiltersAndSignatures {
 
     /**
      * Unwraps a {@link GroovyRuntimeException}.
-     * This method is called by the handle to unwrap internal exceptions 
+     * This method is called by the handle to unwrap internal exceptions
      * of the runtime.
      */
     public static Object unwrap(GroovyRuntimeException gre) throws Throwable {
@@ -179,7 +177,7 @@ public class IndyGuardsFiltersAndSignatures {
      */
     public static boolean isSameMetaClass(MetaClass mc, Object receiver) {
         //TODO: remove this method if possible by switchpoint usage
-        return receiver instanceof GroovyObject && mc==((GroovyObject)receiver).getMetaClass(); 
+        return receiver instanceof GroovyObject && mc == ((GroovyObject) receiver).getMetaClass();
     }
 
     /**
@@ -207,7 +205,7 @@ public class IndyGuardsFiltersAndSignatures {
      * return false if the Object is null.
      */
     public static boolean sameClass(Class c, Object o) {
-        if (o==null) return false;
+        if (o == null) return false;
         return o.getClass() == c;
     }
 }

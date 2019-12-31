@@ -101,7 +101,7 @@ import static org.codehaus.groovy.vmplugin.v7.IndyInterface.switchPoint;
 public abstract class Selector {
     public Object[] args, originalArguments;
     public MetaMethod method;
-    public MethodType targetType,currentType;
+    public MethodType targetType, currentType;
     public String name;
     public MethodHandle handle;
     public boolean useMetaClass = false, cache = true;
@@ -115,7 +115,9 @@ public abstract class Selector {
     public boolean catchException = true;
     public CallType callType;
 
-    /** Cache values for read-only access */
+    /**
+     * Cache values for read-only access
+     */
     private static final CallType[] CALL_TYPE_VALUES = CallType.values();
 
     /**
@@ -124,31 +126,36 @@ public abstract class Selector {
     public static Selector getSelector(MutableCallSite callSite, Class sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
         CallType callType = CALL_TYPE_VALUES[callID];
         switch (callType) {
-            case INIT: return new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case METHOD: return new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case GET: 
+            case INIT:
+                return new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case METHOD:
+                return new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case GET:
                 return new PropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             case SET:
                 throw new GroovyBugError("your call tried to do a property set, which is not supported.");
-            case CAST:  return new CastSelector(callSite, arguments);
-            default: throw new GroovyBugError("unexpected call type");
+            case CAST:
+                return new CastSelector(callSite, arguments);
+            default:
+                throw new GroovyBugError("unexpected call type");
         }
     }
+
     abstract void setCallSiteTarget();
 
     /**
-     * Helper method to transform the given arguments, consisting of the receiver 
+     * Helper method to transform the given arguments, consisting of the receiver
      * and the actual arguments in an Object[], into a new Object[] consisting
-     * of the receiver and the arguments directly. Before the size of args was 
+     * of the receiver and the arguments directly. Before the size of args was
      * always 2, the returned Object[] will have a size of 1+n, where n is the
      * number arguments.
      */
     private static Object[] spread(Object[] args, boolean spreadCall) {
         if (!spreadCall) return args;
         Object[] normalArguments = (Object[]) args[1];
-        Object[] ret = new Object[normalArguments.length+1];
+        Object[] ret = new Object[normalArguments.length + 1];
         ret[0] = args[0];
-        System.arraycopy(normalArguments, 0, ret, 1, ret.length-1);
+        System.arraycopy(normalArguments, 0, ret, 1, ret.length - 1);
         return ret;
     }
 
@@ -188,26 +195,26 @@ public abstract class Selector {
         }
 
         private void castAndSetGuards() {
-            handle =  MethodHandles.explicitCastArguments(handle,targetType);
+            handle = MethodHandles.explicitCastArguments(handle, targetType);
             setGuards(args[0]);
             doCallSiteTargetSet();
         }
 
         private void handleNullWithoutBoolean() {
-            if (handle!=null || args[0]!=null) return;
+            if (handle != null || args[0] != null) return;
 
             if (staticTargetType.isPrimitive()) {
-                handle = MethodHandles.insertArguments(GROOVY_CAST_EXCEPTION,1,staticTargetType);
+                handle = MethodHandles.insertArguments(GROOVY_CAST_EXCEPTION, 1, staticTargetType);
                 // need to call here here because we used the static target type
                 // it won't be done otherwise because handle.type() == callSite.type()
-                castAndSetGuards(); 
+                castAndSetGuards();
             } else {
-               handle = MethodHandles.identity(staticSourceType);
+                handle = MethodHandles.identity(staticSourceType);
             }
         }
 
         private void handleInstanceCase() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             if (staticTargetType.isAssignableFrom(args[0].getClass())) {
                 handle = MethodHandles.identity(staticSourceType);
@@ -221,7 +228,7 @@ public abstract class Selector {
         }
 
         private void handleCollections() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             if (!(args[0] instanceof Collection)) return;
             if (isAbstractClassOf(HashSet.class, staticTargetType)) {
@@ -232,33 +239,33 @@ public abstract class Selector {
         }
 
         private void handleSAM() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             if (!(args[0] instanceof Closure)) return;
             Method m = CachedSAMClass.getSAMMethod(staticTargetType);
-            if (m==null) return;
+            if (m == null) return;
             //TODO: optimize: add guard based on type Closure
             handle = MethodHandles.insertArguments(SAM_CONVERSION, 1, m, staticTargetType);
         }
 
         private void castToTypeFallBack() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             // generic fallback to castToType
             handle = MethodHandles.insertArguments(DTT_CAST_TO_TYPE, 1, staticTargetType);
         }
 
         private void handleBoolean() {
-            if (handle!=null) return;
+            if (handle != null) return;
 
             // boolean->boolean, Boolean->boolean, boolean->Boolean
             // is handled by compiler
             // that leaves (T)Z and (T)Boolean, where T is the static type
             // but runtime type of T might be Boolean
 
-            boolean primitive = staticTargetType==boolean.class;
-            if (!primitive && staticTargetType!=Boolean.class) return;
-            if (args[0]==null) {
+            boolean primitive = staticTargetType == boolean.class;
+            if (!primitive && staticTargetType != Boolean.class) return;
+            if (args[0] == null) {
                 if (primitive) {
                     handle = MethodHandles.constant(boolean.class, false);
                     handle = MethodHandles.dropArguments(handle, 0, staticSourceType);
@@ -268,7 +275,7 @@ public abstract class Selector {
             } else if (args[0] instanceof Boolean) {
                 // give value through or unbox
                 handle = BOOLEAN_IDENTITY;
-            } else { 
+            } else {
                 //call asBoolean
                 name = "asBoolean";
                 super.setCallSiteTarget();
@@ -299,14 +306,14 @@ public abstract class Selector {
             Object receiver = getCorrectedReceiver();
             if (receiver instanceof GroovyObject) {
                 Class aClass = receiver.getClass();
-                Method reflectionMethod = null;
                 try {
-                    reflectionMethod = aClass.getMethod("getProperty", String.class);
+                    Method reflectionMethod = aClass.getMethod("getProperty", String.class);
                     if (!reflectionMethod.isSynthetic() && !isMarkedInternal(reflectionMethod)) {
                         handle = MethodHandles.insertArguments(GROOVY_OBJECT_GET_PROPERTY, 1, name);
                         return;
                     }
-                } catch (ReflectiveOperationException e)  {}
+                } catch (ReflectiveOperationException ignored) {
+                }
             } else if (receiver instanceof Class) {
                 handle = MOP_GET;
                 handle = MethodHandles.insertArguments(handle, 2, name);
@@ -314,9 +321,9 @@ public abstract class Selector {
                 return;
             }
 
-            if (method!=null || mci==null) return;
+            if (method != null || mci == null) return;
             Class chosenSender = this.sender;
-            if (mci.getTheClass()!= chosenSender && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+            if (mci.getTheClass() != chosenSender && GroovyCategorySupport.hasCategoryInCurrentThread()) {
                 chosenSender = mci.getTheClass();
             }
             MetaProperty res = mci.getEffectiveGetMetaProperty(chosenSender, receiver, name, false);
@@ -341,7 +348,7 @@ public abstract class Selector {
                 }
             } else {
                 handle = META_PROPERTY_GETTER.bindTo(res);
-            } 
+            }
         }
 
         private boolean isMarkedInternal(Method reflectionMethod) {
@@ -355,21 +362,21 @@ public abstract class Selector {
          */
         @Override
         public void setHandleForMetaMethod() {
-            if (handle!=null) return;
+            if (handle != null) return;
             super.setHandleForMetaMethod();
-            if (handle != null && insertName && handle.type().parameterCount()==2) {
+            if (handle != null && insertName && handle.type().parameterCount() == 2) {
                 handle = MethodHandles.insertArguments(handle, 1, name);
             }
         }
 
         /**
-         * The MOP requires all get property operations to go through 
-         * {@link GroovyObject#getProperty(String)}. We do this in case 
+         * The MOP requires all get property operations to go through
+         * {@link GroovyObject#getProperty(String)}. We do this in case
          * no property was found before.
          */
         @Override
-        public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
-            if (handle!=null) return;
+        public void setMetaClassCallHandleIfNeeded(boolean standardMetaClass) {
+            if (handle != null) return;
             useMetaClass = true;
             if (LOG_ENABLED) LOG.info("set meta class invocation path for property get.");
             handle = MethodHandles.insertArguments(MOP_GET, 2, this.name);
@@ -407,7 +414,7 @@ public abstract class Selector {
          */
         @Override
         public void chooseMeta(MetaClassImpl mci) {
-            if (mci==null) return;
+            if (mci == null) return;
             if (LOG_ENABLED) LOG.info("getting constructor");
             Object[] newArgs = removeRealReceiver(args);
             method = mci.retrieveConstructor(newArgs);
@@ -425,7 +432,7 @@ public abstract class Selector {
          */
         @Override
         public void setHandleForMetaMethod() {
-            if (method==null) return;
+            if (method == null) return;
             if (method instanceof MetaConstructor) {
                 if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
                 MetaConstructor mc = (MetaConstructor) method;
@@ -449,7 +456,7 @@ public abstract class Selector {
                 MethodHandle con = BEAN_CONSTRUCTOR_PROPERTY_SETTER.bindTo(mc);
                 // inner class case
                 MethodType foldTargetType = MethodType.methodType(Object.class);
-                if (args.length==3) {
+                if (args.length == 3) {
                     con = MethodHandles.dropArguments(con, 1, targetType.parameterType(1));
                     foldTargetType = foldTargetType.insertParameterTypes(0, targetType.parameterType(1));
                 }
@@ -461,7 +468,7 @@ public abstract class Selector {
         }
 
         /**
-         * In case of a bean constructor we don't do any varags or implicit null argument 
+         * In case of a bean constructor we don't do any varags or implicit null argument
          * transformations. Otherwise we do the same as for {@link MethodSelector#correctParameterLength()}
          */
         @Override
@@ -484,12 +491,12 @@ public abstract class Selector {
          * Set MOP based constructor invocation path.
          */
         @Override
-        public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
-            if (handle!=null) return;
+        public void setMetaClassCallHandleIfNeeded(boolean standardMetaClass) {
+            if (handle != null) return;
             useMetaClass = true;
             if (LOG_ENABLED) LOG.info("set meta class invocation path");
             handle = MOP_INVOKE_CONSTRUCTOR.bindTo(mc);
-            handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
+            handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
             handle = MethodHandles.dropArguments(handle, 0, Class.class);
             if (LOG_ENABLED) LOG.info("create collector for arguments");
         }
@@ -501,9 +508,10 @@ public abstract class Selector {
      * calls as well as getProperty calls.
      */
     private static class MethodSelector extends Selector {
-        private static final Object[] SINGLE_NULL_ARRAY = { null };
+        private static final Object[] SINGLE_NULL_ARRAY = {null};
         protected MetaClass mc;
         private boolean isCategoryMethod;
+
         public MethodSelector(MutableCallSite callSite, Class sender, String methodName, CallType callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
             this.callType = callType;
             this.targetType = callSite.type();
@@ -513,7 +521,7 @@ public abstract class Selector {
             this.callSite = callSite;
             this.sender = sender;
             this.safeNavigationOrig = safeNavigation;
-            this.safeNavigation = safeNavigation && arguments[0]==null;
+            this.safeNavigation = safeNavigation && arguments[0] == null;
             this.thisCall = thisCall;
             this.spread = spreadCall;
             this.cache = !spread;
@@ -529,7 +537,7 @@ public abstract class Selector {
                                 "\n\t\tthisCall: " + thisCall +
                                 "\n\t\tspreadCall: " + spreadCall +
                                 "\n\t\twith " + arguments.length + " arguments");
-                for (int i=0; i<arguments.length; i++) {
+                for (int i = 0; i < arguments.length; i++) {
                     msg.append("\n\t\t\targument[").append(i).append("] = ");
                     if (arguments[i] == null) {
                         msg.append("null");
@@ -544,12 +552,12 @@ public abstract class Selector {
         /**
          * Sets the null constant for safe navigation.
          * In case of foo?.bar() and foo being null, we don't call the method,
-         * instead we simply return null. This produces a handle, which will 
+         * instead we simply return null. This produces a handle, which will
          * return the constant.
          */
         public boolean setNullForSafeNavigation() {
             if (!safeNavigation) return false;
-            handle = MethodHandles.dropArguments(NULL_REF,0,targetType.parameterArray());
+            handle = MethodHandles.dropArguments(NULL_REF, 0, targetType.parameterArray());
             if (LOG_ENABLED) LOG.info("set null returning handle for safe navigation");
             return true;
         }
@@ -568,7 +576,8 @@ public abstract class Selector {
                 ClassLoader cl = c.getClassLoader();
                 try {
                     Class.forName(c.getName(), true, cl);
-                } catch (ClassNotFoundException e) {}
+                } catch (ClassNotFoundException ignored) {
+                }
                 mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
                 this.cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
             } else {
@@ -586,7 +595,7 @@ public abstract class Selector {
          * or the meta class is an AdaptingMetaClass.
          */
         public void chooseMeta(MetaClassImpl mci) {
-            if (mci==null) return;
+            if (mci == null) return;
             Object receiver = getCorrectedReceiver();
             Object[] newArgs = removeRealReceiver(args);
             if (receiver instanceof Class) {
@@ -594,16 +603,19 @@ public abstract class Selector {
                 if (!mci.hasCustomStaticInvokeMethod()) method = mci.retrieveStaticMethod(name, newArgs);
             } else {
                 String changedName = name;
-                if (receiver instanceof GeneratedClosure && changedName.equals("call")) {changedName = "doCall";}
-                if (!mci.hasCustomInvokeMethod()) method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
+                if (receiver instanceof GeneratedClosure && changedName.equals("call")) {
+                    changedName = "doCall";
+                }
+                if (!mci.hasCustomInvokeMethod())
+                    method = mci.getMethodWithCaching(selectionBase, changedName, newArgs, false);
             }
-            if (LOG_ENABLED) LOG.info("retrieved method from meta class: "+method);
+            if (LOG_ENABLED) LOG.info("retrieved method from meta class: " + method);
         }
 
         /**
          * Creates a MethodHandle using a before selected MetaMethod.
          * If the MetaMethod has reflective information available, then
-         * we will use that information to create the target MethodHandle. 
+         * we will use that information to create the target MethodHandle.
          * If that is not the case we will produce a handle, which will use the
          * MetaMethod itself for invocation.
          */
@@ -622,9 +634,9 @@ public abstract class Selector {
             }
 
             boolean isCategoryTypeMethod = metaMethod instanceof NewInstanceMetaMethod;
-            if (LOG_ENABLED) LOG.info("meta method is category type method: "+isCategoryTypeMethod);
+            if (LOG_ENABLED) LOG.info("meta method is category type method: " + isCategoryTypeMethod);
             boolean isStaticCategoryTypeMethod = metaMethod instanceof NewStaticMetaMethod;
-            if (LOG_ENABLED) LOG.info("meta method is static category type method: "+isCategoryTypeMethod);
+            if (LOG_ENABLED) LOG.info("meta method is static category type method: " + isCategoryTypeMethod);
 
             if (metaMethod instanceof ReflectionMetaMethod) {
                 if (LOG_ENABLED) LOG.info("meta method is reflective method");
@@ -649,7 +661,7 @@ public abstract class Selector {
                         // or it might be an object (static method invocation on instance)
                         // Object.class handles both cases at once
                         handle = MethodHandles.dropArguments(handle, 0, Object.class);
-                    } 
+                    }
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);
                 }
@@ -663,7 +675,7 @@ public abstract class Selector {
                     skipSpreadCollector = true;
                 } else {
                     // wrap arguments from call site in Object[]
-                    handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
+                    handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
                 }
                 currentType = removeWrapper(targetType);
                 if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
@@ -671,7 +683,7 @@ public abstract class Selector {
         }
 
         private MethodHandle correctClassForNameAndUnReflectOtherwise(Method m) throws IllegalAccessException {
-            if (m.getDeclaringClass()==Class.class && m.getName().equals("forName") && m.getParameterTypes().length==1) {
+            if (m.getDeclaringClass() == Class.class && m.getName().equals("forName") && m.getParameterTypes().length == 1) {
                 return MethodHandles.insertArguments(CLASS_FOR_NAME, 1, true, sender.getClassLoader());
             } else {
                 return LOOKUP.unreflect(m);
@@ -683,8 +695,8 @@ public abstract class Selector {
          */
         private MethodType removeWrapper(MethodType targetType) {
             Class[] types = targetType.parameterArray();
-            for (int i=0; i<types.length; i++) {
-                if (types[i]==Wrapper.class) {
+            for (int i = 0; i < types.length; i++) {
+                if (types[i] == Wrapper.class) {
                     targetType = targetType.changeParameterType(i, Object.class);
                 }
             }
@@ -696,8 +708,8 @@ public abstract class Selector {
          * This method is called only if no handle has been created before. This
          * is usually the case if the method selection failed.
          */
-        public void setMetaClassCallHandleIfNedded(boolean standardMetaClass) {
-            if (handle!=null) return;
+        public void setMetaClassCallHandleIfNeeded(boolean standardMetaClass) {
+            if (handle != null) return;
             useMetaClass = true;
             if (LOG_ENABLED) LOG.info("set meta class invocation path");
             Object receiver = getCorrectedReceiver();
@@ -716,7 +728,7 @@ public abstract class Selector {
                 }
             }
             handle = MethodHandles.insertArguments(handle, 1, name);
-            if (!spread) handle = handle.asCollector(Object[].class, targetType.parameterCount()-1);
+            if (!spread) handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
             if (LOG_ENABLED) LOG.info("bind method name and create collector for arguments");
         }
 
@@ -729,37 +741,37 @@ public abstract class Selector {
         public void correctWrapping() {
             if (useMetaClass) return;
             Class[] pt = handle.type().parameterArray();
-            if (currentType!=null) pt = currentType.parameterArray();
-            for (int i=1; i<args.length; i++) {
+            if (currentType != null) pt = currentType.parameterArray();
+            for (int i = 1; i < args.length; i++) {
                 if (args[i] instanceof Wrapper) {
                     Class type = pt[i];
                     MethodType mt = MethodType.methodType(type, Wrapper.class);
                     handle = MethodHandles.filterArguments(handle, i, UNWRAP_METHOD.asType(mt));
-                    if (LOG_ENABLED) LOG.info("added filter for Wrapper for argument at pos "+i);
+                    if (LOG_ENABLED) LOG.info("added filter for Wrapper for argument at pos " + i);
                 }
             }
         }
 
         /**
          * Handles cases in which we have to correct the length of arguments
-         * using the parameters. This might be needed for vargs and for one 
-         * parameter calls without arguments (null is used then).  
+         * using the parameters. This might be needed for vargs and for one
+         * parameter calls without arguments (null is used then).
          */
         public void correctParameterLength() {
-            if (handle==null) return;
+            if (handle == null) return;
 
             Class[] params = handle.type().parameterArray();
-            if (currentType!=null) params = currentType.parameterArray();
+            if (currentType != null) params = currentType.parameterArray();
             if (!isVargs) {
                 if (spread && useMetaClass) return;
-                if (params.length==2 && args.length==1) {
+                if (params.length == 2 && args.length == 1) {
                     handle = MethodHandles.insertArguments(handle, 1, SINGLE_NULL_ARRAY);
                 }
                 return;
             }
 
-            Class lastParam = params[params.length-1];
-            Object lastArg = unwrapIfWrapped(args[args.length-1]);
+            Class lastParam = params[params.length - 1];
+            Object lastArg = unwrapIfWrapped(args[args.length - 1]);
             if (params.length == args.length) {
                 // may need rewrap
                 if (lastArg == null) return;
@@ -773,7 +785,7 @@ public abstract class Selector {
                 // job before already, so the only case for this here is, that
                 // we have no argument for the array, meaning params.length is
                 // args.length+1. In that case we have to fill in an empty array
-                handle = MethodHandles.insertArguments(handle, params.length-1, Array.newInstance(lastParam.getComponentType(), 0));
+                handle = MethodHandles.insertArguments(handle, params.length - 1, Array.newInstance(lastParam.getComponentType(), 0));
                 if (LOG_ENABLED) LOG.info("added empty array for missing vargs part");
             } else { //params.length < args.length
                 // we depend on the method selection having done a good 
@@ -795,12 +807,12 @@ public abstract class Selector {
             if (useMetaClass) return;
 
             Class[] parameters = handle.type().parameterArray();
-            if (currentType!=null) parameters = currentType.parameterArray();
+            if (currentType != null) parameters = currentType.parameterArray();
             if (args.length != parameters.length) {
                 throw new GroovyBugError("At this point argument array length and parameter array length should be the same");
             }
-            for (int i=0; i<args.length; i++) {
-                if (parameters[i]==Object.class) continue; 
+            for (int i = 0; i < args.length; i++) {
+                if (parameters[i] == Object.class) continue;
                 Object arg = unwrapIfWrapped(args[i]);
                 // we have to handle here different cases in which we do no
                 // transformations. We depend on our method selection to have
@@ -813,15 +825,15 @@ public abstract class Selector {
                 // these. This is also handled already. What is left is the 
                 // GString conversion and the number conversions.
 
-                if (arg==null) continue;
+                if (arg == null) continue;
                 Class got = arg.getClass();
 
                 // equal class, nothing to do
-                if (got==parameters[i]) continue;
+                if (got == parameters[i]) continue;
 
                 Class wrappedPara = TypeHelper.getWrapperClass(parameters[i]);
                 // equal class with one maybe a primitive, the later explicitCastArguments will solve this case
-                if (wrappedPara==TypeHelper.getWrapperClass(got)) continue;
+                if (wrappedPara == TypeHelper.getWrapperClass(got)) continue;
 
                 // equal in terms of an assignment in Java. That means according to Java widening rules, or
                 // a subclass, interface, superclass relation, this case then handles also 
@@ -830,7 +842,8 @@ public abstract class Selector {
 
                 // to aid explicitCastArguments we convert to the wrapper type to let is only unbox
                 handle = TypeTransformers.addTransformer(handle, i, arg, wrappedPara);
-                if (LOG_ENABLED) LOG.info("added transformer at pos "+i+" for type "+got+" to type "+wrappedPara);
+                if (LOG_ENABLED)
+                    LOG.info("added transformer at pos " + i + " for type " + got + " to type " + wrappedPara);
             }
         }
 
@@ -840,7 +853,7 @@ public abstract class Selector {
          * invocation on NullObject instead.
          */
         public void correctNullReceiver() {
-            if (args[0]!=null) return;
+            if (args[0] != null) return;
             handle = handle.bindTo(NullObject.getNullObject());
             handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
             if (LOG_ENABLED) LOG.info("binding null object receiver and dropping old receiver");
@@ -848,19 +861,19 @@ public abstract class Selector {
 
         public void correctSpreading() {
             if (!spread || useMetaClass || skipSpreadCollector) return;
-            handle = handle.asSpreader(Object[].class, args.length-1);
+            handle = handle.asSpreader(Object[].class, args.length - 1);
         }
 
         /**
-         * Adds the standard exception handler.  
+         * Adds the standard exception handler.
          */
         public void addExceptionHandler() {
             //TODO: if we would know exactly which paths require the exceptions
             //      and which paths not, we can sometimes save this guard 
-            if (handle==null || !catchException) return;
+            if (handle == null || !catchException) return;
             Class returnType = handle.type().returnType();
-            if (returnType!=Object.class) {
-                MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class); 
+            if (returnType != Object.class) {
+                MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class);
                 handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
             } else {
                 handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
@@ -871,8 +884,8 @@ public abstract class Selector {
         /**
          * Sets all argument and receiver guards.
          */
-        public void setGuards (Object receiver) {
-            if (handle==null) return;
+        public void setGuards(Object receiver) {
+            if (handle == null) return;
             if (!cache) return;
 
             MethodHandle fallback = makeFallBack(callSite, sender, name, callType.ordinal(), targetType, safeNavigationOrig, thisCall, spread);
@@ -880,15 +893,15 @@ public abstract class Selector {
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
                 GroovyObject go = (GroovyObject) receiver;
-                MetaClass mc = (MetaClass) go.getMetaClass();
-                MethodHandle test = SAME_MC.bindTo(mc); 
+                MetaClass mc = go.getMetaClass();
+                MethodHandle test = SAME_MC.bindTo(mc);
                 // drop dummy receiver
-                test = test.asType(MethodType.methodType(boolean.class,targetType.parameterType(0)));
+                test = test.asType(MethodType.methodType(boolean.class, targetType.parameterType(0)));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
                 if (LOG_ENABLED) LOG.info("added meta class equality check");
             } else if (receiver instanceof Class) {
                 MethodHandle test = EQUALS.bindTo(receiver);
-                test = test.asType(MethodType.methodType(boolean.class,targetType.parameterType(0)));
+                test = test.asType(MethodType.methodType(boolean.class, targetType.parameterType(0)));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
                 if (LOG_ENABLED) LOG.info("added class equality check");
             }
@@ -916,20 +929,20 @@ public abstract class Selector {
 
             // guards for receiver and parameter
             Class[] pt = handle.type().parameterArray();
-            for (int i=0; i<args.length; i++) {
+            for (int i = 0; i < args.length; i++) {
                 Object arg = args[i];
-                MethodHandle test = null;
-                if (arg==null) {
+                MethodHandle test;
+                if (arg == null) {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
-                    if (LOG_ENABLED) LOG.info("added null argument check at pos "+i);
-                } else { 
+                    if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
+                } else {
                     Class argClass = arg.getClass();
                     if (pt[i].isPrimitive()) continue;
                     //if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
                     test = SAME_CLASS.
-                                bindTo(argClass).
-                                asType(MethodType.methodType(boolean.class, pt[i]));
-                    if (LOG_ENABLED) LOG.info("added same class check at pos "+i);
+                            bindTo(argClass).
+                            asType(MethodType.methodType(boolean.class, pt[i]));
+                    if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
                 }
                 Class[] drops = new Class[i];
                 System.arraycopy(pt, 0, drops, 0, drops.length);
@@ -956,12 +969,12 @@ public abstract class Selector {
         public void setSelectionBase() {
             if (thisCall) {
                 selectionBase = sender;
-            } else if (args[0]==null) {
+            } else if (args[0] == null) {
                 selectionBase = NullObject.class;
             } else {
                 selectionBase = mc.getTheClass();
             }
-            if (LOG_ENABLED) LOG.info("selection base set to "+selectionBase);
+            if (LOG_ENABLED) LOG.info("selection base set to " + selectionBase);
         }
 
         /**
@@ -970,7 +983,7 @@ public abstract class Selector {
         public boolean setInterceptor() {
             if (!(this.args[0] instanceof GroovyInterceptable)) return false;
             handle = MethodHandles.insertArguments(INTERCEPTABLE_INVOKER, 1, this.name);
-            handle = handle.asCollector(Object[].class, targetType.parameterCount()-1); 
+            handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
             handle = handle.asType(targetType);
             return true;
         }
@@ -987,20 +1000,20 @@ public abstract class Selector {
         public void setCallSiteTarget() {
             if (!setNullForSafeNavigation() && !setInterceptor()) {
                 getMetaClass();
-                if (LOG_ENABLED) LOG.info("meta class is "+mc);
+                if (LOG_ENABLED) LOG.info("meta class is " + mc);
                 setSelectionBase();
                 MetaClassImpl mci = getMetaClassImpl(mc, callType != CallType.GET);
                 chooseMeta(mci);
                 setHandleForMetaMethod();
-                setMetaClassCallHandleIfNedded(mci!=null);
+                setMetaClassCallHandleIfNeeded(mci != null);
                 correctParameterLength();
                 correctCoerce();
                 correctWrapping();
                 correctNullReceiver();
                 correctSpreading();
 
-                if (LOG_ENABLED) LOG.info("casting explicit from "+handle.type()+" to "+targetType);
-                handle =  MethodHandles.explicitCastArguments(handle,targetType);
+                if (LOG_ENABLED) LOG.info("casting explicit from " + handle.type() + " to " + targetType);
+                handle = MethodHandles.explicitCastArguments(handle, targetType);
 
                 addExceptionHandler();
             }
@@ -1025,7 +1038,7 @@ public abstract class Selector {
      */
     public Object getCorrectedReceiver() {
         Object receiver = args[0];
-        if (receiver==null) {
+        if (receiver == null) {
             if (LOG_ENABLED) LOG.info("receiver is null");
             receiver = NullObject.getNullObject();
         }
@@ -1048,11 +1061,12 @@ public abstract class Selector {
     private static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
         Class mcc = mc.getClass();
         boolean valid = mcc == MetaClassImpl.class ||
-                         mcc == AdaptingMetaClass.class ||
-                         mcc == ClosureMetaClass.class ||
-                         (includeEMC && mcc == ExpandoMetaClass.class);
+                mcc == AdaptingMetaClass.class ||
+                mcc == ClosureMetaClass.class ||
+                (includeEMC && mcc == ExpandoMetaClass.class);
         if (!valid) {
-            if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
+            if (LOG_ENABLED)
+                LOG.info("meta class is neither MetaClassImpl, nor AdoptingMetaClass, nor ClosureMetaClass, normal method selection path disabled.");
             return null;
         }
         if (LOG_ENABLED) LOG.info("meta class is a recognized MetaClassImpl");
@@ -1064,7 +1078,7 @@ public abstract class Selector {
      * by producing a new array.
      */
     private static Object[] removeRealReceiver(Object[] args) {
-        Object[] ar = new Object[args.length-1];
+        Object[] ar = new Object[args.length - 1];
         System.arraycopy(args, 1, ar, 0, args.length - 1);
         return ar;
     }

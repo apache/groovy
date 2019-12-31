@@ -25,12 +25,12 @@ import java.math.BigInteger;
 
 /**
  * This class contains helper methods for converting and comparing types.
- * WARNING: This class is for internal use only. do not use it outside of its 
- * package and not outside groovy-core. 
+ * WARNING: This class is for internal use only. do not use it outside of its
+ * package and not outside groovy-core.
  */
 public class TypeHelper {
     /**
-     * Get wrapper class for a given class. 
+     * Get wrapper class for a given class.
      * If the class is for a primitive number type, then the wrapper class
      * will be returned. If it is no primitive number type, we return the
      * class itself.
@@ -57,7 +57,7 @@ public class TypeHelper {
     }
 
     /**
-     * Realizes an unsharp equal for the class. 
+     * Realizes an unsharp equal for the class.
      * In general we return true if the provided arguments are the same. But
      * we will also return true if our argument class is a wrapper for
      * the parameter class. For example the parameter is an int and the
@@ -65,8 +65,7 @@ public class TypeHelper {
      */
     protected static boolean argumentClassIsParameterClass(Class argumentClass, Class parameterClass) {
         if (argumentClass == parameterClass) return true;
-        if (getWrapperClass(parameterClass) == argumentClass) return true;
-        return false;
+        return getWrapperClass(parameterClass) == argumentClass;
     }
 
     /**
@@ -75,9 +74,9 @@ public class TypeHelper {
      * the argument is null.
      */
     protected static MethodType replaceWithMoreSpecificType(Object[] args, MethodType callSiteType) {
-        for (int i=0; i<args.length; i++) {
+        for (int i = 0; i < args.length; i++) {
             // if argument null, take the static type
-            if (args[i]==null) continue;
+            if (args[i] == null) continue;
             if (callSiteType.parameterType(i).isPrimitive()) continue;
             Class argClass = args[i].getClass();
             callSiteType = callSiteType.changeParameterType(i, argClass);
@@ -86,27 +85,27 @@ public class TypeHelper {
     }
 
     protected static boolean isIntCategory(Class x) {
-        return x==Integer.class    ||  x==int.class    ||
-                x==Byte.class       ||  x==byte.class   ||
-                x==Short.class      ||  x==short.class;
+        return x == Integer.class || x == int.class ||
+                x == Byte.class || x == byte.class ||
+                x == Short.class || x == short.class;
     }
 
     protected static boolean isLongCategory(Class x) {
-        return  x==Long.class       ||  x==long.class   ||
+        return x == Long.class || x == long.class ||
                 isIntCategory(x);
     }
 
     private static boolean isBigIntCategory(Class x) {
-        return  x==BigInteger.class || isLongCategory(x);
+        return x == BigInteger.class || isLongCategory(x);
     }
 
     protected static boolean isBigDecCategory(Class x) {
-        return  x==BigDecimal.class || isBigIntCategory(x);
+        return x == BigDecimal.class || isBigIntCategory(x);
     }
 
     protected static boolean isDoubleCategory(Class x) {
-        return  x==Float.class      ||  x==float.class  ||
-                x==Double.class     ||  x==double.class ||
+        return x == Float.class || x == float.class ||
+                x == Double.class || x == double.class ||
                 isBigDecCategory(x);
     }
 }

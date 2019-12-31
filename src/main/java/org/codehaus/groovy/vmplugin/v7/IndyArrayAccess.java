@@ -32,7 +32,8 @@ import java.util.HashMap;
  */
 public class IndyArrayAccess {
 
-    private static final MethodHandle notNegative,normalizeIndex;
+    private static final MethodHandle notNegative, normalizeIndex;
+
     static {
         try {
             notNegative = MethodHandles.lookup().findStatic(IndyArrayAccess.class, "notNegative", MethodType.methodType(boolean.class, int.class));
@@ -42,9 +43,10 @@ public class IndyArrayAccess {
         }
     }
 
-    private static final HashMap<Class,MethodHandle> getterMap, setterMap;
+    private static final HashMap<Class, MethodHandle> getterMap, setterMap;
+
     static {
-        getterMap = new HashMap<Class,MethodHandle>();
+        getterMap = new HashMap<Class, MethodHandle>();
         Class[] classes = new Class[]{
                 int[].class, byte[].class, short[].class, long[].class,
                 double[].class, float[].class,
@@ -53,7 +55,7 @@ public class IndyArrayAccess {
             MethodHandle handle = buildGetter(arrayClass);
             getterMap.put(arrayClass, handle);
         }
-        setterMap = new HashMap<Class,MethodHandle>();
+        setterMap = new HashMap<Class, MethodHandle>();
         for (Class arrayClass : classes) {
             MethodHandle handle = buildSetter(arrayClass);
             setterMap.put(arrayClass, handle);
@@ -66,8 +68,8 @@ public class IndyArrayAccess {
 
         fallback = MethodHandles.dropArguments(fallback, 2, int.class);
         MethodType reorderType = fallback.type().
-                                    insertParameterTypes(0, int.class).
-                                    dropParameterTypes(2,3);
+                insertParameterTypes(0, int.class).
+                dropParameterTypes(2, 3);
         fallback = MethodHandles.permuteArguments(fallback, reorderType, 1, 0, 0);
 
         fallback = MethodHandles.foldArguments(fallback, normalizeIndex);
@@ -78,14 +80,14 @@ public class IndyArrayAccess {
         return handle;
     }
 
-    private static MethodHandle buildSetter(Class arrayClass){
+    private static MethodHandle buildSetter(Class arrayClass) {
         MethodHandle set = MethodHandles.arrayElementSetter(arrayClass);
         MethodHandle fallback = MethodHandles.explicitCastArguments(set, set.type().changeParameterType(0, Object.class));
 
         fallback = MethodHandles.dropArguments(fallback, 3, int.class);
         MethodType reorderType = fallback.type().
-                                    insertParameterTypes(0, int.class).
-                                    dropParameterTypes(4,5);
+                insertParameterTypes(0, int.class).
+                dropParameterTypes(4, 5);
         fallback = MethodHandles.permuteArguments(fallback, reorderType, 1, 0, 3, 0);
 
         fallback = MethodHandles.foldArguments(fallback, normalizeIndex);
@@ -97,15 +99,15 @@ public class IndyArrayAccess {
     }
 
     private static int getLength(Object array) {
-        if (array instanceof Object[]) return ((Object[])array).length;
-        if (array instanceof boolean[]) return ((boolean[])array).length;
-        if (array instanceof byte[]) return ((byte[])array).length;
-        if (array instanceof char[]) return ((char[])array).length;
-        if (array instanceof short[]) return ((short[])array).length;
-        if (array instanceof int[]) return ((int[])array).length;
-        if (array instanceof long[]) return ((long[])array).length;
-        if (array instanceof float[]) return ((float[])array).length;
-        if (array instanceof double[]) return ((double[])array).length;
+        if (array instanceof Object[]) return ((Object[]) array).length;
+        if (array instanceof boolean[]) return ((boolean[]) array).length;
+        if (array instanceof byte[]) return ((byte[]) array).length;
+        if (array instanceof char[]) return ((char[]) array).length;
+        if (array instanceof short[]) return ((short[]) array).length;
+        if (array instanceof int[]) return ((int[]) array).length;
+        if (array instanceof long[]) return ((long[]) array).length;
+        if (array instanceof float[]) return ((float[]) array).length;
+        if (array instanceof double[]) return ((double[]) array).length;
         return 0;
     }
 
@@ -120,13 +122,13 @@ public class IndyArrayAccess {
     }
 
     public static boolean notNegative(int index) {
-        return index>=0;
+        return index >= 0;
     }
 
     public static MethodHandle arrayGet(MethodType type) {
         Class key = type.parameterType(0);
         MethodHandle res = getterMap.get(key);
-        if (res!=null) return res;
+        if (res != null) return res;
         res = buildGetter(key);
         res = MethodHandles.explicitCastArguments(res, type);
         return res;
@@ -135,7 +137,7 @@ public class IndyArrayAccess {
     public static MethodHandle arraySet(MethodType type) {
         Class key = type.parameterType(0);
         MethodHandle res = setterMap.get(key);
-        if (res!=null) return res;
+        if (res != null) return res;
         res = buildSetter(key);
         res = MethodHandles.explicitCastArguments(res, type);
         return res;
