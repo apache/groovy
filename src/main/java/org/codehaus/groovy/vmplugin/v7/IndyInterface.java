@@ -29,8 +29,12 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Bytecode level interface for bootstrap methods used by invokedynamic.
@@ -73,6 +77,10 @@ public class IndyInterface {
              * Cast invocation type
              */
             CAST("cast");
+
+            private static final Map<String, CallType> NAME_CALLTYPE_MAP =
+                    Stream.of(CallType.values()).collect(Collectors.toMap(CallType::getCallSiteName, Function.identity()));
+
             /**
              * The name of the call site type
              */
@@ -87,6 +95,10 @@ public class IndyInterface {
              */
             public String getCallSiteName() {
                 return name;
+            }
+
+            public static CallType fromCallSiteName(String callSiteName) {
+                return NAME_CALLTYPE_MAP.get(callSiteName);
             }
         }
 
@@ -159,23 +171,15 @@ public class IndyInterface {
          * @since Groovy 2.1.0
          */
         public static CallSite bootstrap(Lookup caller, String callType, MethodType type, String name, int flags) {
-            boolean safe = (flags&SAFE_NAVIGATION)!=0;
-            boolean thisCall = (flags&THIS_CALL)!=0;
-            boolean spreadCall = (flags&SPREAD_CALL)!=0;
-            int callID;
-            if (callType.equals(CallType.METHOD.getCallSiteName())) {
-                callID = CallType.METHOD.ordinal();
-            } else if (callType.equals(CallType.INIT.getCallSiteName())) {
-                callID = CallType.INIT.ordinal();
-            } else if (callType.equals(CallType.GET.getCallSiteName())) {
-                callID = CallType.GET.ordinal();
-            } else if (callType.equals(CallType.SET.getCallSiteName())) {
-                callID = CallType.SET.ordinal();
-            } else if (callType.equals(CallType.CAST.getCallSiteName())) {
-                callID = CallType.CAST.ordinal();
-            }else {
-                throw new GroovyBugError("Unknown call type: "+callType);
-            }
+            boolean safe = (flags & SAFE_NAVIGATION) != 0;
+            boolean thisCall = (flags & THIS_CALL) != 0;
+            boolean spreadCall = (flags & SPREAD_CALL) != 0;
+
+            CallType ct = CallType.fromCallSiteName(callType);
+            if (null == ct) throw new GroovyBugError("Unknown call type: " + callType);
+
+            int callID = ct.ordinal();
+
             return realBootstrap(caller, name, callID, type, safe, thisCall, spreadCall);
         }
 
