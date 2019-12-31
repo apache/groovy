@@ -23,6 +23,7 @@ import org.codehaus.groovy.GroovyBugError;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
 import java.util.HashMap;
 
 /**
@@ -99,16 +100,11 @@ public class IndyArrayAccess {
     }
 
     private static int getLength(Object array) {
-        if (array instanceof Object[]) return ((Object[]) array).length;
-        if (array instanceof boolean[]) return ((boolean[]) array).length;
-        if (array instanceof byte[]) return ((byte[]) array).length;
-        if (array instanceof char[]) return ((char[]) array).length;
-        if (array instanceof short[]) return ((short[]) array).length;
-        if (array instanceof int[]) return ((int[]) array).length;
-        if (array instanceof long[]) return ((long[]) array).length;
-        if (array instanceof float[]) return ((float[]) array).length;
-        if (array instanceof double[]) return ((double[]) array).length;
-        return 0;
+        if (null == array || !array.getClass().isArray()) {
+            return 0;
+        }
+
+        return Array.getLength(array);
     }
 
     private static int normalizeIndex(Object array, int i) {
