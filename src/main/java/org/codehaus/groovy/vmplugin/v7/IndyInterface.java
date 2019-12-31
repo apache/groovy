@@ -52,19 +52,42 @@ public class IndyInterface {
         /**
          * Enum for easy differentiation between call types
          */
-        public enum CALL_TYPES {
-            /**Method invocation type*/         METHOD("invoke"), 
-            /**Constructor invocation type*/    INIT("init"), 
-            /**Get property invocation type*/   GET("getProperty"), 
-            /**Set property invocation type*/   SET("setProperty"),
-            /**Cast invocation type*/           CAST("cast");
-            /**The name of the call site type*/
+        public enum CallType {
+            /**
+             * Method invocation type
+             */
+            METHOD("invoke"),
+            /**
+             * Constructor invocation type
+             */
+            INIT("init"),
+            /**
+             * Get property invocation type
+             */
+            GET("getProperty"),
+            /**
+             * Set property invocation type
+             */
+            SET("setProperty"),
+            /**
+             * Cast invocation type
+             */
+            CAST("cast");
+            /**
+             * The name of the call site type
+             */
             private final String name;
-            CALL_TYPES(String callSiteName) {
+
+            CallType(String callSiteName) {
                 this.name = callSiteName;
             }
-            /** Returns the name of the call site type */
-            public String getCallSiteName(){ return name; }
+
+            /**
+             * Returns the name of the call site type
+             */
+            public String getCallSiteName() {
+                return name;
+            }
         }
 
         /** Logger */
@@ -140,16 +163,16 @@ public class IndyInterface {
             boolean thisCall = (flags&THIS_CALL)!=0;
             boolean spreadCall = (flags&SPREAD_CALL)!=0;
             int callID;
-            if (callType.equals(CALL_TYPES.METHOD.getCallSiteName())) {
-                callID = CALL_TYPES.METHOD.ordinal();
-            } else if (callType.equals(CALL_TYPES.INIT.getCallSiteName())) {
-                callID = CALL_TYPES.INIT.ordinal();
-            } else if (callType.equals(CALL_TYPES.GET.getCallSiteName())) {
-                callID = CALL_TYPES.GET.ordinal();
-            } else if (callType.equals(CALL_TYPES.SET.getCallSiteName())) {
-                callID = CALL_TYPES.SET.ordinal();
-            } else if (callType.equals(CALL_TYPES.CAST.getCallSiteName())) {
-                callID = CALL_TYPES.CAST.ordinal();
+            if (callType.equals(CallType.METHOD.getCallSiteName())) {
+                callID = CallType.METHOD.ordinal();
+            } else if (callType.equals(CallType.INIT.getCallSiteName())) {
+                callID = CallType.INIT.ordinal();
+            } else if (callType.equals(CallType.GET.getCallSiteName())) {
+                callID = CallType.GET.ordinal();
+            } else if (callType.equals(CallType.SET.getCallSiteName())) {
+                callID = CallType.SET.ordinal();
+            } else if (callType.equals(CallType.CAST.getCallSiteName())) {
+                callID = CallType.CAST.ordinal();
             }else {
                 throw new GroovyBugError("Unknown call type: "+callType);
             }
