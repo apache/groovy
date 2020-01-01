@@ -357,7 +357,7 @@ public class FileSystemCompiler {
         public String[] getVersion() {
             return new String[]{
                     "Groovy compiler version " + GroovySystem.getVersion(),
-                    "Copyright 2003-2019 The Apache Software Foundation. http://groovy-lang.org/",
+                    "Copyright 2003-2020 The Apache Software Foundation. http://groovy-lang.org/",
                     "",
             };
         }
