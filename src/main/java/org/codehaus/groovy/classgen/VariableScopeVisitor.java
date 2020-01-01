@@ -266,12 +266,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             var = new DynamicVariable(var.getName(), true);
         }
 
+        boolean isClassVariable = (scope.isClassScope() && !scope.isReferencedLocalVariable(name))
+                || (scope.isReferencedClassVariable(name) && scope.getDeclaredVariable(name) == null);
         VariableScope end = scope;
 
         scope = currentScope;
         while (scope != end) {
-            if (end.isClassScope() ||
-                    (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name) == null)) {
+            if (isClassVariable) {
                 scope.putReferencedClassVariable(var);
             } else {
                 scope.putReferencedLocalVariable(var);
