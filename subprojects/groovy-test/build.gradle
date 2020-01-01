@@ -16,9 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
+ext {
+    junitVersion = '4.13'
+}
+
 dependencies {
     implementation rootProject
-    compile 'junit:junit:4.12'
+    compile "junit:junit:$junitVersion"
     // groovy-ant needed for FileNameFinder used in AllTestSuite and JavadocAssertionTestSuite
     testRuntime(project(':groovy-ant')) {
         transitive = false // bring in just what we need below
