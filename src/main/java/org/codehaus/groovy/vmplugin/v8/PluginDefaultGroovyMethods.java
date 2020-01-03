@@ -56,8 +56,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param optional the Optional
      * @return {@code true} if a value is present, otherwise {@code false}
+     *
+     * @since 2.5.0
      */
-    public static boolean asBoolean(Optional<?> optional) {
+    public static boolean asBoolean(final Optional<?> optional) {
         return optional.isPresent();
     }
 
@@ -72,12 +74,14 @@ public class PluginDefaultGroovyMethods {
      * @param self      an Optional
      * @param transform the closure used to transform the optional value if present
      * @return an Optional containing the transformed value or empty if the optional is empty or the transform returns null
+     *
+     * @since 3.0.0
      */
-    public static <S,T> Optional<T> collect(Optional<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+    public static <S,T> Optional<T> collect(final Optional<S> self, @ClosureParams(FirstParam.FirstGenericType.class) final Closure<T> transform) {
         Objects.requireNonNull(self);
         Objects.requireNonNull(transform);
         if (!self.isPresent()) {
-            return self.empty();
+            return Optional.empty();
         }
         return Optional.ofNullable(transform.call(self.get()));
     }
@@ -96,24 +100,26 @@ public class PluginDefaultGroovyMethods {
      * @param self      a Future
      * @param transform the closure used to transform the Future value
      * @return a Future allowing the transformed value to be obtained asynchronously
+     *
+     * @since 3.0.0
      */
-    public static <S,T> Future<T> collect(Future<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+    public static <S,T> Future<T> collect(final Future<S> self, @ClosureParams(FirstParam.FirstGenericType.class) final Closure<T> transform) {
         Objects.requireNonNull(self);
         Objects.requireNonNull(transform);
         return new TransformedFuture<T>(self, transform);
     }
 
     private static class TransformedFuture<E> implements Future<E> {
-        private Future delegate;
-        private Closure<E> transform;
+        private final Future delegate;
+        private final Closure<E> transform;
 
-        private TransformedFuture(Future delegate, Closure<E> transform) {
+        private TransformedFuture(final Future delegate, final Closure<E> transform) {
             this.delegate = delegate;
             this.transform = transform;
         }
 
         @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
+        public boolean cancel(final boolean mayInterruptIfRunning) {
             return delegate.cancel(mayInterruptIfRunning);
         }
 
@@ -133,7 +139,7 @@ public class PluginDefaultGroovyMethods {
         }
 
         @Override
-        public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        public E get(final long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return transform.call(delegate.get(timeout, unit));
         }
     }
@@ -143,8 +149,10 @@ public class PluginDefaultGroovyMethods {
      * @param stream the Stream
      * @param <T> the type of element
      * @return a new {@code java.util.List} instance
+     *
+     * @since 2.5.0
      */
-    public static <T> List<T> toList(Stream<T> stream) {
+    public static <T> List<T> toList(final Stream<T> stream) {
         return stream.collect(Collectors.<T>toList());
     }
 
@@ -153,8 +161,10 @@ public class PluginDefaultGroovyMethods {
      * @param stream the Stream
      * @param <T> the type of element
      * @return a new {@code java.util.Set} instance
+     *
+     * @since 2.5.0
      */
-    public static <T> Set<T> toSet(Stream<T> stream) {
+    public static <T> Set<T> toSet(final Stream<T> stream) {
         return stream.collect(Collectors.<T>toSet());
     }
 
@@ -163,11 +173,14 @@ public class PluginDefaultGroovyMethods {
      * @param stream the {@code java.util.stream.BaseStream}
      * @param <T> the type of element
      * @return a new {@code java.util.List} instance
+     *
+     * @since 2.5.0
      */
-    public static <T> List<T> toList(BaseStream<T, ? extends BaseStream> stream) {
+    public static <T> List<T> toList(final BaseStream<T, ? extends BaseStream> stream) {
         return StreamSupport.stream(
-                        Spliterators.spliteratorUnknownSize(stream.iterator(), Spliterator.ORDERED),
-                false).collect(Collectors.<T>toList());
+                Spliterators.spliteratorUnknownSize(stream.iterator(), Spliterator.ORDERED),
+                false
+        ).collect(Collectors.<T>toList());
     }
 
     /**
@@ -175,11 +188,14 @@ public class PluginDefaultGroovyMethods {
      * @param stream the {@code java.util.stream.BaseStream}
      * @param <T> the type of element
      * @return a new {@code java.util.Set} instance
+     *
+     * @since 2.5.0
      */
-    public static <T> Set<T> toSet(BaseStream<T, ? extends BaseStream> stream) {
+    public static <T> Set<T> toSet(final BaseStream<T, ? extends BaseStream> stream) {
         return StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(stream.iterator(), Spliterator.ORDERED),
-                false).collect(Collectors.<T>toSet());
+                false
+        ).collect(Collectors.<T>toSet());
     }
 
     /**
@@ -189,8 +205,10 @@ public class PluginDefaultGroovyMethods {
      * @param <T> The type of the array elements
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static <T> Stream<T> stream(T[] self) {
+    public static <T> Stream<T> stream(final T[] self) {
         return Arrays.stream(self);
     }
 
@@ -200,8 +218,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static Stream<Integer> stream(int[] self) {
+    public static Stream<Integer> stream(final int[] self) {
         return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
 
@@ -211,8 +231,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static Stream<Long> stream(long[] self) {
+    public static Stream<Long> stream(final long[] self) {
         return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
 
@@ -222,8 +244,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static Stream<Double> stream(double[] self) {
+    public static Stream<Double> stream(final double[] self) {
         return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
 
@@ -233,8 +257,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static Stream<Character> stream(char[] self) {
+    public static Stream<Character> stream(final char[] self) {
         return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
 
@@ -244,8 +270,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static Stream<Byte> stream(byte[] self) {
+    public static Stream<Byte> stream(final byte[] self) {
         return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
 
@@ -255,8 +283,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static Stream<Short> stream(short[] self) {
+    public static Stream<Short> stream(final short[] self) {
         return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
 
@@ -266,8 +296,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static Stream<Boolean> stream(boolean[] self) {
+    public static Stream<Boolean> stream(final boolean[] self) {
         return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
 
@@ -277,9 +309,10 @@ public class PluginDefaultGroovyMethods {
      *
      * @param self The array, assumed to be unmodified during use
      * @return a {@code Stream} for the array
+     *
+     * @since 2.5.0
      */
-    public static Stream<Float> stream(float[] self) {
+    public static Stream<Float> stream(final float[] self) {
         return IntStream.range(0, self.length).mapToObj(i -> self[i]);
     }
-
 }
