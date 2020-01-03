@@ -573,11 +573,6 @@ public abstract class Selector {
                 mc = ((GroovyObject) receiver).getMetaClass();
             } else if (receiver instanceof Class) {
                 Class c = (Class) receiver;
-                ClassLoader cl = c.getClassLoader();
-                try {
-                    Class.forName(c.getName(), true, cl);
-                } catch (ClassNotFoundException ignored) {
-                }
                 mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
                 this.cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
             } else {
