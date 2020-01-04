@@ -20,7 +20,7 @@
 import java.text.DecimalFormat
 
 plugins {
-    id "me.champeau.gradle.jmh" version "0.4.8"
+    id "me.champeau.gradle.jmh" version "0.5.0"
 }
 
 configurations {
@@ -30,12 +30,12 @@ configurations {
 
 dependencies {
     jmh rootProject
-    testImplementation 'org.codehaus.groovy:groovy-all:2.4.12'
+    testImplementation 'org.codehaus.groovy:groovy-all:2.4.17'
     stats 'org.apache.commons:commons-math3:3.6'
 }
 
 jmh {
-    jmhVersion = '1.19'
+    jmhVersion = '1.21'
     if (project.hasProperty('benchInclude')) {
         include = ['.*' + project.benchInclude + '.*']
     }
