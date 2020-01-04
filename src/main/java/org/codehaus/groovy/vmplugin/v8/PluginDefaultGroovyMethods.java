@@ -21,8 +21,11 @@ package org.codehaus.groovy.vmplugin.v8;
 import groovy.lang.Closure;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
+import org.codehaus.groovy.runtime.NullObject;
 
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.function.DoubleFunction;
 import java.util.function.DoublePredicate;
 import java.util.function.IntFunction;
@@ -47,7 +51,9 @@ import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.BaseStream;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -201,6 +207,7 @@ public class PluginDefaultGroovyMethods {
      * assert !OptionalInt.empty().mapToObj(x -> new Object()).isPresent()
      * assert  OptionalInt.of(1234).mapToObj(x -> new Object()).isPresent()
      * assert !OptionalInt.of(1234).mapToObj(x -> null).isPresent()
+     * assert  OptionalInt.of(1234).mapToObj(Integer::toString).get() == '1234'
      * </pre>
      *
      * @since 3.0.0
@@ -219,6 +226,7 @@ public class PluginDefaultGroovyMethods {
      * assert !OptionalLong.empty().mapToObj(x -> new Object()).isPresent()
      * assert  OptionalLong.of(123L).mapToObj(x -> new Object()).isPresent()
      * assert !OptionalLong.of(123L).mapToObj(x -> null).isPresent()
+     * assert  OptionalLong.of(1234L).mapToObj(Long::toString).get() == '1234'
      * </pre>
      *
      * @since 3.0.0
@@ -237,6 +245,7 @@ public class PluginDefaultGroovyMethods {
      * assert !OptionalDouble.empty().mapToObj(x -> new Object()).isPresent()
      * assert  OptionalDouble.of(Math.PI).mapToObj(x -> new Object()).isPresent()
      * assert !OptionalDouble.of(Math.PI).mapToObj(x -> null).isPresent()
+     * assert  OptionalDouble.of(Math.PI).mapToObj(Double::toString).get().startsWith('3.14')
      * </pre>
      *
      * @since 3.0.0
@@ -382,56 +391,78 @@ public class PluginDefaultGroovyMethods {
 
     /**
      * Accumulates the elements of stream into a new List.
-     * @param stream the Stream
+     * @param self the Stream
      * @param <T> the type of element
      * @return a new {@code java.util.List} instance
      *
      * @since 2.5.0
      */
-    public static <T> List<T> toList(final Stream<T> stream) {
-        return stream.collect(Collectors.<T>toList());
+    public static <T> List<T> toList(final Stream<T> self) {
+        return self.collect(Collectors.<T>toList());
     }
 
     /**
      * Accumulates the elements of stream into a new Set.
-     * @param stream the Stream
+     * @param self the Stream
      * @param <T> the type of element
      * @return a new {@code java.util.Set} instance
      *
      * @since 2.5.0
      */
-    public static <T> Set<T> toSet(final Stream<T> stream) {
-        return stream.collect(Collectors.<T>toSet());
+    public static <T> Set<T> toSet(final Stream<T> self) {
+        return self.collect(Collectors.<T>toSet());
     }
 
     /**
      * Accumulates the elements of stream into a new List.
-     * @param stream the {@code java.util.stream.BaseStream}
+     * @param self the {@code java.util.stream.BaseStream}
      * @param <T> the type of element
      * @return a new {@code java.util.List} instance
      *
      * @since 2.5.0
      */
-    public static <T> List<T> toList(final BaseStream<T, ? extends BaseStream> stream) {
-        return StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(stream.iterator(), Spliterator.ORDERED),
-                false
-        ).collect(Collectors.<T>toList());
+    public static <T> List<T> toList(final BaseStream<T, ? extends BaseStream> self) {
+        return stream(self.iterator()).collect(Collectors.<T>toList());
     }
 
     /**
      * Accumulates the elements of stream into a new Set.
-     * @param stream the {@code java.util.stream.BaseStream}
+     * @param self the {@code java.util.stream.BaseStream}
      * @param <T> the type of element
      * @return a new {@code java.util.Set} instance
      *
      * @since 2.5.0
      */
-    public static <T> Set<T> toSet(final BaseStream<T, ? extends BaseStream> stream) {
-        return StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(stream.iterator(), Spliterator.ORDERED),
-                false
-        ).collect(Collectors.<T>toSet());
+    public static <T> Set<T> toSet(final BaseStream<T, ? extends BaseStream> self) {
+        return stream(self.iterator()).collect(Collectors.<T>toSet());
+    }
+
+    /**
+     * Returns an empty sequential {@link Stream}.
+     * <pre class="groovyTestCase">
+     * def item = null
+     * assert item.stream().toList() == []
+     * assert !item.stream().findFirst().isPresent()
+     * </pre>
+     *
+     * @since 3.0.0
+     */
+    public static <T> Stream<T> stream(final NullObject self) {
+        return Stream.empty();
+    }
+
+    /**
+     * Returns a sequential {@link Stream} containing a single element.
+     * <pre class="groovyTestCase">
+     * def item = 'string'
+     * assert item.stream().toList() == ['string']
+     * assert item.stream().findFirst().isPresent()
+     * </pre>
+     *
+     * @since 3.0.0
+     */
+    public static <T> Stream<T> stream(final T self) {
+        return Stream.of(self);
     }
 
     /**
@@ -458,7 +489,7 @@ public class PluginDefaultGroovyMethods {
      * @since 2.5.0
      */
     public static Stream<Integer> stream(final int[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        return Arrays.stream(self).mapToObj(Integer::valueOf);
     }
 
     /**
@@ -471,7 +502,7 @@ public class PluginDefaultGroovyMethods {
      * @since 2.5.0
      */
     public static Stream<Long> stream(final long[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        return Arrays.stream(self).mapToObj(Long::valueOf);
     }
 
     /**
@@ -484,7 +515,7 @@ public class PluginDefaultGroovyMethods {
      * @since 2.5.0
      */
     public static Stream<Double> stream(final double[] self) {
-        return IntStream.range(0, self.length).mapToObj(i -> self[i]);
+        return Arrays.stream(self).mapToObj(Double::valueOf);
     }
 
     /**
@@ -553,6 +584,82 @@ public class PluginDefaultGroovyMethods {
     }
 
     /**
+     * Returns a sequential {@link Stream} with the specified element(s) as its
+     * source.
+     * <pre class="groovyTestCase">
+     * def tokens = new StringTokenizer('one two')
+     * assert tokens.stream().toList() == ['one', 'two']
+     * </pre>
+     *
+     * @since 3.0.0
+     */
+    public static <T> Stream<T> stream(final Enumeration<T> self) {
+        return stream(new Spliterators.AbstractSpliterator<T>(Long.MAX_VALUE, Spliterator.ORDERED) {
+            @Override
+            public void forEachRemaining(final Consumer<? super T> action) {
+                while (self.hasMoreElements()) {
+                    action.accept(self.nextElement());
+                }
+            }
+            @Override
+            public boolean tryAdvance(final Consumer<? super T> action) {
+                if (self.hasMoreElements()) {
+                    action.accept(self.nextElement());
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified element(s) as its
+     * source.
+     * <pre class="groovyTestCase">
+     * class Items implements Iterable<String> {
+     *   Iterator<String> iterator() {
+     *     ['one', 'two'].iterator()
+     *   }
+     * }
+     * def items = new Items()
+     * assert items.stream().toList() == ['one', 'two']
+     * </pre>
+     *
+     * @since 3.0.0
+     */
+    public static <T> Stream<T> stream(final Iterable<T> self) {
+        return StreamSupport.stream(self.spliterator(), false);
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified element(s) as its
+     * source.
+     * <pre class="groovyTestCase">
+     * [].iterator().stream().toList().isEmpty()
+     * ['one', 'two'].iterator().stream().toList() == ['one', 'two']
+     * </pre>
+     *
+     * @since 3.0.0
+     */
+    public static <T> Stream<T> stream(final Iterator<T> self) {
+        return stream(Spliterators.spliteratorUnknownSize(self, Spliterator.ORDERED));
+    }
+
+    /**
+     * Returns a sequential {@link Stream} with the specified element(s) as its
+     * source.
+     * <pre class="groovyTestCase">
+     * [].spliterator().stream().toList().isEmpty()
+     * ['one', 'two'].spliterator().stream().toList() == ['one', 'two']
+     * </pre>
+     *
+     * @since 3.0.0
+     */
+    public static <T> Stream<T> stream(final Spliterator<T> self) {
+        return StreamSupport.stream(self, false);
+    }
+
+    /**
      * If a value is present in the {@link Optional}, returns a {@link Stream}
      * with the value as its source or else an empty stream.
      *
@@ -560,5 +667,44 @@ public class PluginDefaultGroovyMethods {
      */
     public static <T> Stream<T> stream(final Optional<T> self) {
         return self.map(Stream::of).orElseGet(Stream::empty);
+    }
+
+    /**
+     * If a value is present in the {@link OptionalInt}, returns an {@link IntStream}
+     * with the value as its source or else an empty stream.
+     *
+     * @since 3.0.0
+     */
+    public static IntStream stream(final OptionalInt self) {
+        if (!self.isPresent()) {
+            return IntStream.empty();
+        }
+        return IntStream.of(self.getAsInt());
+    }
+
+    /**
+     * If a value is present in the {@link OptionalLong}, returns a {@link LongStream}
+     * with the value as its source or else an empty stream.
+     *
+     * @since 3.0.0
+     */
+    public static LongStream stream(final OptionalLong self) {
+        if (!self.isPresent()) {
+            return LongStream.empty();
+        }
+        return LongStream.of(self.getAsLong());
+    }
+
+    /**
+     * If a value is present in the {@link OptionalDouble}, returns a {@link DoubleStream}
+     * with the value as its source or else an empty stream.
+     *
+     * @since 3.0.0
+     */
+    public static DoubleStream stream(final OptionalDouble self) {
+        if (!self.isPresent()) {
+            return DoubleStream.empty();
+        }
+        return DoubleStream.of(self.getAsDouble());
     }
 }
