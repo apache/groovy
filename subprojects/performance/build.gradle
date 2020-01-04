@@ -30,7 +30,7 @@ configurations {
 
 dependencies {
     jmh rootProject
-    testImplementation 'org.codehaus.groovy:groovy-all:2.4.17'
+    testImplementation rootProject
     stats 'org.apache.commons:commons-math3:3.6'
 }
 
