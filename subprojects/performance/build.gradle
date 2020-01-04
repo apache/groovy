@@ -40,6 +40,7 @@ jmh {
         include = ['.*' + project.benchInclude + '.*']
     }
     includeTests = true
+    duplicateClassesStrategy = 'WARN'
 }
 jmhClasses.dependsOn clean
 
