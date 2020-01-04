@@ -76,8 +76,7 @@ task performanceTests {
 }
 
 ['1.8.9', '2.0.8', '2.1.9', '2.2.2', '2.3.10', '2.3.11', '2.4.7', 'current'].each { version ->
-    def t = task "performanceTestGroovy${version.replace('.', '_')}"(type: JavaExec) {
-        dependsOn compileTestJava
+    def t = task "performanceTestGroovy${version.replace('.', '_')}"(type: JavaExec, dependsOn: compileTestGroovy) {
         def groovyConf = configurations.detachedConfiguration(
                 dependencies.create(
                         'current' == version ? files(rootProject.jar.archivePath) : "org.codehaus.groovy:groovy:$version")
