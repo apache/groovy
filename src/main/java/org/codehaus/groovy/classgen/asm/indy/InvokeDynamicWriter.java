@@ -121,25 +121,26 @@ public class InvokeDynamicWriter extends InvocationWriter {
         operandStack.replace(ClassHelper.OBJECT_TYPE, numberOfArguments);
         compileStack.popLHS();
     }
-    
+
     private void makeIndyCall(MethodCallerMultiAdapter adapter, Expression receiver, boolean implicitThis, boolean safe, String methodName, Expression arguments) {
         OperandStack operandStack = controller.getOperandStack();
-        
+
         StringBuilder sig = new StringBuilder(prepareIndyCall(receiver, implicitThis));
-        
+
         // load arguments
         int numberOfArguments = 1;
         ArgumentListExpression ae = makeArgumentList(arguments);
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
+        AsmClassGenerator acg = controller.getAcg();
         if (containsSpreadExpression) {
-            controller.getAcg().despreadList(ae.getExpressions(), true);
+            acg.despreadList(ae.getExpressions(), true);
             sig.append(getTypeDescription(Object[].class));
         } else {
             for (Expression arg : ae.getExpressions()) {
-                arg.visit(controller.getAcg());
+                arg.visit(acg);
                 if (arg instanceof CastExpression) {
                     operandStack.box();
-                    controller.getAcg().loadWrapper(arg);
+                    acg.loadWrapper(arg);
                     sig.append(getTypeDescription(Wrapper.class));
                 } else {
                     sig.append(getTypeDescription(operandStack.getTopOperand()));
@@ -150,7 +151,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
 
         sig.append(")Ljava/lang/Object;");
         String callSiteName = METHOD.getCallSiteName();
-        if (adapter==null) callSiteName = INIT.getCallSiteName();
+        if (adapter == null) callSiteName = INIT.getCallSiteName();
         int flags = getMethodCallFlags(adapter, safe, containsSpreadExpression);
         finishIndyCall(BSM, callSiteName, sig.toString(), numberOfArguments, methodName, flags);
     }
