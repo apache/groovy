@@ -124,3 +124,7 @@ task performanceTests {
     }
     performanceTests.dependsOn(t)
 }
+
+compileJmhGroovy {
+    classpath += compileJmhJava.classpath
+}
