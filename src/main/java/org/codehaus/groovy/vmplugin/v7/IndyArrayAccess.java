@@ -44,26 +44,26 @@ public class IndyArrayAccess {
         }
     }
 
-    private static final HashMap<Class, MethodHandle> getterMap, setterMap;
+    private static final HashMap<Class<?>, MethodHandle> getterMap, setterMap;
 
     static {
-        getterMap = new HashMap<Class, MethodHandle>();
-        Class[] classes = new Class[]{
+        getterMap = new HashMap<>();
+        Class<?>[] classes = new Class<?>[]{
                 int[].class, byte[].class, short[].class, long[].class,
                 double[].class, float[].class,
                 boolean[].class, char[].class, Object[].class};
-        for (Class arrayClass : classes) {
+        for (Class<?> arrayClass : classes) {
             MethodHandle handle = buildGetter(arrayClass);
             getterMap.put(arrayClass, handle);
         }
-        setterMap = new HashMap<Class, MethodHandle>();
-        for (Class arrayClass : classes) {
+        setterMap = new HashMap<>();
+        for (Class<?> arrayClass : classes) {
             MethodHandle handle = buildSetter(arrayClass);
             setterMap.put(arrayClass, handle);
         }
     }
 
-    private static MethodHandle buildGetter(Class arrayClass) {
+    private static MethodHandle buildGetter(Class<?> arrayClass) {
         MethodHandle get = MethodHandles.arrayElementGetter(arrayClass);
         MethodHandle fallback = MethodHandles.explicitCastArguments(get, get.type().changeParameterType(0, Object.class));
 
@@ -81,7 +81,7 @@ public class IndyArrayAccess {
         return handle;
     }
 
-    private static MethodHandle buildSetter(Class arrayClass) {
+    private static MethodHandle buildSetter(Class<?> arrayClass) {
         MethodHandle set = MethodHandles.arrayElementSetter(arrayClass);
         MethodHandle fallback = MethodHandles.explicitCastArguments(set, set.type().changeParameterType(0, Object.class));
 
@@ -122,7 +122,7 @@ public class IndyArrayAccess {
     }
 
     public static MethodHandle arrayGet(MethodType type) {
-        Class key = type.parameterType(0);
+        Class<?> key = type.parameterType(0);
         MethodHandle res = getterMap.get(key);
         if (res != null) return res;
         res = buildGetter(key);
@@ -131,7 +131,7 @@ public class IndyArrayAccess {
     }
 
     public static MethodHandle arraySet(MethodType type) {
-        Class key = type.parameterType(0);
+        Class<?> key = type.parameterType(0);
         MethodHandle res = setterMap.get(key);
         if (res != null) return res;
         res = buildSetter(key);

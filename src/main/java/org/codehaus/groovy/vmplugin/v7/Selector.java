@@ -95,7 +95,6 @@ import static org.codehaus.groovy.vmplugin.v7.IndyGuardsFiltersAndSignatures.unw
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOG;
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOG_ENABLED;
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.makeFallBack;
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.switchPoint;
 
 public abstract class Selector {
@@ -106,12 +105,12 @@ public abstract class Selector {
     public MethodHandle handle;
     public boolean useMetaClass = false, cache = true;
     public MutableCallSite callSite;
-    public Class sender;
+    public Class<?> sender;
     public boolean isVargs;
     public boolean safeNavigation, safeNavigationOrig, spread;
     public boolean skipSpreadCollector;
     public boolean thisCall;
-    public Class selectionBase;
+    public Class<?> selectionBase;
     public boolean catchException = true;
     public CallType callType;
 
@@ -123,7 +122,7 @@ public abstract class Selector {
     /**
      * Returns the Selector
      */
-    public static Selector getSelector(MutableCallSite callSite, Class sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+    public static Selector getSelector(MutableCallSite callSite, Class<?> sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
         CallType callType = CALL_TYPE_VALUES[callID];
         switch (callType) {
             case INIT:
@@ -221,7 +220,7 @@ public abstract class Selector {
             }
         }
 
-        private static boolean isAbstractClassOf(Class toTest, Class givenOnCallSite) {
+        private static boolean isAbstractClassOf(Class<?> toTest, Class<?> givenOnCallSite) {
             if (!toTest.isAssignableFrom(givenOnCallSite)) return false;
             if (givenOnCallSite.isInterface()) return true;
             return Modifier.isAbstract(givenOnCallSite.getModifiers());
@@ -286,7 +285,7 @@ public abstract class Selector {
     private static class PropertySelector extends MethodSelector {
         private boolean insertName = false;
 
-        public PropertySelector(MutableCallSite callSite, Class sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+        public PropertySelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
@@ -305,7 +304,7 @@ public abstract class Selector {
         public void chooseMeta(MetaClassImpl mci) {
             Object receiver = getCorrectedReceiver();
             if (receiver instanceof GroovyObject) {
-                Class aClass = receiver.getClass();
+                Class<?> aClass = receiver.getClass();
                 try {
                     Method reflectionMethod = aClass.getMethod("getProperty", String.class);
                     if (!reflectionMethod.isSynthetic() && !isMarkedInternal(reflectionMethod)) {
@@ -322,7 +321,7 @@ public abstract class Selector {
             }
 
             if (method != null || mci == null) return;
-            Class chosenSender = this.sender;
+            Class<?> chosenSender = this.sender;
             if (mci.getTheClass() != chosenSender && GroovyCategorySupport.hasCategoryInCurrentThread()) {
                 chosenSender = mci.getTheClass();
             }
@@ -387,7 +386,7 @@ public abstract class Selector {
     private static class InitSelector extends MethodSelector {
         private boolean beanConstructor;
 
-        public InitSelector(MutableCallSite callSite, Class sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+        public InitSelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
@@ -405,7 +404,7 @@ public abstract class Selector {
         @Override
         public MetaClass getMetaClass() {
             Object receiver = args[0];
-            mc = GroovySystem.getMetaClassRegistry().getMetaClass((Class) receiver);
+            mc = GroovySystem.getMetaClassRegistry().getMetaClass((Class<?>) receiver);
             return mc;
         }
 
@@ -512,7 +511,7 @@ public abstract class Selector {
         protected MetaClass mc;
         private boolean isCategoryMethod;
 
-        public MethodSelector(MutableCallSite callSite, Class sender, String methodName, CallType callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
+        public MethodSelector(MutableCallSite callSite, Class<?> sender, String methodName, CallType callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
             this.callType = callType;
             this.targetType = callSite.type();
             this.name = methodName;
@@ -572,7 +571,7 @@ public abstract class Selector {
             } else if (receiver instanceof GroovyObject) {
                 mc = ((GroovyObject) receiver).getMetaClass();
             } else if (receiver instanceof Class) {
-                Class c = (Class) receiver;
+                Class<?> c = (Class<?>) receiver;
                 mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
                 this.cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
             } else {
@@ -689,7 +688,7 @@ public abstract class Selector {
          * Helper method to manipulate the given type to replace Wrapper with Object.
          */
         private MethodType removeWrapper(MethodType targetType) {
-            Class[] types = targetType.parameterArray();
+            Class<?>[] types = targetType.parameterArray();
             for (int i = 0; i < types.length; i++) {
                 if (types[i] == Wrapper.class) {
                     targetType = targetType.changeParameterType(i, Object.class);
@@ -735,11 +734,11 @@ public abstract class Selector {
          */
         public void correctWrapping() {
             if (useMetaClass) return;
-            Class[] pt = handle.type().parameterArray();
+            Class<?>[] pt = handle.type().parameterArray();
             if (currentType != null) pt = currentType.parameterArray();
             for (int i = 1; i < args.length; i++) {
                 if (args[i] instanceof Wrapper) {
-                    Class type = pt[i];
+                    Class<?> type = pt[i];
                     MethodType mt = MethodType.methodType(type, Wrapper.class);
                     handle = MethodHandles.filterArguments(handle, i, UNWRAP_METHOD.asType(mt));
                     if (LOG_ENABLED) LOG.info("added filter for Wrapper for argument at pos " + i);
@@ -755,7 +754,7 @@ public abstract class Selector {
         public void correctParameterLength() {
             if (handle == null) return;
 
-            Class[] params = handle.type().parameterArray();
+            Class<?>[] params = handle.type().parameterArray();
             if (currentType != null) params = currentType.parameterArray();
             if (!isVargs) {
                 if (spread && useMetaClass) return;
@@ -765,7 +764,7 @@ public abstract class Selector {
                 return;
             }
 
-            Class lastParam = params[params.length - 1];
+            Class<?> lastParam = params[params.length - 1];
             Object lastArg = unwrapIfWrapped(args[args.length - 1]);
             if (params.length == args.length) {
                 // may need rewrap
@@ -801,7 +800,7 @@ public abstract class Selector {
         public void correctCoerce() {
             if (useMetaClass) return;
 
-            Class[] parameters = handle.type().parameterArray();
+            Class<?>[] parameters = handle.type().parameterArray();
             if (currentType != null) parameters = currentType.parameterArray();
             if (args.length != parameters.length) {
                 throw new GroovyBugError("At this point argument array length and parameter array length should be the same");
@@ -821,12 +820,12 @@ public abstract class Selector {
                 // GString conversion and the number conversions.
 
                 if (arg == null) continue;
-                Class got = arg.getClass();
+                Class<?> got = arg.getClass();
 
                 // equal class, nothing to do
                 if (got == parameters[i]) continue;
 
-                Class wrappedPara = TypeHelper.getWrapperClass(parameters[i]);
+                Class<?> wrappedPara = TypeHelper.getWrapperClass(parameters[i]);
                 // equal class with one maybe a primitive, the later explicitCastArguments will solve this case
                 if (wrappedPara == TypeHelper.getWrapperClass(got)) continue;
 
@@ -866,7 +865,7 @@ public abstract class Selector {
             //TODO: if we would know exactly which paths require the exceptions
             //      and which paths not, we can sometimes save this guard 
             if (handle == null || !catchException) return;
-            Class returnType = handle.type().returnType();
+            Class<?> returnType = handle.type().returnType();
             if (returnType != Object.class) {
                 MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class);
                 handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
@@ -883,7 +882,12 @@ public abstract class Selector {
             if (handle == null) return;
             if (!cache) return;
 
-            MethodHandle fallback = makeFallBack(callSite, sender, name, callType.ordinal(), targetType, safeNavigationOrig, thisCall, spread);
+            MethodHandle fallback;
+            if (callSite instanceof CacheableCallSite) {
+                fallback = ((CacheableCallSite) callSite).getFallbackTarget();
+            } else {
+                throw new GroovyBugError("CacheableCallSite is expected, but the actual callsite is: " + callSite);
+            }
 
             // special guards for receiver
             if (receiver instanceof GroovyObject) {
@@ -923,7 +927,7 @@ public abstract class Selector {
             if (LOG_ENABLED) LOG.info("added switch point guard");
 
             // guards for receiver and parameter
-            Class[] pt = handle.type().parameterArray();
+            Class<?>[] pt = handle.type().parameterArray();
             for (int i = 0; i < args.length; i++) {
                 Object arg = args[i];
                 MethodHandle test;
@@ -931,7 +935,7 @@ public abstract class Selector {
                     test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
                     if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
                 } else {
-                    Class argClass = arg.getClass();
+                    Class<?> argClass = arg.getClass();
                     if (pt[i].isPrimitive()) continue;
                     //if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
                     test = SAME_CLASS.
@@ -939,7 +943,7 @@ public abstract class Selector {
                             asType(MethodType.methodType(boolean.class, pt[i]));
                     if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
                 }
-                Class[] drops = new Class[i];
+                Class<?>[] drops = new Class[i];
                 System.arraycopy(pt, 0, drops, 0, drops.length);
                 test = MethodHandles.dropArguments(test, 0, drops);
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
@@ -950,12 +954,15 @@ public abstract class Selector {
          * do the actual call site target set, if the call is supposed to be cached
          */
         public void doCallSiteTargetSet() {
+            if (LOG_ENABLED) LOG.info("call site stays uncached");
+            /*
             if (!cache) {
                 if (LOG_ENABLED) LOG.info("call site stays uncached");
             } else {
                 callSite.setTarget(handle);
                 if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
             }
+            */
         }
 
         /**
@@ -1054,7 +1061,7 @@ public abstract class Selector {
      * none of these cases matches, this method returns null.
      */
     private static MetaClassImpl getMetaClassImpl(MetaClass mc, boolean includeEMC) {
-        Class mcc = mc.getClass();
+        Class<?> mcc = mc.getClass();
         boolean valid = mcc == MetaClassImpl.class ||
                 mcc == AdaptingMetaClass.class ||
                 mcc == ClosureMetaClass.class ||
