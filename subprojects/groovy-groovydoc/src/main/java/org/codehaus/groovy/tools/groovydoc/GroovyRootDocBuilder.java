@@ -119,9 +119,7 @@ public class GroovyRootDocBuilder {
             return;
         }
         try {
-            // TODO reinstate and remove preview sys property once stable
-//            final boolean newParser = Boolean.parseBoolean(getSystemPropertySafe("groovy.antlr4", "true"));
-            final boolean newParser = Boolean.parseBoolean(getSystemPropertySafe("preview.groovydoc.antlr4", "false"));
+            final boolean newParser = Boolean.parseBoolean(getSystemPropertySafe("groovy.antlr4", "true"));
 
             GroovyDocParserI docParser = newParser ? new org.codehaus.groovy.tools.groovydoc.antlr4.GroovyDocParser(links, properties)
                     : new GroovyDocParser(links, properties);
@@ -182,7 +180,7 @@ public class GroovyRootDocBuilder {
         result = replaceAllTags(result, "<TT>", "</TT>", CODE_REGEX, relPath);
 
         // hack to reformat other groovydoc block tags (@see, @return, @param, @throws, @author, @since) into html
-        result = replaceAllTags(result + "@endMarker", "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX, relPath);
+        result = replaceAllTags(result + " @endMarker", "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX, relPath);
         // remove @endMarker
         result = result.substring(0, result.length() - 10);
 
