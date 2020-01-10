@@ -32,7 +32,7 @@ def elementTypes = [
 ]
 def encode = { org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(it) }
 def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
-def paramsOf = { n, classDoc, boolean brief -> n.parameters().collect{ param -> encode(param.isTypeAvailable()?param.type().name():param.typeName()) }.join(", ") }
+def paramsOf = { n, classDoc, boolean brief -> n.parameters().collect{ param -> encode(param.isTypeAvailable()?param.type().typeName():param.typeName()) }.join(", ") }
 def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
 %>
 <html>

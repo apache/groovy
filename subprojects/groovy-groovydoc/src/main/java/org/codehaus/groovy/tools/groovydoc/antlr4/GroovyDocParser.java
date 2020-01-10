@@ -27,8 +27,13 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
+import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocParserI;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
+import org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc;
+import org.codehaus.groovy.tools.groovydoc.SimpleGroovyFieldDoc;
+import org.codehaus.groovy.tools.groovydoc.SimpleGroovyMethodDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.util.List;
@@ -70,11 +75,30 @@ public class GroovyDocParser implements GroovyDocParserI {
         CompilationUnit compUnit = new CompilationUnit(config);
         SourceUnit unit = new SourceUnit(file, src, config, null, new ErrorCollector(config));
         compUnit.addSource(unit);
-        compUnit.compile(Phases.SEMANTIC_ANALYSIS);
+        compUnit.compile(Phases.CONVERSION);
         ModuleNode root = unit.getAST();
         GroovydocVisitor visitor = new GroovydocVisitor(unit, packagePath, links);
         visitor.visitClass(root.getClasses().get(0));
-        return visitor.getGroovyClassDocs();
+        Map<String, GroovyClassDoc> groovyClassDocs = visitor.getGroovyClassDocs();
+        for (GroovyClassDoc classDoc : groovyClassDocs.values()) {
+            replaceTags((SimpleGroovyClassDoc) classDoc);
+        }
+        return groovyClassDocs;
+    }
+
+    private void replaceTags(SimpleGroovyClassDoc sgcd) {
+        sgcd.setRawCommentText(sgcd.replaceTags(sgcd.getRawCommentText()));
+        for (GroovyMethodDoc groovyMethodDoc : sgcd.methods()) {
+            SimpleGroovyMethodDoc sgmd = (SimpleGroovyMethodDoc) groovyMethodDoc;
+            sgmd.setRawCommentText(sgcd.replaceTags(sgmd.getRawCommentText()));
+        }
+        for (GroovyFieldDoc groovyFieldDoc : sgcd.isEnum() ? sgcd.enumConstants() : sgcd.fields()) {
+            SimpleGroovyFieldDoc sgfd = (SimpleGroovyFieldDoc) groovyFieldDoc;
+            sgfd.setRawCommentText(sgcd.replaceTags(sgfd.getRawCommentText()));
+        }
+        for (GroovyClassDoc innerClassDoc : sgcd.innerClasses()) {
+            replaceTags((SimpleGroovyClassDoc) innerClassDoc);
+        }
     }
 
 }
