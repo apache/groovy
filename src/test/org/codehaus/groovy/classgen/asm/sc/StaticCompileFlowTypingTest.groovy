@@ -18,10 +18,17 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import groovy.test.NotYetImplemented
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-class StaticCompileFlowTypingTest extends AbstractBytecodeTestCase {
-    void testFlowTyping() {
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class StaticCompileFlowTypingTest {
+
+    @Test
+    void testFlowTyping1() {
         assertScript '''
             @groovy.transform.CompileStatic
             Object m() {
@@ -36,6 +43,27 @@ class StaticCompileFlowTypingTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @NotYetImplemented @Test // GROOVY-9344
+    void testFlowTyping2() {
+        assertScript '''
+            class A {}
+            class B {}
+
+            @groovy.transform.CompileStatic
+            String m() {
+                def var
+                var = new A()
+                def c = { ->
+                    var = new B()
+                }
+                c()
+                var.toString()
+            }
+            assert m() != null
+        '''
+    }
+
+    @Test
     void testInstanceOf() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -50,6 +78,7 @@ class StaticCompileFlowTypingTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testMethodSelection() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -63,6 +92,7 @@ class StaticCompileFlowTypingTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testMethodSelectionDifferentFromDynamicGroovy() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -90,7 +120,6 @@ class StaticCompileFlowTypingTest extends AbstractBytecodeTestCase {
             assert a.foo(arr[0]) == 1
             assert a.foo(arr[1]) == 2
             assert a.foo(arr[2]) == 3
-
         '''
     }
 }
