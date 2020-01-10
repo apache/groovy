@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
@@ -942,10 +943,22 @@ public class CompilationUnit extends ProcessingUnit {
 
                     if (errorCollector != null) {
                         unit.getErrorCollector().addCollectorContents(errorCollector);
-                    } else if (context != null) {
-                        unit.getErrorCollector().addException(e instanceof Exception ? (Exception) e : new RuntimeException(e), context);
                     } else {
-                        unit.getErrorCollector().addError(new ExceptionMessage(e instanceof Exception ? (Exception) e : new RuntimeException(e), unit.debug, unit));
+                        if (e instanceof GroovyRuntimeException) {
+                            GroovyRuntimeException gre = (GroovyRuntimeException) e;
+                            context = Optional.ofNullable(gre.getModule()).map(ModuleNode::getContext).orElse(context);
+                        }
+                        if (context != null) {
+                            if (e instanceof SyntaxException) {
+                                unit.getErrorCollector().addError((SyntaxException) e, context);
+                            } else if (e.getCause() instanceof SyntaxException) {
+                                unit.getErrorCollector().addError((SyntaxException) e.getCause(), context);
+                            } else {
+                                unit.getErrorCollector().addException(e instanceof Exception ? (Exception) e : new RuntimeException(e), context);
+                            }
+                        } else {
+                            unit.getErrorCollector().addError(new ExceptionMessage(e instanceof Exception ? (Exception) e : new RuntimeException(e), unit.debug, unit));
+                        }
                     }
                 }
             }
@@ -1079,13 +1092,13 @@ public class CompilationUnit extends ProcessingUnit {
         addNewPhaseOperation((ISourceUnitOperation) op, phase);
     }
 
-    @Deprecated // IntelliJ IDEA depends on the API
-    public void applyToPrimaryClassNodes(final PrimaryClassNodeOperation op) throws CompilationFailedException {
+    @Deprecated
+    public void applyToSourceUnits(final SourceUnitOperation op) throws CompilationFailedException {
         op.doPhaseOperation(this);
     }
 
     @Deprecated
-    public void applyToSourceUnits(final SourceUnitOperation op) throws CompilationFailedException {
+    public void applyToPrimaryClassNodes(final PrimaryClassNodeOperation op) throws CompilationFailedException {
         op.doPhaseOperation(this);
     }
 
