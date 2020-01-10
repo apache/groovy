@@ -124,7 +124,7 @@ public class TypeTransformers {
      * This method handles transformations to String from GString,
      * array transformations and number based transformations
      */
-    protected static MethodHandle addTransformer(MethodHandle handle, int pos, Object arg, Class parameter) {
+    protected static MethodHandle addTransformer(MethodHandle handle, int pos, Object arg, Class<?> parameter) {
         MethodHandle transformer = null;
         if (arg instanceof GString) {
             transformer = TO_STRING;
@@ -144,7 +144,7 @@ public class TypeTransformers {
      * creates a method handle able to transform the given Closure into a SAM type
      * if the given parameter is a SAM type
      */
-    private static MethodHandle createSAMTransform(Object arg, Class parameter) {
+    private static MethodHandle createSAMTransform(Object arg, Class<?> parameter) {
         Method method = CachedSAMClass.getSAMMethod(parameter);
         if (method == null) return null;
         // TODO: have to think about how to optimize this!
@@ -199,7 +199,7 @@ public class TypeTransformers {
      */
     public static MethodHandle applyUnsharpFilter(MethodHandle handle, int pos, MethodHandle transformer) {
         MethodType type = transformer.type();
-        Class given = handle.type().parameterType(pos);
+        Class<?> given = handle.type().parameterType(pos);
         if (type.returnType() != given || type.parameterType(0) != given) {
             transformer = transformer.asType(MethodType.methodType(given, type.parameterType(0)));
         }
@@ -210,7 +210,7 @@ public class TypeTransformers {
      * returns a transformer later applied as filter to transform one
      * number into another
      */
-    private static MethodHandle selectNumberTransformer(Class param, Object arg) {
+    private static MethodHandle selectNumberTransformer(Class<?> param, Object arg) {
         param = TypeHelper.getWrapperClass(param);
 
         if (param == Byte.class) {
