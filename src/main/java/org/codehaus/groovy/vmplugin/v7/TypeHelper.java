@@ -35,7 +35,7 @@ public class TypeHelper {
      * will be returned. If it is no primitive number type, we return the
      * class itself.
      */
-    protected static Class getWrapperClass(Class c) {
+    protected static Class<?> getWrapperClass(Class<?> c) {
         if (c == Integer.TYPE) {
             c = Integer.class;
         } else if (c == Byte.TYPE) {
@@ -63,7 +63,7 @@ public class TypeHelper {
      * the parameter class. For example the parameter is an int and the
      * argument class is a wrapper.
      */
-    protected static boolean argumentClassIsParameterClass(Class argumentClass, Class parameterClass) {
+    protected static boolean argumentClassIsParameterClass(Class<?> argumentClass, Class<?> parameterClass) {
         if (argumentClass == parameterClass) return true;
         return getWrapperClass(parameterClass) == argumentClass;
     }
@@ -78,32 +78,32 @@ public class TypeHelper {
             // if argument null, take the static type
             if (args[i] == null) continue;
             if (callSiteType.parameterType(i).isPrimitive()) continue;
-            Class argClass = args[i].getClass();
+            Class<?> argClass = args[i].getClass();
             callSiteType = callSiteType.changeParameterType(i, argClass);
         }
         return callSiteType;
     }
 
-    protected static boolean isIntCategory(Class x) {
+    protected static boolean isIntCategory(Class<?> x) {
         return x == Integer.class || x == int.class ||
                 x == Byte.class || x == byte.class ||
                 x == Short.class || x == short.class;
     }
 
-    protected static boolean isLongCategory(Class x) {
+    protected static boolean isLongCategory(Class<?> x) {
         return x == Long.class || x == long.class ||
                 isIntCategory(x);
     }
 
-    private static boolean isBigIntCategory(Class x) {
+    private static boolean isBigIntCategory(Class<?> x) {
         return x == BigInteger.class || isLongCategory(x);
     }
 
-    protected static boolean isBigDecCategory(Class x) {
+    protected static boolean isBigDecCategory(Class<?> x) {
         return x == BigDecimal.class || isBigIntCategory(x);
     }
 
-    protected static boolean isDoubleCategory(Class x) {
+    protected static boolean isDoubleCategory(Class<?> x) {
         return x == Float.class || x == float.class ||
                 x == Double.class || x == double.class ||
                 isBigDecCategory(x);

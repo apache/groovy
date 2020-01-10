@@ -61,14 +61,14 @@ public class IndyMath {
             OOV = MethodType.methodType(Void.TYPE, Object.class, Object.class);
 
     private static void makeMapEntry(String method, MethodType[] keys, MethodType[] values) throws NoSuchMethodException, IllegalAccessException {
-        Map<MethodType, MethodHandle> xMap = new HashMap();
-        methods.put(method, xMap);
+        Map<MethodType, MethodHandle> xMap = new HashMap<>();
+        METHODS.put(method, xMap);
         for (int i = 0; i < keys.length; i++) {
             xMap.put(keys[i], LOOKUP.findStatic(IndyMath.class, method, values[i]));
         }
     }
 
-    private static Map<String, Map<MethodType, MethodHandle>> methods = new HashMap();
+    private static final Map<String, Map<MethodType, MethodHandle>> METHODS = new HashMap<>();
 
     static {
         try {
@@ -107,7 +107,7 @@ public class IndyMath {
      * more efficient call path.
      */
     public static boolean chooseMathMethod(Selector info, MetaMethod metaMethod) {
-        Map<MethodType, MethodHandle> xmap = methods.get(info.name);
+        Map<MethodType, MethodHandle> xmap = METHODS.get(info.name);
         if (xmap == null) return false;
 
         MethodType type = replaceWithMoreSpecificType(info.args, info.targetType);
@@ -129,9 +129,10 @@ public class IndyMath {
      * parameters in the MethodType will have the same type.
      */
     private static MethodType widenOperators(MethodType mt) {
-        if (mt.parameterCount() == 2) {
-            Class leftType = mt.parameterType(0);
-            Class rightType = mt.parameterType(1);
+        final int parameterCount = mt.parameterCount();
+        if (parameterCount == 2) {
+            Class<?> leftType = mt.parameterType(0);
+            Class<?> rightType = mt.parameterType(1);
 
             if (isIntCategory(leftType) && isIntCategory(rightType)) return IIV;
             if (isLongCategory(leftType) && isLongCategory(rightType)) return LLV;
@@ -139,8 +140,8 @@ public class IndyMath {
             if (isDoubleCategory(leftType) && isDoubleCategory(rightType)) return DDV;
 
             return OOV;
-        } else if (mt.parameterCount() == 1) {
-            Class leftType = mt.parameterType(0);
+        } else if (parameterCount == 1) {
+            Class<?> leftType = mt.parameterType(0);
             if (isIntCategory(leftType)) return IV;
             if (isLongCategory(leftType)) return LV;
             if (isBigDecCategory(leftType)) return GV;

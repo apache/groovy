@@ -204,7 +204,7 @@ public class IndyGuardsFiltersAndSignatures {
      * class as the provided Class. This method will
      * return false if the Object is null.
      */
-    public static boolean sameClass(Class c, Object o) {
+    public static boolean sameClass(Class<?> c, Object o) {
         if (o == null) return false;
         return o.getClass() == c;
     }
