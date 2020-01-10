@@ -930,10 +930,23 @@ public class CompilationUnit extends ProcessingUnit {
                 } catch (GroovyBugError e) {
                     unit.changeBugText(e, context);
                     throw e;
-                } catch (NoClassDefFoundError | Exception e) {
-                    // effort to get more logging in case a dependency of a class is loaded
-                    // although it shouldn't have
-                    unit.convertUncaughtExceptionToCompilationError(e);
+                } catch (Exception | LinkageError e) {
+                    ErrorCollector errorCollector = null;
+                    // check for a nested compilation exception
+                    for (Throwable t = e.getCause(); t != e && t != null; t = t.getCause()) {
+                        if (t instanceof MultipleCompilationErrorsException) {
+                            errorCollector = ((MultipleCompilationErrorsException) t).getErrorCollector();
+                            break;
+                        }
+                    }
+
+                    if (errorCollector != null) {
+                        unit.getErrorCollector().addCollectorContents(errorCollector);
+                    } else if (context != null) {
+                        unit.getErrorCollector().addException(e instanceof Exception ? (Exception) e : new RuntimeException(e), context);
+                    } else {
+                        unit.getErrorCollector().addError(new ExceptionMessage(e instanceof Exception ? (Exception) e : new RuntimeException(e), unit.debug, unit));
+                    }
                 }
             }
             unit.getErrorCollector().failIfErrors();
@@ -1033,24 +1046,6 @@ public class CompilationUnit extends ProcessingUnit {
             index[min] = -1;
         }
         return sorted;
-    }
-
-    private void convertUncaughtExceptionToCompilationError(final Throwable e) {
-        ErrorCollector nestedCollector = null;
-        // check the exception for a nested compilation exception
-        for (Throwable next = e.getCause(); next != e && next != null; next = next.getCause()) {
-            if (!(next instanceof MultipleCompilationErrorsException)) continue;
-            MultipleCompilationErrorsException mcee = (MultipleCompilationErrorsException) next;
-            nestedCollector = mcee.collector;
-            break;
-        }
-
-        if (nestedCollector != null) {
-            getErrorCollector().addCollectorContents(nestedCollector);
-        } else {
-            Exception err = e instanceof Exception?((Exception)e):new RuntimeException(e);
-            getErrorCollector().addError(new ExceptionMessage(err, debug, this));
-        }
     }
 
     private void changeBugText(final GroovyBugError e, final SourceUnit context) {
