@@ -555,13 +555,19 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
         if (isPrimitiveType(name)) return null;
-        Map<String, GroovyClassDoc> resolvedClasses = rootDoc.getResolvedClasses();
-        GroovyClassDoc groovyClassDoc = resolvedClasses.get(name);
-        if (groovyClassDoc != null) {
-            return groovyClassDoc;
+        GroovyClassDoc groovyClassDoc = null;
+        Map<String, GroovyClassDoc> resolvedClasses = null;
+        if (rootDoc != null) {
+            resolvedClasses = rootDoc.getResolvedClasses();
+            groovyClassDoc = resolvedClasses.get(name);
+            if (groovyClassDoc != null) {
+                return groovyClassDoc;
+            }
         }
         groovyClassDoc = doResolveClass(rootDoc, name);
-        resolvedClasses.put(name, groovyClassDoc);
+        if (resolvedClasses != null) {
+            resolvedClasses.put(name, groovyClassDoc);
+        }
         return groovyClassDoc;
     }
 
@@ -574,18 +580,20 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 //        if (name.equals("T") || name.equals("U") || name.equals("K") || name.equals("V") || name.equals("G")) {
 //            name = "java/lang/Object";
 //        }
-        GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name);
-        if (doc != null) return doc;
         int slashIndex = name.lastIndexOf("/");
-        if (slashIndex < 1) {
-            doc = resolveInternalClassDocFromImport(rootDoc, name);
+        if (rootDoc != null) {
+            GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name);
             if (doc != null) return doc;
-            for (GroovyClassDoc nestedDoc : nested) {
-                if (nestedDoc.name().endsWith("." + name))
-                    return nestedDoc;
+            if (slashIndex < 1) {
+                doc = resolveInternalClassDocFromImport(rootDoc, name);
+                if (doc != null) return doc;
+                for (GroovyClassDoc nestedDoc : nested) {
+                    if (nestedDoc.name().endsWith("." + name))
+                        return nestedDoc;
+                }
+                doc = rootDoc.classNamed(this, name);
+                if (doc != null) return doc;
             }
-            doc = rootDoc.classNamed(this, name);
-            if (doc != null) return doc;
         }
 
         // The class is not in the tree being documented
@@ -819,8 +827,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         return typeName.substring(lastDot + 1);
     }
 
-    public String typeName() {/*todo*/
-        return null;
+    public String typeName() {
+        return qualifiedTypeName();
     }
 
     public void addInterfaceName(String className) {
@@ -896,7 +904,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     // TODO: is there a better way to do this?
     public String replaceAllTagsCollated(String self, String preKey, String postKey,
                                          String valueSeparator, String postValues, Pattern regex) {
-        Matcher matcher = regex.matcher(self + "@endMarker");
+        Matcher matcher = regex.matcher(self + " @endMarker");
         if (matcher.find()) {
             matcher.reset();
             Map<String, List<String>> savedTags = new LinkedHashMap<String, List<String>>();

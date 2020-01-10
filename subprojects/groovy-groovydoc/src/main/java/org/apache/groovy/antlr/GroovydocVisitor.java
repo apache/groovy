@@ -19,19 +19,25 @@
 package org.apache.groovy.antlr;
 
 import groovy.lang.groovydoc.Groovydoc;
+import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
+import org.codehaus.groovy.tools.groovydoc.SimpleGroovyAnnotationRef;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyConstructorDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyDoc;
@@ -39,14 +45,17 @@ import org.codehaus.groovy.tools.groovydoc.SimpleGroovyExecutableMemberDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyFieldDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyMethodDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyParameter;
+import org.codehaus.groovy.tools.groovydoc.SimpleGroovyProgramElementDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyType;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -63,7 +72,6 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private SimpleGroovyClassDoc currentClassDoc = null;
     private Map<String, GroovyClassDoc> classDocs = new HashMap<>();
     private static final String FS = "/";
-    private final Map<String, String> aliases = new HashMap<>();
 
     public GroovydocVisitor(final SourceUnit unit, String packagePath, List<LinkArgument> links) {
         this.unit = unit;
@@ -78,7 +86,15 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClass(ClassNode node) {
-        List<String> imports = node.getModule().getImports().stream().map(ImportNode::getClassName).collect(Collectors.toList());
+        final Map<String, String> aliases = new HashMap<>();
+        final List<String> imports = new ArrayList<>();
+        for (ImportNode iNode : node.getModule().getImports()) {
+            String name = iNode.getClassName();
+            imports.add(name);
+            if (iNode.getAlias() != null && !iNode.getAlias().isEmpty()) {
+                aliases.put(iNode.getAlias(), name.replaceAll("\\.", "/"));
+            }
+        }
         String name = node.getNameWithoutPackage();
 
         if (node instanceof InnerClassNode) {
@@ -87,15 +103,12 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         currentClassDoc = new SimpleGroovyClassDoc(imports, aliases, name, links);
         if (node.isEnum()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.ENUM_DEF);
-        }
-        if (node.isAnnotationDefinition()) {
+        } else if (node.isAnnotationDefinition()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.ANNOTATION_DEF);
-        }
-        if (node.isInterface()) {
-            currentClassDoc.setTokenType(SimpleGroovyDoc.INTERFACE_DEF);
-        }
-        if (isTrait(node)) {
+        } else if (isTrait(node)) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.TRAIT_DEF);
+        } else if (node.isInterface()) {
+            currentClassDoc.setTokenType(SimpleGroovyDoc.INTERFACE_DEF);
         }
         if (node.isScript()) {
             currentClassDoc.setScript(true);
@@ -103,6 +116,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         for (ClassNode iface : node.getInterfaces()) {
             currentClassDoc.addInterfaceName(makeType(iface));
         }
+        currentClassDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
+        currentClassDoc.setNameWithTypeArgs(name + genericTypesAsString(node.getGenericsTypes()));
         if (!node.isInterface() && node.getSuperClass() != null) {
             String superName = makeType(node.getSuperClass());
             currentClassDoc.setSuperClassName(superName);
@@ -112,27 +127,13 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
                 superDoc.setFullPathName(superName);
             }
         }
-        if (Modifier.isPublic(node.getModifiers())) {
-            currentClassDoc.setPublic(true);
-        }
-        if (Modifier.isProtected(node.getModifiers())) {
-            currentClassDoc.setProtected(true);
-        }
-        if (Modifier.isPrivate(node.getModifiers())) {
-            currentClassDoc.setPrivate(true);
-        }
-        if (Modifier.isStatic(node.getModifiers())) {
-            currentClassDoc.setStatic(true);
-        }
-        if (Modifier.isFinal(node.getModifiers())) {
-            currentClassDoc.setFinal(true);
-        }
+        processModifiers(currentClassDoc, node, node.getModifiers());
+        processAnnotations(currentClassDoc, node);
         if (Modifier.isAbstract(node.getModifiers())) {
             currentClassDoc.setAbstract(true);
         }
         currentClassDoc.setFullPathName(packagePath + FS + name);
         currentClassDoc.setGroovy(true);
-        currentClassDoc.setNameWithTypeArgs(name);
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
         super.visitClass(node);
         SimpleGroovyClassDoc parent = currentClassDoc;
@@ -157,6 +158,33 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private static final Pattern JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
+
+    private String getDocContent(Groovydoc groovydoc) {
+        if (groovydoc == null) return "";
+        String result = groovydoc.getContent();
+        if (result == null) result = "";
+        Matcher m = JAVADOC_COMMENT_PATTERN.matcher(result);
+        if (m.find()) {
+            result = m.group(1).trim();
+        }
+        return result;
+    }
+
+    private void processAnnotations(SimpleGroovyProgramElementDoc element, AnnotatedNode node) {
+        for (AnnotationNode an : node.getAnnotations()) {
+            String name = an.getClassNode().getName();
+            element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, name));
+        }
+    }
+
+    private void processAnnotations(SimpleGroovyParameter param, AnnotatedNode node) {
+        for (AnnotationNode an : node.getAnnotations()) {
+            String name = an.getClassNode().getName();
+            param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, name));
+        }
+    }
+
     @Override
     public void visitConstructor(ConstructorNode node) {
         SimpleGroovyConstructorDoc cons = new SimpleGroovyConstructorDoc(currentClassDoc.simpleTypeName(), currentClassDoc);
@@ -172,6 +200,24 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         setConstructorOrMethodCommon(node, meth);
         currentClassDoc.add(meth);
         processPropertiesFromGetterSetter(meth);
+        super.visitMethod(node);
+        meth.setTypeParameters(genericTypesAsString(node.getGenericsTypes()));
+    }
+
+    private String genericTypesAsString(GenericsType[] genericsTypes) {
+        if (genericsTypes == null) return "";
+        StringBuilder result = new StringBuilder("<");
+        boolean first = true;
+        for (GenericsType genericsType : genericsTypes) {
+            if (!first) {
+                result.append(", ");
+            } else {
+                first = false;
+            }
+            result.append(genericsType.getName());
+        }
+        result.append(">");
+        return result.toString();
     }
 
     private void processPropertiesFromGetterSetter(SimpleGroovyMethodDoc currentMethodDoc) {
@@ -239,11 +285,15 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitProperty(PropertyNode node) {
         String name = node.getName();
-        SimpleGroovyFieldDoc field = new SimpleGroovyFieldDoc(name, currentClassDoc);
-        field.setType(new SimpleGroovyType(makeType(node.getType())));
-        Groovydoc groovydoc = node.getGroovydoc();
-        field.setRawCommentText(groovydoc == null ? "" : groovydoc.getContent());
-        currentClassDoc.addProperty(field);
+        SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
+        fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
+        int mods = node.getField().getModifiers();
+        if (!hasAnno(node.getField(), "PackageScope")) {
+            processModifiers(fieldDoc, node.getField(), mods);
+            Groovydoc groovydoc = node.getGroovydoc();
+            fieldDoc.setRawCommentText(groovydoc == null ? "" : getDocContent(groovydoc));
+            currentClassDoc.addProperty(fieldDoc);
+        }
         super.visitProperty(node);
     }
 
@@ -252,64 +302,80 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitDeclarationExpression(DeclarationExpression expression) {
+        if (currentClassDoc.isScript()) {
+            if (hasAnno(expression, "Field")) {
+                VariableExpression varx = expression.getVariableExpression();
+                SimpleGroovyFieldDoc field = new SimpleGroovyFieldDoc(varx.getName(), currentClassDoc);
+                field.setType(new SimpleGroovyType(makeType(varx.getType())));
+                int mods = varx.getModifiers();
+                processModifiers(field, varx, mods);
+                boolean isProp = (mods & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) == 0;
+                if (isProp) {
+                    currentClassDoc.addProperty(field);
+                } else {
+                    currentClassDoc.add(field);
+                }
+            }
+        }
+        super.visitDeclarationExpression(expression);
+    }
+
+    private void processModifiers(SimpleGroovyProgramElementDoc element, AnnotatedNode node, int mods) {
+        if (Modifier.isStatic(mods)) {
+            element.setStatic(true);
+        }
+        if (hasAnno(node, "PackageScope")) {
+            element.setPackagePrivate(true);
+        } else {
+            if (Modifier.isPublic(mods)) {
+                element.setPublic(true);
+            }
+            if (Modifier.isProtected(mods)) {
+                element.setProtected(true);
+            }
+            if (Modifier.isPrivate(mods)) {
+                element.setPrivate(true);
+            }
+            if (Modifier.isFinal(mods)) {
+                element.setFinal(true);
+            }
+        }
+    }
+
+    @Override
     public void visitField(FieldNode node) {
         String name = node.getName();
-        SimpleGroovyFieldDoc field = new SimpleGroovyFieldDoc(name, currentClassDoc);
-        field.setType(new SimpleGroovyType(makeType(node.getType())));
-        boolean isProp = node.getDeclaringClass().getProperty(name) != null;
-        int mods = node.getModifiers();
-        if (currentClassDoc.isScript() && (mods & (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) == 0) {
-            // handle @Field props
-            isProp = true;
-            currentClassDoc.addProperty(field);
-        }
-        if (!isProp) {
-            if (node.isPublic()) {
-                field.setPublic(true);
-            }
-            if (node.isProtected()) {
-                field.setProtected(true);
-            }
-            if (node.isPrivate()) {
-                field.setPrivate(true);
-            }
-            if (node.isStatic()) {
-                field.setStatic(true);
-            }
-            if (node.isFinal()) {
-                field.setFinal(true);
-            }
-            field.setRawCommentText(node.getGroovydoc().getContent());
-            currentClassDoc.add(field);
-        }
+        SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
+        fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
+        processModifiers(fieldDoc, node, node.getModifiers());
+        processAnnotations(fieldDoc, node);
+        fieldDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
+        currentClassDoc.add(fieldDoc);
         super.visitField(node);
     }
 
     private void setConstructorOrMethodCommon(MethodNode node, SimpleGroovyExecutableMemberDoc methOrCons) {
-        methOrCons.setRawCommentText(node.getGroovydoc().getContent());
-        if (node.isPublic()) {
-            methOrCons.setPublic(true);
-        }
+        methOrCons.setRawCommentText(getDocContent(node.getGroovydoc()));
+        processModifiers(methOrCons, node, node.getModifiers());
+        processAnnotations(methOrCons, node);
         if (node.isAbstract()) {
             methOrCons.setAbstract(true);
-        }
-        if (node.isProtected()) {
-            methOrCons.setProtected(true);
-        }
-        if (node.isPrivate()) {
-            methOrCons.setPrivate(true);
-        }
-        if (node.isStatic()) {
-            methOrCons.setStatic(true);
-        }
-        if (node.isFinal()) {
-            methOrCons.setFinal(true);
         }
         for (Parameter param : node.getParameters()) {
             SimpleGroovyParameter p = new SimpleGroovyParameter(param.getName());
             p.setType(new SimpleGroovyType(makeType(param.getType())));
+            processAnnotations(p, param);
             methOrCons.add(p);
         }
+    }
+
+    private boolean hasAnno(AnnotatedNode node, String annoSuffix) {
+        for (AnnotationNode annotationNode : node.getAnnotations()) {
+            // check name to cover non/resolved cases
+            if (annotationNode.getClassNode().getName().endsWith(annoSuffix)) return true;
+        }
+        return false;
     }
 
     public Map<String, GroovyClassDoc> getGroovyClassDocs() {
