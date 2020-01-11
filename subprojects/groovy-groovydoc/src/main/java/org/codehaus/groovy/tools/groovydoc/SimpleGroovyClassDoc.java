@@ -923,11 +923,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     }
                     if (TAG_TEXT.containsKey(tagname)) {
                         String text = TAG_TEXT.get(tagname);
-                        List<String> contents = savedTags.get(text);
-                        if (contents == null) {
-                            contents = new ArrayList<String>();
-                            savedTags.put(text, contents);
-                        }
+                        List<String> contents = savedTags.computeIfAbsent(text, k -> new ArrayList<String>());
                         contents.add(content);
                         matcher.appendReplacement(sb, "");
                     } else {
