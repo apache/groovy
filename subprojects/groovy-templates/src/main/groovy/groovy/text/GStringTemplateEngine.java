@@ -189,12 +189,10 @@ public class GStringTemplateEngine extends TemplateEngine {
             templateExpressions.append("}}");
 
             // Use a new class loader by default for each class so each class can be independently garbage collected
-            final GroovyClassLoader loader = reuseClassLoader && parentLoader instanceof GroovyClassLoader?(GroovyClassLoader)parentLoader:(
-                    (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                        public Object run() {
-                            return new GroovyClassLoader(parentLoader);
-                        }
-                    }));
+            final GroovyClassLoader loader =
+                    reuseClassLoader && parentLoader instanceof GroovyClassLoader
+                            ? (GroovyClassLoader) parentLoader
+                            : AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
             final Class groovyClass;
             try {
                 groovyClass = loader.parseClass(new GroovyCodeSource(templateExpressions.toString(), "GStringTemplateScript" + counter.incrementAndGet() + ".groovy", "x"));
