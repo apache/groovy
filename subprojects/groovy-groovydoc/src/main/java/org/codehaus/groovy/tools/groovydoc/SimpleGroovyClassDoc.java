@@ -517,11 +517,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         final String[] target = type.split("#");
         String shortClassName = target[0].replaceAll(".*\\.", "");
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
-        String name = (full ? target[0] : shortClassName).replaceAll("#", ".").replace('$', '.');
+        String name = (full ? target[0] : shortClassName).replace('#', '.').replace('$', '.');
 
         // last chance lookup for classes within the current codebase
         if (rootDoc != null) {
-            String slashedName = target[0].replaceAll("\\.", "/");
+            String slashedName = target[0].replace('.', '/');
             GroovyClassDoc doc = rootDoc.classNamed(classDoc, slashedName);
             if (doc != null) {
                 target[0] = doc.getFullPathName(); // if we added a package
@@ -696,7 +696,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         for (String importName : importedClassesAndPackages) {
             String candidate = null;
             if (importName.endsWith("/" + name)) {
-                candidate = importName.replaceAll("/", ".");
+                candidate = importName.replace('/', '.');
             } else if (importName.endsWith("/*")) {
                 candidate = importName.substring(0, importName.length() - 2).replace('/', '.') + "." + name;
             }

@@ -78,7 +78,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     @Override
     public void visit(ImportDeclaration n, Object arg) {
         Optional<Name> qualPath = n.getName().getQualifier();
-        String qual = qualPath.map(value -> value.asString().replaceAll("\\.", "/") + "/").orElse("");
+        String qual = qualPath.map(value -> value.asString().replace('.', '/') + "/").orElse("");
         String id = n.getName().getIdentifier();
         String name = qual + id;
         imports.add(name);
@@ -188,7 +188,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
             parent = currentClassDoc;
             name = parent.name() + "$" + name;
         }
-        currentClassDoc = new SimpleGroovyClassDoc(imports, aliases, name.replaceAll("\\$", "."), links);
+        currentClassDoc = new SimpleGroovyClassDoc(imports, aliases, name.replace('$', '.'), links);
         if (parent != null) {
             parent.addNested(currentClassDoc);
         }
@@ -237,7 +237,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     }
 
     private String withSlashes(String s) {
-        return s.replaceAll("\\.", "/").replaceAll("\\$", ".");
+        return s.replace('.', '/').replace('$', '.');
     }
 
     @Override
