@@ -313,7 +313,7 @@ public class IndyInterface {
         );
     }
 
-    private static <T> T doWithCallSite(MutableCallSite callSite, Object[] arguments, BiFunction<? super CacheableCallSite, ? super Object, T> f) {
+    private static <T> T doWithCallSite(MutableCallSite callSite, Object[] arguments, BiFunction<? super CacheableCallSite, ? super Object, ? extends T> f) {
         if (callSite instanceof CacheableCallSite) {
             CacheableCallSite cacheableCallSite = (CacheableCallSite) callSite;
             Object receiver = arguments[0];
