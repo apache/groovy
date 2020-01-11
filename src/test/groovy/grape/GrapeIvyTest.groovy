@@ -24,6 +24,7 @@ import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.Assume.assumeTrue
 
 final class GrapeIvyTest {
 
@@ -464,6 +465,7 @@ final class GrapeIvyTest {
 
     @Test // GROOVY-9312
     void testResolveSucceedsFromLocalMavenRepository() {
+        assumeTrue System.getProperty('maven.home') != null
         def tempDir = File.createTempDir()
 
         new File(tempDir, 'pom.xml').write '''\
