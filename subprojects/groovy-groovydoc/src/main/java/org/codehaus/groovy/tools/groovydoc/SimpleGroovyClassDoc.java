@@ -555,7 +555,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
         if (isPrimitiveType(name)) return null;
-        GroovyClassDoc groovyClassDoc = null;
+        GroovyClassDoc groovyClassDoc;
         Map<String, GroovyClassDoc> resolvedClasses = null;
         if (rootDoc != null) {
             resolvedClasses = rootDoc.getResolvedClasses();
