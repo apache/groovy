@@ -500,9 +500,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             return "<a href='" + resolveMethodArgs(rootDoc, classDoc, type) + "'>" + (label == null ? type.substring(1) : label) + "</a>";
 
         if (type.endsWith("[]")) {
+            String componentType = type.substring(0, type.length() - 2);
             if (label != null)
-                return getDocUrl(type.substring(0, type.length() - 2) + " " + label, full, links, relativePath, rootDoc, classDoc);
-            return getDocUrl(type.substring(0, type.length() - 2), full, links, relativePath, rootDoc, classDoc) + "[]";
+                return getDocUrl(componentType + " " + label, full, links, relativePath, rootDoc, classDoc);
+            return getDocUrl(componentType, full, links, relativePath, rootDoc, classDoc) + "[]";
         }
 
         if (!type.contains(".") && classDoc != null) {
