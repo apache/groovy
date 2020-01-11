@@ -244,7 +244,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         if (classDoc == null) {
             return;
         }
-        GroovyMethodDoc methods[] = classDoc.methods();
+        GroovyMethodDoc[] methods = classDoc.methods();
 
         //find expected method name
         String expectedMethodName;
