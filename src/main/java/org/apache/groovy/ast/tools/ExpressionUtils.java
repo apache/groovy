@@ -33,7 +33,7 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
@@ -48,25 +48,16 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 
 public final class ExpressionUtils {
-    private static ArrayList<Integer> handledTypes = new ArrayList<Integer>();
 
     private ExpressionUtils() {
-
     }
 
-    static {
-        handledTypes.add(PLUS);
-        handledTypes.add(MINUS);
-        handledTypes.add(MULTIPLY);
-        handledTypes.add(DIVIDE);
-        handledTypes.add(LEFT_SHIFT);
-        handledTypes.add(RIGHT_SHIFT);
-        handledTypes.add(RIGHT_SHIFT_UNSIGNED);
-        handledTypes.add(BITWISE_OR);
-        handledTypes.add(BITWISE_AND);
-        handledTypes.add(BITWISE_XOR);
-        handledTypes.add(POWER);
-    }
+    // NOTE: values are sorted in ascending order
+    private static final int[] HANDLED_TYPES = {
+        PLUS, MINUS, MULTIPLY, DIVIDE, POWER,
+        LEFT_SHIFT, RIGHT_SHIFT, RIGHT_SHIFT_UNSIGNED,
+        BITWISE_OR, BITWISE_AND, BITWISE_XOR,
+    };
 
     /**
      * Turns expressions of the form ConstantExpression(40) + ConstantExpression(2)
@@ -92,9 +83,10 @@ public final class ExpressionUtils {
             }
         } else if (isNumberOrArrayOfNumber(wrapperType, false)) {
             int type = be.getOperation().getType();
-            if (handledTypes.contains(type)) {
+            if (Arrays.binarySearch(HANDLED_TYPES, type) >= 0) {
+                boolean isShift = (type >= LEFT_SHIFT && type <= RIGHT_SHIFT_UNSIGNED);
                 Expression leftX = transformInlineConstants(be.getLeftExpression(), targetType);
-                Expression rightX = transformInlineConstants(be.getRightExpression(), targetType);
+                Expression rightX = transformInlineConstants(be.getRightExpression(), isShift ? ClassHelper.int_TYPE : targetType);
                 if (leftX instanceof ConstantExpression && rightX instanceof ConstantExpression) {
                     Number left = safeNumber((ConstantExpression) leftX);
                     Number right = safeNumber((ConstantExpression) rightX);
@@ -342,10 +334,9 @@ public final class ExpressionUtils {
     }
 
     private static Expression findConstant(FieldNode fn) {
-        if (fn != null && !fn.isEnum() && fn.isStatic() && fn.isFinal()) {
-            if (fn.getInitialValueExpression() instanceof ConstantExpression) {
-                return fn.getInitialValueExpression();
-            }
+        if (fn != null && !fn.isEnum() && fn.isStatic() && fn.isFinal()
+                && fn.getInitialValueExpression() instanceof ConstantExpression) {
+            return fn.getInitialValueExpression();
         }
         return null;
     }
