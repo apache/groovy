@@ -223,8 +223,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private void processPropertiesFromGetterSetter(SimpleGroovyMethodDoc currentMethodDoc) {
         String methodName = currentMethodDoc.name();
         int len = methodName.length();
-        String prefix = null;
-        String propName = null;
+        String prefix;
+        String propName;
         if (len > 3 && methodName.startsWith("get")) {
             prefix = "get";
             propName = methodName.substring(3);
@@ -247,7 +247,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         GroovyMethodDoc methods[] = classDoc.methods();
 
         //find expected method name
-        String expectedMethodName = null;
+        String expectedMethodName;
         if ("set".equals(prefix) && (currentMethodDoc.parameters().length >= 1 && !currentMethodDoc.parameters()[0].typeName().equals("boolean"))) {
             expectedMethodName = "get" + propName;
         } else if ("get".equals(prefix) && !currentMethodDoc.returnType().typeName().equals("boolean")) {
