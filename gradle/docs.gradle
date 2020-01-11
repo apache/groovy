@@ -110,6 +110,7 @@ groovydocAll {
         classpath += sp.groovydoc.classpath
         groovyClasspath += sp.groovydoc.groovyClasspath
     }
+    exclude 'org/codehaus/groovy/testng/TestNgRunner.java' // TODO fix antlr4 groovydoc and remove exclusion
 }
 groovydocAll groovydocBaseSpec
 
