@@ -35,6 +35,7 @@ import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
@@ -162,18 +163,25 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
         }
         n.getExtendedTypes().forEach(et -> {
             if (n.isInterface()) {
-                currentClassDoc.addInterfaceName(et.getNameAsString());
+                currentClassDoc.addInterfaceName(fullName(et));
             } else {
-                currentClassDoc.setSuperClassName(et.getNameAsString());
+                currentClassDoc.setSuperClassName(fullName(et));
             }
         });
         currentClassDoc.setNameWithTypeArgs(currentClassDoc.name() + genericTypesAsString(n.getTypeParameters()));
         n.getImplementedTypes().forEach(classOrInterfaceType ->
-                currentClassDoc.addInterfaceName(classOrInterfaceType.getNameAsString()));
+                currentClassDoc.addInterfaceName(fullName(classOrInterfaceType)));
         super.visit(n, arg);
         if (parent != null) {
             currentClassDoc = parent;
         }
+    }
+
+    private String fullName(ClassOrInterfaceType et) {
+        StringBuilder name = new StringBuilder();
+        et.getScope().ifPresent(sc -> name.append(sc.toString()));
+        name.append(et.getNameAsString());
+        return name.toString();
     }
 
     private String genericTypesAsString(NodeList<TypeParameter> typeParameters) {
@@ -203,15 +211,13 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
 
     private void processAnnotations(SimpleGroovyProgramElementDoc element, NodeWithAnnotations<?> n) {
         for (AnnotationExpr an : n.getAnnotations()) {
-            String name = an.getNameAsString();
-            element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, name));
+            element.addAnnotationRef(new SimpleGroovyAnnotationRef(an.getClass().getName(), an.getNameAsString()));
         }
     }
 
     private void processAnnotations(SimpleGroovyParameter param, NodeWithAnnotations<?> n) {
         for (AnnotationExpr an : n.getAnnotations()) {
-            String name = an.getNameAsString();
-            param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, name));
+            param.addAnnotationRef(new SimpleGroovyAnnotationRef(an.getClass().getName(), an.getNameAsString()));
         }
     }
 
