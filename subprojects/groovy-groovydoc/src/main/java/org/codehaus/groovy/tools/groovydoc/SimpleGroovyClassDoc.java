@@ -588,6 +588,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             if (slashIndex < 1) {
                 doc = resolveInternalClassDocFromImport(rootDoc, name);
                 if (doc != null) return doc;
+                doc = resolveInternalClassDocFromSamePackage(rootDoc, name);
+                if (doc != null) return doc;
                 for (GroovyClassDoc nestedDoc : nested) {
                     if (nestedDoc.name().endsWith("." + name))
                         return nestedDoc;
@@ -678,6 +680,15 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             }
         }
         return null;
+    }
+
+    private GroovyClassDoc resolveInternalClassDocFromSamePackage(GroovyRootDoc rootDoc, String baseName) {
+        if (isPrimitiveType(baseName)) return null;
+        if (baseName.contains(".")) return null;
+        int lastSlash = fullPathName.lastIndexOf("/");
+        if (lastSlash < 0) return null;
+        String pkg = fullPathName.substring(0, lastSlash + 1);
+        return ((SimpleGroovyRootDoc)rootDoc).classNamedExact(pkg + baseName);
     }
 
     private Class resolveExternalClassFromImport(String name) {
