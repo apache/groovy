@@ -24,7 +24,3 @@ dependencies {
     }
     testImplementation project(':groovy-test')
 }
-
-groovydoc {
-    exclude 'org/codehaus/groovy/testng/TestNgRunner.java' // TODO fix antlr4 groovydoc and remove exclusion
-}
