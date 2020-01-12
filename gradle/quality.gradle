@@ -170,13 +170,13 @@ subprojects { sp ->
             break
     }
     rat {
-        inputDir = sp.projectDir.absolutePath
+        inputDir = sp.projectDir
         excludes = [ 'target/**', 'build/**', '.gradle/**', '*.iml', '.classpath', '.project', '.settings/**', 'bin/**' , *extras]
     }
 }
 
 rat {
-    inputDir = projectDir.absolutePath
+    inputDir = projectDir
     excludes = [ 'subprojects/**', // covered above
                  'benchmark/**', // benchmarking files excluded from src zip
                  'config/**',
