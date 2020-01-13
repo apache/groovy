@@ -18,7 +18,7 @@
  */
 dependencies {
     implementation rootProject
-    implementation "com.github.javaparser:javaparser-core:$javaParserVersion"
+    compile "com.github.javaparser:javaparser-core:$javaParserVersion"
     testImplementation rootProject.sourceSets.test.runtimeClasspath
     implementation project(':groovy-templates')
     runtime project(':groovy-docgenerator')
