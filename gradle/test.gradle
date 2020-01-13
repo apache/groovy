@@ -36,6 +36,9 @@ allprojects {
         }
         systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main'
 
+        if (rootProject.targetJavaHome) {
+            executable = "${rootProject.targetJavaHome}/bin/java"
+        }
         forkEvery = 50
         maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
         scanForTestClasses = true

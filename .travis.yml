@@ -23,6 +23,9 @@ install: true
 
 matrix:
   include:
+    - env: BC='legacy' FEATURE='13' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
+      jdk: openjdk11
+
     - env: BC='legacy'
       jdk: openjdk12
 
@@ -37,6 +40,9 @@ matrix:
 
     - env: BC='legacy'
       jdk: oraclejdk8
+
+    - env: BC='indy' FEATURE='13' TARGET_JAVA_HOME="/home/travis/openjdk$FEATURE" LICENSE='GPL'
+      jdk: openjdk11
 
     - env: BC='indy'
       jdk: openjdk12
@@ -58,7 +64,9 @@ before_script:
 
 script:
   - ./gradlew -version
-  - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test; else travis_wait 60 ./gradlew testWithIndy; fi
+  - if [ "$TARGET_JAVA_HOME" != "" ]; then wget https://github.com/sormuras/bach/raw/master/install-jdk.sh -P /tmp/ && chmod 755 /tmp/install-jdk.sh; fi
+  - if [ "$TARGET_JAVA_HOME" != "" ]; then /tmp/install-jdk.sh --target "$TARGET_JAVA_HOME" --workspace "/home/travis/.cache/install-jdk" --feature "$FEATURE" --license "$LICENSE" --cacerts; fi
+  - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test -Ptarget.java.home=$TARGET_JAVA_HOME; else travis_wait 60 ./gradlew testWithIndy -Ptarget.java.home=$TARGET_JAVA_HOME; fi
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching

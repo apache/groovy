@@ -66,6 +66,7 @@ ext.modules = {
     subprojects.findAll{ !['performance', 'binary-compatibility'].contains(it.name) }
 }
 ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
+ext.targetJavaHome = rootProject.hasProperty('target.java.home') ? rootProject.property('target.java.home') : ''
 
 apply from: 'gradle/bad-practices.gradle'
 //apply from: 'gradle/indy.gradle'
