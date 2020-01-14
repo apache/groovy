@@ -47,6 +47,7 @@ options {
     import java.util.HashSet;
     import java.util.Collections;
     import java.util.Arrays;
+    import java.util.stream.IntStream;
 }
 
 @members {
@@ -73,11 +74,14 @@ options {
         super.emit(token);
     }
 
-    private static final Set<Integer> REGEX_CHECK_SET =
-                                            Collections.unmodifiableSet(
-                                                new HashSet<>(Arrays.asList(Identifier, CapitalizedIdentifier, NullLiteral, BooleanLiteral, THIS, RPAREN, RBRACK, RBRACE, IntegerLiteral, FloatingPointLiteral, StringLiteral, GStringEnd, INC, DEC)));
+    private static final int[] REGEX_CHECK_ARRAY =
+                                    IntStream.of(
+                                        Identifier, CapitalizedIdentifier, NullLiteral, BooleanLiteral, THIS, RPAREN, RBRACK, RBRACE,
+                                        IntegerLiteral, FloatingPointLiteral, StringLiteral, GStringEnd, INC, DEC
+                                    ).sorted().toArray();
+
     private boolean isRegexAllowed() {
-        if (REGEX_CHECK_SET.contains(this.lastTokenType)) {
+        if (Arrays.binarySearch(REGEX_CHECK_ARRAY, this.lastTokenType) >= 0) {
             return false;
         }
 
