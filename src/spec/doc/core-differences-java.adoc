@@ -186,7 +186,7 @@ In Java you can do this:
 include::{projectdir}/src/spec/test/DifferencesFromJavaTest.groovy[tags=innerclass_3_java,indent=0]
 ----------------------------------
 
-Groovy doesn't support the `y.new X()` syntax. Instead, you have to write `new X(y)`, like in the code below:
+Before 3.0.0, Groovy doesn't support the `y.new X()` syntax. Instead, you have to write `new X(y)`, like in the code below:
 
 [source,groovy]
 ----------------------------------
@@ -200,6 +200,9 @@ value null. Basically the same rules apply to calling a constructor.
 There is a danger that you will write new X() instead of new X(this) for
 example. Since this might also be the regular way we have not yet found
 a good way to prevent this problem.
+
+[NOTE]
+Groovy 3.0.0 supports Java style syntax for creating instances of non-static inner classes.
 
 == Lambda expressions and the method reference operator
 
