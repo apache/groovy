@@ -144,6 +144,22 @@ include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_class2,indent=0]
 
 Note that the class `Inner2` is defined only to provide an implementation of the method `run` to class `Outer2`. Anonymous inner classes help to eliminate verbosity in this case.
 
+Since Groovy 3.0.0, Java syntax for non-static inner class instantiation is now supported, for example:
+
+[source,groovy]
+--------------------------------------
+class Computer {
+    class Cpu {
+        int coreNumber
+
+        Cpu(int coreNumber) {
+            this.coreNumber = coreNumber
+        }
+    }
+}
+
+assert 4 == new Computer().new Cpu(4).coreNumber
+--------------------------------------
 
 ===== Anonymous inner class
 
