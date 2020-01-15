@@ -37,7 +37,7 @@
     <ul>
         <li><a href="primitive-types/package-frame.html" title="Primitive types" target="packageFrame">Primitive types</a></li>
         <% packages.grep().each { %>
-        <li><a href="${it.name.replaceAll('\\.', '/')}/package-frame.html" title="${it.name}" target="packageFrame">${it.name}</a></li>
+        <li><a href="${it.name.replace('.', '/')}/package-frame.html" title="${it.name}" target="packageFrame">${it.name}</a></li>
         <% } %>
     </ul>
 </div>

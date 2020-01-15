@@ -56,7 +56,7 @@
         <h2><b>${indexMapEntry.key}</b></h2>
         <dl>
             <% indexMapEntry.value.each { it -> %>
-            <% final String classUrl = it.docType.fullyQualifiedClassName.replaceAll('\\.','/') + '.html' %>
+            <% final String classUrl = it.docType.fullyQualifiedClassName.replace('.','/') + '.html' %>
             <% if (it.docMethod) { %>
             <% final String methodUrl = classUrl + '#' + it.docMethod.name + '(' + it.docMethod.parametersSignature + ')' %>
             <dt><a href="${methodUrl}"><b>${it.docMethod.name}(${it.docMethod.parametersSignature})</b></a> - Method in ${it.docType.interface ? 'interface' : 'class'} ${it.docType.packageName}.<a href="${classUrl}">${it.docType.simpleClassName}</a></dt>

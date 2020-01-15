@@ -487,7 +487,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     sb.append("&gt;");
                     return sb.toString();
                 }
-                return type.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+                return type.replace("<", "&lt;").replace(">", "&gt;");
             }
         }
         Matcher matcher = REF_LABEL_REGEX.matcher(type);
@@ -989,11 +989,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     public static String encodeSpecialSymbols(String text) {
-        return Matcher.quoteReplacement(text.replaceAll("@", "&at;"));
+        return Matcher.quoteReplacement(text.replace("@", "&at;"));
     }
 
     public static String decodeSpecialSymbols(String text) {
-        return text.replaceAll("&at;", "@");
+        return text.replace("&at;", "@");
     }
 
     public void setNameWithTypeArgs(String nameWithTypeArgs) {
