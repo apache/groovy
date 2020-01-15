@@ -178,6 +178,44 @@ Groovy supports the standard Java / C for loop:
 include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=classic_for_loop_example,indent=0]
 ----
 
+===== Enhanced classic Java-style for loop
+
+The more elaborate form of Java's classic for loop with comma-separate expressions
+is now supported. Example:
+
+[source,groovy]
+--------------------------------------
+def facts = []
+def count = 5
+for (int fact = 1, i = 1; i <= count; i++, fact *= i) {
+    facts << fact
+}
+assert facts == [1, 2, 6, 24, 120]
+--------------------------------------
+
+===== Multi-assignment in combination with for loop
+
+Groovy has supported multi-assignment statements since Groovy 1.6:
+
+[source,groovy]
+--------------------------------------
+// multi-assignment with types
+def (String x, int y) = ['foo', 42]
+assert "$x $y" == 'foo 42'
+--------------------------------------
+
+These can now appear in for loops:
+
+[source,groovy]
+--------------------------------------
+// multi-assignment goes loopy
+def baNums = []
+for (def (String u, int v) = ['bar', 42]; v < 45; u++, v++) {
+    baNums << "$u $v"
+}
+assert baNums == ['bar 42', 'bas 43', 'bat 44']
+--------------------------------------
+
 ===== for in loop
 
 The for loop in Groovy is much simpler and works with any kind of array, collection, Map, etc.
@@ -188,8 +226,7 @@ include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=groovy_for_loop_ex
 ----
 
 [NOTE]
-Groovy also supports the Java colon variation with colons: `for (char c : text) {}`,
-where the type of the variable is mandatory.
+Groovy also supports the Java colon variation with colons: `for (char c : text) {}`
 
 ===== while loop
 
@@ -199,6 +236,22 @@ Groovy supports the usual while {...} loops like Java:
 ----
 include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=while_loop_example,indent=0]
 ----
+
+===== do/while loop
+
+Java's class do/while loop is now supported. Example:
+
+
+[source,groovy]
+--------------------------------------
+// classic Java-style do..while loop
+def count = 5
+def fact = 1
+do {
+    fact *= count--
+} while(count > 1)
+assert fact == 120
+--------------------------------------
 
 ==== Exception handling
 
