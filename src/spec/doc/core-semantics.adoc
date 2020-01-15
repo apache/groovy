@@ -288,6 +288,63 @@ try {
 }
 ----
 
+==== ARM Try with resources
+
+Groovy often provides better alternatives to Java 7's `try`-with-resources statement for Automatic Resource Management (ARM).
+That syntax is now supported for Java programmers migrating to Groovy and still wanting to use the old style:
+
+[source,groovy]
+--------------------------------------
+class FromResource extends ByteArrayInputStream {
+    @Override
+    void close() throws IOException {
+        super.close()
+        println "FromResource closing"
+    }
+
+    FromResource(String input) {
+        super(input.toLowerCase().bytes)
+    }
+}
+
+class ToResource extends ByteArrayOutputStream {
+    @Override
+    void close() throws IOException {
+        super.close()
+        println "ToResource closing"
+    }
+}
+
+def wrestle(s) {
+    try (
+            FromResource from = new FromResource(s)
+            ToResource to = new ToResource()
+    ) {
+        to << from
+        return to.toString()
+    }
+}
+
+def wrestle2(s) {
+    FromResource from = new FromResource(s)
+    try (from; ToResource to = new ToResource()) { // Enhanced try-with-resources in Java 9+
+        to << from
+        return to.toString()
+    }
+}
+
+assert wrestle("ARM was here!").contains('arm')
+assert wrestle2("ARM was here!").contains('arm')
+--------------------------------------
+Which yields the following output:
+--------------------------------------
+ToResource closing
+FromResource closing
+ToResource closing
+FromResource closing
+--------------------------------------
+
+
 === Power assertion
 
 Unlike Java with which Groovy shares the `assert` keyword, the latter in Groovy behaves very differently. First of all,
