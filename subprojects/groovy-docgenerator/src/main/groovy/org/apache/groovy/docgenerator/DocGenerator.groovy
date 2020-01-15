@@ -529,10 +529,7 @@ class DocGenerator {
         }
 
         private static String filePathOf(String packageName) {
-            def fileSep = File.separator
-            // need to escape separator on windows for regex's sake
-            if (fileSep == '\\') fileSep *= 2
-            return packageName.replaceAll(/\./, fileSep)
+            return packageName.replace('.', File.separator)
         }
 
         static File sourceFileOf(String pathOrClassName) {

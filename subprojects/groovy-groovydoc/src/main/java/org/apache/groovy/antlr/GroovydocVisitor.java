@@ -92,13 +92,13 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             String name = iNode.getClassName();
             imports.add(name);
             if (iNode.getAlias() != null && !iNode.getAlias().isEmpty()) {
-                aliases.put(iNode.getAlias(), name.replaceAll("\\.", "/"));
+                aliases.put(iNode.getAlias(), name.replace('.', '/'));
             }
         }
         String name = node.getNameWithoutPackage();
 
         if (node instanceof InnerClassNode) {
-            name = name.replaceAll("\\$", ".");
+            name = name.replace('$', '.');
         }
         currentClassDoc = new SimpleGroovyClassDoc(imports, aliases, name, links);
         if (node.isEnum()) {
@@ -298,7 +298,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     private String makeType(ClassNode node) {
-        return node.getName().replaceAll("\\.", "/").replaceAll("\\$", ".");
+        return node.getName().replace('.', '/').replace('$', '.');
     }
 
     @Override

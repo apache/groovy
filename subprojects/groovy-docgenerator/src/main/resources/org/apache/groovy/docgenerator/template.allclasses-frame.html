@@ -31,7 +31,7 @@
     <h2 title="All Classes">All Classes</h2>
     <ul>
         <% docTypes.each { docType -> %>
-        <li><a href="${docType.fullyQualifiedClassName.replaceAll(/\./, '/')}.html" title="${docType.interface ? 'interface' : 'class'} in ${docType.packageName}"  target="classFrame">
+        <li><a href="${docType.fullyQualifiedClassName.replace('.', '/')}.html" title="${docType.interface ? 'interface' : 'class'} in ${docType.packageName}"  target="classFrame">
             <% if (docType.interface) { %>
             <i>${docType.simpleClassName}</i>
             <% } else { %>
