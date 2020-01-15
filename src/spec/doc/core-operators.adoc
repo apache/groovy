@@ -140,6 +140,12 @@ The following operators are available:
 
 | `>=`
 | greater than or equal
+
+| `===`
+| identical (Since Groovy 3.0.0)
+
+| `!==`
+| not identical (Since Groovy 3.0.0)
 |====
 
 Here are some examples of simple number comparisons using these operators:
@@ -148,6 +154,28 @@ Here are some examples of simple number comparisons using these operators:
 ----
 include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=simple_relational_op,indent=0]
 ----
+
+Both `===` and `!==` are supported which are the same as calling the `is()` method,
+and negating a call to the `is()` method respectively.
+
+[source,groovy]
+--------------------------------------
+import groovy.transform.EqualsAndHashCode
+
+@EqualsAndHashCode
+class Creature { String type }
+
+def cat = new Creature(type: 'cat')
+def copyCat = cat
+def lion = new Creature(type: 'cat')
+
+assert cat.equals(lion) // Java logical equality
+assert cat == lion      // Groovy shorthand operator
+
+assert cat.is(copyCat)  // Groovy identity
+assert cat === copyCat  // operator shorthand
+assert cat !== lion     // negated operator shorthand
+--------------------------------------
 
 == Logical operators
 
@@ -285,6 +313,28 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=conditional_op_elv
 
 Usage of the Elvis operator reduces the verbosity of your code and reduces the risks of errors in case of refactorings,
 by removing the need to duplicate the expression which is tested in both the condition and the positive return value.
+
+=== Elvis assignment operator
+
+Groovy 3.0.0 introduces the Elvis operator, for example:
+
+[source,groovy]
+--------------------------------------
+import groovy.transform.ToString
+
+@ToString
+class Element {
+    String name
+    int atomicNumber
+}
+
+def he = new Element(name: 'Helium')
+he.with {
+    name = name ?: 'Hydrogen'   // existing Elvis operator
+    atomicNumber ?= 2           // new Elvis assignment shorthand
+}
+assert he.toString() == 'Element(Helium, 2)'
+--------------------------------------
 
 == Object operators
 
@@ -651,6 +701,34 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=subscript_destruct
 <6> we can use the subscript operator to write to a property thanks to the delegation to `putAt`
 <7> and check that it's really the property `name` which was changed
 
+=== Safe index operator
+
+Groovy 3.0.0 introduces safe indexing operator, i.e. `?[]`, which is similar to `?.`. For example:
+
+[source,groovy]
+--------------------------------------
+String[] array = ['a', 'b']
+assert 'b' == array?[1]      // get using normal array index
+array?[1] = 'c'              // set using normal array index
+assert 'c' == array?[1]
+
+array = null
+assert null == array?[1]     // return null for all index values
+array?[1] = 'c'              // quietly ignore attempt to set value
+assert null == array?[1]
+
+def personInfo = [name: 'Daniel.Sun', location: 'Shanghai']
+assert 'Daniel.Sun' == personInfo?['name']      // get using normal map index
+personInfo?['name'] = 'sunlan'                  // set using normal map index
+assert 'sunlan' == personInfo?['name']
+
+personInfo = null
+assert null == personInfo?['name']              // return null for all map values
+personInfo?['name'] = 'sunlan'                  // quietly ignore attempt to set value
+assert null == personInfo?['name']
+--------------------------------------
+
+
 === Membership operator
 
 The membership operator (`in`) is equivalent to calling the `isCase` method. In the context of a `List`, it is equivalent
@@ -746,14 +824,14 @@ The table below lists all groovy operators in order of precedence.
 |   | `.` &#160; `.&` &#160; `.@` | member access, method closure, field/attribute access
 |   | `?.` &#160; `\*` &#160; `*.` &#160; `*:` | safe dereferencing, spread, spread-dot, spread-map
 |   | `~` &#160; `!` &#160; `(type)` | bitwise negate/pattern, not, typecast
-|   | `[]` &#160; `++` &#160; `--` | list/map/array index, post inc/decrement
+|   | `[]` &#160; `?[]` &#160; `++` &#160; `--` | list/map/array (safe) index, post inc/decrement
 | 2 | `**` | power
 | 3 | `++` &#160; `--` &#160; `+` &#160; `-` | pre inc/decrement, unary plus, unary minus
 | 4 | `*` &#160; `/` &#160; `%` | multiply, div, remainder
 | 5 | `+` &#160; `-` | addition, subtraction
 | 6 | `<<` &#160; `>>` &#160; `>>>` &#160; `..` &#160; `..<` | left/right (unsigned) shift, inclusive/exclusive range
-| 7 | `<` &#160; `\<=` &#160; `>` &#160; `>=` &#160; `in` &#160; `instanceof` &#160; `as` | less/greater than/or equal, in, instanceof, type coercion
-| 8 | `==` &#160; `!=` &#160; `pass:[<=>]` | equals, not equals, compare to
+| 7 | `<` &#160; `\<=` &#160; `>` &#160; `>=` &#160; `in` &#160; `!in` &#160; `instanceof` &#160; `!instanceof` &#160; `as` | less/greater than/or equal, in, not in, instanceof, not instanceof, type coercion
+| 8 | `==` &#160; `!=` &#160; `pass:[<=>]` &#160; `===` &#160; `!==` | equals, not equals, compare to, identical to, not identical to
 |   | `=~` &#160; `==~` | regex find, regex match
 | 9 | `&` | binary/bitwise and
 | 10 | `^` | binary/bitwise xor
@@ -763,7 +841,7 @@ The table below lists all groovy operators in order of precedence.
 | 14 | `? :` | ternary conditional
 |    | `?:` | elvis operator
 | 15 | `=` &#160; `\**=` &#160; `*=` &#160; `/=` &#160; `%=` &#160; `+=` &#160; `-=` &#160; +
-`pass:[<<=]` &#160; `>>=` &#160; `>>>=` &#160; `&=` &#160; `^=` &#160; `\|=` | various assignments
+`pass:[<<=]` &#160; `>>=` &#160; `>>>=` &#160; `&=` &#160; `^=` &#160; `\|=` &#160; &#160; `?=` | various assignments
 |======================
 
 [[Operator-Overloading]]
