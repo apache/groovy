@@ -70,6 +70,31 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=groovydoc_comment,ind
 Groovydoc follows the same conventions as Java's own Javadoc.
 So you'll be able to use the same tags as with Javadoc.
 
+In addition, Groovy supports *Runtime Groovydoc* since 3.0.0, i.e. Groovydoc can be retained at runtime.
+
+NOTE: Runtime Groovydoc is disabled by default. It can be enabled by adding JVM option `-Dgroovy.attach.runtime.groovydoc=true`
+
+The Runtime Groovydoc starts with `/\**@` and ends with `*/`, for example:
+
+[source,groovy]
+----
+/**@
+ * Some class groovydoc for Foo
+ */
+class Foo {
+    /**@
+     * Some method groovydoc for bar
+     */
+    void bar() {
+    }
+}
+
+assert Foo.class.groovydoc.content.contains('Some class groovydoc for Foo') // <1>
+assert Foo.class.getMethod('bar', new Class[0]).groovydoc.content.contains('Some method groovydoc for bar') // <2>
+----
+<1> Get the runtime groovydoc for class `Foo`
+<2> Get the runtime groovydoc for method `bar`
+
 === Shebang line
 
 Beside the single-line comment, there is a special line comment, often called the _shebang_ line understood by UNIX systems
