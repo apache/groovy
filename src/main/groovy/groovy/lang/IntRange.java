@@ -219,6 +219,10 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
         if (inclusive == null) {
             throw new IllegalStateException("Should not call subListBorders on a non-inclusive aware IntRange");
         }
+        return subListBorders(from, to, inclusive, size);
+    }
+
+    static RangeInfo subListBorders(int from, int to, boolean inclusive, int size) {
         int tempFrom = from;
         if (tempFrom < 0) {
             tempFrom += size;

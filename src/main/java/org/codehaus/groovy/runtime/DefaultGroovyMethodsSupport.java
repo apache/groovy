@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.EmptyRange;
 import groovy.lang.IntRange;
+import groovy.lang.NumberRange;
 import groovy.lang.Range;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -73,7 +74,10 @@ public class DefaultGroovyMethodsSupport {
     // helper method for getAt and putAt
     protected static RangeInfo subListBorders(int size, Range range) {
         if (range instanceof IntRange) {
-            return ((IntRange)range).subListBorders(size);
+            return ((IntRange) range).subListBorders(size);
+        }
+        if (range instanceof NumberRange) {
+            return ((NumberRange) range).subListBorders(size);
         }
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);

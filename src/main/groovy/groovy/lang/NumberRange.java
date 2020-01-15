@@ -21,6 +21,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
+import org.codehaus.groovy.runtime.RangeInfo;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -174,6 +175,20 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         this.to = (Comparable) tempTo;
         this.stepSize = stepSize == null ? 1 : stepSize;
         this.inclusive = inclusive;
+    }
+
+    /**
+     * A method for determining from and to information when using this IntRange to index an aggregate object of the specified size.
+     * Normally only used internally within Groovy but useful if adding range indexing support for your own aggregates.
+     *
+     * @param size the size of the aggregate being indexed
+     * @return the calculated range information (with 1 added to the to value, ready for providing to subList
+     */
+    public RangeInfo subListBorders(int size) {
+        if (stepSize.intValue() != 1) {
+            throw new IllegalStateException("Step must be 1 when used by subList!");
+        }
+        return IntRange.subListBorders(((Number) from).intValue(), ((Number) to).intValue(), inclusive, size);
     }
 
     /**
