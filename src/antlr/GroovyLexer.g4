@@ -38,7 +38,6 @@ options {
 }
 
 @header {
-    import static org.apache.groovy.parser.antlr4.SemanticPredicates.*;
     import java.util.Deque;
     import java.util.ArrayDeque;
     import java.util.Map;
@@ -48,6 +47,8 @@ options {
     import java.util.Collections;
     import java.util.Arrays;
     import java.util.stream.IntStream;
+    import org.apache.groovy.util.Maps;
+    import static org.apache.groovy.parser.antlr4.SemanticPredicates.*;
 }
 
 @members {
@@ -139,13 +140,12 @@ options {
         }
     }
 
-    private static final Map<String, String> PAREN_MAP = Collections.unmodifiableMap(new HashMap<String, String>() {
-        {
-            put("(", ")");
-            put("[", "]");
-            put("{", "}");
-        }
-    });
+    private static final Map<String, String> PAREN_MAP =
+        Maps.of(
+            "(", ")",
+            "[", "]",
+            "{", "}"
+        );
 
     protected void enterParenCallback(String text) {}
 
@@ -299,7 +299,8 @@ GStringPathPart
 RollBackOne
     :   . {
             // a trick to handle GStrings followed by EOF properly
-            if (EOF == _input.LA(1) && ('"' == _input.LA(-1) || '/' == _input.LA(-1))) {
+            int readChar = _input.LA(-1);
+            if (EOF == _input.LA(1) && ('"' == readChar || '/' == readChar)) {
                 setType(GStringEnd);
             } else {
                 setChannel(HIDDEN);
