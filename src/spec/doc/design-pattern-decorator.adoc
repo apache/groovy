@@ -227,7 +227,8 @@ You may have to adjust your `logging.properties` file for messages at log level 
 
 == Asynchronous Decorators using GPars
 
-Using the example code in http://www.cs.iastate.edu/~design/projects/panini/docs/starting.shtml[Panini] for inspiration. Here is a Groovy version that avoids using an `@AddedBehavior` annotation at the expense of not having as general an algorithm for selecting the methods to decorate. This isn't a limitation of the particular approach chosen but just a simplification for illustrative purposes (but don't assume below is an exact equivalent).
+The following example is inspired by some of the early example code for the http://design.cs.iastate.edu/~panini/[Panini] programming language.
+These days, you'll see this style used with async functions in JavaScript.
 
 [source,groovy]
 ----
