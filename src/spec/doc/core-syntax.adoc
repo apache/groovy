@@ -1098,6 +1098,31 @@ include::{projectdir}/src/spec/test/SyntaxTest.groovy[tags=array_3,indent=0]
 Java's array initializer notation is not supported by Groovy, 
 as the curly braces can be misinterpreted with the notation of Groovy closures.
 
+==== Java-style array initialization
+
+Groovy has always supported literal list/array definitions using square brackets
+and has avoided Java-style curly braces so as not to conflict with closure definitions.
+In the case where the curly braces come immediately after an array type declaration however,
+there is no ambiguity with closure definitions, so the Java style is now also supported.
+
+Examples:
+
+[source,groovy]
+--------------------------------------
+def primes = new int[] {2, 3, 5, 7, 11}
+assert primes.size() == 5 && primes.sum() == 28
+assert primes.class.name == '[I'
+
+def pets = new String[] {'cat', 'dog'}
+assert pets.size() == 2 && pets.sum() == 'catdog'
+assert pets.class.name == '[Ljava.lang.String;'
+
+// traditional Groovy alternative still supported
+String[] groovyBooks = [ 'Groovy in Action', 'Making Java Groovy' ]
+assert groovyBooks.every{ it.contains('Groovy') }
+--------------------------------------
+
+
 == Maps
 
 Sometimes called dictionaries or associative arrays in other languages, Groovy features maps.
