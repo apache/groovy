@@ -19,10 +19,7 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
-import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 public interface GroovyDocParserI {
