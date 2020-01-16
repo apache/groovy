@@ -663,7 +663,7 @@ public class InvokerHelper {
         if (arguments instanceof String) {
             if (verbose) {
                 String arg = escapeBackslashes((String) arguments)
-                        .replaceAll("'", "\\\\'");    // single quotation mark
+                        .replace("'", "\\'");    // single quotation mark
                 return "'" + arg + "'";
             } else {
                 return (String) arguments;
@@ -687,9 +687,9 @@ public class InvokerHelper {
         return orig
                 .replace("\\", "\\\\")           // backslash
                 .replace("\n", "\\n")            // line feed
-                .replaceAll("\\r", "\\\\r")      // carriage return
-                .replaceAll("\\t", "\\\\t")      // tab
-                .replaceAll("\\f", "\\\\f");     // form feed
+                .replace("\r", "\\r")            // carriage return
+                .replace("\t", "\\t")            // tab
+                .replace("\f", "\\f");           // form feed
     }
 
     private static String handleFormattingException(Object item, Exception ex) {

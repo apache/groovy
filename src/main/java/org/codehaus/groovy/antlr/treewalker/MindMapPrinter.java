@@ -368,9 +368,9 @@ public class MindMapPrinter extends VisitorAdapter {
         }
         name = name.replace('"',' ');
         name = name.replace('\'',' ');
-        name = name.replaceAll("&","&amp;");
-        name = name.replaceAll("<","&lt;");
-        name = name.replaceAll(">","&gt;");
+        name = name.replace("&","&amp;");
+        name = name.replace("<","&lt;");
+        name = name.replace(">","&gt;");
         name = name.trim();
         return name;
     }
