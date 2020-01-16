@@ -113,7 +113,7 @@ public class GenericsType extends ASTNode {
                 ret.append(genericsBounds(theType.getOuterClass(), new HashSet<>()));
             }
             ret.append('.');
-            ret.append(theType.getName().substring(parentClassNodeName.length() + 1));
+            ret.append(theType.getName(), parentClassNodeName.length() + 1, theType.getName().length());
         } else {
             ret.append(theType.getName());
         }

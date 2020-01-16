@@ -127,7 +127,7 @@ class ActionFactory extends AbstractFactory {
         }
         StringBuffer buffer = new StringBuffer(text.length())
         buffer.append(Character.toUpperCase(ch))
-        buffer.append(text.substring(1))
+        buffer.append(text, 1, text.length())
         return buffer.toString()
     }
 

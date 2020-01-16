@@ -1153,7 +1153,7 @@ public class Groovyc extends MatchingTask {
                 sb.append(File.pathSeparatorChar);
             }
             if (next.startsWith(baseDir)) {
-                sb.append(".").append(next.substring(baseDir.length()));
+                sb.append(".").append(next, baseDir.length(), next.length());
             } else {
                 sb.append(next);
             }
