@@ -18,6 +18,17 @@
  */
 import org.gradle.util.GradleVersion
 
+plugins {
+    id "com.gradle.enterprise" version "3.1.1"
+}
+
+gradleEnterprise {
+    buildScan {
+        termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+        apply from: 'gradle/build-scans.gradle'
+    }
+}
+
 def subprojects = ['groovy-ant',
         'groovy-bsf',
         'groovy-cli-commons',
