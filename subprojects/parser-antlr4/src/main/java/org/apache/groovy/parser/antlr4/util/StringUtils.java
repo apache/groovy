@@ -216,7 +216,7 @@ public class StringUtils {
 			start = end + replLength;
 			end = text.indexOf(searchString, start);
 		}
-		buf.append(text.substring(start));
+		buf.append(text, start, text.length());
 		return buf.toString();
 	}
 
