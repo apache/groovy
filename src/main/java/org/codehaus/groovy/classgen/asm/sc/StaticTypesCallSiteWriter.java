@@ -739,11 +739,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 boolean acceptAnyMethod =
                         MAP_TYPE.equals(rType) || rType.implementsInterface(MAP_TYPE)
                         || LIST_TYPE.equals(rType) || rType.implementsInterface(LIST_TYPE);
-                List<MethodNode> nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
+                List<MethodNode> nodes = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
                 if (nodes.isEmpty()) {
                     // retry with raw types
                     rType = rType.getPlainNodeReference();
-                    nodes = StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
+                    nodes = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
                 }
                 nodes = StaticTypeCheckingSupport.chooseBestMethod(rType, nodes, args);
                 if (nodes.size() == 1 || (nodes.size() > 1 && acceptAnyMethod)) {

@@ -244,6 +244,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.choose
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
@@ -1587,8 +1588,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (isPrimitiveType(testClass))
                 dgmReceivers.add(getWrapper(testClass));
             for (ClassNode dgmReceiver : dgmReceivers) {
-                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getTransformLoader(), dgmReceiver, "get" + capName, ClassNode.EMPTY_ARRAY);
-                for (MethodNode method : findDGMMethodsByNameAndArguments(getTransformLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
+                List<MethodNode> methods = findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "get" + capName, ClassNode.EMPTY_ARRAY);
+                for (MethodNode method : findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), dgmReceiver, "is" + capName, ClassNode.EMPTY_ARRAY)) {
                     if (Boolean_TYPE.equals(getWrapper(method.getReturnType()))) methods.add(method);
                 }
                 if (!methods.isEmpty()) {
@@ -2874,8 +2875,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClosureSignatureHint hintInstance = hint.getDeclaredConstructor().newInstance();
             closureSignatures = hintInstance.getClosureSignatures(
                     selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod,
-                    typeCheckingContext.source,
-                    typeCheckingContext.compilationUnit,
+                    typeCheckingContext.getSource(),
+                    typeCheckingContext.getCompilationUnit(),
                     convertToStringArray(options), expression);
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GroovyBugError(e);
@@ -2896,8 +2897,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     arguments,
                     expression,
                     selectedMethod instanceof ExtensionMethodNode ? ((ExtensionMethodNode) selectedMethod).getExtensionMethodNode() : selectedMethod,
-                    typeCheckingContext.source,
-                    typeCheckingContext.compilationUnit,
+                    typeCheckingContext.getSource(),
+                    typeCheckingContext.getCompilationUnit(),
                     convertToStringArray(options));
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new GroovyBugError(e);
@@ -2905,8 +2906,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassLoader getTransformLoader() {
-        CompilationUnit compilationUnit = typeCheckingContext.getCompilationUnit();
-        return compilationUnit != null ? compilationUnit.getTransformLoader() : getSourceUnit().getClassLoader();
+        return Optional.ofNullable(typeCheckingContext.getCompilationUnit()).map(CompilationUnit::getTransformLoader).orElseGet(() -> getSourceUnit().getClassLoader());
     }
 
     private void doInferClosureParameterTypes(final ClassNode receiver, final Expression arguments, final ClosureExpression expression, final MethodNode selectedMethod, final Expression hintClass, final Expression resolverClass, final Expression options) {
@@ -4665,9 +4665,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             collectAllInterfaceMethodsByName(receiver, name, methods);
         }
 
-        // lookup in DGM methods too
-        findDGMMethodsByNameAndArguments(getTransformLoader(), receiver, name, args, methods);
-        methods = filterMethodsByVisibility(methods);
+        if (!"<init>".equals(name) && !"<clinit>".equals(name)) {
+            // lookup in DGM methods too
+            findDGMMethodsByNameAndArguments(getSourceUnit().getClassLoader(), receiver, name, args, methods);
+        }
+        methods = filterMethodsByVisibility(methods, typeCheckingContext.getEnclosingClassNode());
         List<MethodNode> chosen = chooseBestMethod(receiver, methods, args);
         if (!chosen.isEmpty()) return chosen;
 
@@ -4692,10 +4694,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         return EMPTY_METHODNODE_LIST;
-    }
-
-    private List<MethodNode> filterMethodsByVisibility(final List<MethodNode> methodNodeList) {
-        return StaticTypeCheckingSupport.filterMethodsByVisibility(methodNodeList, typeCheckingContext.getEnclosingClassNode());
     }
 
     /**
