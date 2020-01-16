@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
@@ -223,7 +224,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 
                 final Entry entry = (Entry) o;
 
-                if (groovyClass != null ? !groovyClass.equals(entry.groovyClass) : entry.groovyClass != null)
+                if (!Objects.equals(groovyClass, entry.groovyClass))
                     return false;
                 return name.equals(entry.name);
             }
