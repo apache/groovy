@@ -163,7 +163,7 @@ public class SmartDocumentFilter extends DocumentFilter {
 
     private String replaceMetaCharacters(String string) {
         // just in case remove carriage returns
-        string = string.replaceAll("\\t", TAB_REPLACEMENT);
+        string = string.replace("\\t", TAB_REPLACEMENT);
         return string;
     }
 
