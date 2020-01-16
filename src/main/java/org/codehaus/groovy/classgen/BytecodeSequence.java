@@ -66,7 +66,7 @@ public class BytecodeSequence extends Statement {
             return;
         }
         for (BytecodeInstruction instruction : instructions) {
-            Object part = (Object) instruction;
+            Object part = instruction;
             if (part instanceof ASTNode) {
                 ((ASTNode) part).visit(visitor);
             }

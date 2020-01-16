@@ -127,7 +127,7 @@ public class ImmutablePropertyUtils {
                 args(
                         fieldExpr,
                         constX("clone"),
-                        new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), Collections.<Expression>emptyList())
+                        new ArrayExpression(ClassHelper.OBJECT_TYPE.makeArray(), Collections.emptyList())
                 )
         );
         return castX(type, smce);

@@ -43,7 +43,7 @@ public final class Weighers {
   public static <K, V> EntryWeigher<K, V> asEntryWeigher(
       final org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weigher<? super V> weigher) {
     return (weigher == singleton())
-        ? Weighers.<K, V>entrySingleton()
+        ? Weighers.entrySingleton()
         : new EntryWeigherView<K, V>(weigher);
   }
 

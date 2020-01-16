@@ -28,7 +28,7 @@ import org.apache.groovy.lang.annotation.Incubating;
 @Incubating
 public class UncheckedThrow {
     public static void rethrow( final Throwable checkedException ) {
-        UncheckedThrow.<RuntimeException>thrownInsteadOf( checkedException );
+        UncheckedThrow.thrownInsteadOf( checkedException );
     }
     @SuppressWarnings("unchecked")
     private static <T extends Throwable> void thrownInsteadOf(Throwable t) throws T {

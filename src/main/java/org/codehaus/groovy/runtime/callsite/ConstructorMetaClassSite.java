@@ -35,7 +35,7 @@ public class ConstructorMetaClassSite extends MetaClassSite {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
         } else {
-          return CallSiteArray.defaultCallConstructor(this, (Class)receiver, args);
+          return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
 }

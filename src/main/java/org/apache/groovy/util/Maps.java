@@ -5815,7 +5815,7 @@ public class Maps {
             resultMap.put(value, entry.getKey());
         }
 
-        return Collections.<V, K>unmodifiableMap(resultMap);
+        return Collections.unmodifiableMap(resultMap);
     }
 
     private Maps() {}

@@ -744,10 +744,7 @@ public class MetaClassHelper {
                     || classToTransformFrom == BigInteger.class)
                 return true;
         } else if (classToTransformTo == BigInteger.class) {
-            if (classToTransformFrom == Integer.class
-                    || classToTransformFrom == Long.class
-                    || classToTransformFrom == Short.class
-                    || classToTransformFrom == Byte.class)
+            if (isIntegerLongShortByte(classToTransformFrom))
                 return true;
         } else if (classToTransformTo == Long.class) {
             if (classToTransformFrom == Integer.class
@@ -755,10 +752,7 @@ public class MetaClassHelper {
                     || classToTransformFrom == Byte.class)
                 return true;
         } else if (classToTransformTo == Float.class) {
-            if (classToTransformFrom == Integer.class
-                    || classToTransformFrom == Long.class
-                    || classToTransformFrom == Short.class
-                    || classToTransformFrom == Byte.class)
+            if (isIntegerLongShortByte(classToTransformFrom))
                 return true;
         } else if (classToTransformTo == Short.class) {
             if (classToTransformFrom == Byte.class)
@@ -770,6 +764,13 @@ public class MetaClassHelper {
         }
 
         return ReflectionCache.isAssignableFrom(classToTransformTo, classToTransformFrom);
+    }
+
+    private static boolean isIntegerLongShortByte(Class classToTransformFrom) {
+        return classToTransformFrom == Integer.class
+                || classToTransformFrom == Long.class
+                || classToTransformFrom == Short.class
+                || classToTransformFrom == Byte.class;
     }
 
     public static boolean isGenericSetMethod(MetaMethod method) {
