@@ -29,7 +29,7 @@ import java.io.Writer;
 public class PlatformLineWriterTest extends TestCase {
 
     public void testPlatformLineWriter() throws IOException, ClassNotFoundException {
-        String LS = System.getProperty("line.separator");
+        String LS = System.lineSeparator();
         Binding binding = new Binding();
         binding.setVariable("first", "Tom");
         binding.setVariable("last", "Adams");
