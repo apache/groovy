@@ -361,7 +361,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         if (BytecodeHelper.isClassLiteralPossible(node) || BytecodeHelper.isSameCompilationUnit(classNode, node)) {
                             BytecodeHelper.visitClassLiteral(mv, node);
                         } else {
-                            mv.visitMethodInsn(INVOKESTATIC, classInternalName, "$get$$class$" + classInternalName.replaceAll("/", "\\$"), "()Ljava/lang/Class;", false);
+                            mv.visitMethodInsn(INVOKESTATIC, classInternalName, "$get$$class$" + classInternalName.replace('/', '$'), "()Ljava/lang/Class;", false);
                         }
                         Label l1 = new Label();
                         mv.visitJumpInsn(IF_ACMPEQ, l1);

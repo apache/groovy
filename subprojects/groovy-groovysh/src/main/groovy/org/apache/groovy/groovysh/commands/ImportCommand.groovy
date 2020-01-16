@@ -101,7 +101,7 @@ class ImportCommand extends CommandSupport {
             fail(msg)
         }
         // remove last semicolon
-        importSpec = importSpec.replaceAll(';', '')
+        importSpec = importSpec.replace(';', '')
 
         def buff = ['import ' + args.join(' ')]
         buff << 'def dummp = false'

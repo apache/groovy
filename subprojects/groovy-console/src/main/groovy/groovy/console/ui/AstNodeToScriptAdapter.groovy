@@ -516,7 +516,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             // GROOVY-5150: final constants may be initialized directly
             print ' = '
             if (ClassHelper.STRING_TYPE == type) {
-                print "'" + node.initialValueExpression.text.replaceAll("'", "\\\\'") + "'"
+                print "'" + node.initialValueExpression.text.replace("'", "\\'") + "'"
             } else if (ClassHelper.char_TYPE == type) {
                 print "'${node.initialValueExpression.text}'"
             } else {
