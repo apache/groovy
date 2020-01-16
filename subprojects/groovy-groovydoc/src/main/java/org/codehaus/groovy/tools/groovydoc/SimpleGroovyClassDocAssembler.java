@@ -315,7 +315,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (classDoc == null) {
             return;
         }
-        GroovyMethodDoc methods[] = classDoc.methods();
+        GroovyMethodDoc[] methods = classDoc.methods();
 
         //find expected method name
         String expectedMethodName = null;
