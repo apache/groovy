@@ -200,7 +200,7 @@ class ExtractIndexAndSql {
             indexPropList.add(new Tuple(index, prop == null || prop.length() == 0 ? "<this>" : prop));
             txtIndex = matcher.end();
         }
-        newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
+        newSql.append(sql, txtIndex, sql.length()); // append ending SQL after last param.
         return newSql.toString();
     }
 
