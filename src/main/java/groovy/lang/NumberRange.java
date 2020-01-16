@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
@@ -94,7 +95,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
      * @param from the first value in the range
      * @param to   the last value in the range
      */
-    public <T extends Number & Comparable, U extends Number & Comparable>
+    public <T extends Number, U extends Number>
     NumberRange(T from, U to) {
         this(from, to, null, true);
     }
@@ -107,7 +108,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
      * @param to   end of the range
      * @param inclusive whether the range is inclusive
      */
-    public <T extends Number & Comparable, U extends Number & Comparable>
+    public <T extends Number, U extends Number>
     NumberRange(T from, U to, boolean inclusive) {
         this(from, to, null, inclusive);
     }
@@ -120,7 +121,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
      * @param to   end of the range
      * @param stepSize the gap between discrete elements in the range
      */
-    public <T extends Number & Comparable, U extends Number & Comparable, V extends
+    public <T extends Number, U extends Number, V extends
             Number & Comparable<? super Number>>
     NumberRange(T from, U to, V stepSize) {
         this(from, to, stepSize, true);
@@ -135,8 +136,8 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
      * @param stepSize the gap between discrete elements in the range
      * @param inclusive whether the range is inclusive
      */
-    public <T extends Number & Comparable, U extends Number & Comparable, V extends
-            Number & Comparable>
+    public <T extends Number, U extends Number, V extends
+            Number>
     NumberRange(T from, U to, V stepSize, boolean inclusive) {
         if (from == null) {
             throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
@@ -185,7 +186,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
      * @param stepSize the desired step size
      * @return a new NumberRange
      */
-    public <T extends Number & Comparable> NumberRange by(T stepSize) {
+    public <T extends Number> NumberRange by(T stepSize) {
         if (!Integer.valueOf(1).equals(this.stepSize)) {
             throw new IllegalStateException("by only allowed on ranges with original stepSize = 1 but found " + this.stepSize);
         }
@@ -193,12 +194,12 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
     }
 
     @SuppressWarnings("unchecked")
-    /* package private */ static <T extends Number & Comparable> T comparableNumber(Comparable c) {
+    /* package private */ static <T extends Number> T comparableNumber(Comparable c) {
         return (T) c;
     }
 
     @SuppressWarnings("unchecked")
-    /* package private */ static <T extends Number & Comparable> T comparableNumber(Number n) {
+    /* package private */ static <T extends Number> T comparableNumber(Number n) {
         return (T) n;
     }
 
@@ -402,7 +403,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
                 final BigInteger fromNum = new BigInteger(from.toString());
                 final BigInteger toTemp = new BigInteger(to.toString());
                 final BigInteger toNum = inclusive ? toTemp : toTemp.subtract(BigInteger.ONE);
-                final BigInteger sizeNum = new BigDecimal(toNum.subtract(fromNum)).divide(new BigDecimal(stepSize.longValue()), BigDecimal.ROUND_DOWN).toBigInteger().add(BigInteger.ONE);
+                final BigInteger sizeNum = new BigDecimal(toNum.subtract(fromNum)).divide(new BigDecimal(stepSize.longValue()), RoundingMode.DOWN).toBigInteger().add(BigInteger.ONE);
                 tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0 ? sizeNum.intValue() : Integer.MAX_VALUE;
                 shortcut = true;
             } else if (((from instanceof BigDecimal || from instanceof BigInteger) && to instanceof Number) ||
@@ -411,7 +412,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
                 final BigDecimal fromNum = new BigDecimal(from.toString());
                 final BigDecimal toTemp = new BigDecimal(to.toString());
                 final BigDecimal toNum = inclusive ? toTemp : toTemp.subtract(new BigDecimal("1.0"));
-                final BigInteger sizeNum = toNum.subtract(fromNum).divide(new BigDecimal(stepSize.longValue()), BigDecimal.ROUND_DOWN).toBigInteger().add(BigInteger.ONE);
+                final BigInteger sizeNum = toNum.subtract(fromNum).divide(new BigDecimal(stepSize.longValue()), RoundingMode.DOWN).toBigInteger().add(BigInteger.ONE);
                 tempsize = sizeNum.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) < 0 ? sizeNum.intValue() : Integer.MAX_VALUE;
                 shortcut = true;
             }

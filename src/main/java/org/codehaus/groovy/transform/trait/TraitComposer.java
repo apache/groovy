@@ -169,7 +169,7 @@ public abstract class TraitComposer {
                 new Parameter[] {new Parameter(ClassHelper.CLASS_Type,"clazz")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
         staticInitMethod.setDeclaringClass(helperClassNode);
         staticInitCall.setMethodTarget(staticInitMethod);
-        cNode.addStaticInitializerStatements(Collections.<Statement>singletonList(new ExpressionStatement(
+        cNode.addStaticInitializerStatements(Collections.singletonList(new ExpressionStatement(
                 staticInitCall
         )), false);
         if (fieldHelperClassNode != null && !cNode.declaresInterface(fieldHelperClassNode)) {

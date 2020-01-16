@@ -75,7 +75,7 @@ public class DummyClassGenerator extends ClassGenerator {
                     Opcodes.V1_3,
                     classNode.getModifiers(),
                     internalClassName,
-                    (String) null,
+                    null,
                     internalBaseClassName,
                     BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );

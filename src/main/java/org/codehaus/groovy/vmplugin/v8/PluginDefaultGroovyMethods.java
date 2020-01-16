@@ -398,7 +398,7 @@ public class PluginDefaultGroovyMethods {
      * @since 2.5.0
      */
     public static <T> List<T> toList(final Stream<T> self) {
-        return self.collect(Collectors.<T>toList());
+        return self.collect(Collectors.toList());
     }
 
     /**
@@ -410,7 +410,7 @@ public class PluginDefaultGroovyMethods {
      * @since 2.5.0
      */
     public static <T> Set<T> toSet(final Stream<T> self) {
-        return self.collect(Collectors.<T>toSet());
+        return self.collect(Collectors.toSet());
     }
 
     /**
@@ -422,7 +422,7 @@ public class PluginDefaultGroovyMethods {
      * @since 2.5.0
      */
     public static <T> List<T> toList(final BaseStream<T, ? extends BaseStream> self) {
-        return stream(self.iterator()).collect(Collectors.<T>toList());
+        return stream(self.iterator()).collect(Collectors.toList());
     }
 
     /**
@@ -434,7 +434,7 @@ public class PluginDefaultGroovyMethods {
      * @since 2.5.0
      */
     public static <T> Set<T> toSet(final BaseStream<T, ? extends BaseStream> self) {
-        return stream(self.iterator()).collect(Collectors.<T>toSet());
+        return stream(self.iterator()).collect(Collectors.toSet());
     }
 
     /**

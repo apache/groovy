@@ -480,7 +480,7 @@ public class DefaultTypeTransformation {
     }
 
     public static <T> Collection<T> arrayAsCollection(T[] value) {
-        return Arrays.asList((T[]) value);
+        return Arrays.asList(value);
     }
 
     /**

@@ -288,7 +288,7 @@ public abstract class AbstractConcurrentMapBase {
                 if (o instanceof Entry) {
                     Object arr [] = new Object [2];
                     arr [0] = ee;
-                    arr [1] = (Entry) o;
+                    arr [1] = o;
                     tab[index] = arr;
                     return;
                 }
@@ -309,7 +309,7 @@ public abstract class AbstractConcurrentMapBase {
                 if (o instanceof Entry) {
                     Object arr [] = new Object [2];
                     arr [0] = ee;
-                    arr [1] = (Entry) o;
+                    arr [1] = o;
                     return arr;
                 }
                 else {

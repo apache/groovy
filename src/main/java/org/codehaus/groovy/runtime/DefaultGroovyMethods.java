@@ -3635,7 +3635,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <S,T> List<T> collect(Iterable<S> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
-        return (List<T>) collect(self.iterator(), transform);
+        return collect(self.iterator(), transform);
     }
 
     /**
@@ -6274,7 +6274,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.2
      */
     public static long sum(long[] self) {
-        return sum(self, (long) 0);
+        return sum(self, 0);
     }
 
     /**
@@ -6310,7 +6310,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.2
      */
     public static double sum(double[] self) {
-        return sum(self, (double) 0);
+        return sum(self, 0);
     }
 
     /**
@@ -9342,7 +9342,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> Iterator<T> sort(Iterator<T> self, Comparator<? super T> comparator) {
-        return sort((Iterable<T>) toList(self), true, comparator).listIterator();
+        return sort(toList(self), true, comparator).listIterator();
     }
 
     /**
@@ -10534,7 +10534,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> Collection<T> take(Iterable<T> self, int num) {
-        Collection<T> result = self instanceof Collection ? createSimilarCollection((Collection<T>) self, num < 0 ? 0 : num) : new ArrayList<T>();
+        Collection<T> result = self instanceof Collection ? createSimilarCollection((Collection<T>) self, Math.max(num, 0)) : new ArrayList<T>();
         addAll(result, take(self.iterator(), num));
         return result;
     }
@@ -12015,7 +12015,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 Method samMethod = CachedSAMClass.getSAMMethod(clazz);
                 if (samMethod!=null) {
                     Map impl = Collections.singletonMap(samMethod.getName(),cl);
-                    return (T) ProxyGenerator.INSTANCE.instantiateAggregate(impl, Collections.<Class>singletonList(clazz));
+                    return (T) ProxyGenerator.INSTANCE.instantiateAggregate(impl, Collections.singletonList(clazz));
                 }
             }
             return (T) Proxy.newProxyInstance(
@@ -12346,7 +12346,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] plus(T[] left, T[] right) {
-        return (T[]) plus((List<T>) toList(left), (Collection<T>) toList(right)).toArray();
+        return (T[]) plus((List<T>) toList(left), toList(right)).toArray();
     }
 
     /**
@@ -12382,7 +12382,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] plus(T[] left, Collection<T> right) {
-        return (T[]) plus((List<T>) toList(left), (Collection<T>) right).toArray();
+        return (T[]) plus((List<T>) toList(left), right).toArray();
     }
 
     /**
@@ -12404,7 +12404,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static <T> T[] plus(T[] left, Iterable<T> right) {
-        return (T[]) plus((List<T>) toList(left), (Collection<T>) toList(right)).toArray();
+        return (T[]) plus((List<T>) toList(left), toList(right)).toArray();
     }
 
     /**
@@ -13003,7 +13003,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @Deprecated
     public static boolean disjoint(Collection left, Collection right) {
-        return disjoint((Iterable) left, (Iterable) right);
+        return disjoint(left, right);
     }
 
     /**
@@ -17884,15 +17884,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Iterator<T> iterator(final Enumeration<T> enumeration) {
         return new Iterator<T>() {
-            private T last;
-
             public boolean hasNext() {
                 return enumeration.hasMoreElements();
             }
 
             public T next() {
-                last = enumeration.nextElement();
-                return last;
+                return enumeration.nextElement();
             }
 
             public void remove() {
@@ -18290,7 +18287,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.6.0
      */
     public static groovy.lang.groovydoc.Groovydoc getGroovydoc(AnnotatedElement holder) {
-        Groovydoc groovydocAnnotation = holder.<Groovydoc>getAnnotation(Groovydoc.class);
+        Groovydoc groovydocAnnotation = holder.getAnnotation(Groovydoc.class);
 
         return null == groovydocAnnotation
                     ? EMPTY_GROOVYDOC

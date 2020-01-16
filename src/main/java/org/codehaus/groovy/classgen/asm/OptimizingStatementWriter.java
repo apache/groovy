@@ -506,7 +506,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         public String toString() {
             StringBuilder ret = new StringBuilder();
             if (current.shouldOptimize) {
-                ret.append("should optimize, can = " + current.canOptimize);
+                ret.append("should optimize, can = ").append(current.canOptimize);
             } else if (current.canOptimize) {
                 ret.append("can optimize");
             } else {

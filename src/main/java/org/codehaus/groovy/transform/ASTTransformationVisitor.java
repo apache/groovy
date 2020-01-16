@@ -286,7 +286,6 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                             compilationUnit.getErrorCollector().addError(new SimpleMessage(
                                     "IOException reading the service definition at "
                                             + service.toExternalForm() + " because of exception " + ioe.toString(), null));
-                            continue;
                         }
                     }
                 }
