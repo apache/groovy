@@ -668,7 +668,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 return;
             }
             if (starImportsWhitelist != null) {
-                String packageName = className.substring(0, className.lastIndexOf('.') + 1) + "*";
+                String packageName = getWildCardImport(className);
                 if (starImportsWhitelist.contains(packageName)
                         || starImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                     return;
@@ -680,7 +680,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 throw new SecurityException("Importing [" + className + "] is not allowed");
             }
             if (starImportsBlacklist != null) {
-                String packageName = className.substring(0, className.lastIndexOf('.') + 1) + "*";
+                String packageName = getWildCardImport(className);
                 if (starImportsBlacklist.contains(packageName) ||
                         starImportsBlacklist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                     throw new SecurityException("Importing [" + className + "] is not allowed");
@@ -689,12 +689,16 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
     }
 
+    private String getWildCardImport(String className) {
+        return className.substring(0, className.lastIndexOf('.') + 1) + "*";
+    }
+
     protected void assertStaticImportIsAllowed(final String member, final String className) {
         final String fqn = member.equals(className) ? member : className + "." + member;
         if (staticImportsWhitelist != null && !staticImportsWhitelist.contains(fqn)) {
             if (staticStarImportsWhitelist != null) {
                 // we should now check if the import is in the star imports
-                String packageName = className.substring(0, className.lastIndexOf('.') + 1) + "*";
+                String packageName = getWildCardImport(className);
                 if (!staticStarImportsWhitelist.contains(className + ".*")
                         && !staticStarImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                     throw new SecurityException("Importing [" + fqn + "] is not allowed");
@@ -708,7 +712,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
         // check that there's no star import blacklist
         if (staticStarImportsBlacklist != null) {
-            String packageName = className.substring(0, className.lastIndexOf('.') + 1) + "*";
+            String packageName = getWildCardImport(className);
             if (staticStarImportsBlacklist.contains(className + ".*")
                     || staticStarImportsBlacklist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
                 throw new SecurityException("Importing [" + fqn + "] is not allowed");

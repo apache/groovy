@@ -2361,14 +2361,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             } else if (leftExpression instanceof BinaryExpression) {
                 int lefttype = ((BinaryExpression) leftExpression).getOperation().getType();
                 if (!Types.ofType(lefttype, Types.ASSIGNMENT_OPERATOR) && lefttype != Types.LEFT_SQUARE_BRACKET) {
-                    throw new ASTRuntimeException(node, "\n" + ((BinaryExpression) leftExpression).getText() + " is a binary expression, but it should be a variable expression");
+                    throw new ASTRuntimeException(node, "\n" + leftExpression.getText() + " is a binary expression, but it should be a variable expression");
                 }
             } else if (leftExpression instanceof GStringExpression) {
-                throw new ASTRuntimeException(node, "\n\"" + ((GStringExpression) leftExpression).getText() + "\" is a GString expression, but it should be a variable expression");
+                throw new ASTRuntimeException(node, "\n\"" + leftExpression.getText() + "\" is a GString expression, but it should be a variable expression");
             } else if (leftExpression instanceof MethodCallExpression) {
-                throw new ASTRuntimeException(node, "\n\"" + ((MethodCallExpression) leftExpression).getText() + "\" is a method call expression, but it should be a variable expression");
+                throw new ASTRuntimeException(node, "\n\"" + leftExpression.getText() + "\" is a method call expression, but it should be a variable expression");
             } else if (leftExpression instanceof MapExpression) {
-                throw new ASTRuntimeException(node, "\n'" + ((MapExpression) leftExpression).getText() + "' is a map expression, but it should be a variable expression");
+                throw new ASTRuntimeException(node, "\n'" + leftExpression.getText() + "' is a map expression, but it should be a variable expression");
             } else {
                 throw new ASTRuntimeException(node, "\n" + leftExpression.getClass() + ", with its value '" + leftExpression.getText() + "', is a bad expression as the left hand side of an assignment operator");
             }

@@ -55,7 +55,7 @@ public class ConstructorCallTransformer {
     }
 
     Expression transformConstructorCall(final ConstructorCallExpression expr) {
-        ConstructorNode node = (ConstructorNode) expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        ConstructorNode node = expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (node == null) return expr;
         Parameter[] params = node.getParameters();
         if ((params.length == 1 || params.length == 2) // 2 is for inner class case

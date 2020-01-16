@@ -1174,7 +1174,7 @@ public class CompositeVisitor implements Visitor{
     public GroovySourceAST pop() {
         GroovySourceAST lastNodePopped = null;
         for (Object backToFrontVisitor : backToFrontVisitors) {
-            lastNodePopped = (GroovySourceAST) ((Visitor) backToFrontVisitor).pop();
+            lastNodePopped = ((Visitor) backToFrontVisitor).pop();
         }
         return lastNodePopped;
     }

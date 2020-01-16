@@ -1665,7 +1665,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
      */
     public Builder<K, V> weigher(Weigher<? super V> weigher) {
       this.weigher = (weigher == org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.singleton())
-          ? org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.<K, V>entrySingleton()
+          ? org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.entrySingleton()
           : new BoundedEntryWeigher<K, V>(org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.asEntryWeigher(weigher));
       return this;
     }
@@ -1680,8 +1680,8 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
      */
     public Builder<K, V> weigher(EntryWeigher<? super K, ? super V> weigher) {
       this.weigher = (weigher == org.apache.groovy.util.concurrent.concurrentlinkedhashmap.Weighers.entrySingleton())
-          ? Weighers.<K, V>entrySingleton()
-          : new BoundedEntryWeigher<K, V>(weigher);
+          ? Weighers.entrySingleton()
+          : new BoundedEntryWeigher<>(weigher);
       return this;
     }
 

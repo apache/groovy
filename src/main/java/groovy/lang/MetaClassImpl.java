@@ -1027,11 +1027,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return invokeMethod(theClass, object, methodName, originalArguments, false, false);
     }
 
-    private Object invokeMethodClosure(Object object, String methodName, Object[] arguments) {
+    private Object invokeMethodClosure(Object object, Object[] arguments) {
         final MethodClosure mc = (MethodClosure) object;
         final Object owner = mc.getOwner();
 
-        methodName = mc.getMethod();
+        String methodName = mc.getMethod();
         final Class ownerClass = owner instanceof Class ? (Class) owner : owner.getClass();
         final MetaClass ownerMetaClass = registry.getMetaClass(ownerClass);
 
@@ -1131,7 +1131,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (CLOSURE_CALL_METHOD.equals(methodName) || CLOSURE_DO_CALL_METHOD.equals(methodName)) {
                 final Class objectClass = object.getClass();
                 if (objectClass == MethodClosure.class) {
-                    return this.invokeMethodClosure(object, methodName, arguments);
+                    return this.invokeMethodClosure(object, arguments);
                 } else if (objectClass == CurriedClosure.class) {
                     final CurriedClosure cc = (CurriedClosure) object;
                     // change the arguments for an uncurried call

@@ -105,7 +105,7 @@ public class MapEntryOrKeyValue extends ClosureSignatureHint {
                     if ("argNum".equals(key)) {
                         pIndex = Integer.parseInt(value);
                     } else if ("index".equals(key)) {
-                        generateIndex = Boolean.valueOf(value);
+                        generateIndex = Boolean.parseBoolean(value);
                     } else {
                         throw new IncorrectTypeHintException(mn, "Unrecognized option: "+key, source.getLineNumber(), source.getColumnNumber());
                     }

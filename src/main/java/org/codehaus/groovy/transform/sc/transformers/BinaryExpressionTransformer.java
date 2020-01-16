@@ -294,7 +294,7 @@ public class BinaryExpressionTransformer {
 
     private static Expression convertInOperatorToTernary(final BinaryExpression bin, final Expression rightExpression, final Expression leftExpression) {
         MethodCallExpression call = callX(rightExpression, "isCase", leftExpression);
-        call.setMethodTarget((MethodNode) bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+        call.setMethodTarget(bin.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
         call.setSourcePosition(bin);
         call.copyNodeMetaData(bin);
         Expression tExp = ternaryX(

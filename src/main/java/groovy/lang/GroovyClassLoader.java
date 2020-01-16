@@ -705,7 +705,7 @@ public class GroovyClassLoader extends URLClassLoader {
                 SourceUnit msu = null;
                 if (mn != null) msu = mn.getContext();
                 ClassNode main = null;
-                if (mn != null) main = (ClassNode) mn.getClasses().get(0);
+                if (mn != null) main = mn.getClasses().get(0);
                 if (msu == su && main == classNode) generatedClass = theClass;
             }
 
@@ -816,8 +816,7 @@ public class GroovyClassLoader extends URLClassLoader {
         if (recompile != null && !recompile) return false;
         if (!GroovyObject.class.isAssignableFrom(cls)) return false;
         long timestamp = getTimeStamp(cls);
-        if (timestamp == Long.MAX_VALUE) return false;
-        return true;
+        return timestamp != Long.MAX_VALUE;
     }
 
     /**
@@ -1204,7 +1203,7 @@ public class GroovyClassLoader extends URLClassLoader {
                 node.addField(timeTagField);
 
                 timeTagField = new FieldNode(
-                        Verifier.__TIMESTAMP__ + String.valueOf(System.currentTimeMillis()),
+                        Verifier.__TIMESTAMP__ + System.currentTimeMillis(),
                         ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
                         ClassHelper.long_TYPE,
                         //"",
