@@ -20,8 +20,6 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 import org.codehaus.groovy.gradle.JarJarTask
 
-apply plugin: 'osgi'
-
 group = 'org.codehaus.groovy'
 archivesBaseName = 'groovy'
 
