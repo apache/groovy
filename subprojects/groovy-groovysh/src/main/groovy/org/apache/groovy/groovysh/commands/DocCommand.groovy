@@ -93,7 +93,7 @@ class DocCommand extends CommandSupport {
     }
 
     protected String normalizeClassName(String className) {
-        className.replaceAll('"', '').replaceAll("'", '')
+        className.replace('"', '').replace("'", '')
     }
 
     protected void browse(List urls) {
@@ -136,7 +136,7 @@ class DocCommand extends CommandSupport {
 
     protected List urlsFor(String className) {
         String groovyVersion = GroovySystem.version
-        def path = className.replaceAll(/\./, '/') + '.html'
+        def path = className.replace('.', '/') + '.html'
 
         def urls = []
         if (className.matches(/^(groovy|org\.codehaus\.groovy|)\..+/)) {

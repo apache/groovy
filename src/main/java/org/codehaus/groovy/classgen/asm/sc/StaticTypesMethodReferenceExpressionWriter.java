@@ -39,10 +39,8 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
-import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -58,6 +56,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
 
 /**
@@ -299,7 +298,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     private MethodNode findMethodRefMethod(String methodRefName, Parameter[] abstractMethodParameters, Expression typeOrTargetRef) {
         ClassNode typeOrTargetRefType = typeOrTargetRef.getType();
         List<MethodNode> methodNodeList = typeOrTargetRefType.getMethods(methodRefName);
-        Set<MethodNode> dgmMethodNodeSet = StaticTypeCheckingSupport.findDGMMethodsForClassNode(MetaClassRegistryImpl.class.getClassLoader(), typeOrTargetRefType, methodRefName);
+        Set<MethodNode> dgmMethodNodeSet = findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), typeOrTargetRefType, methodRefName);
 
         List<MethodNode> allMethodNodeList = new LinkedList<>(methodNodeList);
         allMethodNodeList.addAll(dgmMethodNodeSet);
