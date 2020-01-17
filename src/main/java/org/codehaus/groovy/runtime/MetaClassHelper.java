@@ -298,6 +298,7 @@ public class MetaClassHelper {
          */
 
         if (parameter.getTheClass() == argument) return 0;
+        if (parameter.getTheClass() == NullObject.class && argument == null) return 0;
 
         if (parameter.isInterface()) {
             int dist = getMaximumInterfaceDistance(argument, parameter.getTheClass()) << INTERFACE_SHIFT;
