@@ -96,7 +96,7 @@ class PrintTest extends GroovyTestCase {
         }
     }
 
-def NEWLINE = System.getProperty("line.separator")
+def NEWLINE = System.lineSeparator()
 
 void doTest(def param) {
     StringWriter sw1 = new StringWriter()

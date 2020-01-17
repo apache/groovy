@@ -34,7 +34,7 @@ interface Parsing {
  * Provides a facade over the parser to recognize valid Groovy syntax.
  */
 class Parser {
-    static final String NEWLINE = System.getProperty('line.separator')
+    static final String NEWLINE = System.lineSeparator()
 
     private static final Logger log = Logger.create(Parser)
 

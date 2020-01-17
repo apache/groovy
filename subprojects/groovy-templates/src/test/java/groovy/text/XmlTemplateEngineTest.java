@@ -39,7 +39,7 @@ public class XmlTemplateEngineTest extends TestCase {
         String xmlResult = "<xml>\n"
                 + "  Stein\n"
                 + xmlTemplateEngine.getIndentation() + "Stein\n"
-                + "Stein" + System.getProperty("line.separator")
+                + "Stein" + System.lineSeparator()
                 + "</xml>\n";
         Template template = xmlTemplateEngine.createTemplate(xmlScript);
         assertEquals(xmlResult, template.make(binding).toString());
@@ -59,7 +59,7 @@ public class XmlTemplateEngineTest extends TestCase {
         String xmlResult = "<xml>\n"
                 + "  Stein Stein\n"
                 + xmlTemplateEngine.getIndentation() + "Stein Stein\n"
-                + "Stein" + System.getProperty("line.separator")
+                + "Stein" + System.lineSeparator()
                 + "</xml>\n";
         Template template = xmlTemplateEngine.createTemplate(xmlScript);
         assertEquals(xmlResult, template.make(binding).toString());
@@ -80,7 +80,7 @@ public class XmlTemplateEngineTest extends TestCase {
                 + "  Stein Stein\n"
                 + xmlTemplateEngine.getIndentation() + "Stein Stein\n"
                 + xmlTemplateEngine.getIndentation() + "<nonamespace>\n"
-                + "Stein" + System.getProperty("line.separator")
+                + "Stein" + System.lineSeparator()
                 + xmlTemplateEngine.getIndentation() + "</nonamespace>\n"
                 + "</foo:bar>\n";
         Template template = xmlTemplateEngine.createTemplate(xmlScript);

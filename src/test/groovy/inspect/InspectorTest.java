@@ -213,7 +213,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
     public void testPrint() {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(bytes);
-        String ls = System.getProperty("line.separator");
+        String ls = System.lineSeparator();
         String[] first = {"a", "b"};
         String[] second = {"x", "y"};
         Object[] memberInfo = {first, second};
