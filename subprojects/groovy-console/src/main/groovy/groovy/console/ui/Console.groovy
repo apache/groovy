@@ -1230,7 +1230,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         scriptRunning = true
         interruptAction.enabled = true
         stackOverFlowError = false // reset this flag before running a script
-        def endLine = System.getProperty('line.separator')
+        def endLine = System.lineSeparator()
         def record = new HistoryRecord(allText: inputArea.getText().replace(endLine, '\n'),
                 selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
         addToHistory(record)
@@ -1306,7 +1306,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             return
         }
         stackOverFlowError = false // reset this flag before running a script
-        def endLine = System.getProperty('line.separator')
+        def endLine = System.lineSeparator()
         def record = new HistoryRecord(allText: inputArea.getText().replace(endLine, '\n'),
                 selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
 
@@ -1361,7 +1361,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     private void setInputTextFromHistory(newIndex) {
-        def endLine = System.getProperty('line.separator')
+        def endLine = System.lineSeparator()
         if (historyIndex >= history.size()) {
             pendingRecord = new HistoryRecord(allText: inputArea.getText().replace(endLine, '\n'),
                     selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)

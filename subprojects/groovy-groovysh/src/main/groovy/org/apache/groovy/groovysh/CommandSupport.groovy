@@ -33,7 +33,7 @@ import org.codehaus.groovy.tools.shell.util.MessageSource
 abstract class CommandSupport
     implements Command
 {
-    protected static final String NEWLINE = System.properties['line.separator']
+    protected static final String NEWLINE = System.lineSeparator()
 
     /** Instance logger for the command, initialized late to include the command name. */
     protected final Logger log

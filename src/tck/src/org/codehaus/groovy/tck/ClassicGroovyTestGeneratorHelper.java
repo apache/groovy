@@ -105,5 +105,5 @@ public class ClassicGroovyTestGeneratorHelper implements TestGeneratorHelper {
         return decorateWithLineNumbersAndErrorMessage(theSrcText,null);
     }
 
-    protected String lineSep = System.getProperty("line.separator");
+    protected String lineSep = System.lineSeparator();
 }

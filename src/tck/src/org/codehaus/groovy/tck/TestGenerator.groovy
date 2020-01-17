@@ -118,7 +118,7 @@ class TestGenerator{
             result.println("        }")
             result.println("    }")
         }
-        result.println('    protected String lineSep = System.getProperty("line.separator");')
+        result.println('    protected String lineSep = System.lineSeparator();')
         result.println('    protected TestGeneratorHelper helper = new ClassicGroovyTestGeneratorHelper();')
         result.println("}")
 
