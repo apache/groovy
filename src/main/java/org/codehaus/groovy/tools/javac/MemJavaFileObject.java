@@ -21,7 +21,6 @@ package org.codehaus.groovy.tools.javac;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.ClassNode;
 
-import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,23 +35,30 @@ public class MemJavaFileObject extends SimpleJavaFileObject {
     private final String src;
 
     /**
-     * Construct a MemJavaFileObject instance with given groovy class node and stub source code
+     * Construct a MemJavaFileObject instance with given class node and source code
      *
-     * @param classNode  the groovy class node
-     * @param src  the stub source code
+     * @param classNode  the class node
+     * @param src  the source code
      */
     public MemJavaFileObject(ClassNode classNode, String src) {
-        super(createURI(classNode), JavaFileObject.Kind.SOURCE);
-        this.className = classNode.getName();
+        this(classNode.getName(), src);
+    }
+
+    /**
+     * Construct a MemJavaFileObject instance with given class name and source code
+     *
+     * @param className the class name
+     * @param src the source code
+     */
+    public MemJavaFileObject(String className, String src) {
+        super(createURI(className), Kind.SOURCE);
+        this.className = className;
         this.src = src;
     }
 
-    private static URI createURI(ClassNode classNode) {
+    private static URI createURI(String className) {
         try {
-            String packageName = classNode.getPackageName();
-            String className = classNode.getNameWithoutPackage();
-
-            return new URI("string:///" + (null == packageName ? "" : (packageName.replace('.', '/') + "/")) + className + ".java");
+            return new URI("string:///" + className.replace('.', '/') + Kind.SOURCE.extension);
         } catch (URISyntaxException e) {
             throw new GroovyRuntimeException(e);
         }
