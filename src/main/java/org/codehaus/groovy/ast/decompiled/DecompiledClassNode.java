@@ -41,8 +41,8 @@ import java.util.function.Supplier;
 public class DecompiledClassNode extends ClassNode {
     private final ClassStub classData;
     private final AsmReferenceResolver resolver;
-    private boolean supersInitialized = false;
-    private boolean membersInitialized = false;
+    private volatile boolean supersInitialized;
+    private volatile boolean membersInitialized;
 
     public DecompiledClassNode(ClassStub data, AsmReferenceResolver resolver) {
         super(data.className, getFullModifiers(data), null, null, MixinNode.EMPTY_ARRAY);
@@ -178,6 +178,8 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     private void lazyInitSupers() {
+        if (supersInitialized) return;
+
         synchronized (lazyInitLock) {
             if (!supersInitialized) {
                 ClassSignatureParser.configureClass(this, this.classData, this.resolver);
@@ -189,6 +191,8 @@ public class DecompiledClassNode extends ClassNode {
     }
 
     private void lazyInitMembers() {
+        if (membersInitialized) return;
+
         synchronized (lazyInitLock) {
             if (!membersInitialized) {
                 if (classData.methods != null) {
