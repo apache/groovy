@@ -45,15 +45,10 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradle.build-scan' version '2.4.2'
     id 'me.champeau.buildscan-recipes' version '0.2.3'
     id 'com.github.spotbugs' version '2.0.0'
     id "com.github.ben-manes.versions" version '0.27.0'
-}
-
-buildScan {
-    termsOfServiceUrl = 'https://gradle.com/terms-of-service'
-    apply from: 'gradle/build-scans.gradle'
+    id "com.github.blindpirate.osgi" version "0.0.1"
 }
 
 buildScanRecipes {
