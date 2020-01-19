@@ -3333,14 +3333,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             matches.add(method);
             matchesDistances[0] = dist;
             matchesDistances[1] = dist2;
-        } else if (dist < matchesDistances[0] || (dist == 0 && matchesDistances[0] != 0)) { // matchesDistances[0] may be -1
+        } else if (matchesDistances[0] != 0 && (dist < matchesDistances[0] || dist == 0)) { // matchesDistances[0] may be -1
             matchesDistances[0] = dist;
             matchesDistances[1] = dist2;
             matches.clear();
             matches.add(method);
         } else if (dist == matchesDistances[0]) {
-            ListIterator iter = matches.listIterator();
-            if (dist2 < matchesDistances[1] || (dist2 == 0 && matchesDistances[1] != 0)) {
+            if ((matchesDistances[1] != 0 && (dist2 < matchesDistances[1] || dist2 == 0))) {
                 matchesDistances[1] = dist2;
                 matches.clear();
                 matches.add(method);
