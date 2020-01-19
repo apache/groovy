@@ -74,11 +74,13 @@ enum J {
     B,
 }
 
+/* // antlr2 parser does not support the following code since some beta/rc release of 3.0.0
 enum K {
     A,
     B,
     ;
 }
+*/
 
 enum Outer {
     A, B

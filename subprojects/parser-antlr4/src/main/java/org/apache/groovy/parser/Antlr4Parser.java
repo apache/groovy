@@ -28,17 +28,16 @@ public class Antlr4Parser extends AbstractParser {
     private final CompilerConfiguration compilerConfiguration;
 
     public Antlr4Parser() {
-        this.compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
+        this(new CompilerConfiguration(CompilerConfiguration.DEFAULT));
     }
 
     public Antlr4Parser(CompilerConfiguration compilerConfiguration) {
         this.compilerConfiguration = compilerConfiguration;
+        compilerConfiguration.setPluginFactory(new Antlr4PluginFactory(compilerConfiguration));
     }
 
     @Override
     protected CompilerConfiguration getCompilerConfiguration() {
-        compilerConfiguration.setPluginFactory(new Antlr4PluginFactory(compilerConfiguration));
-
         return compilerConfiguration;
     }
 }
