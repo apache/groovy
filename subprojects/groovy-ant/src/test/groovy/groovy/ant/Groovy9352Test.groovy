@@ -18,7 +18,8 @@
  */
 package groovy.ant
 
-class Groovy9352Test extends AntTestCase {
+final class Groovy9352Test extends AntTestCase {
+
     void test() {
         doInTmpDir { ant, baseDir ->
             baseDir.src {
@@ -27,14 +28,13 @@ class Groovy9352Test extends AntTestCase {
                         package p1
                         import groovy.transform.CompileStatic
                         import p2.Producer
-                        
+
                         @CompileStatic
                         class Consumer {
                            void doSomething(Producer producer) {
                               // this shouldn't trigger a compile error
                               producer.foo()
                            }
-                        
                         }
                     ''')
                 }
@@ -43,22 +43,22 @@ class Groovy9352Test extends AntTestCase {
                         package p2;
                         import java.util.List;
                         import java.util.ArrayList;
-                        
+
                         public class Producer {
                            public void foo() {}
-                        
+
                            // the following members are private, they shouldn't leak into the public API
                            private Gson gson;
                            private Gson gson2 = new SubGson();
                            private List<Gson> gsonList;
                            @GsonAnnotation
                            private List<? extends Gson> gsonList2 = new ArrayList<SubGson>();
-                           
+
                            @GsonAnnotation
                            private Producer(Gson p) {}
                            private Producer(int p) throws Gson {}
                            private Producer() { gson = new Gson(); }
-                           
+
                            @GsonAnnotation
                            private void bar(Gson p) {}
                            private Gson bar() { return null;}
@@ -82,7 +82,7 @@ class Groovy9352Test extends AntTestCase {
                         import java.lang.annotation.Retention;
                         import java.lang.annotation.RetentionPolicy;
                         import java.lang.annotation.Target;
-                        
+
                         @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
                         @Retention(RetentionPolicy.RUNTIME)
                         @interface GsonAnnotation {
@@ -92,15 +92,15 @@ class Groovy9352Test extends AntTestCase {
             }
 
             ant.mkdir(dir: 'build')
+
             ant.taskdef(name: 'groovyc', classname: 'org.codehaus.groovy.ant.Groovyc')
 
             // 1) compile the Java source code only
-            ant.groovyc(srcdir: 'src', destdir: 'build', includes: 'p2/*' /*, keepStubs: true*/) {
+            ant.groovyc(srcdir: 'src', destdir: 'build', includes: 'p2/*') {
                 javac()
             }
 
-            // 2) delete `Gson`, `SubGson`, `GsonAnnotation` related files:
-            // "Gson.java", "Gson.class", "SubGson.java", "SubGson.class", "GsonAnnotation.java", "GsonAnnotation.class"
+            // 2) delete Gson, SubGson and GsonAnnotation related files:
             assert new File(ant.project.baseDir,"src/p2/Gson.java").delete()
             assert new File(ant.project.baseDir,"build/p2/Gson.class").delete()
             assert new File(ant.project.baseDir,"src/p2/SubGson.java").delete()
@@ -109,7 +109,11 @@ class Groovy9352Test extends AntTestCase {
             assert new File(ant.project.baseDir,"build/p2/GsonAnnotation.class").delete()
 
             // 3) compile the Groovy source code
-            ant.groovyc(srcdir: 'src', destdir: 'build', includes: 'p1/*')
+            ant.groovyc(srcdir: 'src', destdir: 'build', includes: 'p1/*') {
+                classpath {
+                    pathelement(path: 'build')
+                }
+            }
         }
     }
 }

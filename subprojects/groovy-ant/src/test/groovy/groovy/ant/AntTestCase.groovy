@@ -19,16 +19,19 @@
 package groovy.ant
 
 import groovy.test.GroovyTestCase
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 
 abstract class AntTestCase extends GroovyTestCase {
-    protected void doInTmpDir(Closure cl) {
+
+    protected void doInTmpDir(@ClosureParams(value=SimpleType, options=['groovy.ant.AntBuilder','groovy.util.FileTreeBuilder']) Closure<Void> block) {
         // tag::create_zip_builder[]
         def ant = new AntBuilder()
         // end::create_zip_builder[]
         def baseDir = File.createTempDir()
         ant.project.baseDir = baseDir
         try {
-            cl.call(ant, new FileTreeBuilder(baseDir))
+            block.call(ant, new FileTreeBuilder(baseDir))
         } finally {
             baseDir.deleteDir()
         }
