@@ -290,7 +290,7 @@ public class MetaClassHelper {
         return Math.max(max, superClassMax);
     }
 
-    private static long calculateParameterDistance(Class argument, CachedClass parameter) {
+    private static long calculateParameterDistance(Class argument, CachedClass parameter, boolean preferNullObject) {
         /**
          * note: when shifting with 32 bit, you should only shift on a long. If you do
          *       that with an int, then i==(i<<32), which means you loose the shift
@@ -331,9 +331,6 @@ public class MetaClassHelper {
                 clazz = clazz.getSuperclass();
                 objectDistance += 3;
             }
-        } else if (parameter.getTheClass() == Object.class) {
-            // make NullObject is preferred over Object
-            return 1;
         } else {
             // choose the distance to Object if a parameter is null
             // this will mean that Object is preferred over a more
@@ -342,6 +339,9 @@ public class MetaClassHelper {
             if (clazz.isPrimitive()) {
                 objectDistance += 2;
             } else {
+                if (preferNullObject) {
+                    objectDistance += 1;
+                }
                 while (clazz != Object.class && clazz != null) {
                     clazz = clazz.getSuperclass();
                     objectDistance += 2;
@@ -352,6 +352,10 @@ public class MetaClassHelper {
     }
 
     public static long calculateParameterDistance(Class[] arguments, ParameterTypes pt) {
+        return calculateParameterDistance(arguments, pt, false);
+    }
+
+    public static long calculateParameterDistance(Class[] arguments, ParameterTypes pt, boolean preferNullObject) {
         CachedClass[] parameters = pt.getParameterTypes();
         if (parameters.length == 0) return 0;
 
@@ -445,7 +449,7 @@ public class MetaClassHelper {
         // of vargs.  Since the minimum for arguments is noVargsLength
         // we can safely iterate to this point
         for (int i = 0; i < noVargsLength; i++) {
-            ret += calculateParameterDistance(arguments[i], parameters[i]);
+            ret += calculateParameterDistance(arguments[i], parameters[i], preferNullObject);
         }
 
         if (arguments.length == parameters.length) {
@@ -456,7 +460,7 @@ public class MetaClassHelper {
                 baseType = ReflectionCache.getCachedClass(baseType.getTheClass().getComponentType()); // case D
                 ret += 2L << VARGS_SHIFT; // penalty for vargs
             }
-            ret += calculateParameterDistance(arguments[noVargsLength], baseType);
+            ret += calculateParameterDistance(arguments[noVargsLength], baseType, preferNullObject);
         } else if (arguments.length > parameters.length) {
             // case B
             // we give our a vargs penalty for each exceeding argument and iterate
@@ -464,7 +468,7 @@ public class MetaClassHelper {
             ret += (2L + arguments.length - parameters.length) << VARGS_SHIFT; // penalty for vargs
             CachedClass vargsType = ReflectionCache.getCachedClass(parameters[noVargsLength].getTheClass().getComponentType());
             for (int i = noVargsLength; i < arguments.length; i++) {
-                ret += calculateParameterDistance(arguments[i], vargsType);
+                ret += calculateParameterDistance(arguments[i], vargsType, preferNullObject);
             }
         } else {
             // case A

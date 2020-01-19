@@ -36,16 +36,7 @@ import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
-import org.codehaus.groovy.runtime.ArrayTypeUtils;
-import org.codehaus.groovy.runtime.ConvertedClosure;
-import org.codehaus.groovy.runtime.CurriedClosure;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.GeneratedClosure;
-import org.codehaus.groovy.runtime.GroovyCategorySupport;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.AbstractCallSite;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.ConstructorSite;
@@ -3305,12 +3296,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected static Object doChooseMostSpecificParams(String theClassName, String name, List matchingMethods, Class[] arguments, boolean checkParametersCompatible) {
         long matchesDistance = -1;
         LinkedList matches = new LinkedList();
+        // when some argument is null, prefer NullObject than Object.
+        boolean hasNull = false;
+        for (int i = 0; i < arguments.length; ++i) {
+            hasNull = hasNull || (arguments[i] == null);
+        }
         for (Object method : matchingMethods) {
             final ParameterTypes parameterTypes = (ParameterTypes) method;
             if (checkParametersCompatible && !MetaClassHelper.parametersAreCompatible(arguments, parameterTypes.getNativeParameterTypes()))
                 continue;
             long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
-            if (dist == 0) return method;
+            // check prefer NullObject version distance when some argument is null
+            long dis2 = 0;
+            if (hasNull) {
+                dis2 = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes, true);
+            }
+            if (dist == 0 && dis2 == 0) return method;
             matchesDistance = handleMatches(matchesDistance, matches, method, dist);
         }
 
