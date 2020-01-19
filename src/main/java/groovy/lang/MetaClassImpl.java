@@ -84,19 +84,7 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -3294,7 +3282,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected static Object doChooseMostSpecificParams(String theClassName, String name, List matchingMethods, Class[] arguments, boolean checkParametersCompatible) {
-        long matchesDistance = -1;
+        long[] matchesDistances = new long[] { -1, -1 };
         LinkedList matches = new LinkedList();
         // when some argument is null, prefer NullObject than Object.
         boolean hasNull = false;
@@ -3312,7 +3300,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 dis2 = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes, true);
             }
             if (dist == 0 && dis2 == 0) return method;
-            matchesDistance = handleMatches(matchesDistance, matches, method, dist);
+            handleMatches(matchesDistances, matches, method, dist, dis2);
         }
 
         int size = matches.size();
@@ -3340,18 +3328,26 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return msg.toString();
     }
 
-    protected static long handleMatches(long matchesDistance, LinkedList matches, Object method, long dist) {
+    protected static void handleMatches(long[] matchesDistances, LinkedList matches, Object method, long dist, long dist2) {
         if (matches.isEmpty()) {
             matches.add(method);
-            matchesDistance = dist;
-        } else if (dist < matchesDistance) {
-            matchesDistance = dist;
+            matchesDistances[0] = dist;
+            matchesDistances[1] = dist2;
+        } else if (dist < matchesDistances[0] || (dist == 0 && matchesDistances[0] != 0)) { // matchesDistances[0] may be -1
+            matchesDistances[0] = dist;
+            matchesDistances[1] = dist2;
             matches.clear();
             matches.add(method);
-        } else if (dist == matchesDistance) {
-            matches.add(method);
+        } else if (dist == matchesDistances[0]) {
+            ListIterator iter = matches.listIterator();
+            if (dist2 < matchesDistances[1] || (dist2 == 0 && matchesDistances[1] != 0)) {
+                matchesDistances[1] = dist2;
+                matches.clear();
+                matches.add(method);
+            } else if (dist2 == matchesDistances[1]) {
+                matches.add(method);
+            }
         }
-        return matchesDistance;
     }
 
     private static boolean isGenericGetMethod(MetaMethod method) {
