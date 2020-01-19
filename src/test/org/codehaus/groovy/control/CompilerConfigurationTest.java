@@ -63,7 +63,6 @@ public final class CompilerConfigurationTest {
         assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
-        assertEquals(Collections.emptyMap(), config.getOptimizationOptions());
         assertNull(config.getJointCompilationOptions());
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
@@ -90,7 +89,6 @@ public final class CompilerConfigurationTest {
         assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
         assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
-        assertEquals(Collections.emptyMap(), config.getOptimizationOptions());
         assertNull(config.getJointCompilationOptions());
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
@@ -119,15 +117,15 @@ public final class CompilerConfigurationTest {
         init.setPluginFactory(pluginFactory);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
-        assertEquals(true, init.getDebug());
-        assertEquals(true, init.getParameters());
+        assertEquals(Boolean.TRUE, init.getDebug());
+        assertEquals(Boolean.TRUE, init.getParameters());
         assertEquals(Boolean.FALSE, init.getVerbose());
         assertEquals(720, init.getTolerance());
         assertEquals(234, init.getMinimumRecompilationInterval());
         assertEquals("blarg.foo.WhatSit", init.getScriptBaseClass());
         assertEquals("LEAD-123", init.getSourceEncoding());
         assertEquals(CompilerConfiguration.JDK5, init.getTargetBytecode());
-        assertEquals(true, init.getRecompileGroovySource());
+        assertEquals(Boolean.TRUE, init.getRecompileGroovySource());
         assertEquals("File1", init.getClasspath().get(0));
         assertEquals("Somewhere", init.getClasspath().get(1));
         assertEquals(tergetDirectory, init.getTargetDirectory());
