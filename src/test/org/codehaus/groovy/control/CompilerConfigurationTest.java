@@ -18,65 +18,59 @@
  */
 package org.codehaus.groovy.control;
 
-import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Collections;
 import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Make sure CompilerConfiguration works.
  */
-public class CompilerConfigurationTest extends GroovyTestCase {
-    Properties savedProperties;
+public final class CompilerConfigurationTest {
 
-    // Use setUp/tearDown to avoid mucking with system properties for other tests...
+    private Properties savedProperties;
 
+    @Before
     public void setUp() {
         savedProperties = System.getProperties();
         System.setProperties(new Properties(savedProperties));
     }
 
+    @After
     public void tearDown() {
         System.setProperties(savedProperties);
     }
 
+    @Test
     public void testDefaultConstructor() {
-        final CompilerConfiguration config = CompilerConfiguration.DEFAULT;
+        CompilerConfiguration config = CompilerConfiguration.DEFAULT;
 
         assertEquals(WarningMessage.LIKELY_ERRORS, config.getWarningLevel());
         assertEquals(Boolean.getBoolean("groovy.output.debug"), config.getDebug());
         assertEquals(Boolean.getBoolean("groovy.output.verbose"), config.getVerbose());
-        assertEquals(false, config.getDebug());
-        assertEquals(false, config.getVerbose());
         assertEquals(10, config.getTolerance());
         assertEquals(100, config.getMinimumRecompilationInterval());
-        assertNull(config.getScriptBaseClass());
-        assertEquals(getSystemEncoding(), config.getSourceEncoding());
-        assertEquals(getVMVersion(), config.getTargetBytecode());
-        assertEquals(false, config.getRecompileGroovySource());
-        {
-            final List listCP = config.getClasspath();
-            assertNotNull(listCP);
-            assertEquals(0, listCP.size());
-        }
-        assertNull(config.getTargetDirectory());
+        assertEquals(System.getProperty("file.encoding", CompilerConfiguration.DEFAULT_SOURCE_ENCODING), config.getSourceEncoding());
+        assertEquals(CompilerConfiguration.JDK8, config.getTargetBytecode());
+        assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
+        assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
-        assertTrue(0 == config.getJointCompilationOptions().size());
+        assertEquals(Collections.emptyMap(), config.getOptimizationOptions());
+        assertNull(config.getJointCompilationOptions());
         assertNotNull(config.getPluginFactory());
+        assertNull(config.getScriptBaseClass());
+        assertNull(config.getTargetDirectory());
     }
 
-    private String getSystemEncoding() {
-        return System.getProperty("file.encoding", CompilerConfiguration.DEFAULT_SOURCE_ENCODING);
-    }
-
-    private static String getVMVersion() {
-        return CompilerConfiguration.JDK8;
-    }
-
+    @Test
     public void testSetViaSystemProperties() {
         System.setProperty("groovy.warnings", "PaRaNoiA");
         System.setProperty("groovy.output.verbose", "trUE");
@@ -84,31 +78,28 @@ public class CompilerConfigurationTest extends GroovyTestCase {
 
         assertEquals("PaRaNoiA", System.getProperty("groovy.warnings"));
 
-        final CompilerConfiguration config = new CompilerConfiguration(System.getProperties());
+        CompilerConfiguration config = new CompilerConfiguration(System.getProperties());
 
         assertEquals(WarningMessage.PARANOIA, config.getWarningLevel());
-        assertEquals(false, config.getDebug());
-        assertEquals(true, config.getVerbose());
+        assertEquals(Boolean.FALSE, config.getDebug());
+        assertEquals(Boolean.TRUE, config.getVerbose());
         assertEquals(10, config.getTolerance());
         assertEquals(867892345, config.getMinimumRecompilationInterval());
-        assertNull(config.getScriptBaseClass());
-        assertEquals(getSystemEncoding(), config.getSourceEncoding());
-        assertEquals(getVMVersion(), config.getTargetBytecode());
-        assertEquals(false, config.getRecompileGroovySource());
-        {
-            final List listCP = config.getClasspath();
-            assertNotNull(listCP);
-            assertEquals(0, listCP.size());
-        }
-        assertNull(config.getTargetDirectory());
+        assertEquals(CompilerConfiguration.DEFAULT.getSourceEncoding(), config.getSourceEncoding());
+        assertEquals(CompilerConfiguration.DEFAULT.getTargetBytecode(), config.getTargetBytecode());
+        assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
+        assertEquals(Collections.emptyList(), config.getClasspath());
         assertEquals(".groovy", config.getDefaultScriptExtension());
-        assertTrue(0 == config.getJointCompilationOptions().size());
+        assertEquals(Collections.emptyMap(), config.getOptimizationOptions());
+        assertNull(config.getJointCompilationOptions());
         assertNotNull(config.getPluginFactory());
+        assertNull(config.getScriptBaseClass());
+        assertNull(config.getTargetDirectory());
     }
 
+    @Test
     public void testCopyConstructor1() {
-        final CompilerConfiguration init = new CompilerConfiguration();
-
+        CompilerConfiguration init = new CompilerConfiguration();
         init.setWarningLevel(WarningMessage.POSSIBLE_ERRORS);
         init.setDebug(true);
         init.setParameters(true);
@@ -117,64 +108,55 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         init.setMinimumRecompilationInterval(234);
         init.setScriptBaseClass("blarg.foo.WhatSit");
         init.setSourceEncoding("LEAD-123");
-        init.setTargetBytecode(CompilerConfiguration.POST_JDK5);
+        init.setTargetBytecode(CompilerConfiguration.JDK5);
         init.setRecompileGroovySource(true);
         init.setClasspath("File1" + File.pathSeparator + "Somewhere");
-
-        final File initTDFile = new File("A wandering path");
-        init.setTargetDirectory(initTDFile);
+        File tergetDirectory = new File("A wandering path");
+        init.setTargetDirectory(tergetDirectory);
         init.setDefaultScriptExtension(".jpp");
-
-        final Map initJoint = new HashMap();
-        initJoint.put("somekey", "somevalue");
-        init.setJointCompilationOptions(initJoint);
-
-        final ParserPluginFactory initPPF = ParserPluginFactory.antlr4(init);
-        init.setPluginFactory(initPPF);
+        init.setJointCompilationOptions(Collections.singletonMap("somekey", "somevalue"));
+        ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4(init);
+        init.setPluginFactory(pluginFactory);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
         assertEquals(true, init.getDebug());
         assertEquals(true, init.getParameters());
-        assertEquals(false, init.getVerbose());
+        assertEquals(Boolean.FALSE, init.getVerbose());
         assertEquals(720, init.getTolerance());
         assertEquals(234, init.getMinimumRecompilationInterval());
         assertEquals("blarg.foo.WhatSit", init.getScriptBaseClass());
         assertEquals("LEAD-123", init.getSourceEncoding());
-        assertEquals(CompilerConfiguration.POST_JDK5, init.getTargetBytecode());
+        assertEquals(CompilerConfiguration.JDK5, init.getTargetBytecode());
         assertEquals(true, init.getRecompileGroovySource());
-        {
-            final List listCP = init.getClasspath();
-            assertEquals("File1", listCP.get(0));
-            assertEquals("Somewhere", listCP.get(1));
-        }
-        assertEquals(initTDFile, init.getTargetDirectory());
+        assertEquals("File1", init.getClasspath().get(0));
+        assertEquals("Somewhere", init.getClasspath().get(1));
+        assertEquals(tergetDirectory, init.getTargetDirectory());
         assertEquals(".jpp", init.getDefaultScriptExtension());
-        assertEquals(initJoint, init.getJointCompilationOptions());
-        assertEquals(initPPF, init.getPluginFactory());
+        assertEquals("somevalue", init.getJointCompilationOptions().get("somekey"));
+        assertEquals(pluginFactory, init.getPluginFactory());
 
-        final CompilerConfiguration config = new CompilerConfiguration(init);
+        //
+
+        CompilerConfiguration config = new CompilerConfiguration(init);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, config.getWarningLevel());
-        assertEquals(true, config.getDebug());
-        assertEquals(false, config.getVerbose());
+        assertEquals(Boolean.TRUE, config.getDebug());
+        assertEquals(Boolean.FALSE, config.getVerbose());
         assertEquals(720, config.getTolerance());
         assertEquals(234, config.getMinimumRecompilationInterval());
         assertEquals("blarg.foo.WhatSit", config.getScriptBaseClass());
         assertEquals("LEAD-123", config.getSourceEncoding());
-        assertEquals(CompilerConfiguration.POST_JDK5, config.getTargetBytecode());
-        assertEquals(true, config.getRecompileGroovySource());
-        {
-            final List listCP = config.getClasspath();
-            assertEquals("File1", listCP.get(0));
-            assertEquals("Somewhere", listCP.get(1));
-        }
-        assertEquals(initTDFile, config.getTargetDirectory());
+        assertEquals(CompilerConfiguration.JDK5, config.getTargetBytecode());
+        assertEquals(Boolean.TRUE, config.getRecompileGroovySource());
+        assertEquals("File1", config.getClasspath().get(0));
+        assertEquals("Somewhere", config.getClasspath().get(1));
+        assertEquals(tergetDirectory, config.getTargetDirectory());
         assertEquals(".jpp", config.getDefaultScriptExtension());
-        assertEquals(initJoint, config.getJointCompilationOptions());
-        assertEquals(initPPF, config.getPluginFactory());
-
+        assertEquals("somevalue", config.getJointCompilationOptions().get("somekey"));
+        assertEquals(pluginFactory, config.getPluginFactory());
     }
 
+    @Test
     public void testCopyConstructor2() {
         final CompilerConfiguration init = new CompilerConfiguration();
 
@@ -186,45 +168,39 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         init.setMinimumRecompilationInterval(975);
         init.setScriptBaseClass("");
         init.setSourceEncoding("Gutenberg");
-        init.setTargetBytecode(CompilerConfiguration.PRE_JDK5);
+        init.setTargetBytecode(CompilerConfiguration.JDK5);
         init.setRecompileGroovySource(false);
         init.setClasspath("");
-
-        final File initTDFile = new File("A wandering path");
-        init.setTargetDirectory(initTDFile);
+        File tergetDirectory = new File("A wandering path");
+        init.setTargetDirectory(tergetDirectory);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
-        assertEquals(false, init.getDebug());
-        assertEquals(false, init.getParameters());
-        assertEquals(true, init.getVerbose());
+        assertEquals(Boolean.FALSE, init.getDebug());
+        assertEquals(Boolean.FALSE, init.getParameters());
+        assertEquals(Boolean.TRUE, init.getVerbose());
         assertEquals(55, init.getTolerance());
         assertEquals(975, init.getMinimumRecompilationInterval());
         assertEquals("", init.getScriptBaseClass());
         assertEquals("Gutenberg", init.getSourceEncoding());
-        assertEquals(CompilerConfiguration.PRE_JDK5, init.getTargetBytecode());
-        assertEquals(false, init.getRecompileGroovySource());
-        {
-            final List listCP = init.getClasspath();
-            assertNotNull(listCP);
-            assertEquals(0, listCP.size());
-        }
-        assertEquals(initTDFile, init.getTargetDirectory());
+        assertEquals(CompilerConfiguration.JDK5, init.getTargetBytecode());
+        assertEquals(Boolean.FALSE, init.getRecompileGroovySource());
+        assertEquals(Collections.emptyList(), init.getClasspath());
+        assertEquals(tergetDirectory, init.getTargetDirectory());
 
-        final CompilerConfiguration config = new CompilerConfiguration(init);
+        //
+
+        CompilerConfiguration config = new CompilerConfiguration(init);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, config.getWarningLevel());
-        assertEquals(false, config.getDebug());
-        assertEquals(true, config.getVerbose());
+        assertEquals(Boolean.FALSE, config.getDebug());
+        assertEquals(Boolean.TRUE, config.getVerbose());
         assertEquals(55, config.getTolerance());
         assertEquals(975, config.getMinimumRecompilationInterval());
         assertEquals("", config.getScriptBaseClass());
         assertEquals("Gutenberg", config.getSourceEncoding());
-        assertEquals(CompilerConfiguration.PRE_JDK5, config.getTargetBytecode());
-        assertEquals(false, config.getRecompileGroovySource());
-        {
-            final List listCP = config.getClasspath();
-            assertEquals(0, listCP.size());
-        }
-        assertEquals(initTDFile, config.getTargetDirectory());
+        assertEquals(CompilerConfiguration.JDK5, config.getTargetBytecode());
+        assertEquals(Boolean.FALSE, config.getRecompileGroovySource());
+        assertEquals(Collections.emptyList(), config.getClasspath());
+        assertEquals(tergetDirectory, config.getTargetDirectory());
     }
 }
