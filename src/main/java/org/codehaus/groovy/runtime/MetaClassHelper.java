@@ -331,6 +331,9 @@ public class MetaClassHelper {
                 clazz = clazz.getSuperclass();
                 objectDistance += 3;
             }
+        } else if (parameter.getTheClass() == Object.class) {
+            // make NullObject is preferred over Object
+            return 1;
         } else {
             // choose the distance to Object if a parameter is null
             // this will mean that Object is preferred over a more
