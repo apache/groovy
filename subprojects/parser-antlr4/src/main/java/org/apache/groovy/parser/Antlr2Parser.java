@@ -18,14 +18,26 @@
  */
 package org.apache.groovy.parser;
 
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
  * The Antlr2 parser for creating a module node.
  */
 public class Antlr2Parser extends AbstractParser {
+    private final CompilerConfiguration compilerConfiguration;
+
+    public Antlr2Parser() {
+        this(new CompilerConfiguration(CompilerConfiguration.DEFAULT));
+    }
+
+    public Antlr2Parser(CompilerConfiguration compilerConfiguration) {
+        this.compilerConfiguration = compilerConfiguration;
+        compilerConfiguration.setPluginFactory(new AntlrParserPluginFactory());
+    }
+
     @Override
     protected CompilerConfiguration getCompilerConfiguration() {
-        return CompilerConfiguration.DEFAULT;
+        return compilerConfiguration;
     }
 }

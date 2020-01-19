@@ -19,7 +19,6 @@
 package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Tuple2;
-import groovy.transform.Trait;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -1190,7 +1189,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
     }
 
     private void attachTraitAnnotation(ClassNode classNode) {
-        classNode.addAnnotation(new AnnotationNode(ClassHelper.make(Trait.class)));
+        classNode.addAnnotation(new AnnotationNode(ClassHelper.make("groovy.transform.Trait")));
     }
 
     @SuppressWarnings("unchecked")
@@ -3787,10 +3786,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> implements Groov
 
         List<List<AnnotationNode>> dimList = this.visitDimsOpt(ctx.dimsOpt());
         if (asBoolean(dimList)) {
-            // clear array's generics type info. Groovy's bug? array's generics type will be ignored. e.g. List<String>[]... p
-            classNode.setGenericsTypes(null);
-            classNode.setUsingGenerics(false);
-
             classNode = this.createArrayType(classNode, dimList);
         }
 

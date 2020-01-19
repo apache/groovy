@@ -339,12 +339,12 @@ class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - InterfaceDeclaration"() {
         doTest('core/InterfaceDeclaration_01.groovy')
-        doTest('core/InterfaceDeclaration_02.groovy')
+        doTest('core/InterfaceDeclaration_02.groovy', [PropertyNode, FieldNode])
         doTest('core/InterfaceDeclaration_03.groovy')
     }
 
     void "test groovy core - EnumDeclaration"() {
-        doTest('core/EnumDeclaration_01.groovy')
+        doTest('core/EnumDeclaration_01.groovy', [PropertyNode, FieldNode])
         doTest('core/EnumDeclaration_02.groovy', [ExpressionStatement])
         doTest('core/EnumDeclaration_03.groovy')
         doTest('core/EnumDeclaration_04.groovy')
