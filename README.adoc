@@ -214,6 +214,10 @@ image:{backers-monthly-img}[]
 
 image:{backers-all-img}[]
 
+== Stargazers over time
+
+image::https://starcharts.herokuapp.com/apache/groovy.svg[Stargazers over time, link=https://starcharts.herokuapp.com/apache/groovy]
+
 == License
 
 Groovy is licensed under the terms of the http://www.apache.org/licenses/LICENSE-2.0.html[Apache License, Version 2.0]
