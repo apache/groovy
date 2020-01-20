@@ -23,12 +23,18 @@ import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.ParserPluginFactory;
 
 /**
- * A parser plugin factory for the new parser
+ * A parser plugin factory for the new parser.
  */
 public class Antlr4PluginFactory extends ParserPluginFactory {
-    private CompilerConfiguration compilerConfiguration;
 
-    public Antlr4PluginFactory(CompilerConfiguration compilerConfiguration) {
+    private final CompilerConfiguration compilerConfiguration;
+
+    public Antlr4PluginFactory() {
+        this.compilerConfiguration = null;
+    }
+
+    @Deprecated
+    public Antlr4PluginFactory(final CompilerConfiguration compilerConfiguration) {
         this.compilerConfiguration = compilerConfiguration;
     }
 
