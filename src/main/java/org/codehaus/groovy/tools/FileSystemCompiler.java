@@ -217,7 +217,7 @@ public class FileSystemCompiler {
         File tmpDir = null;
         // if there are any joint compilation options set stubDir if not set
         try {
-            if ((configuration.getJointCompilationOptions() != null)
+            if (configuration.getJointCompilationOptions() != null
                     && !configuration.getJointCompilationOptions().containsKey("stubDir")) {
                 tmpDir = DefaultGroovyStaticMethods.createTempDir(null, "groovy-generated-", "-java-source");
                 configuration.getJointCompilationOptions().put("stubDir", tmpDir);

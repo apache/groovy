@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools.javac;
 
 import groovy.lang.GroovyClassLoader;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -44,7 +45,7 @@ import java.util.Map;
 public class JavaAwareCompilationUnit extends CompilationUnit {
 
     private final JavaStubGenerator stubGenerator;
-    private final List<String> javaSources = new LinkedList<String>();
+    private final List<String> javaSources = new LinkedList<>();
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
     private final File generationGoal;
     private final boolean keepStubs;
@@ -54,27 +55,32 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         this(null, null, null);
     }
 
-    public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
+    public JavaAwareCompilationUnit(final CompilerConfiguration configuration) {
         this(configuration, null, null);
     }
 
-    public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader) {
+    public JavaAwareCompilationUnit(final CompilerConfiguration configuration, final GroovyClassLoader groovyClassLoader) {
         this(configuration, groovyClassLoader, null);
     }
 
-    public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader,
-                                    GroovyClassLoader transformClassLoader) {
+    public JavaAwareCompilationUnit(final CompilerConfiguration configuration, final GroovyClassLoader groovyClassLoader, final GroovyClassLoader transformClassLoader) {
         super(configuration, null, groovyClassLoader, transformClassLoader);
 
-        this.memStubEnabled = this.configuration.isMemStubEnabled();
-        Map<String, Object> options = this.configuration.getJointCompilationOptions();
-        this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
+        {
+            Map<String, Object> options = this.configuration.getJointCompilationOptions();
 
-        boolean useJava5 = CompilerConfiguration.isPostJDK5(this.configuration.getTargetBytecode());
-        String encoding = this.configuration.getSourceEncoding();
+            boolean atLeastJava5 = CompilerConfiguration.isPostJDK5(this.configuration.getTargetBytecode());
+            String sourceEncoding = this.configuration.getSourceEncoding();
+            Object memStub = options.get(CompilerConfiguration.MEM_STUB);
+            if (memStub == null) {
+                memStub = SystemUtil.getSystemPropertySafe("groovy.generate.stub.in.memory", "false");
+            }
 
-        this.stubGenerator = new JavaStubGenerator(generationGoal, false, useJava5, encoding);
-        this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
+            this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
+            this.memStubEnabled = Boolean.parseBoolean(memStub.toString());
+            this.generationGoal = memStubEnabled ? null : (File) options.get("stubDir");
+            this.stubGenerator = new JavaStubGenerator(generationGoal, false, atLeastJava5, sourceEncoding);
+        }
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             if (!javaSources.isEmpty()) {
@@ -99,7 +105,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     @Override
-    public void gotoPhase(int phase) throws CompilationFailedException {
+    public void gotoPhase(final int phase) throws CompilationFailedException {
         super.gotoPhase(phase);
         // compile Java and clean up
         if (phase == Phases.SEMANTIC_ANALYSIS && !javaSources.isEmpty()) {
@@ -118,7 +124,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     @Override
-    public void configure(CompilerConfiguration configuration) {
+    public void configure(final CompilerConfiguration configuration) {
         super.configure(configuration);
         // GroovyClassLoader should be able to find classes compiled from java sources
         File targetDir = this.configuration.getTargetDirectory();
@@ -128,7 +134,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }
     }
 
-    private void addJavaSource(File file) {
+    private void addJavaSource(final File file) {
         String path = file.getAbsolutePath();
         for (String source : javaSources) {
             if (path.equals(source))
@@ -138,20 +144,20 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     }
 
     @Override
-    public void addSources(String[] paths) {
+    public void addSources(final String[] paths) {
         for (String path : paths) {
             addJavaOrGroovySource(new File(path));
         }
     }
 
     @Override
-    public void addSources(File[] files) {
+    public void addSources(final File[] files) {
         for (File file : files) {
             addJavaOrGroovySource(file);
         }
     }
 
-    private void addJavaOrGroovySource(File file) {
+    private void addJavaOrGroovySource(final File file) {
         if (file.getName().endsWith(".java")) {
             addJavaSource(file);
         } else {
@@ -163,7 +169,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         return compilerFactory;
     }
 
-    public void setCompilerFactory(JavaCompilerFactory compilerFactory) {
+    public void setCompilerFactory(final JavaCompilerFactory compilerFactory) {
         this.compilerFactory = compilerFactory;
     }
 }
