@@ -48,16 +48,16 @@ import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
  */
 public class CompilerConfiguration {
 
-    /** This (<code>"indy"</code>) is the Optimization Option value for enabling <code>invokedynamic</code> compilation. */
+    /** Optimization Option for enabling <code>invokedynamic</code> compilation. */
     public static final String INVOKEDYNAMIC = "indy";
 
-    /** This (<code>"groovydoc"</code>) is the Optimization Option value for enabling attaching groovydoc as AST node metadata. */
+    /** Optimization Option for enabling attaching groovydoc as AST node metadata. */
     public static final String GROOVYDOC = "groovydoc";
 
-    /** This (<code>"runtimeGroovydoc"</code>) is the Optimization Option value for enabling attaching {@link groovy.lang.Groovydoc} annotation. */
+    /** Optimization Option for enabling attaching {@link groovy.lang.Groovydoc} annotation. */
     public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
-    /** This (<code>"memStub"</code>) is the Joint Compilation Option value for enabling generating stubs in memory. */
+    /** Joint Compilation Option for enabling generating stubs in memory. */
     public static final String MEM_STUB = "memStub";
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
@@ -434,12 +434,6 @@ public class CompilerConfiguration {
         handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy");
         handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
         handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
-
-        if (Optional.ofNullable(getSystemPropertySafe("groovy.generate.stub.in.memory"))
-                .map(Boolean::valueOf).orElse(DEFAULT != null && DEFAULT.isMemStubEnabled()).booleanValue()) {
-            jointCompilationOptions = new HashMap<>();
-            jointCompilationOptions.put(MEM_STUB, Boolean.TRUE);
-        }
     }
 
     private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName) {
@@ -1085,13 +1079,5 @@ public class CompilerConfiguration {
     public boolean isRuntimeGroovydocEnabled() {
         Boolean runtimeGroovydocEnabled = getOptimizationOptions().get(RUNTIME_GROOVYDOC);
         return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE).booleanValue();
-    }
-
-    /**
-     * Checks if in-memory stub creation is enabled.
-     */
-    public boolean isMemStubEnabled() {
-        return Optional.ofNullable(getJointCompilationOptions()).map(opts -> opts.get(MEM_STUB))
-                .map(Object::toString).map(Boolean::valueOf).orElse(Boolean.FALSE).booleanValue();
     }
 }
