@@ -675,7 +675,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (val != null) vexp.putNodeMetaData(key, val);
             }
             vexp.removeNodeMetaData(INFERRED_TYPE);
-            storeType(vexp, getType(pexp));
+            ClassNode type = pexp.getNodeMetaData(INFERRED_TYPE);
+            storeType(vexp, Optional.ofNullable(type).orElseGet(pexp::getType));
             return true;
         }
         return false;
@@ -1618,7 +1619,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (mopMethod == null) mopMethod = testClass.getMethod("propertyMissing", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
 
-                if (mopMethod != null) {
+                if (mopMethod != null && !mopMethod.isSynthetic()) {
                     pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                     pexp.removeNodeMetaData(DECLARATION_INFERRED_TYPE);
                     pexp.removeNodeMetaData(INFERRED_TYPE);
