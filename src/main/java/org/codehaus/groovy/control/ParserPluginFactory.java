@@ -25,13 +25,16 @@ import org.codehaus.groovy.antlr.AntlrParserPluginFactory;
  * A factory of parser plugin instances.
  */
 public abstract class ParserPluginFactory {
+
+    public abstract ParserPlugin createParserPlugin();
+
     /**
      * Creates the ANTLR 4 parser.
      *
      * @return the factory for the parser
      */
-    public static ParserPluginFactory antlr4(final CompilerConfiguration compilerConfiguration) {
-        return new Antlr4PluginFactory(compilerConfiguration);
+    public static ParserPluginFactory antlr4() {
+        return new Antlr4PluginFactory();
     }
 
     /**
@@ -43,6 +46,4 @@ public abstract class ParserPluginFactory {
     public static ParserPluginFactory antlr2() {
         return new AntlrParserPluginFactory();
     }
-
-    public abstract ParserPlugin createParserPlugin();
 }

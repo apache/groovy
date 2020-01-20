@@ -249,17 +249,14 @@ final class TestUtils {
     }
 
     static GroovyShell createAntlr4Shell(CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)) {
-        compilerConfiguration.pluginFactory = new Antlr4PluginFactory(compilerConfiguration)
-
-        return new GroovyShell(compilerConfiguration);
+        compilerConfiguration.pluginFactory = new Antlr4PluginFactory()
+        return new GroovyShell(compilerConfiguration)
     }
 
-    static GroovyShell createAntlr2Shell() {
-        CompilerConfiguration configuration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
-        configuration.pluginFactory = new AntlrParserPluginFactory()
-
-        return new GroovyShell(configuration);
+    static GroovyShell createAntlr2Shell(CompilerConfiguration compilerConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT)) {
+        compilerConfiguration.pluginFactory = new AntlrParserPluginFactory()
+        return new GroovyShell(compilerConfiguration)
     }
 
-    public static final List COMMON_IGNORE_CLASS_LIST = Collections.unmodifiableList([AssertStatement, BreakStatement, ConstructorNode, ContinueStatement, ExpressionStatement, FieldNode, ForStatement, GenericsType, IfStatement, MethodNode, PackageNode, Parameter, PropertyNode, ReturnStatement, ThrowStatement, Token, WhileStatement] as List);
+    public static final List COMMON_IGNORE_CLASS_LIST = Collections.unmodifiableList([AssertStatement, BreakStatement, ConstructorNode, ContinueStatement, ExpressionStatement, FieldNode, ForStatement, GenericsType, IfStatement, MethodNode, PackageNode, Parameter, PropertyNode, ReturnStatement, ThrowStatement, Token, WhileStatement])
 }

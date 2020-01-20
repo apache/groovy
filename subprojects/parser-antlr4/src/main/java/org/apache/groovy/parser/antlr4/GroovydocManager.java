@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -51,11 +50,6 @@ public class GroovydocManager {
     private static final String VALUE = "value";
     private static final Pattern SPACES_PATTERN = Pattern.compile("\\s+");
     private final boolean groovydocEnabled, runtimeGroovydocEnabled;
-
-    @Deprecated
-    public GroovydocManager(final CompilerConfiguration compilerConfiguration) {
-        this(compilerConfiguration.isGroovydocEnabled(), compilerConfiguration.isRuntimeGroovydocEnabled());
-    }
 
     public GroovydocManager(final boolean groovydocEnabled, final boolean runtimeGroovydocEnabled) {
         this.groovydocEnabled = groovydocEnabled;

@@ -871,7 +871,7 @@ public class CompilerConfiguration {
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
             pluginFactory = !Boolean.parseBoolean(getSystemPropertySafe("groovy.antlr4", "true"))
-                                ? ParserPluginFactory.antlr2() : ParserPluginFactory.antlr4(this);
+                                ? ParserPluginFactory.antlr2() : ParserPluginFactory.antlr4();
         }
         return pluginFactory;
     }

@@ -114,7 +114,7 @@ public final class CompilerConfigurationTest {
         init.setTargetDirectory(tergetDirectory);
         init.setDefaultScriptExtension(".jpp");
         init.setJointCompilationOptions(Collections.singletonMap("somekey", "somevalue"));
-        ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4(init);
+        ParserPluginFactory pluginFactory = ParserPluginFactory.antlr4();
         init.setPluginFactory(pluginFactory);
 
         assertEquals(WarningMessage.POSSIBLE_ERRORS, init.getWarningLevel());
