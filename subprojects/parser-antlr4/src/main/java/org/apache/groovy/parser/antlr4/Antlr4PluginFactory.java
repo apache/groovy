@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.parser.antlr4;
 
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.ParserPluginFactory;
 
@@ -27,19 +26,8 @@ import org.codehaus.groovy.control.ParserPluginFactory;
  */
 public class Antlr4PluginFactory extends ParserPluginFactory {
 
-    private final CompilerConfiguration compilerConfiguration;
-
-    public Antlr4PluginFactory() {
-        this.compilerConfiguration = null;
-    }
-
-    @Deprecated
-    public Antlr4PluginFactory(final CompilerConfiguration compilerConfiguration) {
-        this.compilerConfiguration = compilerConfiguration;
-    }
-
     @Override
     public ParserPlugin createParserPlugin() {
-        return new Antlr4ParserPlugin(compilerConfiguration);
+        return new Antlr4ParserPlugin();
     }
 }
