@@ -20,7 +20,6 @@ package org.apache.groovy.parser.antlr4;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.StringReaderSource;
@@ -29,23 +28,11 @@ import org.codehaus.groovy.syntax.Reduction;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Optional;
 
 /**
  * A parser plugin for the new parser.
  */
 public class Antlr4ParserPlugin implements ParserPlugin {
-
-    private final CompilerConfiguration compilerConfiguration;
-
-    public Antlr4ParserPlugin() {
-        this.compilerConfiguration = null;
-    }
-
-    @Deprecated
-    public Antlr4ParserPlugin(final CompilerConfiguration compilerConfiguration) {
-        this.compilerConfiguration = compilerConfiguration;
-    }
 
     @Override
     public Reduction parseCST(final SourceUnit sourceUnit, final Reader reader) {
@@ -64,8 +51,10 @@ public class Antlr4ParserPlugin implements ParserPlugin {
 
     @Override
     public ModuleNode buildAST(final SourceUnit sourceUnit, final ClassLoader classLoader, final Reduction cst) {
-        CompilerConfiguration compilerConfiguration = Optional.ofNullable(this.compilerConfiguration).orElseGet(sourceUnit::getConfiguration);
-        AstBuilder builder = new AstBuilder(sourceUnit, compilerConfiguration.isGroovydocEnabled(), compilerConfiguration.isRuntimeGroovydocEnabled());
+        AstBuilder builder = new AstBuilder(sourceUnit,
+                sourceUnit.getConfiguration().isGroovydocEnabled(),
+                sourceUnit.getConfiguration().isRuntimeGroovydocEnabled()
+        );
         return builder.buildAST();
     }
 }

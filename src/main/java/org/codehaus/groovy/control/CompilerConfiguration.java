@@ -879,7 +879,7 @@ public class CompilerConfiguration {
 
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
-            pluginFactory = ParserPluginFactory.antlr4(this);
+            pluginFactory = ParserPluginFactory.antlr4();
         }
         return pluginFactory;
     }
