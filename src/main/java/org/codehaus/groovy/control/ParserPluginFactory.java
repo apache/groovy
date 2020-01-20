@@ -30,7 +30,7 @@ public abstract class ParserPluginFactory {
      *
      * @return the factory for the parser
      */
-    public static ParserPluginFactory antlr4(CompilerConfiguration compilerConfiguration) {
+    public static ParserPluginFactory antlr4(final CompilerConfiguration compilerConfiguration) {
         return new Antlr4PluginFactory(compilerConfiguration);
     }
 

@@ -44,17 +44,22 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  * 3) attach groovydoc to AST node as metadata
  */
 public class GroovydocManager {
+
     public static final String DOC_COMMENT = GroovydocHolder.DOC_COMMENT; // keys for meta data
     private static final String GROOVYDOC_PREFIX = "/**";
     private static final String RUNTIME_GROOVYDOC_PREFIX = GROOVYDOC_PREFIX + "@";
     private static final String VALUE = "value";
     private static final Pattern SPACES_PATTERN = Pattern.compile("\\s+");
-    private final boolean groovydocEnabled;
-    private final boolean runtimeGroovydocEnabled;
+    private final boolean groovydocEnabled, runtimeGroovydocEnabled;
 
-    public GroovydocManager(CompilerConfiguration compilerConfiguration) {
-        this.groovydocEnabled = compilerConfiguration.isGroovydocEnabled();
-        this.runtimeGroovydocEnabled = compilerConfiguration.isRuntimeGroovydocEnabled();
+    @Deprecated
+    public GroovydocManager(final CompilerConfiguration compilerConfiguration) {
+        this(compilerConfiguration.isGroovydocEnabled(), compilerConfiguration.isRuntimeGroovydocEnabled());
+    }
+
+    public GroovydocManager(final boolean groovydocEnabled, final boolean runtimeGroovydocEnabled) {
+        this.groovydocEnabled = groovydocEnabled;
+        this.runtimeGroovydocEnabled = runtimeGroovydocEnabled;
     }
 
     /**
