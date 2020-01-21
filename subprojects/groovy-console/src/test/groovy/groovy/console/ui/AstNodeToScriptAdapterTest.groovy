@@ -594,8 +594,8 @@ class AstNodeToScriptAdapterTest extends GroovyTestCase {
 
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
 
-        assert result =~ /new script[0-9].*\$1/
-        assert result =~ /public class script[0-9].*\$1/
+        assert result =~ /new script[0-9]+\$1\(this\)/
+        assert result =~ /class script[0-9]+\$1/
         assert result =~ /public java\.lang\.String toString\(\)/
     }
 
