@@ -21,11 +21,12 @@ package org.apache.groovy.util;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ArraysTest {
+public final class ArraysTest {
+
     @Test
     public void testConcat0() {
         Assert.assertNull(Arrays.concat());
-        Assert.assertNull(Arrays.concat(null));
+        Assert.assertNull(Arrays.concat((Object[][]) null));
     }
 
     @Test
