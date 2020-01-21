@@ -126,7 +126,7 @@ public class PluginDefaultGroovyMethods {
 
     /**
      * Tests given value against specified type and changes generics of result.
-     * This is equivalent to: <code>self.filter(it -> it instanceof Type).map(it -> (Type) it)</code>
+     * This is equivalent to: <code>self.filter(it -&gt; it instanceof Type).map(it -&gt; (Type) it)</code>
      * <pre class="groovyTestCase">
      * assert !Optional.empty().filter(Number).isPresent()
      * assert !Optional.of('x').filter(Number).isPresent()
@@ -145,10 +145,10 @@ public class PluginDefaultGroovyMethods {
      * the given predicate and returns the optional if the test returns true or
      * else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalInt.empty().filter(i -> true).isPresent()
-     * assert  OptionalInt.of(1234).filter(i -> true).isPresent()
-     * assert !OptionalInt.of(1234).filter(i -> false).isPresent()
-     * assert  OptionalInt.of(1234).filter(i -> true).getAsInt() == 1234
+     * assert !OptionalInt.empty().filter(i -&gt; true).isPresent()
+     * assert  OptionalInt.of(1234).filter(i -&gt; true).isPresent()
+     * assert !OptionalInt.of(1234).filter(i -&gt; false).isPresent()
+     * assert  OptionalInt.of(1234).filter(i -&gt; true).getAsInt() == 1234
      * </pre>
      *
      * @since 3.0.0
@@ -165,10 +165,10 @@ public class PluginDefaultGroovyMethods {
      * the given predicate and returns the optional if the test returns true or
      * else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalLong.empty().filter(n -> true).isPresent()
-     * assert  OptionalLong.of(123L).filter(n -> true).isPresent()
-     * assert !OptionalLong.of(123L).filter(n -> false).isPresent()
-     * assert  OptionalLong.of(123L).filter(n -> true).getAsLong() == 123L
+     * assert !OptionalLong.empty().filter(n -&gt; true).isPresent()
+     * assert  OptionalLong.of(123L).filter(n -&gt; true).isPresent()
+     * assert !OptionalLong.of(123L).filter(n -&gt; false).isPresent()
+     * assert  OptionalLong.of(123L).filter(n -&gt; true).getAsLong() == 123L
      * </pre>
      *
      * @since 3.0.0
@@ -185,10 +185,10 @@ public class PluginDefaultGroovyMethods {
      * the given predicate and returns the optional if the test returns true or
      * empty otherwise.
      * <pre class="groovyTestCase">
-     * assert !OptionalDouble.empty().filter(n -> true).isPresent()
-     * assert  OptionalDouble.of(Math.PI).filter(n -> true).isPresent()
-     * assert !OptionalDouble.of(Math.PI).filter(n -> false).isPresent()
-     * assert  OptionalDouble.of(Math.PI).filter(n -> true).getAsDouble() == Math.PI
+     * assert !OptionalDouble.empty().filter(n -&gt; true).isPresent()
+     * assert  OptionalDouble.of(Math.PI).filter(n -&gt; true).isPresent()
+     * assert !OptionalDouble.of(Math.PI).filter(n -&gt; false).isPresent()
+     * assert  OptionalDouble.of(Math.PI).filter(n -&gt; true).getAsDouble() == Math.PI
      * </pre>
      *
      * @since 3.0.0
@@ -204,9 +204,9 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalInt}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalInt.empty().mapToObj(x -> new Object()).isPresent()
-     * assert  OptionalInt.of(1234).mapToObj(x -> new Object()).isPresent()
-     * assert !OptionalInt.of(1234).mapToObj(x -> null).isPresent()
+     * assert !OptionalInt.empty().mapToObj(x -&gt; new Object()).isPresent()
+     * assert  OptionalInt.of(1234).mapToObj(x -&gt; new Object()).isPresent()
+     * assert !OptionalInt.of(1234).mapToObj(x -&gt; null).isPresent()
      * assert  OptionalInt.of(1234).mapToObj(Integer::toString).get() == '1234'
      * </pre>
      *
@@ -223,9 +223,9 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalLong}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalLong.empty().mapToObj(x -> new Object()).isPresent()
-     * assert  OptionalLong.of(123L).mapToObj(x -> new Object()).isPresent()
-     * assert !OptionalLong.of(123L).mapToObj(x -> null).isPresent()
+     * assert !OptionalLong.empty().mapToObj(x -&gt; new Object()).isPresent()
+     * assert  OptionalLong.of(123L).mapToObj(x -&gt; new Object()).isPresent()
+     * assert !OptionalLong.of(123L).mapToObj(x -&gt; null).isPresent()
      * assert  OptionalLong.of(1234L).mapToObj(Long::toString).get() == '1234'
      * </pre>
      *
@@ -242,9 +242,9 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalDouble}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalDouble.empty().mapToObj(x -> new Object()).isPresent()
-     * assert  OptionalDouble.of(Math.PI).mapToObj(x -> new Object()).isPresent()
-     * assert !OptionalDouble.of(Math.PI).mapToObj(x -> null).isPresent()
+     * assert !OptionalDouble.empty().mapToObj(x -&gt; new Object()).isPresent()
+     * assert  OptionalDouble.of(Math.PI).mapToObj(x -&gt; new Object()).isPresent()
+     * assert !OptionalDouble.of(Math.PI).mapToObj(x -&gt; null).isPresent()
      * assert  OptionalDouble.of(Math.PI).mapToObj(Double::toString).get().startsWith('3.14')
      * </pre>
      *
@@ -261,8 +261,8 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalInt}, returns an {@code OptionalInt}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !Optional.empty().mapToInt(x -> 42).isPresent()
-     * assert  Optional.of('x').mapToInt(x -> 42).getAsInt() == 42
+     * assert !Optional.empty().mapToInt(x -&gt; 42).isPresent()
+     * assert  Optional.of('x').mapToInt(x -&gt; 42).getAsInt() == 42
      * </pre>
      *
      * @since 3.0.0
@@ -278,8 +278,8 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalLong}, returns an {@code OptionalLong}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !Optional.empty().mapToLong(x -> 42L).isPresent()
-     * assert  Optional.of('x').mapToLong(x -> 42L).getAsLong() == 42L
+     * assert !Optional.empty().mapToLong(x -&gt; 42L).isPresent()
+     * assert  Optional.of('x').mapToLong(x -&gt; 42L).getAsLong() == 42L
      * </pre>
      *
      * @since 3.0.0
@@ -295,8 +295,8 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalDouble}, returns an {@code OptionalDouble}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !Optional.empty().mapToDouble(x -> Math.PI).isPresent()
-     * assert  Optional.of('x').mapToDouble(x -> Math.PI).getAsDouble() == Math.PI
+     * assert !Optional.empty().mapToDouble(x -&gt; Math.PI).isPresent()
+     * assert  Optional.of('x').mapToDouble(x -&gt; Math.PI).getAsDouble() == Math.PI
      * </pre>
      *
      * @since 3.0.0
