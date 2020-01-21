@@ -1079,94 +1079,82 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ClassNode visitClassDeclaration(ClassDeclarationContext ctx) {
-        String packageName = moduleNode.getPackageName();
-        packageName = null != packageName ? packageName : "";
+        String packageName = Optional.ofNullable(moduleNode.getPackageName()).orElse("");
+        String className = this.visitIdentifier(ctx.identifier());
+        if (VAR_STR.equals(className)) {
+            throw createParsingFailedException("var cannot be used for type declarations", ctx.identifier());
+        }
 
         List<ModifierNode> modifierNodeList = ctx.getNodeMetaData(TYPE_DECLARATION_MODIFIERS);
         Objects.requireNonNull(modifierNodeList, "modifierNodeList should not be null");
-
         ModifierManager modifierManager = new ModifierManager(this, modifierNodeList);
         int modifiers = modifierManager.getClassModifiersOpValue();
 
         boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
         modifiers &= ~Opcodes.ACC_SYNTHETIC;
 
-        final ClassNode outerClass = classNodeStack.peek();
-        ClassNode classNode;
-        String className = this.visitIdentifier(ctx.identifier());
-
-        if (VAR_STR.equals(className)) {
-            throw createParsingFailedException("var cannot be used for type declarations", ctx.identifier());
-        }
-
+        ClassNode classNode, outerClass = classNodeStack.peek();
         if (asBoolean(ctx.ENUM())) {
-            classNode =
-                    EnumHelper.makeEnumNode(
-                            asBoolean(outerClass) ? className : packageName + className,
-                            modifiers, null, outerClass);
+            classNode = EnumHelper.makeEnumNode(
+                    asBoolean(outerClass) ? className : packageName + className,
+                    modifiers,
+                    null,
+                    outerClass
+            );
+        } else if (asBoolean(outerClass)) {
+            if (outerClass.isInterface()) modifiers |= Opcodes.ACC_STATIC;
+            classNode = new InnerClassNode(
+                    outerClass,
+                    outerClass.getName() + "$" + className,
+                    modifiers,
+                    ClassHelper.OBJECT_TYPE
+            );
         } else {
-            if (asBoolean(outerClass)) {
-                classNode =
-                        new InnerClassNode(
-                                outerClass,
-                                outerClass.getName() + "$" + className,
-                                modifiers | (outerClass.isInterface() ? Opcodes.ACC_STATIC : 0),
-                                ClassHelper.OBJECT_TYPE);
-            } else {
-                classNode =
-                        new ClassNode(
-                                packageName + className,
-                                modifiers,
-                                ClassHelper.OBJECT_TYPE);
-            }
+            classNode = new ClassNode(
+                    packageName + className,
+                    modifiers,
+                    ClassHelper.OBJECT_TYPE
+            );
         }
 
         configureAST(classNode, ctx);
-        classNode.putNodeMetaData(CLASS_NAME, className);
         classNode.setSyntheticPublic(syntheticPublic);
+        classNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
+        boolean isInterface = (asBoolean(ctx.INTERFACE()) && !asBoolean(ctx.AT()));
+        boolean isInterfaceWithDefaultMethods = (isInterface && this.containsDefaultMethods(ctx));
 
-        if (asBoolean(ctx.TRAIT())) {
-            attachTraitAnnotation(classNode);
+        if (isInterfaceWithDefaultMethods || asBoolean(ctx.TRAIT())) {
+            classNode.addAnnotation(new AnnotationNode(ClassHelper.make("groovy.transform.Trait")));
         }
         classNode.addAnnotations(modifierManager.getAnnotations());
-        classNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
 
-        boolean isInterface = asBoolean(ctx.INTERFACE()) && !asBoolean(ctx.AT());
-        boolean isInterfaceWithDefaultMethods = false;
-
-        // declaring interface with default method
-        if (isInterface && this.containsDefaultMethods(ctx)) {
-            isInterfaceWithDefaultMethods = true;
-            attachTraitAnnotation(classNode);
-            classNode.putNodeMetaData(IS_INTERFACE_WITH_DEFAULT_METHODS, true);
+        if (isInterfaceWithDefaultMethods) {
+            classNode.putNodeMetaData(IS_INTERFACE_WITH_DEFAULT_METHODS, Boolean.TRUE);
         }
+        classNode.putNodeMetaData(CLASS_NAME, className);
 
-        if (asBoolean(ctx.CLASS()) || asBoolean(ctx.TRAIT()) || isInterfaceWithDefaultMethods) { // class OR trait OR interface with default methods
+        if (asBoolean(ctx.CLASS()) || asBoolean(ctx.TRAIT()) || isInterfaceWithDefaultMethods) {
             classNode.setSuperClass(this.visitType(ctx.sc));
             classNode.setInterfaces(this.visitTypeList(ctx.is));
-
             this.initUsingGenerics(classNode);
-        } else if (isInterface) { // interface(NOT annotation)
-            classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT);
 
+        } else if (isInterface) {
+            classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT);
             classNode.setSuperClass(ClassHelper.OBJECT_TYPE);
             classNode.setInterfaces(this.visitTypeList(ctx.scs));
-
             this.initUsingGenerics(classNode);
-
             this.hackMixins(classNode);
-        } else if (asBoolean(ctx.ENUM())) { // enum
+
+        } else if (asBoolean(ctx.ENUM())) {
             classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_ENUM | Opcodes.ACC_FINAL);
-
             classNode.setInterfaces(this.visitTypeList(ctx.is));
-
             this.initUsingGenerics(classNode);
-        } else if (asBoolean(ctx.AT())) { // annotation
+
+        } else if (asBoolean(ctx.AT())) {
             classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_ANNOTATION);
-
             classNode.addInterface(ClassHelper.Annotation_TYPE);
-
             this.hackMixins(classNode);
+
         } else {
             throw createParsingFailedException("Unsupported class declaration: " + ctx.getText(), ctx);
         }
@@ -1191,10 +1179,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         groovydocManager.handle(classNode, ctx);
 
         return classNode;
-    }
-
-    private void attachTraitAnnotation(ClassNode classNode) {
-        classNode.addAnnotation(new AnnotationNode(ClassHelper.make("groovy.transform.Trait")));
     }
 
     @SuppressWarnings("unchecked")
