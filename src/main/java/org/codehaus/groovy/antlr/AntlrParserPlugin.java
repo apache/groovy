@@ -22,6 +22,7 @@ import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.TokenStreamRecognitionException;
 import antlr.collections.AST;
+import groovy.transform.Trait;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -630,7 +631,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         List<AnnotationNode> annotations = new ArrayList<>();
 
         if (isType(TRAIT_DEF, classDef)) {
-            annotations.add(new AnnotationNode(ClassHelper.make("groovy.transform.Trait")));
+            annotations.add(new AnnotationNode(ClassHelper.makeCached(Trait.class)));
         }
 
         AST node = classDef.getFirstChild();

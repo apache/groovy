@@ -19,6 +19,7 @@
 package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Tuple2;
+import groovy.transform.Trait;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -1124,7 +1125,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         boolean isInterfaceWithDefaultMethods = (isInterface && this.containsDefaultMethods(ctx));
 
         if (isInterfaceWithDefaultMethods || asBoolean(ctx.TRAIT())) {
-            classNode.addAnnotation(new AnnotationNode(ClassHelper.make("groovy.transform.Trait")));
+            classNode.addAnnotation(new AnnotationNode(ClassHelper.makeCached(Trait.class)));
         }
         classNode.addAnnotations(modifierManager.getAnnotations());
 
