@@ -19,12 +19,13 @@
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 
-allprojects {
+allprojects { proj ->
     apply plugin: "org.nosphere.apache.rat"
     //apply plugin: "com.github.hierynomus.license"
     apply plugin: 'checkstyle'
     apply plugin: 'codenarc'
-    apply plugin: 'com.github.spotbugs'
+//    apply plugin: 'com.github.spotbugs'
+    apply plugin: 'jp.skypencil.spotbugs.snom'
     configurations.codenarc {
         // because we will rely on the version we build
         // because version ranges are evil
@@ -42,6 +43,10 @@ allprojects {
     
     dependencies {
         codenarc "org.codenarc:CodeNarc:1.5"
+        spotbugs 'com.github.spotbugs:spotbugs:3.1.11'
+        if (proj.name.contains('jaxb') && JavaVersion.current().isJava9Compatible()) {
+            spotbugs 'javax.xml.bind:jaxb-api:2.3.0'
+        }
         codenarc project(":groovy-templates")
     }
 
@@ -132,23 +137,20 @@ allprojects {
         }
     }
 
-    spotbugs {
-        toolVersion = '3.1.7'
-        // continue build despite warnings
-        ignoreFailures = true
-        //defining source set is needless
-        //just run ./gradlew spotbugsMain then it will parse src/main/java.
-        //To parse test cases, you need to use ./gradlew spotbugsTest.
-    }
-
-    // To generate an HTML report instead of XML
     tasks.withType(SpotBugsTask) {
+        // TODO work out why the following aren't being set automatically
+        if (proj.name.contains('jaxb')) {
+            reportsDir = file("$buildDir/reports/spotbugs")
+            projectName = proj.name
+            release = rootProject.version
+        }
+        ignoreFailures = true
         effort = 'max'
+        maxHeapSize = '2g'
         reports {
             xml.enabled = false
             html.enabled = true
         }
-        maxHeapSize '2g'
     }
 }
 
