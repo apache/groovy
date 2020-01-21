@@ -25,14 +25,13 @@ import groovy.text.markup.TemplateConfiguration;
 import java.util.Map;
 
 public abstract class CustomBaseTemplate extends BaseTemplate {
-    private String version;
 
-    public CustomBaseTemplate(
-            final MarkupTemplateEngine templateEngine,
-            final Map model,
-            final Map modelTypes, final TemplateConfiguration configuration) {
+    public CustomBaseTemplate(final MarkupTemplateEngine templateEngine,
+            final Map model, final Map<String, String> modelTypes, final TemplateConfiguration configuration) {
         super(templateEngine, model, modelTypes, configuration);
     }
+
+    private String version;
 
     public String getVersion() {
         return version;

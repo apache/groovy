@@ -25,12 +25,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A bean used by the test cases
+ * A bean used by the test cases.
  */
 public class DummyBean {
+
     private String name = "James";
-    private Integer i = 123;
-    private Map dynamicProperties = new HashMap();
+    private Integer i = Integer.valueOf(123);
+    private Map<String, Object> dynamicProperties = new HashMap<>();
     private Point point;
     private PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
 
@@ -101,5 +102,4 @@ public class DummyBean {
     public void setPoint(Point point) {
         changeSupport.firePropertyChange("point", this.point, this.point = point);
     }
-
 }
