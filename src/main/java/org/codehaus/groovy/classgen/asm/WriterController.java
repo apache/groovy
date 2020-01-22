@@ -112,7 +112,7 @@ public class WriterController {
         this.unaryExpressionHelper = new UnaryExpressionHelper(this);
         if (optimizeForInt) {
             this.fastPathBinaryExpHelper = new BinaryExpressionMultiTypeDispatcher(this);
-            // todo: replace with a real fast path unary expression helper when available
+            // TODO: replace with a real fast path unary expression helper when available
             this.fastPathUnaryExpressionHelper = new UnaryExpressionHelper(this);
         } else {
             this.fastPathBinaryExpHelper = this.binaryExpHelper;
@@ -140,10 +140,7 @@ public class WriterController {
     }
 
     private ClassVisitor createClassVisitor(final ClassVisitor cv) {
-        if (!LOG_CLASSGEN) {
-            return cv;
-        }
-        if (cv instanceof LoggableClassVisitor) {
+        if (!LOG_CLASSGEN || cv instanceof LoggableClassVisitor) {
             return cv;
         }
         return new LoggableClassVisitor(cv);
@@ -151,16 +148,17 @@ public class WriterController {
 
     private static int chooseBytecodeVersion(final boolean invokedynamic, final boolean previewFeatures, final String targetBytecode) {
         Integer bytecodeVersion = CompilerConfiguration.JDK_TO_BYTECODE_VERSION_MAP.get(targetBytecode);
-
-        if (invokedynamic && bytecodeVersion < Opcodes.V1_8) {
-            return Opcodes.V1_8;
-        } else {
-            if (null != bytecodeVersion) {
-                return previewFeatures ? bytecodeVersion | Opcodes.V_PREVIEW : bytecodeVersion;
-            }
+        if (bytecodeVersion == null) {
+            throw new GroovyBugError("Bytecode version [" + targetBytecode + "] is not supported by the compiler");
         }
 
-        throw new GroovyBugError("Bytecode version ["+targetBytecode+"] is not supported by the compiler");
+        if (invokedynamic && bytecodeVersion <= Opcodes.V1_7) {
+            return Opcodes.V1_7; // invokedynamic added here
+        } else if (previewFeatures) {
+            return bytecodeVersion | Opcodes.V_PREVIEW;
+        } else {
+            return bytecodeVersion;
+        }
     }
 
     public AsmClassGenerator getAcg() {
@@ -260,7 +258,7 @@ public class WriterController {
         this.constructorNode = null;
     }
 
-    public ConstructorNode getConstructorNode(){
+    public ConstructorNode getConstructorNode() {
         return constructorNode;
     }
 
