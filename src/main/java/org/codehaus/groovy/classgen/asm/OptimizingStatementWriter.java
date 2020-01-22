@@ -102,12 +102,10 @@ public class OptimizingStatementWriter extends StatementWriter {
     };
 
     private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(BytecodeInterface8.class, "disabledStandardMetaClass");
-    private final WriterController controller;
     private boolean fastPathBlocked;
 
     public OptimizingStatementWriter(final WriterController controller) {
         super(controller);
-        this.controller = controller;
     }
 
     private FastPathData writeGuards(final StatementMeta meta, final Statement statement) {
