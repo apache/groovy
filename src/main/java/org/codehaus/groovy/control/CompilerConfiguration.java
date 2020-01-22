@@ -40,6 +40,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
 
 /**
@@ -100,12 +101,12 @@ public class CompilerConfiguration {
      * JDK version to bytecode version mapping.
      */
     public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Maps.of(
-            JDK4, Opcodes.V1_4,
-            JDK5, Opcodes.V1_5,
-            JDK6, Opcodes.V1_6,
-            JDK7, Opcodes.V1_7,
-            JDK8, Opcodes.V1_8,
-            JDK9, Opcodes.V9,
+            JDK4,  Opcodes.V1_4,
+            JDK5,  Opcodes.V1_5,
+            JDK6,  Opcodes.V1_6,
+            JDK7,  Opcodes.V1_7,
+            JDK8,  Opcodes.V1_8,
+            JDK9,  Opcodes.V9,
             JDK10, Opcodes.V10,
             JDK11, Opcodes.V11,
             JDK12, Opcodes.V12,
@@ -400,7 +401,6 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.target.directory</code></td><td>{@link #getTargetDirectory}</td></tr>
      *   <tr><td><code>groovy.parameters</code></td><td>{@link #getParameters()}</td></tr>
      *   <tr><td><code>groovy.preview.features</code></td><td>{@link #isPreviewFeatures}</td></tr>
-     *   <tr><td><code>groovy.script.base</code></td><td>{@link #getScriptBaseClass}</td></tr>
      *   <tr><td><code>groovy.default.scriptExtension</code></td><td>{@link #getDefaultScriptExtension}</td></tr>
      * </table>
      * </blockquote>
@@ -417,22 +417,18 @@ public class CompilerConfiguration {
      * </blockquote>
      */
     public CompilerConfiguration() {
-        warningLevel = WarningMessage.LIKELY_ERRORS;
         classpath = new LinkedList<>();
-        parameters = Optional.ofNullable(getSystemPropertySafe("groovy.parameters")).map(Boolean::valueOf).orElse(Boolean.FALSE);
+
         tolerance = 10;
         minimumRecompilationInterval = 100;
-
-        setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", getMinBytecodeVersion()));
-
-        previewFeatures = getSystemPropertySafe("groovy.preview.features") != null;
-        defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
-
-        String encoding = getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING);
-        encoding = getSystemPropertySafe("groovy.source.encoding", encoding);
-        setSourceEncodingOrDefault(encoding);
-
+        warningLevel = WarningMessage.LIKELY_ERRORS;
+        parameters = getBooleanSafe("groovy.parameters");
+        previewFeatures = getBooleanSafe("groovy.preview.features");
         setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
+        setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", JDK8));
+        sourceEncoding = Optional.ofNullable(getSystemPropertySafe("groovy.source.encoding"))
+                .orElseGet(() -> getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
+        defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
         handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy");
@@ -973,10 +969,6 @@ public class CompilerConfiguration {
      */
     public void setPreviewFeatures(final boolean previewFeatures) {
         this.previewFeatures = previewFeatures;
-    }
-
-    private static String getMinBytecodeVersion() {
-        return JDK8;
     }
 
     /**
