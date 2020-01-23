@@ -36,7 +36,6 @@ import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
@@ -310,28 +309,19 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitIfElse");
         writeStatementLabel(statement);
 
-        MethodVisitor mv = controller.getMethodVisitor();
-
         statement.getBooleanExpression().visit(controller.getAcg());
         Label l0 = controller.getOperandStack().jump(IFEQ);
-
-        // if-else is here handled as a special version
-        // of a boolean expression
-        controller.getCompileStack().pushBooleanExpression();
         statement.getIfBlock().visit(controller.getAcg());
-        controller.getCompileStack().pop();
 
-        if (statement.getElseBlock() instanceof EmptyStatement) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (statement.getElseBlock().isEmpty()) {
             mv.visitLabel(l0);
         } else {
             Label l1 = new Label();
             mv.visitJumpInsn(GOTO, l1);
             mv.visitLabel(l0);
 
-            controller.getCompileStack().pushBooleanExpression();
             statement.getElseBlock().visit(controller.getAcg());
-            controller.getCompileStack().pop();
-
             mv.visitLabel(l1);
         }
     }
