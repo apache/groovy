@@ -39,15 +39,27 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Utility class to add return statements.
- * Extracted from Verifier as it can be useful for some AST transformations
+ * <p>
+ * Extracted from Verifier as it can be useful for some AST transformations.
  */
 public class ReturnAdder {
 
+    @FunctionalInterface
+    public interface ReturnStatementListener {
+        /**
+         * Implement this method in order to be notified whenever a return statement is generated.
+         */
+        void returnStatementAdded(ReturnStatement returnStatement);
+    }
+
     private static final ReturnStatementListener DEFAULT_LISTENER = returnStatement -> {
     };
+
+    private final ReturnStatementListener listener;
 
     /**
      * If set to 'true', then returns are effectively added. This is useful whenever you just want
@@ -55,15 +67,13 @@ public class ReturnAdder {
      */
     private final boolean doAdd;
 
-    private final ReturnStatementListener listener;
-
     public ReturnAdder() {
-        doAdd = true;
-        listener = DEFAULT_LISTENER;
+        this.listener = DEFAULT_LISTENER;
+        this.doAdd = true;
     }
 
-    public ReturnAdder(ReturnStatementListener listener) {
-        this.listener = listener;
+    public ReturnAdder(final ReturnStatementListener listener) {
+        this.listener = Objects.requireNonNull(listener);
         this.doAdd = false;
     }
 
@@ -73,20 +83,19 @@ public class ReturnAdder {
      * @deprecated Use {@link #visitMethod(org.codehaus.groovy.ast.MethodNode)} instead
      */
     @Deprecated
-    public static void addReturnIfNeeded(MethodNode node) {
+    public static void addReturnIfNeeded(final MethodNode node) {
         ReturnAdder adder = new ReturnAdder();
         adder.visitMethod(node);
     }
 
-    public void visitMethod(MethodNode node) {
+    public void visitMethod(final MethodNode node) {
         Statement statement = node.getCode();
         if (!node.isVoidMethod()) {
-            if (statement != null) // it happens with @interface methods
-            {
-                final Statement code = addReturnsIfNeeded(statement, node.getVariableScope());
+            if (statement != null) { // happens with @interface methods
+                Statement code = addReturnsIfNeeded(statement, node.getVariableScope());
                 if (doAdd) node.setCode(code);
             }
-        } else if (!node.isAbstract() && node.getReturnType().redirect()!=ClassHelper.VOID_TYPE) {
+        } else if (!node.isAbstract() && node.getReturnType().redirect() != ClassHelper.VOID_TYPE) {
             if (!(statement instanceof BytecodeSequence)) {
                 BlockStatement newBlock = new BlockStatement();
                 Statement code = node.getCode();
@@ -94,11 +103,11 @@ public class ReturnAdder {
                     newBlock.setVariableScope(((BlockStatement) code).getVariableScope());
                 }
                 if (statement instanceof BlockStatement) {
-                    newBlock.addStatements(((BlockStatement)statement).getStatements());
+                    newBlock.addStatements(((BlockStatement) statement).getStatements());
                 } else {
                     newBlock.addStatement(statement);
                 }
-                final ReturnStatement returnStatement = ReturnStatement.RETURN_NULL_OR_VOID;
+                ReturnStatement returnStatement = ReturnStatement.RETURN_NULL_OR_VOID;
                 listener.returnStatementAdded(returnStatement);
                 newBlock.addStatement(returnStatement);
                 newBlock.setSourcePosition(statement);
@@ -107,141 +116,129 @@ public class ReturnAdder {
         }
     }
 
-    private Statement addReturnsIfNeeded(Statement statement, VariableScope scope) {
-        if (  statement instanceof ReturnStatement
-           || statement instanceof BytecodeSequence
-           || statement instanceof ThrowStatement)
-        {
+    private Statement addReturnsIfNeeded(final Statement statement, final VariableScope scope) {
+        if (statement instanceof ReturnStatement || statement instanceof ThrowStatement
+                || statement instanceof BytecodeSequence) {
             return statement;
         }
 
-        if (statement instanceof EmptyStatement) {
-            final ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+        if (statement instanceof EmptyStatement || statement == null) {
+            ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
             listener.returnStatementAdded(returnStatement);
             return returnStatement;
         }
 
         if (statement instanceof ExpressionStatement) {
-            ExpressionStatement expStmt = (ExpressionStatement) statement;
-            Expression expr = expStmt.getExpression();
-            ReturnStatement ret = new ReturnStatement(expr);
-            ret.setSourcePosition(expr);
-            ret.setStatementLabel(statement.getStatementLabel());
-            listener.returnStatementAdded(ret);
-            return ret;
+            Expression expression = ((ExpressionStatement) statement).getExpression();
+            ReturnStatement returnStatement = new ReturnStatement(expression);
+            returnStatement.setStatementLabel(statement.getStatementLabel());
+            returnStatement.setSourcePosition(statement);
+            listener.returnStatementAdded(returnStatement);
+            return returnStatement;
         }
 
         if (statement instanceof SynchronizedStatement) {
-            SynchronizedStatement sync = (SynchronizedStatement) statement;
-            final Statement code = addReturnsIfNeeded(sync.getCode(), scope);
-            if (doAdd) sync.setCode(code);
-            return sync;
+            SynchronizedStatement syncStatement = (SynchronizedStatement) statement;
+            Statement code = addReturnsIfNeeded(syncStatement.getCode(), scope);
+            if (doAdd) syncStatement.setCode(code);
+            return syncStatement;
         }
 
         if (statement instanceof IfStatement) {
-            IfStatement ifs = (IfStatement) statement;
-            final Statement ifBlock = addReturnsIfNeeded(ifs.getIfBlock(), scope);
-            final Statement elseBlock = addReturnsIfNeeded(ifs.getElseBlock(), scope);
+            IfStatement ifElseStatement = (IfStatement) statement;
+            Statement ifBlock = addReturnsIfNeeded(ifElseStatement.getIfBlock(), scope);
+            Statement elseBlock = addReturnsIfNeeded(ifElseStatement.getElseBlock(), scope);
             if (doAdd) {
-                ifs.setIfBlock(ifBlock);
-                ifs.setElseBlock(elseBlock);
+                ifElseStatement.setIfBlock(ifBlock);
+                ifElseStatement.setElseBlock(elseBlock);
             }
-            return ifs;
+            return ifElseStatement;
         }
 
         if (statement instanceof SwitchStatement) {
-            SwitchStatement swi = (SwitchStatement) statement;
-            for (CaseStatement caseStatement : swi.getCaseStatements()) {
-                final Statement code = adjustSwitchCaseCode(caseStatement.getCode(), scope, false);
+            SwitchStatement switchStatement = (SwitchStatement) statement;
+            for (CaseStatement caseStatement : switchStatement.getCaseStatements()) {
+                Statement code = adjustSwitchCaseCode(caseStatement.getCode(), scope, false);
                 if (doAdd) caseStatement.setCode(code);
             }
-            final Statement defaultStatement = adjustSwitchCaseCode(swi.getDefaultStatement(), scope, true);
-            if (doAdd) swi.setDefaultStatement(defaultStatement);
-            return swi;
+            Statement defaultStatement = adjustSwitchCaseCode(switchStatement.getDefaultStatement(), scope, true);
+            if (doAdd) switchStatement.setDefaultStatement(defaultStatement);
+            return switchStatement;
         }
 
         if (statement instanceof TryCatchStatement) {
-            TryCatchStatement trys = (TryCatchStatement) statement;
-            final boolean[] missesReturn = new boolean[1];
-            new ReturnAdder(returnStatement -> missesReturn[0] = true).addReturnsIfNeeded(trys.getFinallyStatement(), scope);
-            boolean hasFinally = !(trys.getFinallyStatement() instanceof EmptyStatement);
+            TryCatchStatement tryCatchFinally = (TryCatchStatement) statement;
+            boolean[] missesReturn = new boolean[1];
+            new ReturnAdder(returnStatement -> missesReturn[0] = true)
+                    .addReturnsIfNeeded(tryCatchFinally.getFinallyStatement(), scope);
+            boolean hasFinally = !(tryCatchFinally.getFinallyStatement() instanceof EmptyStatement);
 
             // if there is no missing return in the finally block and the block exists
             // there is nothing to do
-            if (hasFinally && !missesReturn[0]) return trys;
+            if (hasFinally && !missesReturn[0]) return tryCatchFinally;
 
             // add returns to try and catch blocks
-            final Statement tryStatement = addReturnsIfNeeded(trys.getTryStatement(), scope);
-            if (doAdd) trys.setTryStatement(tryStatement);
-            final int len = trys.getCatchStatements().size();
-            for (int i = 0; i != len; ++i) {
-                final CatchStatement catchStatement = trys.getCatchStatement(i);
-                final Statement code = addReturnsIfNeeded(catchStatement.getCode(), scope);
+            Statement tryStatement = addReturnsIfNeeded(tryCatchFinally.getTryStatement(), scope);
+            if (doAdd) tryCatchFinally.setTryStatement(tryStatement);
+            for (CatchStatement catchStatement : tryCatchFinally.getCatchStatements()) {
+                Statement code = addReturnsIfNeeded(catchStatement.getCode(), scope);
                 if (doAdd) catchStatement.setCode(code);
             }
-            return trys;
+            return tryCatchFinally;
         }
 
         if (statement instanceof BlockStatement) {
-            BlockStatement block = (BlockStatement) statement;
-
-            final List list = block.getStatements();
-            if (!list.isEmpty()) {
-                int idx = list.size() - 1;
-                Statement last = addReturnsIfNeeded((Statement) list.get(idx), block.getVariableScope());
-                if (doAdd) list.set(idx, last);
-                if (!statementReturns(last)) {
-                    final ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
-                    listener.returnStatementAdded(returnStatement);
-                    if (doAdd) list.add(returnStatement);
-                }
+            BlockStatement blockStatement = (BlockStatement) statement;
+            if (blockStatement.isEmpty()) {
+                ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+                returnStatement.setStatementLabel(blockStatement.getStatementLabel());
+                returnStatement.setSourcePosition(blockStatement);
+                listener.returnStatementAdded(returnStatement);
+                return returnStatement;
             } else {
-                ReturnStatement ret = new ReturnStatement(ConstantExpression.NULL);
-                ret.setSourcePosition(block);
-                listener.returnStatementAdded(ret);
-                return ret;
+                List<Statement> statements = blockStatement.getStatements();
+                int lastIndex = statements.size() - 1;
+                Statement last = addReturnsIfNeeded(statements.get(lastIndex), blockStatement.getVariableScope());
+                if (doAdd) statements.set(lastIndex, last);
+                if (!statementReturns(last)) {
+                    ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+                    listener.returnStatementAdded(returnStatement);
+                    if (doAdd) statements.add(returnStatement);
+                }
+                return blockStatement;
             }
-
-            BlockStatement newBlock = new BlockStatement(list, block.getVariableScope());
-            newBlock.setSourcePosition(block);
-            return newBlock;
         }
 
-        if (statement == null) {
-            final ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
-            listener.returnStatementAdded(returnStatement);
-            return returnStatement;
-        } else {
-            final List list = new ArrayList();
-            list.add(statement);
-            final ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
-            listener.returnStatementAdded(returnStatement);
-            list.add(returnStatement);
+        List<Statement> statements = new ArrayList<>(2);
+        statements.add(statement);
 
-            BlockStatement newBlock = new BlockStatement(list, new VariableScope(scope));
-            newBlock.setSourcePosition(statement);
-            return newBlock;
-        }
+        ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+        listener.returnStatementAdded(returnStatement);
+        statements.add(returnStatement);
+
+        BlockStatement blockStatement = new BlockStatement(statements, new VariableScope(scope));
+        blockStatement.setSourcePosition(statement);
+        return blockStatement;
     }
 
-    private Statement adjustSwitchCaseCode(Statement statement, VariableScope scope, boolean defaultCase) {
-        if(statement instanceof BlockStatement) {
-            final List list = ((BlockStatement)statement).getStatements();
-            if (!list.isEmpty()) {
-                int idx = list.size() - 1;
-                Statement last = (Statement) list.get(idx);
-                if(last instanceof BreakStatement) {
+    private Statement adjustSwitchCaseCode(final Statement statement, final VariableScope scope, final boolean defaultCase) {
+        if (statement instanceof BlockStatement) {
+            List<Statement> statements = ((BlockStatement) statement).getStatements();
+            if (!statements.isEmpty()) {
+                int lastIndex = statements.size() - 1;
+                Statement last = statements.get(lastIndex);
+                if (last instanceof BreakStatement) {
                     if (doAdd) {
-                        list.remove(idx);
+                        statements.remove(lastIndex);
                         return addReturnsIfNeeded(statement, scope);
                     } else {
-                        BlockStatement newStmt = new BlockStatement();
-                        for (int i=0;i<idx; i++) {
-                            newStmt.addStatement((Statement) list.get(i));
+                        BlockStatement newBlock = new BlockStatement();
+                        for (int i = 0; i < lastIndex; i += 1) {
+                            newBlock.addStatement(statements.get(i));
                         }
-                        return addReturnsIfNeeded(newStmt, scope);
+                        return addReturnsIfNeeded(newBlock, scope);
                     }
-                } else if(defaultCase) {
+                } else if (defaultCase) {
                     return addReturnsIfNeeded(statement, scope);
                 }
             }
@@ -249,24 +246,15 @@ public class ReturnAdder {
         return statement;
     }
 
-    private static boolean statementReturns(Statement last) {
-        return (
-                last instanceof ReturnStatement ||
-                last instanceof BlockStatement ||
-                last instanceof IfStatement ||
-                last instanceof ExpressionStatement ||
-                last instanceof EmptyStatement ||
-                last instanceof TryCatchStatement ||
-                last instanceof BytecodeSequence ||
-                last instanceof ThrowStatement ||
-                last instanceof SynchronizedStatement
-                );
-    }
-
-    /**
-     * Implement this method in order to be notified whenever a return statement is generated.
-     */
-    public interface ReturnStatementListener {
-        void returnStatementAdded(ReturnStatement returnStatement);
+    private static boolean statementReturns(final Statement last) {
+        return last instanceof ReturnStatement
+            || last instanceof BlockStatement
+            || last instanceof IfStatement
+            || last instanceof ExpressionStatement
+            || last instanceof EmptyStatement
+            || last instanceof TryCatchStatement
+            || last instanceof ThrowStatement
+            || last instanceof SynchronizedStatement
+            || last instanceof BytecodeSequence;
     }
 }
