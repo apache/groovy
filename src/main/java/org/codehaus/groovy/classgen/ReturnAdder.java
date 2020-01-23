@@ -40,6 +40,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Utility class to add return statements.
@@ -131,7 +132,9 @@ public class ReturnAdder {
         if (statement instanceof ExpressionStatement) {
             Expression expression = ((ExpressionStatement) statement).getExpression();
             ReturnStatement returnStatement = new ReturnStatement(expression);
-            returnStatement.setStatementLabel(statement.getStatementLabel());
+            Optional.ofNullable(statement.getStatementLabels()).ifPresent(labels -> {
+                labels.forEach(returnStatement::addStatementLabel);
+            });
             returnStatement.setSourcePosition(statement);
             listener.returnStatementAdded(returnStatement);
             return returnStatement;
@@ -191,7 +194,9 @@ public class ReturnAdder {
             BlockStatement blockStatement = (BlockStatement) statement;
             if (blockStatement.isEmpty()) {
                 ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
-                returnStatement.setStatementLabel(blockStatement.getStatementLabel());
+                Optional.ofNullable(blockStatement.getStatementLabels()).ifPresent(labels -> {
+                    labels.forEach(returnStatement::addStatementLabel);
+                });
                 returnStatement.setSourcePosition(blockStatement);
                 listener.returnStatementAdded(returnStatement);
                 return returnStatement;
