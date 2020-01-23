@@ -37,11 +37,12 @@ allprojects { proj ->
             substitute module("org.codehaus.groovy:groovy-xml") with project(":groovy-xml")
             substitute module("org.codehaus.groovy:groovy-groovydoc") with project(":groovy-groovydoc")
         }
-        
+
         exclude module: 'groovy-all'
     }
-    
+
     dependencies {
+        checkstyle "com.puppycrawl.tools:checkstyle:8.28"
         codenarc "org.codenarc:CodeNarc:1.5"
         spotbugs 'com.github.spotbugs:spotbugs:3.1.11'
         if (proj.name.contains('jaxb') && JavaVersion.current().isJava9Compatible()) {
