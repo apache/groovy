@@ -24,21 +24,19 @@ import org.codehaus.groovy.runtime.MethodClosure
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
 
 class StaticCompilationTest extends AbstractBytecodeTestCase {
+
     void testEmptyMethod() {
-        def bytecode = compile([method:'m'],'''
+        def bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             void m() {}
         ''')
         assert bytecode.hasStrictSequence(
-                ['public m()V',
-                        'L0',
-                        'LINENUMBER 3 L0',
-                        'RETURN']
+                ['public m()V', 'L0', 'LINENUMBER 3 L0', 'RETURN']
         )
     }
 
     void testPrimitiveReturn1() {
-        def bytecode = compile([method:'m'],'''
+        def bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             int m() { 1 }
         ''')
@@ -48,7 +46,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testPrimitiveReturn2() {
-        def bytecode = compile([method:'m'],'''
+        def bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             long m() { 1L }
         ''')
@@ -58,7 +56,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testPrimitiveReturn3() {
-        def bytecode = compile([method:'m'],'''
+        def bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             short m() { 1 }
         ''')
@@ -68,7 +66,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testPrimitiveReturn4() {
-        def bytecode = compile([method:'m'],'''
+        def bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             byte m() { 1 }
         ''')
@@ -78,7 +76,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testIdentityReturns() {
-        def bytecode = compile([method:'m'],'''
+        def bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             int m(int i) { i }
         ''')
@@ -86,7 +84,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 ['ILOAD', 'IRETURN']
         )
 
-        bytecode = compile([method:'m'],'''
+        bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             long m(long l) { l }
         ''')
@@ -94,7 +92,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 ['LLOAD', 'LRETURN']
         )
 
-        bytecode = compile([method:'m'],'''
+        bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             short m(short l) { l }
         ''')
@@ -102,7 +100,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 ['ILOAD', 'IRETURN']
         )
 
-        bytecode = compile([method:'m'],'''
+        bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             float m(float l) { l }
         ''')
@@ -110,7 +108,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 ['FLOAD', 'FRETURN']
         )
 
-        bytecode = compile([method:'m'],'''
+        bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             double m(double l) { l }
         ''')
@@ -118,7 +116,7 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
                 ['DLOAD', 'DRETURN']
         )
 
-        bytecode = compile([method:'m'],'''
+        bytecode = compile(method: 'm', '''
             @groovy.transform.CompileStatic
             Object m(Object l) { l }
         ''')
@@ -128,11 +126,12 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testSingleAssignment() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            int a = 1
-        }''').hasSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                int a = 1
+            }
+        ''').hasSequence([
                 "ICONST_1",
                 "ISTORE",
                 "RETURN"
@@ -140,11 +139,12 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testReturnSingleAssignment() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        int m() {
-            int a = 1
-        }''').hasSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            int m() {
+                int a = 1
+            }
+        ''').hasSequence([
                 "ICONST_1",
                 "ISTORE",
                 "ILOAD",
@@ -153,12 +153,13 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testIntLeftShift() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            int a = 1
-            int b = a << 32
-        }''').hasStrictSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                int a = 1
+                int b = a << 32
+            }
+        ''').hasStrictSequence([
                 "ILOAD",
                 "BIPUSH 32",
                 "ISHL"
@@ -166,12 +167,13 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testLongLeftShift() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            long a = 1L
-            long b = a << 32
-        }''').hasStrictSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                long a = 1L
+                long b = a << 32
+            }
+        ''').hasStrictSequence([
                 "LLOAD",
                 "BIPUSH 32",
                 "LSHL"
@@ -181,11 +183,12 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     void testArrayGet() {
         if (config.indyEnabled) return;
         // this test is done with indy in another tests case
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m(int[] arr) {
-            arr[0]
-        }''').hasStrictSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m(int[] arr) {
+                arr[0]
+            }
+        ''').hasStrictSequence([
                 "ALOAD 1",
                 "ICONST_0",
                 "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArrayGet ([II)I"
@@ -195,11 +198,12 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     void testArraySet() {
         if (config.indyEnabled) return;
         // this test is done with indy in another tests case
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m(int[] arr) {
-            arr[0] = 0
-        }''').hasStrictSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m(int[] arr) {
+                arr[0] = 0
+            }
+        ''').hasStrictSequence([
                 "ICONST_0",
                 "ISTORE 2",
                 "ALOAD 1",
@@ -210,37 +214,38 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
 /*    void testPlusPlus() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            int i = 0
-            i++
-        }''').hasStrictSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                int i = 0
+                i++
+            }
+        ''').hasStrictSequence([
                 "IINC",
         ])
-
     }
 
     void testMinusMinus() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            int i = 0
-            i--
-        }''').hasStrictSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                int i = 0
+                i--
+            }
+        ''').hasStrictSequence([
                 "IINC",
         ])
-
     }
 
     void testPlusEquals() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        int m() {
-            int i = 0
-            i += 13
-            return i
-        }''').hasStrictSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            int m() {
+                int i = 0
+                i += 13
+                return i
+            }
+        ''').hasStrictSequence([
                 "ILOAD",
                 "ILOAD",
                 "IADD",
@@ -249,11 +254,12 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testPlusEqualsFromArgs() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m(int i, int j) {
-            i += j
-        }''').hasStrictSequence([
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m(int i, int j) {
+                i += j
+            }
+        ''').hasStrictSequence([
                 "ILOAD",
                 "ILOAD",
                 "IADD",
@@ -262,14 +268,14 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }*/
 
     void testFlow() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        String m(String str) {
-            def obj = 1
-            obj = str
-            obj.toUpperCase()
-        }
-        m 'Cedric'
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            String m(String str) {
+                def obj = 1
+                obj = str
+                obj.toUpperCase()
+            }
+            m 'Cedric'
         ''').hasStrictSequence([
                 "ICONST",
                 "INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;",
@@ -296,14 +302,14 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testInstanceOf() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m(Object str) {
-            if (str instanceof String) {
-                str.toUpperCase()
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m(Object str) {
+                if (str instanceof String) {
+                    str.toUpperCase()
+                }
             }
-        }
-        m 'Cedric'
+            m 'Cedric'
         ''').hasStrictSequence([
                 "ALOAD",
                 "CHECKCAST java/lang/String",
@@ -312,15 +318,15 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testShouldGenerateDirectConstructorCall() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        class Foo {
-            String msg
-            Foo(int x, String y) { msg = y*x }
-            static Foo foo() {
-                Foo result = [2,'Bar']
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            class Foo {
+                String msg
+                Foo(int x, String y) { msg = y*x }
+                static Foo foo() {
+                    Foo result = [2,'Bar']
+                }
             }
-        }
         ''').hasStrictSequence([
                 'ICONST_2',
                 'LDC "Bar"',
@@ -329,11 +335,11 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testShouldGenerateDirectArrayConstruct() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            int[] arr = [123,456]
-        }
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                int[] arr = [123,456]
+            }
         ''').hasStrictSequence([
                 'ICONST_2',
                 'NEWARRAY T_INT',
@@ -345,11 +351,11 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testShouldGenerateDirectBooleanArrayConstruct() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            boolean[] arr = [123,false]
-        }
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                boolean[] arr = [123,false]
+            }
         ''').hasStrictSequence([
                 'ICONST_2',
                 'NEWARRAY T_BOOLEAN',
@@ -363,38 +369,38 @@ class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     void testShouldTriggerDirectCallToOuterClassGetter() {
-        assert compile([method: 'fromInner',classNamePattern:'.*Inner.*'], '''
-class Holder {
-    String value
-}
+        assert compile(method: 'fromInner', classNamePattern: '.*Inner.*', '''
+            class Holder {
+                String value
+            }
 
-@groovy.transform.CompileStatic
-class Outer {
-    String outerProperty = 'outer'
-    private class Inner {
-        String fromInner() {
-            Holder holder = new Holder()
-            holder.value = outerProperty
-            holder.value
-        }
-    }
+            @groovy.transform.CompileStatic
+            class Outer {
+                String outerProperty = 'outer'
+                private class Inner {
+                    String fromInner() {
+                        Holder holder = new Holder()
+                        holder.value = outerProperty
+                        holder.value
+                    }
+                }
 
-    String blah() {
-        new Inner().fromInner()
-    }
-}
+                String blah() {
+                    new Inner().fromInner()
+                }
+            }
 
-def o = new Outer()
-assert o.blah() == 'outer'
-''').hasStrictSequence([
-        'GETFIELD Outer$Inner.this$0',
-        'INVOKEVIRTUAL Outer.getOuterProperty',
-        'DUP',
-        'ASTORE',
-        'ALOAD',
-        'ALOAD',
-        'INVOKEVIRTUAL Holder.setValue'
-])
+            def o = new Outer()
+            assert o.blah() == 'outer'
+        ''').hasStrictSequence([
+                'GETFIELD Outer$Inner.this$0',
+                'INVOKEVIRTUAL Outer.getOuterProperty',
+                'DUP',
+                'ASTORE',
+                'ALOAD',
+                'ALOAD',
+                'INVOKEVIRTUAL Holder.setValue'
+        ])
     }
 
     void testShouldOptimizeBytecodeByAvoidingCreationOfMopMethods() {
@@ -448,16 +454,15 @@ assert o.blah() == 'outer'
 
     // GROOVY-7124
     void testUseInvokeVirtualPreferredOverInvokeInterface() {
-        assert compile([method: 'foo',classNamePattern:'B'], '''
-        interface A { void m() }
-        class B implements A {
-            void m() {}
-            @groovy.transform.CompileStatic
-            void foo() {
-                m()
+        assert compile(method: 'foo', classNamePattern: 'B', '''
+            interface A { void m() }
+            class B implements A {
+                void m() {}
+                @groovy.transform.CompileStatic
+                void foo() {
+                    m()
+                }
             }
-        }
-
         ''').hasStrictSequence(['INVOKEVIRTUAL B.m'])
     }
 
@@ -478,11 +483,11 @@ assert o.blah() == 'outer'
     }
 
     void testShouldOptimizeCharInit() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            char c = 'x'
-        }
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                char c = 'x'
+            }
         ''').hasStrictSequence([
                 'LINENUMBER 4',
                 'BIPUSH 120',
@@ -491,13 +496,13 @@ assert o.blah() == 'outer'
     }
 
     void testShouldOptimizeCharComparison() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            char c1 = 'x'
-            char c2 = 'x'
-            boolean b = c1==c2
-        }
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                char c1 = 'x'
+                char c2 = 'x'
+                boolean b = c1==c2
+            }
         ''').hasSequence([
                 'LINENUMBER 4',
                 'BIPUSH 120',
@@ -541,149 +546,148 @@ assert o.blah() == 'outer'
 
         // int[]
         def intExample = '''
-        @groovy.transform.CompileStatic
-        void m(int[] arr) {
-            for (int i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(int[] arr) {
+                for (int i: arr) {
+                   println(i)
+                }
             }
-        }
-        m([1,2] as int[])
+            m([1,2] as int[])
         '''
-        assert compile([method:'m'], intExample).hasSequence([*loop_init,'IALOAD','ISTORE'])
+        assert compile(method:'m', intExample).hasSequence([*loop_init,'IALOAD','ISTORE'])
 
         // short[]
         def shortExample = '''
-        @groovy.transform.CompileStatic
-        void m(short[] arr) {
-            for (short i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(short[] arr) {
+                for (short i: arr) {
+                   println(i)
+                }
             }
-        }
-        m([1,2] as short[])
+            m([1,2] as short[])
         '''
-        assert compile([method:'m'], shortExample).hasSequence([*loop_init,'SALOAD','ISTORE'])
+        assert compile(method:'m', shortExample).hasSequence([*loop_init,'SALOAD','ISTORE'])
 
         // byte[]
         def byteExample = '''
-        @groovy.transform.CompileStatic
-        void m(byte[] arr) {
-            for (byte i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(byte[] arr) {
+                for (byte i: arr) {
+                   println(i)
+                }
             }
-        }
-        m([1,2] as byte[])
+            m([1,2] as byte[])
         '''
-        assert compile([method:'m'], byteExample).hasSequence([*loop_init,'BALOAD','ISTORE'])
+        assert compile(method:'m', byteExample).hasSequence([*loop_init,'BALOAD','ISTORE'])
 
         // long[]
         def longExample = '''
-        @groovy.transform.CompileStatic
-        void m(long[] arr) {
-            for (long i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(long[] arr) {
+                for (long i: arr) {
+                   println(i)
+                }
             }
-        }
-        m([1,2] as long[])
+            m([1,2] as long[])
         '''
-        assert compile([method:'m'], longExample).hasSequence([*loop_init,'LALOAD','LSTORE'])
+        assert compile(method:'m', longExample).hasSequence([*loop_init,'LALOAD','LSTORE'])
 
-       // char[]
+        // char[]
         def charExample = '''
-        @groovy.transform.CompileStatic
-        void m(char[] arr) {
-            for (char i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(char[] arr) {
+                for (char i: arr) {
+                   println(i)
+                }
             }
-        }
-        m('foo'.toCharArray())
+            m('foo'.toCharArray())
         '''
-        assert compile([method:'m'], charExample).hasSequence([*loop_init,'CALOAD','ISTORE'])
+        assert compile(method:'m', charExample).hasSequence([*loop_init,'CALOAD','ISTORE'])
 
-       // boolean[]
+        // boolean[]
         def boolExample = '''
-        @groovy.transform.CompileStatic
-        void m(boolean[] arr) {
-            for (boolean i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(boolean[] arr) {
+                for (boolean i: arr) {
+                   println(i)
+                }
             }
-        }
-        m([true,false] as boolean[])
+            m([true,false] as boolean[])
         '''
-        assert compile([method:'m'], boolExample).hasSequence([*loop_init,'BALOAD','ISTORE'])
+        assert compile(method:'m', boolExample).hasSequence([*loop_init,'BALOAD','ISTORE'])
 
         // float[]
         def floatExample = '''
-        @groovy.transform.CompileStatic
-        void m(float[] arr) {
-            for (float i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(float[] arr) {
+                for (float i: arr) {
+                   println(i)
+                }
             }
-        }
-        m([1.5f,2.0f] as float[])
+            m([1.5f,2.0f] as float[])
         '''
-        assert compile([method:'m'], floatExample).hasSequence([*loop_init,'FALOAD','FSTORE'])
+        assert compile(method:'m', floatExample).hasSequence([*loop_init,'FALOAD','FSTORE'])
 
         // double[]
         def doubleExample = '''
-        @groovy.transform.CompileStatic
-        void m(double[] arr) {
-            for (double i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(double[] arr) {
+                for (double i: arr) {
+                   println(i)
+                }
             }
-        }
-        m([1.1,2.2] as double[])
+            m([1.1,2.2] as double[])
         '''
-        assert compile([method:'m'], doubleExample).hasSequence([*loop_init,'DALOAD','DSTORE'])
+        assert compile(method:'m', doubleExample).hasSequence([*loop_init,'DALOAD','DSTORE'])
 
         // Any[]
         def anyExample = '''
-        @groovy.transform.CompileStatic
-        void m(String[] arr) {
-            for (String i: arr) {
-               println(i)
+            @groovy.transform.CompileStatic
+            void m(String[] arr) {
+                for (String i: arr) {
+                   println(i)
+                }
             }
-        }
-        m(['a','b'] as String[])
+            m(['a','b'] as String[])
         '''
-        assert compile([method:'m'], anyExample).hasSequence([*loop_init,'AALOAD','ASTORE'])
+        assert compile(method:'m', anyExample).hasSequence([*loop_init,'AALOAD','ASTORE'])
 
         // now check that everything runs fine
-        [byteExample,shortExample, intExample, charExample, boolExample,
-         longExample, floatExample, doubleExample, anyExample].each { script ->
+        [byteExample,shortExample, intExample, charExample, boolExample, longExample, floatExample, doubleExample, anyExample].each { script ->
             assertScript(script)
         }
     }
 
     void testCompareWithCharOptimization() {
         String code = '''
-        @groovy.transform.CompileStatic
-        boolean m(char[] arr) {
-            char c = arr[0]
-            ' '==c
-        }
-        assert m(' abc '.toCharArray()) == true
+            @groovy.transform.CompileStatic
+            boolean m(char[] arr) {
+                char c = arr[0]
+                ' '==c
+            }
+            assert m(' abc '.toCharArray()) == true
         '''
-        assert compile([method:'m'],code).hasSequence(['BIPUSH','ILOAD','IF_ICMPNE'])
+        assert compile(method:'m',code).hasSequence(['BIPUSH','ILOAD','IF_ICMPNE'])
         assertScript(code)
 
         code = '''
-        @groovy.transform.CompileStatic
-        boolean m(char[] arr) {
-            char c = arr[0]
-            c==' '
-        }
-        assert m(' abc '.toCharArray()) == true
+            @groovy.transform.CompileStatic
+            boolean m(char[] arr) {
+                char c = arr[0]
+                c==' '
+            }
+            assert m(' abc '.toCharArray()) == true
         '''
-        assert compile([method:'m'],code).hasSequence(['ILOAD','BIPUSH','IF_ICMPNE'])
+        assert compile(method:'m',code).hasSequence(['ILOAD','BIPUSH','IF_ICMPNE'])
         assertScript(code)
     }
 
     void testShouldRemoveUnnecessaryCast() {
-        assert compile([method:'m'],'''
-        @groovy.transform.CompileStatic
-        void m() {
-            char c = (char) 'x'
-        }
+        assert compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m() {
+                char c = (char) 'x'
+            }
         ''').hasStrictSequence([
                 'LINENUMBER 4',
                 'BIPUSH 120',
@@ -699,16 +703,16 @@ assert o.blah() == 'outer'
 
         // static case should be compiled into functional interface
         String code = '''
-        import groovy.transform.CompileStatic
-        import java.util.stream.Collectors
+            import groovy.transform.CompileStatic
+            import java.util.stream.Collectors
 
-        @CompileStatic
-        void m() {
-            assert ['foo'].stream().map(String::toUpperCase).collect(Collectors.toList()) == ['FOO']
-        }
-        m()
+            @CompileStatic
+            void m() {
+                assert ['foo'].stream().map(String::toUpperCase).collect(Collectors.toList()) == ['FOO']
+            }
+            m()
         '''
-        assert compile([method:'m'],code).hasSequence([
+        assert compile(method:'m', code).hasSequence([
                 'INVOKEDYNAMIC apply()Ljava/util/function/Function;',
                 /* handle kind 0x6 : INVOKESTATIC */
                 'java/lang/invoke/LambdaMetafactory.metafactory',
