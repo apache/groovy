@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -122,6 +121,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.apache.groovy.util.BeanUtils.capitalize;
 
@@ -380,7 +380,8 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         // add parameter names to the MethodVisitor (jdk8+ only)
-        if (getCompileUnit().getConfig().getParameters()) {
+        if (Optional.ofNullable(controller.getClassNode().getCompileUnit())
+                .orElseGet(context::getCompileUnit).getConfig().getParameters()) {
             for (Parameter parameter : parameters) {
                 // TODO: handle ACC_SYNTHETIC for enum method parameters?
                 mv.visitParameter(parameter.getName(), 0);
@@ -432,7 +433,7 @@ public class AsmClassGenerator extends ClassGenerator {
         final ClassNode superClass = controller.getClassNode().getSuperClass();
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
             boolean hasCallToSuper = false;
-            if (code!=null && controller.getClassNode() instanceof InnerClassNode) {
+            if (code != null && controller.getClassNode() instanceof InnerClassNode) {
                 // if the class not is an inner class node, there are chances that the call to super is already added
                 // so we must ensure not to add it twice (see GROOVY-4471)
                 if (code instanceof BlockStatement) {
@@ -464,8 +465,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (node.isVoidMethod()) {
             mv.visitInsn(RETURN);
         } else {
-            // we make a dummy return for label ranges that reach here
-            ClassNode type = node.getReturnType().redirect();
+            ClassNode type = node.getReturnType();
             if (ClassHelper.isPrimitiveType(type)) {
                 mv.visitLdcInsn(0);
                 controller.getOperandStack().push(ClassHelper.int_TYPE);
@@ -1058,7 +1058,7 @@ public class AsmClassGenerator extends ClassGenerator {
                                 }
                                 PropertyExpression staticOuterField = new PropertyExpression(new ClassExpression(outer), expression.getProperty());
                                 staticOuterField.getObjectExpression().setSourcePosition(objectExpression);
-                                staticOuterField.visit(controller.getAcg());
+                                staticOuterField.visit(this);
                                 return;
                             }
                             outer = outer.getSuperClass();
@@ -2135,14 +2135,6 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private static boolean isVargs(final Parameter[] params) {
         return (params.length > 0 && params[params.length - 1].getType().isArray());
-    }
-
-    private CompileUnit getCompileUnit() {
-        CompileUnit answer = controller.getClassNode().getCompileUnit();
-        if (answer == null) {
-            answer = context.getCompileUnit();
-        }
-        return answer;
     }
 
     public boolean addInnerClass(final ClassNode innerClass) {
