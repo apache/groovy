@@ -814,12 +814,10 @@ public class AsmClassGenerator extends ClassGenerator {
 
     @Override
     public void visitBooleanExpression(final BooleanExpression expression) {
-        controller.getCompileStack().pushBooleanExpression();
         int mark = controller.getOperandStack().getStackLength();
-        Expression inner = expression.getExpression();
-        inner.visit(this);
+
+        expression.getExpression().visit(this);
         controller.getOperandStack().castToBool(mark, true);
-        controller.getCompileStack().pop();
     }
 
     @Override
@@ -839,7 +837,6 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
         onLineNumber(call, "visitConstructorCallExpression: \"" + call.getType().getName() + "\":");
-
         if (call.isSpecialCall()) {
             controller.getInvocationWriter().writeSpecialConstructorCall(call);
             return;
