@@ -432,7 +432,7 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getCallSiteWriter().makeSiteEntry();
 
         MethodVisitor mv = controller.getMethodVisitor();
-        final ClassNode superClass = controller.getClassNode().getSuperClass();
+        ClassNode superClass = controller.getClassNode().getSuperClass();
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
             boolean hasCallToSuper = false;
             if (code != null && controller.getClassNode() instanceof InnerClassNode) {
@@ -441,7 +441,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (code instanceof BlockStatement) {
                     for (Statement statement : ((BlockStatement) code).getStatements()) {
                         if (statement instanceof ExpressionStatement) {
-                            final Expression expression = ((ExpressionStatement) statement).getExpression();
+                            Expression expression = ((ExpressionStatement) statement).getExpression();
                             if (expression instanceof ConstructorCallExpression) {
                                 ConstructorCallExpression call = (ConstructorCallExpression) expression;
                                 if (call.isSuperCall()) {

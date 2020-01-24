@@ -18,8 +18,9 @@
  */
 package org.codehaus.groovy.macro.matcher
 
+import groovy.transform.AutoFinal
+import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import groovy.transform.TypeCheckingMode
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.AnnotationNode
@@ -32,7 +33,6 @@ import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.PackageNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.PropertyNode
-import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ArrayExpression
 import org.codehaus.groovy.ast.expr.AttributeExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
@@ -46,7 +46,6 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.expr.FieldExpression
 import org.codehaus.groovy.ast.expr.GStringExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MapEntryExpression
@@ -59,8 +58,6 @@ import org.codehaus.groovy.ast.expr.PrefixExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.RangeExpression
 import org.codehaus.groovy.ast.expr.SpreadExpression
-import org.codehaus.groovy.ast.expr.SpreadMapExpression
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
@@ -72,23 +69,23 @@ import org.codehaus.groovy.ast.stmt.ForStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.stmt.WhileStatement
-import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.macro.matcher.internal.MatchingConstraintsBuilder
 
-@CompileStatic
+@AutoFinal @CompileStatic
 class ASTMatcher extends ContextualClassCodeVisitor {
 
-    public static final String WILDCARD = "_";
+    public static final String WILDCARD = "_"
 
     private Object current = null
     private boolean match = true
 
-    private ASTMatcher() {}
+    private ASTMatcher() {
+    }
 
     @Override
     protected SourceUnit getSourceUnit() {
-        null
+        return null
     }
 
     /**
@@ -98,7 +95,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
      * @param pattern the pattern AST we want to match to
      * @return true if this AST matches the pattern
      */
-    public static boolean matches(ASTNode node, ASTNode pattern) {
+    static boolean matches(ASTNode node, ASTNode pattern) {
         ASTMatcher matcher = new ASTMatcher()
         matcher.current = node
         matcher.match = true
@@ -107,21 +104,21 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         } else {
             pattern.visit(matcher)
         }
-
-        matcher.match
+        return matcher.match
     }
 
     private boolean failIfNot(boolean value) {
-        match = match && value
+        match = (match && value)
+        return match
     }
 
     private static boolean matchByName(String patternText, String nodeText) {
-        return nodeText.equals(patternText) || WILDCARD.equals(patternText);
+        return nodeText.equals(patternText) || WILDCARD.equals(patternText)
     }
 
     private static boolean isWildcardExpression(Object exp) {
         return (exp instanceof VariableExpression && WILDCARD.equals(exp.getName())
-            || (exp instanceof ConstantExpression && WILDCARD.equals(exp.getValue())));
+            || (exp instanceof ConstantExpression && WILDCARD.equals(exp.getValue())))
     }
 
     /**
@@ -132,10 +129,9 @@ class ASTMatcher extends ContextualClassCodeVisitor {
      * @param pattern a pattern to be found somewhere in the AST
      * @return a list of {@link TreeContext}, always not null.
      */
-    public static List<TreeContext> find(ASTNode node, ASTNode pattern) {
-        ASTFinder finder = new ASTFinder(pattern);
-        node.visit(finder);
-
+    static List<TreeContext> find(ASTNode node, ASTNode pattern) {
+        def finder = new ASTFinder(pattern)
+        node.visit(finder)
         finder.matches
     }
 
@@ -146,7 +142,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         }
     }
 
-    public <T> T ifConstraint(T defaultValue, @DelegatesTo(MatchingConstraints) Closure<T> code) {
+    def <T> T ifConstraint(T defaultValue, @DelegatesTo(value=MatchingConstraints, strategy=Closure.DELEGATE_FIRST) Closure<T> code) {
         def constraints = (List<MatchingConstraints>) treeContext.getUserdata(MatchingConstraints, true)
         if (constraints) {
             def clone = (Closure<T>) code.clone()
@@ -160,23 +156,23 @@ class ASTMatcher extends ContextualClassCodeVisitor {
 
     private String findPlaceholder(Object exp) {
         ifConstraint(null) {
-            if ((exp instanceof VariableExpression && placeholders.contains(exp.name))) {
+            if (exp instanceof VariableExpression && placeholders.contains(exp.name)) {
                 return exp.name
-            } else if ((exp instanceof ConstantExpression && placeholders.contains(exp.value))) {
+            } else if (exp instanceof ConstantExpression && placeholders.contains(exp.value)) {
                 return exp.value
             } else {
-                null
+                return null
             }
         }
     }
 
     private void doWithNode(Object patternNode, Object foundNode, Closure cl) {
-        Class expectedClass = patternNode?patternNode.class:Object
+        Class expectedClass = patternNode ? patternNode.class : Object
         if (expectedClass == null) {
             expectedClass = Object
         }
 
-        boolean doPush = treeContext.node!=foundNode && foundNode instanceof ASTNode
+        boolean doPush = (treeContext.node != foundNode && foundNode instanceof ASTNode)
         if (doPush) {
             pushContext((ASTNode)foundNode)
             if (patternNode instanceof ASTNode) {
@@ -188,12 +184,12 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             String placeholder = findPlaceholder(patternNode)
             if (placeholder) {
                 def alreadySeenAST = treeContext.getUserdata("placeholder_$placeholder", true)
-                if (alreadySeenAST==null) {
+                if (alreadySeenAST == null) {
                     treeContext.parent.putUserdata("placeholder_$placeholder", foundNode)
                 } else {
                     // during the tree inspection, placeholder already found
                     // so we need to check that they are identical
-                    failIfNot(matches((ASTNode)alreadySeenAST[0], (ASTNode)foundNode))
+                    failIfNot(matches((ASTNode) alreadySeenAST[0], (ASTNode) foundNode))
                 }
             } else if (match && (foundNode == null || expectedClass.isAssignableFrom(foundNode.class))) {
                 Object old = current
@@ -210,7 +206,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitClass(final ClassNode node) {
+    void visitClass(ClassNode node) {
         doWithNode(node, current) {
             visitAnnotations(node)
             doWithNode(node.package, ((ClassNode) current).package) {
@@ -227,7 +223,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def curIntfs = cur.interfaces
             failIfNot(intfs.length == curIntfs.length)
             if (intfs.length == curIntfs.length) {
-                for (int i = 0; i < intfs.length && match; i++) {
+                for (int i = 0; i < intfs.length && match; i += 1) {
                     failIfNot(intfs[i] == curIntfs[i])
                 }
             }
@@ -281,7 +277,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    protected void visitObjectInitializerStatements(final ClassNode node) {
+    protected void visitObjectInitializerStatements(ClassNode node) {
         doWithNode(node, current) {
             def initializers = ((ClassNode) current).objectInitializerStatements
             if (initializers.size() == node.objectInitializerStatements.size()) {
@@ -298,7 +294,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitPackage(final PackageNode node) {
+    void visitPackage(PackageNode node) {
         if (node) {
             doWithNode(node, current) {
                 visitAnnotations(node)
@@ -308,7 +304,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitImports(final ModuleNode node) {
+    void visitImports(ModuleNode node) {
         if (node) {
             doWithNode(node, current) {
                 ModuleNode module = (ModuleNode) current
@@ -367,7 +363,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitAnnotations(final AnnotatedNode node) {
+    void visitAnnotations(AnnotatedNode node) {
         doWithNode(node, current) {
             List<AnnotationNode> refAnnotations = node.annotations
             AnnotatedNode cur = (AnnotatedNode) current
@@ -388,7 +384,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
                     }
                     continue
                 }
-                failIfNot(an.classNode==curNext.classNode)
+                failIfNot(an.classNode == curNext.classNode)
                 def refEntrySet = an.members.entrySet()
                 def curEntrySet = curNext.members.entrySet()
                 if (refEntrySet.size() == curEntrySet.size()) {
@@ -411,7 +407,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    protected void visitClassCodeContainer(final Statement code) {
+    protected void visitClassCodeContainer(Statement code) {
         doWithNode(code, current) {
             if (code) {
                 code.visit(this)
@@ -419,16 +415,15 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         }
     }
 
-    @Override
-    @CompileStatic(TypeCheckingMode.SKIP)
-    public void visitDeclarationExpression(final DeclarationExpression expression) {
+    @Override @CompileDynamic
+    void visitDeclarationExpression(DeclarationExpression expression) {
         doWithNode(expression, current) {
             super.visitDeclarationExpression(expression)
         }
     }
 
     @Override
-    protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         doWithNode(node, current) {
             visitAnnotations(node)
             def cur = (MethodNode) current
@@ -450,7 +445,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitField(final FieldNode node) {
+    void visitField(FieldNode node) {
         doWithNode(node, current) {
             visitAnnotations(node)
             def fieldNode = (FieldNode) current
@@ -459,7 +454,6 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             failIfNot(fieldNode.modifiers == node.modifiers)
 
             Expression init = node.initialExpression
-
             Expression curInit = fieldNode.initialExpression
             if (init) {
                 if (curInit) {
@@ -476,7 +470,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitProperty(final PropertyNode node) {
+    void visitProperty(PropertyNode node) {
         doWithNode(node, current) {
             PropertyNode pNode = (PropertyNode) current
             visitAnnotations(node)
@@ -510,7 +504,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    void visitExpressionStatement(final ExpressionStatement statement) {
+    void visitExpressionStatement(ExpressionStatement statement) {
         doWithNode(statement.expression, ((ExpressionStatement) current).expression) {
             visitStatement(statement)
             statement.expression.visit(this)
@@ -518,7 +512,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitBlockStatement(BlockStatement block) {
+    void visitBlockStatement(BlockStatement block) {
         doWithNode(block, current) {
             def statements = ((BlockStatement) current).statements
             if (statements.size() == block.statements.size()) {
@@ -535,7 +529,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitMethodCallExpression(final MethodCallExpression call) {
+    void visitMethodCallExpression(MethodCallExpression call) {
         doWithNode(call, current) {
             def mce = (MethodCallExpression) current
             doWithNode(call.objectExpression, mce.objectExpression) {
@@ -547,20 +541,15 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             doWithNode(call.arguments, mce.arguments) {
                 call.arguments.visit(this)
             }
-            failIfNot(matchByName(call.methodAsString, mce.methodAsString) &&
-                    (call.safe == mce.safe) &&
-                    (call.spreadSafe == mce.spreadSafe) &&
-                    (call.implicitThis == mce.implicitThis))
+            failIfNot(matchByName(call.methodAsString, mce.methodAsString)
+                    && call.safe == mce.safe
+                    && call.spreadSafe == mce.spreadSafe
+                    && call.implicitThis == mce.implicitThis)
         }
     }
 
     @Override
-    public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
-        super.visitStaticMethodCallExpression(call);
-    }
-
-    @Override
-    public void visitConstructorCallExpression(final ConstructorCallExpression call) {
+    void visitConstructorCallExpression(ConstructorCallExpression call) {
         doWithNode(call, current) {
             def cur = (ConstructorCallExpression) current
             doWithNode(call.arguments, cur.arguments) {
@@ -571,7 +560,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitBinaryExpression(final BinaryExpression expression) {
+    void visitBinaryExpression(BinaryExpression expression) {
         doWithNode(expression, current) {
             def bin = (BinaryExpression) current
             def leftExpression = expression.getLeftExpression()
@@ -602,7 +591,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitTernaryExpression(final TernaryExpression expression) {
+    void visitTernaryExpression(TernaryExpression expression) {
         doWithNode(expression, current) {
             TernaryExpression te = (TernaryExpression) current
             doWithNode(expression.booleanExpression, te.booleanExpression) {
@@ -620,7 +609,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitPostfixExpression(final PostfixExpression expression) {
+    void visitPostfixExpression(PostfixExpression expression) {
         doWithNode(expression, current) {
             def origExpr = expression.expression
             def curExpr = (PostfixExpression) current
@@ -632,7 +621,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitPrefixExpression(final PrefixExpression expression) {
+    void visitPrefixExpression(PrefixExpression expression) {
         doWithNode(expression, current) {
             def origExpr = expression.expression
             def curExpr = (PrefixExpression) current
@@ -644,7 +633,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitBooleanExpression(final BooleanExpression expression) {
+    void visitBooleanExpression(BooleanExpression expression) {
         doWithNode(expression, current) {
             doWithNode(expression.expression, ((BooleanExpression) current).expression) {
                 expression.expression.visit(this)
@@ -653,7 +642,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitNotExpression(final NotExpression expression) {
+    void visitNotExpression(NotExpression expression) {
         doWithNode(expression, current) {
             def expr = expression.expression
             def cur = ((NotExpression) current).expression
@@ -664,7 +653,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitClosureExpression(final ClosureExpression expression) {
+    void visitClosureExpression(ClosureExpression expression) {
         doWithNode(expression, current) {
             def code = expression.code
             def cl = (ClosureExpression) current
@@ -682,13 +671,13 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         }
         if (nodeParams) {
             if (curParams.length == nodeParams.length) {
-                for (int i = 0; i < nodeParams.length && match; i++) {
+                for (int i = 0; i < nodeParams.length && match; i += 1) {
                     def n = nodeParams[i]
                     def c = curParams[i]
                     doWithNode(n, c) {
-                        failIfNot(matchByName(n.name, c.name) &&
-                                (n.originType == c.originType) &&
-                                (n.type == c.originType))
+                        failIfNot(matchByName(n.name, c.name)
+                            && n.originType == c.originType
+                            && n.type == c.originType)
                     }
                 }
             } else {
@@ -698,7 +687,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitTupleExpression(final TupleExpression expression) {
+    void visitTupleExpression(TupleExpression expression) {
         doWithNode(expression, current) {
             doWithNode(expression.expressions, ((TupleExpression) current).expressions) {
                 visitListOfExpressions(expression.expressions)
@@ -707,7 +696,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitListExpression(final ListExpression expression) {
+    void visitListExpression(ListExpression expression) {
         doWithNode(expression, current) {
             def exprs = expression.expressions
             doWithNode(exprs, ((ListExpression) current).expressions) {
@@ -717,7 +706,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitArrayExpression(final ArrayExpression expression) {
+    void visitArrayExpression(ArrayExpression expression) {
         doWithNode(expression, current) {
             def expressions = expression.expressions
             def size = expression.sizeExpression
@@ -735,7 +724,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitMapExpression(final MapExpression expression) {
+    void visitMapExpression(MapExpression expression) {
         doWithNode(expression, current) {
             def entries = expression.mapEntryExpressions
             def curEntries = ((MapExpression) current).mapEntryExpressions
@@ -746,7 +735,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitMapEntryExpression(final MapEntryExpression expression) {
+    void visitMapEntryExpression(MapEntryExpression expression) {
         doWithNode(expression, current) {
             def key = expression.keyExpression
             def value = expression.valueExpression
@@ -763,7 +752,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitRangeExpression(final RangeExpression expression) {
+    void visitRangeExpression(RangeExpression expression) {
         doWithNode(expression, current) {
             def from = expression.from
             def to = expression.to
@@ -780,7 +769,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitSpreadExpression(final SpreadExpression expression) {
+    void visitSpreadExpression(SpreadExpression expression) {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((SpreadExpression) current).expression) {
@@ -790,12 +779,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitSpreadMapExpression(final SpreadMapExpression expression) {
-        super.visitSpreadMapExpression(expression);
-    }
-
-    @Override
-    public void visitMethodPointerExpression(final MethodPointerExpression expression) {
+    void visitMethodPointerExpression(MethodPointerExpression expression) {
         doWithNode(expression, current) {
             def cur = (MethodPointerExpression) current
             def expr = expression.expression
@@ -812,7 +796,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
+    void visitUnaryMinusExpression(UnaryMinusExpression expression) {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((UnaryMinusExpression) current).expression) {
@@ -822,7 +806,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
+    void visitUnaryPlusExpression(UnaryPlusExpression expression) {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((UnaryPlusExpression) current).expression) {
@@ -832,7 +816,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
+    void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((BitwiseNegationExpression) current).expression) {
@@ -842,7 +826,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitCastExpression(final CastExpression expression) {
+    void visitCastExpression(CastExpression expression) {
         doWithNode(expression, current) {
             def expr = expression.expression
             doWithNode(expr, ((CastExpression) current).expression) {
@@ -852,20 +836,17 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         }
     }
 
-    @Override
-    @CompileStatic(TypeCheckingMode.SKIP)
-    public void visitConstantExpression(final ConstantExpression expression) {
+    @Override @CompileDynamic
+    void visitConstantExpression(ConstantExpression expression) {
         doWithNode(expression, current) {
             def cur = (ConstantExpression) current
             super.visitConstantExpression(expression)
-            failIfNot((expression.type == cur.type) &&
-                    (expression.value == cur.value))
+            failIfNot(expression.type == cur.type && expression.value == cur.value)
         }
     }
 
-    @Override
-    @CompileStatic(TypeCheckingMode.SKIP)
-    public void visitClassExpression(final ClassExpression expression) {
+    @Override @CompileDynamic
+    void visitClassExpression(ClassExpression expression) {
         doWithNode(expression, current) {
             super.visitClassExpression(expression)
             def cexp = (ClassExpression) current
@@ -874,17 +855,16 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitVariableExpression(final VariableExpression expression) {
+    void visitVariableExpression(VariableExpression expression) {
         doWithNode(expression, current) {
             def curVar = (VariableExpression) current
-            failIfNot(matchByName(expression.name, curVar.name) &&
-                    (expression.type == curVar.type) &&
-                    (expression.originType == curVar.originType))
+            failIfNot(matchByName(expression.name, curVar.name)
+                    && expression.type == curVar.type && expression.originType == curVar.originType)
         }
     }
 
     @Override
-    public void visitPropertyExpression(final PropertyExpression expression) {
+    void visitPropertyExpression(PropertyExpression expression) {
         doWithNode(expression, current) {
             def currentPexp = (PropertyExpression) current
             doWithNode(expression.objectExpression, currentPexp.objectExpression) {
@@ -893,15 +873,15 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             doWithNode(expression.property, currentPexp.property) {
                 expression.property.visit(this)
             }
-            failIfNot((expression.propertyAsString == currentPexp.propertyAsString) &&
-                    (expression.implicitThis == currentPexp.implicitThis) &&
-                    (expression.safe == currentPexp.safe) &&
-                    (expression.spreadSafe == currentPexp.spreadSafe))
+            failIfNot(expression.propertyAsString == currentPexp.propertyAsString
+                    && expression.implicitThis == currentPexp.implicitThis
+                    && expression.safe == currentPexp.safe
+                    && expression.spreadSafe == currentPexp.spreadSafe)
         }
     }
 
     @Override
-    public void visitAttributeExpression(final AttributeExpression expression) {
+    void visitAttributeExpression(AttributeExpression expression) {
         doWithNode(expression, current) {
             def currentPexp = (AttributeExpression) current
             doWithNode(expression.objectExpression, currentPexp.objectExpression) {
@@ -910,20 +890,15 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             doWithNode(expression.property, currentPexp.property) {
                 expression.property.visit(this)
             }
-            failIfNot((expression.propertyAsString == currentPexp.propertyAsString) &&
-                    (expression.implicitThis == currentPexp.implicitThis) &&
-                    (expression.safe == currentPexp.safe) &&
-                    (expression.spreadSafe == currentPexp.spreadSafe))
+            failIfNot(expression.propertyAsString == currentPexp.propertyAsString
+                    && expression.implicitThis == currentPexp.implicitThis
+                    && expression.safe == currentPexp.safe
+                    && expression.spreadSafe == currentPexp.spreadSafe)
         }
     }
 
     @Override
-    public void visitFieldExpression(final FieldExpression expression) {
-        super.visitFieldExpression(expression);
-    }
-
-    @Override
-    public void visitGStringExpression(final GStringExpression expression) {
+    void visitGStringExpression(GStringExpression expression) {
         doWithNode(expression, current) {
             def cur = (GStringExpression) current
             def strings = expression.strings
@@ -940,8 +915,8 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    void visitListOfExpressions(final List<? extends Expression> list) {
-        if (list == null) return;
+    void visitListOfExpressions(List<? extends Expression> list) {
+        if (list == null) return
         def currentExprs = (List<Expression>) current
         if (currentExprs.size() != list.size()) {
             failIfNot(false)
@@ -957,12 +932,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitArgumentlistExpression(final ArgumentListExpression ale) {
-        super.visitArgumentlistExpression(ale);
-    }
-
-    @Override
-    public void visitClosureListExpression(final ClosureListExpression cle) {
+    void visitClosureListExpression(ClosureListExpression cle) {
         doWithNode(cle, current) {
             def exprs = cle.expressions
             doWithNode(exprs, ((ClosureListExpression)current).expressions) {
@@ -972,12 +942,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    public void visitBytecodeExpression(final BytecodeExpression cle) {
-        super.visitBytecodeExpression(cle);
-    }
-
-    @Override
-    void visitIfElse(final IfStatement ifElse) {
+    void visitIfElse(IfStatement ifElse) {
         doWithNode(ifElse, current) {
             visitStatement(ifElse)
             def cur = (IfStatement) current
@@ -998,7 +963,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    void visitForLoop(final ForStatement forLoop) {
+    void visitForLoop(ForStatement forLoop) {
         doWithNode(forLoop, current) {
             visitStatement(forLoop)
             def cur = (ForStatement) current
@@ -1014,7 +979,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     @Override
-    void visitWhileLoop(final WhileStatement loop) {
+    void visitWhileLoop(WhileStatement loop) {
         doWithNode(loop, current) {
             visitStatement(loop)
             def cur = (WhileStatement) current
@@ -1030,7 +995,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     /**
-     * // todo: experimental!
+     * TODO: experimental!
      *
      * Annotates an AST node with matching contraints. This method should be called
      * on an AST intended to be used as a pattern only. It will put node metadata on
@@ -1040,9 +1005,7 @@ class ASTMatcher extends ContextualClassCodeVisitor {
      * @param constraintsSpec a closure specification of matching constraints
      * @return the same pattern, annotated with constraints
      */
-    public static ASTNode withConstraints(
-            final ASTNode pattern,
-            final @DelegatesTo(value=MatchingConstraintsBuilder, strategy=Closure.DELEGATE_ONLY) Closure constraintsSpec) {
+    static ASTNode withConstraints(ASTNode pattern, @DelegatesTo(value=MatchingConstraintsBuilder, strategy=Closure.DELEGATE_ONLY) Closure constraintsSpec) {
         def builder = new MatchingConstraintsBuilder()
         def constraints = builder.build(constraintsSpec)
         pattern.putNodeMetaData(MatchingConstraints, constraints)
