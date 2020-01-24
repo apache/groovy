@@ -573,7 +573,7 @@ elementValueArrayInitializer
 // STATEMENTS / BLOCKS
 
 block
-    :   LBRACE (nls | sep*) blockStatementsOpt RBRACE
+    :   LBRACE sep? blockStatementsOpt RBRACE
     ;
 
 blockStatement
