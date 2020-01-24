@@ -61,7 +61,7 @@ class ReturnStatementToIterationConverter {
         List<ExpressionStatement> argAssignments = []
 
         BlockStatement result = new BlockStatement()
-        result.statementLabel = statement.statementLabel
+        result.copyStatementLabels(statement)
 
         /* Create temp declarations for all method arguments.
          * Add the declarations and var mapping to tempMapping and tempDeclarations for further reference.

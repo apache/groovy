@@ -63,7 +63,6 @@ public class WriterController {
     private String internalBaseClassName;
     private ClassNode outermostClass;
     private MethodNode methodNode;
-    private SourceUnit sourceUnit;
     private ConstructorNode constructorNode;
     private GeneratorContext context;
     private InterfaceHelperClassNode interfaceClassLoadingClass;
@@ -127,7 +126,6 @@ public class WriterController {
         this.methodReferenceExpressionWriter = new MethodReferenceExpressionWriter(this);
         this.internalBaseClassName = BytecodeHelper.getClassInternalName(cn.getSuperClass());
         this.acg = asmClassGenerator;
-        this.sourceUnit = acg.getSourceUnit();
         this.context = gcon;
         this.compileStack = new CompileStack(this);
         this.cv = createClassVisitor(cv);
@@ -197,7 +195,7 @@ public class WriterController {
     }
 
     public SourceUnit getSourceUnit() {
-        return sourceUnit;
+        return getAcg().getSourceUnit();
     }
 
     public TypeChooser getTypeChooser() {

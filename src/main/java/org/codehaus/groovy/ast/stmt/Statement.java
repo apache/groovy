@@ -22,41 +22,43 @@ import org.codehaus.groovy.ast.ASTNode;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Base class for any statement
+ * Base class for any statement.
  */
 public class Statement extends ASTNode {
 
     private List<String> statementLabels;
 
-    public Statement() {
-        statementLabels = null;
-    }
-
-    public List<String> getStatementLabels() {
+    public /*@Nullable*/ List<String> getStatementLabels() {
         return statementLabels;
     }
 
-    // TODO @Deprecated
-    public String getStatementLabel() {
+    @Deprecated
+    public /*@Nullable*/ String getStatementLabel() {
         // last label by default which is added first by APP
         return statementLabels == null ? null : statementLabels.get(0);
     }
 
-    // TODO @Deprecated
-    public void setStatementLabel(String label) {
-        if (statementLabels == null) statementLabels = new LinkedList<String>();
-        statementLabels.add(label);
+    // TODO: @Deprecated
+    public void setStatementLabel(final String label) {
+        if (label != null) addStatementLabel(label);
     }
 
-    public void addStatementLabel(String label) {
-        if (statementLabels == null) statementLabels = new LinkedList<String>();
-        statementLabels.add(label);
+    public void addStatementLabel(final String label) {
+        if (statementLabels == null) statementLabels = new LinkedList<>();
+        statementLabels.add(Objects.requireNonNull(label));
+    }
+
+    public void copyStatementLabels(final Statement that) {
+        Optional.ofNullable(that.getStatementLabels()).ifPresent(labels -> {
+            labels.forEach(this::addStatementLabel);
+        });
     }
 
     public boolean isEmpty() {
         return false;
     }
-
 }

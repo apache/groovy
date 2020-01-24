@@ -62,7 +62,7 @@ class ReturnStatementToIterationConverterTest {
         def block = new ReturnStatementToIterationConverter().convert(statement, positionMapping)
 
         AstAssert.assertSyntaxTree([expected], [block])
-        assert block.statementLabel == "aLabel"
+        assert block.statementLabels[0] == "aLabel"
     }
 
     @Test
