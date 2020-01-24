@@ -508,6 +508,28 @@ public class Node implements Serializable, Cloneable {
                 Object childNodeName = childNode.name();
                 if (name.matches(childNodeName)) {
                     answer.add(childNode);
+                } else if (childNodeName instanceof groovy.xml.QName && ((groovy.xml.QName)childNodeName).matches(name)) {
+                    answer.add(childNode);
+                }
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Provides lookup of elements by QName.
+     *
+     * @param name the QName of interest
+     * @return the nodes matching name
+     */
+    public NodeList getAt(groovy.xml.QName name) {
+        NodeList answer = new NodeList();
+        for (Object child : children()) {
+            if (child instanceof Node) {
+                Node childNode = (Node) child;
+                Object childNodeName = childNode.name();
+                if (name.matches(childNodeName)) {
+                    answer.add(childNode);
                 }
             }
         }
@@ -528,6 +550,11 @@ public class Node implements Serializable, Cloneable {
                 Object childNodeName = childNode.name();
                 if (childNodeName instanceof QName) {
                     QName qn = (QName) childNodeName;
+                    if (qn.matches(name)) {
+                        answer.add(childNode);
+                    }
+                } else if (childNodeName instanceof groovy.xml.QName) {
+                    groovy.xml.QName qn = (groovy.xml.QName) childNodeName;
                     if (qn.matches(name)) {
                         answer.add(childNode);
                     }

@@ -216,6 +216,12 @@ public class QName implements Serializable {
             final QName qName = (QName) o;
             if (!namespaceURI.equals(qName.namespaceURI) && !namespaceURI.equals("*") && !qName.namespaceURI.equals("*")) return false;
             return localPart.equals(qName.localPart) || localPart.equals("*") || qName.localPart.equals("*");
+        } else if (o instanceof groovy.namespace.QName) {
+            // note: we'd ideally like "matches" between new and legacy QName classes to be commutative
+            // but we don't to avoid polluting the new class with the legacy class which will be removed in Groovy 4
+            final groovy.namespace.QName qName = (groovy.namespace.QName) o;
+            if (!namespaceURI.equals(qName.getNamespaceURI()) && !namespaceURI.equals("*") && !qName.getNamespaceURI().equals("*")) return false;
+            return localPart.equals(qName.getLocalPart()) || localPart.equals("*") || qName.getLocalPart().equals("*");
         } else if (o instanceof String) {
             final String string = (String)o;
             if (string.length() == 0) return false;
