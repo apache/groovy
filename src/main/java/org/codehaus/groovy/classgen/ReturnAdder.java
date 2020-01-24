@@ -18,10 +18,8 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.VariableScope;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
@@ -40,7 +38,8 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 
 /**
  * Utility class to add return statements.
@@ -79,40 +78,22 @@ public class ReturnAdder {
     }
 
     /**
-     * Adds return statements in method code whenever an implicit return is detected.
-     * @param node the method node where to add return statements
-     * @deprecated Use {@link #visitMethod(org.codehaus.groovy.ast.MethodNode)} instead
+     * @deprecated Use {@link #visitMethod(MethodNode)} instead.
      */
     @Deprecated
     public static void addReturnIfNeeded(final MethodNode node) {
-        ReturnAdder adder = new ReturnAdder();
-        adder.visitMethod(node);
+        new ReturnAdder().visitMethod(node);
     }
 
+    /**
+     * Adds return statements to given method whenever an implicit return is detected.
+     */
     public void visitMethod(final MethodNode node) {
-        Statement statement = node.getCode();
         if (!node.isVoidMethod()) {
-            if (statement != null) { // happens with @interface methods
-                Statement code = addReturnsIfNeeded(statement, node.getVariableScope());
+            Statement code = node.getCode();
+            if (code != null) { // happens with @interface methods
+                code = addReturnsIfNeeded(code, node.getVariableScope());
                 if (doAdd) node.setCode(code);
-            }
-        } else if (!node.isAbstract() && node.getReturnType().redirect() != ClassHelper.VOID_TYPE) {
-            if (!(statement instanceof BytecodeSequence)) {
-                BlockStatement newBlock = new BlockStatement();
-                Statement code = node.getCode();
-                if (code instanceof BlockStatement) {
-                    newBlock.setVariableScope(((BlockStatement) code).getVariableScope());
-                }
-                if (statement instanceof BlockStatement) {
-                    newBlock.addStatements(((BlockStatement) statement).getStatements());
-                } else {
-                    newBlock.addStatement(statement);
-                }
-                ReturnStatement returnStatement = ReturnStatement.RETURN_NULL_OR_VOID;
-                listener.returnStatementAdded(returnStatement);
-                newBlock.addStatement(returnStatement);
-                newBlock.setSourcePosition(statement);
-                if (doAdd) node.setCode(newBlock);
             }
         }
     }
@@ -124,7 +105,7 @@ public class ReturnAdder {
         }
 
         if (statement instanceof EmptyStatement || statement == null) {
-            ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+            ReturnStatement returnStatement = new ReturnStatement(nullX());
             listener.returnStatementAdded(returnStatement);
             return returnStatement;
         }
@@ -132,7 +113,7 @@ public class ReturnAdder {
         if (statement instanceof ExpressionStatement) {
             Expression expression = ((ExpressionStatement) statement).getExpression();
             ReturnStatement returnStatement = new ReturnStatement(expression);
-            addLabelsToReturnStatement(statement, returnStatement);
+            returnStatement.copyStatementLabels(statement);
             returnStatement.setSourcePosition(statement);
             listener.returnStatementAdded(returnStatement);
             return returnStatement;
@@ -191,8 +172,8 @@ public class ReturnAdder {
         if (statement instanceof BlockStatement) {
             BlockStatement blockStatement = (BlockStatement) statement;
             if (blockStatement.isEmpty()) {
-                ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
-                addLabelsToReturnStatement(blockStatement, returnStatement);
+                ReturnStatement returnStatement = new ReturnStatement(nullX());
+                returnStatement.copyStatementLabels(blockStatement);
                 returnStatement.setSourcePosition(blockStatement);
                 listener.returnStatementAdded(returnStatement);
                 return returnStatement;
@@ -201,8 +182,8 @@ public class ReturnAdder {
                 int lastIndex = statements.size() - 1;
                 Statement last = addReturnsIfNeeded(statements.get(lastIndex), blockStatement.getVariableScope());
                 if (doAdd) statements.set(lastIndex, last);
-                if (!statementReturns(last)) {
-                    ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+                if (!returns(last)) {
+                    ReturnStatement returnStatement = new ReturnStatement(nullX());
                     listener.returnStatementAdded(returnStatement);
                     if (doAdd) statements.add(returnStatement);
                 }
@@ -213,18 +194,13 @@ public class ReturnAdder {
         List<Statement> statements = new ArrayList<>(2);
         statements.add(statement);
 
-        ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
+        ReturnStatement returnStatement = new ReturnStatement(nullX());
         listener.returnStatementAdded(returnStatement);
         statements.add(returnStatement);
 
         BlockStatement blockStatement = new BlockStatement(statements, new VariableScope(scope));
         blockStatement.setSourcePosition(statement);
         return blockStatement;
-    }
-
-    private void addLabelsToReturnStatement(Statement statement, ReturnStatement returnStatement) {
-        Optional.ofNullable(statement.getStatementLabels())
-                .ifPresent(labels -> labels.forEach(returnStatement::addStatementLabel));
     }
 
     private Statement adjustSwitchCaseCode(final Statement statement, final VariableScope scope, final boolean defaultCase) {
@@ -252,15 +228,15 @@ public class ReturnAdder {
         return statement;
     }
 
-    private static boolean statementReturns(final Statement last) {
-        return last instanceof ReturnStatement
-            || last instanceof BlockStatement
-            || last instanceof IfStatement
-            || last instanceof ExpressionStatement
-            || last instanceof EmptyStatement
-            || last instanceof TryCatchStatement
-            || last instanceof ThrowStatement
-            || last instanceof SynchronizedStatement
-            || last instanceof BytecodeSequence;
+    private static boolean returns(final Statement statement) {
+        return statement instanceof ReturnStatement
+            || statement instanceof BlockStatement
+            || statement instanceof IfStatement
+            || statement instanceof ExpressionStatement
+            || statement instanceof EmptyStatement
+            || statement instanceof TryCatchStatement
+            || statement instanceof ThrowStatement
+            || statement instanceof SynchronizedStatement
+            || statement instanceof BytecodeSequence;
     }
 }

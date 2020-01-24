@@ -52,6 +52,7 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -76,11 +77,11 @@ public class StatementWriter {
     }
 
     protected void writeStatementLabel(final Statement statement) {
-        String name = statement.getStatementLabel();
-        if (name != null) {
-            Label label = controller.getCompileStack().createLocalLabel(name);
-            controller.getMethodVisitor().visitLabel(label);
-        }
+        Optional.ofNullable(statement.getStatementLabels()).ifPresent(labels -> {
+            labels.stream().map(controller.getCompileStack()::createLocalLabel).forEach(label -> {
+                controller.getMethodVisitor().visitLabel(label);
+            });
+        });
     }
 
     public void writeBlockStatement(final BlockStatement block) {
