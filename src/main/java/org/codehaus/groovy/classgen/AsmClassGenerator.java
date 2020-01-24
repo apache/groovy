@@ -393,12 +393,14 @@ public class AsmClassGenerator extends ClassGenerator {
         } else if (!node.isAbstract()) {
             Statement code = node.getCode();
             mv.visitCode();
-            // fast path for getter/setters etc.
-            if (code instanceof BytecodeSequence && ((BytecodeSequence)code).getInstructions().size() == 1 && ((BytecodeSequence)code).getInstructions().get(0) instanceof BytecodeInstruction) {
-               ((BytecodeInstruction)((BytecodeSequence)code).getInstructions().get(0)).visit(mv);
+
+            BytecodeInstruction instruction; // fast path for getters, setters, etc.
+            if (code instanceof BytecodeSequence && (instruction = ((BytecodeSequence) code).getBytecodeInstruction()) != null) {
+               instruction.visit(mv);
             } else {
                 visitStdMethod(node, isConstructor, parameters, code);
             }
+
             try {
                 mv.visitMaxs(0, 0);
             } catch (Exception e) {
@@ -1670,13 +1672,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         List<Object> instructions = new LinkedList<>();
-        BytecodeSequence seq = new BytecodeSequence(instructions);
-        BlockStatement bs = new BlockStatement();
-        bs.addStatement(seq);
-        Parameter closureIndex = new Parameter(ClassHelper.int_TYPE, "__closureIndex");
-        ClosureExpression ce = new ClosureExpression(new Parameter[]{closureIndex}, bs);
-        ce.setVariableScope(expression.getVariableScope());
-
         // to keep stack height put a null on stack
         instructions.add(ConstantExpression.NULL);
 
@@ -1730,7 +1725,11 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         });
 
-        // load main Closure
+        BlockStatement bs = new BlockStatement();
+        bs.addStatement(new BytecodeSequence(instructions));
+        Parameter closureIndex = new Parameter(ClassHelper.int_TYPE, "__closureIndex");
+        ClosureExpression ce = new ClosureExpression(new Parameter[]{closureIndex}, bs);
+        ce.setVariableScope(expression.getVariableScope());
         visitClosureExpression(ce);
 
         // we need later an array to store the curried
@@ -1796,22 +1795,22 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     public void visitBytecodeSequence(final BytecodeSequence bytecodeSequence) {
         MethodVisitor mv = controller.getMethodVisitor();
-        List instructions = bytecodeSequence.getInstructions();
+        List<?> sequence = bytecodeSequence.getInstructions();
         int mark = controller.getOperandStack().getStackLength();
-        for (Object part : instructions) {
-            if (part instanceof EmptyExpression) {
+
+        for (Object element : sequence) {
+            if (element instanceof EmptyExpression) {
                 mv.visitInsn(ACONST_NULL);
-            } else if (part instanceof Expression) {
-                ((Expression) part).visit(this);
-            } else if (part instanceof Statement) {
-                Statement stm = (Statement) part;
-                stm.visit(this);
+            } else if (element instanceof Expression) {
+                ((Expression) element).visit(this);
+            } else if (element instanceof Statement) {
+                ((Statement) element).visit(this);
                 mv.visitInsn(ACONST_NULL);
             } else {
-                BytecodeInstruction runner = (BytecodeInstruction) part;
-                runner.visit(mv);
+                ((BytecodeInstruction) element).visit(mv);
             }
         }
+
         controller.getOperandStack().remove(mark - controller.getOperandStack().getStackLength());
     }
 

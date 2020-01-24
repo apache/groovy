@@ -25,6 +25,7 @@ import org.objectweb.asm.MethodVisitor;
  * an inner class is produced, that contains bytecode
  * creation code in the visit method.
  */
+// TODO: convert to @FunctionalInterface
 public abstract class BytecodeInstruction {
     public abstract void visit(MethodVisitor mv);
 }

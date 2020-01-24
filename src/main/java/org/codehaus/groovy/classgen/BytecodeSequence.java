@@ -22,59 +22,67 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.stmt.Statement;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * This class represents a sequence of BytecodeInstructions
- * or ASTNodes. The evaluation is depending on the type of 
+ * This class represents a sequence of {@link BytecodeInstruction}s
+ * or {@link ASTNode}s. The evaluation is depending on the type of
  * the visitor.
- * 
- * @see BytecodeInstruction
- * @see ASTNode
  */
-
 public class BytecodeSequence extends Statement {
-    private final List<BytecodeInstruction> instructions;
 
-    public BytecodeSequence(List instructions) {
-        this.instructions = instructions;
+    public BytecodeSequence(final BytecodeInstruction instruction) {
+        this.instructions = Collections.singletonList(instruction);
     }
-    
-    public BytecodeSequence(BytecodeInstruction instruction) {
-        this.instructions = new ArrayList(1);
-        this.instructions.add(instruction);
+
+    public BytecodeSequence(final List<?> instructions) {
+        this.instructions = Objects.requireNonNull(instructions);
+    }
+
+    public List<?> getInstructions() {
+        return Collections.unmodifiableList(instructions);
+    }
+
+    private final List<?> instructions;
+
+    /**
+     * Returns the singular BytecodeInstruction.
+     *
+     * @return {@code null} if instruction(s) is not a BytecodeInstruction
+     */
+    public BytecodeInstruction getBytecodeInstruction() {
+        if (instructions.size() == 1) {
+            Object instruction = instructions.get(0);
+            if (instruction instanceof BytecodeInstruction) {
+                return (BytecodeInstruction) instruction;
+            }
+        }
+        return null;
     }
 
     /**
      * Delegates to the visit method used for this class.
-     * If the visitor is a ClassGenerator, then 
+     * If the visitor is a ClassGenerator, then
      * {@link ClassGenerator#visitBytecodeSequence(BytecodeSequence)}
-     * is called with this instance. If the visitor is no 
+     * is called with this instance. If the visitor is no
      * ClassGenerator, then this method will call visit on
      * each ASTNode element sorted by this class. If one
      * element is a BytecodeInstruction, then it will be skipped
-     * as it is no ASTNode. 
-     * 
-     * @param visitor the visitor
+     * as it is no ASTNode.
+     *
      * @see ClassGenerator
      */
-    public void visit(GroovyCodeVisitor visitor) {
+    public void visit(final GroovyCodeVisitor visitor) {
         if (visitor instanceof ClassGenerator) {
-            ClassGenerator gen = (ClassGenerator) visitor;
-            gen.visitBytecodeSequence(this);
-            return;
-        }
-        for (BytecodeInstruction instruction : instructions) {
-            Object part = instruction;
-            if (part instanceof ASTNode) {
-                ((ASTNode) part).visit(visitor);
+            ((ClassGenerator) visitor).visitBytecodeSequence(this);
+        } else {
+            for (Object instruction : instructions) {
+                if (instruction instanceof ASTNode) {
+                    ((ASTNode) instruction).visit(visitor);
+                }
             }
         }
     }
-
-    public List getInstructions() {
-        return instructions;
-    }
-
 }

@@ -25,29 +25,30 @@ import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.objectweb.asm.MethodVisitor;
 
 /**
- * Represents some custom bytecode generation by the compiler
+ * Represents some custom bytecode generation by the compiler.
  */
 public abstract class BytecodeExpression extends Expression {
+
     public static final BytecodeExpression NOP = new BytecodeExpression() {
-        public void visit(MethodVisitor visitor) {
-            //do nothing             
+        public void visit(final MethodVisitor visitor) {
+            // do nothing
         }
     };
 
     public BytecodeExpression() {
     }
-    
-    public BytecodeExpression(ClassNode type) {
-        super.setType(type);
+
+    public BytecodeExpression(final ClassNode type) {
+        setType(type);
     }
-    
-    public void visit(GroovyCodeVisitor visitor) {
+
+    public abstract void visit(MethodVisitor visitor);
+
+    public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitBytecodeExpression(this);
     }
 
-    public abstract void visit(MethodVisitor mv);
-
-    public Expression transformExpression(ExpressionTransformer transformer) {
+    public Expression transformExpression(final ExpressionTransformer transformer) {
         return this;
     }
 }
