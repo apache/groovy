@@ -132,9 +132,7 @@ public class ReturnAdder {
         if (statement instanceof ExpressionStatement) {
             Expression expression = ((ExpressionStatement) statement).getExpression();
             ReturnStatement returnStatement = new ReturnStatement(expression);
-            Optional.ofNullable(statement.getStatementLabels()).ifPresent(labels -> {
-                labels.forEach(returnStatement::addStatementLabel);
-            });
+            addLabelsToReturnStatement(statement, returnStatement);
             returnStatement.setSourcePosition(statement);
             listener.returnStatementAdded(returnStatement);
             return returnStatement;
@@ -194,9 +192,7 @@ public class ReturnAdder {
             BlockStatement blockStatement = (BlockStatement) statement;
             if (blockStatement.isEmpty()) {
                 ReturnStatement returnStatement = new ReturnStatement(ConstantExpression.NULL);
-                Optional.ofNullable(blockStatement.getStatementLabels()).ifPresent(labels -> {
-                    labels.forEach(returnStatement::addStatementLabel);
-                });
+                addLabelsToReturnStatement(blockStatement, returnStatement);
                 returnStatement.setSourcePosition(blockStatement);
                 listener.returnStatementAdded(returnStatement);
                 return returnStatement;
@@ -224,6 +220,11 @@ public class ReturnAdder {
         BlockStatement blockStatement = new BlockStatement(statements, new VariableScope(scope));
         blockStatement.setSourcePosition(statement);
         return blockStatement;
+    }
+
+    private void addLabelsToReturnStatement(Statement statement, ReturnStatement returnStatement) {
+        Optional.ofNullable(statement.getStatementLabels())
+                .ifPresent(labels -> labels.forEach(returnStatement::addStatementLabel));
     }
 
     private Statement adjustSwitchCaseCode(final Statement statement, final VariableScope scope, final boolean defaultCase) {
