@@ -40,7 +40,7 @@ buildscript {
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
         classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
-        classpath "gradle.plugin.org.nosphere.apache:creadur-rat-gradle:0.1.3"
+        classpath "org.nosphere.apache:creadur-rat-gradle:0.6.0"
         classpath "gradle.plugin.com.github.jk1:gradle-license-report:0.3.2"
         if (JavaVersion.current() >= JavaVersion.VERSION_1_8) {
             classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.4"
