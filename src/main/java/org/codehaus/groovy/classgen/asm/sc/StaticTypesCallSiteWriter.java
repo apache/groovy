@@ -352,15 +352,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         mv.visitLabel(l4);
         mv.visitVarInsn(ALOAD, var);
         final ClassNode finalComponentType = componentType;
-        PropertyExpression pexp = new PropertyExpression(new BytecodeExpression() {
+        PropertyExpression pexp = new PropertyExpression(new BytecodeExpression(finalComponentType) {
             @Override
             public void visit(final MethodVisitor mv) {
                 mv.visitVarInsn(ALOAD, next);
-            }
-
-            @Override
-            public ClassNode getType() {
-                return finalComponentType;
             }
         }, propertyName);
         pexp.visit(controller.getAcg());
@@ -445,13 +440,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
                     property = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
                     String[] props = property.split("\\.");
-                    BytecodeExpression thisLoader = new BytecodeExpression() {
+                    BytecodeExpression thisLoader = new BytecodeExpression(CLOSURE_TYPE) {
                         @Override
                         public void visit(final MethodVisitor mv) {
                             mv.visitVarInsn(ALOAD, 0); // load this
                         }
                     };
-                    thisLoader.setType(CLOSURE_TYPE);
                     Expression pexp = new PropertyExpression(thisLoader, new ConstantExpression(props[0]), safe);
                     for (int i = 1, n = props.length; i < n; i += 1) {
                         final String prop = props[i];

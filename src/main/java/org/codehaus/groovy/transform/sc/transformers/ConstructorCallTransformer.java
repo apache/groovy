@@ -109,6 +109,7 @@ public class ConstructorCallTransformer {
                 final ClassNode declaringClass,
                 final MapExpression map,
                 final ConstructorCallExpression originalCall) {
+            super(declaringClass);
             this.staticCompilationTransformer = transformer;
             this.declaringClass = declaringClass;
             this.map = map;
@@ -126,12 +127,8 @@ public class ConstructorCallTransformer {
                 acg = (AsmClassGenerator) visitor;
             } else {
                 originalCall.visit(visitor);
-            } 
+            }
             super.visit(visitor);
-        }
-        @Override
-        public ClassNode getType() {
-            return declaringClass;
         }
 
         @Override
@@ -162,15 +159,10 @@ public class ConstructorCallTransformer {
                 int col = entryExpression.getColumnNumber();
                 Expression keyExpression = staticCompilationTransformer.transform(entryExpression.getKeyExpression());
                 Expression valueExpression = staticCompilationTransformer.transform(entryExpression.getValueExpression());
-                BinaryExpression bexp = new BinaryExpression(new PropertyExpression(new BytecodeExpression() {
+                BinaryExpression bexp = new BinaryExpression(new PropertyExpression(new BytecodeExpression(declaringClass) {
                             @Override
                             public void visit(final MethodVisitor mv) {
                                 mv.visitVarInsn(ALOAD, tmpObj);
-                            }
-
-                            @Override
-                            public ClassNode getType() {
-                                return declaringClass;
                             }
                         }, keyExpression),
                         Token.newSymbol("=", line, col),
@@ -186,8 +178,6 @@ public class ConstructorCallTransformer {
 
             // cleanup stack
             compileStack.removeVar(tmpObj);
-
         }
     }
-
 }

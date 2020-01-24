@@ -460,8 +460,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ConstructorCallExpression cce = new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class), text);
                 setMetaClassCode = new ExpressionStatement(cce);
             } else {
-                List list = new ArrayList();
-                list.add(new BytecodeInstruction() {
+                setMetaClassCode = new BytecodeSequence(new BytecodeInstruction() {
                     @Override
                     public void visit(MethodVisitor mv) {
                         /*
@@ -475,7 +474,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         mv.visitInsn(RETURN);
                     }
                 });
-                setMetaClassCode = new BytecodeSequence(list);
             }
 
             MethodNode methodNode = addMethod(node, !shouldAnnotate,
@@ -993,15 +991,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (addSwapInit) {
-            BytecodeSequence seq = new BytecodeSequence(
-                    new BytecodeInstruction() {
-                        @Override
-                        public void visit(MethodVisitor mv) {
-                            mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(node), SWAP_INIT, "()V", false);
-                        }
-                    });
+            BytecodeSequence seq = new BytecodeSequence(new BytecodeInstruction() {
+                @Override
+                public void visit(MethodVisitor mv) {
+                    mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(node), SWAP_INIT, "()V", false);
+                }
+            });
 
-            List<Statement> swapCall = new ArrayList<Statement>(1);
+            List<Statement> swapCall = new ArrayList<>(1);
             swapCall.add(seq);
             node.addStaticInitializerStatements(swapCall, true);
         }
@@ -1413,34 +1410,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 oldMethod.getExceptions(),
                 null
         );
-        List instructions = new ArrayList(1);
-        instructions.add(
-                new BytecodeInstruction() {
-                    @Override
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        Parameter[] para = oldMethod.getParameters();
-                        Parameter[] goal = overridingMethod.getParameters();
-                        int doubleSlotOffset = 0;
-                        for (int i = 0; i < para.length; i++) {
-                            ClassNode type = para[i].getType();
-                            BytecodeHelper.load(mv, type, i + 1 + doubleSlotOffset);
-                            if (type.redirect() == ClassHelper.double_TYPE ||
-                                    type.redirect() == ClassHelper.long_TYPE) {
-                                doubleSlotOffset++;
-                            }
-                            if (!type.equals(goal[i].getType())) {
-                                BytecodeHelper.doCast(mv, goal[i].getType());
-                            }
-                        }
-                        mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(classNode), overridingMethod.getName(), BytecodeHelper.getMethodDescriptor(overridingMethod.getReturnType(), overridingMethod.getParameters()), false);
-
-                        BytecodeHelper.doReturn(mv, oldMethod.getReturnType());
+        newMethod.setCode(new BytecodeSequence(new BytecodeInstruction() {
+            @Override
+            public void visit(MethodVisitor mv) {
+                mv.visitVarInsn(ALOAD, 0);
+                Parameter[] para = oldMethod.getParameters();
+                Parameter[] goal = overridingMethod.getParameters();
+                int doubleSlotOffset = 0;
+                for (int i = 0; i < para.length; i++) {
+                    ClassNode type = para[i].getType();
+                    BytecodeHelper.load(mv, type, i + 1 + doubleSlotOffset);
+                    if (type.redirect() == ClassHelper.double_TYPE ||
+                            type.redirect() == ClassHelper.long_TYPE) {
+                        doubleSlotOffset++;
+                    }
+                    if (!type.equals(goal[i].getType())) {
+                        BytecodeHelper.doCast(mv, goal[i].getType());
                     }
                 }
+                mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(classNode), overridingMethod.getName(), BytecodeHelper.getMethodDescriptor(overridingMethod.getReturnType(), overridingMethod.getParameters()), false);
 
-        );
-        newMethod.setCode(new BytecodeSequence(instructions));
+                BytecodeHelper.doReturn(mv, oldMethod.getReturnType());
+            }
+        }));
         return newMethod;
     }
 
