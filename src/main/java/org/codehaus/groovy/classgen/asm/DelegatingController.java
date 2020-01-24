@@ -145,6 +145,7 @@ public class DelegatingController extends WriterController {
     }
 
     @Override
+    @Deprecated
     public ClassVisitor getCv() {
         return delegationController.getCv();
     }
