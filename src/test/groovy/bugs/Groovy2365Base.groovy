@@ -16,13 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-/**
- * Created by IntelliJ IDEA.
- * User: applerestore
- * Date: Dec 11, 2007
- * Time: 3:29:40 PM
- * To change this template use File | Settings | File Templates.
- */
 package groovy.bugs
 
 import groovy.test.GroovyTestCase
