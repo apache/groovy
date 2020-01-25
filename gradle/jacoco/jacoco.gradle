@@ -26,14 +26,14 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
             apply plugin: 'jacoco'
         }
 
-        project.afterEvaluate {
+//        project.afterEvaluate {
             tasks.withType(JacocoReport) {
                 if (name != 'jacocoAllReport' && name != 'jacocoAllIndyReport') {
-                    sourceDirectories += files(project.sourceSets.main.allGroovy.srcDirs)
+                    sourceDirectories.from = sourceDirectories + files(project.sourceSets.main.allGroovy.srcDirs)
 //                    classDirectories += files(project.sourceSets.main.output)
                 }
             }
-        }
+//        }
     }
 
     // To avoid "Can't add different class with same name" fatal error
@@ -72,8 +72,8 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
             project.plugins.withType(JavaPlugin) {
                 def sd = sourceDirectories ?: files()
                 def cd = classDirectories ?: files()
-                sourceDirectories = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
-                classDirectories = cd + files(compileGroovy.destinationDir)
+                sourceDirectories.from = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
+                classDirectories.from = cd + files(compileGroovy.destinationDir)
             }
         }
     }
@@ -84,8 +84,8 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
             project.plugins.withType(JavaPlugin) {
                 def sd = sourceDirectories ?: files()
                 def cd = classDirectories ?: files()
-                sourceDirectories = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
-                classDirectories = cd + files(compileGroovyWithIndy.destinationDir)
+                sourceDirectories.from = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
+                classDirectories.from = cd + files(compileGroovyWithIndy.destinationDir)
             }
         }
     }
