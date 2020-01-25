@@ -27,6 +27,8 @@ import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
+import java.lang.reflect.Method
+
 /**
  * Tests for the @Generated annotation.
  */
@@ -53,12 +55,16 @@ class GeneratedAnnotationTest extends GroovyShellTestCase {
             new Person()
         ''')
 
-        GroovyObject.declaredMethods.each { m ->
+        GroovyObject.declaredMethods.findAll{ !isCoverageInstrumentationMethod(it) }.each { m ->
             def method = person.class.declaredMethods.find { it.name == m.name }
             if (method) {
                 assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
             }
         }
+    }
+
+    private static boolean isCoverageInstrumentationMethod(Method it) {
+        it.name.contains('jacoco')
     }
 
     @Test
