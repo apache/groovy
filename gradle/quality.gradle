@@ -198,4 +198,3 @@ rat {
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
-apply from: 'gradle/binarycompatibility.gradle'

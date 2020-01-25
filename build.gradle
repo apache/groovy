@@ -66,7 +66,7 @@ buildScanRecipes {
 }
 
 ext.modules = {
-    subprojects.findAll{ !['performance', 'tests-vm8'].contains(it.name) }
+    subprojects.findAll{ !['performance', 'tests-vm8', 'binary-compatibility'].contains(it.name) }
 }
 ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 
