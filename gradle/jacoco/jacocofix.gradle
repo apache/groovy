@@ -20,9 +20,7 @@
 // workaround for configuration of Jacoco task being executed before all information is available
 gradle.taskGraph.whenReady {
     tasks.withType(JacocoReport) {
-//        sourceDirectories = files(sourceSets.main.allGroovy.srcDirs + sourceSets.main.allJava.srcDirs)
-        additionalSourceDirs(files(sourceSets.main.allGroovy.srcDirs + sourceSets.main.allJava.srcDirs))
-//        classDirectories = files(sourceSets.main.output)
-        additionalClassDirs(files(sourceSets.main.output))
+        sourceDirectories.from = files(sourceSets.main.allGroovy.srcDirs + sourceSets.main.allJava.srcDirs)
+        classDirectories.from = files(sourceSets.main.output)
     }
 }
