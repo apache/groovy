@@ -296,7 +296,7 @@ methodDeclaration[int t, int ct]
     |
         modifiersOpt typeParameters? returnType[$ct]?
         methodName formalParameters (nls THROWS nls qualifiedClassNameList)?
-        nls methodBody?
+        (nls methodBody)?
     ;
 
 methodName
