@@ -144,11 +144,11 @@ modifiers
     ;
 
 classOrInterfaceModifiersOpt
-    :   classOrInterfaceModifiers?
+    :   (classOrInterfaceModifiers nls)?
     ;
 
 classOrInterfaceModifiers
-    :   (classOrInterfaceModifier nls)+
+    :   classOrInterfaceModifier (nls classOrInterfaceModifier)*
     ;
 
 classOrInterfaceModifier
