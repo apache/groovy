@@ -22,6 +22,7 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModifierNode;
 
 import java.util.Arrays;
@@ -116,23 +117,18 @@ public class SemanticPredicates {
         if (context instanceof PostfixExprAltContext) {
             List<ParseTree> peacChildren = ((PostfixExprAltContext) context).children;
 
-            if (1 == peacChildren.size()) {
+            try {
                 ParseTree peacChild = peacChildren.get(0);
+                List<ParseTree>  pecChildren = ((PostfixExpressionContext) peacChild).children;
 
-                if (peacChild instanceof PostfixExpressionContext) {
-                    List<ParseTree>  pecChildren = ((PostfixExpressionContext) peacChild).children;
+                ParseTree pecChild = pecChildren.get(0);
+                PathExpressionContext pec = (PathExpressionContext) pecChild;
 
-                    if (1 == pecChildren.size()) {
-                        ParseTree pecChild = pecChildren.get(0);
+                int t = pec.t;
 
-                        if (pecChild instanceof PathExpressionContext) {
-                            PathExpressionContext pec = (PathExpressionContext) pecChild;
-                            int t = pec.t;
-
-                            return (2 == t || 3 == t);
-                        }
-                    }
-                }
+                return (2 == t || 3 == t);
+            } catch (IndexOutOfBoundsException | ClassCastException e) {
+                throw new GroovyBugError("Unexpected structure of expression context: " + context, e);
             }
         }
 
