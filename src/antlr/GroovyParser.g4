@@ -136,11 +136,11 @@ modifier
     ;
 
 modifiersOpt
-    :   modifiers?
+    :   (modifiers nls)?
     ;
 
 modifiers
-    :   (modifier nls)+
+    :   modifier (nls modifier)*
     ;
 
 classOrInterfaceModifiersOpt
@@ -184,11 +184,11 @@ variableModifier
     ;
 
 variableModifiersOpt
-    :   variableModifiers?
+    :   (variableModifiers nls)?
     ;
 
 variableModifiers
-    :   (variableModifier nls)+
+    :   variableModifier (nls variableModifier)*
     ;
 
 typeParameters
@@ -333,7 +333,7 @@ variableInitializer
     ;
 
 variableInitializers
-    :   variableInitializer nls (COMMA nls variableInitializer nls)* nls COMMA?
+    :   variableInitializer (nls COMMA nls variableInitializer)* nls COMMA?
     ;
 
 dims
@@ -532,11 +532,11 @@ blockStatements
 // ANNOTATIONS
 
 annotationsOpt
-    :   (annotation nls)*
+    :   (annotation (nls annotation)* nls)?
     ;
 
 annotation
-    :   AT annotationName ( LPAREN elementValues? rparen )?
+    :   AT annotationName ( LPAREN elementValues? rparen)?
     ;
 
 elementValues
@@ -587,10 +587,10 @@ localVariableDeclaration
     ;
 
 classifiedModifiers[int t]
-    :   { 0 == $t }? variableModifiers
-    |   { 1 == $t }? modifiers
+    :   (   { 0 == $t }? variableModifiers
+        |   { 1 == $t }? modifiers
+        ) nls
     ;
-
 
 /**
  *  t   0: local variable declaration; 1: field declaration
@@ -716,7 +716,7 @@ resource
  *  To handle empty cases at the end, we add switchLabel* to statement.
  */
 switchBlockStatementGroup
-    :   (switchLabel nls)+ blockStatements
+    :   switchLabel (nls switchLabel)* nls blockStatements
     ;
 
 switchLabel
