@@ -37,11 +37,7 @@ import static org.apache.groovy.parser.antlr4.TestUtils.doTest
 /**
  * Some basic test cases for the new parser
  */
-class GroovyParserTest extends GroovyTestCase {
-
-    void setUp() {}
-
-    void tearDown() {}
+final class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - Comments"() {
         doTest('core/Comments_01.groovy', [ExpressionStatement])
@@ -55,8 +51,7 @@ class GroovyParserTest extends GroovyTestCase {
             def a = 123
         '''
 
-        def antlr4Parser = new org.apache.groovy.parser.Antlr4Parser()
-        antlr4Parser.parse(f)
+        TestUtils.createAntlr4Shell().evaluate(f)
 
         boolean deleted = f.delete()
         assert deleted: "Failed to delete file: ${f.getAbsolutePath()}"
