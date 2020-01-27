@@ -19,28 +19,24 @@
 package org.apache.groovy.parser.antlr4
 
 import groovy.test.GroovyTestCase
+import groovy.test.NotYetImplemented
 import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
 
 /**
- * Some syntax error test cases for the new parser
+ * Some syntax error test cases for the new parser.
  */
-class SyntaxErrorTest extends GroovyTestCase {
-    public static final String RESOURCES_PATH = 'src/test/resources'
-
-    void setUp() {}
-
-    void tearDown() {}
+final class SyntaxErrorTest extends GroovyTestCase {
 
     void "test groovy core - List"() {
         TestUtils.shouldFail('fail/List_01.groovy')
     }
-
+ 
     void "test groovy core - Expression"() {
         TestUtils.shouldFail('fail/Expression_01.groovy')
         TestUtils.shouldFail('fail/Expression_02.groovy')
         TestUtils.shouldFail('fail/Expression_03.groovy')
-//        shouldFail('fail/Expression_04.groovy', true);
-//        shouldFail('fail/Expression_05.groovy', true);
+//        TestUtils.shouldFail('fail/Expression_04.groovy')
+//        TestUtils.shouldFail('fail/Expression_05.groovy')
         TestUtils.shouldFail('fail/Expression_06.groovy')
         TestUtils.shouldFail('fail/Expression_07.groovy')
         TestUtils.shouldFail('fail/Expression_08.groovy')
@@ -55,8 +51,9 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.shouldFail('fail/Switch_01.groovy')
     }
 
+    @NotYetImplemented
     void "test groovy core - LocalVariableDeclaration"() {
-//        TestUtils.shouldFail('fail/LocalVariableDeclaration_01.groovy');
+        TestUtils.shouldFail('fail/LocalVariableDeclaration_01.groovy')
     }
 
     void "test groovy core - Continue"() {
@@ -73,25 +70,25 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/UnexpectedCharacter_01x.groovy')
     }
 
-//    void "test CompilerErrorTest_001.groovy"() {
-//        unzipScriptAndShouldFail("scripts/CompilerErrorTest_001.groovy", [])
-//    }
+    /*void "test CompilerErrorTest_001.groovy"() {
+        unzipScriptAndShouldFail("scripts/CompilerErrorTest_001.groovy", [])
+    }
 
-//    void "test CompilerErrorTest_002.groovy"() {
-//        unzipScriptAndShouldFail("scripts/CompilerErrorTest_002.groovy", [])
-//    }
+    void "test CompilerErrorTest_002.groovy"() {
+        unzipScriptAndShouldFail("scripts/CompilerErrorTest_002.groovy", [])
+    }
 
-//    void "test DifferencesFromJavaTest_002.groovy"() {
-//        unzipScriptAndShouldFail("scripts/DifferencesFromJavaTest_002.groovy", [])
-//    }
+    void "test DifferencesFromJavaTest_002.groovy"() {
+        unzipScriptAndShouldFail("scripts/DifferencesFromJavaTest_002.groovy", [])
+    }
 
-//    void "test Groovy5212Bug_001.groovy"() {
-//        unzipScriptAndShouldFail("scripts/Groovy5212Bug_001.groovy", [])
-//    }
+    void "test Groovy5212Bug_001.groovy"() {
+        unzipScriptAndShouldFail("scripts/Groovy5212Bug_001.groovy", [])
+    }
 
-//    void "test GStringEndTest_001.groovy"() {
-//        unzipScriptAndShouldFail("scripts/GStringEndTest_001.groovy", [])
-//    }
+    void "test GStringEndTest_001.groovy"() {
+        unzipScriptAndShouldFail("scripts/GStringEndTest_001.groovy", [])
+    }*/
 
     void "test groovy core - ParExpression"() {
         TestUtils.doRunAndShouldFail('fail/ParExpression_01x.groovy')
@@ -155,7 +152,6 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_03x.groovy')
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_04x.groovy')
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_05x.groovy')
-
     }
 
     void "test groovy core - ConstructorDeclaration"() {
@@ -244,12 +240,13 @@ class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.shouldFail('fail/Trait_01.groovy')
     }
 
-    /**************************************/
-    static unzipScriptAndShouldFail(String entryName, List ignoreClazzList, Map<String, String> replacementsMap=[:], boolean toCheckNewParserOnly = false) {
+    //--------------------------------------------------------------------------
+
+    private static unzipScriptAndShouldFail(String entryName, List ignoreClazzList, Map<String, String> replacementsMap=[:], boolean toCheckNewParserOnly = false) {
         ignoreClazzList.addAll(TestUtils.COMMON_IGNORE_CLASS_LIST)
 
         TestUtils.unzipAndFail(SCRIPT_ZIP_PATH, entryName, TestUtils.addIgnore(ignoreClazzList, ASTComparatorCategory.LOCATION_IGNORE_LIST), replacementsMap, toCheckNewParserOnly)
     }
 
-    public static final String SCRIPT_ZIP_PATH = "$TestUtils.RESOURCES_PATH/groovy-2.5.0/groovy-2.5.0-SNAPSHOT-20160921-allscripts.zip"
+    private static final String SCRIPT_ZIP_PATH = "$TestUtils.RESOURCES_PATH/groovy-2.5.0/groovy-2.5.0-SNAPSHOT-20160921-allscripts.zip"
 }
