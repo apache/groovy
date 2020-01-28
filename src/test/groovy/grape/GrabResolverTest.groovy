@@ -43,14 +43,14 @@ final class GrabResolverTest {
     void setUp() {
         Grape.@instance = null // isolate each test
 
-        // create a new grape root directory so as to insure a clean slate for each test
+        // create a new grape root directory for each test for isolation
         def grapeRoot = new File(System.getProperty('java.io.tmpdir'), "GrabResolverTest${System.currentTimeMillis()}")
         System.setProperty('grape.root', grapeRoot.path)
         assert grapeRoot.mkdir()
         grapeRoot.deleteOnExit()
 
         Grape.instance.settings.getResolver('downloadGrapes').resolvers.removeAll {
-            it.name == 'jcenter' || it.name == 'localm2'
+            it.name == 'jcenter' || it.name == 'localm2' || it.name == 'cachedGrapes'
         }
     }
 
@@ -62,7 +62,7 @@ final class GrabResolverTest {
             System.setProperty('grape.root', originalGrapeRoot)
         }
 
-        Grape.@instance = null // isolate these tests from other tests
+        Grape.@instance = null // isolate tests
     }
 
     @Test
