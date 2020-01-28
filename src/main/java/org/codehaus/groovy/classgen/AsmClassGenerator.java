@@ -436,31 +436,21 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getCallSiteWriter().makeSiteEntry();
 
         MethodVisitor mv = controller.getMethodVisitor();
-        ClassNode superClass = controller.getClassNode().getSuperClass();
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
             boolean hasCallToSuper = false;
-            if (code != null && controller.getClassNode() instanceof InnerClassNode) {
-                // if the class not is an inner class node, there are chances that the call to super is already added
-                // so we must ensure not to add it twice (see GROOVY-4471)
+            if (code != null && isInnerClass()) {
+                // GROOVY-4471: if the class is an inner class node, there are chances that
+                // the call to super is already added so we must ensure not to add it twice
                 if (code instanceof BlockStatement) {
-                    for (Statement statement : ((BlockStatement) code).getStatements()) {
-                        if (statement instanceof ExpressionStatement) {
-                            Expression expression = ((ExpressionStatement) statement).getExpression();
-                            if (expression instanceof ConstructorCallExpression) {
-                                ConstructorCallExpression call = (ConstructorCallExpression) expression;
-                                if (call.isSuperCall()) {
-                                    hasCallToSuper = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                    hasCallToSuper = ((BlockStatement) code).getStatements().stream()
+                        .map(statement -> statement instanceof ExpressionStatement ? ((ExpressionStatement) statement).getExpression() : null)
+                        .anyMatch(expression -> expression instanceof ConstructorCallExpression && ((ConstructorCallExpression) expression).isSuperCall());
                 }
             }
             if (!hasCallToSuper) {
                 // invokes the super class constructor
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(superClass), "<init>", "()V", false);
+                mv.visitMethodInsn(INVOKESPECIAL, controller.getInternalBaseClassName(), "<init>", "()V", false);
             }
         }
 
@@ -2133,8 +2123,8 @@ public class AsmClassGenerator extends ClassGenerator {
         return isThisExpression(expression) || isSuperExpression(expression);
     }
 
-    private static boolean isVargs(final Parameter[] params) {
-        return (params.length > 0 && params[params.length - 1].getType().isArray());
+    private static boolean isVargs(final Parameter[] parameters) {
+        return (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray());
     }
 
     public boolean addInnerClass(final ClassNode innerClass) {
