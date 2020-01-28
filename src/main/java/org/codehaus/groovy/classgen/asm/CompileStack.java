@@ -375,7 +375,7 @@ public class CompileStack implements Opcodes {
             mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
         }
 
-        pop();
+        popState();
         typedExceptions.clear();
         untypedExceptions.clear();
         stackVariables.clear();
