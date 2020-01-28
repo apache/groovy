@@ -27,7 +27,7 @@ class GrabResolverTest extends GroovyTestCase {
     def originalGrapeRoot
     def grapeRoot
 
-    public void setUp() {
+    void setUp() {
         Grape.@instance = null // isolate our test from other tests
 
         // create a new grape root directory so as to insure a clean slate for this test
@@ -36,9 +36,13 @@ class GrabResolverTest extends GroovyTestCase {
         assert grapeRoot.mkdir()
         grapeRoot.deleteOnExit()
         System.setProperty("grape.root", grapeRoot.path)
+
+        Grape.instance.settings.getResolver('downloadGrapes').resolvers.removeAll {
+            it.name == 'jcenter' || it.name == 'localm2' || it.name == 'cachedGrapes'
+        }
     }
 
-    public void tearDown() {
+    void tearDown() {
         if (originalGrapeRoot == null) {
             // SDN bug: 4463345
             System.getProperties().remove("grape.root")
@@ -49,7 +53,7 @@ class GrabResolverTest extends GroovyTestCase {
         Grape.@instance = null // isolate our test from other tests
     }
 
-    public void manualTestChecksumsCanBeDisabled() {
+    void manualTestChecksumsCanBeDisabled() {
         // TODO someone has cleaned up the checksum info in the public repos that this test
         // was relying on and so this test no longer fails unless you have the corrupt SHA1
         // value cached in your local grapes repo, change test to not rely on that fact and
@@ -70,7 +74,7 @@ class GrabResolverTest extends GroovyTestCase {
         """
     }
 
-  public void testResolverDefinitionIsRequired() {
+  void testResolverDefinitionIsRequired() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
@@ -81,7 +85,7 @@ class GrabResolverTest extends GroovyTestCase {
         }
     }
 
-    public void testResolverDefinitionResolvesDependency() {
+    void testResolverDefinitionResolvesDependency() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shell.evaluate("""
             @GrabResolver(name='restlet.org', root='http://maven.restlet.org')
@@ -90,7 +94,7 @@ class GrabResolverTest extends GroovyTestCase {
             assert org.restlet.Application.class.simpleName == 'Application'""")        
     }    
 
-    public void testResolverDefinitionResolvesDependencyWithShorthand() {
+    void testResolverDefinitionResolvesDependencyWithShorthand() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shell.evaluate("""
             @GrabResolver('http://maven.restlet.org')
