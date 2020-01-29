@@ -24,32 +24,28 @@ install: true
 matrix:
   include:
     - env: BC='legacy'
+      jdk: openjdk13
+    - env: BC='legacy'
       jdk: openjdk12
-
     - env: BC='legacy'
       jdk: openjdk11
-
     - env: BC='legacy'
       jdk: openjdk10
-
     - env: BC='legacy'
       jdk: oraclejdk9
-
     - env: BC='legacy'
       jdk: oraclejdk8
 
     - env: BC='indy'
+      jdk: openjdk13
+    - env: BC='indy'
       jdk: openjdk12
-
     - env: BC='indy'
       jdk: openjdk11
-
     - env: BC='indy'
       jdk: openjdk10
-
     - env: BC='indy'
       jdk: oraclejdk9
-
     - env: BC='indy'
       jdk: oraclejdk8
 
