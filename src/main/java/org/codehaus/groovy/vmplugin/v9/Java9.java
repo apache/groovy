@@ -27,7 +27,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
-import org.codehaus.groovy.vmplugin.v5.Java5;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 
 import java.lang.invoke.MethodHandle;
@@ -120,7 +119,7 @@ public class Java9 extends Java8 {
 
     /**
      * This method may be used by a caller in class C to check whether to enable access to a member of declaring class D successfully
-     * if {@link Java5#checkCanSetAccessible(java.lang.reflect.AccessibleObject, java.lang.Class)} returns true and any of the following hold:
+     * if {@link Java8#checkCanSetAccessible(java.lang.reflect.AccessibleObject, java.lang.Class)} returns true and any of the following hold:
      * <p>
      * 1) C and D are in the same module.
      * 2) The member is public and D is public in a package that the module containing D exports to at least the module containing C.

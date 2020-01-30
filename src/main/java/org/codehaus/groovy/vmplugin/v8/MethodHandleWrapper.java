@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v7;
+package org.codehaus.groovy.vmplugin.v8;
 
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @since 3.0.0
  */
-@Deprecated
 class MethodHandleWrapper {
     private final MethodHandle cachedMethodHandle;
     private final MethodHandle targetMethodHandle;

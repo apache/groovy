@@ -33,6 +33,7 @@ import java.util.Arrays;
  * JDK classes inside the Groovy environment. Static methods are used with the
  * first parameter the destination class.
  */
+@Deprecated
 public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**

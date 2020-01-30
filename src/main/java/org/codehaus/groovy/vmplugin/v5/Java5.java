@@ -65,6 +65,7 @@ import java.util.List;
 /**
  * java 5 based functions
  */
+@Deprecated
 public class Java5 implements VMPlugin {
     private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};

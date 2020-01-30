@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v7;
+package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.GroovyBugError;
@@ -27,12 +27,12 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
-import static org.codehaus.groovy.vmplugin.v7.TypeHelper.isBigDecCategory;
-import static org.codehaus.groovy.vmplugin.v7.TypeHelper.isDoubleCategory;
-import static org.codehaus.groovy.vmplugin.v7.TypeHelper.isIntCategory;
-import static org.codehaus.groovy.vmplugin.v7.TypeHelper.isLongCategory;
-import static org.codehaus.groovy.vmplugin.v7.TypeHelper.replaceWithMoreSpecificType;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
+import static org.codehaus.groovy.vmplugin.v8.TypeHelper.isBigDecCategory;
+import static org.codehaus.groovy.vmplugin.v8.TypeHelper.isDoubleCategory;
+import static org.codehaus.groovy.vmplugin.v8.TypeHelper.isIntCategory;
+import static org.codehaus.groovy.vmplugin.v8.TypeHelper.isLongCategory;
+import static org.codehaus.groovy.vmplugin.v8.TypeHelper.replaceWithMoreSpecificType;
 
 /**
  * This class contains math operations used by indy instead of the normal
@@ -41,7 +41,6 @@ import static org.codehaus.groovy.vmplugin.v7.TypeHelper.replaceWithMoreSpecific
  * WARNING: This class is for internal use only. Do not use it outside of the
  * org.codehaus.groovy.vmplugin.v7 package of groovy-core.
  */
-@Deprecated
 public class IndyMath {
 
     private static final MethodType
