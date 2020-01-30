@@ -144,7 +144,9 @@ modifiers
     ;
 
 classOrInterfaceModifiersOpt
-    :   (classOrInterfaceModifiers NL*)?
+    :   (classOrInterfaceModifiers
+            NL* /* Use `NL*` here for better performance, so DON'T replace it with `nls` */
+        )?
     ;
 
 classOrInterfaceModifiers
