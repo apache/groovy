@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v7;
+package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
@@ -45,13 +45,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
 
 /**
  * This class contains guards, runtime filters and
  * MethodType signatures used by indy.
  */
-@Deprecated
 public class IndyGuardsFiltersAndSignatures {
 
     private static final MethodType

@@ -36,7 +36,7 @@ import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
-import org.codehaus.groovy.vmplugin.v7.IndyInterface;
+import org.codehaus.groovy.vmplugin.v8.IndyInterface;
 import org.objectweb.asm.Handle;
 
 import java.lang.invoke.CallSite;
@@ -44,15 +44,15 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getTypeDescription;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CallType.CAST;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CallType.GET;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CallType.INIT;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.CallType.METHOD;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.GROOVY_OBJECT;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.IMPLICIT_THIS;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.SAFE_NAVIGATION;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.SPREAD_CALL;
-import static org.codehaus.groovy.vmplugin.v7.IndyInterface.THIS_CALL;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.CAST;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.GET;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INIT;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.METHOD;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.GROOVY_OBJECT;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.IMPLICIT_THIS;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.SAFE_NAVIGATION;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.SPREAD_CALL;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.THIS_CALL;
 import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 
 /**

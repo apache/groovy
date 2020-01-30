@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v7;
+package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.GroovySystem;
 import org.apache.groovy.util.SystemUtil;
@@ -46,7 +46,6 @@ import java.util.stream.Stream;
  * interfacing methods with bytecode for invokedynamic as well as some helper
  * methods and classes.
  */
-@Deprecated
 public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 100_000L);
 

@@ -19,10 +19,17 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.Closure;
+import groovy.lang.EmptyRange;
+import groovy.lang.GString;
+import groovy.lang.IntRange;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.RangeInfo;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -63,7 +70,7 @@ import java.util.stream.StreamSupport;
  *
  * @since 2.5.0
  */
-public class PluginDefaultGroovyMethods {
+public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     // No instances, static methods only
     private PluginDefaultGroovyMethods() {
@@ -352,6 +359,111 @@ public class PluginDefaultGroovyMethods {
         Objects.requireNonNull(self);
         Objects.requireNonNull(transform);
         return new TransformedFuture<T>(self, transform);
+    }
+
+    /**
+     * This method is called by the ++ operator for enums. It will invoke
+     * Groovy's default next behaviour for enums do not have their own
+     * next method.
+     *
+     * @param self an Enum
+     * @return the next defined enum from the enum class
+     */
+    public static Object next(final Enum self) {
+        for (Method method : self.getClass().getMethods()) {
+            if (method.getName().equals("next") && method.getParameterCount() == 0) {
+                return InvokerHelper.invokeMethod(self, "next", InvokerHelper.EMPTY_ARGS);
+            }
+        }
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", InvokerHelper.EMPTY_ARGS);
+        int index = Arrays.asList(values).indexOf(self);
+        return values[index < values.length - 1 ? index + 1 : 0];
+    }
+
+    /**
+     * This method is called by the -- operator for enums. It will invoke
+     * Groovy's default previous behaviour for enums that do not have
+     * their own previous method.
+     *
+     * @param self an Enum
+     * @return the previous defined enum from the enum class
+     */
+    public static Object previous(final Enum self) {
+        for (Method method : self.getClass().getMethods()) {
+            if (method.getName().equals("previous") && method.getParameterCount() == 0) {
+                return InvokerHelper.invokeMethod(self, "previous", InvokerHelper.EMPTY_ARGS);
+            }
+        }
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", InvokerHelper.EMPTY_ARGS);
+        int index = Arrays.asList(values).indexOf(self);
+        return values[index > 0 ? index - 1 : values.length - 1];
+    }
+
+    /**
+     * Standard Groovy size() method for StringBuilders.
+     *
+     * @param builder a StringBuilder
+     * @return the length of the StringBuilder
+     */
+    public static int size(final StringBuilder builder) {
+        return builder.length();
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append multiple
+     * objects as string representations to a StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param value a value to append
+     * @return the StringBuilder on which this operation was invoked
+     */
+    public static StringBuilder leftShift(final StringBuilder self, final Object value) {
+        if (value instanceof GString) {
+            // Force the conversion of the GString to string now, or appending
+            // is going to be extremely expensive, due to calls to GString#charAt,
+            // which is going to re-evaluate the GString for each character!
+            return self.append(value.toString());
+        }
+        if (value instanceof CharSequence) {
+            return self.append((CharSequence)value);
+        }
+        return self.append(value);
+    }
+
+    /**
+     * Support the range subscript operator for StringBuilder.
+     * Index values are treated as characters within the builder.
+     *
+     * @param self  a StringBuilder
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(final StringBuilder self, final IntRange range, final Object value) {
+        RangeInfo info = DefaultGroovyMethodsSupport.subListBorders(self.length(), range);
+        self.replace(info.from, info.to, value.toString());
+    }
+
+    /**
+     * Support the range subscript operator for StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(final StringBuilder self, final EmptyRange range, final Object value) {
+        RangeInfo info = DefaultGroovyMethodsSupport.subListBorders(self.length(), range);
+        self.replace(info.from, info.to, value.toString());
+    }
+
+    /**
+     * Appends a String to this StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param value a String
+     * @return a String
+     */
+    public static String plus(final StringBuilder self, final String value) {
+        return self + value;
     }
 
     private static class TransformedFuture<E> implements Future<E> {

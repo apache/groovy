@@ -21,7 +21,7 @@ package org.codehaus.groovy.ast.decompiled;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.vmplugin.v5.Java5;
+import org.codehaus.groovy.vmplugin.v8.Java8;
 import org.objectweb.asm.signature.SignatureVisitor;
 
 import java.util.ArrayList;
@@ -46,9 +46,9 @@ abstract class FormalParameterParser extends SignatureVisitor {
 
     protected void flushTypeParameter() {
         if (currentTypeParameter != null) {
-            ClassNode ref = Java5.configureTypeVariableReference(currentTypeParameter);
+            ClassNode ref = Java8.configureTypeVariableReference(currentTypeParameter);
             ClassNode[] boundNodes = parameterBounds.toArray(ClassNode.EMPTY_ARRAY);
-            typeParameters.add(Java5.configureTypeVariableDefinition(ref, boundNodes));
+            typeParameters.add(Java8.configureTypeVariableDefinition(ref, boundNodes));
 
             currentTypeParameter = null;
             parameterBounds.clear();

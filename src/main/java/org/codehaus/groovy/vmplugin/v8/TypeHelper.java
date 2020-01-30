@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v7;
+package org.codehaus.groovy.vmplugin.v8;
 
 
 import java.lang.invoke.MethodType;
@@ -28,7 +28,6 @@ import java.math.BigInteger;
  * WARNING: This class is for internal use only. do not use it outside of its
  * package and not outside groovy-core.
  */
-@Deprecated
 public class TypeHelper {
     /**
      * Get wrapper class for a given class.
