@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v7;
+package org.codehaus.groovy.vmplugin.v8;
 
 import org.codehaus.groovy.GroovyBugError;
 
@@ -31,7 +31,6 @@ import java.util.HashMap;
  *
  * @since 2.5.0
  */
-@Deprecated
 public class IndyArrayAccess {
 
     private static final MethodHandle notNegative, normalizeIndex;

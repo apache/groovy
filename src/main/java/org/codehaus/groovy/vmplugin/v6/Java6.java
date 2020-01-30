@@ -23,6 +23,7 @@ import org.codehaus.groovy.vmplugin.v5.Java5;
 /**
  * Java 6 based functions. M12n moved these to modules.
  */
+@Deprecated
 public class Java6 extends Java5 {
 
     @Override

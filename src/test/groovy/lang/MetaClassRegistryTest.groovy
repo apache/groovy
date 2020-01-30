@@ -30,7 +30,7 @@ class MetaClassRegistryTest extends GroovyTestCase {
     static initSize
     static {
         try {
-            Class.forName("org.codehaus.groovy.vmplugin.v7.IndyInterface", true, MetaClassRegistryTest.classLoader)
+            Class.forName("org.codehaus.groovy.vmplugin.v8.IndyInterface", true, MetaClassRegistryTest.classLoader)
         } catch (e) {
         }
         initSize = GroovySystem.metaClassRegistry.metaClassRegistryChangeEventListeners.size()

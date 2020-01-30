@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v7;
+package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
@@ -27,6 +27,7 @@ import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.ConvertedClosure;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
+import org.codehaus.groovy.vmplugin.v8.TypeHelper;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -43,7 +44,6 @@ import java.util.Map;
 /**
  * This class contains several transformers for used during method invocation.
  */
-@Deprecated
 public class TypeTransformers {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final MethodHandle

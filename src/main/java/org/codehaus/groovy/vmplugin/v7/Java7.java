@@ -34,6 +34,7 @@ import java.security.PrivilegedAction;
  * <p>
  * For crude customization, you can add your own methods to your own version and place it on the classpath ahead of this one.
  */
+@Deprecated
 public class Java7 extends Java6 {
     private static class LookupHolder {
         private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;

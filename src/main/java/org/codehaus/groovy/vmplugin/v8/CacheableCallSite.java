@@ -16,17 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v7;
+package org.codehaus.groovy.vmplugin.v8;
 
 import org.apache.groovy.util.SystemUtil;
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -34,7 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @since 3.0.0
  */
-@Deprecated
 public class CacheableCallSite extends MutableCallSite {
     private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 16);
     private final MemoizeCache<String, MethodHandleWrapper> cache = new LRUCache<>(CACHE_SIZE);

@@ -22,7 +22,7 @@ import org.codehaus.groovy.classgen.asm.BinaryExpressionWriter;
 import org.codehaus.groovy.classgen.asm.MethodCaller;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesBinaryExpressionMultiTypeDispatcher;
-import org.codehaus.groovy.vmplugin.v7.IndyInterface;
+import org.codehaus.groovy.vmplugin.v8.IndyInterface;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 
