@@ -225,24 +225,24 @@ locals[ int t ]
 
         (
             { 3 != $t }?
-            typeParameters? nls
+            (typeParameters nls)?
             (
                 { 2 != $t }?
-                (EXTENDS nls
+                EXTENDS nls
                     (
                         // Only interface can extend more than one super class
                         {1 == $t}? scs=typeList
                     |
                         sc=type
                     )
-                nls)?
+                nls
             |
                 /* enum should not have type parameters and extends */
             )
 
             (
                 {1 != $t}?
-                (IMPLEMENTS nls is=typeList nls)?
+                IMPLEMENTS nls is=typeList nls
             |
                 /* interface should not implement other interfaces */
             )
@@ -259,15 +259,14 @@ classBody[int t]
         (
             /* Only enum can have enum constants */
             { 2 == $t }?
-            enumConstants? sep?
+            enumConstants (nls COMMA)? sep?
         |
-
         )
-        classBodyDeclaration[$t]? (sep classBodyDeclaration[$t])* sep? RBRACE
+        (classBodyDeclaration[$t] (sep classBodyDeclaration[$t])*)? sep? RBRACE
     ;
 
 enumConstants
-    :   enumConstant (nls COMMA nls enumConstant)* (nls COMMA)?
+    :   enumConstant (nls COMMA nls enumConstant)*
     ;
 
 enumConstant
@@ -275,8 +274,7 @@ enumConstant
     ;
 
 classBodyDeclaration[int t]
-    :   SEMI
-    |   (STATIC nls)? block
+    :   (STATIC nls)? block
     |   memberDeclaration[$t]
     ;
 
@@ -630,7 +628,7 @@ ifElseStatement
     ;
 
 switchStatement
-    :   SWITCH expressionInPar nls LBRACE nls switchBlockStatementGroup* nls RBRACE
+    :   SWITCH expressionInPar nls LBRACE nls (switchBlockStatementGroup+ nls)? RBRACE
     ;
 
 loopStatement
@@ -1090,7 +1088,7 @@ creator[int t]
     ;
 
 arrayInitializer
-    :   LBRACE nls variableInitializers? nls RBRACE
+    :   LBRACE nls (variableInitializers nls)? RBRACE
     ;
 
 /**
