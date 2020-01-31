@@ -952,30 +952,32 @@ pathExpression returns [int t]
 
 pathElement returns [int t]
     :   nls
-
-        // AT: foo.@bar selects the field (or attribute), not property
         (
-            (   DOT                 // The all-powerful dot.
-            |   SPREAD_DOT          // Spread operator:  x*.y  ===  x?.collect{it.y}
-            |   SAFE_DOT            // Optional-null operator:  x?.y  === (x==null)?null:x.y
-            |   SAFE_CHAIN_DOT      // Optional-null chain operator:  x??.y.z  === x?.y?.z
-            ) nls (AT | nonWildcardTypeArguments)?
+            // AT: foo.@bar selects the field (or attribute), not property
+            (
+                (   DOT                 // The all-powerful dot.
+                |   SPREAD_DOT          // Spread operator:  x*.y  ===  x?.collect{it.y}
+                |   SAFE_DOT            // Optional-null operator:  x?.y  === (x==null)?null:x.y
+                |   SAFE_CHAIN_DOT      // Optional-null chain operator:  x??.y.z  === x?.y?.z
+                ) nls (AT | nonWildcardTypeArguments)?
+            |
+                METHOD_POINTER nls      // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
+            |
+                METHOD_REFERENCE nls    // Method reference: System.out::println
+            )
+            namePart
+            { $t = 1; }
         |
-            METHOD_POINTER nls      // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
-        |
-            METHOD_REFERENCE nls    // Method reference: System.out::println
+            DOT nls NEW creator[1]
+            { $t = 6; }
+
+            // Can always append a block, as foo{bar}
+        |   closureOrLambdaExpression
+            { $t = 3; }
         )
-        namePart
-        { $t = 1; }
-    |
-        nls DOT nls NEW creator[1]
-        { $t = 6; }
+
     |   arguments
         { $t = 2; }
-
-    // Can always append a block, as foo{bar}
-    |   nls closureOrLambdaExpression
-        { $t = 3; }
 
     // Element selection is always an option, too.
     // In Groovy, the stuff between brackets is a general argument list,
