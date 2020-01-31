@@ -567,7 +567,7 @@ elementValue
     ;
 
 elementValueArrayInitializer
-    :   LBRACK (elementValue (COMMA elementValue)*)? (COMMA)? RBRACK
+    :   LBRACK (elementValue (COMMA elementValue)* COMMA?)? RBRACK
     ;
 
 // STATEMENTS / BLOCKS
