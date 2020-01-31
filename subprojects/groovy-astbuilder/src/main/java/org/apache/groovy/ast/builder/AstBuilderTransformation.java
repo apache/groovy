@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ast.builder;
+package org.apache.groovy.ast.builder;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -48,7 +48,6 @@ import java.util.List;
  * approach's responsibility to remove the BlockStatement created
  * by the label.
  */
-@Deprecated
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class AstBuilderTransformation extends MethodCallTransformation {
 
