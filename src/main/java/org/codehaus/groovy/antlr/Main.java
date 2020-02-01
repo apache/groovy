@@ -47,25 +47,33 @@ class Main {
 
                 // for each directory/file specified on the command line
                 for (String arg : args) {
-                    if (arg.equals("-showtree")) {
-                        showTree = true;
-                    }
-                    //else if ( args[i].equals("-xml") ) {
-                    //    xml = true;
-                    //}
-                    else if (arg.equals("-verbose")) {
-                        verbose = true;
-                    } else if (arg.equals("-trace")) {
-                        GroovyRecognizer.tracing = true;
-                        GroovyLexer.tracing = true;
-                    } else if (arg.equals("-traceParser")) {
-                        GroovyRecognizer.tracing = true;
-                    } else if (arg.equals("-traceLexer")) {
-                        GroovyLexer.tracing = true;
-                    } else if (arg.equals("-whitespaceIncluded")) {
-                        whitespaceIncluded = true;
-                    } else {
-                        doFile(new File(arg)); // parse it
+                    switch (arg) {
+                        case "-showtree":
+                            showTree = true;
+                            break;
+                        //else if ( args[i].equals("-xml") ) {
+                        //    xml = true;
+                        //}
+                        case "-verbose":
+                            verbose = true;
+                            break;
+                        case "-trace":
+                            GroovyRecognizer.tracing = true;
+                            GroovyLexer.tracing = true;
+                            break;
+                        case "-traceParser":
+                            GroovyRecognizer.tracing = true;
+                            break;
+                        case "-traceLexer":
+                            GroovyLexer.tracing = true;
+                            break;
+                        case "-whitespaceIncluded":
+                            whitespaceIncluded = true;
+                            break;
+                        default:
+                            doFile(new File(arg)); // parse it
+
+                            break;
                     }
                 }
             }
