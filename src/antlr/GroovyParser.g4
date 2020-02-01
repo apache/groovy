@@ -307,9 +307,7 @@ methodName
 returnType[int ct]
     :
         standardType
-    |
-        // annotation method can not have void return type
-        { 3 != $ct }? VOID
+    |   VOID
     ;
 
 fieldDeclaration
