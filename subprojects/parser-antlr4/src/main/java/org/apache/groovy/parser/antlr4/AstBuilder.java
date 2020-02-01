@@ -4115,11 +4115,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return this.createClassNode(ctx);
     }
 
-    private ClassNode createArrayType(ClassNode elementType, List<List<AnnotationNode>> dimsList) {
+    private ClassNode createArrayType(ClassNode elementType, List<List<AnnotationNode>> dimAnnotationsList) {
         ClassNode arrayType = elementType;
-        for (int i = 0, n = dimsList.size(); i < n; i += 1) {
+        for (int i = dimAnnotationsList.size() - 1; i >= 0; i -= 1) {
             arrayType = this.createArrayType(arrayType);
-            arrayType.addAnnotations(dimsList.get(i));
+            arrayType.addAnnotations(dimAnnotationsList.get(i));
         }
         return arrayType;
     }
