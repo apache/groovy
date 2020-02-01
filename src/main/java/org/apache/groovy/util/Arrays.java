@@ -19,6 +19,7 @@
 package org.apache.groovy.util;
 
 import java.lang.reflect.Array;
+import java.util.Objects;
 
 /**
  * Array utilities.
@@ -40,7 +41,7 @@ public class Arrays {
 
         int resultLength =
                 java.util.Arrays.stream(arrays)
-                        .filter(e -> null != e)
+                        .filter(Objects::nonNull)
                         .map(e -> e.length)
                         .reduce(0, Integer::sum);
         T[] resultArray = (T[]) Array.newInstance(arrays[0].getClass().getComponentType(), resultLength);

@@ -42,33 +42,38 @@ public class GroovyStarter {
         // evaluate parameters
         boolean hadMain=false, hadConf=false, hadCP=false;
         int argsOffset = 0;
+        label:
         while (args.length-argsOffset>0 && !(hadMain && hadConf && hadCP)) {
-            if (args[argsOffset].equals("--classpath")) {
-                if (hadCP) break;
-                if (args.length==argsOffset+1) {
-                    exit("classpath parameter needs argument");
-                }
-                lc.addClassPath(args[argsOffset+1]);
-                argsOffset+=2;
-                hadCP=true;
-            } else if (args[argsOffset].equals("--main")) {
-                if (hadMain) break;
-                if (args.length==argsOffset+1) {
-                    exit("main parameter needs argument");
-                }
-                lc.setMainClass(args[argsOffset+1]);
-                argsOffset+=2;
-                hadMain=true;
-            } else if (args[argsOffset].equals("--conf")) {
-                if (hadConf) break;
-                if (args.length==argsOffset+1) {
-                    exit("conf parameter needs argument");
-                }
-                conf=args[argsOffset+1];
-                argsOffset+=2;
-                hadConf=true;
-            } else {
-                break;
+            switch (args[argsOffset]) {
+                case "--classpath":
+                    if (hadCP) break label;
+                    if (args.length == argsOffset + 1) {
+                        exit("classpath parameter needs argument");
+                    }
+                    lc.addClassPath(args[argsOffset + 1]);
+                    argsOffset += 2;
+                    hadCP = true;
+                    break;
+                case "--main":
+                    if (hadMain) break label;
+                    if (args.length == argsOffset + 1) {
+                        exit("main parameter needs argument");
+                    }
+                    lc.setMainClass(args[argsOffset + 1]);
+                    argsOffset += 2;
+                    hadMain = true;
+                    break;
+                case "--conf":
+                    if (hadConf) break label;
+                    if (args.length == argsOffset + 1) {
+                        exit("conf parameter needs argument");
+                    }
+                    conf = args[argsOffset + 1];
+                    argsOffset += 2;
+                    hadConf = true;
+                    break;
+                default:
+                    break label;
             }            
         }
 

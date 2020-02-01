@@ -150,12 +150,12 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public Collection<V> values() {
-        return doWithReadLock(c -> c.values());
+        return doWithReadLock(EvictableCache::values);
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return doWithReadLock(c -> c.entrySet());
+        return doWithReadLock(Map::entrySet);
     }
 
     /**
@@ -163,7 +163,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public Set<K> keys() {
-        return doWithReadLock(c -> c.keys());
+        return doWithReadLock(EvictableCache::keys);
     }
 
     /**
@@ -184,7 +184,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public int size() {
-        return doWithReadLock(c -> c.size());
+        return doWithReadLock(EvictableCache::size);
     }
 
     @Override
@@ -218,7 +218,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
      */
     @Override
     public Map<K, V> clearAll() {
-        return doWithWriteLock(c -> c.clearAll());
+        return doWithWriteLock(EvictableCache::clearAll);
     }
 
     /**

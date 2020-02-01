@@ -333,9 +333,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                     if (instance instanceof CompilationUnitAware) {
                         ((CompilationUnitAware) instance).setCompilationUnit(compilationUnit);
                     }
-                    CompilationUnit.ISourceUnitOperation suOp = source -> {
-                        instance.visit(new ASTNode[]{source.getAST()}, source);
-                    };
+                    CompilationUnit.ISourceUnitOperation suOp = source -> instance.visit(new ASTNode[]{source.getAST()}, source);
                     if (isFirstScan) {
                         compilationUnit.addPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
                     } else {
