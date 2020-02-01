@@ -244,6 +244,11 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.shouldFail('fail/Trait_01.groovy')
     }
 
+    void "test groovy core - Array"() {
+        TestUtils.doRunAndShouldFail('fail/Array_01x.groovy')
+        TestUtils.doRunAndShouldFail('fail/Array_02x.groovy')
+    }
+
     //--------------------------------------------------------------------------
 
     private static unzipScriptAndShouldFail(String entryName, List ignoreClazzList, Map<String, String> replacementsMap=[:], boolean toCheckNewParserOnly = false) {
