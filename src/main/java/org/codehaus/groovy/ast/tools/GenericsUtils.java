@@ -22,6 +22,7 @@ import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import groovy.lang.Tuple2;
 import groovy.transform.stc.IncorrectTypeHintException;
+import org.apache.groovy.internal.util.Predicate;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.AntlrParserPlugin;
@@ -54,7 +55,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
 import static org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.plus;
