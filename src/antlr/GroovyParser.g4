@@ -334,12 +334,12 @@ variableInitializers
     :   variableInitializer (nls COMMA nls variableInitializer)* nls COMMA?
     ;
 
-dims
+emptyDims
     :   (annotationsOpt LBRACK RBRACK)+
     ;
 
-dimsOpt
-    :   dims?
+emptyDimsOpt
+    :   emptyDims?
     ;
 
 standardType
@@ -350,7 +350,7 @@ options { baseContext = type; }
         |
             standardClassOrInterfaceType
         )
-        dimsOpt
+        emptyDimsOpt
     ;
 
 type
@@ -365,7 +365,7 @@ type
         |
                 generalClassOrInterfaceType
         )
-        dimsOpt
+        emptyDimsOpt
     ;
 
 classOrInterfaceType
@@ -1079,10 +1079,13 @@ mapEntryLabel
  */
 creator[int t]
     :   createdName
-        (   {0 == $t || 1 == $t}? nls arguments anonymousInnerClassDeclaration[0]?
-        |   {0 == $t}?            (annotationsOpt LBRACK expression RBRACK)+ dimsOpt
-        |   {0 == $t}?            dims nls arrayInitializer
+        (   nls arguments anonymousInnerClassDeclaration[0]?
+        |   dim+ (nls arrayInitializer)?
         )
+    ;
+
+dim
+    :   annotationsOpt LBRACK expression? RBRACK
     ;
 
 arrayInitializer
