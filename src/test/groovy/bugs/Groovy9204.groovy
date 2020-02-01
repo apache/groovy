@@ -18,14 +18,13 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 final class Groovy9204 {
 
-    @Test @NotYetImplemented
+    @Test
     void testGenerics() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
@@ -36,29 +35,37 @@ final class Groovy9204 {
         try {
             def a = new File(parentDir, 'A.java')
             a.write '''
-                public class A {
-                    public String meth() {
-                        return "hello";
-                    }
-                }
-
-                abstract class One<T extends A> {
+                class One<T extends java.util.List> {
                     protected T field;
                 }
 
-                abstract class Two<T extends A> extends One<T> {
+                class Two<T extends java.util.List> extends One<T> {
                 }
 
-                abstract class Three extends Two<A> {
+                class Three extends Two<java.util.List> {
                 }
+                
+                class Four extends Two<java.util.LinkedList> {
+                }
+                
             '''
             def b = new File(parentDir, 'B.groovy')
             b.write '''
                 @groovy.transform.CompileStatic
-                class B extends Three {
+                class ArrayListTest extends Three {
                     def test() {
-                        field.meth() // typeof(field) should be A
-                        //    ^^^^ Cannot find matching method java.lang.Object#meth()
+                        field = new ArrayList()
+                        field.add("hello")
+                        field[0]
+                    }
+                }
+
+                @groovy.transform.CompileStatic
+                class LinkedListTest extends Four {
+                    def test() {
+                        field = new LinkedList()
+                        field.addFirst("hello")
+                        field[0]
                     }
                 }
             '''
@@ -68,8 +75,8 @@ final class Groovy9204 {
             cu.addSources(a, b)
             cu.compile()
 
-            Class clazz = loader.loadClass('B')
-            assert clazz.newInstance().test() == 'hello'
+            assert loader.loadClass('LinkedListTest').getConstructor().newInstance().test() == 'hello'
+            assert loader.loadClass('ArrayListTest').getConstructor().newInstance().test() == 'hello'
         } finally {
             parentDir.deleteDir()
             config.targetDirectory.deleteDir()
