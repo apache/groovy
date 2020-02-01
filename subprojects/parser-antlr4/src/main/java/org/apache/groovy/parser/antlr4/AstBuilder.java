@@ -3066,7 +3066,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         if (asBoolean(ctx.dim())) { // create array
             ArrayExpression arrayExpression;
-            List<List<AnnotationNode>> allDimAnnotationList;
 
             List<Tuple3<Expression, List<AnnotationNode>, TerminalNode>> dimList =
                     ctx.dim().stream()
@@ -3094,15 +3093,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 latestDim = dim;
             }
 
-            List<List<AnnotationNode>> emptyDimAnnotationList = emptyDimList.stream().map(Tuple3::getV2).collect(Collectors.toList());
             if (asBoolean(ctx.arrayInitializer())) {
                 if (!dimWithExprList.isEmpty()) {
                     throw createParsingFailedException("dimension should be empty", dimWithExprList.get(0).getV3());
                 }
 
                 ClassNode elementType = classNode;
-                allDimAnnotationList = emptyDimAnnotationList;
-                for (int i = 0, n = allDimAnnotationList.size() - 1; i < n; i += 1) {
+                for (int i = 0, n = emptyDimList.size() - 1; i < n; i += 1) {
                     elementType = this.createArrayType(elementType);
                 }
 
@@ -3121,8 +3118,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 }
 
                 Expression[] empties;
-                if (asBoolean(emptyDimAnnotationList)) {
-                    empties = new Expression[emptyDimAnnotationList.size()];
+                if (asBoolean(emptyDimList)) {
+                    empties = new Expression[emptyDimList.size()];
                     Arrays.fill(empties, ConstantExpression.EMPTY_EXPRESSION);
                 } else {
                     empties = Expression.EMPTY_ARRAY;
@@ -3137,14 +3134,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                         Arrays.stream(empties)
                                 ).collect(Collectors.toList()));
 
-                List<List<AnnotationNode>> exprDimAnnotationList = dimWithExprList.stream().map(Tuple3::getV2).collect(Collectors.toList());
-                allDimAnnotationList = new ArrayList<>(exprDimAnnotationList);
-                Collections.reverse(emptyDimAnnotationList);
-                allDimAnnotationList.addAll(emptyDimAnnotationList);
-                Collections.reverse(allDimAnnotationList);
             }
 
-            arrayExpression.setType(this.createArrayType(classNode, allDimAnnotationList));
+            arrayExpression.setType(
+                    this.createArrayType(
+                            classNode,
+                            dimList.stream().map(Tuple3::getV2).collect(Collectors.toList())
+                    )
+            );
 
             return configureAST(arrayExpression, ctx);
         }
