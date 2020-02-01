@@ -146,6 +146,10 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/ClassDeclaration_02x.groovy')
     }
 
+    void "test groovy core - AnnotationDeclaration"() {
+        TestUtils.doRunAndShouldFail('fail/AnnotationDeclaration_01x.groovy');
+    }
+
     void "test groovy core - MethodDeclaration"() {
         TestUtils.shouldFail('fail/MethodDeclaration_01.groovy')
         TestUtils.doRunAndShouldFail('fail/MethodDeclaration_02x.groovy')
