@@ -3374,12 +3374,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
                 if (mn.isEmpty() && typeCheckingContext.getEnclosingClosure() != null && args.length == 0) {
                     // add special handling of getDelegate() and getOwner()
-                    if ("getDelegate".equals(name)) {
-                        mn = Collections.singletonList(GET_DELEGATE);
-                    } else if ("getOwner".equals(name)) {
-                        mn = Collections.singletonList(GET_OWNER);
-                    } else if ("getThisObject".equals(name)) {
-                        mn = Collections.singletonList(GET_THISOBJECT);
+                    switch (name) {
+                        case "getDelegate":
+                            mn = Collections.singletonList(GET_DELEGATE);
+                            break;
+                        case "getOwner":
+                            mn = Collections.singletonList(GET_OWNER);
+                            break;
+                        case "getThisObject":
+                            mn = Collections.singletonList(GET_THISOBJECT);
+                            break;
                     }
                 }
                 if (mn.isEmpty()) {

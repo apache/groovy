@@ -979,56 +979,67 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         Object[] ans;
         String elemType = arg.getClass().getName();
-        if (elemType.equals("[I")) {
-            int[] ia = (int[]) arg;
-            ans = new Integer[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = ia[i];
+        switch (elemType) {
+            case "[I":
+                int[] ia = (int[]) arg;
+                ans = new Integer[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    ans[i] = ia[i];
+                }
+                break;
+            case "[C":
+                char[] ca = (char[]) arg;
+                ans = new Character[ca.length];
+                for (int i = 0; i < ca.length; i++) {
+                    ans[i] = ca[i];
+                }
+                break;
+            case "[Z": {
+                boolean[] ba = (boolean[]) arg;
+                ans = new Boolean[ba.length];
+                for (int i = 0; i < ba.length; i++) {
+                    ans[i] = ba[i];
+                }
+                break;
             }
-        } else if (elemType.equals("[C")) {
-            char[] ca = (char[]) arg;
-            ans = new Character[ca.length];
-            for (int i = 0; i < ca.length; i++) {
-                ans[i] = ca[i];
+            case "[B": {
+                byte[] ba = (byte[]) arg;
+                ans = new Byte[ba.length];
+                for (int i = 0; i < ba.length; i++) {
+                    ans[i] = ba[i];
+                }
+                break;
             }
-        } else if (elemType.equals("[Z")) {
-            boolean[] ba = (boolean[]) arg;
-            ans = new Boolean[ba.length];
-            for (int i = 0; i < ba.length; i++) {
-                ans[i] = ba[i];
-            }
-        } else if (elemType.equals("[B")) {
-            byte[] ba = (byte[]) arg;
-            ans = new Byte[ba.length];
-            for (int i = 0; i < ba.length; i++) {
-                ans[i] = ba[i];
-            }
-        } else if (elemType.equals("[S")) {
-            short[] sa = (short[]) arg;
-            ans = new Short[sa.length];
-            for (int i = 0; i < sa.length; i++) {
-                ans[i] = sa[i];
-            }
-        } else if (elemType.equals("[F")) {
-            float[] fa = (float[]) arg;
-            ans = new Float[fa.length];
-            for (int i = 0; i < fa.length; i++) {
-                ans[i] = fa[i];
-            }
-        } else if (elemType.equals("[J")) {
-            long[] la = (long[]) arg;
-            ans = new Long[la.length];
-            for (int i = 0; i < la.length; i++) {
-                ans[i] = la[i];
-            }
-        } else if (elemType.equals("[D")) {
-            double[] da = (double[]) arg;
-            ans = new Double[da.length];
-            for (int i = 0; i < da.length; i++) {
-                ans[i] = da[i];
-            }
-        } else {
-            throw new RuntimeException("sprintf(String," + arg + ")");
+            case "[S":
+                short[] sa = (short[]) arg;
+                ans = new Short[sa.length];
+                for (int i = 0; i < sa.length; i++) {
+                    ans[i] = sa[i];
+                }
+                break;
+            case "[F":
+                float[] fa = (float[]) arg;
+                ans = new Float[fa.length];
+                for (int i = 0; i < fa.length; i++) {
+                    ans[i] = fa[i];
+                }
+                break;
+            case "[J":
+                long[] la = (long[]) arg;
+                ans = new Long[la.length];
+                for (int i = 0; i < la.length; i++) {
+                    ans[i] = la[i];
+                }
+                break;
+            case "[D":
+                double[] da = (double[]) arg;
+                ans = new Double[da.length];
+                for (int i = 0; i < da.length; i++) {
+                    ans[i] = da[i];
+                }
+                break;
+            default:
+                throw new RuntimeException("sprintf(String," + arg + ")");
         }
         return sprintf(self, format, ans);
     }

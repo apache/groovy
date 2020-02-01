@@ -113,7 +113,7 @@ public class CachedClass {
                 superClass.getMethods(); // populate mopMethods
                 Collections.addAll(mopMethods, superClass.mopMethods);
             }
-            Collections.sort(mopMethods, CachedMethodComparatorByName.INSTANCE);
+            mopMethods.sort(CachedMethodComparatorByName.INSTANCE);
             CachedClass.this.mopMethods = mopMethods.toArray(CachedMethod.EMPTY_ARRAY);
 
             return methods.toArray(CachedMethod.EMPTY_ARRAY);

@@ -219,9 +219,7 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.SEMANTIC_ANALYSIS);
 
-        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
-            TraitComposer.doExtendTraits(classNode, source, this);
-        }, Phases.CANONICALIZATION);
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> TraitComposer.doExtendTraits(classNode, source, this), Phases.CANONICALIZATION);
 
         addPhaseOperation(source -> {
             List<ClassNode> classes = source.getAST().getClasses();

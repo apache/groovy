@@ -882,7 +882,7 @@ public class CompilerConfiguration {
     }
 
     public void setScriptExtensions(final Set<String> scriptExtensions) {
-        this.scriptExtensions = Optional.ofNullable(scriptExtensions).orElseGet(() -> new LinkedHashSet<>());
+        this.scriptExtensions = Optional.ofNullable(scriptExtensions).orElseGet(LinkedHashSet::new);
     }
 
     public Set<String> getScriptExtensions() {
