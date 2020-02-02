@@ -762,9 +762,7 @@ expressionList[boolean canSpread]
     ;
 
 expressionListElement[boolean canSpread]
-    :   (   MUL { require($canSpread, "spread operator is not allowed here", -1); }
-        |
-        ) expression
+    :   MUL? expression
     ;
 
 enhancedStatementExpression
