@@ -1523,7 +1523,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
                 // prefer explicit getter or setter over property if receiver is not 'this'
-                if (property == null || !enclosingTypes.contains(objectExpressionType)) {
+                if (property == null || !enclosingTypes.contains(testClass)) {
                     if (readMode) {
                         if (getter != null) {
                             ClassNode returnType = inferReturnTypeGenerics(current, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
