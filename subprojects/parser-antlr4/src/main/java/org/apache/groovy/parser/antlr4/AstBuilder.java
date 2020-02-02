@@ -1731,19 +1731,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public List<ModifierNode> visitClassifiedModifiers(ClassifiedModifiersContext ctx) {
-        List<ModifierNode> modifierNodeList = Collections.emptyList();
-
         if (!asBoolean(ctx)) {
-            return modifierNodeList;
+            return Collections.emptyList();
         }
 
-        if (asBoolean(ctx.variableModifiers())) {
-            modifierNodeList = this.visitVariableModifiers(ctx.variableModifiers());
-        } if (asBoolean(ctx.modifiers())) {
-            modifierNodeList = this.visitModifiers(ctx.modifiers());
-        }
-
-        return modifierNodeList;
+        return this.visitModifiers(ctx.modifiers());
     }
 
     @Override
