@@ -585,9 +585,7 @@ localVariableDeclaration
     ;
 
 classifiedModifiers[int t]
-    :   (   { 0 == $t }? variableModifiers
-        |   { 1 == $t }? modifiers
-        ) nls
+    :   modifiers nls
     ;
 
 /**
@@ -1158,14 +1156,14 @@ identifier
     :   Identifier
     |   CapitalizedIdentifier
     |   VAR
-    |
-        // if 'static' followed by DOT, we can treat them as identifiers, e.g. static.unused = { -> }
-        { DOT == _input.LT(2).getType() }?
-        STATIC
     |   IN
 //    |   DEF
     |   TRAIT
     |   AS
+    |
+        // if 'static' followed by DOT, we can treat them as identifiers, e.g. static.unused = { -> }
+        { DOT == _input.LT(2).getType() }?
+        STATIC
     ;
 
 builtInType
