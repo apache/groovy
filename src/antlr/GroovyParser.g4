@@ -592,13 +592,11 @@ classifiedModifiers[int t]
  *  t   0: local variable declaration; 1: field declaration
  */
 variableDeclaration[int t]
-@leftfactor { classifiedModifiers }
     :   classifiedModifiers[$t]
         (   type? variableDeclarators
         |   typeNamePairs nls ASSIGN nls variableInitializer
         )
     |
-        classifiedModifiers[$t]?
         type variableDeclarators
     ;
 
