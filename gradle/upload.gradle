@@ -27,7 +27,7 @@ if (isUsingArtifactory) {
 def embedded = ['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'commons-cli', 'openbeans']
 def removeJarjaredDependencies = { p ->
     p.dependencies.removeAll(p.dependencies.findAll {
-        it.groupId == 'org.codehaus.groovy' || embedded.contains(it.artifactId)
+        it.groupId == 'org.apache.groovy' || embedded.contains(it.artifactId)
     })
 }
 
@@ -259,10 +259,11 @@ def pomAll = {
         p.dependencies.clear()
         // defer setting packaging until here otherwise gets overwritten
         p.packaging = 'pom'
+        String groupId = project.group
         allprojects {
             if (it.name.startsWith('groovy') && !optionalModules.contains(it.name)) {
-                def dep = dependencyClass.newInstance()
-                dep.groupId = 'org.codehaus.groovy'
+                def dep = dependencyClass.getDeclaredConstructor().newInstance()
+                dep.groupId = groupId
                 dep.artifactId = it.name
                 dep.version = version
                 p.dependencies.add(dep)
