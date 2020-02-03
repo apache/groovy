@@ -30,7 +30,6 @@ gradleEnterprise {
 }
 
 def subprojects = ['groovy-ant',
-        'groovy-astbuilder',
         'groovy-bsf',
         'groovy-cli-commons',
         'groovy-cli-picocli',
@@ -44,7 +43,6 @@ def subprojects = ['groovy-ant',
         'groovy-jmx',
         'groovy-json',
         'groovy-jsr223',
-        'groovy-macro',
         'groovy-nio',
         'groovy-servlet',
         'groovy-sql',
@@ -54,6 +52,7 @@ def subprojects = ['groovy-ant',
         'groovy-test-junit5',
         'groovy-testng',
         'groovy-xml',
+        'groovy-macro',
         'groovy-yaml',
         'performance',
         'binary-compatibility'

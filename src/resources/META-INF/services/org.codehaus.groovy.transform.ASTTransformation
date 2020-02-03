@@ -15,3 +15,6 @@
 
 # global transformation to handle @Grab annotation
 groovy.grape.GrabAnnotationTransformation
+
+#global transformation for AST Builder
+org.codehaus.groovy.ast.builder.AstBuilderTransformation

@@ -48,7 +48,6 @@ import java.util.List;
  * approach's responsibility to remove the BlockStatement created
  * by the label.
  */
-@Deprecated
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class AstBuilderTransformation extends MethodCallTransformation {
 
