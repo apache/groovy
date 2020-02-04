@@ -144,11 +144,13 @@ public class MatchingHighlighter implements CaretListener {
 
                 stack.push(tuple(token, triggerFlag));
             } else if (tokenType == matchedTokenType) {
-                Tuple2<Token, Boolean> tokenAndTriggerFlagTuple = stack.pop();
-                if (tokenAndTriggerFlagTuple.getV2()) {
-                    triggerToken = tokenAndTriggerFlagTuple.getV1();
-                    matchedToken = token;
-                    break;
+                if (!stack.isEmpty()) {
+                    Tuple2<Token, Boolean> tokenAndTriggerFlagTuple = stack.pop();
+                    if (tokenAndTriggerFlagTuple.getV2()) {
+                        triggerToken = tokenAndTriggerFlagTuple.getV1();
+                        matchedToken = token;
+                        break;
+                    }
                 }
             }
         }

@@ -18,17 +18,35 @@
  */
 package groovy.console.ui.text;
 
-import javax.swing.*;
+import groovy.lang.Tuple;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JTextPane;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultCaret;
 import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
+import javax.swing.text.DocumentFilter;
 import javax.swing.text.Element;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Utilities;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -416,9 +434,10 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
                             TAB_BACK_PATTERN.matcher(getSelectedText()).replaceAll("") :
                             getSelectedText().replaceAll("^\t", "");
 
+                    int stop = start + text.length();
+                    setRenderRange(start, stop);
                     TextEditor.this.replaceSelection(text);
-
-                    TextEditor.this.select(start, start + text.length());
+                    TextEditor.this.select(start, stop);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -441,8 +460,11 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
 
                     String toReplace = TextEditor.this.getSelectedText();
                     toReplace = LINE_START.matcher(toReplace).replaceAll(text);
+
+                    int stop = start + toReplace.length();
+                    setRenderRange(start, stop);
                     TextEditor.this.replaceSelection(toReplace);
-                    TextEditor.this.select(start, start + toReplace.length());
+                    TextEditor.this.select(start, stop);
                 } else {
                     int pos = TextEditor.this.getCaretPosition();
                     doc.insertString(pos, text, null);
@@ -450,6 +472,14 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void setRenderRange(int start, int stop) {
+        DocumentFilter documentFilter = ((DefaultStyledDocument) TextEditor.this.getDocument()).getDocumentFilter();
+        if (documentFilter instanceof SmartDocumentFilter) {
+            SmartDocumentFilter smartDocumentFilter = (SmartDocumentFilter) documentFilter;
+            smartDocumentFilter.setRenderRange(Tuple.tuple(start, stop));
         }
     }
 

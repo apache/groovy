@@ -18,6 +18,7 @@
  */
 package groovy.console.ui.text;
 
+import groovy.lang.Tuple2;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -26,6 +27,8 @@ import org.antlr.v4.runtime.LexerNoViableAltException;
 import org.antlr.v4.runtime.Token;
 import org.apache.groovy.parser.antlr4.GroovyLangLexer;
 import org.apache.groovy.parser.antlr4.GroovySyntaxError;
+import org.apache.groovy.parser.antlr4.util.PositionConfigureUtils;
+import org.apache.groovy.parser.antlr4.util.StringUtils;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -41,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ABSTRACT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.AS;
@@ -163,7 +167,7 @@ public class SmartDocumentFilter extends DocumentFilter {
 
     private String replaceMetaCharacters(String string) {
         // just in case remove carriage returns
-        string = string.replace("\\t", TAB_REPLACEMENT);
+        string = string.replace("\r\n", "\n");
         return string;
     }
 
@@ -192,7 +196,12 @@ public class SmartDocumentFilter extends DocumentFilter {
         }
 
         List<Token> tokenList = tokenStream.getTokens();
-        List<Token> tokenListToRender = findTokensToRender(tokenList);
+        List<Token> tokenListToRender;
+        try {
+            tokenListToRender = findTokensToRender(tokenList);
+        } finally {
+            this.setRenderRange(null);
+        }
 
         for (Token token : tokenListToRender) {
             int tokenType = token.getType();
@@ -228,18 +237,35 @@ public class SmartDocumentFilter extends DocumentFilter {
     }
 
     private List<Token> findTokensToRender(List<Token> tokenList) {
-        int tokenListSize = tokenList.size();
-        int latestTokenListSize = latestTokenList.size();
+        final Tuple2<Integer, Integer> renderRange = getRenderRange();
+        if (null != renderRange) {
+            long startLine = lineNumber(renderRange.getV1());
+            long stopLine = lineNumber(renderRange.getV2());
 
-        if (0 == tokenListSize || 0 == latestTokenListSize) {
+            if (startLine < 0 || stopLine < 0) return tokenList; // should never happen
+
+            return tokenList.stream()
+                    .filter(e -> e.getLine() >= startLine && PositionConfigureUtils.endPosition(e).getV1() <= stopLine)
+                    .collect(Collectors.toList());
+        }
+
+        List<Token> tmpLatestTokenList = filterNewlines(this.latestTokenList);
+        int latestTokenListSize = tmpLatestTokenList.size();
+        if (0 == latestTokenListSize) {
+            return tokenList;
+        }
+
+        List<Token> tmpTokenList = filterNewlines(tokenList);
+        int tokenListSize = tmpTokenList.size();
+        if (0 == tokenListSize) {
             return tokenList;
         }
 
         int startTokenIndex = 0;
         int minSize = Math.min(tokenListSize, latestTokenListSize);
         for (int i = 0; i < minSize; i++) {
-            Token token = tokenList.get(i);
-            Token latestToken = latestTokenList.get(i);
+            Token token = tmpTokenList.get(i);
+            Token latestToken = tmpLatestTokenList.get(i);
 
             if (token.getType() == latestToken.getType()
                     && token.getStartIndex() == latestToken.getStartIndex()
@@ -251,8 +277,8 @@ public class SmartDocumentFilter extends DocumentFilter {
             break;
         }
 
-        List<Token> newTokenList = new ArrayList<>(tokenList);
-        List<Token> newLatestTokenList = new ArrayList<>(latestTokenList);
+        List<Token> newTokenList = new ArrayList<>(tmpTokenList);
+        List<Token> newLatestTokenList = new ArrayList<>(tmpLatestTokenList);
 
         Collections.reverse(newTokenList);
         Collections.reverse(newLatestTokenList);
@@ -277,10 +303,34 @@ public class SmartDocumentFilter extends DocumentFilter {
         }
 
         if (startTokenIndex <= stopTokenIndex) {
-            return tokenList.subList(startTokenIndex, stopTokenIndex);
+            return tmpTokenList.subList(startTokenIndex, stopTokenIndex);
         }
 
         return tokenList; // should never reach here. If unexpected error occurred, it's better to render all tokens
+    }
+
+    /**
+     * Returns line number starting with 1
+     */
+    private long lineNumber(int position) {
+        long result = -1;
+
+        if (position < 0) return result;
+
+        try {
+            String text = this.styledDocument.getText(0, position + 1);
+            result = StringUtils.countChar(text, '\n') + 1;
+        } catch (BadLocationException e) {
+            e.printStackTrace(System.err);
+        }
+
+        return result;
+    }
+
+    private List<Token> filterNewlines(List<Token> tokenList) {
+        return tokenList.stream()
+                .filter(e -> !(NL == e.getType() && e.getText().trim().isEmpty()))
+                .collect(Collectors.toList());
     }
 
     private Style findStyleByTokenType(int tokenType) {
@@ -347,7 +397,7 @@ public class SmartDocumentFilter extends DocumentFilter {
 
     private volatile boolean latest = false;
     private volatile List<Token> latestTokenList = Collections.emptyList();
-    private static final String TAB_REPLACEMENT = "    ";
+    private volatile Tuple2<Integer, Integer> renderRange;
 
     public boolean isLatest() {
         return latest;
@@ -357,4 +407,10 @@ public class SmartDocumentFilter extends DocumentFilter {
         return latestTokenList;
     }
 
+    public void setRenderRange(Tuple2<Integer, Integer> renderRange) {
+        this.renderRange = renderRange;
+    }
+    public Tuple2<Integer, Integer> getRenderRange() {
+        return renderRange;
+    }
 }
