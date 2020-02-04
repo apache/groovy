@@ -18,18 +18,24 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.Test
 
-class Groovy9271Test extends GroovyTestCase {
-    private cc = new CompilerConfiguration(optimizationOptions: [indy: true])
+@CompileStatic
+final class Groovy9271 {
+
+    @Test
     void testBracketsInMethodNameWithIndy() {
-        new GroovyShell(cc).evaluate '''
-        class Bar {
-            private char letter = 'o'
-            int 'foo$()bar'() { 'Goodbye'.toList().count{ it == letter } }
-        }
-        assert new Bar().'foo$()bar'() == 2
+        def config = new CompilerConfiguration(optimizationOptions: [indy: true])
+        new GroovyShell(config).evaluate '''
+            class Bar {
+                private char letter = 'o'
+                int 'foo$()bar'() {
+                    'Goodbye'.toList().count { it == letter }
+                }
+            }
+            assert new Bar().'foo$()bar'() == 2
         '''
     }
 }
