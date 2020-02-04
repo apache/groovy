@@ -55,7 +55,6 @@ import java.util.regex.Pattern
  */
 class Groovysh extends Shell {
 
-
     private static final MessageSource messages = new MessageSource(Groovysh)
 
     private static final Pattern TYPEDEF_PATTERN = ~'^\\s*((?:public|protected|private|static|abstract|final)\\s+)*(?:class|enum|interface).*'
@@ -116,7 +115,7 @@ class Groovysh extends Shell {
     }
 
     private static Closure createDefaultRegistrar(final ClassLoader classLoader) {
-        return { Groovysh shell ->
+        return {Groovysh shell ->
             URL xmlCommandResource = getClass().getResource('commands.xml')
             if (xmlCommandResource != null) {
                 def r = new XmlCommandRegistrar(shell, classLoader)
@@ -200,12 +199,11 @@ class Groovysh extends Shell {
 
                 if (!Boolean.valueOf(getPreference(INTERPRETER_MODE_PREFERENCE_KEY, 'false')) || isTypeOrMethodDeclaration(current)) {
                     // Evaluate the current buffer w/imports and dummy statement
-                    List buff = [importsSpec] + ['true'] + current
+                    List buff = [importsSpec] + [ 'true' ] + current
                     try {
                         setLastResult(result = interp.evaluate(buff))
-                    } catch (MultipleCompilationErrorsException t) {
-                        // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
-                        if (t.message.contains('Unexpected input:') || t.message.contains("Missing ')'")) {
+                    } catch(MultipleCompilationErrorsException t) {
+                        if (isIncompleteCaseOfAntlr4(t)) {
                             // treat like INCOMPLETE case
                             buffers.updateSelected(current)
                             break
@@ -216,9 +214,8 @@ class Groovysh extends Shell {
                     // Evaluate Buffer wrapped with code storing bounded vars
                     try {
                         result = evaluateWithStoredBoundVars(importsSpec, current)
-                    } catch (MultipleCompilationErrorsException t) {
-                        // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
-                        if (t.message.contains('Unexpected input:') || t.message.contains("Missing ')'")) {
+                    } catch(MultipleCompilationErrorsException t) {
+                        if (isIncompleteCaseOfAntlr4(t)) {
                             // treat like INCOMPLETE case
                             buffers.updateSelected(current)
                             break
@@ -246,6 +243,18 @@ class Groovysh extends Shell {
         return result
     }
 
+    @CompileStatic
+    private boolean isIncompleteCaseOfAntlr4(MultipleCompilationErrorsException t) {
+        // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
+        (
+                t.message.contains('Unexpected input:') && !(
+                            t.message.contains('Unexpected input: \'}\';')
+                        || t.message.contains('Unexpected input: \')\';')
+                        || t.message.contains('Unexpected input: \']\';')
+                )
+        ) || t.message.contains("Missing ')'")
+    }
+
     /**
      * return true if the buffer can be recognized as a type declaration statement
      * @param strings
@@ -260,7 +269,6 @@ class Groovysh extends Shell {
      * to simulate an interpreter mode, this method wraps the statements into a try/finally block that
      * stores bound variables like unbound variables
      */
-
     private Object evaluateWithStoredBoundVars(String importsSpec, final List<String> current) {
         Object result
         String variableBlocks = null
@@ -278,7 +286,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             })
         }
         // Evaluate the current buffer w/imports and dummy statement
-        List<String> buff;
+        List<String> buff
         if (variableBlocks) {
             buff = [importsSpec] + ['try {', 'true'] + current + ['} finally {' + variableBlocks + '}']
         } else {
@@ -293,6 +301,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
         return result
     }
+
 
 
     protected Object executeCommand(final String line) {
@@ -313,7 +322,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
     }
 
     String getImportStatements() {
-        return this.imports.collect({ String it -> "import $it;" }).join('')
+        return this.imports.collect({String it -> "import $it;"}).join('')
     }
 
     //
@@ -331,7 +340,6 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         The code will always assume you want the line number in the prompt.  To implement differently overhead the render
         prompt variable.
      */
-
     private String buildPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
 
@@ -341,7 +349,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
         def groovyshellEnv = System.getenv('GROOVYSH_PROMPT')
         if (groovyshellEnv) {
-            return "@|bold ${groovyshellEnv}:|@${lineNum}@|bold >|@ "
+            return  "@|bold ${groovyshellEnv}:|@${lineNum}@|bold >|@ "
         }
         return "@|bold groovy:|@${lineNum}@|bold >|@ "
 
@@ -427,7 +435,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
                 // Disable the result hook for profile scripts
                 def previousHook = resultHook
-                resultHook = { result -> /* nothing */ }
+                resultHook = { result -> /* nothing */}
 
                 try {
                     command.load(file.toURI().toURL())
@@ -530,7 +538,8 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             if (log.debug) {
                 // If we have debug enabled then skip the fancy bits below
                 log.debug(cause)
-            } else {
+            }
+            else {
                 boolean sanitize = getPreference(SANITIZE_PREFERENCE_KEY, 'false')
 
                 // Sanitize the stack trace unless we are in verbose mode, or the user has request otherwise
@@ -604,7 +613,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
             startCommands.add(evalString)
         }
         if (filenames != null && filenames.size() > 0) {
-            startCommands.addAll(filenames.collect({ String it -> "${LoadCommand.COMMAND_NAME} $it" }))
+            startCommands.addAll(filenames.collect({String it -> "${LoadCommand.COMMAND_NAME} $it"}))
         }
         return run(startCommands.join('\n'))
     }
@@ -667,7 +676,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
      * maybe displays log information and a welcome message
      * @param term
      */
-    public void displayWelcomeBanner(InteractiveShellRunner runner) {
+    void displayWelcomeBanner(InteractiveShellRunner runner) {
         if (!log.debug && io.quiet) {
             // nothing to do here
             return

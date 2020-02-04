@@ -47,11 +47,15 @@ options {
     import java.util.Collections;
     import java.util.Arrays;
     import java.util.stream.IntStream;
+    import java.util.logging.Logger;
+    import java.util.logging.Level;
+    import java.util.EmptyStackException;
     import org.apache.groovy.util.Maps;
     import static org.apache.groovy.parser.antlr4.SemanticPredicates.*;
 }
 
 @members {
+    private static final Logger LOGGER = Logger.getLogger(GroovyLexer.class.getName());
     private long tokenIndex     = 0;
     private int  lastTokenType  = 0;
     private int  invalidDigitCount = 0;
@@ -140,13 +144,6 @@ options {
         }
     }
 
-    private static final Map<String, String> PAREN_MAP =
-        Maps.of(
-            "(", ")",
-            "[", "]",
-            "{", "}"
-        );
-
     protected void enterParenCallback(String text) {}
 
     protected void exitParenCallback(String text) {}
@@ -156,19 +153,18 @@ options {
     private void enterParen() {
         String text = getText();
         enterParenCallback(text);
+
         parenStack.push(new Paren(text, this.lastTokenType, getLine(), getCharPositionInLine()));
     }
 
     private void exitParen() {
-        Paren paren = parenStack.peek();
         String text = getText();
-        require(null != paren, "Too many '" + text + "'");
-        require(text.equals(PAREN_MAP.get(paren.getText())),
-                "'" + paren.getText() + "'" + new PositionInfo(paren.getLine(), paren.getColumn()) + " can not match '" + text + "'", -1);
         exitParenCallback(text);
+
+        Paren paren = parenStack.peek();
+        if (null == paren) return;
         parenStack.pop();
     }
-
     private boolean isInsideParens() {
         Paren paren = parenStack.peek();
 
@@ -177,6 +173,7 @@ options {
         if (null == paren) {
             return false;
         }
+
         return ("(".equals(paren.getText()) && TRY != paren.getLastTokenType()) // we don't treat try-paren(i.e. try (....)) as parenthesis
                     || "[".equals(paren.getText());
     }
@@ -208,6 +205,19 @@ options {
     @Override
     public int getErrorColumn() {
         return getCharPositionInLine() + 1;
+    }
+
+    @Override
+    public int popMode() {
+        try {
+            return super.popMode();
+        } catch (EmptyStackException ignored) { // raised when parens are unmatched: too many ), ], or }
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest(org.codehaus.groovy.runtime.DefaultGroovyMethods.asString(ignored));
+            }
+        }
+
+        return Integer.MIN_VALUE;
     }
 }
 
@@ -805,8 +815,10 @@ NOT_IN              : '!in'         { isFollowedBy(_input, ' ', '\t', '\r', '\n'
 
 LPAREN          : '('  { this.enterParen();     } -> pushMode(DEFAULT_MODE);
 RPAREN          : ')'  { this.exitParen();      } -> popMode;
+
 LBRACE          : '{'  { this.enterParen();     } -> pushMode(DEFAULT_MODE);
 RBRACE          : '}'  { this.exitParen();      } -> popMode;
+
 LBRACK          : '['  { this.enterParen();     } -> pushMode(DEFAULT_MODE);
 RBRACK          : ']'  { this.exitParen();      } -> popMode;
 

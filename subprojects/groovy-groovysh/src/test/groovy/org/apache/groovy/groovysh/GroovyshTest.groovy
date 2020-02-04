@@ -96,6 +96,20 @@ class GroovyshTest extends GroovyTestCase {
         } catch (MultipleCompilationErrorsException e) {
             assert '' == mockOut.toString()
         }
+
+        try {
+            groovysh.execute('x)')
+            fail('expected MultipleCompilationErrorsException ')
+        } catch (MultipleCompilationErrorsException e) {
+            assert '' == mockOut.toString()
+        }
+
+        try {
+            groovysh.execute('x]')
+            fail('expected MultipleCompilationErrorsException ')
+        } catch (MultipleCompilationErrorsException e) {
+            assert '' == mockOut.toString()
+        }
     }
 
     void testIncompleteBracketMultilineExpr() {
