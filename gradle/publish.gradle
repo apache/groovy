@@ -44,7 +44,7 @@ allprojects {
                 }
             }
             publish {
-                excludePatterns = "org/codehaus/groovy/groovy/*/groovy-all-*,org/codehaus/groovy/groovy/*/groovy-backports-*,org/codehaus/groovy/groovy/*/groovy-binary-*"
+                excludePatterns = "org/codehaus/groovy/groovy/*/groovy-all-*,org/codehaus/groovy/groovy/*/groovy-bom-*,org/codehaus/groovy/groovy/*/groovy-backports-*,org/codehaus/groovy/groovy/*/groovy-binary-*"
                 repository {
                     repoKey = project.hasProperty('artifactoryRepoKey') ? project.artifactoryRepoKey : 'oss-snapshot-local'
                     //The Artifactory repository key to publish to
@@ -82,8 +82,10 @@ artifactoryPublish {
                 }
             }
         }
+        deployDetails.add(makeTransformedPomDetails(name: 'groovy-bom'))
 
         if (isReleaseVersion) {
+            deployDetails.add(makeTransformedPomSigDetails(name: 'groovy-bom'))
             allprojects {
                 if (project == rootProject || rootProject.ext.modules().contains(project)) {
                     configurations.archives.artifacts.findAll {
