@@ -69,6 +69,7 @@ allprojects {
 //                        'org/codehaus/groovy/groovy-testng/**',
 //                        'org/codehaus/groovy/groovy-xml/**',
                         'org/codehaus/groovy/groovy/*/groovy-all-*',
+                        'org/codehaus/groovy/groovy/*/groovy-bom-*',
                         'org/codehaus/groovy/groovy/*/groovy-backports-*',
                         'org/codehaus/groovy/groovy/*/groovy-binary-*'
                 ].join(',')
@@ -110,9 +111,11 @@ artifactoryPublish {
             }
         }
         deployDetails.add(makeTransformedPomDetails(name: 'groovy-all'))
+        deployDetails.add(makeTransformedPomDetails(name: 'groovy-bom'))
 
         if (isReleaseVersion) {
             deployDetails.add(makeTransformedPomSigDetails(name: 'groovy-all'))
+            deployDetails.add(makeTransformedPomSigDetails(name: 'groovy-bom'))
             allprojects {
                 if (project == rootProject || rootProject.ext.modules().contains(project)) {
                     configurations.archives.artifacts.findAll {
