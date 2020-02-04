@@ -79,7 +79,7 @@ allprojects {
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
 
-    group = 'org.codehaus.groovy'
+    group = 'org.apache.groovy'
     version = groovyVersion
     repositories {
         if (rootProject.hasProperty('buildInChina')) {
