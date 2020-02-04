@@ -211,9 +211,15 @@ def pomAll = {
     addFilter('groovy') { artifact, file ->
         !(artifact.name.contains('groovy-all')) &&
                 !(artifact.name.contains('groovy-binary')) &&
+                !(artifact.name.contains('groovy-bom')) &&
                 !(artifact.name.contains('backport'))
     }
     addFilter('all') { artifact, file ->
+        // add an arbitrary artifact, so that the pom file is generated
+        // we adjust the packaging attribute later
+        artifact.name.contains('groovy-binary')
+    }
+    addFilter('bom') { artifact, file ->
         // add an arbitrary artifact, so that the pom file is generated
         // we adjust the packaging attribute later
         artifact.name.contains('groovy-binary')
@@ -267,6 +273,29 @@ def pomAll = {
                 dep.artifactId = it.name
                 dep.version = version
                 p.dependencies.add(dep)
+            }
+        }
+    }
+
+    // bom for "all" dependencies
+    def allbom = pom('bom', pomConfigureClosureWithoutTweaks)
+    allbom.artifactId = 'groovy-bom'
+    allbom.whenConfigured { p ->
+        p.dependencies.clear()
+        // defer setting packaging until here otherwise gets overwritten
+        p.packaging = 'pom'
+        p.withXml { xml ->
+            def projectNode = xml.asNode()
+            def dependencyManagement = projectNode.appendNode('dependencyManagement').appendNode('dependencies')
+            String groupId = project.group
+            allprojects { proj ->
+                if (proj.name.startsWith('groovy')) {
+                    dependencyManagement.appendNode('dependency').with { dep ->
+                        dep.appendNode('groupId', groupId)
+                        dep.appendNode('artifactId', proj.name)
+                        dep.appendNode('version', proj.version)
+                    }
+                }
             }
         }
     }
