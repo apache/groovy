@@ -815,10 +815,16 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
                 new A().test()
             '''
         } finally {
-            assert !astTrees['A'][1].contains('pfaccess$00') // no mutator bridge method for 'accessed'
-            assert !astTrees['A'][1].contains('pfaccess$1') // no accessor bridge method for 'mutated'
-            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$2 (LA;)Ljava/lang/String;')
-            assert astTrees['A$_closure1'][1].contains('INVOKESTATIC A.pfaccess$02 (LA;Ljava/lang/String;)Ljava/lang/String;')
+            def dump = astTrees['A'][1]
+            assert dump.contains('pfaccess$0') // accessor bridge method for 'accessed'
+            assert !dump.contains('pfaccess$00') // no mutator bridge method for 'accessed'
+            assert dump.contains('pfaccess$01') // mutator bridge method for 'mutated'
+            assert dump.contains('pfaccess$1') // accessor bridge method for 'mutated' -- GROOVY-9385
+            assert dump.contains('pfaccess$2') // accessor bridge method for 'accessedAndMutated'
+            assert dump.contains('pfaccess$02') // mutator bridge method for 'accessedAndMutated'
+            dump = astTrees['A$_closure1'][1]
+            assert dump.contains('INVOKESTATIC A.pfaccess$2 (LA;)Ljava/lang/String;')
+            assert dump.contains('INVOKESTATIC A.pfaccess$02 (LA;Ljava/lang/String;)Ljava/lang/String;')
         }
     }
 

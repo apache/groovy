@@ -138,6 +138,54 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         """
     }
 
+    // GROOVY-9385
+    void testPlusEqualsOnPrivateField() {
+        assertScript '''
+            class C {
+                private int i
+
+                int test() {
+                    { ->
+                        i += 1
+                    }.call()
+                }
+            }
+            assert new C().test() == 1
+        '''
+    }
+
+    // GROOVY-9385
+    void testPrefixPlusPlusOnPrivateField() {
+        assertScript '''
+            class C {
+                private int i
+
+                int test() {
+                    { ->
+                        ++i
+                    }.call()
+                }
+            }
+            assert new C().test() == 1
+        '''
+    }
+
+    // GROOVY-9385
+    void testPostfixPlusPlusOnPrivateField() {
+        assertScript '''
+            class C {
+                private int i
+
+                int test() {
+                    { ->
+                        i++
+                    }.call()
+                }
+            }
+            assert new C().test() == 0
+        '''
+    }
+
     void testPossibleLooseOfPrecision() {
         shouldFailWithMessages '''
             long a = Long.MAX_VALUE
@@ -210,7 +258,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             float f = (float) 1
         '''
     }
-    
+
     void testCompatibleTypeCast() {
         assertScript '''
         String s = 'Hello'
@@ -420,7 +468,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             def c = (Character) null
         '''
     }
-    
+
     void testCastObjectToSubclass() {
         assertScript '''
             Object o = null
@@ -664,7 +712,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             assert m().getClass() == BigDecimal
         '''
     }
-    
+
     void testBigIntegerAssignment() {
         assertScript '''
             BigInteger bigInt = 6666666666666666666666666666666666666
@@ -728,7 +776,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             assert c.getClass() == BigDecimal
         '''
     }
-    
+
     //GROOVY-6435
     void testBigDecAndBigIntSubclass() {
         assertScript '''
@@ -902,7 +950,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                 a = new B()
                 a.bbb()
             }
-            assert fooParameterAssignment(null) == 42            
+            assert fooParameterAssignment(null) == 42
         '''
     }
 
@@ -911,7 +959,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         def m() {
             def a  = 1
             Integer[] b = [a]
-        }            
+        }
         '''
     }
 
@@ -920,7 +968,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         def m() {
             def a = new int[5]
             int[][] b = [a]
-        }            
+        }
         '''
     }
 
@@ -930,7 +978,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             def row = ["", "", ""]
             def (left, right) = [row[0], row[1]]
             left.toUpperCase()
-        }            
+        }
         '''
     }
 
@@ -996,9 +1044,9 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         assertScript '''
         interface A1{}
         interface A2 extends A1{}
-        
+
         class C1 implements A1{}
-        
+
         def m(A2 a2) {
             C1 c1 = (C1) a2
         }
@@ -1009,13 +1057,12 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
         interface A1{}
         interface A2 extends A1{}
-        
+
         final class C1 implements A1{}
-        
+
         def m(A2 a2) {
             C1 c1 = (C1) a2
         }
         ''', "Inconvertible types: cannot cast A2 to C1"
     }
 }
-

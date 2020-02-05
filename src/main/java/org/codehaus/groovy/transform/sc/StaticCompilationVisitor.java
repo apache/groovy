@@ -60,10 +60,10 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -79,11 +79,19 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractSuperClassGenerics;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.COMPONENT_TYPE;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INITIAL_EXPRESSION;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_ACCESS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_MUTATION;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_METHODS_ACCESS;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -148,8 +156,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     private void addDynamicOuterClassAccessorsCallback(final ClassNode outer) {
         if (outer != null && !isStaticallyCompiled(outer)
-                && outer.getNodeMetaData(StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK) == null) {
-            outer.putNodeMetaData(StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK, new CompilationUnit.PrimaryClassNodeOperation() {
+                && outer.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK) == null) {
+            outer.putNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK, new CompilationUnit.PrimaryClassNodeOperation() {
                 @Override
                 public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
                     if (classNode == outer) {
@@ -236,15 +244,24 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      * Adds special accessors and mutators for private fields so that inner classes can get/set them
      */
     private static void addPrivateFieldsAccessors(ClassNode node) {
-        Set<ASTNode> accessedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
-        Set<ASTNode> mutatedFields = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
-        if (accessedFields == null && mutatedFields == null) return;
         Map<String, MethodNode> privateFieldAccessors = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_ACCESSORS);
         Map<String, MethodNode> privateFieldMutators = (Map<String, MethodNode>) node.getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
         if (privateFieldAccessors != null || privateFieldMutators != null) {
             // already added
             return;
         }
+        Set<ASTNode> accessedFields = node.getNodeMetaData(PV_FIELDS_ACCESS);
+        Set<ASTNode> mutatedFields = node.getNodeMetaData(PV_FIELDS_MUTATION);
+        if (accessedFields == null && mutatedFields == null) return;
+        // GROOVY-9385: mutation includes access in case of compound assignment or pre/post-increment/decrement
+        if (mutatedFields != null) {
+            if (accessedFields != null) {
+                accessedFields = new HashSet<>(accessedFields); accessedFields.addAll(mutatedFields);
+            } else {
+                accessedFields = mutatedFields;
+            }
+        }
+
         int acc = -1;
         privateFieldAccessors = accessedFields != null ? new HashMap<String, MethodNode>() : null;
         privateFieldMutators = mutatedFields != null ? new HashMap<String, MethodNode>() : null;
@@ -292,7 +309,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
      * @param node an inner/outer class node for which to generate bridge methods
      */
     private static void addPrivateBridgeMethods(final ClassNode node) {
-        Set<ASTNode> accessedMethods = (Set<ASTNode>) node.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS);
+        Set<ASTNode> accessedMethods = (Set<ASTNode>) node.getNodeMetaData(PV_METHODS_ACCESS);
         if (accessedMethods==null) return;
         List<MethodNode> methods = new ArrayList<MethodNode>(node.getAllDeclaredMethods());
         methods.addAll(node.getDeclaredConstructors());
@@ -389,7 +406,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         // add node metadata for default parameters because they are erased by the Verifier
         if (node.getParameters()!=null) {
             for (Parameter parameter : node.getParameters()) {
-                parameter.putNodeMetaData(StaticTypesMarker.INITIAL_EXPRESSION, parameter.getInitialExpression());
+                parameter.putNodeMetaData(INITIAL_EXPRESSION, parameter.getInitialExpression());
             }
         }
     }
@@ -534,8 +551,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         boolean exists = super.existsProperty(pexp, checkForReadOnly, receiverMemoizer);
         if (exists) {
             objectExpressionType = rType.get();
-            if (objectExpression.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER) == null) {
-                objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, objectExpressionType);
+            if (objectExpression.getNodeMetaData(PROPERTY_OWNER) == null) {
+                objectExpression.putNodeMetaData(PROPERTY_OWNER, objectExpressionType);
             }
             if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, ClassHelper.LIST_TYPE)) {
                 objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, ClassHelper.int_TYPE));
@@ -547,9 +564,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     @Override
     public void visitPropertyExpression(final PropertyExpression pexp) {
         super.visitPropertyExpression(pexp);
-        Object dynamic = pexp.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
+        Object dynamic = pexp.getNodeMetaData(DYNAMIC_RESOLUTION);
         if (dynamic != null) {
-            pexp.getObjectExpression().putNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY, dynamic);
+            pexp.getObjectExpression().putNodeMetaData(RECEIVER_OF_DYNAMIC_PROPERTY, dynamic);
         }
     }
 }
