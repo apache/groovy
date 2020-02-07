@@ -34,6 +34,7 @@ ext.srcSpec = copySpec {
                 'classes/**',
                 'cruise/**',
                 'src/install/**', // CI file
+                '.asf.yaml', // ASF metadata file for github integration
                 '.travis.yml', // CI file
                 'appveyor.yml', // CI file
                 'jitpack.yml', // CI file

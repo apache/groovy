@@ -182,6 +182,7 @@ rat {
     inputDir = projectDir
     excludes = [ 'subprojects/**', // covered above
                  'benchmark/**', // benchmarking files excluded from src zip
+                 '.asf.yaml', // ASF metadata for github integration excluded from src zip
                  'config/**',
                  'src/install/**', // CI file excluded from src zip
                  'src/test/org/codehaus/groovy/ast/LineColumnCheck.txt', // test file
