@@ -213,7 +213,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
     }
 
     private Object doCall(final Object object, final String methodName, final Object[] arguments, final Interceptor interceptor, final Supplier<Object> howToInvoke) {
-        if (null == interceptor) {
+        if (interceptor == null) {
             return howToInvoke.get();
         }
         Object result = interceptor.beforeInvoke(object, methodName, arguments);
