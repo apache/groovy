@@ -50,7 +50,7 @@ public class PogoMetaClassSite extends MetaClassSite {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
         } else {
-          return CallSiteArray.defaultCall(this, receiver, args);
+            return CallSiteArray.defaultCall(this, receiver, args);
         }
     }
 
@@ -73,7 +73,7 @@ public class PogoMetaClassSite extends MetaClassSite {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
         } else {
-          return CallSiteArray.defaultCallCurrent(this, receiver, args);
+            return CallSiteArray.defaultCallCurrent(this, receiver, args);
         }
     }
 
