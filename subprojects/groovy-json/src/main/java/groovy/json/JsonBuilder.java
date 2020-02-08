@@ -319,8 +319,8 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
                 if (second instanceof Closure) {
                     final Closure closure = (Closure)second;
                     if (first instanceof Map) {
-                        Map subMap = new LinkedHashMap();
-                        subMap.putAll((Map) first);
+                        Map<String, Object> subMap = new LinkedHashMap<>();
+                        subMap.putAll(asMap(first));
                         subMap.putAll(JsonDelegate.cloneDelegateAndGetContent(closure));
 
                         return setAndGetContent(name, subMap);
@@ -341,6 +341,11 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
         } else {
             return setAndGetContent(name, new HashMap<String, Object>());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> asMap(Object first) {
+        return (Map<String, Object>) first;
     }
 
     private static List<Map<String, Object>> collectContentForEachEntry(Iterable coll, Closure closure) {

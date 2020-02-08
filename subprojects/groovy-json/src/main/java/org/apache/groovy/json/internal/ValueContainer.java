@@ -114,6 +114,7 @@ public class ValueContainer implements CharSequence, Value {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Enum> T toEnum(Class<T> cls) {
         return (T) value;
     }
