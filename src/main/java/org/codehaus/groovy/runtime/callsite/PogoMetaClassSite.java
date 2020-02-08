@@ -49,7 +49,7 @@ public class PogoMetaClassSite extends MetaClassSite {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
         } else {
-          return CallSiteArray.defaultCall(this, receiver, args);
+            return CallSiteArray.defaultCall(this, receiver, args);
         }
     }
 
@@ -66,8 +66,15 @@ public class PogoMetaClassSite extends MetaClassSite {
                     if (e instanceof MissingMethodExecutionFailed) {
                         throw (MissingMethodException)e.getCause();
                     } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
-                        // in case there's nothing else, invoke the object's own invokeMethod()
-                        return ((GroovyObject)receiver).invokeMethod(name, args);
+                        // in case there's nothing else, invoke the receiver's own invokeMethod()
+                        try {
+                            return receiver.invokeMethod(name, args);
+                        } catch (MissingMethodException mme) {
+                            if (mme instanceof MissingMethodExecutionFailed)
+                                throw (MissingMethodException) mme.getCause();
+                            // GROOVY-9387: in rare cases, this form still works
+                            return metaClass.invokeMethod(receiver, name, args);
+                        }
                     } else {
                         throw e;
                     }
@@ -76,7 +83,7 @@ public class PogoMetaClassSite extends MetaClassSite {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
         } else {
-          return CallSiteArray.defaultCallCurrent(this, receiver, args);
+            return CallSiteArray.defaultCallCurrent(this, receiver, args);
         }
     }
 }
