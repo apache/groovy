@@ -18,7 +18,6 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
 import org.junit.Test
 
@@ -58,7 +57,7 @@ final class Groovy9387 {
         '''
     }
 
-    @Test @NotYetImplemented
+    @Test
     void testThisSetProperty() {
         assertScript SUPPORT_ADAPTER + '''
             class C extends BuilderSupportAdapter {
