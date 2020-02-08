@@ -37,7 +37,7 @@ allprojects {
         systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main'
 
         forkEvery = 50
-        maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors()
+        maxParallelForks = isRunningOnCI() ? 1 : Runtime.runtime.availableProcessors().intdiv(2) ?: 1
         scanForTestClasses = true
         ignoreFailures = false
         testLogging {
