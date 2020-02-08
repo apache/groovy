@@ -31,11 +31,11 @@ import java.util.Set;
  * It's primarily used by methods of Groovy's {@link groovy.sql.Sql} class to return {@code ResultSet} data in map
  * form; allowing access to the result of a SQL query by the name of the column, or by the column number.
  */
-public class GroovyRowResult extends GroovyObjectSupport implements Map {
+public class GroovyRowResult extends GroovyObjectSupport implements Map<String, Object> {
 
-    private final Map result;
+    private final Map<String, Object> result;
 
-    public GroovyRowResult(Map result) {
+    public GroovyRowResult(Map<String, Object> result) {
         this.result = result;
     }
 
@@ -86,7 +86,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
             // a negative index will count backwards from the last column.
             if (index < 0)
                 index += result.size();
-            Iterator it = result.values().iterator();
+            Iterator<Object> it = result.values().iterator();
             int i = 0;
             Object obj = null;
             while ((obj == null) && (it.hasNext())) {
@@ -130,7 +130,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         return result.containsValue(value);
     }
 
-    public Set<Map.Entry> entrySet() {
+    public Set<Map.Entry<String, Object>> entrySet() {
         return result.entrySet();
     }
 
@@ -158,7 +158,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         return result.isEmpty();
     }
 
-    public Set keySet() {
+    public Set<String> keySet() {
         return result.keySet();
     }
 
@@ -172,8 +172,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
      */
-    @SuppressWarnings("unchecked")
-    public Object put(Object key, Object value) {
+    public Object put(String key, Object value) {
         // avoid different case keys being added by explicit remove
         Object orig = remove(key);
         result.put(key, value);
@@ -188,10 +187,9 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
      *
      * @param t the mappings to store in this result
      */
-    @SuppressWarnings("unchecked")
-    public void putAll(Map t) {
+    public void putAll(Map<? extends String, ?> t) {
         // don't delegate to putAll since we want case handling from put
-        for (Entry next : (Set<Entry>) t.entrySet()) {
+        for (Entry<? extends String, ?> next : t.entrySet()) {
             put(next.getKey(), next.getValue());
         }
     }
@@ -204,7 +202,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
         return result.size();
     }
 
-    public Collection values() {
+    public Collection<Object> values() {
         return result.values();
     }
 }

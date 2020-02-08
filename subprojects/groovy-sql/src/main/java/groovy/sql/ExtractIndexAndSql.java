@@ -38,7 +38,7 @@ class ExtractIndexAndSql {
     private static final char QUOTE = '\'';
 
     private final String sql;
-    private List<Tuple> indexPropList;
+    private List<Tuple<?>> indexPropList;
     private String newSql;
 
     /**
@@ -71,7 +71,7 @@ class ExtractIndexAndSql {
         this.sql = sql;
     }
 
-    List<Tuple> getIndexPropList() {
+    List<Tuple<?>> getIndexPropList() {
         return indexPropList;
     }
 
@@ -80,7 +80,7 @@ class ExtractIndexAndSql {
     }
 
     private ExtractIndexAndSql invoke() {
-        indexPropList = new ArrayList<Tuple>();
+        indexPropList = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         StringBuilder currentChunk = new StringBuilder();
         while (index < sql.length()) {
@@ -185,7 +185,7 @@ class ExtractIndexAndSql {
         return ((index + 1) < sql.length()) ? sql.charAt(index + 1) : '\0';
     }
 
-    private static String adaptForNamedParams(String sql, List<Tuple> indexPropList) {
+    private static String adaptForNamedParams(String sql, List<Tuple<?>> indexPropList) {
         StringBuilder newSql = new StringBuilder();
         int txtIndex = 0;
 
@@ -197,7 +197,7 @@ class ExtractIndexAndSql {
             int index = (indexStr == null || indexStr.length() == 0 || ":".equals(indexStr)) ? 0 : Integer.parseInt(indexStr) - 1;
             String prop = matcher.group(2);
             if (prop == null) prop = matcher.group(4);
-            indexPropList.add(new Tuple(index, prop == null || prop.length() == 0 ? "<this>" : prop));
+            indexPropList.add(new Tuple<Object>(index, prop == null || prop.length() == 0 ? "<this>" : prop));
             txtIndex = matcher.end();
         }
         newSql.append(sql, txtIndex, sql.length()); // append ending SQL after last param.
