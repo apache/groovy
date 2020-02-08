@@ -18,6 +18,7 @@
  */
 package groovy.bugs
 
+import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
 import org.junit.Test
 
@@ -26,42 +27,18 @@ import static groovy.test.GroovyAssert.assertScript
 @CompileStatic
 final class Groovy9387 {
 
-    private static final String SUPPORT_ADAPTER = '''
-        class BuilderSupportAdapter extends BuilderSupport {
-            def createNode(a, b) {}
-            def createNode(a) {}
-            def createNode(a, Map b) {}
-            def createNode(a, Map b, c) {}
-            void setParent(a, b) {}
-        }
-    '''
-
-    @Test
-    void testThisPropertySet() {
-        assertScript SUPPORT_ADAPTER + '''
-            class C extends BuilderSupportAdapter {
-                String value = 'abc'
-                void test() {
-                    def b = { -> this.'value' = 'def' }
-                    b()
-                }
-            }
-
-            def c = new C()
-            def v = c.value
-            assert v == 'abc'
-
-            c.test()
-            v = c.value
-            assert v == 'def'
-        '''
-    }
-
-    @Test
+    @Test @NotYetImplemented
     void testThisSetProperty() {
-        assertScript SUPPORT_ADAPTER + '''
-            class C extends BuilderSupportAdapter {
+        assertScript '''
+            class C extends BuilderSupport {
+                def createNode(a, b) {}
+                def createNode(a) {}
+                def createNode(a, Map b) {}
+                def createNode(a, Map b, c) {}
+                void setParent(a, b) {}
+
                 String value = 'abc'
+
                 void test() {
                     def b = { -> this.setProperty('value', 'def') }
                     b()
@@ -80,10 +57,17 @@ final class Groovy9387 {
 
     @Test
     void testThatSetProperty() {
-        assertScript SUPPORT_ADAPTER + '''
-            class C extends BuilderSupportAdapter {
+        assertScript '''
+            class C extends BuilderSupport {
+                def createNode(a, b) {}
+                def createNode(a) {}
+                def createNode(a, Map b) {}
+                def createNode(a, Map b, c) {}
+                void setParent(a, b) {}
+
                 private C that = this
                 String value = 'abc'
+
                 void test() {
                     def b = { -> that.setProperty('value', 'def') }
                     b()
