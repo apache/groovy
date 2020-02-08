@@ -22,7 +22,6 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -78,8 +77,7 @@ public class VerifyClass extends MatchingTask {
     private int execute(File dir) {
         int fails = 0;
         File[] files = dir.listFiles();
-        for (int i = 0; i < files.length; i++) {
-            File f = files[i];
+        for (File f : files) {
             if (f.isDirectory()) {
                 fails += execute(f);
             } else if (f.getName().endsWith(".class")) {
@@ -112,10 +110,9 @@ public class VerifyClass extends MatchingTask {
 
         boolean failed = false;
         List<MethodNode> methods = ca.methods;
-        for (int i = 0, n = methods.size(); i < n; ++i) {
-            MethodNode method = methods.get(i);
+        for (MethodNode method : methods) {
             if (method.instructions.size() > 0) {
-                Analyzer a = new Analyzer(new SimpleVerifier());
+                Analyzer<?> a = new Analyzer<>(new SimpleVerifier());
                 try {
                     a.analyze(ca.name, method);
                     continue;
@@ -128,31 +125,14 @@ public class VerifyClass extends MatchingTask {
                     log("verifying of class " + clazz + " failed");
                 }
                 if (verbose) log(method.name + method.desc);
-                
-                TraceMethodVisitor mv = new TraceMethodVisitor(null); 
-                /*= new TraceMethodVisitor(null) {
-                    public void visitMaxs(int maxStack, int maxLocals) {
-                        StringBuffer buffer = new StringBuffer();
-                        for (int i = 0; i < text.size(); ++i) {
-                            String s = frames[i] == null ? "null" : frames[i].toString();
-                            while (s.length() < maxStack + maxLocals + 1) {
-                                s += " ";
-                            }
-                            buffer.append(Integer.toString(i + 100000).substring(1));
-                            buffer.append(" ");
-                            buffer.append(s);
-                            buffer.append(" : ");
-                            buffer.append(text.get(i));
-                        }
-                        if (verbose) log(buffer.toString());
-                    }
-                };*/
+
+                TraceMethodVisitor mv = new TraceMethodVisitor(null);
                 for (int j = 0; j < method.instructions.size(); ++j) {
-                    Object insn = method.instructions.get(j);
-                    if (insn instanceof AbstractInsnNode) {
-                        ((AbstractInsnNode) insn).accept(mv);
+                    AbstractInsnNode insn = method.instructions.get(j);
+                    if (insn != null) {
+                        insn.accept(mv);
                     } else {
-                        mv.visitLabel((Label) insn);
+                        mv.visitLabel(null);
                     }
                 }
                 mv.visitMaxs(method.maxStack, method.maxLocals);

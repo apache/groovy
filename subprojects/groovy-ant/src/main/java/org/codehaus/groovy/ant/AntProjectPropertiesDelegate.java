@@ -26,13 +26,18 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
-public class AntProjectPropertiesDelegate extends Hashtable {
+public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
 
     private final Project project;
 
     public AntProjectPropertiesDelegate(Project project) {
         super();
         this.project = project;
+    }
+
+    public AntProjectPropertiesDelegate(Map<? extends String, ?> t) {
+        super(t);
+        project = null;
     }
 
     public synchronized int hashCode() {
@@ -78,35 +83,29 @@ public class AntProjectPropertiesDelegate extends Hashtable {
         return project.getProperties().toString();
     }
 
-    public Collection values() {
+    public Collection<Object> values() {
         return project.getProperties().values();
     }
 
-    public synchronized Enumeration elements() {
+    public synchronized Enumeration<Object> elements() {
         return project.getProperties().elements();
     }
 
-    public synchronized Enumeration keys() {
+    public synchronized Enumeration<String> keys() {
         return project.getProperties().keys();
     }
 
-    public AntProjectPropertiesDelegate(Map t) {
-        super(t);
-        project = null;
-    }
-
-    public synchronized void putAll(Map t) {
-        for (Object e : t.entrySet()) {
-            Map.Entry entry = (Map.Entry) e;
+    public synchronized void putAll(Map<? extends String, ?> t) {
+        for (Map.Entry<? extends String, ?> entry : t.entrySet()) {
             put(entry.getKey(), entry.getValue());
         }
     }
 
-    public Set entrySet() {
+    public Set<Map.Entry<String, Object>> entrySet() {
         return project.getProperties().entrySet();
     }
 
-    public Set keySet() {
+    public Set<String> keySet() {
         return project.getProperties().keySet();
     }
 
@@ -121,12 +120,12 @@ public class AntProjectPropertiesDelegate extends Hashtable {
         throw new UnsupportedOperationException("Impossible to remove a property from the project properties.");
     }
 
-    public synchronized Object put(Object key, Object value) {
+    public synchronized Object put(String key, Object value) {
         Object oldValue = null;
         if (containsKey(key)) {
             oldValue = get(key);
         }
-        project.setProperty(key.toString(), value.toString());
+        project.setProperty(key, value.toString());
         return oldValue;
     }
 }
