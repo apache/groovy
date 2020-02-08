@@ -21,12 +21,13 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.MetaClass;
 
 /**
- * Call site which holds reference to meta class
+ * Call site which holds reference to meta class.
 */
 public abstract class MetaClassSite extends AbstractCallSite {
+
     protected final MetaClass metaClass;
 
-    public MetaClassSite(CallSite site, MetaClass metaClass) {
+    public MetaClassSite(final CallSite site, final MetaClass metaClass) {
         super(site);
         this.metaClass = metaClass;
     }
