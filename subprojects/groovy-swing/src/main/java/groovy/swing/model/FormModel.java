@@ -26,13 +26,13 @@ import java.util.Map;
  * PropertyModel, TableModel, TreeModel or nested FormModel instances
  */
 public class FormModel {
-    private Map fieldModels;
+    private Map<String, Object> fieldModels;
 
     public FormModel() {
-        this(new HashMap());
+        this(new HashMap<>());
     }
     
-    public FormModel(Map fieldModels) {
+    public FormModel(Map<String, Object> fieldModels) {
         this.fieldModels = fieldModels;
     }
 

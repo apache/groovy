@@ -122,9 +122,9 @@ public class SwingExtensions {
     public static AbstractButton getAt(ButtonGroup self, int index) {
         int size = self.getButtonCount();
         if (index < 0 || index >= size) return null;
-        Enumeration buttons = self.getElements();
+        Enumeration<AbstractButton> buttons = self.getElements();
         for (int i = 0; i <= index; i++) {
-            AbstractButton b = (AbstractButton) buttons.nextElement();
+            AbstractButton b = buttons.nextElement();
             if (i == index) return b;
         }
         return null;
@@ -162,7 +162,7 @@ public class SwingExtensions {
      * @return the size of the ListModel
      * @since 1.6.4
      */
-    public static int size(ListModel self) {
+    public static int size(ListModel<?> self) {
         return self.getSize();
     }
 
@@ -174,7 +174,7 @@ public class SwingExtensions {
      * @return the element at the given index
      * @since 1.6.4
      */
-    public static Object getAt(ListModel self, int index) {
+    public static Object getAt(ListModel<?> self, int index) {
         return self.getElementAt(index);
     }
 
@@ -185,8 +185,8 @@ public class SwingExtensions {
      * @return an Iterator for a ListModel
      * @since 1.6.4
      */
-    public static Iterator iterator(final ListModel self) {
-        return new Iterator() {
+    public static Iterator<?> iterator(final ListModel<?> self) {
+        return new Iterator<Object>() {
             private int index = 0;
 
             public boolean hasNext() {
@@ -212,7 +212,7 @@ public class SwingExtensions {
      * @return same listModel, after the value was added to it.
      * @since 1.6.4
      */
-    public static DefaultListModel leftShift(DefaultListModel self, Object e) {
+    public static DefaultListModel<?> leftShift(DefaultListModel<Object> self, Object e) {
         self.addElement(e);
         return self;
     }
@@ -228,7 +228,7 @@ public class SwingExtensions {
      * @param e     the element to insert at the given index
      * @since 1.6.4
      */
-    public static void putAt(DefaultListModel self, int index, Object e) {
+    public static void putAt(DefaultListModel<Object> self, int index, Object e) {
         self.set(index, e);
     }
 
@@ -238,7 +238,7 @@ public class SwingExtensions {
      * @param self a DefaultListModel
      * @since 1.6.4
      */
-    public static void clear(DefaultListModel self) {
+    public static void clear(DefaultListModel<?> self) {
         self.removeAllElements();
     }
 
@@ -249,8 +249,8 @@ public class SwingExtensions {
      * @return an Iterator for a DefaultListModel
      * @since 1.6.4
      */
-    public static Iterator iterator(final DefaultListModel self) {
-        return new Iterator() {
+    public static Iterator<?> iterator(final DefaultListModel<Object> self) {
+        return new Iterator<Object>() {
             private int index = 0;
 
             public boolean hasNext() {
@@ -299,7 +299,7 @@ public class SwingExtensions {
      * @return same comboBox, after the value was added to it.
      * @since 1.6.4
      */
-    public static JComboBox leftShift(JComboBox self, Object i) {
+    public static JComboBox<?> leftShift(JComboBox<Object> self, Object i) {
         self.addItem(i);
         return self;
     }
@@ -310,7 +310,7 @@ public class SwingExtensions {
      * @param self a JComboBox
      * @since 1.6.4
      */
-    public static void clear(JComboBox self) {
+    public static void clear(JComboBox<?> self) {
         self.removeAllItems();
     }
 
@@ -321,7 +321,7 @@ public class SwingExtensions {
      * @return an Iterator for a ComboBox
      * @since 1.6.4
      */
-    public static Iterator iterator(JComboBox self) {
+    public static Iterator<?> iterator(JComboBox<Object> self) {
         return iterator(self.getModel());
     }
 
@@ -334,7 +334,7 @@ public class SwingExtensions {
      * @return same model, after the value was added to it.
      * @since 1.6.4
      */
-    public static MutableComboBoxModel leftShift(MutableComboBoxModel self, Object i) {
+    public static MutableComboBoxModel<?> leftShift(MutableComboBoxModel<Object> self, Object i) {
         self.addElement(i);
         return self;
     }
@@ -350,7 +350,7 @@ public class SwingExtensions {
      * @param i     the item to insert at the given index
      * @since 1.6.4
      */
-    public static void putAt(MutableComboBoxModel self, int index, Object i) {
+    public static void putAt(MutableComboBoxModel<Object> self, int index, Object i) {
         self.insertElementAt(i, index);
     }
 
@@ -361,8 +361,8 @@ public class SwingExtensions {
      * @return an Iterator for a MutableComboBoxModel
      * @since 1.6.4
      */
-    public static Iterator iterator(final MutableComboBoxModel self) {
-        return new Iterator() {
+    public static Iterator<?> iterator(final MutableComboBoxModel<Object> self) {
+        return new Iterator<Object>() {
             private int index = 0;
 
             public boolean hasNext() {
@@ -385,7 +385,7 @@ public class SwingExtensions {
      * @param self a DefaultComboBoxModel
      * @since 1.7.3
      */
-    public static void clear(DefaultComboBoxModel self) {
+    public static void clear(DefaultComboBoxModel<?> self) {
         self.removeAllElements();
     }
 
@@ -424,8 +424,8 @@ public class SwingExtensions {
      * @return an Iterator for a TableModel
      * @since 1.6.4
      */
-    public static Iterator iterator(final TableModel self) {
-        return new Iterator() {
+    public static Iterator<?> iterator(final TableModel self) {
+        return new Iterator<Object>() {
             private int row = 0;
 
             public boolean hasNext() {
@@ -497,7 +497,7 @@ public class SwingExtensions {
         int cols = delegate.getColumnCount();
         Object[] rowData = new Object[cols];
         int i = 0;
-        for (Iterator it = DefaultGroovyMethods.iterator(row); it.hasNext() && i < cols;) {
+        for (Iterator<?> it = DefaultGroovyMethods.iterator(row); it.hasNext() && i < cols;) {
             rowData[i++] = it.next();
         }
         return rowData;
@@ -510,8 +510,8 @@ public class SwingExtensions {
      * @return an Iterator for a DefaultTableModel
      * @since 1.6.4
      */
-    public static Iterator iterator(final DefaultTableModel self) {
-        return new Iterator() {
+    public static Iterator<?> iterator(final DefaultTableModel self) {
+        return new Iterator<Object>() {
             private int row = 0;
 
             public boolean hasNext() {
@@ -640,7 +640,7 @@ public class SwingExtensions {
      * @return an Iterator for a TreePath
      * @since 1.6.4
      */
-    public static Iterator iterator(TreePath self) {
+    public static Iterator<?> iterator(TreePath self) {
         return DefaultGroovyMethods.iterator(self.getPath());
     }
 
@@ -833,7 +833,7 @@ public class SwingExtensions {
      * @return an Iterator for a JMenu
      * @since 1.6.4
      */
-    public static Iterator/*<MenuElement>*/ iterator(JMenu self) {
+    public static Iterator<Component> iterator(JMenu self) {
         return DefaultGroovyMethods.iterator(self.getMenuComponents());
     }
 
@@ -881,7 +881,7 @@ public class SwingExtensions {
      * @return an Iterator for a JMenuBar
      * @since 1.6.4
      */
-    public static Iterator/*<JMenu>*/ iterator(JMenuBar self) {
+    public static Iterator<MenuElement> iterator(JMenuBar self) {
         return DefaultGroovyMethods.iterator(self.getSubElements());
     }
 
