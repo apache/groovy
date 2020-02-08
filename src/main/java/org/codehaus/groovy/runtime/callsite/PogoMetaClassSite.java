@@ -26,11 +26,12 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 
 public class PogoMetaClassSite extends MetaClassSite {
-    public PogoMetaClassSite(CallSite site, MetaClass metaClass) {
+
+    public PogoMetaClassSite(final CallSite site, final MetaClass metaClass) {
         super(site, metaClass);
     }
 
-    public final Object call(Object receiver, Object[] args) throws Throwable {
+    public final Object call(final Object receiver, final Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {
                 try {
@@ -53,21 +54,17 @@ public class PogoMetaClassSite extends MetaClassSite {
         }
     }
 
-    protected final boolean checkCall(Object receiver) {
-        return receiver instanceof GroovyObject && ((GroovyObject)receiver).getMetaClass() == metaClass;
-    }
-
-    public final Object callCurrent(GroovyObject receiver, Object[] args) throws Throwable {
+    public final Object callCurrent(final GroovyObject receiver, final Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {
                 try {
                     return metaClass.invokeMethod(array.owner, receiver, name, args, false, true);
                 } catch (MissingMethodException e) {
                     if (e instanceof MissingMethodExecutionFailed) {
-                        throw (MissingMethodException)e.getCause();
+                        throw (MissingMethodException) e.getCause();
                     } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
                         // in case there's nothing else, invoke the object's own invokeMethod()
-                        return ((GroovyObject)receiver).invokeMethod(name, args);
+                        return receiver.invokeMethod(name, args);
                     } else {
                         throw e;
                     }
@@ -78,5 +75,9 @@ public class PogoMetaClassSite extends MetaClassSite {
         } else {
           return CallSiteArray.defaultCallCurrent(this, receiver, args);
         }
+    }
+
+    protected final boolean checkCall(final Object receiver) {
+        return (receiver instanceof GroovyObject && ((GroovyObject) receiver).getMetaClass() == metaClass);
     }
 }
