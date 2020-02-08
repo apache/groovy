@@ -198,7 +198,7 @@ public class SwingExtensions {
             }
 
             public void remove() {
-                throw new UnsupportedOperationException("LisModel is immutable.");
+                throw new UnsupportedOperationException("ListModel is immutable.");
             }
         };
     }
