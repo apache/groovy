@@ -20,9 +20,11 @@ package groovy.bugs
 
 import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static org.junit.Assume.assumeFalse
 
 @CompileStatic
 final class Groovy9387 {
@@ -60,6 +62,8 @@ final class Groovy9387 {
 
     @Test @NotYetImplemented
     void testThisSetProperty() {
+        // currently only broken for classic bytecode (TODO: remove assumeFalse line and this comment once issue is fixed - no harm in having an indy testcase at that point)
+        assumeFalse CompilerConfiguration.DEFAULT.optimizationOptions?.indy
         assertScript SUPPORT_ADAPTER + '''
             class C extends BuilderSupportAdapter {
                 String value = 'abc'
