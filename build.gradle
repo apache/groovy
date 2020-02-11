@@ -410,7 +410,7 @@ compileTestGroovy {
 
 task checkCompatibility {
     doLast {
-        assert JavaVersion.current().java8Compatible
+        assert JavaVersion.current().java9Compatible
     }
 }
 
