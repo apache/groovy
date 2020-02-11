@@ -424,10 +424,10 @@ public class CompilerConfiguration {
         warningLevel = WarningMessage.LIKELY_ERRORS;
         parameters = getBooleanSafe("groovy.parameters");
         previewFeatures = getBooleanSafe("groovy.preview.features");
+        sourceEncoding = getSystemPropertySafe("groovy.source.encoding",
+            getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
         setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
         setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", JDK8));
-        sourceEncoding = Optional.ofNullable(getSystemPropertySafe("groovy.source.encoding"))
-                .orElseGet(() -> getSystemPropertySafe("file.encoding", DEFAULT_SOURCE_ENCODING));
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
@@ -710,10 +710,6 @@ public class CompilerConfiguration {
      * Sets the encoding to be used when reading source files.
      */
     public void setSourceEncoding(final String encoding) {
-        setSourceEncodingOrDefault(encoding);
-    }
-
-    private void setSourceEncodingOrDefault(final String encoding) {
         this.sourceEncoding = Optional.ofNullable(encoding).orElse(DEFAULT_SOURCE_ENCODING);
     }
 
