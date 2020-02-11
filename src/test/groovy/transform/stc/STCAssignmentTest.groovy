@@ -732,6 +732,26 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9389
+    void testPostfixOnNumber() {
+        assertScript '''
+            class Pogo {
+                Integer integer = 0
+                Integer getInteger() { return integer }
+                void setInteger(Integer i) { integer = i }
+            }
+            new Pogo().integer++
+        '''
+        shouldFailWithMessages '''
+            class Pogo {
+                Integer integer = 0
+                Integer getInteger() { return integer }
+                void setInteger(Character c) { integer = (c as int) }
+            }
+            new Pogo().integer++
+        ''', 'Cannot assign value of type java.lang.Integer to variable of type java.lang.Character'
+    }
+
     void testPostfixOnObject() {
         shouldFailWithMessages '''
             Object o = new Object()
