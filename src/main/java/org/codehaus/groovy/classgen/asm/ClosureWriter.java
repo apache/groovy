@@ -51,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -284,13 +285,15 @@ public class ClosureWriter {
 
             // let's add a getter & setter
             Expression fieldExp = new FieldExpression(paramField);
-            answer.addMethod(
+            markAsGenerated(answer,
+                answer.addMethod(
                     "get" + methodName,
                     ACC_PUBLIC,
                     realType.getPlainNodeReference(),
                     Parameter.EMPTY_ARRAY,
                     ClassNode.EMPTY_ARRAY,
-                    new ReturnStatement(fieldExp));
+                    new ReturnStatement(fieldExp)),
+                true);
         }
     }
 
