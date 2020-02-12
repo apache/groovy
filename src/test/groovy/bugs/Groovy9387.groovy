@@ -19,11 +19,9 @@
 package groovy.bugs
 
 import groovy.transform.CompileStatic
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
-import static org.junit.Assume.assumeFalse
 
 @CompileStatic
 final class Groovy9387 {
