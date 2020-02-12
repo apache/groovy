@@ -24,27 +24,79 @@ import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
-    void testShouldGoThroughPrivateBridgeAccessor() {
+    void testShouldGoThroughPrivateBridgeMethod1() {
+        ['i', 'i++'].each {
+            assertScript """
+                class Foo {
+                    private int i = 1
+                    int m() { new String().with { $it } }
+                }
+                assert new Foo().m() == 1
+            """
+        }
+    }
+
+    void testShouldGoThroughPrivateBridgeMethod2() {
+        ['i'/*, 'i++'*/].each { // GROOVY-7304
+            assertScript """
+                class Foo {
+                    private int i = 1
+                    int m() { new String().with { $it } }
+                }
+                class Bar extends Foo {
+                }
+                assert new Bar().m() == 1
+            """
+        }
+    }
+
+    void testShouldGoThroughPrivateBridgeMethod3() {
+        ['++i', 'i+=1', 'i=i+1'].each {
+            assertScript """
+                class Foo {
+                    private int i = 1
+                    int m() { new String().with { $it } }
+                }
+                assert new Foo().m() == 2
+            """
+        }
+    }
+
+    @NotYetImplemented // GROOVY-7304
+    void testShouldGoThroughPrivateBridgeMethod4() {
+        ['++i', 'i+=1', 'i=i+1'].each {
+            assertScript """
+                class Foo {
+                    private int i = 1
+                    int m() { new String().with { $it } }
+                }
+                class Bar extends Foo {
+                }
+                assert new Bar().m() == 2
+            """
+        }
+    }
+
+    void testShouldGoThroughPrivateBridgeMethod5() {
         assertScript '''
             class Foo {
-                private i = 1
-                def m() { new String().with {i}}
+                private int i = 1
+                private int pvI() { return i }
+                int m() { new String().with { pvI() } }
             }
             assert new Foo().m() == 1
-            class Bar extends Foo {}
-            assert new Bar().m() == 1
         '''
     }
 
-    void testShouldGoThroughPrivateBridgeMethod() {
+    void testShouldGoThroughPrivateBridgeMethod6() {
         assertScript '''
             class Foo {
-                private i = 1
-                private def pvI() { i }
-                def m() { new String().with {pvI()}}
+                private int i = 1
+                private int pvI() { return i }
+                int m() { new String().with { pvI() } }
             }
-            assert new Foo().m() == 1
-            class Bar extends Foo {}
+            class Bar extends Foo {
+            }
             assert new Bar().m() == 1
         '''
     }
@@ -67,20 +119,5 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
             }
             Outer.test()
         '''
-    }
-
-    @NotYetImplemented // GROOVY-7304
-    void testShouldGoThroughPrivateBridgeAccessorWithWriteAccess() {
-        ['++i', 'i++', 'i+=1', 'i=i+1'].each {
-            assertScript """
-                class Foo {
-                    private int i = 1
-                    def m() { new String().with { $it } }
-                }
-                assert new Foo().m() == 2
-                class Bar extends Foo {}
-                assert new Bar().m() == 2
-            """
-        }
     }
 }
