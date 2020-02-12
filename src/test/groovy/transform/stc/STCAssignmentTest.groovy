@@ -138,21 +138,6 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testPlusEqualsOnProperty() {
-        assertScript '''
-            class C {
-                int i
-
-                static main(args) {
-                    def c = new C()
-                    c.i = 5
-                    c.i += 10
-                    assert c.i == 15
-                }
-            }
-        '''
-    }
-
     // GROOVY-9385
     void testPlusEqualsOnPrivateField() {
         assertScript '''
