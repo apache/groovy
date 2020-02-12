@@ -882,7 +882,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   a generated closure
      * @param format a format string
      * @param values values referenced by the format specifiers in the format string
-     * @since 3.0.0
+     * @since 2.5.7
      */
     public static void printf(Closure self, String format, Object[] values) {
         Object owner = getClosureOwner(self);
@@ -899,7 +899,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   a generated closure
      * @param format a format string
      * @param value  value referenced by the format specifier in the format string
-     * @since 3.0.0
+     * @since 2.5.7
      */
     public static void printf(Closure self, String format, Object value) {
         Object owner = getClosureOwner(self);
@@ -15208,6 +15208,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number multiply(BigDecimal left, BigInteger right) {
         return NumberMath.multiply(left, right);
+    }
+
+    /**
+     * Compare a BigDecimal to another.
+     * A fluent api style alias for {@code compareTo}.
+     *
+     * @param left  a BigDecimal
+     * @param right a BigDecimal
+     * @return true if left is equal to or bigger than right
+     * @since 2.5.10
+     */
+    public static Boolean isAtLeast(BigDecimal left, BigDecimal right) {
+        return left.compareTo(right) >= 0;
+    }
+
+    /**
+     * Compare a BigDecimal to a String representing a number.
+     * A fluent api style alias for {@code compareTo}.
+     *
+     * @param left  a BigDecimal
+     * @param right a String representing a number
+     * @return true if left is equal to or bigger than the value represented by right
+     * @since 2.5.10
+     */
+    public static Boolean isAtLeast(BigDecimal left, String right) {
+        return isAtLeast(left, new BigDecimal(right));
     }
 
     /**

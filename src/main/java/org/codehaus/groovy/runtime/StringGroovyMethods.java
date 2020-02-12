@@ -2998,6 +2998,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Compare a String representing a number to another.
+     * A fluent api style alias for {@code compareTo} on {@code BigDecimal}.
+     *
+     * @param left  a String representing a number
+     * @param right a String representing a number
+     * @return true if the value represented by left is equal to or bigger than the value represented by right
+     * @since 2.5.10
+     */
+    public static Boolean isAtLeast(String left, String right) {
+        return DefaultGroovyMethods.isAtLeast(new BigDecimal(left), right);
+    }
+
+    /**
      * Convenience method to split a CharSequence (with whitespace as delimiter).
      * Similar to tokenize, but returns an Array of String instead of a List.
      *

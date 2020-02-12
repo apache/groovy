@@ -26,7 +26,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +39,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
+import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 
 /**
  * Compilation control flags and coordination stuff.
@@ -544,8 +544,8 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.5+
      */
-    public static boolean isPostJDK5(String bytecodeVersion) {
-        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK5)) >= 0;
+    public static boolean isPostJDK5(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK5);
     }
 
     /**
@@ -554,8 +554,8 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.7+
      */
-    public static boolean isPostJDK7(String bytecodeVersion) {
-        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK7)) >= 0;
+    public static boolean isPostJDK7(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK7);
     }
 
     /**
@@ -564,8 +564,8 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 1.8+
      */
-    public static boolean isPostJDK8(String bytecodeVersion) {
-        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK8)) >= 0;
+    public static boolean isPostJDK8(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK8);
     }
 
     /**
@@ -574,8 +574,8 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 9.0+
      */
-    public static boolean isPostJDK9(String bytecodeVersion) {
-        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK9)) >= 0;
+    public static boolean isPostJDK9(final String bytecodeVersion) {
+        return isAtLeast(bytecodeVersion, JDK9);
     }
 
     /**

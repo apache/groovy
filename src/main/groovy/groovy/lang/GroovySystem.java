@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.apache.groovy.plugin.GroovyRunner;
 import org.apache.groovy.plugin.GroovyRunnerRegistry;
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.util.ReferenceBundle;
 import org.codehaus.groovy.util.ReleaseInfo;
@@ -99,5 +100,21 @@ public final class GroovySystem {
      */
     public static String getVersion() {
         return ReleaseInfo.getVersion();
+    }
+
+    /**
+     * Returns the major and minor part of the groovy version excluding the point/patch part of the version.
+     * E.g. 2.5.7, 2.5.8-SNAPSHOT, 2.5.9-rc-1 all have 2.5 as the short version.
+     *
+     * @since 2.5.10
+     */
+    public static String getShortVersion() {
+        String full = getVersion();
+        int firstDot = full.indexOf('.');
+        int secondDot = full.indexOf('.', firstDot + 1);
+        if (secondDot < 0) {
+            throw new GroovyBugError("Unexpected version found: " + full);
+        }
+        return full.substring(0, secondDot);
     }
 }

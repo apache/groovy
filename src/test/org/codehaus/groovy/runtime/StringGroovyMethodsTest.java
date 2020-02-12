@@ -197,6 +197,14 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
         assertEquals(expectedResult, result);
     }
 
+    @Test
+    public void testisAtLeast() {
+        assertTrue(StringGroovyMethods.isAtLeast("2.1", "2.1"));
+        assertTrue(StringGroovyMethods.isAtLeast("2.1", "2.0"));
+        assertTrue(StringGroovyMethods.isAtLeast("3.0", "2.1"));
+        assertFalse(StringGroovyMethods.isAtLeast("2.5", "3.0"));
+    }
+
     private Closure<String> createClosureForFindOrFindAll() {
         return new Closure<String>(this) {
             @Override
