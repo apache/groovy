@@ -15643,6 +15643,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Compare a BigDecimal to another.
+     * A fluent api style alias for {@code compareTo}.
+     *
+     * @param left  a BigDecimal
+     * @param right a BigDecimal
+     * @return true if left is equal to or bigger than right
+     * @since 3.0.1
+     */
+    public static Boolean isAtLeast(BigDecimal left, BigDecimal right) {
+        return left.compareTo(right) >= 0;
+    }
+
+    /**
+     * Compare a BigDecimal to a String representing a number.
+     * A fluent api style alias for {@code compareTo}.
+     *
+     * @param left  a BigDecimal
+     * @param right a String representing a number
+     * @return true if left is equal to or bigger than the value represented by right
+     * @since 3.0.1
+     */
+    public static Boolean isAtLeast(BigDecimal left, String right) {
+        return isAtLeast(left, new BigDecimal(right));
+    }
+
+    /**
      * Power of a Number to a certain exponent. Called by the '**' operator.
      *
      * @param self     a Number
