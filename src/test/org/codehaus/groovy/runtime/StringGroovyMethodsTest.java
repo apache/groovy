@@ -197,7 +197,6 @@ public class StringGroovyMethodsTest extends GroovyTestCase {
         assertEquals(expectedResult, result);
     }
 
-    @Test
     public void testisAtLeast() {
         assertTrue(StringGroovyMethods.isAtLeast("2.1", "2.1"));
         assertTrue(StringGroovyMethods.isAtLeast("2.1", "2.0"));
