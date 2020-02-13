@@ -26,7 +26,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +41,7 @@ import java.util.StringTokenizer;
 
 import static org.apache.groovy.util.SystemUtil.getBooleanSafe;
 import static org.apache.groovy.util.SystemUtil.getSystemPropertySafe;
+import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
 
 /**
  * Compilation control flags and coordination stuff.
@@ -555,7 +555,7 @@ public class CompilerConfiguration {
      * @return true if the bytecode version is JDK 1.5+
      */
     public static boolean isPostJDK5(final String bytecodeVersion) {
-        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK5)) >= 0;
+        return isAtLeast(bytecodeVersion, JDK5);
     }
 
     /**
@@ -565,7 +565,7 @@ public class CompilerConfiguration {
      * @return true if the bytecode version is JDK 1.7+
      */
     public static boolean isPostJDK7(final String bytecodeVersion) {
-        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK7)) >= 0;
+        return isAtLeast(bytecodeVersion, JDK7);
     }
 
     /**
@@ -575,7 +575,7 @@ public class CompilerConfiguration {
      * @return true if the bytecode version is JDK 1.8+
      */
     public static boolean isPostJDK8(final String bytecodeVersion) {
-        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK8)) >= 0;
+        return isAtLeast(bytecodeVersion, JDK8);
     }
 
     /**
@@ -585,7 +585,7 @@ public class CompilerConfiguration {
      * @return true if the bytecode version is JDK 9.0+
      */
     public static boolean isPostJDK9(final String bytecodeVersion) {
-        return new BigDecimal(bytecodeVersion).compareTo(new BigDecimal(JDK9)) >= 0;
+        return isAtLeast(bytecodeVersion, JDK9);
     }
 
     /**
@@ -1059,7 +1059,7 @@ public class CompilerConfiguration {
      */
     public boolean isIndyEnabled() {
         Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
-        return Optional.ofNullable(indyEnabled).orElse(Boolean.FALSE).booleanValue();
+        return Optional.ofNullable(indyEnabled).orElse(Boolean.FALSE);
     }
 
     /**
@@ -1067,7 +1067,7 @@ public class CompilerConfiguration {
      */
     public boolean isGroovydocEnabled() {
         Boolean groovydocEnabled = getOptimizationOptions().get(GROOVYDOC);
-        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE).booleanValue();
+        return Optional.ofNullable(groovydocEnabled).orElse(Boolean.FALSE);
     }
 
     /**
@@ -1075,6 +1075,6 @@ public class CompilerConfiguration {
      */
     public boolean isRuntimeGroovydocEnabled() {
         Boolean runtimeGroovydocEnabled = getOptimizationOptions().get(RUNTIME_GROOVYDOC);
-        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE).booleanValue();
+        return Optional.ofNullable(runtimeGroovydocEnabled).orElse(Boolean.FALSE);
     }
 }
