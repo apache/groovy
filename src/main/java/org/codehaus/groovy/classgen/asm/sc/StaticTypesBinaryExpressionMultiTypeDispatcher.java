@@ -45,6 +45,8 @@ import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
@@ -133,6 +135,39 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         } else if (double_TYPE.equals(top)) {
             mv.visitInsn(dInsn);
         }
+    }
+
+    @Override
+    protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression expression) {
+        Expression leftExpression = expression.getLeftExpression();
+        if (leftExpression instanceof PropertyExpression) {
+            PropertyExpression pexp = (PropertyExpression) leftExpression;
+
+            BinaryExpression expressionWithoutAssignment = binX(
+                    leftExpression,
+                    Token.newSymbol(
+                            TokenUtil.removeAssignment(expression.getOperation().getType()),
+                            expression.getOperation().getStartLine(),
+                            expression.getOperation().getStartColumn()
+                    ),
+                    expression.getRightExpression()
+            );
+            expressionWithoutAssignment.copyNodeMetaData(expression);
+            expressionWithoutAssignment.setSafe(expression.isSafe());
+            expressionWithoutAssignment.setSourcePosition(expression);
+
+            if (makeSetProperty(
+                    pexp.getObjectExpression(),
+                    pexp.getProperty(),
+                    expressionWithoutAssignment,
+                    pexp.isSafe(),
+                    pexp.isSpreadSafe(),
+                    pexp.isImplicitThis(),
+                    pexp instanceof AttributeExpression)) {
+                return;
+            }
+        }
+        super.evaluateBinaryExpressionWithAssignment(method, expression);
     }
 
     @Override
