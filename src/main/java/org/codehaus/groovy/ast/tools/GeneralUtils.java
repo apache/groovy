@@ -90,7 +90,7 @@ public class GeneralUtils {
     public static final Token AND = Token.newSymbol(Types.LOGICAL_AND, -1, -1);
     public static final Token OR = Token.newSymbol(Types.LOGICAL_OR, -1, -1);
     public static final Token CMP = Token.newSymbol(Types.COMPARE_TO, -1, -1);
-    private static final Token INSTANCEOF = Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1);
+    public static final Token INSTANCEOF = Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1);
     private static final Token PLUS = Token.newSymbol(Types.PLUS, -1, -1);
     private static final Token INDEX = Token.newSymbol("[", -1, -1);
 
