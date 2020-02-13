@@ -21,7 +21,14 @@ package org.codehaus.groovy.classgen.asm.sc
 import groovy.transform.stc.STCAssignmentTest
 
 /**
- * Unit tests for static type checking : assignments.
+ * Unit tests for static compilation : assignments.
  */
-class AssignmentsStaticCompileTest extends STCAssignmentTest implements StaticCompilationTestSupport {}
+final class AssignmentsStaticCompileTest extends STCAssignmentTest implements StaticCompilationTestSupport {
 
+    @Override // GROOVY-8707
+    void testPlusEqualsOnProperty() {
+        super.testPlusEqualsOnProperty()
+        String bytecode = astTrees['C'][1]
+        assert !bytecode.contains('ScriptBytecodeAdapter.setGroovyObjectProperty') : '"c.i += 10" should use setter, not dynamic property'
+    }
+}
