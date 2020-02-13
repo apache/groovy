@@ -48,7 +48,7 @@ Set excludeModules = [
         "performance", "tests-vm8", "binary-compatibility"
 ]
 
-def compatibilityBaselineVersion = "3.0.0-rc-2"
+def compatibilityBaselineVersion = "3.0.0"
 
 def thisProject = project
 
