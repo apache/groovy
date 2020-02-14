@@ -93,6 +93,7 @@ import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
@@ -162,13 +163,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
         metaClassField =
                 node.addField("metaClass", ACC_PRIVATE | ACC_TRANSIENT | ACC_SYNTHETIC, ClassHelper.METACLASS_TYPE,
-                        new BytecodeExpression(ClassHelper.METACLASS_TYPE) {
-                            @Override
-                            public void visit(MethodVisitor mv) {
-                                mv.visitVarInsn(ALOAD, 0);
-                                mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "$getStaticMetaClass", "()Lgroovy/lang/MetaClass;", false);
-                            }
-                        });
+                        bytecodeX(ClassHelper.METACLASS_TYPE, mv -> {
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "$getStaticMetaClass", "()Lgroovy/lang/MetaClass;", false);
+                        })
+                );
         metaClassField.setSynthetic(true);
         return metaClassField;
     }

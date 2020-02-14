@@ -77,6 +77,7 @@ import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
@@ -350,13 +351,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         Label l4 = new Label();
         mv.visitLabel(l4);
         mv.visitVarInsn(ALOAD, var);
-        final ClassNode finalComponentType = componentType;
-        PropertyExpression pexp = propX(new BytecodeExpression(finalComponentType) {
-            @Override
-            public void visit(final MethodVisitor mv) {
-                mv.visitVarInsn(ALOAD, next);
-            }
-        }, propertyName);
+        PropertyExpression pexp = propX(
+                bytecodeX(componentType, v -> v.visitVarInsn(ALOAD, next)),
+                propertyName
+        );
         pexp.visit(controller.getAcg());
         controller.getOperandStack().box();
         controller.getOperandStack().remove(1);
@@ -430,13 +428,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
                     property = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
                     String[] props = property.split("\\.");
-                    BytecodeExpression thisLoader = new BytecodeExpression(CLOSURE_TYPE) {
-                        @Override
-                        public void visit(final MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0); // load this
-                        }
-                    };
-                    PropertyExpression pexp = new PropertyExpression(thisLoader, constX(props[0]), safe);
+                    BytecodeExpression thisLoader = bytecodeX(CLOSURE_TYPE, mv -> mv.visitVarInsn(ALOAD, 0));
+                    PropertyExpression pexp = propX(thisLoader, constX(props[0]), safe);
                     for (int i = 1, n = props.length; i < n; i += 1) {
                         pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
                         pexp = propX(pexp, props[i]);
