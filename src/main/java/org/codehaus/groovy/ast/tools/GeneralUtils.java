@@ -60,12 +60,14 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
+import org.objectweb.asm.MethodVisitor;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -74,6 +76,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IDENTICAL;
@@ -154,6 +157,21 @@ public class GeneralUtils {
         BlockStatement block = new BlockStatement();
         for (Statement stmt : stmts) block.addStatement(stmt);
         return block;
+    }
+
+    public static BytecodeExpression bytecodeX(Consumer<MethodVisitor> writer) {
+        return new BytecodeExpression() {
+            @Override
+            public void visit(final MethodVisitor visitor) {
+                writer.accept(visitor);
+            }
+        };
+    }
+
+    public static BytecodeExpression bytecodeX(ClassNode type, Consumer<MethodVisitor> writer) {
+        BytecodeExpression expression = bytecodeX(writer);
+        expression.setType(type);
+        return expression;
     }
 
     public static MethodCallExpression callSuperX(String methodName, Expression args) {
@@ -755,6 +773,10 @@ public class GeneralUtils {
 
     public static PropertyExpression propX(Expression owner, Expression property) {
         return new PropertyExpression(owner, property);
+    }
+
+    public static PropertyExpression propX(Expression owner, Expression property, boolean safe) {
+        return new PropertyExpression(owner, property, safe);
     }
 
     public static PropertyExpression thisPropX(boolean implicit, String property) {
