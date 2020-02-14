@@ -61,7 +61,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
-import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.syntax.Token;
@@ -97,25 +96,25 @@ public class GeneralUtils {
     private static final Token PLUS = Token.newSymbol(Types.PLUS, -1, -1);
     private static final Token INDEX = Token.newSymbol("[", -1, -1);
 
-    public static BinaryExpression andX(Expression lhv, Expression rhv) {
+    public static BinaryExpression andX(final Expression lhv, final Expression rhv) {
         return new BinaryExpression(lhv, AND, rhv);
     }
 
-    public static ArgumentListExpression args(Expression... expressions) {
+    public static ArgumentListExpression args(final Expression... expressions) {
         List<Expression> args = new ArrayList<Expression>();
         Collections.addAll(args, expressions);
         return new ArgumentListExpression(args);
     }
 
-    public static ArgumentListExpression args(List<Expression> expressions) {
+    public static ArgumentListExpression args(final List<Expression> expressions) {
         return new ArgumentListExpression(expressions);
     }
 
-    public static ArgumentListExpression args(Parameter[] parameters) {
+    public static ArgumentListExpression args(final Parameter[] parameters) {
         return new ArgumentListExpression(parameters);
     }
 
-    public static ArgumentListExpression args(String... names) {
+    public static ArgumentListExpression args(final String... names) {
         List<Expression> vars = new ArrayList<Expression>();
         for (String name : names) {
             vars.add(varX(name));
@@ -123,43 +122,53 @@ public class GeneralUtils {
         return new ArgumentListExpression(vars);
     }
 
-    public static Statement assignS(Expression target, Expression value) {
+    public static Statement assignS(final Expression target, final Expression value) {
         return new ExpressionStatement(assignX(target, value));
     }
 
-    public static Expression assignX(Expression target, Expression value) {
+    public static Expression assignX(final Expression target, final Expression value) {
         return new BinaryExpression(target, ASSIGN, value);
     }
 
-    public static Expression attrX(Expression oe, Expression prop) {
+    public static Expression attrX(final Expression oe, final Expression prop) {
         return new AttributeExpression(oe, prop);
     }
 
-    public static BinaryExpression binX(Expression left, Token token, Expression right) {
+    public static BinaryExpression binX(final Expression left, final Token token, final Expression right) {
         return new BinaryExpression(left, token, right);
     }
 
-    public static BlockStatement block(VariableScope varScope, Statement... stmts) {
+    public static BlockStatement block(final VariableScope varScope, final Statement... stmts) {
         BlockStatement block = new BlockStatement();
         block.setVariableScope(varScope);
-        for (Statement stmt : stmts) block.addStatement(stmt);
+        for (Statement stmt : stmts) {
+            block.addStatement(stmt);
+        }
         return block;
     }
 
-    public static BlockStatement block(VariableScope varScope, List<Statement> stmts) {
+    public static BlockStatement block(final VariableScope varScope, final List<Statement> stmts) {
         BlockStatement block = new BlockStatement();
         block.setVariableScope(varScope);
-        for (Statement stmt : stmts) block.addStatement(stmt);
+        for (Statement stmt : stmts) {
+            block.addStatement(stmt);
+        }
         return block;
     }
 
-    public static BlockStatement block(Statement... stmts) {
+    public static BlockStatement block(final Statement... stmts) {
         BlockStatement block = new BlockStatement();
-        for (Statement stmt : stmts) block.addStatement(stmt);
+        for (Statement stmt : stmts) {
+            block.addStatement(stmt);
+        }
         return block;
     }
 
-    public static BytecodeExpression bytecodeX(Consumer<MethodVisitor> writer) {
+    public static BooleanExpression boolX(final Expression boolExpr) {
+        return new BooleanExpression(boolExpr);
+    }
+
+    public static BytecodeExpression bytecodeX(final Consumer<MethodVisitor> writer) {
         return new BytecodeExpression() {
             @Override
             public void visit(final MethodVisitor visitor) {
@@ -168,194 +177,108 @@ public class GeneralUtils {
         };
     }
 
-    public static BytecodeExpression bytecodeX(ClassNode type, Consumer<MethodVisitor> writer) {
+    public static BytecodeExpression bytecodeX(final ClassNode type, final Consumer<MethodVisitor> writer) {
         BytecodeExpression expression = bytecodeX(writer);
         expression.setType(type);
         return expression;
     }
 
-    public static MethodCallExpression callSuperX(String methodName, Expression args) {
-        return callX(varX("super"), methodName, args);
-    }
-
-    public static MethodCallExpression callSuperX(String methodName) {
+    public static MethodCallExpression callSuperX(final String methodName) {
         return callSuperX(methodName, MethodCallExpression.NO_ARGUMENTS);
     }
 
-    public static MethodCallExpression callThisX(String methodName, Expression args) {
-        return callX(varX("this"), methodName, args);
+    public static MethodCallExpression callSuperX(final String methodName, final Expression args) {
+        return callX(varX("super"), methodName, args);
     }
 
-    public static MethodCallExpression callThisX(String methodName) {
+    public static MethodCallExpression callThisX(final String methodName) {
         return callThisX(methodName, MethodCallExpression.NO_ARGUMENTS);
     }
 
-    public static MethodCallExpression callX(Expression receiver, String methodName, Expression args) {
+    public static MethodCallExpression callThisX(final String methodName, final Expression args) {
+        return callX(varX("this"), methodName, args);
+    }
+
+    public static MethodCallExpression callX(final Expression receiver, final String methodName) {
+        return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
+    }
+
+    public static MethodCallExpression callX(final Expression receiver, final String methodName, final Expression args) {
         return new MethodCallExpression(receiver, methodName, args);
     }
 
-    public static MethodCallExpression callX(Expression receiver, Expression method, Expression args) {
+    public static MethodCallExpression callX(final Expression receiver, final Expression method, final Expression args) {
         return new MethodCallExpression(receiver, method, args);
     }
 
-    public static MethodCallExpression callX(Expression receiver, String methodName) {
+    public static StaticMethodCallExpression callX(final ClassNode receiver, final String methodName) {
         return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
     }
 
-    public static StaticMethodCallExpression callX(ClassNode receiver, String methodName, Expression args) {
+    public static StaticMethodCallExpression callX(final ClassNode receiver, final String methodName, final Expression args) {
         return new StaticMethodCallExpression(receiver, methodName, args);
     }
 
-    public static StaticMethodCallExpression callX(ClassNode receiver, String methodName) {
-        return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
-    }
-
-    public static CastExpression castX(ClassNode type, Expression expression) {
+    public static CastExpression castX(final ClassNode type, final Expression expression) {
         return new CastExpression(type, expression);
     }
 
-    public static BooleanExpression boolX(Expression boolExpr) {
-        return new BooleanExpression(boolExpr);
-    }
-
-    public static CastExpression castX(ClassNode type, Expression expression, boolean ignoreAutoboxing) {
+    public static CastExpression castX(final ClassNode type, final Expression expression, final boolean ignoreAutoboxing) {
         return new CastExpression(type, expression, ignoreAutoboxing);
     }
 
-    public static ClassExpression classX(ClassNode clazz) {
+    public static CatchStatement catchS(final Parameter variable, final Statement code) {
+        return new CatchStatement(variable, code);
+    }
+
+    public static ClassExpression classX(final ClassNode clazz) {
         return new ClassExpression(clazz);
     }
 
-    public static ClassExpression classX(Class clazz) {
+    public static ClassExpression classX(final Class<?> clazz) {
         return classX(ClassHelper.make(clazz).getPlainNodeReference());
     }
 
-    public static ClosureExpression closureX(Parameter[] params, Statement code) {
+    public static ClosureExpression closureX(final Parameter[] params, final Statement code) {
         return new ClosureExpression(params, code);
     }
 
-    public static ClosureExpression closureX(Statement code) {
+    public static ClosureExpression closureX(final Statement code) {
         return closureX(Parameter.EMPTY_ARRAY, code);
     }
 
-    public static Parameter[] cloneParams(Parameter[] source) {
-        Parameter[] result = new Parameter[source.length];
-        for (int i = 0; i < source.length; i++) {
-            Parameter srcParam = source[i];
-            Parameter dstParam = new Parameter(srcParam.getOriginType(), srcParam.getName());
-            result[i] = dstParam;
-        }
-        return result;
-    }
-
     /**
-     * Build a binary expression that compares two values
+     * Builds a binary expression that compares two values.
+     *
      * @param lhv expression for the value to compare from
      * @param rhv expression for the value value to compare to
      * @return the expression comparing two values
      */
-    public static BinaryExpression cmpX(Expression lhv, Expression rhv) {
+    public static BinaryExpression cmpX(final Expression lhv, final Expression rhv) {
         return new BinaryExpression(lhv, CMP, rhv);
     }
 
-    public static ConstantExpression constX(Object val) {
+    public static ConstantExpression constX(final Object val) {
         return new ConstantExpression(val);
     }
 
-    public static ConstantExpression constX(Object val, boolean keepPrimitive) {
+    public static ConstantExpression constX(final Object val, final boolean keepPrimitive) {
         return new ConstantExpression(val, keepPrimitive);
     }
 
-    /**
-     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
-     * <p>
-     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
-     */
-    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied) {
-        copyAnnotatedNodeAnnotations(annotatedNode, copied, notCopied, true);
-    }
-
-    /**
-     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
-     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
-     * {@link groovy.transform.Generated} annotations will be copied if {@code includeGenerated} is true.
-     * <p>
-     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
-     */
-    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, List<AnnotationNode> notCopied, boolean includeGenerated) {
-        List<AnnotationNode> annotationList = annotatedNode.getAnnotations();
-        for (AnnotationNode annotation : annotationList)  {
-
-            List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(AbstractASTTransformation.RETENTION_CLASSNODE);
-            if (annotations.isEmpty()) continue;
-
-            if (hasClosureMember(annotation)) {
-                notCopied.add(annotation);
-                continue;
-            }
-
-            if (!includeGenerated && annotation.getClassNode().getName().equals("groovy.transform.Generated")) {
-                continue;
-            }
-
-            AnnotationNode retentionPolicyAnnotation = annotations.get(0);
-            Expression valueExpression = retentionPolicyAnnotation.getMember("value");
-            if (!(valueExpression instanceof PropertyExpression)) continue;
-
-            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
-            boolean processAnnotation =
-                    propertyExpression.getProperty() instanceof ConstantExpression &&
-                            (
-                                    "RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()) ||
-                                            "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
-                            );
-
-            if (processAnnotation)  {
-                AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
-                for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
-                    newAnnotation.addMember(member.getKey(), member.getValue());
-                }
-                newAnnotation.setSourcePosition(annotatedNode);
-
-                copied.add(newAnnotation);
-            }
-        }
-    }
-
-    public static Statement createConstructorStatementDefault(FieldNode fNode) {
-        final String name = fNode.getName();
-        final ClassNode fType = fNode.getType();
-        final Expression fieldExpr = propX(varX("this"), name);
-        Expression initExpr = fNode.getInitialValueExpression();
-        Statement assignInit;
-        if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression)initExpr).isNullExpression())) {
-            if (ClassHelper.isPrimitiveType(fType)) {
-                assignInit = EmptyStatement.INSTANCE;
-            } else {
-                assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
-            }
-        } else {
-            assignInit = assignS(fieldExpr, initExpr);
-        }
-        fNode.setInitialValueExpression(null);
-        Expression value = findArg(name);
-        return ifElseS(equalsNullX(value), assignInit, assignS(fieldExpr, castX(fType, value)));
-    }
-
-    public static ConstructorCallExpression ctorX(ClassNode type, Expression args) {
+    public static ConstructorCallExpression ctorX(final ClassNode type, final Expression args) {
         return new ConstructorCallExpression(type, args);
     }
 
-    public static ConstructorCallExpression ctorX(ClassNode type) {
+    public static ConstructorCallExpression ctorX(final ClassNode type) {
         return new ConstructorCallExpression(type, ArgumentListExpression.EMPTY_ARGUMENTS);
     }
 
-    public static Statement ctorSuperS(Expression args) {
+    public static Statement ctorSuperS(final Expression args) {
         return stmt(ctorX(ClassNode.SUPER, args));
     }
 
-    public static Statement ctorThisS(Expression args) {
+    public static Statement ctorThisS(final Expression args) {
         return stmt(ctorX(ClassNode.THIS, args));
     }
 
@@ -367,35 +290,39 @@ public class GeneralUtils {
         return stmt(ctorX(ClassNode.THIS));
     }
 
-    public static Statement declS(Expression target, Expression init) {
+    public static Statement declS(final Expression target, final Expression init) {
         return stmt(declX(target, init));
     }
 
-    public static DeclarationExpression declX(Expression target, Expression init) {
+    public static DeclarationExpression declX(final Expression target, final Expression init) {
         return new DeclarationExpression(target, ASSIGN, init);
     }
 
-    public static BinaryExpression eqX(Expression lhv, Expression rhv) {
+    public static MapEntryExpression entryX(final Expression key, final Expression value) {
+        return new MapEntryExpression(key, value);
+    }
+
+    public static BinaryExpression eqX(final Expression lhv, final Expression rhv) {
         return new BinaryExpression(lhv, EQ, rhv);
     }
 
-    public static BooleanExpression equalsNullX(Expression argExpr) {
+    public static BooleanExpression equalsNullX(final Expression argExpr) {
         return new BooleanExpression(eqX(argExpr, new ConstantExpression(null)));
     }
 
-    public static FieldExpression fieldX(FieldNode fieldNode) {
+    public static FieldExpression fieldX(final FieldNode fieldNode) {
         return new FieldExpression(fieldNode);
     }
 
-    public static FieldExpression fieldX(ClassNode owner, String fieldName) {
+    public static FieldExpression fieldX(final ClassNode owner, final String fieldName) {
         return new FieldExpression(owner.getField(fieldName));
     }
 
-    public static Expression findArg(String argName) {
+    public static Expression findArg(final String argName) {
         return new PropertyExpression(new VariableExpression("args"), argName);
     }
 
-    public static List<MethodNode> getAllMethods(ClassNode type) {
+    public static List<MethodNode> getAllMethods(final ClassNode type) {
         ClassNode node = type;
         List<MethodNode> result = new ArrayList<MethodNode>();
         while (node != null) {
@@ -405,7 +332,7 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<PropertyNode> getAllProperties(ClassNode type) {
+    public static List<PropertyNode> getAllProperties(final ClassNode type) {
         ClassNode node = type;
         List<PropertyNode> result = new ArrayList<PropertyNode>();
         while (node != null) {
@@ -415,12 +342,8 @@ public class GeneralUtils {
         return result;
     }
 
-    public static String getGetterName(PropertyNode pNode) {
-        return "get" + Verifier.capitalize(pNode.getName());
-    }
-
-    public static List<FieldNode> getInstanceNonPropertyFields(ClassNode cNode) {
-        final List<FieldNode> result = new ArrayList<FieldNode>();
+    public static List<FieldNode> getInstanceNonPropertyFields(final ClassNode cNode) {
+        List<FieldNode> result = new ArrayList<FieldNode>();
         for (FieldNode fNode : cNode.getFields()) {
             if (!fNode.isStatic() && cNode.getProperty(fNode.getName()) == null) {
                 result.add(fNode);
@@ -429,7 +352,7 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<String> getInstanceNonPropertyFieldNames(ClassNode cNode) {
+    public static List<String> getInstanceNonPropertyFieldNames(final ClassNode cNode) {
         List<FieldNode> fList = getInstanceNonPropertyFields(cNode);
         List<String> result = new ArrayList<String>(fList.size());
         for (FieldNode fNode : fList) {
@@ -438,8 +361,8 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<PropertyNode> getInstanceProperties(ClassNode cNode) {
-        final List<PropertyNode> result = new ArrayList<PropertyNode>();
+    public static List<PropertyNode> getInstanceProperties(final ClassNode cNode) {
+        List<PropertyNode> result = new ArrayList<PropertyNode>();
         for (PropertyNode pNode : cNode.getProperties()) {
             if (!pNode.isStatic()) {
                 result.add(pNode);
@@ -448,7 +371,7 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<String> getInstancePropertyNames(ClassNode cNode) {
+    public static List<String> getInstancePropertyNames(final ClassNode cNode) {
         List<PropertyNode> pList = BeanUtils.getAllProperties(cNode, false, false, true);
         List<String> result = new ArrayList<String>(pList.size());
         for (PropertyNode pNode : pList) {
@@ -457,8 +380,8 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<FieldNode> getInstancePropertyFields(ClassNode cNode) {
-        final List<FieldNode> result = new ArrayList<FieldNode>();
+    public static List<FieldNode> getInstancePropertyFields(final ClassNode cNode) {
+        List<FieldNode> result = new ArrayList<FieldNode>();
         for (PropertyNode pNode : cNode.getProperties()) {
             if (!pNode.isStatic()) {
                 result.add(pNode.getField());
@@ -467,7 +390,7 @@ public class GeneralUtils {
         return result;
     }
 
-    public static Set<ClassNode> getInterfacesAndSuperInterfaces(ClassNode type) {
+    public static Set<ClassNode> getInterfacesAndSuperInterfaces(final ClassNode type) {
         Set<ClassNode> res = new LinkedHashSet<ClassNode>();
         if (type.isInterface()) {
             res.add(type);
@@ -481,8 +404,8 @@ public class GeneralUtils {
         return res;
     }
 
-    public static List<FieldNode> getSuperNonPropertyFields(ClassNode cNode) {
-        final List<FieldNode> result;
+    public static List<FieldNode> getSuperNonPropertyFields(final ClassNode cNode) {
+        List<FieldNode> result;
         if (cNode == ClassHelper.OBJECT_TYPE) {
             result = new ArrayList<FieldNode>();
         } else {
@@ -496,8 +419,8 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<FieldNode> getSuperPropertyFields(ClassNode cNode) {
-        final List<FieldNode> result;
+    public static List<FieldNode> getSuperPropertyFields(final ClassNode cNode) {
+        List<FieldNode> result;
         if (cNode == ClassHelper.OBJECT_TYPE) {
             result = new ArrayList<FieldNode>();
         } else {
@@ -511,18 +434,18 @@ public class GeneralUtils {
         return result;
     }
 
-    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters, boolean traverseSuperClasses, boolean skipReadonly) {
+    public static List<PropertyNode> getAllProperties(final Set<String> names, final ClassNode cNode, final boolean includeProperties, final boolean includeFields, final boolean includePseudoGetters, final boolean includePseudoSetters, final boolean traverseSuperClasses, final boolean skipReadonly) {
         return getAllProperties(names, cNode, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, traverseSuperClasses, skipReadonly);
     }
 
-    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties, boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters, boolean traverseSuperClasses, boolean skipReadonly) {
+    public static List<PropertyNode> getAllProperties(final Set<String> names, final ClassNode origType, final ClassNode cNode, final boolean includeProperties, final boolean includeFields, final boolean includePseudoGetters, final boolean includePseudoSetters, final boolean traverseSuperClasses, final boolean skipReadonly) {
         return getAllProperties(names, origType, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, traverseSuperClasses, skipReadonly, false, false, false);
     }
 
-    public static List<PropertyNode> getAllProperties(Set<String> names, ClassNode origType, ClassNode cNode, boolean includeProperties,
-                                                      boolean includeFields, boolean includePseudoGetters, boolean includePseudoSetters,
-                                                      boolean traverseSuperClasses, boolean skipReadonly, boolean reverse, boolean allNames, boolean includeStatic) {
-        final List<PropertyNode> result = new ArrayList<PropertyNode>();
+    public static List<PropertyNode> getAllProperties(final Set<String> names, final ClassNode origType, final ClassNode cNode, final boolean includeProperties,
+                                                      final boolean includeFields, final boolean includePseudoGetters, final boolean includePseudoSetters,
+                                                      final boolean traverseSuperClasses, final boolean skipReadonly, final boolean reverse, final boolean allNames, final boolean includeStatic) {
+        List<PropertyNode> result = new ArrayList<PropertyNode>();
         if (cNode != ClassHelper.OBJECT_TYPE && traverseSuperClasses && !reverse) {
             result.addAll(getAllProperties(names, origType, cNode.getSuperClass(), includeProperties, includeFields, includePseudoGetters, includePseudoSetters, true, skipReadonly));
         }
@@ -564,281 +487,6 @@ public class GeneralUtils {
         return result;
     }
 
-    public static BinaryExpression hasClassX(Expression instance, ClassNode cNode) {
-        return eqX(classX(cNode), callX(instance, "getClass"));
-    }
-
-    private static boolean hasClosureMember(AnnotationNode annotation) {
-
-        Map<String, Expression> members = annotation.getMembers();
-        for (Map.Entry<String, Expression> member : members.entrySet())  {
-            if (member.getValue() instanceof ClosureExpression) return true;
-
-            if (member.getValue() instanceof ClassExpression)  {
-                ClassExpression classExpression = (ClassExpression) member.getValue();
-                Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
-                if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static boolean hasDeclaredMethod(ClassNode cNode, String name, int argsCount) {
-        List<MethodNode> ms = cNode.getDeclaredMethods(name);
-        for (MethodNode m : ms) {
-            Parameter[] paras = m.getParameters();
-            if (paras != null && paras.length == argsCount) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static BinaryExpression hasEqualFieldX(FieldNode fNode, Expression other) {
-        return eqX(varX(fNode), propX(other, fNode.getName()));
-    }
-
-    public static BinaryExpression hasEqualPropertyX(ClassNode annotatedNode, PropertyNode pNode, VariableExpression other) {
-        return eqX(getterThisX(annotatedNode, pNode), getterX(other.getOriginType(), other, pNode));
-    }
-
-    @Deprecated
-    public static BinaryExpression hasEqualPropertyX(PropertyNode pNode, Expression other) {
-        String getterName = getGetterName(pNode);
-        return eqX(callThisX(getterName), callX(other, getterName));
-    }
-
-    public static BooleanExpression hasSameFieldX(FieldNode fNode, Expression other) {
-        return sameX(varX(fNode), propX(other, fNode.getName()));
-    }
-
-    public static BooleanExpression hasSamePropertyX(PropertyNode pNode, Expression other) {
-        ClassNode cNode = pNode.getDeclaringClass();
-        return sameX(getterThisX(cNode, pNode), getterX(cNode, other, pNode));
-    }
-
-    public static Statement ifElseS(Expression cond, Statement thenStmt, Statement elseStmt) {
-        return new IfStatement(
-                cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
-                thenStmt,
-                elseStmt
-        );
-    }
-
-    public static Statement ifS(Expression cond, Expression trueExpr) {
-        return ifS(cond, new ExpressionStatement(trueExpr));
-    }
-
-    public static Statement ifS(Expression cond, Statement trueStmt) {
-        return new IfStatement(
-                cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
-                trueStmt,
-                EmptyStatement.INSTANCE
-        );
-    }
-
-    public static Expression indexX(Expression target, Expression value) {
-        return new BinaryExpression(target, INDEX, value);
-    }
-
-    public static BooleanExpression isInstanceOfX(Expression objectExpression, ClassNode cNode) {
-        return new BooleanExpression(new BinaryExpression(objectExpression, INSTANCEOF, classX(cNode)));
-    }
-
-    public static BooleanExpression isNullX(Expression expr) {
-        return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(null)));
-    }
-
-    public static BooleanExpression isOneX(Expression expr) {
-        return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(1)));
-    }
-
-    public static boolean isOrImplements(ClassNode type, ClassNode interfaceType) {
-        return type.equals(interfaceType) || type.implementsInterface(interfaceType);
-    }
-
-    public static BooleanExpression isTrueX(Expression argExpr) {
-        return new BooleanExpression(new BinaryExpression(argExpr, EQ, new ConstantExpression(Boolean.TRUE)));
-    }
-
-    public static BooleanExpression isZeroX(Expression expr) {
-        return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(0)));
-    }
-
-    public static ListExpression listX(List<Expression> args) {
-        return new ListExpression(args);
-    }
-
-    public static ListExpression list2args(List args) {
-        ListExpression result = new ListExpression();
-        for (Object o : args) {
-            result.addExpression(new ConstantExpression(o));
-        }
-        return result;
-    }
-
-    public static ListExpression classList2args(List<String> args) {
-        ListExpression result = new ListExpression();
-        for (Object o : args) {
-            result.addExpression(new ClassExpression(ClassHelper.make(o.toString())));
-        }
-        return result;
-    }
-
-    public static VariableExpression localVarX(String name) {
-        VariableExpression result = new VariableExpression(name);
-        result.setAccessedVariable(result);
-        return result;
-    }
-
-    public static VariableExpression localVarX(String name, ClassNode type) {
-        VariableExpression result = new VariableExpression(name, type);
-        result.setAccessedVariable(result);
-        return result;
-    }
-
-    public static BinaryExpression ltX(Expression lhv, Expression rhv) {
-        return new BinaryExpression(lhv, LT, rhv);
-    }
-
-    public static MapExpression mapX(List<MapEntryExpression> expressions) {
-        return new MapExpression(expressions);
-    }
-
-    public static MapEntryExpression entryX(Expression key, Expression value) {
-        return new MapEntryExpression(key, value);
-    }
-
-    public static BinaryExpression notIdenticalX(Expression lhv, Expression rhv) {
-        return new BinaryExpression(lhv, NOT_IDENTICAL, rhv);
-    }
-
-    /**
-     * @deprecated use MethodNodeUtils#methodDescriptorWithoutReturnType(MethodNode) instead
-     */
-    @Deprecated
-    public static String makeDescriptorWithoutReturnType(MethodNode mn) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(mn.getName()).append(':');
-        for (Parameter p : mn.getParameters()) {
-            sb.append(p.getType()).append(',');
-        }
-        return sb.toString();
-    }
-
-    public static BinaryExpression neX(Expression lhv, Expression rhv) {
-        return new BinaryExpression(lhv, NE, rhv);
-    }
-
-    public static ConstantExpression nullX() {
-        return new ConstantExpression(null);
-    }
-
-    public static BooleanExpression notNullX(Expression argExpr) {
-        return new BooleanExpression(new BinaryExpression(argExpr, NE, new ConstantExpression(null)));
-    }
-
-    public static NotExpression notX(Expression expr) {
-        return new NotExpression(expr instanceof BooleanExpression ? expr : new BooleanExpression(expr));
-    }
-
-    public static BinaryExpression orX(Expression lhv, Expression rhv) {
-        return new BinaryExpression(lhv, OR, rhv);
-    }
-
-    public static Parameter param(ClassNode type, String name) {
-        return param(type, name, null);
-    }
-
-    public static Parameter param(ClassNode type, String name, Expression initialExpression) {
-        Parameter param = new Parameter(type, name);
-        if (initialExpression != null) {
-            param.setInitialExpression(initialExpression);
-        }
-        return param;
-    }
-
-    public static Parameter[] params(Parameter... params) {
-        return params != null ? params : Parameter.EMPTY_ARRAY;
-    }
-
-    public static BinaryExpression plusX(Expression lhv, Expression rhv) {
-        return new BinaryExpression(lhv, PLUS, rhv);
-    }
-
-    public static PropertyExpression propX(Expression owner, String property) {
-        return new PropertyExpression(owner, property);
-    }
-
-    public static PropertyExpression propX(Expression owner, Expression property) {
-        return new PropertyExpression(owner, property);
-    }
-
-    public static PropertyExpression propX(Expression owner, Expression property, boolean safe) {
-        return new PropertyExpression(owner, property, safe);
-    }
-
-    public static PropertyExpression thisPropX(boolean implicit, String property) {
-        PropertyExpression pexp = propX(varX("this"), property);
-        pexp.setImplicitThis(implicit);
-        return pexp;
-    }
-
-    public static Statement returnS(Expression expr) {
-        return new ReturnStatement(new ExpressionStatement(expr));
-    }
-
-    public static Statement safeExpression(Expression fieldExpr, Expression expression) {
-        return new IfStatement(
-                equalsNullX(fieldExpr),
-                new ExpressionStatement(fieldExpr),
-                new ExpressionStatement(expression));
-    }
-
-    public static BooleanExpression sameX(Expression self, Expression other) {
-        return new BooleanExpression(callX(self, "is", args(other)));
-    }
-
-    public static Statement stmt(Expression expr) {
-        return new ExpressionStatement(expr);
-    }
-
-    public static TernaryExpression ternaryX(Expression cond, Expression trueExpr, Expression elseExpr) {
-        return new TernaryExpression(
-                cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
-                trueExpr,
-                elseExpr);
-    }
-
-    public static VariableExpression varX(String name) {
-        return new VariableExpression(name);
-    }
-
-    public static VariableExpression varX(Variable variable) {
-        return new VariableExpression(variable);
-    }
-
-    public static VariableExpression varX(String name, ClassNode type) {
-        return new VariableExpression(name, type);
-    }
-
-    public static ThrowStatement throwS(Expression expr) {
-        return new ThrowStatement(expr);
-    }
-
-    public static CatchStatement catchS(Parameter variable, Statement code) {
-        return new CatchStatement(variable, code);
-    }
-
-    public static TryCatchStatement tryCatchS(Statement tryStatement) {
-        return tryCatchS(tryStatement, EmptyStatement.INSTANCE);
-    }
-
-    public static TryCatchStatement tryCatchS(Statement tryStatement, Statement finallyStatement) {
-        return new TryCatchStatement(tryStatement, finallyStatement);
-    }
-
     /**
      * This method is similar to {@link #propX(Expression, Expression)} but will make sure that if the property
      * being accessed is defined inside the classnode provided as a parameter, then a getter call is generated
@@ -847,21 +495,12 @@ public class GeneralUtils {
      * @param pNode the property being accessed
      * @return a method call expression or a property expression
      */
-    public static Expression getterThisX(ClassNode annotatedNode, PropertyNode pNode) {
+    public static Expression getterThisX(final ClassNode annotatedNode, final PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
             return callThisX(getterName(annotatedNode, pNode));
         }
         return propX(new VariableExpression("this"), pNode.getName());
-    }
-
-    private static String getterName(ClassNode annotatedNode, PropertyNode pNode) {
-        String getterName = "get" + capitalize(pNode.getName());
-        boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
-        if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
-            getterName = "is" + capitalize(pNode.getName());
-        }
-        return getterName;
     }
 
     /**
@@ -873,12 +512,341 @@ public class GeneralUtils {
      * @param pNode the property being accessed
      * @return a method call expression or a property expression
      */
-    public static Expression getterX(ClassNode annotatedNode, Expression receiver, PropertyNode pNode) {
+    public static Expression getterX(final ClassNode annotatedNode, final Expression receiver, final PropertyNode pNode) {
         ClassNode owner = pNode.getDeclaringClass();
         if (annotatedNode.equals(owner)) {
             return callX(receiver, getterName(annotatedNode, pNode));
         }
         return propX(receiver, pNode.getName());
+    }
+
+    public static BinaryExpression hasClassX(final Expression instance, final ClassNode cNode) {
+        return eqX(classX(cNode), callX(instance, "getClass"));
+    }
+
+    public static BinaryExpression hasEqualFieldX(final FieldNode fNode, final Expression other) {
+        return eqX(varX(fNode), propX(other, fNode.getName()));
+    }
+
+    public static BinaryExpression hasEqualPropertyX(final ClassNode annotatedNode, final PropertyNode pNode, final VariableExpression other) {
+        return eqX(getterThisX(annotatedNode, pNode), getterX(other.getOriginType(), other, pNode));
+    }
+
+    @Deprecated
+    public static BinaryExpression hasEqualPropertyX(final PropertyNode pNode, final Expression other) {
+        String getterName = getGetterName(pNode);
+        return eqX(callThisX(getterName), callX(other, getterName));
+    }
+
+    public static BooleanExpression hasSameFieldX(final FieldNode fNode, final Expression other) {
+        return sameX(varX(fNode), propX(other, fNode.getName()));
+    }
+
+    public static BooleanExpression hasSamePropertyX(final PropertyNode pNode, final Expression other) {
+        ClassNode cNode = pNode.getDeclaringClass();
+        return sameX(getterThisX(cNode, pNode), getterX(cNode, other, pNode));
+    }
+
+    public static Statement ifElseS(final Expression cond, final Statement thenStmt, final Statement elseStmt) {
+        return new IfStatement(
+                cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
+                thenStmt,
+                elseStmt
+        );
+    }
+
+    public static Statement ifS(final Expression cond, final Expression trueExpr) {
+        return ifS(cond, new ExpressionStatement(trueExpr));
+    }
+
+    public static Statement ifS(final Expression cond, final Statement trueStmt) {
+        return new IfStatement(
+                cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
+                trueStmt,
+                EmptyStatement.INSTANCE
+        );
+    }
+
+    public static Expression indexX(final Expression target, final Expression value) {
+        return new BinaryExpression(target, INDEX, value);
+    }
+
+    public static BooleanExpression isInstanceOfX(final Expression objectExpression, final ClassNode cNode) {
+        return new BooleanExpression(new BinaryExpression(objectExpression, INSTANCEOF, classX(cNode)));
+    }
+
+    public static BooleanExpression isNullX(final Expression expr) {
+        return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(null)));
+    }
+
+    public static BooleanExpression isOneX(final Expression expr) {
+        return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(1)));
+    }
+
+    public static BooleanExpression isTrueX(final Expression argExpr) {
+        return new BooleanExpression(new BinaryExpression(argExpr, EQ, new ConstantExpression(Boolean.TRUE)));
+    }
+
+    public static BooleanExpression isZeroX(final Expression expr) {
+        return new BooleanExpression(new BinaryExpression(expr, EQ, new ConstantExpression(0)));
+    }
+
+    public static ListExpression listX(final List<Expression> args) {
+        return new ListExpression(args);
+    }
+
+    public static ListExpression list2args(final List<? extends Object> args) {
+        ListExpression result = new ListExpression();
+        for (Object o : args) {
+            result.addExpression(new ConstantExpression(o));
+        }
+        return result;
+    }
+
+    public static ListExpression classList2args(final List<String> args) {
+        ListExpression result = new ListExpression();
+        for (Object o : args) {
+            result.addExpression(new ClassExpression(ClassHelper.make(o.toString())));
+        }
+        return result;
+    }
+
+    public static VariableExpression localVarX(final String name) {
+        VariableExpression result = new VariableExpression(name);
+        result.setAccessedVariable(result);
+        return result;
+    }
+
+    public static VariableExpression localVarX(final String name, final ClassNode type) {
+        VariableExpression result = new VariableExpression(name, type);
+        result.setAccessedVariable(result);
+        return result;
+    }
+
+    public static BinaryExpression ltX(final Expression lhv, final Expression rhv) {
+        return new BinaryExpression(lhv, LT, rhv);
+    }
+
+    public static MapExpression mapX(final List<MapEntryExpression> expressions) {
+        return new MapExpression(expressions);
+    }
+
+    public static BinaryExpression neX(final Expression lhv, final Expression rhv) {
+        return new BinaryExpression(lhv, NE, rhv);
+    }
+
+    public static BinaryExpression notIdenticalX(final Expression lhv, final Expression rhv) {
+        return new BinaryExpression(lhv, NOT_IDENTICAL, rhv);
+    }
+
+    public static BooleanExpression notNullX(final Expression argExpr) {
+        return new BooleanExpression(new BinaryExpression(argExpr, NE, new ConstantExpression(null)));
+    }
+
+    public static NotExpression notX(final Expression expr) {
+        return new NotExpression(expr instanceof BooleanExpression ? expr : new BooleanExpression(expr));
+    }
+
+    public static ConstantExpression nullX() {
+        return new ConstantExpression(null);
+    }
+
+    public static BinaryExpression orX(final Expression lhv, final Expression rhv) {
+        return new BinaryExpression(lhv, OR, rhv);
+    }
+
+    public static Parameter param(final ClassNode type, final String name) {
+        return param(type, name, null);
+    }
+
+    public static Parameter param(final ClassNode type, final String name, final Expression initialExpression) {
+        Parameter param = new Parameter(type, name);
+        if (initialExpression != null) {
+            param.setInitialExpression(initialExpression);
+        }
+        return param;
+    }
+
+    public static Parameter[] params(final Parameter... params) {
+        return params != null ? params : Parameter.EMPTY_ARRAY;
+    }
+
+    public static BinaryExpression plusX(final Expression lhv, final Expression rhv) {
+        return new BinaryExpression(lhv, PLUS, rhv);
+    }
+
+    public static PropertyExpression propX(final Expression owner, final String property) {
+        return new PropertyExpression(owner, property);
+    }
+
+    public static PropertyExpression propX(final Expression owner, final Expression property) {
+        return new PropertyExpression(owner, property);
+    }
+
+    public static PropertyExpression propX(final Expression owner, final Expression property, final boolean safe) {
+        return new PropertyExpression(owner, property, safe);
+    }
+
+    public static Statement returnS(final Expression expr) {
+        return new ReturnStatement(new ExpressionStatement(expr));
+    }
+
+    public static Statement safeExpression(final Expression fieldExpr, final Expression expression) {
+        return new IfStatement(
+                equalsNullX(fieldExpr),
+                new ExpressionStatement(fieldExpr),
+                new ExpressionStatement(expression));
+    }
+
+    public static BooleanExpression sameX(final Expression self, final Expression other) {
+        return new BooleanExpression(callX(self, "is", args(other)));
+    }
+
+    public static Statement stmt(final Expression expr) {
+        return new ExpressionStatement(expr);
+    }
+
+    public static TernaryExpression ternaryX(final Expression cond, final Expression trueExpr, final Expression elseExpr) {
+        return new TernaryExpression(
+                cond instanceof BooleanExpression ? (BooleanExpression) cond : new BooleanExpression(cond),
+                trueExpr,
+                elseExpr);
+    }
+
+    public static PropertyExpression thisPropX(final boolean implicit, final String property) {
+        PropertyExpression pexp = propX(varX("this"), property);
+        pexp.setImplicitThis(implicit);
+        return pexp;
+    }
+
+    public static ThrowStatement throwS(final Expression expr) {
+        return new ThrowStatement(expr);
+    }
+
+    public static TryCatchStatement tryCatchS(final Statement tryStatement) {
+        return tryCatchS(tryStatement, EmptyStatement.INSTANCE);
+    }
+
+    public static TryCatchStatement tryCatchS(final Statement tryStatement, final Statement finallyStatement) {
+        return new TryCatchStatement(tryStatement, finallyStatement);
+    }
+
+    public static VariableExpression varX(final String name) {
+        return new VariableExpression(name);
+    }
+
+    public static VariableExpression varX(final Variable variable) {
+        return new VariableExpression(variable);
+    }
+
+    public static VariableExpression varX(final String name, final ClassNode type) {
+        return new VariableExpression(name, type);
+    }
+
+    //--------------------------------------------------------------------------
+
+    public static Parameter[] cloneParams(final Parameter[] source) {
+        Parameter[] result = new Parameter[source.length];
+        for (int i = 0; i < source.length; i++) {
+            Parameter srcParam = source[i];
+            Parameter dstParam = new Parameter(srcParam.getOriginType(), srcParam.getName());
+            result[i] = dstParam;
+        }
+        return result;
+    }
+
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * <p>
+     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
+     */
+    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, final List<AnnotationNode> notCopied) {
+        copyAnnotatedNodeAnnotations(annotatedNode, copied, notCopied, true);
+    }
+
+    /**
+     * Copies all <tt>candidateAnnotations</tt> with retention policy {@link java.lang.annotation.RetentionPolicy#RUNTIME}
+     * and {@link java.lang.annotation.RetentionPolicy#CLASS}.
+     * {@link groovy.transform.Generated} annotations will be copied if {@code includeGenerated} is true.
+     * <p>
+     * Annotations with {@link org.codehaus.groovy.runtime.GeneratedClosure} members are not supported at present.
+     */
+    public static void copyAnnotatedNodeAnnotations(final AnnotatedNode annotatedNode, final List<AnnotationNode> copied, final List<AnnotationNode> notCopied, final boolean includeGenerated) {
+        List<AnnotationNode> annotationList = annotatedNode.getAnnotations();
+        for (AnnotationNode annotation : annotationList)  {
+
+            List<AnnotationNode> annotations = annotation.getClassNode().getAnnotations(AbstractASTTransformation.RETENTION_CLASSNODE);
+            if (annotations.isEmpty()) continue;
+
+            if (hasClosureMember(annotation)) {
+                notCopied.add(annotation);
+                continue;
+            }
+
+            if (!includeGenerated && annotation.getClassNode().getName().equals("groovy.transform.Generated")) {
+                continue;
+            }
+
+            AnnotationNode retentionPolicyAnnotation = annotations.get(0);
+            Expression valueExpression = retentionPolicyAnnotation.getMember("value");
+            if (!(valueExpression instanceof PropertyExpression)) continue;
+
+            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
+            boolean processAnnotation =
+                    propertyExpression.getProperty() instanceof ConstantExpression &&
+                            (
+                                    "RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()) ||
+                                            "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
+                            );
+
+            if (processAnnotation)  {
+                AnnotationNode newAnnotation = new AnnotationNode(annotation.getClassNode());
+                for (Map.Entry<String, Expression> member : annotation.getMembers().entrySet())  {
+                    newAnnotation.addMember(member.getKey(), member.getValue());
+                }
+                newAnnotation.setSourcePosition(annotatedNode);
+
+                copied.add(newAnnotation);
+            }
+        }
+    }
+
+    public static Statement createConstructorStatementDefault(final FieldNode fNode) {
+        final String name = fNode.getName();
+        final ClassNode fType = fNode.getType();
+        final Expression fieldExpr = propX(varX("this"), name);
+        Expression initExpr = fNode.getInitialValueExpression();
+        Statement assignInit;
+        if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression)initExpr).isNullExpression())) {
+            if (ClassHelper.isPrimitiveType(fType)) {
+                assignInit = EmptyStatement.INSTANCE;
+            } else {
+                assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            }
+        } else {
+            assignInit = assignS(fieldExpr, initExpr);
+        }
+        fNode.setInitialValueExpression(null);
+        Expression value = findArg(name);
+        return ifElseS(equalsNullX(value), assignInit, assignS(fieldExpr, castX(fType, value)));
+    }
+
+    private static String getterName(final ClassNode annotatedNode, final PropertyNode pNode) {
+        String getterName = "get" + capitalize(pNode.getName());
+        boolean existingExplicitGetter = annotatedNode.getMethod(getterName, Parameter.EMPTY_ARRAY) != null;
+        if (ClassHelper.boolean_TYPE.equals(pNode.getOriginType()) && !existingExplicitGetter) {
+            getterName = "is" + capitalize(pNode.getName());
+        }
+        return getterName;
+    }
+
+    public static String getGetterName(final PropertyNode pNode) {
+        return "get" + capitalize(pNode.getName());
+    }
+
+    public static String getSetterName(final String name) {
+        return "set" + capitalize(name);
     }
 
     /**
@@ -891,7 +859,7 @@ public class GeneralUtils {
      * @throws java.lang.IllegalArgumentException when expression is null
      * @throws java.lang.Exception when closure can't be read from source
      */
-    public static String convertASTToSource(ReaderSource readerSource, ASTNode expression) throws Exception {
+    public static String convertASTToSource(final ReaderSource readerSource, final ASTNode expression) throws Exception {
         if (expression == null) throw new IllegalArgumentException("Null: expression");
 
         StringBuilder result = new StringBuilder();
@@ -918,7 +886,7 @@ public class GeneralUtils {
         return source;
     }
 
-    public static boolean copyStatementsWithSuperAdjustment(ClosureExpression pre, BlockStatement body) {
+    public static boolean copyStatementsWithSuperAdjustment(final ClosureExpression pre, final BlockStatement body) {
         Statement preCode = pre.getCode();
         boolean changed = false;
         if (preCode instanceof BlockStatement) {
@@ -945,25 +913,64 @@ public class GeneralUtils {
         return changed;
     }
 
-    public static String getSetterName(String name) {
-        return "set" + Verifier.capitalize(name);
+    private static boolean hasClosureMember(final AnnotationNode annotation) {
+        Map<String, Expression> members = annotation.getMembers();
+        for (Map.Entry<String, Expression> member : members.entrySet())  {
+            if (member.getValue() instanceof ClosureExpression) return true;
+
+            if (member.getValue() instanceof ClassExpression)  {
+                ClassExpression classExpression = (ClassExpression) member.getValue();
+                Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
+                if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
+            }
+        }
+
+        return false;
     }
 
-    public static boolean isDefaultVisibility(int modifiers) {
-        return (modifiers & (Modifier.PRIVATE | Modifier.PUBLIC | Modifier.PROTECTED)) == 0;
+    public static boolean hasDeclaredMethod(final ClassNode cNode, final String name, final int argsCount) {
+        List<MethodNode> ms = cNode.getDeclaredMethods(name);
+        for (MethodNode m : ms) {
+            Parameter[] paras = m.getParameters();
+            if (paras != null && paras.length == argsCount) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public static boolean inSamePackage(ClassNode first, ClassNode second) {
+    public static boolean inSamePackage(final ClassNode first, final ClassNode second) {
         PackageNode firstPackage = first.getPackage();
         PackageNode secondPackage = second.getPackage();
         return ((firstPackage == null && secondPackage == null) ||
                         firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
     }
 
-    public static boolean inSamePackage(Class first, Class second) {
+    public static boolean inSamePackage(final Class<?> first, final Class<?> second) {
         Package firstPackage = first.getPackage();
         Package secondPackage = second.getPackage();
         return ((firstPackage == null && secondPackage == null) ||
                         firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
+    }
+
+    public static boolean isDefaultVisibility(final int modifiers) {
+        return (modifiers & (Modifier.PRIVATE | Modifier.PUBLIC | Modifier.PROTECTED)) == 0;
+    }
+
+    public static boolean isOrImplements(final ClassNode type, final ClassNode interfaceType) {
+        return type.equals(interfaceType) || type.implementsInterface(interfaceType);
+    }
+
+    /**
+     * @deprecated use MethodNodeUtils#methodDescriptorWithoutReturnType(MethodNode) instead
+     */
+    @Deprecated
+    public static String makeDescriptorWithoutReturnType(final MethodNode mn) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(mn.getName()).append(':');
+        for (Parameter p : mn.getParameters()) {
+            sb.append(p.getType()).append(',');
+        }
+        return sb.toString();
     }
 }
