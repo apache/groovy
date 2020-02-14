@@ -699,7 +699,7 @@ give it a `ClosureExpression`, like in the following example:
 
 [source,groovy]
 --------------------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
+include::{projectdir}/subprojects/groovy-astbuilder/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
 --------------------------------------------------------------------------------------------------------------
 
 For a complete list of options, please refer to gapi:org.codehaus.groovy.control.customizers.ASTTransformationCustomizer[]
