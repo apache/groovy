@@ -143,7 +143,7 @@ public class BinaryExpressionHelper {
 
     public void eval(final BinaryExpression expression) {
         switch (expression.getOperation().getType()) {
-        case EQUAL: // = assignment
+        case EQUAL: // = (aka assignment)
             evaluateEqual(expression, false);
             break;
 
@@ -720,7 +720,7 @@ public class BinaryExpressionHelper {
         VariableSlotLoader usesSubscript = loadWithSubscript(expression);
 
         // execute method
-        execMethodAndStoreForSubscriptOperator(op,method,expression,usesSubscript,orig);
+        execMethodAndStoreForSubscriptOperator(op, method, expression, usesSubscript, orig);
 
         // new value is already on stack, so nothing to do here
         if (usesSubscript != null) controller.getCompileStack().removeVar(usesSubscript.getIndex());
@@ -771,7 +771,7 @@ public class BinaryExpressionHelper {
             compileStack.removeVar(resultIdx);
 
         } else if (expression instanceof VariableExpression || expression instanceof PropertyExpression || expression instanceof FieldExpression) {
-            // here we handle a.b++ and a++
+            // here we handle a++ and a.b++
             controller.getOperandStack().dup();
             controller.getCompileStack().pushLHS(true);
             expression.visit(controller.getAcg());
@@ -794,6 +794,7 @@ public class BinaryExpressionHelper {
                 operandStack.push(ClassHelper.OBJECT_TYPE);
                 // change (receiver,callsite) to (callsite,receiver)
                 operandStack.swap();
+
                 setType(operandStack.getTopOperand());
 
                 // no need to keep any of those on the operand stack

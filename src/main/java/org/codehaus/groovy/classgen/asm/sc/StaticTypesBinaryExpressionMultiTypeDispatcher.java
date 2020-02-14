@@ -34,7 +34,6 @@ import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
@@ -73,7 +72,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -216,7 +215,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         VariableExpression result = varX(this.getClass().getSimpleName() + "$spreadresult" + counter, ARRAYLIST_CLASSNODE);
         ConstructorCallExpression newArrayList = ctorX(ARRAYLIST_CLASSNODE);
         newArrayList.setNodeMetaData(DIRECT_METHOD_CALL_TARGET, ARRAYLIST_CONSTRUCTOR);
-        Expression decl = ((ExpressionStatement) declS(result, newArrayList)).getExpression();
+        Expression decl = declX(result, newArrayList);
         decl.visit(controller.getAcg());
         // if (receiver != null)
         receiver.visit(controller.getAcg());
