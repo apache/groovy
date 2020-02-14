@@ -85,7 +85,7 @@ other variable, despite being a block of code:
 include::{projectdir}/src/spec/test/ClosuresSpecTest.groovy[tags=closure_is_an_instance_of_Closure,indent=0]
 ----
 <1> You can assign a closure to a variable, and it is an instance of `groovy.lang.Closure`
-<2> If not using `def`, you can assign a closure to a variable of type `groovy.lang.Closure`
+<2> If not using `def` or `var`, use `groovy.lang.Closure` as the type
 <3> Optionally, you can specify the return type of the closure by using the generic type of `groovy.lang.Closure`
 
 === Calling a closure
