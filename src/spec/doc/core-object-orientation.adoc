@@ -148,17 +148,7 @@ Since Groovy 3.0.0, Java syntax for non-static inner class instantiation is now 
 
 [source,groovy]
 --------------------------------------
-class Computer {
-    class Cpu {
-        int coreNumber
-
-        Cpu(int coreNumber) {
-            this.coreNumber = coreNumber
-        }
-    }
-}
-
-assert 4 == new Computer().new Cpu(4).coreNumber
+include::{projectdir}/src/spec/test/ClassTest.groovy[tags=inner_instantiation,indent=0]
 --------------------------------------
 
 ===== Anonymous inner class

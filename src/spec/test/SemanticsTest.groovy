@@ -24,7 +24,8 @@ class SemanticsTest extends CompilableTestSupport {
     void testVariableDefinition() {
         // tag::variable_definition_example[]
         String x
-        def o
+        def y
+        var z
         // end::variable_definition_example[]
     }
 
