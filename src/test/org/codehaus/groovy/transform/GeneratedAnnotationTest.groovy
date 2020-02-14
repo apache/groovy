@@ -85,4 +85,23 @@ class GeneratedAnnotationTest extends GroovyShellTestCase {
         def method = person.class.declaredMethods.find { it.name == 'invokeMethod' }
         assert !('groovy.transform.Generated' in method.annotations*.annotationType().name)
     }
+
+    @Test
+    void testCapturedArgForGeneratedClosureIsAnnotatedWithGenerated_GROOVY9396() {
+        def objectUnderTest = evaluate'''
+        class ClassUnderTest {
+            Closure<String> c(String arg) {
+                def closureVar = {
+                    arg
+                }
+                closureVar
+            }
+        }
+        new ClassUnderTest()
+        '''
+
+        Closure<String> closure = objectUnderTest.class.getMethod('c', String).invoke(objectUnderTest, 'var')
+        def getArg = closure.class.getMethod('getArg')
+        assert getArg.annotations*.annotationType().name.contains('groovy.transform.Generated')
+    }
 }
