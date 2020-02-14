@@ -199,6 +199,7 @@ def configureAdditionalArtifacts = {
 }
 
 def optionalModules = [
+        'groovy-astbuilder',
         'groovy-bsf',
         'groovy-cli-commons',
         'groovy-dateutil',
