@@ -350,7 +350,11 @@ public class GeneralUtils {
     }
 
     public static Statement declS(Expression target, Expression init) {
-        return new ExpressionStatement(new DeclarationExpression(target, ASSIGN, init));
+        return stmt(declX(target, init));
+    }
+
+    public static DeclarationExpression declX(Expression target, Expression init) {
+        return new DeclarationExpression(target, ASSIGN, init);
     }
 
     public static BinaryExpression eqX(Expression lhv, Expression rhv) {
