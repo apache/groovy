@@ -41,16 +41,21 @@ public class GenericsType extends ASTNode {
     private final ClassNode[] upperBounds;
     private boolean placeholder, resolved, wildcard;
 
+    public GenericsType(final ClassNode type) {
+        this(type, null, null);
+    }
+
+    protected GenericsType(final ClassNode[] upperBounds, final ClassNode lowerBound) {
+        this.lowerBound = lowerBound;
+        this.upperBounds = upperBounds;
+    }
+
     public GenericsType(final ClassNode type, final ClassNode[] upperBounds, final ClassNode lowerBound) {
         setType(type);
         this.lowerBound = lowerBound;
         this.upperBounds = upperBounds;
         this.placeholder = type.isGenericsPlaceHolder();
         setName(placeholder ? type.getUnresolvedName() : type.getName());
-    }
-
-    public GenericsType(final ClassNode basicType) {
-        this(basicType, null, null);
     }
 
     public ClassNode getType() {

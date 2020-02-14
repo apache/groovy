@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
+import org.codehaus.groovy.ast.ImmutableClassNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -1028,6 +1029,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (className != null) {
             ClassNode type = ClassHelper.make(className);
             if (resolve(type)) {
+                if (type instanceof ImmutableClassNode && !ClassHelper.isPrimitiveType(type)) {
+                    ClassNode wrapper = ClassHelper.makeWithoutCaching(className);
+                    wrapper.setRedirect(type);
+                    type = wrapper;
+                }
                 return new ClassExpression(type);
             }
         }

@@ -110,7 +110,7 @@ import static java.util.stream.Collectors.joining;
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
 
-    private static class MapOfLists {
+    protected static class MapOfLists {
         Map<Object, List<MethodNode>> map;
 
         List<MethodNode> get(Object key) {
@@ -129,8 +129,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public static final ClassNode[] EMPTY_ARRAY = new ClassNode[0];
-    public static final ClassNode THIS = new ClassNode(Object.class);
-    public static final ClassNode SUPER = new ClassNode(Object.class);
+    public static final ClassNode THIS = new ImmutableClassNode(Object.class);
+    public static final ClassNode SUPER = new ImmutableClassNode(Object.class);
 
     private String name;
     private int modifiers;
@@ -139,7 +139,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private MixinNode[] mixins;
     private List<Statement> objectInitializers;
     private List<ConstructorNode> constructors;
-    private MapOfLists methods;
+    protected MapOfLists methods;
     private List<MethodNode> methodsList;
     private LinkedList<FieldNode> fields;
     private List<PropertyNode> properties;
@@ -164,7 +164,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     // clazz!=null when resolved
     protected Class clazz;
     // only false when this classNode is constructed from a class
-    private volatile boolean lazyInitDone = true;
+    protected volatile boolean lazyInitDone = true;
     // not null if if the ClassNode is an array
     private ClassNode componentType;
     // if not null this instance is handled as proxy

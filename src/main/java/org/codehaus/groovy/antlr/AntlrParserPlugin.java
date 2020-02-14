@@ -43,6 +43,7 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.ImmutableClassNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -123,6 +124,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.lang.annotation.Annotation;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -419,7 +421,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             if (node.getNumberOfChildren() == 0) {
                 String name = identifier(node);
                 // import is like  "import Foo"
-                ClassNode type = ClassHelper.make(name);
+                ClassNode type = makeClassNode(name);
                 configureAST(type, importNode);
                 addImport(type, name, alias, annotations);
                 imp = last(output.getImports());
@@ -434,7 +436,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 if (isStatic) {
                     // import is like "import static foo.Bar.*"
                     // packageName is actually a className in this case
-                    ClassNode type = ClassHelper.make(packageName);
+                    ClassNode type = makeClassNode(packageName);
                     configureAST(type, importNode);
                     addStaticStarImport(type, packageName, annotations);
                     imp = output.getStaticStarImports().get(packageName);
@@ -453,14 +455,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 if (isStatic) {
                     // import is like "import static foo.Bar.method"
                     // packageName is really class name in this case
-                    ClassNode type = ClassHelper.make(packageName);
+                    ClassNode type = makeClassNode(packageName);
                     configureAST(type, importNode);
                     addStaticImport(type, name, alias, annotations);
                     imp = output.getStaticImports().get(alias == null ? name : alias);
                     configureAST(imp, importNode);
                 } else {
                     // import is like "import foo.Bar"
-                    ClassNode type = ClassHelper.make(packageName + "." + name);
+                    ClassNode type = makeClassNode(packageName + "." + name);
                     configureAST(type, importNode);
                     addImport(type, name, alias, annotations);
                     imp = last(output.getImports());
@@ -631,7 +633,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         List<AnnotationNode> annotations = new ArrayList<>();
 
         if (isType(TRAIT_DEF, classDef)) {
-            annotations.add(new AnnotationNode(ClassHelper.makeCached(Trait.class)));
+            annotations.add(makeAnnotationNode(Trait.class));
         }
 
         AST node = classDef.getFirstChild();
@@ -876,7 +878,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             checkNoInvalidModifier(methodDef, "Method", modifiers, Opcodes.ACC_VOLATILE, "volatile");
             node = node.getNextSibling();
         }
-
         if (isAnInterface()) {
             modifiers |= Opcodes.ACC_ABSTRACT;
         }
@@ -1022,7 +1023,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
         }
-
         if (classNode.isInterface()) {
             modifiers |= Opcodes.ACC_STATIC | Opcodes.ACC_FINAL;
             if ((modifiers & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED)) == 0) {
@@ -1292,7 +1292,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected AnnotationNode annotation(AST annotationNode) {
         annotationBeingDef = true;
         AST node = annotationNode.getFirstChild();
-        AnnotationNode annotatedNode = new AnnotationNode(ClassHelper.make(qualifiedName(node)));
+        AnnotationNode annotatedNode = new AnnotationNode(makeType(annotationNode));
         configureAST(annotatedNode, annotationNode);
         while (true) {
             node = node.getNextSibling();
@@ -3002,7 +3002,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 answer = makeArray(makeTypeWithArguments(node), node);
             } else {
                 checkTypeArgs(node, false);
-                answer = ClassHelper.make(qualifiedName(node));
+                answer = makeClassNode(qualifiedName(node));
                 if (answer.isUsingGenerics()) {
                     ClassNode proxy = ClassHelper.makeWithoutCaching(answer.getName());
                     proxy.setRedirect(answer);
@@ -3113,6 +3113,21 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node.setLastLineNumber(((GroovySourceAST) ast).getLineLast());
             node.setLastColumnNumber(((GroovySourceAST) ast).getColumnLast());
         }
+    }
+
+    protected static AnnotationNode makeAnnotationNode(Class<? extends Annotation> type) {
+        AnnotationNode node = new AnnotationNode(ClassHelper.makeCached(type));
+        return node;
+    }
+
+    protected static ClassNode makeClassNode(String name) {
+        ClassNode node = ClassHelper.make(name);
+        if (node instanceof ImmutableClassNode && !ClassHelper.isPrimitiveType(node)) {
+            ClassNode wrapper = ClassHelper.makeWithoutCaching(name);
+            wrapper.setRedirect(node);
+            node = wrapper;
+        }
+        return node;
     }
 
     protected static Token makeToken(int typeCode, AST node) {

@@ -49,6 +49,7 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.ImmutableClassNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -127,6 +128,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -281,6 +283,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.PrimitiveTypeCont
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.QualifiedClassNameContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.QualifiedClassNameListContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.QualifiedNameContext;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.QualifiedNameElementContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.QualifiedStandardClassNameContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.RegexExprAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.RelationalExprAltContext;
@@ -499,18 +502,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (hasStatic) {
             if (hasStar) { // e.g. import static java.lang.Math.*
                 String qualifiedName = this.visitQualifiedName(ctx.qualifiedName());
-                ClassNode type = ClassHelper.make(qualifiedName);
+                ClassNode type = makeClassNode(qualifiedName);
                 configureAST(type, ctx);
 
                 moduleNode.addStaticStarImport(type.getText(), type, annotationNodeList);
 
                 importNode = last(moduleNode.getStaticStarImports().values());
             } else { // e.g. import static java.lang.Math.pow
-                List<GroovyParserRuleContext> identifierList = new LinkedList<>(ctx.qualifiedName().qualifiedNameElement());
+                List<? extends QualifiedNameElementContext> identifierList = ctx.qualifiedName().qualifiedNameElement();
                 int identifierListSize = identifierList.size();
                 String name = identifierList.get(identifierListSize - 1).getText();
                 ClassNode classNode =
-                        ClassHelper.make(
+                        makeClassNode(
                                 identifierList.stream()
                                         .limit(identifierListSize - 1)
                                         .map(ParseTree::getText)
@@ -534,7 +537,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             } else { // e.g. import java.util.Map
                 String qualifiedName = this.visitQualifiedName(ctx.qualifiedName());
                 String name = last(ctx.qualifiedName().qualifiedNameElement()).getText();
-                ClassNode classNode = ClassHelper.make(qualifiedName);
+                ClassNode classNode = makeClassNode(qualifiedName);
                 String alias = hasAlias
                         ? ctx.alias.getText()
                         : name;
@@ -547,6 +550,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         return configureAST(importNode, ctx);
+    }
+
+    private static AnnotationNode makeAnnotationNode(Class<? extends Annotation> type) {
+        AnnotationNode node = new AnnotationNode(ClassHelper.make(type));
+        return node;
+    }
+
+    private static ClassNode makeClassNode(String name) {
+        ClassNode node = ClassHelper.make(name);
+        if (node instanceof ImmutableClassNode && !ClassHelper.isPrimitiveType(node)) {
+            ClassNode wrapper = ClassHelper.makeWithoutCaching(name);
+            wrapper.setRedirect(node);
+            node = wrapper;
+        }
+        return node;
     }
 
     // statement {    --------------------------------------------------------------------
@@ -1122,7 +1140,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         boolean isInterfaceWithDefaultMethods = (isInterface && this.containsDefaultMethods(ctx));
 
         if (isInterfaceWithDefaultMethods || asBoolean(ctx.TRAIT())) {
-            classNode.addAnnotation(new AnnotationNode(ClassHelper.makeCached(Trait.class)));
+            classNode.addAnnotation(makeAnnotationNode(Trait.class));
         }
         classNode.addAnnotations(modifierManager.getAnnotations());
 
@@ -4125,7 +4143,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private ClassNode createClassNode(GroovyParserRuleContext ctx) {
-        ClassNode result = ClassHelper.make(ctx.getText());
+        ClassNode result = makeClassNode(ctx.getText());
 
         if (!isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) { // type in the "instanceof" expression should not have proxy to redirect to it
             result = this.proxyClassNode(result);
