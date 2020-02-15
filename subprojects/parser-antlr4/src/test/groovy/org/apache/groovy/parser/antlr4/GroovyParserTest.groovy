@@ -436,5 +436,6 @@ final class GroovyParserTest extends GroovyTestCase {
         doTest('bugs/BUG-GROOVY-8641.groovy')
         doTest('bugs/BUG-GROOVY-8913.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-8991.groovy')
+        doTest('bugs/BUG-GROOVY-9399.groovy')
     }
 }
