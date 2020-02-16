@@ -177,7 +177,6 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClassOrInterfaceM
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClassOrInterfaceModifiersOptContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClassOrInterfaceTypeContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClassicalForControlContext;
-import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClassifiedModifiersContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClosureContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ClosureOrLambdaExpressionContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.CommandArgumentContext;
@@ -1594,7 +1593,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 && methodName.equals(className)) { // constructor declaration
 
             methodNode = createConstructorNodeForClass(methodName, parameters, exceptions, code, classNode, modifiers);
-        } else { // class memeber method declaration
+        } else { // class member method declaration
             if (!hasReturnType && hasMethodBody && (0 == modifierManager.getModifierCount())) {
                 throw createParsingFailedException("Invalid method declaration: " + methodName, ctx);
             }
@@ -1697,10 +1696,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return configureAST(this.visitVariableDeclaration(ctx.variableDeclaration()), ctx);
     }
 
-    private ModifierManager createModifierManager(VariableDeclarationContext ctx) {
-        return new ModifierManager(this, this.visitClassifiedModifiers(ctx.classifiedModifiers()));
-    }
-
     private DeclarationListStatement createMultiAssignmentDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager) {
         /*
         if (!modifierManager.contains(DEF)) {
@@ -1730,17 +1725,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public List<ModifierNode> visitClassifiedModifiers(ClassifiedModifiersContext ctx) {
-        if (!asBoolean(ctx)) {
-            return Collections.emptyList();
-        }
-
-        return this.visitModifiers(ctx.modifiers());
-    }
-
-    @Override
     public DeclarationListStatement visitVariableDeclaration(VariableDeclarationContext ctx) {
-        ModifierManager modifierManager = this.createModifierManager(ctx);
+        ModifierManager modifierManager =
+                new ModifierManager(
+                        this,
+                        asBoolean(ctx.modifiers()) ? this.visitModifiers(ctx.modifiers()) : Collections.emptyList()
+                );
 
         if (asBoolean(ctx.typeNamePairs())) { // e.g. def (int a, int b) = [1, 2]
             return this.createMultiAssignmentDeclarationListStatement(ctx, modifierManager);
