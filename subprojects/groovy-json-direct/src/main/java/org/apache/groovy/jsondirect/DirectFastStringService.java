@@ -26,7 +26,7 @@ import static org.apache.groovy.jsondirect.DirectFastStringServiceFactory.UNSAFE
 
 /**
  * Internal class for fast processing of Strings during JSON parsing - direct field writing version.
- * Works for JDK 7 and 8 but uses the Unsafe mechanism of Java.
+ * Works for JDK 7 and 8 for most JDK implementations but uses the Unsafe mechanism of Java.
  */
 public class DirectFastStringService implements FastStringService {
     @Override
