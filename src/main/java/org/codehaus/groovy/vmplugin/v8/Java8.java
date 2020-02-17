@@ -346,7 +346,9 @@ public class Java8 implements VMPlugin {
         for (AnnotationNode an : annotations) {
             plugin.configureAnnotationNodeFromDefinition(an, node);
         }
-        plugin.configureAnnotationNodeFromDefinition(node, node);
+        if (!node.getClassNode().getName().equals("java.lang.annotation.Retention")) {
+            plugin.configureAnnotationNodeFromDefinition(node, node);
+        }
     }
 
     private void configureAnnotation(AnnotationNode node, Annotation annotation) {
@@ -446,11 +448,11 @@ public class Java8 implements VMPlugin {
             Class<?> sc = clazz.getSuperclass();
             if (sc != null) classNode.setUnresolvedSuperClass(makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc));
             makeInterfaceTypes(compileUnit, classNode, clazz);
-            setAnnotationMetaData(classNode.getTypeClass().getAnnotations(), classNode);
+            setAnnotationMetaData(clazz.getAnnotations(), classNode);
 
             PackageNode packageNode = classNode.getPackage();
             if (packageNode != null) {
-                setAnnotationMetaData(classNode.getTypeClass().getPackage().getAnnotations(), packageNode);
+                setAnnotationMetaData(clazz.getPackage().getAnnotations(), packageNode);
             }
         } catch (NoClassDefFoundError e) {
             throw new NoClassDefFoundError("Unable to load class "+classNode.toString(false)+" due to missing dependency "+e.getMessage());
