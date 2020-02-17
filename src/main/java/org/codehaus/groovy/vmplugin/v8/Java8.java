@@ -308,12 +308,6 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    @Deprecated
-    private void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
-        VMPlugin plugin = VMPluginFactory.getPlugin();
-        plugin.configureAnnotationNodeFromDefinition(definition, root);
-    }
-
     public void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root) {
         ClassNode type = definition.getClassNode();
         if ("java.lang.annotation.Retention".equals(type.getName())) {
