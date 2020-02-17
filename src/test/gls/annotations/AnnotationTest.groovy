@@ -882,6 +882,22 @@ final class AnnotationTest extends CompilableTestSupport {
         '''
     }
 
+    void testAnnotationRetentionMirrorsJava() {
+        assertScript '''
+            for (retention in ['', '@Retention(SOURCE)', '@Retention(CLASS)', '@Retention(RUNTIME)']) {
+                def src = """
+                    import java.lang.annotation.Retention;
+                    import static java.lang.annotation.RetentionPolicy.*;
+                    $retention
+                    @interface MyAnnotation {}
+                """
+                def mag = new GroovyClassLoader().parseClass src
+                def maj = new org.apache.groovy.util.JavaShell().compile 'MyAnnotation', src
+                assert mag.annotations == maj.annotations
+            }
+        '''
+    }
+
     void testAnnotationWithRepeatableSupportedPrecompiledJava() {
         assertScript '''
             import java.lang.annotation.*
