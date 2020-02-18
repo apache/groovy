@@ -32,6 +32,7 @@ if (!artifactoryUser) {
     }
 }
 
+logger.lifecycle "user.dir: ${System.getProperty('user.dir')}"
 logger.lifecycle "ArtifactoryUser user: $artifactoryUser"
 
 allprojects {
