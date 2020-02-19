@@ -67,6 +67,7 @@ import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.Annotation;
@@ -636,6 +637,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private static final EvictableCache<String, Set<String>> DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE = new UnlimitedConcurrentCache<>();
+    static {
+        Map<String, Set<String>> defaultImportClasses = VMPluginFactory.getPlugin().getDefaultImportClasses(DEFAULT_IMPORTS);
+        DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(defaultImportClasses);
+    }
 
     protected boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
         String typeName = type.getName();
