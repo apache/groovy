@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
+import groovy.transform.CompileStatic;
 import groovy.transform.Generated;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -66,6 +67,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUME
  */
 public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceExpressionWriter implements AbstractFunctionalInterfaceWriter {
     private static final String METHODREF_EXPR_INSTANCE = "__METHODREF_EXPR_INSTANCE";
+    private static final ClassNode GENERATED_TYPE = ClassHelper.make(Generated.class);
+    private static final ClassNode COMPILE_STATIC_TYPE = ClassHelper.make(CompileStatic.class);
 
     public StaticTypesMethodReferenceExpressionWriter(WriterController controller) {
         super(controller);
@@ -209,8 +212,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 )
         );
 
-        syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(Generated.class)));
-        syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(groovy.transform.CompileStatic.class)));
+        syntheticMethodNode.addAnnotation(new AnnotationNode(GENERATED_TYPE));
+        syntheticMethodNode.addAnnotation(new AnnotationNode(COMPILE_STATIC_TYPE));
 
         return syntheticMethodNode;
     }
@@ -239,8 +242,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 )
         );
 
-        syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(Generated.class)));
-        syntheticMethodNode.addAnnotation(new AnnotationNode(ClassHelper.make(groovy.transform.CompileStatic.class)));
+        syntheticMethodNode.addAnnotation(new AnnotationNode(GENERATED_TYPE));
+        syntheticMethodNode.addAnnotation(new AnnotationNode(COMPILE_STATIC_TYPE));
 
         return syntheticMethodNode;
     }
