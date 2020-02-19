@@ -39,30 +39,69 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Find classes under the specified package
+ * Find classes under the specified package via some classpath entry
+ *
+ * Usage:
+ * <pre><code>
+ *   // find classes under `me.sunlan` package via classpath entry(directory) `D:/_APPS/git_apps/java8-labs/out/production/classes/`
+ *   ClassFinder.find(URI.create("file:/D:/_APPS/git_apps/java8-labs/out/production/classes/"), "me/sunlan")
+ *
+ *   // find classes under `groovy.lang` package via classpath entry(jar file) `D:/_DEV/Groovy/groovy-3.0.1/lib/groovy-3.0.1.jar`
+ *   ClassFinder.find(URI.create("file:/D:/_DEV/Groovy/groovy-3.0.1/lib/groovy-3.0.1.jar"), "groovy/lang")
+ *
+ *   // find classes under `java.lang` package via classpath entry(jrt)
+ *   ClassFinder.find(URI.create("jrt:/modules/java.base/"), "java/lang")
+ *
+ *   // find classes under the sub-packages too, e.g. we can get {@link groovy.lang.groovydoc.GroovydocHolder} via the following code
+ *   ClassFinder.find(URI.create("file:/D:/_DEV/Groovy/groovy-3.0.1/lib/groovy-3.0.1.jar"), "groovy/lang", true)
+ * </code></pre>
  *
  * @since 3.0.2
  */
 public class ClassFinder {
-    public static Map<String, Set<String>> find(URI originalUri, String packageName) {
-        return find(originalUri, packageName, false);
+    /**
+     * Returns the found classes
+     *
+     * @param classpathEntryURI the classpath entry
+     * @param packageName the package under which we find classes
+     * @return the found classes
+     * @since 3.0.2
+     */
+    public static Map<String, Set<String>> find(URI classpathEntryURI, String packageName) {
+        return find(classpathEntryURI, packageName, false);
     }
 
-    public static Map<String, Set<String>> find(URI originalUri, String packageName, boolean recursive) {
+    /**
+     * Returns the found classes
+     *
+     * @param classpathEntryURI the classpath entry
+     * @param packageName the package under which we find classes
+     * @param recursive whether to find sub-packages
+     * @return the found classes
+     * @since 3.0.2
+     */
+    public static Map<String, Set<String>> find(URI classpathEntryURI, String packageName, boolean recursive) {
         URI uri;
         String prefix;
-        if ("jrt".equals(originalUri.getScheme())) {
+        String scheme = classpathEntryURI.getScheme();
+        if ("jrt".equals(scheme)) {
             uri = URI.create("jrt:/");
-            prefix = originalUri.getPath().substring(1) + "/";
-        } else {
-            Path path = Paths.get(originalUri);
+            prefix = classpathEntryURI.getPath().substring(1) + "/";
+        } else if ("file".equals(scheme)) {
+            Path path = Paths.get(classpathEntryURI);
+            if (!Files.exists(path)) {
+                throw new IllegalArgumentException(path + " does not exist");
+            }
+
             if (Files.isDirectory(path)) {
                 uri = URI.create("file:/");
                 prefix = path.toString();
             } else {
-                uri = URI.create("jar:" + originalUri.toString());
+                uri = URI.create("jar:" + classpathEntryURI.toString());
                 prefix = "";
             }
+        } else {
+            throw new UnsupportedOperationException(classpathEntryURI + " is not supported");
         }
 
         return find(uri, prefix, packageName, recursive);
