@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
@@ -531,27 +532,6 @@ public class JavaStubGenerator {
         return "\"" + escapeSpecialChars(s) + "\"";
     }
 
-    private static ConstructorCallExpression getConstructorCallExpression(ConstructorNode constructorNode) {
-        Statement code = constructorNode.getCode();
-        if (!(code instanceof BlockStatement))
-            return null;
-
-        BlockStatement block = (BlockStatement) code;
-        List stats = block.getStatements();
-        if (stats == null || stats.isEmpty())
-            return null;
-
-        Statement stat = (Statement) stats.get(0);
-        if (!(stat instanceof ExpressionStatement))
-            return null;
-
-        Expression expr = ((ExpressionStatement) stat).getExpression();
-        if (!(expr instanceof ConstructorCallExpression))
-            return null;
-
-        return (ConstructorCallExpression) expr;
-    }
-
     private void printConstructor(PrintWriter out, ClassNode clazz, ConstructorNode constructorNode) {
         printAnnotations(out, constructorNode);
         // printModifiers(out, constructorNode.getModifiers());
@@ -564,8 +544,8 @@ public class JavaStubGenerator {
 
         printParams(out, constructorNode);
 
-        ConstructorCallExpression constrCall = getConstructorCallExpression(constructorNode);
-        if (constrCall == null || !constrCall.isSpecialCall()) {
+        ConstructorCallExpression constrCall = getFirstIfSpecialConstructorCall(constructorNode.getCode());
+        if (constrCall == null) {
             out.println(" {}");
         } else {
             out.println(" {");
