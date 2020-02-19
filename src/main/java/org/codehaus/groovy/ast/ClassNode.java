@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 
 /**
  * Represents a class in the AST.
@@ -796,16 +797,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addStaticInitializerStatements(List<Statement> staticStatements, boolean fieldInit) {
         MethodNode method = getOrAddStaticConstructorNode();
-        BlockStatement block = null;
-        Statement statement = method.getCode();
-        if (statement == null) {
-            block = new BlockStatement();
-        } else if (statement instanceof BlockStatement) {
-            block = (BlockStatement) statement;
-        } else {
-            block = new BlockStatement();
-            block.addStatement(statement);
-        }
+        BlockStatement block = getCodeAsBlock(method);
 
         // while anything inside a static initializer block is appended
         // we don't want to append in the case we have a initialization

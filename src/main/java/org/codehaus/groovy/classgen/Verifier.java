@@ -90,6 +90,8 @@ import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
@@ -1041,15 +1043,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         statements.addAll(node.getObjectInitializerStatements());
 
-        Statement code = constructorNode.getCode();
-        BlockStatement block = new BlockStatement();
+        BlockStatement block = getCodeAsBlock(constructorNode);
         List<Statement> otherStatements = block.getStatements();
-        if (code instanceof BlockStatement) {
-            block = (BlockStatement) code;
-            otherStatements = block.getStatements();
-        } else if (code != null) {
-            otherStatements.add(code);
-        }
         if (!otherStatements.isEmpty()) {
             if (first != null) {
                 // it is super(..) since this(..) is already covered
@@ -1119,16 +1114,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
         return false;
-    }
-
-    private static ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
-        if (!(code instanceof ExpressionStatement)) return null;
-
-        Expression expression = ((ExpressionStatement) code).getExpression();
-        if (!(expression instanceof ConstructorCallExpression)) return null;
-        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
-        if (cce.isSpecialCall()) return cce;
-        return null;
     }
 
     protected void addFieldInitialization(List list, List staticList, FieldNode fieldNode,

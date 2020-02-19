@@ -271,19 +271,35 @@ public class GeneralUtils {
     }
 
     public static Statement ctorSuperS(final Expression args) {
-        return stmt(ctorX(ClassNode.SUPER, args));
+        return stmt(ctorSuperX(args));
+    }
+
+    public static ConstructorCallExpression ctorSuperX(Expression args) {
+        return ctorX(ClassNode.SUPER, args);
     }
 
     public static Statement ctorThisS(final Expression args) {
-        return stmt(ctorX(ClassNode.THIS, args));
+        return stmt(ctorThisX(args));
+    }
+
+    public static ConstructorCallExpression ctorThisX(Expression args) {
+        return ctorX(ClassNode.THIS, args);
     }
 
     public static Statement ctorSuperS() {
-        return stmt(ctorX(ClassNode.SUPER));
+        return stmt(ctorSuperX());
+    }
+
+    public static ConstructorCallExpression ctorSuperX() {
+        return ctorX(ClassNode.SUPER);
     }
 
     public static Statement ctorThisS() {
-        return stmt(ctorX(ClassNode.THIS));
+        return stmt(ctorThisX());
+    }
+
+    public static ConstructorCallExpression ctorThisX() {
+        return ctorX(ClassNode.THIS);
     }
 
     public static Statement declS(final Expression target, final Expression init) {
