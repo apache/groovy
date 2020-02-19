@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ast.tools;
 
-import groovy.transform.Generated;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -42,7 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -51,7 +50,6 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * Utility class for working with ClassNodes
  */
 public class ClassNodeUtils {
-    private static final ClassNode GENERATED_TYPE = ClassHelper.make(Generated.class);
 
     /**
      * Formats a type name into a human readable version. For arrays, appends "[]" to the formatted
@@ -146,7 +144,7 @@ public class ClassNodeUtils {
     public static Map<String, MethodNode> getDeclaredMethodsFromSuper(ClassNode cNode) {
         ClassNode parent = cNode.getSuperClass();
         if (parent == null) {
-            return new HashMap<String, MethodNode>();
+            return new HashMap<>();
         }
         return parent.getDeclaredMethodsMap();
     }
@@ -191,7 +189,7 @@ public class ClassNodeUtils {
      * @param methodsMap A map of existing methods to alter
      */
     public static void addDeclaredMethodsFromAllInterfaces(ClassNode cNode, Map<String, MethodNode> methodsMap) {
-        List cnInterfaces = Arrays.asList(cNode.getInterfaces());
+        List<?> cnInterfaces = Arrays.asList(cNode.getInterfaces());
         ClassNode parent = cNode.getSuperClass();
         while (parent != null && !parent.equals(ClassHelper.OBJECT_TYPE)) {
             ClassNode[] interfaces = parent.getInterfaces();
@@ -360,7 +358,7 @@ public class ClassNodeUtils {
         List<ConstructorNode> declaredConstructors = cNode.getDeclaredConstructors();
         for (ConstructorNode constructorNode : declaredConstructors) {
             // allow constructors added by other transforms if flagged as Generated
-            if (hasAnnotation(constructorNode, GENERATED_TYPE)) {
+            if (isGenerated(constructorNode)) {
                 continue;
             }
             if (xform != null) {
@@ -394,7 +392,7 @@ public class ClassNodeUtils {
      */
     public static FieldNode getField(ClassNode classNode, String fieldName) {
         ClassNode node = classNode;
-        Set<String> visited = new HashSet<String>();
+        Set<String> visited = new HashSet<>();
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);
             if (fn != null) return fn;
