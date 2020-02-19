@@ -187,6 +187,7 @@ rat {
                  'src/test/org/codehaus/groovy/ast/LineColumnCheck.txt', // test file
                  'security/groovykeys', // excluded from src zip
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
+                 'artifactory.properties',  // potential file on CI server
                  'gradle.properties',  // artifactory release plugin removes header when bumping version
                  '**/target/**', '**/build/**', 'licenses/**', 'notices/**',
                  'out/**', '*.ipr',  '**/*.iml', '*.iws', '.idea/**', // Intellij files
