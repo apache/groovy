@@ -19,35 +19,38 @@
 package org.codehaus.groovy.ast.source
 
 import groovy.test.GroovyTestCase
-import org.codehaus.groovy.control.*
-import org.codehaus.groovy.control.io.*
-import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.io.StringReaderSource
 
 abstract class SourceBaseTestCase extends GroovyTestCase {
 
     private classNode
-    public classNode() {
-      if (classNode!=null) return node
-      def cu = new CompilationUnit(null,null, new GroovyClassLoader(this.class.classLoader))
-      def source = new StringReaderSource(script,cu.configuration)
-      def su = cu.addSource(new SourceUnit("Script_"+this.name, source, cu.configuration, cu.classLoader, cu.errorCollector))
-      cu.compile(Phases.CONVERSION)
-      classNode = cu.firstClassNode
-      return classNode
+
+    def classNode() {
+        if (classNode != null) return node
+        def cu = new CompilationUnit(null, null, new GroovyClassLoader(this.class.classLoader))
+        def source = new StringReaderSource(script, cu.configuration)
+        cu.addSource(new SourceUnit("Script_" + this.name, source, cu.configuration, cu.classLoader, cu.errorCollector))
+        cu.compile(Phases.CONVERSION)
+        classNode = cu.firstClassNode
+        return classNode
     }
-    
+
     def sourceInfo(expression) {
-      return [  expression.lineNumber,
+        return [expression.lineNumber,
                 expression.columnNumber,
                 expression.lastLineNumber,
-                expression.lastColumnNumber 
-             ]
+                expression.lastColumnNumber
+        ]
     }
-    
-    def statements(String method="run") {
-      def ret = classNode().getMethod(method).code
-      if (ret instanceof BlockStatement) return ret.statements
-      if (ret==null) return null
-      return [ret]
+
+    def statements(String method = "run") {
+        def ret = classNode().getMethod(method).code
+        if (ret instanceof BlockStatement) return ret.statements
+        if (ret == null) return null
+        return [ret]
     }
 }
