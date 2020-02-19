@@ -243,7 +243,7 @@ public class Java5 implements VMPlugin {
         for (AnnotationNode an : annotations) {
             configureAnnotationFromDefinition(an, node);
         }
-        if (!node.getClassNode().getName().equals("java.lang.annotation.Retention")) {
+        if (!"java.lang.annotation.Retention".equals(node.getClassNode().getName())) {
             configureAnnotationFromDefinition(node, node);
         }
     }
