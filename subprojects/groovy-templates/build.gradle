@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    implementation rootProject
+    api rootProject
     api project(':groovy-xml')
     testImplementation rootProject.sourceSets.test.runtimeClasspath
     testImplementation project(':groovy-test')
