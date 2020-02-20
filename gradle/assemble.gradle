@@ -204,7 +204,7 @@ allprojects {
             dependsOn arch
             from = file(arch.archivePath)
             if (project == rootProject) {
-                repackagedLibraries = files(configurations.runtime.incoming.artifactView {
+                repackagedLibraries = files(configurations.runtimeClasspath.incoming.artifactView {
                     componentFilter { component ->
                         if (component instanceof ModuleComponentIdentifier) {
                             return component.module in [
