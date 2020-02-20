@@ -162,9 +162,9 @@ dependencies {
     api "org.ow2.asm:asm:$asmVersion" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
     // for internal usage by the parser but manually excluded later in assemble.gradle - modules will use shaded version
     api "antlr:antlr:$antlrVersion"
-    compileOnly "org.ow2.asm:asm-analysis:$asmVersion"
-    compileOnly "org.ow2.asm:asm-commons:$asmVersion"
-    compileOnly "org.ow2.asm:asm-tree:$asmVersion"
+    implementation "org.ow2.asm:asm-analysis:$asmVersion"
+    implementation "org.ow2.asm:asm-commons:$asmVersion"
+    implementation "org.ow2.asm:asm-tree:$asmVersion"
     implementation "org.ow2.asm:asm-util:$asmVersion"
     implementation("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')

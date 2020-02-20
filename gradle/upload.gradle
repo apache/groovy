@@ -24,7 +24,7 @@ if (isUsingArtifactory) {
     logger.lifecycle 'Deployment environment set to Artifactory'
 }
 
-def embedded = ['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'commons-cli', 'openbeans']
+def embedded = ['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'picocli', 'openbeans']
 def removeJarjaredDependencies = { p ->
     p.dependencies.removeAll(p.dependencies.findAll {
         it.groupId == 'org.apache.groovy' || embedded.contains(it.artifactId)
