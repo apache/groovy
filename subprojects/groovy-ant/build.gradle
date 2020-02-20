@@ -17,17 +17,21 @@
  *  under the License.
  */
 dependencies {
-    implementation rootProject
-    compile "org.apache.ant:ant:$antVersion"
-    runtime("org.apache.ant:ant-junit:$antVersion") {
+    api rootProject  // FileNameFinder implements IFileNameFinder...
+    api("org.apache.ant:ant:$antVersion") {  // AntBuilder has Project constructor...
+        transitive = false
+    }
+    implementation("org.apache.ant:ant-junit:$antVersion") {
         exclude(group: 'junit', module: 'junit')
     }
-    runtime "org.apache.ant:ant-launcher:$antVersion"
-    runtime "org.apache.ant:ant-antlr:$antVersion"
+    implementation "org.apache.ant:ant-launcher:$antVersion"
+    implementation "org.apache.ant:ant-antlr:$antVersion"
     // for groovydoc ant command
     implementation project(':groovy-groovydoc'), {
         transitive = false
     }
+    compileOnly "org.ow2.asm:asm-tree:$asmVersion" // VerifyClass
+    compileOnly "org.ow2.asm:asm-util:$asmVersion" // VerifyClass
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-xml')
 }

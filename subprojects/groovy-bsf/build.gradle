@@ -17,10 +17,10 @@
  *  under the License.
  */
 dependencies {
-    compile('bsf:bsf:2.4.0') {
+    api('bsf:bsf:2.4.0') {  // GroovyEngine...
         exclude(group: 'commons-logging', module: 'commons-logging')
     }
-    compile 'commons-logging:commons-logging:1.2'
-    implementation rootProject
+    implementation 'commons-logging:commons-logging:1.2'
+    api rootProject // GroovyEngine#getEvalShell
     testImplementation project(':groovy-test')
 }

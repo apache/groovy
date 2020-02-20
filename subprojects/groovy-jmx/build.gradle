@@ -17,7 +17,7 @@
  *  under the License.
  */
 dependencies {
-    implementation rootProject
+    api rootProject // JmxBuilder extends FactoryBuilderSupport...
     testImplementation project(':groovy-test')
 }
 

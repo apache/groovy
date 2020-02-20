@@ -19,7 +19,7 @@
 evaluationDependsOn(':groovy-swing')
 
 dependencies {
-    implementation rootProject
+    api rootProject // AstBrowser has methods with Closure params...
     implementation project(':groovy-swing')
     implementation project(':groovy-templates')
     testImplementation project(':groovy-test')

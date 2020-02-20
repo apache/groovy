@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    implementation rootProject
+    api rootProject  // NioExtensions uses Closure...
     testImplementation project(':groovy-test')
     // temporarily disable spock tests since it doesn't support 4 yet
     if (!spockVersion.startsWith('1.3') || !groovyVersion.startsWith('4')) {

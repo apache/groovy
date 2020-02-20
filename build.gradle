@@ -156,13 +156,16 @@ ext {
 }
 
 dependencies {
-    compile "antlr:antlr:$antlrVersion"
-    compile "org.ow2.asm:asm:$asmVersion"
-    compile "org.ow2.asm:asm-analysis:$asmVersion"
-    compile "org.ow2.asm:asm-commons:$asmVersion"
-    compile "org.ow2.asm:asm-tree:$asmVersion"
-    compile "org.ow2.asm:asm-util:$asmVersion"
-    compile "info.picocli:picocli:$picocliVersion"
+    // for internal CLI usage
+    api "info.picocli:picocli:$picocliVersion" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
+    // for internal usage of things like Opcode
+    api "org.ow2.asm:asm:$asmVersion" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
+    // for internal usage by the parser but manually excluded later in assemble.gradle - modules will use shaded version
+    api "antlr:antlr:$antlrVersion"
+    compileOnly "org.ow2.asm:asm-analysis:$asmVersion"
+    compileOnly "org.ow2.asm:asm-commons:$asmVersion"
+    compileOnly "org.ow2.asm:asm-tree:$asmVersion"
+    implementation "org.ow2.asm:asm-util:$asmVersion"
     implementation("com.thoughtworks.xstream:xstream:$xstreamVersion") {
         exclude(group: 'xpp3', module: 'xpp3_min')
         exclude(group: 'junit', module: 'junit')
@@ -176,7 +179,7 @@ dependencies {
 
     compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsannotationsVersion"
 
-    runtime("org.codehaus.gpars:gpars:$gparsVersion") {
+    implementation("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
 

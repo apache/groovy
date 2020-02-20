@@ -23,8 +23,8 @@ repositories {
 }
 
 dependencies {
-    api rootProject
-    api project(':groovy-xml')
+    api rootProject // Template uses Writable...
+    implementation project(':groovy-xml')
     testImplementation rootProject.sourceSets.test.runtimeClasspath
     testImplementation project(':groovy-test')
     // temporarily disable spock tests since it doesn't support 4 yet
