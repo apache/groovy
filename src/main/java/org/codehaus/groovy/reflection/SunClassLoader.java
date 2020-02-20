@@ -34,7 +34,7 @@ import java.util.Map;
  * Special class loader, which when running on Sun VM allows to generate accessor classes for any method
  */
 public class SunClassLoader extends ClassLoader implements Opcodes {
-    protected final Map<String,Class> knownClasses = new HashMap<String,Class>();
+    protected final Map<String, Class> knownClasses = new HashMap<String, Class>();
 
     protected static final SunClassLoader sunVM;
 
@@ -48,19 +48,18 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
                     return null;
                 }
             });
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             res = null;
         }
         sunVM = res;
     }
 
     protected SunClassLoader() throws Throwable {
-        super (SunClassLoader.class.getClassLoader());
+        super(SunClassLoader.class.getClassLoader());
 
         final Class magic = ClassLoader.getSystemClassLoader().loadClass("sun.reflect.MagicAccessorImpl");
         knownClasses.put("sun.reflect.MagicAccessorImpl", magic);
-        loadMagic ();
+        loadMagic();
     }
 
     private void loadMagic() {
@@ -71,7 +70,7 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitMethodInsn(INVOKESPECIAL, "sun/reflect/MagicAccessorImpl", "<init>", "()V", false);
         mv.visitInsn(RETURN);
-        mv.visitMaxs(0,0);
+        mv.visitMaxs(0, 0);
         mv.visitEnd();
         cw.visitEnd();
 
@@ -88,7 +87,7 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     }
 
     protected static String resName(String s) {
-        return s.replace('.','/') + ".class";
+        return s.replace('.', '/') + ".class";
     }
 
     protected void define(byte[] bytes, final String name) {
@@ -98,12 +97,11 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
         final Class aClass = knownClasses.get(name);
         if (aClass != null)
-          return aClass;
+            return aClass;
         else {
             try {
                 return super.loadClass(name, resolve);
-            }
-            catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException e) {
                 return getClass().getClassLoader().loadClass(name);
             }
         }
