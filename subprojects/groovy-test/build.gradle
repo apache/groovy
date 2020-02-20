@@ -22,8 +22,8 @@ ext {
 }
 
 dependencies {
-    implementation rootProject
-    compile "junit:junit:$junitVersion"
+    api rootProject   // GroovyTestCase uses Closure...
+    api "junit:junit:$junitVersion" // GroovyTestCase extends TestCase...
     // groovy-ant needed for FileNameFinder used in AllTestSuite and JavadocAssertionTestSuite
     testRuntime(project(':groovy-ant')) {
         transitive = false // bring in just what we need below

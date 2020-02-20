@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    implementation rootProject
+    api rootProject  // NioExtensions uses Closure...
     testImplementation project(':groovy-test')
     testImplementation ("org.spockframework:spock-core:$spockVersion") {
         exclude group: 'org.codehaus.groovy'

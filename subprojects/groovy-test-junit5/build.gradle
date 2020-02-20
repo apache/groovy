@@ -23,9 +23,13 @@ ext {
 }
 
 dependencies {
-    implementation rootProject
-    compile "org.junit.platform:junit-platform-launcher:$junit5PlatformVersion"
-    runtime "org.junit.jupiter:junit-jupiter-engine:$junit5Version"
+    api rootProject // JUnit5Runner implements GroovyRunner...
+    implementation("org.junit.platform:junit-platform-launcher:$junit5PlatformVersion") {
+        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
+    }
+    implementation("org.junit.jupiter:junit-jupiter-engine:$junit5Version") {
+        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
+    }
     testImplementation "org.junit.jupiter:junit-jupiter-params:$junit5Version"
     testRuntime "org.junit.platform:junit-platform-engine:$junit5PlatformVersion"
     testRuntime "org.junit.platform:junit-platform-runner:$junit5PlatformVersion"

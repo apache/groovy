@@ -362,7 +362,7 @@ ext.distSpec = copySpec {
     into('lib') {
         from jarjar
         from modules()*.jarjar
-        from(configurations.runtime) {
+        from(configurations.runtimeClasspath) {
             exclude {
                 it.file.name.startsWith('openbeans-') ||
                         it.file.name.startsWith('asm-') ||
@@ -373,7 +373,7 @@ ext.distSpec = copySpec {
         }
         from('src/bin/groovy.icns')
     }
-    modules().configurations.runtime.each { conf ->
+    modules().configurations.runtimeClasspath.each { conf ->
         into('lib') {
             from(conf) {
                 exclude {

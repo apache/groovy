@@ -22,12 +22,12 @@ ext {
 }
 
 dependencies {
-    implementation rootProject
-    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
-    compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
-    testRuntime "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+    api rootProject  // YamlBuilder extends GroovyObjectSupport...
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     implementation project(':groovy-json')
     testImplementation project(':groovy-test')
+    testRuntime "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     testRuntime project(':groovy-ant') // for JavadocAssertionTests
 }
 

@@ -17,8 +17,8 @@
  *  under the License.
  */
 dependencies {
-    implementation rootProject
-    compile "commons-cli:commons-cli:$commonsCliVersion"
+    api rootProject // CliBuilder uses Option...
+    implementation "commons-cli:commons-cli:$commonsCliVersion"
     testImplementation rootProject.sourceSets.test.output
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')
