@@ -65,7 +65,7 @@ public class GroovySunClassLoader extends SunClassLoader {
                     super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
                 }
             };
-            reader.accept(cv, ClassWriter.COMPUTE_MAXS);
+            reader.accept(cv, ClassReader.SKIP_DEBUG);
             define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
         }
     }

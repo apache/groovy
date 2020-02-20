@@ -82,7 +82,7 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
         try (final InputStream asStream = SunClassLoader.class.getClassLoader().getResourceAsStream(resName(name))) {
             ClassReader reader = new ClassReader(asStream);
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-            reader.accept(cw, ClassWriter.COMPUTE_MAXS);
+            reader.accept(cw, ClassReader.SKIP_DEBUG);
             define(cw.toByteArray(), name);
         }
     }
