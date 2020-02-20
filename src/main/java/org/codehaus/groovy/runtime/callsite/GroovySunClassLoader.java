@@ -34,21 +34,24 @@ public class GroovySunClassLoader extends SunClassLoader {
     public static final SunClassLoader sunVM;
 
     static {
-            sunVM = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
-                try {
-                    if (SunClassLoader.sunVM != null) {
-                        return new GroovySunClassLoader();
-                    }
+        sunVM = AccessController.doPrivileged((PrivilegedAction<SunClassLoader>) () -> {
+            try {
+                if (SunClassLoader.sunVM != null) {
+                    return new GroovySunClassLoader();
                 }
-                catch (Throwable t) {//
-                }
-                return null;
-            });
+            } catch (Throwable ignore) {
+            }
+            return null;
+        });
     }
 
-    protected GroovySunClassLoader () throws Throwable {
+    protected GroovySunClassLoader() throws Throwable {
+        this(ClassReader.SKIP_CODE);
+    }
+
+    protected GroovySunClassLoader(int parsingOptions) throws Throwable {
         super();
-        loadAbstract ();
+        loadAbstract(parsingOptions);
         loadFromRes("org.codehaus.groovy.runtime.callsite.MetaClassSite");
         loadFromRes("org.codehaus.groovy.runtime.callsite.MetaMethodSite");
         loadFromRes("org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite");
@@ -56,7 +59,7 @@ public class GroovySunClassLoader extends SunClassLoader {
         loadFromRes("org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite");
     }
 
-    private void loadAbstract() throws IOException {
+    private void loadAbstract(int parsingOptions) throws IOException {
         try (final InputStream asStream = GroovySunClassLoader.class.getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"))) {
             ClassReader reader = new ClassReader(asStream);
             final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
@@ -65,7 +68,7 @@ public class GroovySunClassLoader extends SunClassLoader {
                     super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
                 }
             };
-            reader.accept(cv, ClassWriter.COMPUTE_MAXS);
+            reader.accept(cv, parsingOptions);
             define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
         }
     }
