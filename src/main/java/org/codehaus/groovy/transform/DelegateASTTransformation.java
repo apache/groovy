@@ -43,6 +43,7 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -203,11 +204,22 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         if (propertyNameList == null || propertyNameList.isEmpty()) {
             return true;
         }
-        final List<String> pNames = new ArrayList<>();
+        final Set<String> pNames = new HashSet<>();
+        final Set<String> mNames = new HashSet<>();
         for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, false, false, false)) {
-            pNames.add(pNode.getField().getName());
+            String name = pNode.getField().getName();
+            pNames.add(name);
+            // add getter/setters since Groovy compiler hasn't added property accessors yet
+            String capitalized = Verifier.capitalize(name);
+            if ((pNode.getModifiers() & ACC_FINAL) == 0) {
+                mNames.add("set" + capitalized);
+            }
+            mNames.add("get" + capitalized);
+            boolean isPrimBool = pNode.getOriginType().equals(ClassHelper.boolean_TYPE);
+            if (isPrimBool) {
+                mNames.add("is" + capitalized);
+            }
         }
-        final List<String> mNames = new ArrayList<>();
         for (MethodNode mNode : cNode.getAllDeclaredMethods()) {
             mNames.add(mNode.getName());
         }
