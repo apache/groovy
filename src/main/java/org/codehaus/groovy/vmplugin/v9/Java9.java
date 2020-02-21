@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v9;
 
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.Tuple;
@@ -27,6 +28,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 
 import java.lang.invoke.MethodHandle;
@@ -41,9 +43,12 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +60,51 @@ import java.util.stream.Collectors;
  * Additional Java 9 based functions will be added here as needed.
  */
 public class Java9 extends Java8 {
+    @Override
+    public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
+        Map<String, Set<String>> result = new LinkedHashMap<>();
+
+        List<String> javaPns = new ArrayList<>(4);
+        List<String> groovyPns = new ArrayList<>(4);
+        for (String prefix : packageNames) {
+            String pn = prefix.substring(0, prefix.length() - 1).replace('.', '/');
+
+            if (pn.startsWith("java/")) {
+                javaPns.add(pn);
+            } else if (pn.startsWith("groovy/")) {
+                groovyPns.add(pn);
+            } else {
+                throw new GroovyBugError("unexpected package: " + pn);
+            }
+        }
+
+        result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
+
+        try {
+            URI gsLocation = DefaultGroovyMethods.getLocation(GroovySystem.class).toURI();
+            result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
+        } catch (Exception e) {
+            System.err.println("[WARNING] Failed to get default imported groovy classes: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    private static Map<String, Set<String>> doFindClasses(URI uri, String packageName, List<String> defaultPackageNames) {
+        Map<String, Set<String>> result = ClassFinder.find(uri, packageName, true)
+                .entrySet().stream()
+                .filter(e -> e.getValue().stream().anyMatch(defaultPackageNames::contains))
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> entry.getValue().stream()
+                                        .filter(e -> defaultPackageNames.contains(e))
+                                        .map(e -> e.replace('/', '.') + ".")
+                                        .collect(Collectors.toSet())
+                        )
+                );
+        return result;
+    }
 
     private static class LookupHolder {
         private static final Method PRIVATE_LOOKUP;
