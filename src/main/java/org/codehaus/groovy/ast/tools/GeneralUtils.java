@@ -583,8 +583,11 @@ public class GeneralUtils {
         return boolX(binX(objectExpression, INSTANCEOF, classX(cNode)));
     }
 
+    /**
+     * Alias for {@link #equalsNullX(Expression)}
+     */
     public static BooleanExpression isNullX(final Expression expr) {
-        return boolX(binX(expr, EQ, nullX()));
+        return equalsNullX(expr);
     }
 
     public static BooleanExpression isOneX(final Expression expr) {
