@@ -122,6 +122,10 @@ public class GeneralUtils {
         return stmt(assignX(target, value));
     }
 
+    public static Statement assignNullS(final Expression target) {
+        return assignS(target, ConstantExpression.EMPTY_EXPRESSION);
+    }
+
     public static Expression assignX(final Expression target, final Expression value) {
         return binX(target, ASSIGN, value);
     }
