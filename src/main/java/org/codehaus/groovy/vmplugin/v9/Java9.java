@@ -24,6 +24,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.ResolveVisitor;
@@ -67,6 +68,7 @@ import java.util.stream.Collectors;
  */
 public class Java9 extends Java8 {
     private static final Logger LOGGER = Logger.getLogger(Java9.class.getName());
+    private static final boolean DETERMINISTIC_DEFAULT_IMPORTS = SystemUtil.getBooleanSafe("groovy.deterministic.default.imports", true);
 
     @Override
     public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
@@ -141,7 +143,11 @@ public class Java9 extends Java8 {
 
     @Override
     public boolean resolveFromDefaultImports(ResolveVisitor resolveVisitor, final ClassNode type) {
-        return false;
+        if (DETERMINISTIC_DEFAULT_IMPORTS) {
+            return false;
+        }
+
+        return super.resolveFromDefaultImports(resolveVisitor, type);
     }
 
     private static class LookupHolder {
