@@ -337,7 +337,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
                 // have to compile regexp first so that it will match
                 groupList.add(Pattern.compile(nextRegexp).pattern());
             }
-            if (!regexp.toString().equals("")) {
+            if (!regexp.toString().isEmpty()) {
                 matcher = Pattern.compile(regexp.substring(1)).matcher("");
                 
                 iter = children.values().iterator();

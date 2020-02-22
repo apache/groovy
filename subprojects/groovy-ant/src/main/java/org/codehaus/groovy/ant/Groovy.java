@@ -375,7 +375,7 @@ public class Groovy extends Java {
             }
         }
         // Catch any statements not followed by ;
-        if (!txt.toString().equals("")) {
+        if (!txt.toString().isEmpty()) {
             execGroovy(txt.toString(), out);
         }
     }
@@ -390,7 +390,7 @@ public class Groovy extends Java {
         log.debug("execGroovy()");
 
         // Check and ignore empty statements
-        if ("".equals(txt.trim())) {
+        if (txt.trim().isEmpty()) {
             return;
         }
 

@@ -404,7 +404,7 @@ public class Groovydoc extends Task {
                 }
 
                 if (files.length > 0) {
-                    if ("".equals(dir)) {
+                    if (dir.isEmpty()) {
                         log.warn(baseDir
                                 + " contains source files in the default package,"
                                 + " you must specify them as source files not packages.");

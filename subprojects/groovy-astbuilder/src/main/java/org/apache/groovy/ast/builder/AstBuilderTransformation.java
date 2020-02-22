@@ -160,7 +160,7 @@ public class AstBuilderTransformation extends MethodCallTransformation {
                 // is method object correct type?
                 if (call.getObjectExpression() != null && call.getObjectExpression().getType() != null) {
                     String name = call.getObjectExpression().getType().getName();
-                    if (name != null && !"".equals(name) && factoryTargets.contains(name)) {
+                    if (name != null && !name.isEmpty() && factoryTargets.contains(name)) {
 
                         // is one of the arguments a closure?
                         if (call.getArguments() != null && call.getArguments() instanceof TupleExpression) {
