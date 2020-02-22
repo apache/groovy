@@ -53,6 +53,7 @@ import static org.apache.groovy.ast.tools.ImmutablePropertyUtils.implementsClone
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.assignNullS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -228,7 +229,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
             if (ClassHelper.isPrimitiveType(fType)) {
                 assignInit = EmptyStatement.INSTANCE;
             } else {
-                assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+                assignInit = assignNullS(fieldExpr);
             }
         } else {
             assignInit = assignS(fieldExpr, initExpr);
@@ -250,7 +251,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
             if (ClassHelper.isPrimitiveType(fType)) {
                 assignInit = EmptyStatement.INSTANCE;
             } else {
-                assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+                assignInit = assignNullS(fieldExpr);
             }
         } else {
             assignInit = assignS(fieldExpr, initExpr);
@@ -283,7 +284,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         Expression initExpr = fNode.getInitialValueExpression();
         final Statement assignInit;
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
-            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            assignInit = assignNullS(fieldExpr);
         } else {
             assignInit = assignS(fieldExpr, checkUnresolved(fNode, initExpr, knownImmutables, knownImmutableClasses));
         }
@@ -296,11 +297,11 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         final Expression fieldExpr = propX(varX("this"), fNode.getName());
         Expression param = getParam(fNode, namedArgsMap != null);
         Statement assignStmt = assignS(fieldExpr, checkUnresolved(fNode, param, knownImmutables, knownImmutableClasses));
-        assignStmt = ifElseS(equalsNullX(param), assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION), assignStmt);
+        assignStmt = ifElseS(equalsNullX(param), assignNullS(fieldExpr), assignStmt);
         Expression initExpr = fNode.getInitialValueExpression();
         final Statement assignInit;
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
-            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            assignInit = assignNullS(fieldExpr);
         } else {
             assignInit = assignS(fieldExpr, checkUnresolved(fNode, initExpr, knownImmutables, knownImmutableClasses));
         }
@@ -318,7 +319,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         Expression initExpr = fNode.getInitialValueExpression();
         final Statement assignInit;
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
-            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            assignInit = assignNullS(fieldExpr);
         } else {
             assignInit = assignS(fieldExpr, cloneCollectionExpr(initExpr, fieldType));
         }
@@ -338,11 +339,11 @@ public class ImmutablePropertyHandler extends PropertyHandler {
                 isInstanceOfX(param, CLONEABLE_TYPE),
                 assignS(fieldExpr, cloneCollectionExpr(cloneArrayOrCloneableExpr(param, fieldType), fieldType)),
                 assignS(fieldExpr, cloneCollectionExpr(param, fieldType)));
-        assignStmt = ifElseS(equalsNullX(param), assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION), assignStmt);
+        assignStmt = ifElseS(equalsNullX(param), assignNullS(fieldExpr), assignStmt);
         Expression initExpr = fNode.getInitialValueExpression();
         final Statement assignInit;
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
-            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            assignInit = assignNullS(fieldExpr);
         } else {
             assignInit = assignS(fieldExpr, cloneCollectionExpr(initExpr, fieldType));
         }
@@ -356,7 +357,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         final Expression param = getParam(fNode, namedArgs);
         final Statement assignInit;
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
-            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            assignInit = assignNullS(fieldExpr);
         } else {
             assignInit = assignS(fieldExpr, cloneArrayOrCloneableExpr(initExpr, fieldType));
         }
@@ -369,11 +370,11 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         final ClassNode fieldType = fNode.getType();
         final Expression param = getParam(fNode, namedArgsMap != null);
         Statement assignStmt = assignS(fieldExpr, cloneArrayOrCloneableExpr(param, fieldType));
-        assignStmt = ifElseS(equalsNullX(param), assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION), assignStmt);
+        assignStmt = ifElseS(equalsNullX(param), assignNullS(fieldExpr), assignStmt);
         final Statement assignInit;
         final Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
-            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            assignInit = assignNullS(fieldExpr);
         } else {
             assignInit = assignS(fieldExpr, cloneArrayOrCloneableExpr(initExpr, fieldType));
         }
@@ -389,7 +390,7 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         Expression initExpr = fNode.getInitialValueExpression();
         final Statement assignInit;
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
-            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            assignInit = assignNullS(fieldExpr);
         } else {
             assignInit = assignS(fieldExpr, cloneDateExpr(initExpr));
         }
@@ -402,11 +403,11 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         final Expression fieldExpr = propX(varX("this"), fNode.getName());
         final Expression param = getParam(fNode, namedArgsMap != null);
         Statement assignStmt = assignS(fieldExpr, cloneDateExpr(param));
-        assignStmt = ifElseS(equalsNullX(param), assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION), assignStmt);
+        assignStmt = ifElseS(equalsNullX(param), assignNullS(fieldExpr), assignStmt);
         final Statement assignInit;
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null || (initExpr instanceof ConstantExpression && ((ConstantExpression) initExpr).isNullExpression())) {
-            assignInit = assignS(fieldExpr, ConstantExpression.EMPTY_EXPRESSION);
+            assignInit = assignNullS(fieldExpr);
         } else {
             assignInit = assignS(fieldExpr, cloneDateExpr(initExpr));
         }
