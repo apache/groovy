@@ -63,6 +63,35 @@ class NullCheckTransformTest extends GroovyTestCase {
             import groovy.transform.*
             import static groovy.test.GroovyAssert.shouldFail
 
+            @AutoExternalize
+            @NullCheck
+            class OneHolder {
+                String one
+            }
+
+            @AutoExternalize
+            @NullCheck(includeGenerated=true)
+            class TwoHolder {
+                String two
+            }
+
+            def one = new OneHolder(one: 'One')
+            // fail late without null checking via subsequent NPE
+            def ex = shouldFail(NullPointerException) { one.writeExternal(null) }
+            assert ex.message == 'Cannot invoke method writeObject() on null object'
+
+            def two = new TwoHolder(two: 'Two')
+            // fail early with null checking in place via IAE
+            ex = shouldFail(IllegalArgumentException) { two.writeExternal(null) }
+            assert ex.message == 'out cannot be null'
+        '''
+    }
+
+    void testNullCheckWithEquals() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
             @EqualsAndHashCode
             @NullCheck
             class OneHolder {
@@ -78,8 +107,8 @@ class NullCheckTransformTest extends GroovyTestCase {
             def one = new OneHolder(one: 'One')
             assert !one.equals(null)
             def two = new TwoHolder(two: 'Two')
-            def ex = shouldFail(IllegalArgumentException) { two.equals(null) }
-            assert ex.message == 'other cannot be null'
+            // method equals flags itself as already null-check processed so as to prefer false over IllegalArgumentException here
+            assert !two.equals(null)
         '''
     }
 
@@ -127,6 +156,137 @@ class NullCheckTransformTest extends GroovyTestCase {
 
             ex = shouldFail(IllegalArgumentException) { new ConsWithNullDefault(42, null) }
             assert ex.message == 'second cannot be null'
+        '''
+    }
+
+    void testNullCheckWithImmutable1() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @Immutable
+            @NullCheck(includeGenerated=true)
+            class Foo {
+                List<Integer> numbers
+                String sep
+                String bar(final String prefix) { numbers.collect{ prefix + it }.join(sep) }
+            }
+
+            assert new Foo(numbers: 0..1, sep: '-').bar('test') == 'test0-test1'
+            def ex = shouldFail(IllegalArgumentException) { new Foo().bar('test') }
+            assert ex.message.matches(/(sep|numbers) cannot be null/)
+            ex = shouldFail(IllegalArgumentException) { new Foo(null).bar('test') }
+            assert ex.message.contains('args cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: null, sep: '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(sep: '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: 0..1).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: 0..1, sep: null).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(null, '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(0..1, null).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+        '''
+    }
+
+    void testNullCheckWithImmutable2() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @Immutable
+            @NullCheck(includeGenerated=true)
+            class Foo {
+                List<Integer> numbers = null
+                String sep = null
+                String bar(final String prefix) { numbers.collect{ prefix + it }.join(sep) }
+            }
+
+            assert new Foo(numbers: 0..1, sep: '-').bar('test') == 'test0-test1'
+            def ex = shouldFail(IllegalArgumentException) { new Foo().bar('test') }
+            assert ex.message.matches(/(sep|numbers) cannot be null/)
+            ex = shouldFail(IllegalArgumentException) { new Foo(null).bar('test') }
+            assert ex.message.contains('args cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: null, sep: '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(sep: '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: 0..1).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: 0..1, sep: null).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(null, '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(0..1, null).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+        '''
+    }
+
+    void testNullCheckWithImmutable3() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @Immutable
+            @NullCheck(includeGenerated=true)
+            class Foo {
+                List<Integer> numbers = 0..2
+                String sep
+                String bar(final String prefix) { numbers.collect{ prefix + it }.join(sep) }
+            }
+
+            assert new Foo(numbers: 0..1, sep: '-').bar('test') == 'test0-test1'
+            def ex = shouldFail(IllegalArgumentException) { new Foo().bar('test') }
+            assert ex.message.matches(/(sep|numbers) cannot be null/)
+            ex = shouldFail(IllegalArgumentException) { new Foo(null).bar('test') }
+            assert ex.message.contains('args cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: null, sep: '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            assert new Foo(sep: '-').bar('test') == 'test0-test1-test2\'
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: 0..1).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: 0..1, sep: null).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(null, '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(0..1, null).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+        '''
+    }
+
+    void testNullCheckWithImmutable4() {
+        assertScript '''
+            import groovy.transform.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @Immutable
+            @NullCheck(includeGenerated=true)
+            class Foo {
+                List<Integer> numbers
+                String sep = '*'
+                String bar(final String prefix) { numbers.collect{ prefix + it }.join(sep) }
+            }
+
+            assert new Foo(numbers: 0..1, sep: '-').bar('test') == 'test0-test1'
+            def ex = shouldFail(IllegalArgumentException) { new Foo().bar('test') }
+            assert ex.message.matches(/(sep|numbers) cannot be null/)
+            ex = shouldFail(IllegalArgumentException) { new Foo(null).bar('test') }
+            assert ex.message.contains('args cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: null, sep: '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(sep: '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            assert new Foo(numbers: 0..1).bar('test') == 'test0*test1'
+            ex = shouldFail(IllegalArgumentException) { new Foo(numbers: 0..1, sep: null).bar('test') }
+            assert ex.message.contains('sep cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(null, '-').bar('test') }
+            assert ex.message.contains('numbers cannot be null')
+            ex = shouldFail(IllegalArgumentException) { new Foo(0..1, null).bar('test') }
+            assert ex.message.contains('sep cannot be null')
         '''
     }
 }
