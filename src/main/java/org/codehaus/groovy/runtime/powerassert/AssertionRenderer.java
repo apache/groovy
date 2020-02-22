@@ -154,7 +154,7 @@ public final class AssertionRenderer {
             return String.format("%s (toString() == null)", javaLangObjectToString(value));
         }
 
-        if (toString.equals("")) {
+        if (toString.isEmpty()) {
             if (hasStringLikeType(value)) return "\"\"";
             return String.format("%s (toString() == \"\")", javaLangObjectToString(value));
         }
