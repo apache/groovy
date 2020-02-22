@@ -18,13 +18,15 @@
  */
 package org.codehaus.groovy.vmplugin.v9;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
@@ -44,8 +46,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -54,12 +58,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Additional Java 9 based functions will be added here as needed.
  */
 public class Java9 extends Java8 {
+    private static final Logger LOGGER = Logger.getLogger(Java9.class.getName());
+
     @Override
     public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
         Map<String, Set<String>> result = new LinkedHashMap<>();
@@ -81,13 +89,38 @@ public class Java9 extends Java8 {
         result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
 
         try {
-            URI gsLocation = DefaultGroovyMethods.getLocation(GroovySystem.class).toURI();
-            result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
+            List<URI> foundURIList = new LinkedList<>();
+            result.putAll(doFindGroovyClasses("groovy.lang.GroovySystem", groovyPns, foundURIList));
+
+            // in user production environment, Groovy core classes, e.g. `GroovySystem`(java class) and `GrapeIvy`(groovy class) are all packaged in the groovy core jar file,
+            // but in Groovy development environment, Groovy core classes are distributed in different directories
+            result.putAll(doFindGroovyClasses("groovy.grape.GrapeIvy", groovyPns, foundURIList));
         } catch (Exception e) {
-            System.err.println("[WARNING] Failed to get default imported groovy classes: " + e.getMessage());
+            throw new GroovyBugError("Failed to get default imported groovy classes", e);
         }
 
         return result;
+    }
+
+    private Map<String, Set<String>> doFindGroovyClasses(String cn, List<String> groovyPns, List<URI> foundURIList) throws URISyntaxException {
+        GroovyClassLoader groovyClassLoader = new GroovyClassLoader();
+        URI classpathEntryURI;
+        try {
+            Class<?> clazz = groovyClassLoader.loadClass(cn);
+            classpathEntryURI = DefaultGroovyMethods.getLocation(clazz).toURI();
+            if (foundURIList.contains(classpathEntryURI)) {
+                return Collections.emptyMap();
+            }
+
+            foundURIList.add(classpathEntryURI);
+            return doFindClasses(classpathEntryURI, "groovy", groovyPns);
+        } catch (ClassNotFoundException e) {
+            if (LOGGER.isLoggable(Level.WARNING)) {
+                LOGGER.warning("Failed to find class: " + e.getMessage());
+            }
+        }
+
+        return Collections.emptyMap();
     }
 
     private static Map<String, Set<String>> doFindClasses(URI uri, String packageName, List<String> defaultPackageNames) {
@@ -104,6 +137,11 @@ public class Java9 extends Java8 {
                         )
                 );
         return result;
+    }
+
+    @Override
+    public boolean resolveFromDefaultImports(ResolveVisitor resolveVisitor, final ClassNode type) {
+        return false;
     }
 
     private static class LookupHolder {

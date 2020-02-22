@@ -24,6 +24,7 @@ import java.awt.Dimension
 import java.nio.CharBuffer
 import java.util.concurrent.LinkedBlockingQueue
 import org.codehaus.groovy.util.StringUtil
+import groovy.util.HeadlessTestSupport
 
 /** 
  * Tests various GDK methods

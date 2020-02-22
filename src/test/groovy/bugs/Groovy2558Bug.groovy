@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import groovy.test.GroovyTestCase
+import groovy.util.Person
 
 class Groovy2558Bug extends GroovyTestCase {
     void testMe () {

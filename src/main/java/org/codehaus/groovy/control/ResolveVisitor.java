@@ -621,9 +621,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
             }
 
-            if (resolveFromDefaultImports(type, DEFAULT_IMPORTS)) {
+            if (VMPluginFactory.getPlugin().resolveFromDefaultImports(this, type)) {
                 return true;
             }
+
             if (BIGINTEGER_STR.equals(typeName)) {
                 type.setRedirect(ClassHelper.BigInteger_TYPE);
                 return true;
@@ -642,7 +643,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(defaultImportClasses);
     }
 
-    protected boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
+    public boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
         String typeName = type.getName();
 
         for (String packagePrefix : packagePrefixes) {

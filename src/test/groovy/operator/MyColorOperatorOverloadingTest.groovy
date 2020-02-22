@@ -21,6 +21,7 @@ package groovy.operator
 import groovy.test.GroovyTestCase
 
 import static java.awt.Color.*
+import groovy.util.HeadlessTestSupport
 
 class MyColorOperatorOverloadingTest extends GroovyTestCase {
     void testAll() {

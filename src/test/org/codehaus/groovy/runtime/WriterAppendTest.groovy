@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime
 
 import groovy.test.GroovyTestCase
+import groovy.lang.DummyGStringBase
 
 /**
  * Test Writer append and leftShift DGM methods

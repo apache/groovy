@@ -21,6 +21,7 @@ package groovy.swing
 import groovy.test.GroovyTestCase
 
 import javax.swing.SwingUtilities
+import groovy.util.HeadlessTestSupport
 
 abstract class GroovySwingTestCase extends GroovyTestCase {
 

@@ -31,6 +31,7 @@ import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
 import java.awt.*
 import javax.swing.*
+import groovy.util.HeadlessTestSupport
 
 class SwingBuilderTest extends GroovySwingTestCase {
 

@@ -19,6 +19,7 @@
 package groovy
 
 import groovy.test.GroovyTestCase
+import groovy.util.HeadlessTestSupport
 
 /**
  * Tests the use of properties in Groovy

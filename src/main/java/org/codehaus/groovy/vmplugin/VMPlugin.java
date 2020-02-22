@@ -23,6 +23,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.control.ResolveVisitor;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
@@ -124,5 +125,16 @@ public interface VMPlugin {
      */
     default Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
         return Collections.emptyMap();
+    }
+
+    /**
+     * Resolve types from default imported packages
+     *
+     * @param resolveVisitor the resolve visitor
+     * @param type the type to resolve
+     * @return resolved or not
+     */
+    default boolean resolveFromDefaultImports(ResolveVisitor resolveVisitor, final ClassNode type) {
+        return resolveVisitor.resolveFromDefaultImports(type, ResolveVisitor.DEFAULT_IMPORTS);
     }
 }
