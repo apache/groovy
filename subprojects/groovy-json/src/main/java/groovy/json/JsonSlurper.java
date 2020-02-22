@@ -196,7 +196,7 @@ public class JsonSlurper {
      * @return a data structure of lists and maps
      */
     public Object parseText(String text) {
-        if (text == null || "".equals(text)) {
+        if (text == null || text.isEmpty()) {
             throw new IllegalArgumentException("Text must not be null or empty");
         }
         return createParser().parse(text);

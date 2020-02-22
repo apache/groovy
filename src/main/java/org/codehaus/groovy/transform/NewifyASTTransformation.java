@@ -233,7 +233,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         if (!(expr instanceof ConstantExpression)) { return null; }
         final ConstantExpression constExpr = (ConstantExpression) expr;
         final String text = constExpr.getText();
-        if (constExpr.getValue() == null || text.equals("")) { return null; }
+        if (constExpr.getValue() == null || text.isEmpty()) { return null; }
         try {
             final Pattern pattern = Pattern.compile(text);
             return pattern;
