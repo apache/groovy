@@ -84,7 +84,7 @@ public class Java9 extends Java8 {
         try {
             result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
 
-            GroovyClassLoader gcl = new GroovyClassLoader();
+            GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader());
             URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
             result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
 
