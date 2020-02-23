@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v9;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import groovy.lang.Tuple;
@@ -54,16 +54,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Additional Java 9 based functions will be added here as needed.
  */
 public class Java9 extends Java8 {
+    private static final Logger LOGGER = Logger.getLogger(Java9.class.getName());
+
     @Override
     public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
-        Map<String, Set<String>> result = new LinkedHashMap<>();
-
         List<String> javaPns = new ArrayList<>(4);
         List<String> groovyPns = new ArrayList<>(4);
         for (String prefix : packageNames) {
@@ -78,13 +80,24 @@ public class Java9 extends Java8 {
             }
         }
 
-        result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
-
+        Map<String, Set<String>> result = new LinkedHashMap<>(2048);
         try {
-            URI gsLocation = DefaultGroovyMethods.getLocation(GroovySystem.class).toURI();
+            result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
+
+            GroovyClassLoader gcl = new GroovyClassLoader();
+            URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
             result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
-        } catch (Exception e) {
-            System.err.println("[WARNING] Failed to get default imported groovy classes: " + e.getMessage());
+
+            // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `GrapeIvy`(groovy class) are all packaged in the groovy-core jar file,
+            // but in Groovy development environment, groovy-core classes are distributed in different directories
+            URI giLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.grape.GrapeIvy")).toURI();
+            if (!gsLocation.equals(giLocation)) {
+                result.putAll(doFindClasses(giLocation, "groovy", groovyPns));
+            }
+        } catch (Exception ignore) {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
+            }
         }
 
         return result;
