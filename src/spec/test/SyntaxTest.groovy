@@ -17,6 +17,7 @@
  *  under the License.
  */
 import gls.CompilableTestSupport
+import org.codehaus.groovy.runtime.StringGroovyMethods
 
 class SyntaxTest extends CompilableTestSupport {
 
@@ -206,7 +207,7 @@ class SyntaxTest extends CompilableTestSupport {
             // end::shebang_comment_line[]
         '''
 
-        shouldCompile script.stripIndent().split('\n')[1..2].join('\n')
+        shouldCompile StringGroovyMethods.stripIndent((CharSequence)script).split('\n')[1..2].join('\n')
     }
 
     void testSingleLineComment() {

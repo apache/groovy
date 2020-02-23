@@ -18,6 +18,10 @@
  */
 package groovy.lang
 
+import org.codehaus.groovy.runtime.StringGroovyMethods
+
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 class StripMarginTest extends GroovyTestCase {
     void testStripMarginOnSingleLineString() {
         def expected = "the quick brown fox jumps over the lazy dog"
@@ -48,14 +52,16 @@ class StripMarginTest extends GroovyTestCase {
     }
 
     void testStripIndent() {
-        def actual   = """
+        def raw = """
                 return 'foo'
             }
 
             def method() {
                 return 'bar'
             }
-        """.stripIndent()
+        """
+        // hack to avoid conflicts with stripIndent from JDK13+ (resolution in Groovy 3)
+        def actual = isAtLeastJdk('13.0') ? StringGroovyMethods.stripIndent((CharSequence)raw) : raw.stripIndent()
 
         def expected = """
     return 'foo'
@@ -70,14 +76,16 @@ def method() {
     }
 
     void testStripIndentWithFirstLineBackslash() {
-        def actual   = """\
+        def raw = """\
                 return 'foo'
             }
 
             def method() {
                 return 'bar'
             }
-        """.stripIndent()
+        """
+        // hack to avoid conflicts with stripIndent from JDK13+ (resolution in Groovy 3)
+        def actual = isAtLeastJdk('13.0') ? StringGroovyMethods.stripIndent((CharSequence)raw) : raw.stripIndent()
         
         def expected = """\
     return 'foo'

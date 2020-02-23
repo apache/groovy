@@ -31,8 +31,9 @@ class AnnotationTest extends GroovyTestCase {
             class MyClass {
                 // TODO confirm the JDK9 behavior is what we expect
                 private static final List<String> expected = [
-                    '@vm8.Requires(value=[@vm8.Require(value=val1), @vm8.Require(value=val2)])',    // JDK5-8
-                    '@vm8.Requires(value={@vm8.Require(value="val1"), @vm8.Require(value="val2")})' // JDK9
+                    '@vm8.Requires(value=[@vm8.Require(value=val1), @vm8.Require(value=val2)])',     // JDK5-8
+                    '@vm8.Requires(value={@vm8.Require(value="val1"), @vm8.Require(value="val2")})', // JDK9
+                    '@vm8.Requires({@vm8.Require("val1"), @vm8.Require("val2")})'                    // JDK14
                 ]
 
                 // control

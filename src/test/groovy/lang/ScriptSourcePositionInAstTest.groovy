@@ -20,6 +20,7 @@ package groovy.lang
 
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.runtime.StringGroovyMethods
 
 /**
  * Check that scripts have proper source position in the AST
@@ -45,18 +46,24 @@ class ScriptSourcePositionInAstTest extends GroovyTestCase {
     }
 
     void testDoubleStatementScript() {
-        assert positionsForScript("""\
+        def raw = """\
             println 'hello'
             println 'bye'
-        """.stripIndent()) == [[1, 1], [2, 14]]
+        """
+        // avoid stripIndent issues on JDK13+ by calling Groovy's DGM stripIndent explicitly
+        def script = StringGroovyMethods.stripIndent((CharSequence)raw)
+        assert positionsForScript(script) == [[1, 1], [2, 14]]
     }
 
     void testScriptWithClasses() {
-        assert positionsForScript("""\
+        def raw = """\
             class Bar {}
             println 'hello'
             println 'bye'
             class Baz{}
-        """.stripIndent()) == [[2, 1], [3, 14]]
+        """
+        // avoid stripIndent issues on JDK13+ by calling Groovy's DGM stripIndent explicitly
+        def script = StringGroovyMethods.stripIndent((CharSequence)raw)
+        assert positionsForScript(script) == [[2, 1], [3, 14]]
     }
 }
