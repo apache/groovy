@@ -154,11 +154,7 @@ public class CallSiteGenerator {
     }
 
     private static void classHeader(ClassWriter cw, String internalName, String superName) {
-        if (VMPluginFactory.getPlugin().getVersion()>=8) {
-            cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
-        } else {
-            cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
-        }
+        cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, internalName, null, superName, null);
     }
 
     public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
