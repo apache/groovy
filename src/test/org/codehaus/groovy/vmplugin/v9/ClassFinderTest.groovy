@@ -19,7 +19,6 @@
 package org.codehaus.groovy.vmplugin.v9
 
 import org.codehaus.groovy.control.ResolveVisitor
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.codehaus.groovy.vmplugin.VMPluginFactory
 import org.junit.Test
 
@@ -102,44 +101,5 @@ class ClassFinderTest {
         Map<String, Set<String>> r1 = VMPluginFactory.getPlugin().getDefaultImportClasses(ResolveVisitor.DEFAULT_IMPORTS) as TreeMap<String, Set<String>>
 
         assert (ResolveVisitor.DEFAULT_IMPORTS as List).sort() == r1.values().stream().flatMap(e -> e.stream()).collect(Collectors.toSet()).sort()
-
-        def r2 = [:] as TreeMap
-        URI gsLocation = null;
-        try {
-            gsLocation = DefaultGroovyMethods.getLocation(GroovySystem.class).toURI();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-
-        for (String prefix : ResolveVisitor.DEFAULT_IMPORTS) {
-            String pn = prefix.substring(0, prefix.length() - 1).replace('.', '/');
-
-            Map<String, Set<String>> map = Collections.emptyMap();
-            if (pn.startsWith("java/")) {
-                map = ClassFinder.find(URI.create("jrt:/modules/java.base/"), pn);
-            } else if (pn.startsWith("groovy/")) {
-                if (null != gsLocation) {
-                    map = ClassFinder.find(gsLocation, pn);
-                }
-            }
-
-            map = map.entrySet().stream()
-                    .collect(
-                            Collectors.toMap(
-                                    (Map.Entry entry) -> entry.getKey(),
-                                    (Map.Entry entry) -> entry.getValue().stream()
-                                            .map(e -> e.replace('/', '.') + ".")
-                                            .collect(Collectors.toSet())
-                            )
-                    );
-
-            r2.putAll(map);
-        }
-
-        assert r1.size() == r2.size()
-        assert r1.keySet() == r2.keySet()
-        r1.keySet().each { c1 ->
-            assert (r1.get(c1) as TreeSet) == (r2.get(c1) as TreeSet)
-        }
     }
 }
