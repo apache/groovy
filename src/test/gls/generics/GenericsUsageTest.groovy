@@ -214,7 +214,7 @@ final class GenericsUsageTest extends CompilableTestSupport {
 
             shouldFailCompilationWithMessage """
                 abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
-            """, "Unexpected input: 'AbstractList<E implements'"
+            """, "Unexpected input: '<'"
 
             shouldFailCompilationWithMessage """
                 abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
@@ -312,7 +312,7 @@ final class GenericsUsageTest extends CompilableTestSupport {
         } else {
             shouldFailCompilationWithMessages '''
                 class MyList extends ArrayList<> {}
-            ''', ['Unexpected input: \'ArrayList<>\'']
+            ''', ['Unexpected input: \'<\'']
         }
 
         shouldFailCompilationWithMessages '''

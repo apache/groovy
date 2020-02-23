@@ -1082,6 +1082,39 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             throw createParsingFailedException("var cannot be used for type declarations", ctx.identifier());
         }
 
+        boolean isAnnotation = asBoolean(ctx.AT());
+        if (isAnnotation) {
+            if (asBoolean(ctx.typeParameters())) {
+                throw createParsingFailedException("annotation declaration cannot have type parameters", ctx.typeParameters());
+            }
+
+            if (asBoolean(ctx.EXTENDS())) {
+                throw createParsingFailedException("No extends clause allowed for annotation declaration", ctx.EXTENDS());
+            }
+
+            if (asBoolean(ctx.IMPLEMENTS())) {
+                throw createParsingFailedException("No implements clause allowed for annotation declaration", ctx.IMPLEMENTS());
+            }
+        }
+
+        boolean isEnum = asBoolean(ctx.ENUM());
+        if (isEnum) {
+            if (asBoolean(ctx.typeParameters())) {
+                throw createParsingFailedException("enum declaration cannot have type parameters", ctx.typeParameters());
+            }
+
+            if (asBoolean(ctx.EXTENDS())) {
+                throw createParsingFailedException("No extends clause allowed for enum declaration", ctx.EXTENDS());
+            }
+        }
+
+        boolean isInterface = (asBoolean(ctx.INTERFACE()) && !isAnnotation);
+        if (isInterface) {
+            if (asBoolean(ctx.IMPLEMENTS())) {
+                throw createParsingFailedException("No implements clause allowed for interface declaration", ctx.IMPLEMENTS());
+            }
+        }
+
         List<ModifierNode> modifierNodeList = ctx.getNodeMetaData(TYPE_DECLARATION_MODIFIERS);
         Objects.requireNonNull(modifierNodeList, "modifierNodeList should not be null");
         ModifierManager modifierManager = new ModifierManager(this, modifierNodeList);
@@ -1091,7 +1124,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         modifiers &= ~Opcodes.ACC_SYNTHETIC;
 
         ClassNode classNode, outerClass = classNodeStack.peek();
-        if (asBoolean(ctx.ENUM())) {
+
+        if (isEnum) {
             classNode = EnumHelper.makeEnumNode(
                     asBoolean(outerClass) ? className : packageName + className,
                     modifiers,
@@ -1117,7 +1151,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         configureAST(classNode, ctx);
         classNode.setSyntheticPublic(syntheticPublic);
         classNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
-        boolean isInterface = (asBoolean(ctx.INTERFACE()) && !asBoolean(ctx.AT()));
         boolean isInterfaceWithDefaultMethods = (isInterface && this.containsDefaultMethods(ctx));
 
         if (isInterfaceWithDefaultMethods || asBoolean(ctx.TRAIT())) {
@@ -1131,7 +1164,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         classNode.putNodeMetaData(CLASS_NAME, className);
 
         if (asBoolean(ctx.CLASS()) || asBoolean(ctx.TRAIT()) || isInterfaceWithDefaultMethods) {
-            classNode.setSuperClass(this.visitType(ctx.sc));
+            ClassNode superClass;
+            if (asBoolean(ctx.scs)) {
+                ClassNode[] scs = this.visitTypeList(ctx.scs);
+                if (scs.length > 1) {
+                    throw createParsingFailedException("Cannot extend multiple classes", ctx.EXTENDS());
+                }
+                superClass = scs[0];
+            } else {
+                superClass = ClassHelper.OBJECT_TYPE;
+            }
+            classNode.setSuperClass(superClass);
             classNode.setInterfaces(this.visitTypeList(ctx.is));
             this.initUsingGenerics(classNode);
 
@@ -1142,12 +1185,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             this.initUsingGenerics(classNode);
             this.hackMixins(classNode);
 
-        } else if (asBoolean(ctx.ENUM())) {
+        } else if (isEnum) {
             classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_ENUM | Opcodes.ACC_FINAL);
             classNode.setInterfaces(this.visitTypeList(ctx.is));
             this.initUsingGenerics(classNode);
 
-        } else if (asBoolean(ctx.AT())) {
+        } else if (isAnnotation) {
             classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_ANNOTATION);
             classNode.addInterface(ClassHelper.Annotation_TYPE);
             this.hackMixins(classNode);
