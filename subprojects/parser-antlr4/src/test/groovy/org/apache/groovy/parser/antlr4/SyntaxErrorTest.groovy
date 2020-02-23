@@ -284,6 +284,113 @@ test.groovy: 2: Missing ')' @ line 2, column 22.
 '''
     }
 
+
+    void "test groovy core - AnnotationDeclaration 1"() {
+        def err = expectFail '''\
+@interface A<T> {}
+        '''
+
+        assert err == '''\
+startup failed:
+test.groovy: 1: annotation declaration cannot have type parameters @ line 1, column 13.
+   @interface A<T> {}
+               ^
+
+1 error
+'''
+    }
+
+    void "test groovy core - AnnotationDeclaration 2"() {
+        def err = expectFail '''\
+@interface A extends Object {}
+        '''
+
+        assert err == '''\
+startup failed:
+test.groovy: 1: No extends clause allowed for annotation declaration @ line 1, column 14.
+   @interface A extends Object {}
+                ^
+
+1 error
+'''
+    }
+
+    void "test groovy core - AnnotationDeclaration 3"() {
+        def err = expectFail '''\
+@interface A implements Serializable {}
+        '''
+
+        assert err == '''\
+startup failed:
+test.groovy: 1: No implements clause allowed for annotation declaration @ line 1, column 14.
+   @interface A implements Serializable {}
+                ^
+
+1 error
+'''
+    }
+
+    void "test groovy core - EnumDeclaration 1"() {
+        def err = expectFail '''\
+enum E<T> {}
+        '''
+
+        assert err == '''\
+startup failed:
+test.groovy: 1: enum declaration cannot have type parameters @ line 1, column 7.
+   enum E<T> {}
+         ^
+
+1 error
+'''
+    }
+
+    void "test groovy core - EnumDeclaration 2"() {
+        def err = expectFail '''\
+enum E extends Object {}
+        '''
+
+        assert err == '''\
+startup failed:
+test.groovy: 1: No extends clause allowed for enum declaration @ line 1, column 8.
+   enum E extends Object {}
+          ^
+
+1 error
+'''
+    }
+
+    void "test groovy core - InterfaceDeclaration 1"() {
+        def err = expectFail '''\
+interface I implements Serializable {}
+        '''
+
+        assert err == '''\
+startup failed:
+test.groovy: 1: No implements clause allowed for interface declaration @ line 1, column 13.
+   interface I implements Serializable {}
+               ^
+
+1 error
+'''
+    }
+
+    void "test test groovy core - ClassDeclaration 1"() {
+        def err = expectFail '''\
+class C extends Object, Number {}
+        '''
+
+        assert err == '''\
+startup failed:
+test.groovy: 1: Cannot extend multiple classes @ line 1, column 9.
+   class C extends Object, Number {}
+           ^
+
+1 error
+'''
+    }
+
+
     //--------------------------------------------------------------------------
     def expectFail(String code) {
         try {

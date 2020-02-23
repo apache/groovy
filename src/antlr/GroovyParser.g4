@@ -221,36 +221,11 @@ locals[ int t ]
         |   AT INTERFACE { $t = 3; }
         |   TRAIT { $t = 4; }
         )
-        identifier nls
-
-        (
-            { 3 != $t }?
-            (typeParameters nls)?
-            (
-                { 2 != $t }?
-                EXTENDS nls
-                    (
-                        // Only interface can extend more than one super class
-                        {1 == $t}? scs=typeList
-                    |
-                        sc=type
-                    )
-                nls
-            |
-                /* enum should not have type parameters and extends */
-            )
-
-            (
-                {1 != $t}?
-                IMPLEMENTS nls is=typeList nls
-            |
-                /* interface should not implement other interfaces */
-            )
-        |
-            /* annotation should not have implements and extends*/
-        )
-
-        classBody[$t]
+        identifier
+        (nls typeParameters)?
+        (nls EXTENDS nls scs=typeList)?
+        (nls IMPLEMENTS nls is=typeList)?
+        nls classBody[$t]
     ;
 
 // t    see the comment of classDeclaration
