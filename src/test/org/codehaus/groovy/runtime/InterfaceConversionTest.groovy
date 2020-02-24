@@ -45,8 +45,6 @@ class InterfaceConversionTest extends GroovyTestCase {
     void testDefaultInterfaceMethodCallOnProxy() {
         // reversed is a default method within the Comparator interface for 1.8+
         if (!isAtLeastJdk("1.8")) return
-        // broken on JDK14, TODO: FIX
-        if (isAtLeastJdk("14.0")) return
         Comparator c1 = { a, b -> a <=> b }
         assert c1.compare("a", "b") == -1
         def c2 = c1.reversed()

@@ -18,12 +18,17 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.vmplugin.v7.Java7;
 
 import java.lang.annotation.ElementType;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -82,5 +87,72 @@ public class Java8 extends Java7 {
             }
         }
         return params;
+    }
+
+    private static class LookupHolder {
+        private static final Method PRIVATE_LOOKUP;
+        private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
+
+        static {
+            Constructor<MethodHandles.Lookup> lookup = null;
+            Method privateLookup = null;
+            try { // java 9+ friendly
+                privateLookup = MethodHandles.class.getMethod("privateLookupIn", Class.class, MethodHandles.Lookup.class);
+            } catch (final NoSuchMethodException | RuntimeException e) { // java 8 or fallback if anything else goes wrong
+                try {
+                    lookup = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, Integer.TYPE);
+                    if (!lookup.isAccessible()) {
+                        trySetAccessible(lookup);
+                    }
+                } catch (final NoSuchMethodException ex) {
+                    throw new IllegalStateException("Incompatible JVM", e);
+                }
+            }
+            PRIVATE_LOOKUP = privateLookup;
+            LOOKUP_Constructor = lookup;
+        }
+    }
+
+    private static boolean trySetAccessible(AccessibleObject ao) {
+        try {
+            ao.setAccessible(true);
+            return true;
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static Constructor<MethodHandles.Lookup> getLookupConstructor() {
+        return LookupHolder.LOOKUP_Constructor;
+    }
+
+    private static Method getPrivateLookup() {
+        return LookupHolder.PRIVATE_LOOKUP;
+    }
+
+    public static MethodHandles.Lookup of(final Class<?> declaringClass) {
+        try {
+            final Method privateLookup = getPrivateLookup();
+            if (privateLookup != null) {
+                return (MethodHandles.Lookup) privateLookup.invoke(null, declaringClass, MethodHandles.lookup());
+            }
+            return getLookupConstructor().newInstance(declaringClass, MethodHandles.Lookup.PRIVATE).in(declaringClass);
+        } catch (final IllegalAccessException | InstantiationException e) {
+            throw new IllegalArgumentException(e);
+        } catch (final InvocationTargetException e) {
+            throw new GroovyRuntimeException(e);
+        }
+    }
+
+    @Override
+    public Object getInvokeSpecialHandle(Method method, Object receiver) {
+        final Class<?> receiverType = receiver.getClass();
+        try {
+            return of(receiverType).unreflectSpecial(method, receiverType).bindTo(receiver);
+        } catch (ReflectiveOperationException e) {
+            return super.getInvokeSpecialHandle(method, receiver);
+        }
     }
 }
