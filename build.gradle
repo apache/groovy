@@ -50,7 +50,7 @@ plugins {
     // id 'com.github.spotbugs' version '1.6.9' // not compatible with Gradle 6
     id 'jp.skypencil.spotbugs.snom' version '0.4.13' // work in progress replacement of above
     id 'com.github.ben-manes.versions' version '0.27.0'
-    id 'com.github.blindpirate.osgi' version '0.0.1'
+    id 'com.github.blindpirate.osgi' version '0.0.3'
 }
 
 buildScanRecipes {
