@@ -8414,7 +8414,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value corresponding to the given key
      * @since 1.0
      */
-    public static <K,V> V getAt(Map<K,V> self, K key) {
+    public static <K,V> V getAt(Map<K,V> self, Object key) {
         return self.get(key);
     }
 
