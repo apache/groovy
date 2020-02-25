@@ -291,7 +291,9 @@ public class GenericsType extends ASTNode {
     private boolean checkGenerics(final ClassNode classNode) {
         ClassNode lowerBound = getLowerBound();
         if (lowerBound != null) {
-            return compareGenericsWithBound(classNode, lowerBound);
+            if (!lowerBound.redirect().isUsingGenerics()) {
+                return compareGenericsWithBound(classNode, lowerBound);
+            }
         }
         ClassNode[] upperBounds = getUpperBounds();
         if (upperBounds != null) {
