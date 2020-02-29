@@ -96,7 +96,7 @@ public class Java9 extends Java8 {
             }
         } catch (Exception ignore) {
             if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.finest("Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
+                LOGGER.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
             }
         }
 
