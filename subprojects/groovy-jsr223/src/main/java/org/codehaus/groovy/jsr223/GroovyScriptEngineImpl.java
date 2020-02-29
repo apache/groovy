@@ -70,6 +70,7 @@ import javax.script.CompiledScript;
 import javax.script.Invocable;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import java.io.IOException;
@@ -150,7 +151,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         } catch (ClassCastException cce) { /*ignore.*/ }
 
         try {
-            Class<?> clazz = getScriptClass(script);
+            Class<?> clazz = getScriptClass(script, ctx);
             if (clazz == null) throw new ScriptException("Script class is null");
             return eval(clazz, ctx);
         } catch (Exception e) {
@@ -178,7 +179,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     public CompiledScript compile(String scriptSource) throws ScriptException {
         try {
             return new GroovyCompiledScript(this,
-                    getScriptClass(scriptSource));
+                    getScriptClass(scriptSource, context));
         } catch (CompilationFailedException ee) {
             throw new ScriptException(ee);
         }
@@ -321,14 +322,14 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
-    Class<?> getScriptClass(String script)
+    Class<?> getScriptClass(String script, ScriptContext context)
             throws CompilationFailedException {
         Class<?> clazz = classMap.get(script);
         if (clazz != null) {
             return clazz;
         }
 
-        clazz = loader.parseClass(script, generateScriptName());
+        clazz = loader.parseClass(script, generateScriptName(context));
         classMap.put(script, clazz);
         return clazz;
     }
@@ -400,7 +401,15 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     // generate a unique name for top-level Script classes
-    private static synchronized String generateScriptName() {
+    private static synchronized String generateScriptName(ScriptContext	context) {
+        // If context is available, and contains FILENAME,
+        // use it as script name
+        if (context != null) {
+            Object filename = context.getAttribute(ScriptEngine.FILENAME);
+            if (filename != null) {
+                return filename.toString();
+            }
+        }
         return "Script" + (++counter) + ".groovy";
     }
 
