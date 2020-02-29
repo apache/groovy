@@ -762,7 +762,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         ctx.catchClause().stream().map(this::visitCatchClause)
-                .reduce(new LinkedList<CatchStatement>(), (r, e) -> {
+                .reduce(new LinkedList<>(), (r, e) -> {
                     r.addAll(e); // merge several LinkedList<CatchStatement> instances into one LinkedList<CatchStatement> instance
                     return r;
                 })
@@ -3462,21 +3462,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         stringLiteralList.add(configureAST(new ConstantExpression(parseGStringEnd(ctx, beginQuotation)), ctx.GStringEnd()));
 
         List<Expression> values = ctx.gstringValue().stream()
-                .map(e -> {
-                    Expression expression = this.visitGstringValue(e);
-
-                    if (expression instanceof ClosureExpression && !hasArrow(e)) {
-                        List<Statement> statementList = ((BlockStatement) ((ClosureExpression) expression).getCode()).getStatements();
-
-                        if (statementList.stream().noneMatch(DefaultGroovyMethods::asBoolean)) {
-                            return configureAST(new ConstantExpression(null), e);
-                        }
-
-                        return configureAST(this.createCallMethodCallExpression(expression, new ArgumentListExpression(), true), e);
-                    }
-
-                    return expression;
-                })
+                .map(this::visitGstringValue)
                 .collect(Collectors.toList());
 
         StringBuilder verbatimText = new StringBuilder(ctx.getText().length());
@@ -3546,16 +3532,27 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(this.visitGstringPath(ctx.gstringPath()), ctx);
         }
 
-        if (asBoolean(ctx.LBRACE())) {
-            if (asBoolean(ctx.statementExpression())) {
-                return configureAST(((ExpressionStatement) this.visit(ctx.statementExpression())).getExpression(), ctx.statementExpression());
-            } else { // e.g. "${}"
-                return configureAST(new ConstantExpression(null), ctx);
-            }
-        }
-
         if (asBoolean(ctx.closure())) {
-            return configureAST(this.visitClosure(ctx.closure()), ctx);
+            ClosureExpression closureExpression = this.visitClosure(ctx.closure());
+            if (!hasArrow(ctx)) {
+                List<Statement> statementList = ((BlockStatement) closureExpression.getCode()).getStatements();
+                int size = statementList.size();
+                if (1 == size) {
+                    Statement statement = statementList.get(0);
+                    if (statement instanceof ExpressionStatement) {
+                        Expression expression = ((ExpressionStatement) statement).getExpression();
+                        if (!(expression instanceof DeclarationExpression)) {
+                            return expression;
+                        }
+                    }
+                } else if (0 == size) {
+                    return configureAST(new ConstantExpression(null), ctx);
+                }
+
+                return configureAST(this.createCallMethodCallExpression(closureExpression, new ArgumentListExpression(), true), ctx);
+            }
+
+            return configureAST(closureExpression, ctx);
         }
 
         throw createParsingFailedException("Unsupported gstring value: " + ctx.getText(), ctx);
