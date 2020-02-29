@@ -446,7 +446,6 @@ gstring
 
 gstringValue
     :   gstringPath
-    |   LBRACE statementExpression? RBRACE
     |   closure
     ;
 
