@@ -3545,7 +3545,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             return expression;
                         }
                     }
-                } else if (0 == size) {
+                } else if (0 == size) { // e.g. "${}"
                     return configureAST(new ConstantExpression(null), ctx);
                 }
 
