@@ -322,6 +322,11 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
+    Class<?> getScriptClass(String script)
+            throws CompilationFailedException {
+        return getScriptClass(script, null);
+    }
+
     Class<?> getScriptClass(String script, ScriptContext context)
             throws CompilationFailedException {
         Class<?> clazz = classMap.get(script);
