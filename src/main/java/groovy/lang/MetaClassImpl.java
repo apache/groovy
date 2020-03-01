@@ -77,6 +77,7 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.util.ComplexKeyHashMap;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.SingleKeyHashMap;
+import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import javax.annotation.Nullable;
@@ -138,6 +139,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
     private static final Comparator<CachedClass> CACHED_CLASS_NAME_COMPARATOR = Comparator.comparing(CachedClass::getName);
     private static final boolean PERMISSIVE_PROPERTY_ACCESS = SystemUtil.getBooleanSafe("groovy.permissive.property.access");
+    private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
     protected final Class theClass;
     protected final CachedClass theCachedClass;
@@ -1256,7 +1258,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         } else {
             return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
@@ -1912,7 +1914,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //----------------------------------------------------------------------
             // executing the getter method
             //----------------------------------------------------------------------
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
@@ -1973,8 +1975,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // field
         //----------------------------------------------------------------------
-        if (method != null)
-            return new GetBeanMethodMetaProperty(name, method);
+        if (method != null) {
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
+            return new GetBeanMethodMetaProperty(name, transformedMetaMethod);
+        }
 
         if (mp != null) {
             return mp;
@@ -1992,15 +1996,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // check for a generic get method provided through a category
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
-            if (method != null)
-                return new GetMethodMetaProperty(name, method);
+            if (method != null) {
+                MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
+                return new GetMethodMetaProperty(name, transformedMetaMethod);
+            }
+
         }
 
         // the generic method is valid, if available (!=null), if static or
         // if it is not static and we do no static access
         if (genericGetMethod != null && !(!genericGetMethod.isStatic() && isStatic)) {
             method = genericGetMethod;
-            return new GetMethodMetaProperty(name, method);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
+            return new GetMethodMetaProperty(name, transformedMetaMethod);
         }
 
         //----------------------------------------------------------------------
@@ -2811,7 +2819,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 arguments[1] = newValue;
             }
 
-            MetaMethod transformedMetaMethod = VMPluginFactory.getPlugin().transformMetaMethod(this, method);
+            MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
             transformedMetaMethod.doMethodInvoke(object, arguments);
             return;
         }
