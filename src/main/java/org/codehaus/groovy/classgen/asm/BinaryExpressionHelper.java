@@ -338,6 +338,11 @@ public class BinaryExpressionHelper {
         }
     }
 
+    @Deprecated
+    protected void assignToArray(final Expression parent, final Expression receiver, final Expression index, final Expression rhsValueLoader) {
+        assignToArray(parent, receiver, index, rhsValueLoader, false);
+    }
+
     protected void assignToArray(final Expression parent, final Expression receiver, final Expression index, final Expression rhsValueLoader, final boolean safe) {
         // let's replace this assignment to a subscript operator with a
         // method call
