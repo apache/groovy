@@ -22,6 +22,7 @@ import groovy.bugs.groovy9081.somepkg.ProtectedConstructor
 import org.junit.Test
 
 import java.awt.Font
+import java.awt.HeadlessException
 import java.lang.annotation.RetentionPolicy
 
 // TODO add JVM option `--illegal-access=deny` when all warnings fixed
@@ -82,5 +83,13 @@ final class Groovy9081 {
         int b = 2
         BigDecimal c = a * b
         assert c == 666
+    }
+
+    @Test
+    void testGetProperty() {
+        try {
+            java.awt.Toolkit.defaultToolkit.systemClipboard
+        } catch (HeadlessException ignore) {
+        }
     }
 }
