@@ -69,15 +69,14 @@ import javax.script.Compilable;
 import javax.script.CompiledScript;
 import javax.script.Invocable;
 import javax.script.ScriptContext;
-import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessController;
@@ -427,12 +426,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         return (T) Proxy.newProxyInstance(
                 clazz.getClassLoader(),
                 new Class<?>[]{clazz},
-                new InvocationHandler() {
-                    public Object invoke(Object proxy, Method m, Object[] args)
-                            throws Throwable {
-                        return invokeImplSafe(thiz, m.getName(), args);
-                    }
-                });
+                (proxy, m, args) -> invokeImplSafe(thiz, m.getName(), args));
     }
 
     // determine appropriate class loader to serve as parent loader
