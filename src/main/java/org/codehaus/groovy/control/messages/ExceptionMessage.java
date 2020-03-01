@@ -28,7 +28,9 @@ import java.util.Objects;
  * A class for error messages produced by the parser system.
  */
 public class ExceptionMessage extends Message {
-
+    /** not used */
+    @Deprecated
+    protected boolean verbose;
     private final Exception cause;
     protected final boolean debug;
     protected final ProcessingUnit owner;

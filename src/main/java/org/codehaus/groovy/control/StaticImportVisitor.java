@@ -77,6 +77,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private boolean inAnnotation;
     private boolean inLeftExpression;
 
+    /**
+     * Use {@link #StaticImportVisitor(ClassNode,SourceUnit)}.
+     */
+    @Deprecated
+    public StaticImportVisitor() {
+        this(null, null);
+    }
+
     public StaticImportVisitor(final ClassNode classNode, final SourceUnit sourceUnit) {
         this.currentClass = classNode;
         this.sourceUnit = sourceUnit;
