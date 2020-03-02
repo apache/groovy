@@ -902,11 +902,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         int defaultStatementListSize = defaultStatementList.size();
         if (defaultStatementListSize > 1) {
-            throw createParsingFailedException("switch statement should have only one default case, which should appear at last", defaultStatementList.get(0));
+            throw createParsingFailedException("a switch must only have one default branch", defaultStatementList.get(0));
         }
 
         if (defaultStatementListSize > 0 && last(statementList) instanceof CaseStatement) {
-            throw createParsingFailedException("default case should appear at last", defaultStatementList.get(0));
+            throw createParsingFailedException("a default branch must only appear as the last branch of a switch", defaultStatementList.get(0));
         }
 
         SwitchStatement result = configureAST(
