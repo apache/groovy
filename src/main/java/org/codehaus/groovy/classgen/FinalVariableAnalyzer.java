@@ -32,10 +32,16 @@ import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.BreakStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ContinueStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -65,7 +71,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         is_uninitialized(false),
         is_final(true),
         is_var(false),
-        is_ambiguous(false); // any further use of that variable can trigger uninitialized ot not final errors
+        is_ambiguous(false); // any further use of that variable can trigger uninitialized or not final errors
 
         private final boolean isFinal;
 
@@ -87,7 +93,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
-    private final Deque<Map<Variable, VariableState>> assignmentTracker = new LinkedList<Map<Variable, VariableState>>();
+    private final Deque<Map<Variable, VariableState>> assignmentTracker = new LinkedList<>();
 
     public FinalVariableAnalyzer(final SourceUnit sourceUnit) {
         this(sourceUnit, null);
@@ -137,7 +143,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     @Override
     public void visitBlockStatement(final BlockStatement block) {
         Set<Variable> old = declaredFinalVariables;
-        declaredFinalVariables = new HashSet<Variable>();
+        declaredFinalVariables = new HashSet<>();
         super.visitBlockStatement(block);
         declaredFinalVariables = old;
     }
@@ -280,48 +286,106 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
         // merge if/else branches
         Map<Variable, VariableState> curState = getState();
-        Set<Variable> allVars = new HashSet<Variable>();
+        Set<Variable> allVars = new HashSet<>();
         allVars.addAll(curState.keySet());
         allVars.addAll(ifState.keySet());
         allVars.addAll(elseState.keySet());
         for (Variable var : allVars) {
             VariableState beforeValue = curState.get(var);
-            VariableState ifValue = ifState.get(var);
-            VariableState elseValue = elseState.get(var);
-            // merge if and else values
-            VariableState mergedIfElse;
-            mergedIfElse = isFinal(ifValue) && isFinal(elseValue) ? VariableState.is_final : VariableState.is_var;
             if (beforeValue != null) {
-                curState.put(var, mergedIfElse);
+                VariableState ifValue = ifState.get(var);
+                VariableState elseValue = elseState.get(var);
+                if (ifValue == elseValue) {
+                    curState.put(var, ifValue);
+                } else {
+                    curState.put(var, beforeValue == VariableState.is_uninitialized ? VariableState.is_ambiguous : VariableState.is_var);
+                }
             }
         }
     }
 
-    private boolean isFinal(VariableState value) {
-        return value != null && value.isFinal;
+    @Override
+    public void visitSwitch(SwitchStatement switchS) {
+        visitStatement(switchS);
+        switchS.getExpression().visit(this);
+        List<Statement> branches = new ArrayList<>(switchS.getCaseStatements());
+        if (!(switchS.getDefaultStatement() instanceof EmptyStatement)) {
+            branches.add(switchS.getDefaultStatement());
+        }
+        List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
+
+        // collect after states
+        int lastIndex = branches.size() - 1;
+        for (int i = 0; i <= lastIndex; i++) {
+            pushState();
+            boolean done = false;
+            boolean returning = false;
+            for (int j = i; !done; j++) {
+                Statement branch = branches.get(j);
+                Statement block = branch; // default branch
+                if (branch instanceof CaseStatement) {
+                    CaseStatement caseS = (CaseStatement) branch;
+                    block = caseS.getCode();
+                    caseS.getExpression().visit(this);
+                }
+                block.visit(this);
+                done = j == lastIndex || !fallsThrough(block);
+                if (done) {
+                    returning = returningBlock(block);
+                }
+            }
+            if (!returning) {
+                afterStates.add(getState());
+            }
+            popState();
+        }
+        if (afterStates.isEmpty()) {
+            return;
+        }
+
+        // merge branches
+        Map<Variable, VariableState> beforeState = getState();
+        Set<Variable> allVars = new HashSet<>(beforeState.keySet());
+        for (Map<Variable, VariableState> map : afterStates) {
+            allVars.addAll(map.keySet());
+        }
+        for (Variable var : allVars) {
+            VariableState beforeValue = beforeState.get(var);
+            if (beforeValue != null) {
+                final VariableState merged = afterStates.get(0).get(var);
+                if (merged != null) {
+                    if (afterStates.stream().allMatch(state -> merged.equals(state.get(var)))) {
+                        beforeState.put(var, merged);
+                    } else {
+                        VariableState different = beforeValue == VariableState.is_uninitialized ? VariableState.is_ambiguous : VariableState.is_var;
+                        beforeState.put(var, different);
+                    }
+                }
+            }
+        }
     }
 
     @Override
     public void visitTryCatchFinally(final TryCatchStatement statement) {
         visitStatement(statement);
-        Map<Variable, VariableState> beforeTryState = new HashMap<Variable, VariableState>(getState());
+        Map<Variable, VariableState> beforeTryState = new HashMap<>(getState());
         pushState();
         Statement tryStatement = statement.getTryStatement();
         tryStatement.visit(this);
-        Map<Variable, VariableState> afterTryState = new HashMap<Variable, VariableState>(getState());
+        Map<Variable, VariableState> afterTryState = new HashMap<>(getState());
         Statement finallyStatement = statement.getFinallyStatement();
         List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
         // the try finally case
         finallyStatement.visit(this);
         if (!returningBlock(tryStatement)) {
-            afterStates.add(new HashMap<Variable, VariableState>(getState()));
+            afterStates.add(new HashMap<>(getState()));
         }
         popState();
         // now the finally only case but only if no catches
         if (statement.getCatchStatements().isEmpty()) {
             finallyStatement.visit(this);
             if (!returningBlock(tryStatement)) {
-                afterStates.add(new HashMap<Variable, VariableState>(getState()));
+                afterStates.add(new HashMap<>(getState()));
             }
         }
         for (CatchStatement catchStatement : statement.getCatchStatements()) {
@@ -357,7 +421,6 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     private void visitCatchFinally(Map<Variable, VariableState> initialVarState, List<Map<Variable, VariableState>> afterTryCatchStates, CatchStatement catchStatement, Statement finallyStatement) {
         pushState();
-//        getState().clear();
         getState().putAll(initialVarState);
         Statement code = catchStatement.getCode();
         catchStatement.visit(this);
@@ -369,10 +432,10 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     /**
-     * @return true if the block's last statement is a return
+     * @return true if the block's last statement is a return or throw
      */
     private boolean returningBlock(Statement block) {
-        if (block instanceof ReturnStatement) {
+        if (block instanceof ReturnStatement || block instanceof  ThrowStatement) {
             return true;
         }
         if (!(block instanceof BlockStatement)) {
@@ -383,10 +446,26 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             return false;
         }
         Statement last = DefaultGroovyMethods.last(bs.getStatements());
-        if (last instanceof ReturnStatement) {
+        if (last instanceof ReturnStatement || last instanceof ThrowStatement) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * @return true if the block falls through, i.e. no break/return
+     */
+    private boolean fallsThrough(Statement statement) {
+        if (statement instanceof EmptyStatement) {
+            return true;
+        }
+        BlockStatement block = (BlockStatement) statement; // currently only possibility
+        if (block.getStatements().size() == 0) {
+            return true;
+        }
+        Statement last = DefaultGroovyMethods.last(block.getStatements());
+        boolean completesAbruptly = last instanceof ReturnStatement || last instanceof BreakStatement || last instanceof ThrowStatement || last instanceof ContinueStatement;
+        return !completesAbruptly;
     }
 
     private void recordAssignment(
