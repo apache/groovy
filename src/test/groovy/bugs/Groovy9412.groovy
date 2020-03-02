@@ -18,29 +18,32 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase;
-class Groovy9412 extends GroovyTestCase {
-    void testProtectedFieldInClosureInEnum(){
+import groovy.transform.CompileStatic
+import org.junit.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy9412 {
+
+    @Test
+    void testCovarianceOfEnumThatImplementsInterface() {
         assertScript '''
-    import groovy.transform.TypeChecked
-
-        @TypeChecked
-        class MyClass {
-
-            interface Foo {}
+            interface Foo {
+            }
 
             enum Bar implements Foo {
-                AA
+                Baz
             }
 
-            void F() {
-                List<Foo> g = []
-                g.add(Bar.AA)
+            @groovy.transform.TypeChecked
+            def test() {
+                List<Foo> list = []
+                list.add(Bar.Baz) // add(E) should accept Foo or Bar instances
+                return list
             }
-        }
 
-    assert new MyClass()
-    '''
-
+            assert test().size() == 1
+        '''
     }
 }
