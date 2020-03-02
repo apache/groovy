@@ -856,6 +856,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 // GROOVY-3684: focus away and then back to inputArea ensures caret blinks
                 swing.doLater outputArea.&requestFocusInWindow
                 swing.doLater inputArea.&requestFocusInWindow
+                // Line numbers are typically (re)drawn using a document listener,
+                // but those were disabled above while modifying the document.
+                // So make sure line numbers are drawn now.
+                inputEditor.repaint()
             }
         }
     }
