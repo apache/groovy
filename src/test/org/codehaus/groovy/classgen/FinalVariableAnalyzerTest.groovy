@@ -504,6 +504,24 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-9424
+    void testFinalVarInitializedByAllSwitchBranches() {
+        assertScript '''
+            final String result
+
+            switch (2) {
+                case 1: result = 'a'; break
+                case 2: // fallthrough
+                case 3: result = 'b'; break
+                case 4: throw new RuntimeException('Boom')
+                case 5: return
+                default: result = 'x'
+            }
+
+            assert result == 'b'
+        '''
+    }
+
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 
