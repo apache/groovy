@@ -116,7 +116,7 @@ public interface VMPlugin {
     MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod);
 
     /**
-     * Returns the default import classes: class name -> the relevant package names
+     * Returns the default import classes: class name -&gt; the relevant package names
      *
      * @param packageNames the default import package names, e.g. java.lang.
      * @return the default import classes
