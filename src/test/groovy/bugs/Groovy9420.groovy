@@ -18,23 +18,33 @@
  */
 package groovy.bugs
 
-import gls.CompilableTestSupport
+import groovy.transform.CompileStatic
+import org.junit.Test
 
-class Groovy9420 extends CompilableTestSupport {
-    void testStaticBooleanIsPropertyInStaticContext() {
-        shouldCompile """
+import static groovy.test.GroovyAssert.assertScript
+
+@CompileStatic
+final class Groovy9420 {
+
+    @Test
+    void testMapGetVsGetAt() {
+        assertScript '''
             @groovy.transform.CompileStatic
             void blah() {
-                Map<String, String> m = [foo: 'foo']
+                Map<String, String> m = [foo: 'bar']
                 def a = m.get(key)
-                uhuh(a)
+                test(a)
                 def b = m[key]
-                uhuh(b)
+                test(b)
             }
 
-            void uhuh(String a) { }
-
             Object getKey() { 'foo' }
-        """
+
+            void test(String a) {
+                assert a == 'bar'
+            }
+
+            blah()
+        '''
     }
 }
