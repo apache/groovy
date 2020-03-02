@@ -313,7 +313,7 @@ public class GenericsType extends ASTNode {
         if (classNode == null) {
             return false;
         }
-        if (!bound.isUsingGenerics() || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null)) {
+        if (bound.getGenericsTypes() == null || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null)) {
             // if the bound is not using generics or the class node is a raw type, there's nothing to compare with
             return true;
         }
