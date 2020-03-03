@@ -441,13 +441,9 @@ public abstract class StaticTypeCheckingSupport {
      * @return true if the class node is assignable to the other class node, false otherwise
      */
     static boolean isAssignableTo(ClassNode type, ClassNode toBeAssignedTo) {
-        if (UNKNOWN_PARAMETER_TYPE == type) return true;
-        if (type == toBeAssignedTo) return true;
-        if (toBeAssignedTo.redirect() == STRING_TYPE && type.redirect() == GSTRING_TYPE) {
-            return true;
-        }
-        if (isPrimitiveType(toBeAssignedTo)) toBeAssignedTo = getWrapper(toBeAssignedTo);
+        if (type == toBeAssignedTo || type == UNKNOWN_PARAMETER_TYPE) return true;
         if (isPrimitiveType(type)) type = getWrapper(type);
+        if (isPrimitiveType(toBeAssignedTo)) toBeAssignedTo = getWrapper(toBeAssignedTo);
         if (NUMBER_TYPES.containsKey(type.redirect()) && NUMBER_TYPES.containsKey(toBeAssignedTo.redirect())) {
             return NUMBER_TYPES.get(type.redirect()) <= NUMBER_TYPES.get(toBeAssignedTo.redirect());
         }
@@ -457,12 +453,11 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isDerivedFrom(GSTRING_TYPE) && STRING_TYPE.equals(toBeAssignedTo)) {
             return true;
         }
-        if (toBeAssignedTo.isDerivedFrom(GSTRING_TYPE) && STRING_TYPE.equals(type)) {
+        if (STRING_TYPE.equals(type) && toBeAssignedTo.isDerivedFrom(GSTRING_TYPE)) {
             return true;
         }
         if (implementsInterfaceOrIsSubclassOf(type, toBeAssignedTo)) {
-            if (OBJECT_TYPE.equals(toBeAssignedTo)) return true;
-            if (toBeAssignedTo.isUsingGenerics()) {
+            if (toBeAssignedTo.getGenericsTypes() != null) {
                 // perform additional check on generics
                 // ? extends toBeAssignedTo
                 GenericsType gt = GenericsUtils.buildWildcardType(toBeAssignedTo);
@@ -678,8 +673,7 @@ public abstract class StaticTypeCheckingSupport {
 
         // on an assignment everything that can be done by a GroovyCast is allowed
 
-        // anything can be assigned to an Object, String, Boolean
-        // or Class typed variable
+        // anything can be assigned to an Object, String, Boolean or Class typed variable
         if (isWildcardLeftHandSide(leftRedirect) && !(boolean_TYPE.equals(left) && rightExpressionIsNull)) return true;
 
         // char as left expression
@@ -837,16 +831,15 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static String toMethodParametersString(final String methodName, final ClassNode... parameters) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(methodName).append("(");
+        StringBuilder sb = new StringBuilder(methodName);
+        sb.append('(');
         if (parameters != null) {
-            for (int i = 0, parametersLength = parameters.length; i < parametersLength; i += 1) {
-                final ClassNode parameter = parameters[i];
-                sb.append(prettyPrintType(parameter));
-                if (i < parametersLength - 1) sb.append(", ");
+            for (int i = 0, n = parameters.length; i < n; i += 1) {
+                sb.append(prettyPrintType(parameters[i]));
+                if (i < n - 1) sb.append(", ");
             }
         }
-        sb.append(")");
+        sb.append(')');
         return sb.toString();
     }
 
