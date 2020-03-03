@@ -195,7 +195,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-
     // GROOVY-10051
     void testReturnTypeInferenceWithMethodGenericsAndBounds() {
         assertScript '''
@@ -482,6 +481,16 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot call A <String, Integer>#<init>(java.lang.Class <String>, java.lang.Class <Integer>) with arguments [java.lang.Class <java.lang.Integer>, java.lang.Class <java.lang.String>]'
     }
 
+    void testMethodCallWithMapParameterUnbounded() {
+        assertScript """
+            import static ${this.class.name}.isEmpty
+            class C {
+                Map<String, ?> map = new HashMap()
+            }
+            assert isEmpty(new C().map)
+        """
+    }
+
     // GROOVY-9460
     void testMethodCallWithClassParameterUnbounded() {
         assertScript '''
@@ -489,13 +498,92 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 static void baz(Class<?> target) {
                 }
             }
-            class Foo<D> { // cannot be "T" because that matches type parameter in Class
-                void test(Class<D> param) {
-                    Bar.baz(param) // Cannot call Bar#baz(java.lang.Class<?>) with arguments [java.lang.Class<D>]
+            class Foo<X> { // cannot be "T" because that matches type parameter in Class
+                void test(Class<X> c) {
+                    Bar.baz(c) // Cannot call Bar#baz(Class<?>) with arguments [Class<X>]
                 }
             }
             new Foo<String>().test(String.class)
         '''
+    }
+
+    // GROOVY-10525
+    void testMethodCallWithClassParameterUnbounded2() {
+        assertScript '''
+            @Grab('javax.validation:validation-api:1.1.0.Final')
+            import javax.validation.Validator
+
+            void test(Object bean, List<Class<?>> types, Validator validator) {
+                validator.validate(bean, types as Class<?>[])
+            }
+        '''
+    }
+
+    // GROOVY-9413
+    void testMethodCallWithClassParameterUnbounded3() {
+        File parentDir = createTempDir()
+        config.with {
+            targetDirectory = createTempDir()
+            jointCompilationOptions = [stubDir: createTempDir()]
+        }
+        try {
+            def a = new File(parentDir, 'A.java')
+            a.write '''
+                import java.util.Map;
+
+                interface APSBus {
+                    void send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler);
+                }
+
+                interface APSBusRouter {
+                    boolean send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler);
+                }
+
+                interface APSHandler<T> {
+                    void handle(T value);
+                }
+
+                interface APSResult<T> {
+                }
+
+                class APSServiceTracker<Service> {
+                    void withService(WithService<Service> withService, Object... args) throws Exception {
+                    }
+                }
+
+                interface WithService<Service> {
+                    void withService(Service service, Object... args) throws Exception;
+                }
+            '''
+            def b = new File(parentDir, 'B.groovy')
+            b.write '''
+                class One9413 implements APSBus {
+                    private APSServiceTracker<APSBusRouter> busRouterTracker
+
+                    @Override
+                    void send(String target, Map<String, Object> message, APSHandler<APSResult<?>> resultHandler) {
+                        busRouterTracker.withService { APSBusRouter busRouter, Object... arguments ->
+                            busRouter.send(target, message, resultHandler)
+                        }
+                    }
+                }
+
+                class Two9413 implements APSBusRouter {
+                    @Override
+                    boolean send(String target, Map<String, Object> payload, APSHandler<APSResult<?>> resultHandler) {
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+            config.jointCompilationOptions.stubDir.deleteDir()
+        }
     }
 
     void testConstructorCallWithClassParameterUsingClassLiteralArg() {
@@ -596,6 +684,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         new ClassB()
         '''
     }
+
     // GROOVY-5415
     void testShouldUseMethodGenericType2() {
         shouldFailWithMessages '''import groovy.transform.stc.GenericsSTCTest.ClassA
@@ -874,6 +963,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             Map<String, Integer> foo = null
             Integer result = foo?.get('a')
+            assert result == null
         '''
     }
 
@@ -881,6 +971,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             List<Integer> foo = null
             Integer result = foo?.get(0)
+            assert result == null
         '''
     }
 
@@ -889,8 +980,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Integer> foo = [1]
             foo = null
             Integer result = foo?.get(0)
+            assert result == null
         '''
-
     }
 
     void testMethodCallWithArgumentUsingNestedGenerics() {
@@ -1148,6 +1239,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             printEqual(1, 'foo')
         ''', '#printEqual(T, T) with arguments [int, java.lang.String]'
     }
+
     void testIncompatibleGenericsForTwoArgumentsUsingEmbeddedPlaceholder() {
         shouldFailWithMessages '''
             public <T> void printEqual(T arg1, List<T> arg2) {
@@ -1197,7 +1289,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call TypedProperty <Number, Unknown>#eq(java.lang.Number) with arguments [java.lang.String]'
     }
 
-    void testGroovy5748() {
+    // GROOVY-5748
+    void testPlaceholdersAndWildcards() {
         assertScript '''
             interface IStack<T> {
                 INonEmptyStack<T, ? extends IStack<T>> push(T x)
@@ -1301,10 +1394,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-8960
     void testCorrectlyBoundedByExtendsGenericParameterType2() {
-        File parentDir = File.createTempDir()
+        File parentDir = createTempDir()
         config.with {
-            targetDirectory = File.createTempDir()
-            jointCompilationOptions = [stubDir: File.createTempDir()]
+            targetDirectory = createTempDir()
+            jointCompilationOptions = [stubDir: createTempDir()]
         }
         try {
             def a = new File(parentDir, 'aJavaClass.java')
@@ -1566,11 +1659,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         // GROOVY-9822
+        File parentDir = createTempDir()
         config.with {
             targetDirectory = createTempDir()
             jointCompilationOptions = [stubDir: createTempDir()]
         }
-        File parentDir = createTempDir()
         try {
             def a = new File(parentDir, 'Types.java')
             a.write '''
@@ -1627,10 +1720,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             config.targetDirectory.deleteDir()
             config.jointCompilationOptions.stubDir.deleteDir()
         }
-    }
-
-    protected static File createTempDir() {
-        File.createTempDir('groovy-junit-', Long.toString(System.currentTimeMillis()))
     }
 
     void testRegressionInConstructorCheck() {
@@ -2358,11 +2447,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         // GROOVY-9821
+        File parentDir = createTempDir()
         config.with {
             targetDirectory = createTempDir()
             jointCompilationOptions = [stubDir: createTempDir()]
         }
-        File parentDir = createTempDir()
         try {
             def a = new File(parentDir, 'Types.java')
             a.write '''
@@ -2419,26 +2508,35 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    static class MyList extends LinkedList<String> {}
+    //--------------------------------------------------------------------------
 
-    public static class ClassA<T> {
-        public <X> Class<X> foo(Class<X> classType) {
+    static class MyList
+        extends LinkedList<String> {
+    }
+
+    static class ClassA<T> {
+        def <X> Class<X> foo(Class<X> classType) {
             return classType;
         }
-
-        public <X> Class<X> bar(Class<T> classType) {
+        def <X> Class<X> bar(Class<T> classType) {
             return null;
         }
     }
 
-    public static class JavaClassSupport {
-        public static class Container<T> {
+    static class JavaClassSupport {
+        static class Container<T> {
         }
+        static class StringContainer extends Container<String> {
+        }
+        static <T> List<T> unwrap(Collection<? extends Container<T>> list) {
+        }
+    }
 
-        public static class StringContainer extends Container<String> {
-        }
+    static boolean isEmpty(Map<?,?> map) {
+        map == null || map.isEmpty()
+    }
 
-        public static <T> List<T> unwrap(Collection<? extends Container<T>> list) {
-        }
+    protected static File createTempDir() {
+        File.createTempDir('groovy-junit-', Long.toString(System.currentTimeMillis()))
     }
 }
