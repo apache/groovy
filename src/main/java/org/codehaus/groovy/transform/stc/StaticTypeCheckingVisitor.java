@@ -5369,15 +5369,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected boolean typeCheckMethodsWithGenericsOrFail(final ClassNode receiver, final ClassNode[] arguments, final MethodNode candidateMethod, final Expression location) {
         if (!typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod)) {
             Map<GenericsTypeName, GenericsType> classGTs = GenericsUtils.extractPlaceholders(receiver);
-            ClassNode[] ptypes = new ClassNode[candidateMethod.getParameters().length];
             Parameter[] parameters = candidateMethod.getParameters();
+            ClassNode[] paramTypes = new ClassNode[parameters.length];
             for (int i = 0, n = parameters.length; i < n; i += 1) {
-                Parameter parameter = parameters[i];
-                ClassNode type = parameter.getType();
-                ptypes[i] = fullyResolveType(type, classGTs);
+                paramTypes[i] = fullyResolveType(parameters[i].getType(), classGTs);
             }
             addStaticTypeError("Cannot call " + toMethodGenericTypesString(candidateMethod) + receiver.toString(false) + "#" +
-                    toMethodParametersString(candidateMethod.getName(), ptypes) + " with arguments " + formatArgumentList(arguments), location);
+                    toMethodParametersString(candidateMethod.getName(), paramTypes) + " with arguments " + formatArgumentList(arguments), location);
             return false;
         }
         return true;
@@ -5392,7 +5390,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static String formatArgumentList(final ClassNode[] nodes) {
         if (nodes == null || nodes.length == 0) return "[]";
         StringBuilder sb = new StringBuilder(24 * nodes.length);
-        sb.append("[");
+        sb.append('[');
         for (ClassNode node : nodes) {
             sb.append(prettyPrintType(node));
             sb.append(", ");
