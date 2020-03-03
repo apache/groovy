@@ -18,14 +18,13 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 final class Groovy9413 {
-
-    @Test @NotYetImplemented
+// .\gradlew --no-daemon --max-workers 2 :test --tests groovy.bugs.Groovy9413 --debug-jvm
+    @Test
     void testInterfaceGenerics() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),

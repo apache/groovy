@@ -71,7 +71,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
 
     @Override
     public void visitTypeArgument() {
-        arguments.add(createWildcard(new ClassNode[]{ClassHelper.OBJECT_TYPE}, null));
+        arguments.add(createWildcard(null, null));
     }
 
     @Override
