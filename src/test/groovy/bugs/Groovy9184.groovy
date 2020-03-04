@@ -28,7 +28,7 @@ import static org.codehaus.groovy.control.ParserPluginFactory.antlr2
 @Deprecated
 final class Groovy9184 {
 
-    @Test(timeout=1500L)
+    @Test(timeout=2000L)
     void testEnumWithinEnum() {
         def config = new CompilerConfiguration(pluginFactory: antlr2())
 
