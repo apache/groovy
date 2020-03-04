@@ -981,7 +981,7 @@ indexPropertyArgs
     ;
 
 namedPropertyArgs
-    :   QUESTION? LBRACK (mapEntryList | COLON) RBRACK
+    :   QUESTION? LBRACK (namedPropertyArgList | COLON) RBRACK
     ;
 
 primary
@@ -1001,6 +1001,14 @@ primary
     |   builtInType                                                                         #builtInTypePrmrAlt
     ;
 
+namedPropertyArgPrimary
+options { baseContext = primary; }
+    :   identifier                                                                          #identifierPrmrAlt
+    |   literal                                                                             #literalPrmrAlt
+    |   gstring                                                                             #gstringPrmrAlt
+    |   parExpression                                                                       #parenPrmrAlt
+    ;
+
 list
     :   LBRACK expressionList[true]? COMMA? RBRACK
     ;
@@ -1017,14 +1025,31 @@ mapEntryList
     :   mapEntry (COMMA mapEntry)*
     ;
 
+namedPropertyArgList
+options { baseContext = mapEntryList; }
+    :   namedPropertyArg (COMMA namedPropertyArg)*
+    ;
+
 mapEntry
     :   mapEntryLabel COLON nls expression
+    |   MUL COLON nls expression
+    ;
+
+namedPropertyArg
+options { baseContext = mapEntry; }
+    :   namedPropertyArgLabel COLON nls expression
     |   MUL COLON nls expression
     ;
 
 mapEntryLabel
     :   keywords
     |   primary
+    ;
+
+namedPropertyArgLabel
+options { baseContext = mapEntryLabel; }
+    :   keywords
+    |   namedPropertyArgPrimary
     ;
 
 /**
@@ -1090,13 +1115,13 @@ enhancedArgumentList
 argumentListElement
 options { baseContext = enhancedArgumentListElement; }
     :   expressionListElement[true]
-    |   mapEntry
+    |   namedPropertyArg
     ;
 
 enhancedArgumentListElement
     :   expressionListElement[true]
     |   standardLambdaExpression
-    |   mapEntry
+    |   namedPropertyArg
     ;
 
 stringLiteral
