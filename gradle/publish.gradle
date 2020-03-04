@@ -25,8 +25,9 @@ if (!artifactoryUser) {
     // try to read artifactory.properties
     def base = file(projectDir)
     def artifactoryFile = new File(base, 'artifactory.properties')
-    while (!artifactoryFile.exists() && base) {
+    while (!artifactoryFile.exists()) {
         base = base.parentFile
+        if (!base) break
         artifactoryFile = new File(base, 'artifactory.properties')
     }
     if (artifactoryFile.exists()) {
@@ -35,6 +36,8 @@ if (!artifactoryUser) {
         props.load(artifactoryFile.newReader())
         ext.artifactoryUser = props.getProperty('artifactoryUser','')
         ext.artifactoryPassword = props.getProperty('artifactoryPassword','')
+    } else {
+        logger.lifecycle 'No artifactory.properties file found'
     }
 }
 
