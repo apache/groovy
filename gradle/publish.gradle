@@ -22,9 +22,15 @@ ext.artifactoryUser = project.hasProperty('artifactoryUser') ? project.artifacto
 ext.artifactoryPassword = project.hasProperty('artifactoryPassword') ? project.artifactoryPassword : System.getenv('ARTIFACTORY_PASSWORD')
 
 if (!artifactoryUser) {
-    // try to read from properties
-    def artifactoryFile = file('artifactory.properties')
+    // try to read artifactory.properties
+    def base = file(projectDir)
+    def artifactoryFile = new File(base, 'artifactory.properties')
+    while (!artifactoryFile.exists() && base) {
+        base = base.parentFile
+        artifactoryFile = new File(base, 'artifactory.properties')
+    }
     if (artifactoryFile.exists()) {
+        logger.lifecycle 'Found artifactory.properties in ' + base.path
         def props = new Properties()
         props.load(artifactoryFile.newReader())
         ext.artifactoryUser = props.getProperty('artifactoryUser','')
