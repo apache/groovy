@@ -522,6 +522,18 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    // GROOVY-9438
+    void testFinalVarWithSwitchAsLastStatementAndCaseContainingOnlyBreak() {
+        assertScript '''
+            switch(1) {
+                case 1:
+                    break
+                default:
+                    println 2
+            }
+        '''
+    }
+
     @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 

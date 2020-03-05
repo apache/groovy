@@ -459,6 +459,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         if (statement instanceof EmptyStatement) {
             return true;
         }
+        if (statement instanceof ReturnStatement) { // from ReturnAdder
+            return false;
+        }
         BlockStatement block = (BlockStatement) statement; // currently only possibility
         if (block.getStatements().size() == 0) {
             return true;
