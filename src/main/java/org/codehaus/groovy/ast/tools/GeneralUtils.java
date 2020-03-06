@@ -694,8 +694,18 @@ public class GeneralUtils {
         return new PropertyExpression(owner, property);
     }
 
+    @Deprecated
+    public static Expression propX$$bridge(final Expression owner, final String property) {
+        return propX(owner, property);
+    }
+
     public static PropertyExpression propX(final Expression owner, final Expression property) {
         return new PropertyExpression(owner, property);
+    }
+
+    @Deprecated
+    public static Expression propX$$bridge(final Expression owner, final Expression property) {
+        return propX(owner, property);
     }
 
     public static PropertyExpression propX(final Expression owner, final Expression property, final boolean safe) {
