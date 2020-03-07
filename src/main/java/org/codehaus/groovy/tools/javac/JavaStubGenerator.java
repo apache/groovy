@@ -544,6 +544,9 @@ public class JavaStubGenerator {
 
         printParams(out, constructorNode);
 
+        ClassNode[] exceptions = constructorNode.getExceptions();
+        printExceptions(out, exceptions);
+
         ConstructorCallExpression constrCall = getFirstIfSpecialConstructorCall(constructorNode.getCode());
         if (constrCall == null) {
             out.println(" {}");
@@ -695,15 +698,7 @@ public class JavaStubGenerator {
         printParams(out, methodNode);
 
         ClassNode[] exceptions = methodNode.getExceptions();
-        for (int i = 0; i < exceptions.length; i++) {
-            ClassNode exception = exceptions[i];
-            if (i == 0) {
-                out.print("throws ");
-            } else {
-                out.print(", ");
-            }
-            printType(out, exception);
-        }
+        printExceptions(out, exceptions);
 
         if (Traits.isTrait(clazz)) {
             out.println(";");
@@ -737,6 +732,18 @@ public class JavaStubGenerator {
             ClassNode retType = methodNode.getReturnType();
             printReturn(out, retType);
             out.println("}");
+        }
+    }
+
+    private void printExceptions(PrintWriter out, ClassNode[] exceptions) {
+        for (int i = 0; i < exceptions.length; i++) {
+            ClassNode exception = exceptions[i];
+            if (i == 0) {
+                out.print("throws ");
+            } else {
+                out.print(", ");
+            }
+            printType(out, exception);
         }
     }
 
