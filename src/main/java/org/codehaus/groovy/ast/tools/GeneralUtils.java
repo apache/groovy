@@ -59,6 +59,7 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.syntax.Token;
@@ -114,6 +115,10 @@ public class GeneralUtils {
             vars.add(varX(name));
         }
         return new ArgumentListExpression(vars);
+    }
+
+    public static Statement assignNullS(final Expression target) {
+        return assignS(target, ConstantExpression.EMPTY_EXPRESSION);
     }
 
     public static Statement assignS(final Expression target, final Expression value) {
@@ -254,23 +259,43 @@ public class GeneralUtils {
     }
 
     public static Statement ctorSuperS() {
-        return stmt(ctorX(ClassNode.SUPER));
+        return stmt(ctorSuperX());
     }
 
     public static Statement ctorSuperS(final Expression args) {
-        return stmt(ctorX(ClassNode.SUPER, args));
+        return stmt(ctorSuperX(args));
+    }
+
+    public static ConstructorCallExpression ctorSuperX() {
+        return ctorX(ClassNode.SUPER);
+    }
+
+    public static ConstructorCallExpression ctorSuperX(final Expression args) {
+        return ctorX(ClassNode.SUPER, args);
     }
 
     public static Statement ctorThisS() {
-        return stmt(ctorX(ClassNode.THIS));
+        return stmt(ctorThisX());
     }
 
     public static Statement ctorThisS(final Expression args) {
-        return stmt(ctorX(ClassNode.THIS, args));
+        return stmt(ctorThisX(args));
+    }
+
+    public static ConstructorCallExpression ctorThisX() {
+        return ctorX(ClassNode.THIS);
+    }
+
+    public static ConstructorCallExpression ctorThisX(final Expression args) {
+        return ctorX(ClassNode.THIS, args);
     }
 
     public static Statement declS(final Expression target, final Expression init) {
-        return new ExpressionStatement(new DeclarationExpression(target, ASSIGN, init));
+        return stmt(declX(target, init));
+    }
+
+    public static DeclarationExpression declX(final Expression target, final Expression init) {
+        return new DeclarationExpression(target, ASSIGN, init);
     }
 
     public static MapEntryExpression entryX(final Expression key, final Expression value) {
@@ -655,6 +680,10 @@ public class GeneralUtils {
         return new PropertyExpression(owner, property);
     }
 
+    public static PropertyExpression propX(final Expression owner, final Expression property, final boolean safe) {
+        return new PropertyExpression(owner, property, safe);
+    }
+
     public static Statement returnS(final Expression expr) {
         return new ReturnStatement(new ExpressionStatement(expr));
     }
@@ -681,8 +710,22 @@ public class GeneralUtils {
                 elseExpr);
     }
 
+    public static PropertyExpression thisPropX(final boolean implicit, final String property) {
+        PropertyExpression pexp = (PropertyExpression) propX(varX("this"), property);
+        pexp.setImplicitThis(implicit);
+        return pexp;
+    }
+
     public static ThrowStatement throwS(final Expression expr) {
         return new ThrowStatement(expr);
+    }
+
+    public static TryCatchStatement tryCatchS(final Statement tryStatement) {
+        return tryCatchS(tryStatement, EmptyStatement.INSTANCE);
+    }
+
+    public static TryCatchStatement tryCatchS(final Statement tryStatement, final Statement finallyStatement) {
+        return new TryCatchStatement(tryStatement, finallyStatement);
     }
 
     public static VariableExpression varX(final String name) {
