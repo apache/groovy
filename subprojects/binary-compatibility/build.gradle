@@ -29,8 +29,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.2.8'
-        classpath 'com.google.guava:guava:27.0-jre'
+        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.2.9'
+        classpath 'com.google.guava:guava:28.2-jre'
     }
 }
 apply plugin: 'me.champeau.gradle.japicmp'
@@ -48,7 +48,7 @@ Set excludeModules = [
         "groovy-astbuilder", "groovy-json-direct", "groovy-yaml", "performance", "tests-vm8", "binary-compatibility"
 ]
 
-def compatibilityBaselineVersion = "2.5.8"
+def compatibilityBaselineVersion = "2.5.10"
 
 def thisProject = project
 
