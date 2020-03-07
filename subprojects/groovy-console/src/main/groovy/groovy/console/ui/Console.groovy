@@ -1047,16 +1047,27 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         new AstBrowser(inputArea, rootElement, shell.getClassLoader(), config).run({ inputArea.getText() })
     }
 
+    @CompileStatic
+    private static class CstInspector extends TestRig {
+        CstInspector() throws Exception {
+            super(new String[] { 'Groovy', 'compilationUnit', '-gui' })
+        }
+
+        void inspectParseTree(String text) {
+            CharStream charStream = CharStreams.fromReader(new StringReader(text))
+            GroovyLangLexer lexer = new GroovyLangLexer(charStream)
+            CommonTokenStream tokens = new CommonTokenStream(lexer)
+            GroovyLangParser parser = new GroovyLangParser(tokens)
+            process(lexer, GroovyLangParser.class, parser, charStream)
+        }
+    }
+
+    @CompileStatic
     void inspectCst(EventObject evt = null) {
         String text = this.inputEditor.textEditor.text
 
-        CharStream charStream = CharStreams.fromReader(new StringReader(text))
-        GroovyLangLexer lexer = new GroovyLangLexer(charStream)
-        CommonTokenStream tokens = new CommonTokenStream(lexer)
-        GroovyLangParser parser = new GroovyLangParser(tokens)
-
-        def tr = new TestRig(new String[] { 'Groovy', 'compilationUnit', '-gui' })
-        tr.process(lexer, GroovyLangParser.class, parser, charStream)
+        def gtr = new CstInspector()
+        gtr.inspectParseTree(text)
     }
 
     void inspectTokens(EventObject evt = null) {
