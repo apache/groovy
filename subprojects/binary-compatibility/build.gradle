@@ -29,8 +29,8 @@ buildscript {
     }
 
     dependencies {
-        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.2.8'
-        classpath 'com.google.guava:guava:27.0-jre'
+        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.2.9'
+        classpath 'com.google.guava:guava:28.2-jre'
     }
 }
 apply plugin: 'me.champeau.gradle.japicmp'
@@ -45,10 +45,10 @@ tasks.check {
 
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.
 Set excludeModules = [
-        "performance", "tests-vm8", "binary-compatibility"
+        "performance", "tests-vm8", "binary-compatibility", 'groovy-astbuilder'
 ]
 
-def compatibilityBaselineVersion = "3.0.0"
+def compatibilityBaselineVersion = "3.0.1"
 
 def thisProject = project
 
