@@ -49,7 +49,7 @@ plugins {
     // id 'com.github.spotbugs' version '3.0.0' // fails due to Guava conflict: https://github.com/spotbugs/spotbugs-gradle-plugin/issues/166
     // id 'com.github.spotbugs' version '1.6.9' // not compatible with Gradle 6
     id 'jp.skypencil.spotbugs.snom' version '0.4.13' // work in progress replacement of above
-    id 'com.github.ben-manes.versions' version '0.27.0'
+    id 'com.github.ben-manes.versions' version '0.28.0'
     id 'com.github.blindpirate.osgi' version '0.0.3'
 }
 
