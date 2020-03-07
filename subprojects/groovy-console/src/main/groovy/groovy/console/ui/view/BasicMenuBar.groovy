@@ -94,6 +94,7 @@ menuBar {
         menuItem(inspectLastAction)
         menuItem(inspectVariablesAction)
         menuItem(inspectAstAction)
+        menuItem(inspectCstAction)
         menuItem(inspectTokensAction)
     }
 
