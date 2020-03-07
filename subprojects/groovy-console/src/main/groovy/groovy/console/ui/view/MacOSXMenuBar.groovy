@@ -145,6 +145,7 @@ menuBar {
         menuItem(inspectLastAction, icon:null)
         menuItem(inspectVariablesAction, icon:null)
         menuItem(inspectAstAction, icon:null)
+        menuItem(inspectCstAction, icon:null)
         menuItem(inspectTokensAction, icon:null)
     }
 }

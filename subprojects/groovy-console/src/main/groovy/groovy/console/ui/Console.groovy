@@ -27,8 +27,14 @@ import groovy.swing.SwingBuilder
 import groovy.transform.CompileStatic
 import groovy.transform.ThreadInterrupt
 import groovy.ui.GroovyMain
+import org.antlr.v4.gui.TestRig
+import org.antlr.v4.runtime.CharStream
+import org.antlr.v4.runtime.CharStreams
+import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.groovy.antlr.LexerFrame
 import org.apache.groovy.io.StringBuilderWriter
+import org.apache.groovy.parser.antlr4.GroovyLangLexer
+import org.apache.groovy.parser.antlr4.GroovyLangParser
 import org.apache.groovy.util.SystemUtil
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -1039,6 +1045,18 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     void inspectAst(EventObject evt = null) {
         new AstBrowser(inputArea, rootElement, shell.getClassLoader(), config).run({ inputArea.getText() })
+    }
+
+    void inspectCst(EventObject evt = null) {
+        String text = this.inputEditor.textEditor.text
+
+        CharStream charStream = CharStreams.fromReader(new StringReader(text))
+        GroovyLangLexer lexer = new GroovyLangLexer(charStream)
+        CommonTokenStream tokens = new CommonTokenStream(lexer)
+        GroovyLangParser parser = new GroovyLangParser(tokens)
+
+        def tr = new TestRig(new String[] { 'Groovy', 'compilationUnit', '-gui' })
+        tr.process(lexer, GroovyLangParser.class, parser, charStream)
     }
 
     void inspectTokens(EventObject evt = null) {
