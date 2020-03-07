@@ -257,10 +257,17 @@ inspectVariablesAction = action(
 )
 
 inspectAstAction = action(
-        name: 'Inspect Ast',
+        name: 'Inspect AST',
         closure: controller.&inspectAst,
         mnemonic: 'A',
         accelerator: shortcut('T'),
+)
+
+inspectCstAction = action(
+        name: 'Inspect CST',
+        closure: controller.&inspectCst,
+        mnemonic: 'C',
+        accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.CTRL_DOWN_MASK + InputEvent.ALT_DOWN_MASK)
 )
 
 inspectTokensAction = action(
