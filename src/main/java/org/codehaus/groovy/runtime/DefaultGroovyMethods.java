@@ -16723,7 +16723,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static int findIndexOf(Object self, int startIndex, Closure condition) {
-        return findIndexOf(InvokerHelper.asIterator(self), condition);
+        return findIndexOf(InvokerHelper.asIterator(self), startIndex, condition);
     }
 
     /**
