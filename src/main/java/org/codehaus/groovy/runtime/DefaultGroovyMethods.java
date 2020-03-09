@@ -17149,6 +17149,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over the elements of an aggregate of items, starting from a
      * specified startIndex, and returns the index of the first item that matches the
      * condition specified in the closure.
+     * Example (aggregate is {@code ChronoUnit} enum values):
+     * <pre class="groovyTestCase">
+     * import java.time.temporal.ChronoUnit
+     * def nameStartsWithM = { it.name().startsWith('M') }
+     * def first  = ChronoUnit.findIndexOf(nameStartsWithM)
+     * def second = ChronoUnit.findIndexOf(first + 1, nameStartsWithM)
+     * def third  = ChronoUnit.findIndexOf(second + 1, nameStartsWithM)
+     * Set units  = [first, second, third]
+     * assert !units.contains(-1) // should have found 3 of MICROS, MILLIS, MINUTES, MONTHS, ...
+     * assert units.size() == 3 // just check size so as not to rely on order
+     * </pre>
      *
      * @param self       the iteration object over which to iterate
      * @param startIndex start matching from this index
@@ -17260,6 +17271,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the elements of an aggregate of items and returns
      * the index of the last item that matches the condition specified in the closure.
+     * Example (aggregate is {@code ChronoUnit} enum values):
+     * <pre class="groovyTestCase">
+     * import java.time.temporal.ChronoUnit
+     * def nameStartsWithM = { it.name().startsWith('M') }
+     * def first = ChronoUnit.findIndexOf(nameStartsWithM)
+     * def last  = ChronoUnit.findLastIndexOf(nameStartsWithM)
+     * // should have found 2 unique index values for MICROS, MILLIS, MINUTES, MONTHS, ...
+     * assert first != -1 && last != -1 && first != last
+     * </pre>
      *
      * @param self      the iteration object over which to iterate
      * @param condition the matching condition
