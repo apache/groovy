@@ -600,14 +600,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (enclosingClosure != null) {
                 tryVariableExpressionAsProperty(vexp, name);
             } else {
-                // GROOVY-7691
-                FieldNode fieldNode = (FieldNode) accessedVariable;
-                ClassNode actualType = findActualTypeByGenericsPlaceholderName(
-                        fieldNode.getOriginType().getUnresolvedName(),
-                        makeDeclaringAndActualGenericsTypeMapOfExactType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())
-                );
-                if (actualType != null) {
-                    storeType(vexp, actualType);
+                // GROOVY-9454
+                ClassNode inferredType = getInferredTypeFromTempInfo(vexp, null);
+                if (inferredType != null && !inferredType.equals(OBJECT_TYPE)) {
+                    vexp.putNodeMetaData(INFERRED_RETURN_TYPE, inferredType);
+                } else {
+                    // GROOVY-7691
+                    FieldNode fieldNode = (FieldNode) accessedVariable;
+                    ClassNode fieldType = findActualTypeByGenericsPlaceholderName(
+                            fieldNode.getOriginType().getUnresolvedName(),
+                            makeDeclaringAndActualGenericsTypeMapOfExactType(fieldNode.getDeclaringClass(), typeCheckingContext.getEnclosingClassNode())
+                    );
+                    if (fieldType != null) {
+                        storeType(vexp, fieldType);
+                    }
                 }
             }
         } else if (accessedVariable instanceof PropertyNode) {
