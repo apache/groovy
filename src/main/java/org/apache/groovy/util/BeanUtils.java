@@ -36,8 +36,8 @@ public class BeanUtils {
      */
     public static String decapitalize(final String property) {
         if (property == null || property.isEmpty()) return property;
-        if (property.length() > 2 && isUpperCase(property.charAt(1)) && isUpperCase(property.charAt(0))) return property;
-        final char c[] = property.toCharArray();
+        if (property.length() >= 2 && isUpperCase(property.charAt(1)) && isUpperCase(property.charAt(0))) return property;
+        final char[] c = property.toCharArray();
         c[0] = Character.toLowerCase(c[0]);
         return new String(c);
     }
