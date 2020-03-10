@@ -723,6 +723,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitNotExpression(final NotExpression expression) {
+        // GROOVY-9455: !(x instanceof T) shouldn't propagate T as inferred type
+        typeCheckingContext.pushTemporaryTypeInfo();
+        super.visitNotExpression(expression);
+        typeCheckingContext.popTemporaryTypeInfo();
+    }
+
+    @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
         typeCheckingContext.pushEnclosingBinaryExpression(expression);

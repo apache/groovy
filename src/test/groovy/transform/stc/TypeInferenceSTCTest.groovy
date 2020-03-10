@@ -209,6 +209,139 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8523
+    void testNotInstanceof1() {
+        assertScript '''
+            class Test1 {
+                static int checkRes = 0
+
+                static void f1(Object var1) {
+                    if (!(var1 instanceof Runnable)){
+                        checkRes = 3
+                        return
+                    }
+                    f2(var1)
+                }
+
+                static void f2(Runnable var2) {
+                    checkRes = 4
+                }
+            }
+
+            Runnable r = {}
+            Test1.f1(r)
+            assert Test1.checkRes == 4
+            Test1.f1(42)
+            assert Test1.checkRes == 3
+        '''
+    }
+
+    // GROOVY-8523
+    void testNotInstanceOf2() {
+        assertScript '''
+            class Test1 {
+                static int checkRes = 0
+
+                static void f1(Object var1) {
+                    if (var1 !instanceof Runnable){
+                        checkRes = 3
+                        return
+                    }
+                    f2(var1)
+                }
+
+                static void f2(Runnable var2) {
+                    checkRes = 4
+                }
+            }
+
+            Runnable r = {}
+            Test1.f1(r)
+            assert Test1.checkRes == 4
+            Test1.f1(42)
+            assert Test1.checkRes == 3
+        '''
+    }
+
+    // GROOVY-8523
+    void testNotInstanceOf3() {
+        assertScript '''
+            class Test1 {
+                static int checkRes = 0
+
+                static void f1(Object var1) {
+                    if (!(var1 instanceof Runnable)){
+                        checkRes = 3
+                        return
+                    }
+                    if (!(var1 instanceof List)){
+                        checkRes = 5
+                        return
+                    }
+                    f2(var1)
+                }
+
+                static void f2(Runnable var2) {
+                    checkRes = 4
+                }
+            }
+
+            Runnable r = {}
+            Test1.f1(r)
+            assert Test1.checkRes == 5
+        '''
+    }
+
+    // GROOVY-8523
+    void testNotInstanceOf4() {
+        assertScript '''
+            class Test1 {
+                static int checkRes = 0
+
+                static void f1(Object var1) {
+                    if (!(var1 instanceof Runnable)){
+                        checkRes = 3
+                        return
+                    }
+                    if (!(var1 instanceof Thread)){
+                        checkRes = 5
+                        return
+                    }
+                    f2(var1)
+                }
+
+                static void f2(Runnable var2) {
+                    checkRes = 4
+                }
+            }
+
+            Runnable r = {}
+            Test1.f1(r)
+            assert Test1.checkRes == 5
+        '''
+    }
+
+    // GROOVY-9455
+    void testNotInstanceOf5() {
+        shouldFailWithMessages '''
+            void test(object) {
+                if (!(object instanceof String)) {
+                    object.toUpperCase()
+                }
+            }
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
+    void testNotInstanceOf6() {
+        shouldFailWithMessages '''
+            void test(object) {
+                if (object !instanceof String) {
+                    object.toUpperCase()
+                }
+            }
+        ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
+    }
+
     void testShouldNotAllowDynamicVariable() {
         shouldFailWithMessages '''
             String name = 'Guillaume'
