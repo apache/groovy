@@ -22,6 +22,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Represents a field access such as the expression "this.foo".
  */
@@ -29,19 +31,21 @@ public class FieldExpression extends Expression {
 
     private final FieldNode field;
     private boolean useRef;
-    
-    public FieldExpression(FieldNode field) {
-        this.field = field;
+
+    public FieldExpression(final FieldNode field) {
+        this.field = requireNonNull(field);
     }
-    
-    public void visit(GroovyCodeVisitor visitor) {
+
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitFieldExpression(this);
     }
 
-    public Expression transformExpression(ExpressionTransformer transformer) {
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
         return this;
     }
-    
+
     public String getFieldName() {
         return field.getName();
     }
@@ -50,32 +54,36 @@ public class FieldExpression extends Expression {
         return field;
     }
 
+    @Override
     public String getText() {
         return "this." + field.getName();
+    }
+
+    @Override
+    public ClassNode getType() {
+        return field.getType();
+    }
+
+    @Override
+    public void setType(final ClassNode type) {
+        super.setType(type);
+        field.setType(type);
     }
 
     public boolean isDynamicTyped() {
         return field.isDynamicTyped();
     }
 
-    public void setType(ClassNode type) {
-        super.setType(type);
-        field.setType(type);
-    }
-    
-    public ClassNode getType() {
-        return field.getType();
-    }
-    
-    public void setUseReferenceDirectly(boolean useRef) {
-        this.useRef = useRef;        
-    }
-    
     public boolean isUseReferenceDirectly() {
         return useRef;
     }
-    
+
+    public void setUseReferenceDirectly(final boolean useRef) {
+        this.useRef = useRef;
+    }
+
+    @Override
     public String toString() {
-        return "field("+getType()+" "+getFieldName()+")";
+        return "field(" + getType() + " " + getFieldName() + ")";
     }
 }

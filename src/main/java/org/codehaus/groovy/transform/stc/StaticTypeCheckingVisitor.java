@@ -207,7 +207,6 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.MINIMUM_BYTECODE_VERSION;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
-import static org.codehaus.groovy.syntax.Types.ASSIGNMENT_OPERATOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IN;
@@ -344,30 +343,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected final ReturnAdder returnAdder = new ReturnAdder(returnListener);
 
-    protected TypeCheckingContext typeCheckingContext;
-    protected DefaultTypeCheckingExtension extension;
     protected FieldNode currentField;
     protected PropertyNode currentProperty;
+    protected DefaultTypeCheckingExtension extension;
+    protected TypeCheckingContext typeCheckingContext;
 
-    public StaticTypeCheckingVisitor(final SourceUnit source, final ClassNode cn) {
-        this.typeCheckingContext = new TypeCheckingContext(this);
-        this.extension = createDefaultTypeCheckingExtension();
-        this.typeCheckingContext.source = source;
-        this.typeCheckingContext.pushEnclosingClassNode(cn);
-        this.typeCheckingContext.pushErrorCollector(source.getErrorCollector());
+    public StaticTypeCheckingVisitor(final SourceUnit sourceUnit, final ClassNode classNode) {
+        this.typeCheckingContext = new TypeCheckingContext(sourceUnit);
+        this.typeCheckingContext.pushEnclosingClassNode(classNode);
         this.typeCheckingContext.pushTemporaryTypeInfo();
-    }
 
-    private DefaultTypeCheckingExtension createDefaultTypeCheckingExtension() {
-        DefaultTypeCheckingExtension ext = new DefaultTypeCheckingExtension(this);
-        ext.addHandler(new TraitTypeCheckingExtension(this));
-        ext.addHandler(new EnumTypeCheckingExtension(this));
-        return ext;
+        this.extension = new DefaultTypeCheckingExtension(this);
+        this.extension.addHandler(new EnumTypeCheckingExtension(this));
+        this.extension.addHandler(new TraitTypeCheckingExtension(this));
     }
 
     @Override
     protected SourceUnit getSourceUnit() {
-        return typeCheckingContext.source;
+        return typeCheckingContext.getSource();
     }
 
     public void initialize() {
@@ -791,17 +784,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 resultType = lType;
             }
 
-            // if left expression is a closure shared variable, a second pass should be done
+            // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
             if (leftExpression instanceof VariableExpression) {
                 VariableExpression leftVar = (VariableExpression) leftExpression;
                 if (leftVar.isClosureSharedVariable()) {
-                    // if left expression is a closure shared variable, we should check it twice
-                    // see GROOVY-5874
                     typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression));
                 }
             }
 
-            boolean isAssignment = expression.getOperation().isA(ASSIGNMENT_OPERATOR);
+            boolean isAssignment = isAssignment(expression.getOperation().getType());
             if (isAssignment && lType.isUsingGenerics() && missesGenericsTypes(resultType)) {
                 // unchecked assignment
                 // examples:
@@ -1406,7 +1397,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * otherwise falls back to the provided type class.
      */
     protected ClassNode findCurrentInstanceOfClass(final Expression expr, final ClassNode type) {
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
+        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
             List<ClassNode> nodes = getTemporaryTypesForExpression(expr);
             if (nodes != null && nodes.size() == 1) return nodes.get(0);
         }
@@ -2276,7 +2267,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode getInferredTypeFromTempInfo(final Expression exp, ClassNode result) {
-        if (exp instanceof VariableExpression && !typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
+        if (exp instanceof VariableExpression && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
             List<ClassNode> classNodes = getTemporaryTypesForExpression(exp);
             if (classNodes != null && !classNodes.isEmpty()) {
                 List<ClassNode> types = new ArrayList<>(classNodes.size() + 1);
@@ -3090,7 +3081,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 Expression type = annotation.getMember("type");
                 Integer stInt = Closure.OWNER_FIRST;
                 if (strategy != null) {
-                    stInt = (Integer) evaluateExpression(castX(Integer_TYPE, strategy), typeCheckingContext.source.getConfiguration());
+                    stInt = (Integer) evaluateExpression(castX(Integer_TYPE, strategy), getSourceUnit().getConfiguration());
                 }
                 if (value instanceof ClassExpression && !value.getType().equals(DELEGATES_TO_TARGET)) {
                     if (genericTypeIndex != null) {
@@ -3104,7 +3095,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     ClassNode[] resolved = GenericsUtils.parseClassNodesFromString(
                             typeString,
                             getSourceUnit(),
-                            typeCheckingContext.compilationUnit,
+                            typeCheckingContext.getCompilationUnit(),
                             mn,
                             type
                     );
@@ -3656,7 +3647,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             owners.add(Receiver.make(OBJECT_TYPE));
         }
         addSelfTypes(receiver, owners);
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
+        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
             List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
             if (potentialReceiverType != null) {
                 for (ClassNode node : potentialReceiverType) {
@@ -3789,7 +3780,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             instanceOfExpression = findNotInstanceOfReturnExpression(ifElse);
         }
         if (instanceOfExpression != null) {
-            if (typeCheckingContext.enclosingBlocks.size() > 0) {
+            if (!typeCheckingContext.enclosingBlocks.isEmpty()) {
                 visitInstanceofNot(instanceOfExpression);
             }
         }
@@ -4110,7 +4101,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private static boolean hasInferredReturnType(final Expression expression) {
         ClassNode type = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
-        return type != null && !type.getName().equals("java.lang.Object");
+        return type != null && !type.getName().equals(ClassHelper.OBJECT);
     }
 
     @Override
@@ -4175,7 +4166,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 List<ClassNode> assignedTypes = typeCheckingContext.closureSharedVariablesAssignmentTypes.computeIfAbsent(var, k -> new LinkedList<ClassNode>());
                 assignedTypes.add(cn);
             }
-            if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
+            if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
                 List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(exp);
                 if (temporaryTypesForExpression != null && !temporaryTypesForExpression.isEmpty()) {
                     // a type inference has been made on a variable whose type was defined in an instanceof block
@@ -5420,7 +5411,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if ((DEBUG_GENERATED_CODE && expr.getLineNumber() < 0) || !typeCheckingContext.reportedErrors.contains(err)) {
             typeCheckingContext.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
                     new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()),
-                    typeCheckingContext.source)
+                    getSourceUnit())
             );
             typeCheckingContext.reportedErrors.add(err);
         }
@@ -5676,7 +5667,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         @Override
         protected SourceUnit getSourceUnit() {
-            return typeCheckingContext.source;
+            return StaticTypeCheckingVisitor.this.getSourceUnit();
         }
 
         @Override
