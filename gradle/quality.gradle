@@ -24,8 +24,7 @@ allprojects { proj ->
     //apply plugin: "com.github.hierynomus.license"
     apply plugin: 'checkstyle'
     apply plugin: 'codenarc'
-//    apply plugin: 'com.github.spotbugs'
-    apply plugin: 'jp.skypencil.spotbugs.snom'
+    apply plugin: 'com.github.spotbugs'
     configurations.codenarc {
         // because we will rely on the version we build
         // because version ranges are evil
@@ -44,7 +43,7 @@ allprojects { proj ->
     dependencies {
         checkstyle "com.puppycrawl.tools:checkstyle:$checkstyleVersion"
         codenarc "org.codenarc:CodeNarc:1.5"
-        spotbugs 'com.github.spotbugs:spotbugs:3.1.11'
+        spotbugs "com.github.spotbugs:spotbugs:$spotbugsVersion"
         if (proj.name.contains('jaxb') && JavaVersion.current().isJava9Compatible()) {
             spotbugs 'javax.xml.bind:jaxb-api:2.3.0'
         }
