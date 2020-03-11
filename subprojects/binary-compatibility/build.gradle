@@ -45,7 +45,7 @@ tasks.check {
 
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.
 Set excludeModules = [
-        "performance", "tests-vm8", "binary-compatibility", 'groovy-astbuilder'
+        "performance", "binary-compatibility"
 ]
 
 def compatibilityBaselineVersion = "3.0.2"
