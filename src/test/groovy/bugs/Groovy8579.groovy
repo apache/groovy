@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.vm8
+package groovy.bugs
 
 import org.junit.Test
 
