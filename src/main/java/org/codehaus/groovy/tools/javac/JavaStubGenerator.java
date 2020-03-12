@@ -823,7 +823,7 @@ public class JavaStubGenerator {
             printType(out, type.getComponentType());
             out.print("[]");
         } else if (java5 && type.isGenericsPlaceHolder()) {
-            out.print(type.getGenericsTypes()[0].getName());
+            out.print(type.getUnresolvedName());
         } else {
             printGenericsBounds(out, type, false);
         }
