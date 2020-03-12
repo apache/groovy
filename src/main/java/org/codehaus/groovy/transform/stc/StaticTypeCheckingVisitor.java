@@ -348,10 +348,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected DefaultTypeCheckingExtension extension;
     protected TypeCheckingContext typeCheckingContext;
 
-    public StaticTypeCheckingVisitor(final SourceUnit sourceUnit, final ClassNode classNode) {
-        this.typeCheckingContext = new TypeCheckingContext(sourceUnit);
+    public StaticTypeCheckingVisitor(final SourceUnit source, final ClassNode classNode) {
+        this.typeCheckingContext = new TypeCheckingContext(this);
         this.typeCheckingContext.pushEnclosingClassNode(classNode);
         this.typeCheckingContext.pushTemporaryTypeInfo();
+        this.typeCheckingContext.pushErrorCollector(
+                        source.getErrorCollector());
+        this.typeCheckingContext.source = source;
 
         this.extension = new DefaultTypeCheckingExtension(this);
         this.extension.addHandler(new EnumTypeCheckingExtension(this));
