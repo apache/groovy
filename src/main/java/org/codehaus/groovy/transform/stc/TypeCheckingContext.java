@@ -49,17 +49,17 @@ import java.util.TreeSet;
 
 public class TypeCheckingContext {
 
-    private final SourceUnit source;
+    public TypeCheckingContext(final StaticTypeCheckingVisitor visitor) {
+        this.visitor = visitor;
+    }
 
-    public TypeCheckingContext(final SourceUnit source) {
+    /*public TypeCheckingContext(final SourceUnit source) {
         this.source = source;
         pushErrorCollector(source.getErrorCollector());
-    }
+    }*/
 
-    @Deprecated
-    public TypeCheckingContext(final StaticTypeCheckingVisitor visitor) {
-        this.source = null;
-    }
+    protected final StaticTypeCheckingVisitor visitor;
+    protected       SourceUnit source;
 
     public SourceUnit getSource() {
         return source;
@@ -67,7 +67,7 @@ public class TypeCheckingContext {
 
     //--------------------------------------------------------------------------
 
-    private CompilationUnit compilationUnit;
+    protected CompilationUnit compilationUnit;
 
     public CompilationUnit getCompilationUnit() {
         return compilationUnit;
@@ -79,7 +79,7 @@ public class TypeCheckingContext {
 
     //--------------------------------------------------------------------------
 
-    private final LinkedList<ErrorCollector> errorCollectors = new LinkedList<>();
+    protected final LinkedList<ErrorCollector> errorCollectors = new LinkedList<>();
 
     public ErrorCollector pushErrorCollector() {
         CompilerConfiguration config = Optional.ofNullable(getErrorCollector())
@@ -115,7 +115,7 @@ public class TypeCheckingContext {
      * Stores information which is only valid in the "if" branch of an if-then-else statement. This is used when the if
      * condition expression makes use of an instanceof check
      */
-    protected final Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation = new Stack<>();
+    protected Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation = new Stack<>();
 
     public void pushTemporaryTypeInfo() {
         Map<Object, List<ClassNode>> potentialTypes = new HashMap<>();
@@ -160,7 +160,7 @@ public class TypeCheckingContext {
      * }
      * // Here var1 instance of Runnable
      */
-    protected final Map<BlockStatement, Map<VariableExpression, List<ClassNode>>> blockStatements2Types = new IdentityHashMap<>();
+    protected final IdentityHashMap<BlockStatement, Map<VariableExpression, List<ClassNode>>> blockStatements2Types = new IdentityHashMap<>();
 
     protected Set<MethodNode> alreadyVisitedMethods = new HashSet<>();
 
@@ -169,7 +169,7 @@ public class TypeCheckingContext {
      * example, for closure shared variables, we need a first pass to collect every type which is assigned to a closure
      * shared variable, then a second pass to ensure that every method call on such a variable is made on a LUB.
      */
-    protected final Set<SecondPassExpression> secondPassExpressions = new LinkedHashSet<>();
+    protected final LinkedHashSet<SecondPassExpression> secondPassExpressions = new LinkedHashSet<>();
 
     /**
      * A map used to store every type used in closure shared variable assignments. In a second pass, we will compute the
@@ -177,7 +177,7 @@ public class TypeCheckingContext {
      */
     protected final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<>();
 
-    protected final Map<Parameter, ClassNode> controlStructureVariables = new HashMap<>();
+    protected       Map<Parameter, ClassNode> controlStructureVariables = new HashMap<>();
 
     // this map is used to ensure that two errors are not reported on the same line/column
     protected final Set<Long> reportedErrors = new TreeSet<>();
@@ -185,14 +185,14 @@ public class TypeCheckingContext {
     //--------------------------------------------------------------------------
 
     // TODO: replace with general node stack and filters
-    private final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<>();
-    private final LinkedList<MethodNode> enclosingMethods = new LinkedList<>();
-    private final LinkedList<Expression> enclosingMethodCalls = new LinkedList<>();
+    protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<>();
+    protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<>();
+    protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<>();
     protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<>();
-    private final LinkedList<SwitchStatement> switchStatements = new LinkedList<>();
-    private final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<>();
+    protected final LinkedList<SwitchStatement> switchStatements = new LinkedList<>();
+    protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<>();
     // stores the current binary expression. This is used when assignments are made with a null object, for type inference
-    private final LinkedList<BinaryExpression> enclosingBinaryExpressions = new LinkedList<>();
+    protected final LinkedList<BinaryExpression> enclosingBinaryExpressions = new LinkedList<>();
 
     /**
      * Pushes a binary expression into the binary expression stack.
