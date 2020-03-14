@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -215,14 +216,14 @@ public class GroovyRootDocBuilder {
     }
 
     private static String pruneTagFromFront(String description, String tag) {
-        int index = Math.max(indexOfTag(description, tag.toLowerCase()), indexOfTag(description, tag.toUpperCase()));
+        int index = Math.max(indexOfTag(description, tag.toLowerCase(Locale.ENGLISH)), indexOfTag(description, tag.toUpperCase(Locale.ENGLISH)));
         if (index < 0) return description;
         return description.substring(index);
     }
 
     private static String pruneTagFromEnd(String description, String tag) {
-        int index = Math.max(description.lastIndexOf("<" + tag.toLowerCase() + ">"),
-                description.lastIndexOf("<" + tag.toUpperCase() + ">"));
+        int index = Math.max(description.lastIndexOf("<" + tag.toLowerCase(Locale.ENGLISH) + ">"),
+                description.lastIndexOf("<" + tag.toUpperCase(Locale.ENGLISH) + ">"));
         if (index < 0) return description;
         return description.substring(0, index);
     }
