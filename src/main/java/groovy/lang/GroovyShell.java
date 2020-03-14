@@ -345,8 +345,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param source    is the source content of the script
      * @param args      the command line arguments to pass in
      */
-    public Object run(GroovyCodeSource source, List args) throws CompilationFailedException {
-        return run(source, ((String[]) args.toArray(EMPTY_STRING_ARRAY)));
+    public Object run(GroovyCodeSource source, List<String> args) throws CompilationFailedException {
+        return run(source, args.toArray(EMPTY_STRING_ARRAY));
     }
 
     /**
@@ -366,8 +366,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param source    is the source content of the script
      * @param args      the command line arguments to pass in
      */
-    public Object run(URI source, List args) throws CompilationFailedException, IOException {
-        return run(new GroovyCodeSource(source), ((String[]) args.toArray(EMPTY_STRING_ARRAY)));
+    public Object run(URI source, List<String> args) throws CompilationFailedException, IOException {
+        return run(new GroovyCodeSource(source), args.toArray(EMPTY_STRING_ARRAY));
     }
 
     /**
