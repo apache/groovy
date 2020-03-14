@@ -53,11 +53,11 @@ class JavaShellTest {
     }
 
     @Test
-    void runMain() {
+    void run() {
         JavaShell js = new JavaShell()
         final mcn = "tests.Test1"
         try {
-            js.runMain(mcn, '''
+            js.run(mcn, '''
             package tests;
             public class Test1 {
                 public static void main(String[] args) {

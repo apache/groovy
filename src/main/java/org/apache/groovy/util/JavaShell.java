@@ -90,7 +90,7 @@ public class JavaShell {
      * @param args arguments for main method
      * @throws Throwable
      */
-    public void runMain(String className, String src, String... args) throws Throwable {
+    public void run(String className, String src, String... args) throws Throwable {
         Class<?> c = compile(className, src);
         Method mainMethod = c.getMethod(MAIN_METHOD_NAME, String[].class);
         mainMethod.invoke(null, (Object) args);
@@ -105,7 +105,9 @@ public class JavaShell {
      * @throws ClassNotFoundException
      */
     public Class<?> compile(final String className, String src) throws IOException, ClassNotFoundException {
-        return compileAll(className, src).get(className);
+        doCompile(className, src);
+
+        return jscl.findClass(className);
     }
 
     /**
@@ -118,6 +120,18 @@ public class JavaShell {
      * @throws ClassNotFoundException
      */
     public Map<String, Class<?>> compileAll(final String className, String src) throws IOException, ClassNotFoundException {
+        doCompile(className, src);
+
+        Map<String, Class<?>> classes = new LinkedHashMap<>();
+        for (String cn : jscl.getClassMap().keySet()) {
+            Class<?> c = jscl.findClass(cn);
+            classes.put(cn, c);
+        }
+
+        return classes;
+    }
+
+    private void doCompile(String className, String src) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         try (BytesJavaFileManager bjfm = new BytesJavaFileManager(compiler.getStandardFileManager(null, locale, charset))) {
             StringBuilderWriter out = new StringBuilderWriter();
@@ -142,14 +156,6 @@ public class JavaShell {
             final Map<String, byte[]> classMap = bjfm.getClassMap();
 
             jscl.setClassMap(classMap);
-
-            Map<String, Class<?>> classes = new LinkedHashMap<>();
-            for (String cn : classMap.keySet()) {
-                Class<?> c = jscl.findClass(cn);
-                classes.put(cn, c);
-            }
-
-            return classes;
         }
     }
 
