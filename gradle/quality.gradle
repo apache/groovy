@@ -24,7 +24,8 @@ allprojects { proj ->
     //apply plugin: "com.github.hierynomus.license"
     apply plugin: 'checkstyle'
     apply plugin: 'codenarc'
-    apply plugin: 'com.github.spotbugs'
+    //    apply plugin: 'com.github.spotbugs'
+    apply plugin: 'jp.skypencil.spotbugs.snom'
     configurations.codenarc {
         // because we will rely on the version we build
         // because version ranges are evil
