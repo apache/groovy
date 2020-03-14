@@ -145,18 +145,14 @@ public class GroovyShell extends GroovyObjectSupport {
         }
     }
 
-    //
-    // FIXME: Use List<String> here, current version is not safe
-    //
-
     /**
      * A helper method which runs the given script file with the given command line arguments
      *
      * @param scriptFile the file of the script to run
      * @param list       the command line arguments to pass in
      */
-    public Object run(File scriptFile, List list) throws CompilationFailedException, IOException {
-        return run(scriptFile, (String[]) list.toArray(EMPTY_STRING_ARRAY));
+    public Object run(File scriptFile, List<String> list) throws CompilationFailedException, IOException {
+        return run(scriptFile, list.toArray(EMPTY_STRING_ARRAY));
     }
 
     /**
@@ -166,8 +162,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName   is the logical file name of the script (which is used to create the class name of the script)
      * @param list       the command line arguments to pass in
      */
-    public Object run(String scriptText, String fileName, List list) throws CompilationFailedException {
-        return run(scriptText, fileName, (String[]) list.toArray(EMPTY_STRING_ARRAY));
+    public Object run(String scriptText, String fileName, List<String> list) throws CompilationFailedException {
+        return run(scriptText, fileName, list.toArray(EMPTY_STRING_ARRAY));
     }
 
     /**
