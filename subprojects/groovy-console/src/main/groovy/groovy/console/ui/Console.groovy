@@ -18,6 +18,11 @@
  */
 package groovy.console.ui
 
+
+import com.github.javaparser.StaticJavaParser
+import com.github.javaparser.ast.CompilationUnit
+import com.github.javaparser.ast.Modifier
+import com.github.javaparser.ast.body.TypeDeclaration
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
 import groovy.console.ui.text.FindReplaceUtility
@@ -35,6 +40,7 @@ import org.apache.groovy.antlr.LexerFrame
 import org.apache.groovy.io.StringBuilderWriter
 import org.apache.groovy.parser.antlr4.GroovyLangLexer
 import org.apache.groovy.parser.antlr4.GroovyLangParser
+import org.apache.groovy.util.JavaShell
 import org.apache.groovy.util.SystemUtil
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -1136,13 +1142,25 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         return consoleControllers.find { it.consoleId == consoleId }
     }
 
+    private enum SourceType {
+        GROOVY, JAVA
+    }
+
+    void runJava(EventObject evt = null) {
+        doRun(evt, SourceType.JAVA)
+    }
+
     // actually run the script
     void runScript(EventObject evt = null) {
+        doRun(evt, SourceType.GROOVY)
+    }
+
+    private doRun(EventObject evt = null, SourceType st) {
         saveInputAreaContentHash()
         if (saveOnRun && scriptFile != null) {
-            if (fileSave(evt)) runScriptImpl(false)
+            if (fileSave(evt)) runScriptImpl(false, st)
         } else {
-            runScriptImpl(false)
+            runScriptImpl(false, st)
         }
     }
 
@@ -1180,10 +1198,19 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         cc.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
     }
 
-    void runSelectedScript(EventObject evt = null) {
-        saveInputAreaContentHash()
-        runScriptImpl(true)
+    void runSelectedJava(EventObject evt = null) {
+        doRunSelected(evt, SourceType.JAVA)
     }
+
+    void runSelectedScript(EventObject evt = null) {
+        doRunSelected(evt, SourceType.GROOVY)
+    }
+
+    private void doRunSelected(EventObject evt = null, SourceType st) {
+        saveInputAreaContentHash()
+        runScriptImpl(true, st)
+    }
+
 
     void addClasspathJar(EventObject evt = null) {
         def fc = new JFileChooser(currentClasspathJarDir)
@@ -1251,7 +1278,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         inputAreaContentHash = inputArea.getText().hashCode()
     }
 
-    private void runScriptImpl(boolean selected) {
+    private void runScriptImpl(boolean selected, SourceType st = SourceType.GROOVY) {
         if (scriptRunning) {
             statusLabel.text = 'Cannot run script now as a script is already running. Please wait or use "Interrupt Script" option.'
             return
@@ -1269,8 +1296,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         // Print the input text
         if (showScriptInOutput) {
+            final promptPrfix = SourceType.JAVA === st ? 'java> ' : 'groovy> '
             for (line in record.getTextToRun(selected).tokenize('\n')) {
-                appendOutputNl('groovy> ', promptStyle)
+                appendOutputNl(promptPrfix, promptStyle)
                 appendOutput(line, commandStyle)
             }
             appendOutputNl(' \n', promptStyle)
@@ -1282,7 +1310,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             try {
                 systemOutInterceptor.setConsoleId(this.getConsoleId())
                 SwingUtilities.invokeLater { showExecutingMessage() }
-                String name = scriptFile?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
                 if (beforeExecution) {
                     beforeExecution()
                 }
@@ -1291,13 +1318,13 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     ClassLoader savedThreadContextClassLoader = Thread.currentThread().contextClassLoader
                     try {
                         Thread.currentThread().contextClassLoader = shell.classLoader
-                        result = shell.run(record.getTextToRun(selected), name, [])
+                        result = doRun(selected, st, record)
                     }
                     finally {
                         Thread.currentThread().contextClassLoader = savedThreadContextClassLoader
                     }
                 } else {
-                    result = shell.run(record.getTextToRun(selected), name, [])
+                    result = doRun(selected, st, record)
                 }
                 if (afterExecution) {
                     afterExecution()
@@ -1319,7 +1346,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     int delay = prefs.getInt('loopModeDelay', ConsolePreferences.DEFAULT_LOOP_MODE_DELAY_MILLIS)
                     Timer timer = new Timer(delay, {
                         if( inputAreaContentHash == inputArea.getText().hashCode() ) {
-                            runScriptImpl(selected)
+                            runScriptImpl(selected, st)
                         }
                     })
                     timer.repeats = false
@@ -1327,6 +1354,47 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 }
             }
         }
+    }
+
+    @CompileStatic
+    private Object doRun(boolean selected, SourceType st, HistoryRecord record) {
+        def result
+        def src = record.getTextToRun(selected)
+        if (SourceType.JAVA === st) {
+            Optional<String> optionalPrimaryClassName = findPrimaryClassName(src)
+            if (optionalPrimaryClassName.isPresent()) {
+                def js = new JavaShell(Thread.currentThread().contextClassLoader)
+                js.run(optionalPrimaryClassName.get(), src)
+            }
+        } else {
+            String name = ((File) scriptFile)?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
+            result = shell.run(src, name, [])
+        }
+        return result
+    }
+
+    @CompileStatic
+    private static Optional<String> findPrimaryClassName(String javaSrc) {
+        List<TypeDeclaration<?>> result = new LinkedList<>()
+        CompilationUnit compilationUnit = StaticJavaParser.parse(javaSrc)
+
+        for (TypeDeclaration<?> td : compilationUnit.getTypes()) {
+            if (!(td.isTopLevelType() && td.isClassOrInterfaceDeclaration() && td.getModifiers().contains(Modifier.publicModifier()))) continue
+
+            if (td.fullyQualifiedName.isPresent()) {
+                result << td
+            }
+        }
+
+        String className = null
+        if (!result.isEmpty()) {
+            Optional<String> optionalClassName = result.get(0).getFullyQualifiedName()
+            if (optionalClassName.isPresent()) {
+                className = optionalClassName.get()
+            }
+        }
+
+        return Optional.ofNullable(className)
     }
 
     void compileScript(EventObject evt = null) {

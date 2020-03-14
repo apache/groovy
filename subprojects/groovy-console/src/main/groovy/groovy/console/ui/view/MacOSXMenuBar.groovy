@@ -130,9 +130,11 @@ menuBar {
 
     menu(text: 'Script', mnemonic: 'S') {
         menuItem(runAction, icon:null)
+        menuItem(runJavaAction, icon:null)
         checkBoxMenuItem(loopModeAction, selected: controller.loopMode)
         checkBoxMenuItem(saveOnRunAction, selected: controller.saveOnRun)
         menuItem(runSelectionAction, icon:null)
+        menuItem(runJavaSelectionAction, icon:null)
         checkBoxMenuItem(threadInterruptAction, selected: controller.threadInterrupt)
         menuItem(interruptAction, icon:null)
         menuItem(compileAction, icon:null)
