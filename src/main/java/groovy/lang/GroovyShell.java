@@ -387,8 +387,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @param list     the command line arguments to pass in
      */
-    public Object run(final Reader in, final String fileName, List list) throws CompilationFailedException {
-        return run(in, fileName, (String[]) list.toArray(EMPTY_STRING_ARRAY));
+    public Object run(final Reader in, final String fileName, List<String> list) throws CompilationFailedException {
+        return run(in, fileName, list.toArray(EMPTY_STRING_ARRAY));
     }
 
     /**
