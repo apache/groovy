@@ -1649,7 +1649,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private MethodNode createMethodNodeForClass(MethodDeclarationContext ctx, ModifierManager modifierManager, String methodName, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code, ClassNode classNode, int modifiers) {
-        MethodNode methodNode;
         if (asBoolean(ctx.elementValue())) { // the code of annotation method
             code = configureAST(
                     new ExpressionStatement(
@@ -1659,23 +1658,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         modifiers |= !modifierManager.containsAny(STATIC) && (classNode.isInterface() || (isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && !modifierManager.containsAny(DEFAULT))) ? Opcodes.ACC_ABSTRACT : 0;
-
-        checkWhetherMethodNodeWithSameSignatureExists(classNode, methodName, parameters, ctx);
-
-        methodNode = classNode.addMethod(methodName, modifiers, returnType, parameters, exceptions, code);
+        MethodNode methodNode = new MethodNode(methodName, modifiers, returnType, parameters, exceptions, code);
+        classNode.addMethod(methodNode);
 
         methodNode.setAnnotationDefault(asBoolean(ctx.elementValue()));
         return methodNode;
-    }
-
-    private void checkWhetherMethodNodeWithSameSignatureExists(ClassNode classNode, String methodName, Parameter[] parameters, MethodDeclarationContext ctx) {
-        MethodNode sameSigMethodNode = classNode.getDeclaredMethod(methodName, parameters);
-
-        if (null == sameSigMethodNode) {
-            return;
-        }
-
-        throw createParsingFailedException("The method " +  sameSigMethodNode.getText() + " duplicates another method of the same signature", ctx);
     }
 
     private ConstructorNode createConstructorNodeForClass(String methodName, Parameter[] parameters, ClassNode[] exceptions, Statement code, ClassNode classNode, int modifiers) {

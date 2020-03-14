@@ -16,10 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package fail
+class Foo extends Specification {
+    def foo() {
+        expect: true
+    }
 
-class A {
-    String foo() {}
-    def foo() {}
+    def foo() {
+        expect: false
+    }
 }
-new A()
