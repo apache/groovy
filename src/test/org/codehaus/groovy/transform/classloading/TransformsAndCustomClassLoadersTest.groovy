@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
@@ -37,6 +38,7 @@ import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 import java.lang.annotation.ElementType
+import java.nio.file.FileSystemNotFoundException
 
 /**
  * Tests whether local and global transforms are successfully detected, loaded,
@@ -88,6 +90,18 @@ class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
         def clazz = compileAndLoadClass("class Foo {}", dependencyLoader, transformLoader)
         assert clazz
         assert clazz.name == "FOO"
+    }
+
+    void testShouldKeepOriginalExceptionDuringGlobalTransformApplyingGroovy9469Bug() {
+        try {
+            transformLoader = new GlobalTestTransformClassLoader(transformLoader, FailingWithMeaningfulMessageTransformation)
+            compileAndLoadClass("class Foo {}", dependencyLoader, transformLoader)
+            fail("Excepted MultipleCompilationErrorsException not thrown")
+        } catch(MultipleCompilationErrorsException e) {
+            assert e.message.contains("FailingWithMeaningfulMessageTransformation")
+            assert e.message.contains("FileSystemNotFoundException")
+            assert e.message.contains("meaningful error message")
+        }
     }
 
     private compileAndLoadClass(String source, GroovyClassLoader dependencyLoader, GroovyClassLoader transformLoader) {
@@ -159,5 +173,15 @@ class ToUpperCaseGlobalTransform implements ASTTransformation {
         for (clazz in module.classes) {
             clazz.name = clazz.name.toUpperCase()
         }
+    }
+}
+
+@GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
+class FailingWithMeaningfulMessageTransformation implements ASTTransformation {
+    FailingWithMeaningfulMessageTransformation() {
+        throw new FileSystemNotFoundException("Custom exception with meaningful error message")
+    }
+    @Override
+    void visit(ASTNode[] nodes, SourceUnit source) {
     }
 }
