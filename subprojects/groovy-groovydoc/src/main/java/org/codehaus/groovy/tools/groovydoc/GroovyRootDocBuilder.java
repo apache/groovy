@@ -57,7 +57,7 @@ public class GroovyRootDocBuilder {
     }
 
     public GroovyRootDocBuilder(String[] sourcepaths, List<LinkArgument> links, Properties properties) {
-        this.sourcepaths = Arrays.copyOf(sourcepaths, sourcepaths.length);
+        this.sourcepaths = sourcepaths == null ? null : Arrays.copyOf(sourcepaths, sourcepaths.length);
         this.links = links;
         this.rootDoc = new SimpleGroovyRootDoc("root");
         this.properties = properties;

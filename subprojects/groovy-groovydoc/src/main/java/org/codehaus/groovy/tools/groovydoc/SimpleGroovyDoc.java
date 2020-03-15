@@ -246,7 +246,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
 //    public GroovySeeTag[] seeTags() {/*todo*/return null;}
 
     public GroovyTag[] tags() {
-        return Arrays.copyOf(tags, tags.length);
+        return tags == null ? null : Arrays.copyOf(tags, tags.length);
     }
 
 //    public GroovyTag[] tags(String arg0) {/*todo*/return null;}
