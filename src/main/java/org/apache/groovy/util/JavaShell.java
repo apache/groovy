@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.util;
 
-import groovy.lang.GroovyRuntimeException;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -150,7 +149,7 @@ public class JavaShell {
             task.call();
 
             if (bjfm.isEmpty()) {
-                throw new GroovyRuntimeException(out.toString());
+                throw new JavaShellCompilationException(out.toString());
             }
 
             final Map<String, byte[]> classMap = bjfm.getClassMap();
