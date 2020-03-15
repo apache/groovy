@@ -228,7 +228,7 @@ runSelectionAction = action(
 )
 
 runJavaSelectionAction = action(
-        name: 'Run Java Selection',
+        name: 'Run Selection as Java',
         closure: controller.&runSelectedJava
 )
 
