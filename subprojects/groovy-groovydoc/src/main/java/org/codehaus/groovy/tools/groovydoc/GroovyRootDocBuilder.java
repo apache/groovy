@@ -27,6 +27,7 @@ import org.codehaus.groovy.tools.shell.util.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -56,7 +57,7 @@ public class GroovyRootDocBuilder {
     }
 
     public GroovyRootDocBuilder(String[] sourcepaths, List<LinkArgument> links, Properties properties) {
-        this.sourcepaths = sourcepaths;
+        this.sourcepaths = Arrays.copyOf(sourcepaths, sourcepaths.length);
         this.links = links;
         this.rootDoc = new SimpleGroovyRootDoc("root");
         this.properties = properties;

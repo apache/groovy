@@ -656,6 +656,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                     case ABSTRACT:
                         memberOrClass.setAbstract(true);
                         break;
+                    default:
                 }
                 currentModifier = currentModifier.getNextSibling();
             }
