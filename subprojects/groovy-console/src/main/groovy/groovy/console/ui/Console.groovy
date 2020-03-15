@@ -18,6 +18,11 @@
  */
 package groovy.console.ui
 
+import com.github.javaparser.ParseProblemException
+import com.github.javaparser.StaticJavaParser
+import com.github.javaparser.ast.CompilationUnit
+import com.github.javaparser.ast.Modifier
+import com.github.javaparser.ast.body.TypeDeclaration
 import groovy.cli.internal.CliBuilderInternal
 import groovy.cli.internal.OptionAccessor
 import groovy.console.ui.text.FindReplaceUtility
@@ -35,6 +40,7 @@ import org.apache.groovy.antlr.LexerFrame
 import org.apache.groovy.io.StringBuilderWriter
 import org.apache.groovy.parser.antlr4.GroovyLangLexer
 import org.apache.groovy.parser.antlr4.GroovyLangParser
+import org.apache.groovy.util.JavaShell
 import org.apache.groovy.util.SystemUtil
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.ErrorCollector
@@ -913,15 +919,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     int errorLine = se.line
                     String message = se.originalMessage
 
-                    String scriptFileName = scriptFile?.name ?: DEFAULT_SCRIPT_NAME_START
-
                     def doc = outputArea.styledDocument
-
-                    def style = hyperlinkStyle
-                    def hrefAttr = new SimpleAttributeSet()
-                    // don't pass a GString as it won't be coerced to String as addAttribute takes an Object
-                    hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + scriptFileName + ':' + errorLine)
-                    style.addAttribute(HTML.Tag.A, hrefAttr)
+                    Style style = createLinkStyle(errorLine)
 
                     insertString(doc, doc.length, message + ' at ', stacktraceStyle)
                     insertString(doc, doc.length, "line: ${se.line}, column: ${se.startColumn}\n\n", style)
@@ -933,6 +932,29 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     def doc = outputArea.styledDocument
                     insertString(doc, doc.length, "${error.message}\n", new SimpleAttributeSet())
                 }
+            }
+        } else if (t instanceof ParseProblemException) {
+            def problemList = ((ParseProblemException) t).getProblems()
+            int count = problemList.size()
+            appendOutputNl("${count} compilation error${count > 1 ? 's' : ''}:\n\n", commandStyle)
+
+            def doc = outputArea.styledDocument
+            problemList.each { p ->
+                insertString(doc, doc.length, "${p.message}", stacktraceStyle)
+
+                if (p.location.isPresent()) {
+                    def range = p.location.get().begin.range
+                    if (range.isPresent()) {
+                        def position = range.get().begin
+                        def errorLine = position.line
+                        def errorCol = position.column
+                        Style style = createLinkStyle(errorLine)
+
+                        insertString(doc, doc.length, " at ", stacktraceStyle)
+                        insertString(doc, doc.length, "line: ${errorLine}, column: ${errorCol}\n\n", style)
+                    }
+                }
+
             }
         } else {
             reportException(t)
@@ -949,6 +971,16 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             prepareOutputWindow()
             showOutputWindow()
         }
+    }
+
+    private Style createLinkStyle(int errorLine) {
+        String scriptFileName = scriptFile?.name ?: DEFAULT_SCRIPT_NAME_START
+        def style = hyperlinkStyle
+        def hrefAttr = new SimpleAttributeSet()
+        // don't pass a GString as it won't be coerced to String as addAttribute takes an Object
+        hrefAttr.addAttribute(HTML.Attribute.HREF, 'file://' + scriptFileName + ':' + errorLine)
+        style.addAttribute(HTML.Tag.A, hrefAttr)
+        return style
     }
 
     private calcPreferredSize(a, b, c) {
@@ -1136,13 +1168,74 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         return consoleControllers.find { it.consoleId == consoleId }
     }
 
+    @CompileStatic
+    private class GroovySourceType extends SourceType {
+        GroovySourceType() {
+            super('groovy')
+        }
+
+        @Override
+        Object run(String src) {
+            String name = ((File) Console.this.scriptFile)?.name ?: (DEFAULT_SCRIPT_NAME_START + Console.this.scriptNameCounter++)
+            Console.this.shell.run(src, name, [])
+        }
+    }
+
+    @CompileStatic
+    private class JavaSourceType extends SourceType {
+        JavaSourceType() {
+            super('java')
+        }
+
+        @Override
+        Object run(String src) {
+            Optional<String> optionalPrimaryClassName = findPrimaryClassName(src)
+            if (optionalPrimaryClassName.isPresent()) {
+                def js = new JavaShell(Thread.currentThread().contextClassLoader)
+                js.run(optionalPrimaryClassName.get(), src)
+            }
+            return null
+        }
+    }
+
+    @CompileStatic
+    private abstract class SourceType {
+        String extension
+        SourceType(String extension) {
+            this.extension = extension
+        }
+
+        abstract Object run(String src)
+
+        @Override
+        boolean equals(o) {
+            if (this.is(o)) return true
+            if (!(o instanceof SourceType)) return false
+
+            SourceType that = (SourceType) o
+
+            if (extension != that.extension) return false
+
+            return true
+        }
+
+        @Override
+        int hashCode() {
+            return extension.hashCode()
+        }
+    }
+
+    void runJava(EventObject evt = null) {
+        runScript(evt, new JavaSourceType())
+    }
+
     // actually run the script
-    void runScript(EventObject evt = null) {
+    void runScript(EventObject evt = null, SourceType st = new GroovySourceType()) {
         saveInputAreaContentHash()
         if (saveOnRun && scriptFile != null) {
-            if (fileSave(evt)) runScriptImpl(false)
+            if (fileSave(evt)) runScriptImpl(false, st)
         } else {
-            runScriptImpl(false)
+            runScriptImpl(false, st)
         }
     }
 
@@ -1180,9 +1273,13 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         cc.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
     }
 
-    void runSelectedScript(EventObject evt = null) {
+    void runSelectedJava(EventObject evt = null) {
+        runSelectedScript(evt, new JavaSourceType())
+    }
+
+    void runSelectedScript(EventObject evt = null, SourceType st = new GroovySourceType()) {
         saveInputAreaContentHash()
-        runScriptImpl(true)
+        runScriptImpl(true, st)
     }
 
     void addClasspathJar(EventObject evt = null) {
@@ -1251,7 +1348,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         inputAreaContentHash = inputArea.getText().hashCode()
     }
 
-    private void runScriptImpl(boolean selected) {
+    private void runScriptImpl(boolean selected, SourceType st = new GroovySourceType()) {
         if (scriptRunning) {
             statusLabel.text = 'Cannot run script now as a script is already running. Please wait or use "Interrupt Script" option.'
             return
@@ -1269,8 +1366,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         // Print the input text
         if (showScriptInOutput) {
+            final promptPrefix = "${st.extension}> "
             for (line in record.getTextToRun(selected).tokenize('\n')) {
-                appendOutputNl('groovy> ', promptStyle)
+                appendOutputNl(promptPrefix, promptStyle)
                 appendOutput(line, commandStyle)
             }
             appendOutputNl(' \n', promptStyle)
@@ -1282,7 +1380,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             try {
                 systemOutInterceptor.setConsoleId(this.getConsoleId())
                 SwingUtilities.invokeLater { showExecutingMessage() }
-                String name = scriptFile?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
                 if (beforeExecution) {
                     beforeExecution()
                 }
@@ -1291,13 +1388,13 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     ClassLoader savedThreadContextClassLoader = Thread.currentThread().contextClassLoader
                     try {
                         Thread.currentThread().contextClassLoader = shell.classLoader
-                        result = shell.run(record.getTextToRun(selected), name, [])
+                        result = doRun(selected, st, record)
                     }
                     finally {
                         Thread.currentThread().contextClassLoader = savedThreadContextClassLoader
                     }
                 } else {
-                    result = shell.run(record.getTextToRun(selected), name, [])
+                    result = doRun(selected, st, record)
                 }
                 if (afterExecution) {
                     afterExecution()
@@ -1319,7 +1416,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     int delay = prefs.getInt('loopModeDelay', ConsolePreferences.DEFAULT_LOOP_MODE_DELAY_MILLIS)
                     Timer timer = new Timer(delay, {
                         if( inputAreaContentHash == inputArea.getText().hashCode() ) {
-                            runScriptImpl(selected)
+                            runScriptImpl(selected, st)
                         }
                     })
                     timer.repeats = false
@@ -1327,6 +1424,36 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 }
             }
         }
+    }
+
+    @CompileStatic
+    private Object doRun(boolean selected, SourceType st, HistoryRecord record) {
+        def src = record.getTextToRun(selected)
+        return st.run(src)
+    }
+
+    @CompileStatic
+    private static Optional<String> findPrimaryClassName(String javaSrc) {
+        List<TypeDeclaration<?>> result = new LinkedList<>()
+        CompilationUnit compilationUnit = StaticJavaParser.parse(javaSrc)
+
+        for (TypeDeclaration<?> td : compilationUnit.getTypes()) {
+            if (!(td.isTopLevelType() && td.isClassOrInterfaceDeclaration() && td.getModifiers().contains(Modifier.publicModifier()))) continue
+
+            if (td.fullyQualifiedName.isPresent()) {
+                result << td
+            }
+        }
+
+        String className = null
+        if (!result.isEmpty()) {
+            Optional<String> optionalClassName = result.get(0).getFullyQualifiedName()
+            if (optionalClassName.isPresent()) {
+                className = optionalClassName.get()
+            }
+        }
+
+        return Optional.ofNullable(className)
     }
 
     void compileScript(EventObject evt = null) {

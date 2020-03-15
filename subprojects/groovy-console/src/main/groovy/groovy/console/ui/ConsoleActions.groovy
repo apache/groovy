@@ -204,6 +204,14 @@ runAction = action(
         shortDescription: 'Execute Groovy Script'
 )
 
+runJavaAction = action(
+        name: 'Run as Java',
+        closure: controller.&runJava,
+        mnemonic: 'J',
+        accelerator: shortcut('alt R'),
+        shortDescription: 'Execute Java Code'
+)
+
 loopModeAction = action(
         name: 'Loop Mode',
         closure: controller.&loopMode,
@@ -217,6 +225,11 @@ runSelectionAction = action(
         mnemonic: 'E',
         keyStroke: shortcut('shift ENTER'),
         accelerator: shortcut('shift R')
+)
+
+runJavaSelectionAction = action(
+        name: 'Run Selection as Java',
+        closure: controller.&runSelectedJava
 )
 
 addClasspathJar = action(
