@@ -144,6 +144,7 @@ allprojects { proj ->
             projectName = proj.name
             release = rootProject.version
         }
+        excludeFilter = file("$rootProject.projectDir/config/spotbugs/exclude.xml")
         ignoreFailures = true
         effort = 'max'
         maxHeapSize = '2g'
