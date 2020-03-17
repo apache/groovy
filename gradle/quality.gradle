@@ -149,7 +149,10 @@ allprojects { proj ->
         maxHeapSize = '2g'
         reports {
             xml.enabled = false
-            html.enabled = true
+            html {
+                enabled = true
+                stylesheet = 'fancy-hist.xsl'
+            }
         }
     }
 }
