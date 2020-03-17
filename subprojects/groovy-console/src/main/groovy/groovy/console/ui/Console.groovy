@@ -30,7 +30,9 @@ import groovy.console.ui.text.GroovyFilter
 import groovy.console.ui.text.SmartDocumentFilter
 import groovy.swing.SwingBuilder
 import groovy.transform.CompileStatic
+import groovy.transform.EqualsAndHashCode
 import groovy.transform.ThreadInterrupt
+import groovy.transform.TupleConstructor
 import groovy.ui.GroovyMain
 import org.antlr.v4.gui.TestRig
 import org.antlr.v4.runtime.CharStream
@@ -1179,6 +1181,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             String name = ((File) Console.this.scriptFile)?.name ?: (DEFAULT_SCRIPT_NAME_START + Console.this.scriptNameCounter++)
             Console.this.shell.run(src, name, [])
         }
+
+        @Override
+        Object compile(String src) {
+            shell.getClassLoader().parseClass(src)
+        }
     }
 
     @CompileStatic
@@ -1198,33 +1205,28 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             }
             return null
         }
+
+        @Override
+        Object compile(String src) {
+            Optional<String> optionalPrimaryClassName = findPrimaryClassName(src)
+            if (optionalPrimaryClassName.isPresent()) {
+                def js = new JavaShell(Thread.currentThread().contextClassLoader)
+                js.compileAll(optionalPrimaryClassName.get(), src)
+            } else {
+                System.err.println('Initial parsing successful but no public class found. Compile will not proceed.')
+            }
+            return null
+        }
     }
 
     @CompileStatic
+    @EqualsAndHashCode
+    @TupleConstructor
     private abstract class SourceType {
         String extension
-        SourceType(String extension) {
-            this.extension = extension
-        }
 
         abstract Object run(String src)
-
-        @Override
-        boolean equals(o) {
-            if (this.is(o)) return true
-            if (!(o instanceof SourceType)) return false
-
-            SourceType that = (SourceType) o
-
-            if (extension != that.extension) return false
-
-            return true
-        }
-
-        @Override
-        int hashCode() {
-            return extension.hashCode()
-        }
+        abstract Object compile(String src)
     }
 
     void runJava(EventObject evt = null) {
@@ -1458,7 +1460,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         return Optional.ofNullable(className)
     }
 
-    void compileScript(EventObject evt = null) {
+    void compileAsJava(EventObject evt = null) {
+        compileScript(evt, new JavaSourceType())
+    }
+
+    void compileScript(EventObject evt = null, SourceType st = new GroovySourceType()) {
         if (scriptRunning) {
             statusLabel.text = 'Cannot compile script now as a script is already running. Please wait or use "Interrupt Script" option.'
             return
@@ -1472,8 +1478,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         // Print the input text
         if (showScriptInOutput) {
+            final promptPrefix = "${st.extension}> "
             for (line in record.allText.tokenize('\n')) {
-                appendOutputNl('groovy> ', promptStyle)
+                appendOutputNl(promptPrefix, promptStyle)
                 appendOutput(line, commandStyle)
             }
             appendOutputNl(' \n', promptStyle)
@@ -1484,7 +1491,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         runThread = Thread.start {
             try {
                 SwingUtilities.invokeLater { showCompilingMessage() }
-                shell.getClassLoader().parseClass(record.allText)
+                st.compile(record.allText)
                 SwingUtilities.invokeLater { compileFinishNormal() }
             } catch (Throwable t) {
                 SwingUtilities.invokeLater { finishException(t, false) }

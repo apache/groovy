@@ -423,6 +423,12 @@ compileAction = action(
         shortDescription: 'Compile Groovy Script'
 )
 
+compileJavaAction = action(
+        name: 'Compile as Java',
+        closure: controller.&compileAsJava,
+        shortDescription: 'Compile as Java'
+)
+
 commentAction = action(
         name: 'Comment',
         closure: controller.&comment,
