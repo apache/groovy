@@ -684,7 +684,7 @@ BooleanLiteral
 
 fragment
 EscapeSequence
-    :   Backslash [btnfr"'\\]
+    :   Backslash [btnfrs"'\\]
     |   OctalEscape
     |   UnicodeEscape
     |   DollarEscape
