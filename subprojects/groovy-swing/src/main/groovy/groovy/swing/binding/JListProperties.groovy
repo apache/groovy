@@ -18,13 +18,15 @@
  */
 package groovy.swing.binding
 
+import groovy.transform.Synchronized
 import org.apache.groovy.swing.binding.FullBinding
 import org.apache.groovy.swing.binding.PropertyBinding
 import org.apache.groovy.swing.binding.SourceBinding
 import org.apache.groovy.swing.binding.TargetBinding
 import org.apache.groovy.swing.binding.TriggerBinding
 
-import javax.swing.*
+import javax.swing.JList
+import javax.swing.ListModel
 import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
 import javax.swing.event.ListSelectionEvent
@@ -128,19 +130,27 @@ class JListElementsBinding extends AbstractSyntheticBinding implements ListDataL
 }
 
 class JListSelectedElementBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ListSelectionListener {
-    JList boundList
+    private JList boundList
+
+    @Synchronized JList getBoundList() {
+        return boundList
+    }
+
+    @Synchronized void setBoundList(JList boundList) {
+        this.boundList = boundList
+    }
 
     protected JListSelectedElementBinding(PropertyBinding source, TargetBinding target, String propertyName) {
         super(source, target, JList.class, propertyName)
     }
 
-    synchronized void syntheticBind() {
+    @Synchronized void syntheticBind() {
         boundList = (JList) ((PropertyBinding) sourceBinding).getBean()
         boundList.addPropertyChangeListener("selectionModel", this)
         boundList.addListSelectionListener(this)
     }
 
-    synchronized void syntheticUnbind() {
+    @Synchronized void syntheticUnbind() {
         boundList.removePropertyChangeListener("selectionModel", this)
         boundList.removeListSelectionListener(this)
         boundList = null

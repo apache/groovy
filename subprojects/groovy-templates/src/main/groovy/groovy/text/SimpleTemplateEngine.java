@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Processes template source files substituting variables and expressions into
@@ -91,7 +92,7 @@ import java.util.Map;
  */
 public class SimpleTemplateEngine extends TemplateEngine {
     private boolean verbose;
-    private static int counter = 1;
+    private static AtomicInteger counter = new AtomicInteger(0);
     private GroovyShell groovyShell;
     private boolean escapeBackslash;
 
@@ -121,7 +122,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
             System.out.println("\n-- script end --\n");
         }
         try {
-            template.script = groovyShell.parse(script, "SimpleTemplateScript" + counter++ + ".groovy");
+            template.script = groovyShell.parse(script, "SimpleTemplateScript" + counter.incrementAndGet() + ".groovy");
         } catch (Exception e) {
             throw new GroovyRuntimeException("Failed to parse template script (your template may contain an error or be trying to use expressions not currently supported): " + e.getMessage());
         }
