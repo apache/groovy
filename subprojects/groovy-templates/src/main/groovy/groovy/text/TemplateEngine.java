@@ -18,42 +18,73 @@
  */
 package groovy.text;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import groovy.util.CharsetToolkit;
 import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.charset.Charset;
 
 /**
- * Represents an API to any template engine which is basically a factory of Template instances from a given text input.
+ * A template engine is a factory for creating a Template instance for a given text input.
  */
 public abstract class TemplateEngine {
+    /**
+     * Creates a template by reading content from the Reader.
+     */
     public abstract Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException;
-    
+
+    /**
+     * Creates a template from the String contents.
+     */
     public Template createTemplate(String templateText) throws CompilationFailedException, ClassNotFoundException, IOException {
         return createTemplate(new StringReader(templateText));
     }
-    
+
+    /**
+     * Creates a template from the File contents.
+     * If the encoding for the file can be determined, that encoding will be used, otherwise the default encoding will be used.
+     * Consider using {@link #createTemplate(File, Charset)} if you need to explicitly set the encoding.
+     */
     public Template createTemplate(File file) throws CompilationFailedException, ClassNotFoundException, IOException {
-        Reader reader = new FileReader(file);
-        try {
+        CharsetToolkit toolkit = new CharsetToolkit(file);
+        try (Reader reader = toolkit.getReader()) {
             return createTemplate(reader);
-        } finally {
-            DefaultGroovyMethodsSupport.closeWithWarning(reader);
         }
     }
 
-    public Template createTemplate(URL url) throws CompilationFailedException, ClassNotFoundException, IOException {
-        Reader reader = new InputStreamReader(url.openStream());
-        try {
+    /**
+     * Creates a template from the File contents using the given charset encoding.
+     */
+    public Template createTemplate(File file, Charset cs) throws CompilationFailedException, ClassNotFoundException, IOException {
+        try (Reader reader = new InputStreamReader(new FileInputStream(file), cs)) {
             return createTemplate(reader);
-        } finally {
-            DefaultGroovyMethodsSupport.closeWithWarning(reader);
+        }
+    }
+
+    /**
+     * Creates a template from the content found at the URL using the default encoding.
+     * Please consider using {@link #createTemplate(URL, Charset)}.
+     */
+    @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "left for legacy reasons but users expected to heed warning")
+    public Template createTemplate(URL url) throws CompilationFailedException, ClassNotFoundException, IOException {
+        try (Reader reader = new InputStreamReader(url.openStream())) {
+            return createTemplate(reader);
+        }
+    }
+
+    /**
+     * Creates a template from the content found at the URL using the given charset encoding.
+     */
+    public Template createTemplate(URL url, Charset cs) throws CompilationFailedException, ClassNotFoundException, IOException {
+        try (Reader reader = new InputStreamReader(url.openStream(), cs)) {
+            return createTemplate(reader);
         }
     }
 }

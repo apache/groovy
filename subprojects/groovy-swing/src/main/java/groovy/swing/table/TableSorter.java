@@ -229,7 +229,7 @@ public class TableSorter extends TableMap {
         if (high - low < 2) {
             return;
         }
-        int middle = (low + high) / 2;
+        int middle = (low + high) >>> 1;
         shuttlesort(to, from, low, middle);
         shuttlesort(to, from, middle, high);
 

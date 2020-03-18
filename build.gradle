@@ -177,8 +177,6 @@ dependencies {
         transitive = false
     }
 
-    compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsAnnotationsVersion"
-
     implementation("org.codehaus.gpars:gpars:$gparsVersion") {
         exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
@@ -369,6 +367,9 @@ task bootstrapJar(type:Jar ) {
 }
 
 allprojects {
+    dependencies {
+        compileOnly "com.github.spotbugs:spotbugs-annotations:$spotbugsAnnotationsVersion"
+    }
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'

@@ -41,6 +41,7 @@ import java.io.Writer;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Template engine for use in templating scenarios where both the template
@@ -104,7 +105,7 @@ import java.util.Map;
  */
 public class XmlTemplateEngine extends TemplateEngine {
 
-    private static int counter = 1;
+    private static AtomicInteger counter = new AtomicInteger(0);
 
     private static class GspPrinter extends XmlNodePrinter {
 
@@ -255,8 +256,9 @@ public class XmlTemplateEngine extends TemplateEngine {
         }
 
         public String toString() {
-            if (result.get() != null) {
-                return result.get().toString();
+            Object o = result.get();
+            if (o != null) {
+                return o.toString();
             }
             String string = writeTo(new StringBuilderWriter(1024)).toString();
             result = new WeakReference<>(string);
@@ -308,7 +310,7 @@ public class XmlTemplateEngine extends TemplateEngine {
 
         Script script;
         try {
-            script = groovyShell.parse(writer.toString(), "XmlTemplateScript" + counter++ + ".groovy");
+            script = groovyShell.parse(writer.toString(), "XmlTemplateScript" + counter.incrementAndGet() + ".groovy");
         } catch (Exception e) {
             throw new GroovyRuntimeException("Failed to parse template script (your template may contain an error or be trying to use expressions not currently supported): " + e.getMessage());
         }
