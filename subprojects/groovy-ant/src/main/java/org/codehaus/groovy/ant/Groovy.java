@@ -24,6 +24,7 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.MissingMethodException;
 import groovy.lang.Script;
+import groovy.util.CharsetToolkit;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -315,15 +316,14 @@ public class Groovy extends Java {
                 // if there are no groovy statements between the enclosing Groovy tags
                 // then read groovy statements in from a text file using the src attribute
                 if (command == null || command.trim().length() == 0) {
+                    if (srcFile == null || !srcFile.exists()) {
+                        throw new BuildException("Source file does not exist!", getLocation());
+                    }
                     createClasspath().add(new Path(getProject(), srcFile.getParentFile().getCanonicalPath()));
-                    command = getText(new BufferedReader(new FileReader(srcFile)));
+                    command = getText(new CharsetToolkit(srcFile).getReader());
                 }
 
-                if (command != null) {
-                    execGroovy(command, out);
-                } else {
-                    throw new BuildException("Source file does not exist!", getLocation());
-                }
+                execGroovy(command, out);
 
             } finally {
                 if (out != null && out != System.out) {
