@@ -150,8 +150,8 @@ ext {
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.11.1'
     spockVersion = '2.0-M2-groovy-3.0'
-    spotbugsVersion = '4.0.0'
-    spotbugsAnnotationsVersion = '4.0.0'
+    spotbugsVersion = '4.0.1'
+    spotbugsAnnotationsVersion = '4.0.1'
     checkstyleVersion = '8.30'
 }
 
