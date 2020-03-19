@@ -52,6 +52,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Vector;
@@ -320,9 +321,8 @@ public class Groovy extends Java {
                     log.verbose("Opening PrintStream to output file " + output);
                     BufferedOutputStream bos = new BufferedOutputStream(
                             new FileOutputStream(output.getAbsolutePath(), append));
-                    out = (encoding == null || encoding.isEmpty())
-                            ? new PrintStream(bos)
-                            : new PrintStream(bos, false, encoding);
+                    out = new PrintStream(bos, false,
+                            (encoding == null || encoding.isEmpty()) ? Charset.defaultCharset().name() : encoding);
                 }
 
                 // if there are no groovy statements between the enclosing Groovy tags
