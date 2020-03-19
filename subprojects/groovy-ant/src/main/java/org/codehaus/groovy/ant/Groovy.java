@@ -46,7 +46,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -67,6 +66,8 @@ public class Groovy extends Java {
     private static final String PREFIX = "embedded_script_in_";
     private static final String SUFFIX = "groovy_Ant_task";
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+    /** encoding; set to null or empty means 'default' */
+    private String encoding = null;
 
     private final LoggingHelper log = new LoggingHelper(this);
 
@@ -124,6 +125,15 @@ public class Groovy extends Java {
         this.fork = fork;
     }
 
+    /**
+     * Declare the encoding to use when outputting to a file;
+     * Use "" for the platform's default encoding.
+     * @param encoding the character encoding to use.
+     * @since 3.0.3
+     */
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
 
     /**
      * Should a new GroovyShell be used when forking. Special variables won't be available
@@ -308,9 +318,11 @@ public class Groovy extends Java {
             try {
                 if (output != null) {
                     log.verbose("Opening PrintStream to output file " + output);
-                    out = new PrintStream(
-                            new BufferedOutputStream(
-                                    new FileOutputStream(output.getAbsolutePath(), append)));
+                    BufferedOutputStream bos = new BufferedOutputStream(
+                            new FileOutputStream(output.getAbsolutePath(), append));
+                    out = (encoding == null || encoding.isEmpty())
+                            ? new PrintStream(bos)
+                            : new PrintStream(bos, false, encoding);
                 }
 
                 // if there are no groovy statements between the enclosing Groovy tags
