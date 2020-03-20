@@ -101,58 +101,50 @@ import org.codehaus.groovy.syntax.Token
 
 import java.util.logging.Level
 
-@CompileStatic
-@Log @SuppressWarnings("GroovyUnusedDeclaration")
+@CompileStatic @Log @SuppressWarnings('GroovyUnusedDeclaration')
 class ASTComparatorCategory {
     static { log.level = Level.WARNING }
-    static List<String> LOCATION_IGNORE_LIST = ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "startLine"]
-    static private List<String> EXPRESSION_IGNORE_LIST = ["text"] + LOCATION_IGNORE_LIST
+    public static final List<String> LOCATION_IGNORE_LIST = ['columnNumber', 'lineNumber', 'lastColumnNumber', 'lastLineNumber', 'startLine'].asUnmodifiable()
+    private static final List<String> EXPRESSION_IGNORE_LIST = (['text'] + LOCATION_IGNORE_LIST).asUnmodifiable()
 
-    /**
-     *  Keeps all checked object pairs and their comparison result.
-     *  Will be cleared at {@link #apply(groovy.lang.Closure)} method }
-     */
-    static Map<List<Object>, Boolean> objects = [:] as Map<List<Object>, Boolean>
-    static String lastName
-
-    static Map<Class, List<String>> DEFAULT_CONFIGURATION = [
-            (ClassNode)                   : (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods", "unresolvedSuperClass", "innerClasses" ] + LOCATION_IGNORE_LIST) as List<String>,
+    public static final Map<Class, List<String>> DEFAULT_CONFIGURATION = [
+            (ClassNode)                   : ['module', 'declaredMethodsMap', 'plainNodeReference', 'typeClass', 'allInterfaces', 'orAddStaticConstructorNode', 'allDeclaredMethods', 'unresolvedSuperClass', 'innerClasses' ] + LOCATION_IGNORE_LIST,
             (ConstructorNode)             : ['declaringClass'],
             (DynamicVariable)             : [],
-            (EnumConstantClassNode)       : ["typeClass"],
-            (FieldNode)                   : ["owner", "declaringClass", "initialValueExpression", "assignToken"],
+            (EnumConstantClassNode)       : ['typeClass'],
+            (FieldNode)                   : ['owner', 'declaringClass', 'initialValueExpression', 'assignToken'],
             (GenericsType)                : [],
             (ImportNode)                  : LOCATION_IGNORE_LIST,
-            (InnerClassNode)              : (['module', "declaredMethodsMap", "plainNodeReference", "typeClass", "allInterfaces", "orAddStaticConstructorNode", "allDeclaredMethods", "unresolvedSuperClass", "innerClasses" ] + LOCATION_IGNORE_LIST) as List<String>,
+            (InnerClassNode)              : ['module', 'declaredMethodsMap', 'plainNodeReference', 'typeClass', 'allInterfaces', 'orAddStaticConstructorNode', 'allDeclaredMethods', 'unresolvedSuperClass', 'innerClasses' ] + LOCATION_IGNORE_LIST,
             (InterfaceHelperClassNode)    : [],
-            (MethodNode)                  : ["text", "declaringClass"],
+            (MethodNode)                  : ['text', 'declaringClass'],
             (MixinNode)                   : [],
-            (ModuleNode)                  : ["context"],
+            (ModuleNode)                  : ['context'],
             (PackageNode)                 : [],
             (Parameter)                   : [],
-            (PropertyNode)                : ['declaringClass', 'initialValueExpression', "assignToken"],
+            (PropertyNode)                : ['declaringClass', 'initialValueExpression', 'assignToken'],
             (Variable)                    : [],
-            (VariableScope)               : ["clazzScope", "parent", "declaredVariablesIterator"],
-            (Token)                       : ["root", "startColumn"],
-            (AnnotationNode)              : (["text"] + LOCATION_IGNORE_LIST) as List<String>,
-            (AssertStatement)             : ["text"],
-            (BlockStatement)              : ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"],
-            (BreakStatement)              : ["text"],
-            (CaseStatement)               : ["text"],
-            (CatchStatement)              : (["text"] + LOCATION_IGNORE_LIST) as List<String>,
-            (ContinueStatement)           : ["text"],
-            (DoWhileStatement)            : ["text"],
-            (EmptyStatement)              : ["text"],
-            (ExpressionStatement)         : ["text"],
-            (ForStatement)                : ["text"],
-            (IfStatement)                 : ["text"],
-            (LoopingStatement)            : ["text"],
-            (ReturnStatement)             : ["text"],
-            (SwitchStatement)             : ["columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber", "text"],
-            (SynchronizedStatement)       : ["text"],
-            (ThrowStatement)              : ["text"],
-            (TryCatchStatement)           : (["text"] + LOCATION_IGNORE_LIST) as List<String>,
-            (WhileStatement)              : ["text"],
+            (VariableScope)               : ['clazzScope', 'parent', 'declaredVariablesIterator'],
+            (Token)                       : ['root', 'startColumn'],
+            (AnnotationNode)              : (['text'] + LOCATION_IGNORE_LIST),
+            (AssertStatement)             : ['text'],
+            (BlockStatement)              : ['columnNumber', 'lineNumber', 'lastColumnNumber', 'lastLineNumber', 'text'],
+            (BreakStatement)              : ['text'],
+            (CaseStatement)               : ['text'],
+            (CatchStatement)              : ['text'] + LOCATION_IGNORE_LIST,
+            (ContinueStatement)           : ['text'],
+            (DoWhileStatement)            : ['text'],
+            (EmptyStatement)              : ['text'],
+            (ExpressionStatement)         : ['text'],
+            (ForStatement)                : ['text'],
+            (IfStatement)                 : ['text'],
+            (LoopingStatement)            : ['text'],
+            (ReturnStatement)             : ['text'],
+            (SwitchStatement)             : ['columnNumber', 'lineNumber', 'lastColumnNumber', 'lastLineNumber', 'text'],
+            (SynchronizedStatement)       : ['text'],
+            (ThrowStatement)              : ['text'],
+            (TryCatchStatement)           : ['text'] + LOCATION_IGNORE_LIST,
+            (WhileStatement)              : ['text'],
             (AnnotationConstantExpression): EXPRESSION_IGNORE_LIST,
             (ArgumentListExpression)      : EXPRESSION_IGNORE_LIST,
             (ArrayExpression)             : EXPRESSION_IGNORE_LIST,
@@ -166,7 +158,7 @@ class ASTComparatorCategory {
             (ClosureListExpression)       : EXPRESSION_IGNORE_LIST,
             (ConstantExpression)          : EXPRESSION_IGNORE_LIST,
             (ConstructorCallExpression)   : EXPRESSION_IGNORE_LIST,
-            (DeclarationExpression)       : ["text", "columnNumber", "lineNumber", "lastColumnNumber", "lastLineNumber"],
+            (DeclarationExpression)       : ['text', 'columnNumber', 'lineNumber', 'lastColumnNumber', 'lastLineNumber'],
             (ElvisOperatorExpression)     : EXPRESSION_IGNORE_LIST,
             (EmptyExpression)             : EXPRESSION_IGNORE_LIST,
             (ExpressionTransformer)       : EXPRESSION_IGNORE_LIST,
@@ -192,13 +184,21 @@ class ASTComparatorCategory {
             (UnaryMinusExpression)        : EXPRESSION_IGNORE_LIST,
             (UnaryPlusExpression)         : EXPRESSION_IGNORE_LIST,
             (VariableExpression)          : EXPRESSION_IGNORE_LIST,
-    ] as Map<Class, List<String>>
+    ].asUnmodifiable()
 
-    static Map<Class, List<String>> COLLECTION_PROPERTY_CONFIGURATION = [
-            (ModuleNode): ["classes", "name"]
-    ] as Map<Class, List<String>>
+    public static final Map<Class, List<String>> COLLECTION_PROPERTY_CONFIGURATION = [
+            (ModuleNode): ['classes', 'name']
+    ].asUnmodifiable()
 
-    static Map<Class, List<String>> configuration = DEFAULT_CONFIGURATION;
+    public static Map<Class, List<String>> configuration = DEFAULT_CONFIGURATION
+
+    /**
+     *  Keeps all checked object pairs and their comparison result.
+     *  Will be cleared at {@link #apply(groovy.lang.Closure)} method }
+     */
+    public static final Map<List<Object>, Boolean> objects = [:]
+
+    static String lastName
 
     @CompileDynamic
     static void apply(config = DEFAULT_CONFIGURATION, Closure cl) {
