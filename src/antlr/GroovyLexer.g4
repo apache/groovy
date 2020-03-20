@@ -894,7 +894,7 @@ JavaLetter
         { Character.isJavaIdentifierStart(_input.LA(-1)) }?
     |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
         [\uD800-\uDBFF] [\uDC00-\uDFFF]
-        { Character.isJavaIdentifierStart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1))) }?
+        { Character.isJavaIdentifierStart(Character.toCodePoint((char) _input.LA(-2), (char) _input.LA(-1))) }?
     ;
 
 fragment
@@ -910,7 +910,7 @@ JavaLetterOrDigit
         { Character.isJavaIdentifierPart(_input.LA(-1)) }?
     |   // covers UTF-16 surrogate pairs encodings for U+10000 to U+10FFFF
         [\uD800-\uDBFF] [\uDC00-\uDFFF]
-        { Character.isJavaIdentifierPart(Character.toCodePoint((char)_input.LA(-2), (char)_input.LA(-1))) }?
+        { Character.isJavaIdentifierPart(Character.toCodePoint((char) _input.LA(-2), (char) _input.LA(-1))) }?
     ;
 
 fragment
@@ -935,7 +935,7 @@ WS  : ([ \t\u000C]+ | LineEscape+) -> skip
 NL  : LineTerminator   { this.ignoreTokenInsideParens(); }
     ;
 
-// Multiple-line comments(including groovydoc comments)
+// Multiple-line comments (including groovydoc comments)
 ML_COMMENT
     :   '/*' .*? '*/'       { this.ignoreMultiLineCommentConditionally(); } -> type(NL)
     ;
