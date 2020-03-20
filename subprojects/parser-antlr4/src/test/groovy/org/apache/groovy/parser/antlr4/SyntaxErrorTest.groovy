@@ -75,6 +75,54 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/UnexpectedCharacter_01x.groovy')
     }
 
+    void 'test groovy core - UnexpectedCharacter 2'() {
+        def err = expectParseError '''\
+            |def \u200Bname = null
+            |'''.stripMargin()
+
+        // TODO: Could the character be escaped in the error message?
+        assert err == '''\
+            |startup failed:
+            |test.groovy: 1: Unexpected input: 'def \u200B' @ line 1, column 5.
+            |   def \u200Bname = null
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
+
+        //
+
+        err = expectParseError '''\
+            |def na\u200Bme = null
+            |'''.stripMargin()
+
+        // TODO: Could the character be escaped in the error message?
+        assert err == '''\
+            |startup failed:
+            |test.groovy: 1: Unexpected input: '\u200B'; Expecting <EOF> @ line 1, column 7.
+            |   def na\u200Bme = null
+            |         ^
+            |
+            |1 error
+            |'''.stripMargin()
+
+        //
+
+        err = expectParseError '''\
+            |def na\u000Cme = null
+            |'''.stripMargin()
+
+        // TODO: Could the character be escaped in the error message?
+        assert err == '''\
+            |startup failed:
+            |test.groovy: 1: Unexpected input: '\u000C'; Expecting <EOF> @ line 1, column 7.
+            |   def na\u000Cme = null
+            |         ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
     void 'test groovy core - ParExpression'() {
         TestUtils.doRunAndShouldFail('fail/ParExpression_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/ParExpression_02x.groovy')
