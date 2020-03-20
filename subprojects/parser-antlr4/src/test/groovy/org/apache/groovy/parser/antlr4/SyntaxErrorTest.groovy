@@ -371,27 +371,27 @@ final class SyntaxErrorTest extends GroovyTestCase {
     }
 
     @NotYetImplemented
-    void 'test CompilerErrorTest_001.groovy'() {
+    void 'test CompilerErrorTest_001'() {
         unzipScriptAndShouldFail('scripts/CompilerErrorTest_001.groovy', [])
     }
 
     @NotYetImplemented
-    void 'test CompilerErrorTest_002.groovy'() {
+    void 'test CompilerErrorTest_002'() {
         unzipScriptAndShouldFail('scripts/CompilerErrorTest_002.groovy', [])
     }
 
     @NotYetImplemented
-    void 'test DifferencesFromJavaTest_002.groovy'() {
+    void 'test DifferencesFromJavaTest_002'() {
         unzipScriptAndShouldFail('scripts/DifferencesFromJavaTest_002.groovy', [])
     }
 
     @NotYetImplemented
-    void 'test Groovy5212Bug_001.groovy'() {
+    void 'test Groovy5212Bug_001'() {
         unzipScriptAndShouldFail('scripts/Groovy5212Bug_001.groovy', [])
     }
 
     @NotYetImplemented
-    void 'test GStringEndTest_001.groovy'() {
+    void 'test GStringEndTest_001'() {
         unzipScriptAndShouldFail('scripts/GStringEndTest_001.groovy', [])
     }
 
