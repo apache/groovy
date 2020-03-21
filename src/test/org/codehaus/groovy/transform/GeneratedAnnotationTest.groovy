@@ -57,7 +57,7 @@ class GeneratedAnnotationTest extends GroovyShellTestCase {
 
         GroovyObject.declaredMethods.findAll{ !isCoverageInstrumentationMethod(it) }.each { m ->
             def method = person.class.declaredMethods.find { it.name == m.name }
-            if (method) {
+            if (method && !method.name.contains('jacoco')) {
                 assert method.annotations*.annotationType().name.contains('groovy.transform.Generated')
             }
         }

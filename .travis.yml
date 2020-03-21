@@ -53,12 +53,15 @@ matrix:
     - env: BC='indy'
       jdk: oraclejdk8
 
+    - env: BC='sonar'
+      jdk: openjdk11
+
 before_script:
   - unset _JAVA_OPTIONS
 
 script:
   - ./gradlew -version
-  - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test; else travis_wait 60 ./gradlew testWithIndy; fi
+  - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test; elif [ "$BC" == "sonar" ]; then travis_wait 60 ./gradlew sonarqube -Dsonar.login=$SONAR_LOGIN -Pcoverage=true; else travis_wait 60 ./gradlew testWithIndy; fi
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
