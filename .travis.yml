@@ -19,7 +19,9 @@ language: groovy
 # https://docs.travis-ci.com/user/reference/overview/
 sudo: required
 dist: trusty
-install: true
+
+install:
+  - git fetch --unshallow
 
 matrix:
   include:
