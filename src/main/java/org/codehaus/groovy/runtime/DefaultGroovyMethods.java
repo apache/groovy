@@ -13069,7 +13069,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<List<T>> chop(Iterator<T> self, int... chopSizes) {
         List<List<T>> result = new ArrayList<List<T>>();
-        for (Integer nextSize : chopSizes) {
+        for (int nextSize : chopSizes) {
             int size = nextSize;
             List<T> next = new ArrayList<T>();
             while (size-- != 0 && self.hasNext()) {
