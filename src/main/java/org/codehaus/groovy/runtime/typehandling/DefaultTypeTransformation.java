@@ -299,12 +299,12 @@ public class DefaultTypeTransformation {
                 return n.floatValue();
             }
             if (type == Double.class) {
-                Double answer = n.doubleValue();
+                double answer = n.doubleValue();
                 //throw a runtime exception if conversion would be out-of-range for the type.
                 if (!(n instanceof Double) && (answer == Double.NEGATIVE_INFINITY
                         || answer == Double.POSITIVE_INFINITY)) {
                     throw new GroovyRuntimeException("Automatic coercion of " + n.getClass().getName()
-                            + " value " + n + " to double failed.  Value is out of range.");
+                            + " value " + n + " to double failed. Value is out of range.");
                 }
                 return answer;
             }
@@ -345,12 +345,12 @@ public class DefaultTypeTransformation {
         } else if (type == float.class) {
             return floatUnbox(object);
         } else if (type == double.class) {
-            Double answer = doubleUnbox(object);
+            double answer = doubleUnbox(object);
             //throw a runtime exception if conversion would be out-of-range for the type.
             if (!(object instanceof Double) && (answer == Double.NEGATIVE_INFINITY
                     || answer == Double.POSITIVE_INFINITY)) {
                 throw new GroovyRuntimeException("Automatic coercion of " + object.getClass().getName()
-                        + " value " + object + " to double failed.  Value is out of range.");
+                        + " value " + object + " to double failed. Value is out of range.");
             }
             return answer;
         } //nothing else possible
