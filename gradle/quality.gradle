@@ -202,3 +202,11 @@ rat {
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "apache_groovy"
+        property "sonar.organization", "apache"
+        property "sonar.host.url", "https://sonarcloud.io"
+    }
+}
