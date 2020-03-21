@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.ant;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.tools.ant.Project;
-import org.graalvm.compiler.core.common.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Enumeration;
