@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ant;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.tools.ant.Project;
 
 import java.util.Collection;
@@ -28,7 +29,9 @@ import java.util.Set;
 
 public class AntProjectPropertiesDelegate extends Hashtable {
 
-    private final Project project;
+    private transient final Project project;
+
+    private static final long serialVersionUID = -8311751517184349962L;
 
     public AntProjectPropertiesDelegate(Project project) {
         super();
@@ -45,7 +48,7 @@ public class AntProjectPropertiesDelegate extends Hashtable {
 
     /**
      * @throws UnsupportedOperationException is always thrown when this method is invoked. The Project properties are immutable.
-     */    
+     */
     public synchronized void clear() {
         throw new UnsupportedOperationException("Impossible to clear the project properties.");
     }
@@ -54,6 +57,7 @@ public class AntProjectPropertiesDelegate extends Hashtable {
         return project.getProperties().isEmpty();
     }
 
+    @SuppressFBWarnings(value = "CN_IDIOM_NO_SUPER_CALL", justification = "Okay for our use case. The cloned delegate should have the correct type.")
     public synchronized Object clone() {
         return project.getProperties().clone();
     }

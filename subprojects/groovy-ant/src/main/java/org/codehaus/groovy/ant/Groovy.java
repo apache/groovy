@@ -67,7 +67,9 @@ public class Groovy extends Java {
     private static final String PREFIX = "embedded_script_in_";
     private static final String SUFFIX = "groovy_Ant_task";
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-    /** encoding; set to null or empty means 'default' */
+    /**
+     * encoding; set to null or empty means 'default'
+     */
     private String encoding = null;
 
     private final LoggingHelper log = new LoggingHelper(this);
@@ -129,6 +131,7 @@ public class Groovy extends Java {
     /**
      * Declare the encoding to use when outputting to a file;
      * Use "" for the platform's default encoding.
+     *
      * @param encoding the character encoding to use.
      * @since 3.0.3
      */
@@ -276,6 +279,7 @@ public class Groovy extends Java {
 
     /**
      * Set the script base class name
+     *
      * @param scriptBaseClass the name of the base class for scripts
      */
     public void setScriptBaseClass(final String scriptBaseClass) {
@@ -446,8 +450,7 @@ public class Groovy extends Java {
                 ReflectionUtils.trySetAccessible(contextField);
                 final Object context = contextField.get(propsHandler);
                 mavenPom = InvokerHelper.invokeMethod(context, "getProject", EMPTY_OBJECT_ARRAY);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());
             }
             // load groovy into "root.maven" classloader instead of "root" so that
@@ -478,14 +481,14 @@ public class Groovy extends Java {
     }
 
     private void configureCompiler() {
-        if (scriptBaseClass!=null) {
+        if (scriptBaseClass != null) {
             configuration.setScriptBaseClass(scriptBaseClass);
         }
         if (indy) {
             configuration.getOptimizationOptions().put("indy", Boolean.TRUE);
             configuration.getOptimizationOptions().put("int", Boolean.FALSE);
         }
-        if (configscript!=null) {
+        if (configscript != null) {
             Binding binding = new Binding();
             binding.setVariable("configuration", configuration);
 
@@ -499,7 +502,7 @@ public class Groovy extends Java {
             try {
                 shell.evaluate(confSrc);
             } catch (IOException e) {
-                throw new BuildException("Unable to configure compiler using configuration file: "+confSrc, e);
+                throw new BuildException("Unable to configure compiler using configuration file: " + confSrc, e);
             }
         }
     }
@@ -523,8 +526,7 @@ public class Groovy extends Java {
                 script.setProperty("pom", mavenPom);
             }
             script.run();
-        }
-        catch (final MissingMethodException mme) {
+        } catch (final MissingMethodException mme) {
             // not a script, try running through run method but properties will not be available
             if (scriptFile != null) {
                 try {
@@ -535,8 +537,7 @@ public class Groovy extends Java {
             } else {
                 shell.run(txt, scriptName, cmdline.getCommandline());
             }
-        }
-        catch (final CompilationFailedException | IOException e) {
+        } catch (final CompilationFailedException | IOException e) {
             processError(e);
         }
     }
@@ -594,14 +595,16 @@ public class Groovy extends Java {
             throw new IllegalStateException("GROOVY_HOME incorrectly defined. No lib directory found in: " + groovyHome);
         }
         final File[] files = jarDir.listFiles();
-        for (File file : files) {
-            try {
-                log.debug("Adding jar to classpath: " + file.getCanonicalPath());
-            } catch (IOException e) {
-                // ignore
+        if (files != null) {
+            for (File file : files) {
+                try {
+                    log.debug("Adding jar to classpath: " + file.getCanonicalPath());
+                } catch (IOException e) {
+                    // ignore
+                }
+                path = super.createClasspath();
+                path.setLocation(file);
             }
-            path = super.createClasspath();
-            path.setLocation(file);
         }
     }
 
