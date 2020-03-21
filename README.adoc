@@ -24,10 +24,12 @@ The Groovy development team
 :revdate: 24-02-2014
 :build-icon: http://ci.groovy-lang.org:8111/app/rest/builds/buildType:(id:Groovy_Jdk7Build)/statusIcon
 :travis-build-icon: https://travis-ci.org/apache/groovy.svg?branch=master
+:sonarcloud-icon: https://sonarcloud.io/api/project_badges/measure?project=apache_groovy&metric=alert_status
 :noheader:
 :groovy-www: https://groovy-lang.org/
 :groovy-ci: http://ci.groovy-lang.org?guest=1
 :travis-ci: https://travis-ci.org/apache/groovy
+:sonarcloud: https://sonarcloud.io/dashboard?id=apache_groovy
 :jdk: https://www.oracle.com/technetwork/java/javase/downloads
 :bintray-latest-version-image: https://api.bintray.com/packages/groovy/maven/groovy/images/download.png
 :bintray-latest-version-link: https://bintray.com/groovy/maven/groovy/_latestVersion
@@ -51,6 +53,7 @@ image:{jdk-icon}[jdk, link={jdk}]
 image:{apache-license-icon}[Apache License 2, link={apache-license-link}]
 // image:{build-icon}[teamcity build status, link={groovy-ci}]
 image:{travis-build-icon}[travis build status, link={travis-ci}]
+image:{sonarcloud-icon}[quality gate status, link={sonarcloud}]
 image:{bintray-download-icon}[bintray download, link={bintray-latest-version-link}]
 image:{apache-groovy-twitter-icon}[follow on Twitter, link={apache-groovy-twitter-link}]
 
