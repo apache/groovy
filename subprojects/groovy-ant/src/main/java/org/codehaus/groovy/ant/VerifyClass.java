@@ -77,16 +77,18 @@ public class VerifyClass extends MatchingTask {
     private int execute(File dir) {
         int fails = 0;
         File[] files = dir.listFiles();
-        for (File f : files) {
-            if (f.isDirectory()) {
-                fails += execute(f);
-            } else if (f.getName().endsWith(".class")) {
-                try {
-                    boolean ok = readClass(f.getCanonicalPath());
-                    if (!ok) fails++;
-                } catch (IOException ioe) {
-                    log(ioe.getMessage());
-                    throw new BuildException(ioe);
+        if (files != null) {
+            for (File f : files) {
+                if (f.isDirectory()) {
+                    fails += execute(f);
+                } else if (f.getName().endsWith(".class")) {
+                    try {
+                        boolean ok = readClass(f.getCanonicalPath());
+                        if (!ok) fails++;
+                    } catch (IOException ioe) {
+                        log(ioe.getMessage());
+                        throw new BuildException(ioe);
+                    }
                 }
             }
         }
