@@ -11460,7 +11460,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> T asType(Iterable iterable, Class<T> clazz) {
         if (Collection.class.isAssignableFrom(clazz)) {
-            return asType(toList(iterable), clazz);
+            return asType((Collection) toList(iterable), clazz);
         }
 
         return asType((Object) iterable, clazz);
