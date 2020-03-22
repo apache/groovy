@@ -154,6 +154,8 @@ ext {
     spotbugsVersion = '4.0.1'
     spotbugsAnnotationsVersion = '4.0.1'
     checkstyleVersion = '8.30'
+    junit5Version = '5.6.0'
+    junit5PlatformVersion = '1.6.0'
 }
 
 dependencies {

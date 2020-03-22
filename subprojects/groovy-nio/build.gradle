@@ -28,18 +28,15 @@ dependencies {
     testImplementation ("org.spockframework:spock-core:$spockVersion") {
         exclude group: 'org.codehaus.groovy'
     }
+    testImplementation ("org.spockframework:spock-junit4:$spockVersion")
 }
 
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {
     extensionClasses = 'org.apache.groovy.nio.extensions.NioExtensions'
 }
 
-sourceSets {
-    test {
-        groovy {
-            exclude 'org/apache/groovy/nio/extensions/NioExtensionsTest.groovy'
-        }
-    }
+test {
+    useJUnitPlatform()
 }
 
 compileJava.dependsOn moduleDescriptor
