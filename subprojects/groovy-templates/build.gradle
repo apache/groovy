@@ -30,6 +30,13 @@ dependencies {
     testImplementation("org.spockframework:spock-core:$spockVersion") {
         exclude group: 'org.codehaus.groovy'
     }
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:$junit5Version") {
+        because 'for JUnit 3/4 tests as well as JUnit 5'
+    }
+}
+
+test {
+    useJUnitPlatform()
 }
 
 task backportJar(type:Jar) {
