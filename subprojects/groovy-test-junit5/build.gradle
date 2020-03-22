@@ -17,11 +17,6 @@
  *  under the License.
  */
 
-ext {
-    junit5Version = '5.6.0'
-    junit5PlatformVersion = '1.6.0'
-}
-
 dependencies {
     api rootProject // JUnit5Runner implements GroovyRunner...
     implementation("org.junit.platform:junit-platform-launcher:$junit5PlatformVersion") {
