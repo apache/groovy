@@ -18,16 +18,19 @@
  */
 package groovy.util;
 
+import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 /**
  * A Collections utility class
@@ -94,22 +97,20 @@ public class GroovyCollections {
      * @return a List of the combinations found
      * @since 2.2.0
      */
-    public static List combinations(Iterable collections) {
-        List collectedCombos = new ArrayList();
-        for (Object collection : collections) {
-            Iterable items = DefaultTypeTransformation.asCollection(collection);
+    public static <T> List<List<T>> combinations(Iterable<T> collections) {
+        List<List<T>> collectedCombos = emptyList();
+        for (T collection : collections) {
+            Collection<T> items = DefaultTypeTransformation.asCollection(collection);
             if (collectedCombos.isEmpty()) {
-                for (Object item : items) {
-                    List l = new ArrayList();
-                    l.add(item);
-                    collectedCombos.add(l);
-                }
+                collectedCombos = StreamSupport.stream(items.spliterator(), false)
+                                               .map(GroovyCollections::newArrayList)
+                                               .collect(toCollection(ArrayList::new));
             } else {
-                List savedCombos = new ArrayList(collectedCombos);
-                List newCombos = new ArrayList();
-                for (Object value : items) {
-                    for (Object savedCombo : savedCombos) {
-                        List oldList = new ArrayList((List) savedCombo);
+                List<List<T>> savedCombos = new ArrayList<>(collectedCombos);
+                List<List<T>> newCombos = new ArrayList<>(items.size() * savedCombos.size());
+                for (T value : items) {
+                    for (List<T> savedCombo : savedCombos) {
+                        List<T> oldList = new ArrayList<>(savedCombo);
                         oldList.add(value);
                         newCombos.add(oldList);
                     }
@@ -121,6 +122,15 @@ public class GroovyCollections {
                 break;
         }
         return collectedCombos;
+    }
+
+    private static <T> List<T> newArrayList(T... elements) {
+        if (elements == null || elements.length == 0) {
+            return emptyList();
+        }
+        List<T> ret = new ArrayList<>(elements.length);
+        ret.addAll(Arrays.asList(elements));
+        return ret;
     }
 
     public static <T> List<List<T>> inits(Iterable<T> collections) {

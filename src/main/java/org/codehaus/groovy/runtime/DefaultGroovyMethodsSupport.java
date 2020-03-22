@@ -75,7 +75,7 @@ public class DefaultGroovyMethodsSupport {
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, Range range) {
+    protected static <T extends Comparable> RangeInfo subListBorders(int size, Range<T> range) {
         if (range instanceof IntRange) {
             return ((IntRange) range).subListBorders(size);
         }
@@ -96,7 +96,7 @@ public class DefaultGroovyMethodsSupport {
     }
 
     // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, EmptyRange range) {
+    protected static <T extends Comparable> RangeInfo subListBorders(int size, EmptyRange<T> range) {
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         return new RangeInfo(from, from, false);
     }
