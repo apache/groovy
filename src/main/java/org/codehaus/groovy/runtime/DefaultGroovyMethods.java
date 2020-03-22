@@ -14017,69 +14017,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return result;
     }
 
-//    public static Boolean putAt(boolean[] array, int idx, Boolean newValue) {
-//        return (Boolean) primitiveArrayPut(array, idx, newValue);
-//    }
-//
-//    public static Byte putAt(byte[] array, int idx, Object newValue) {
-//        if (!(newValue instanceof Byte)) {
-//            Number n = (Number) newValue;
-//            newValue = new Byte(n.byteValue());
-//        }
-//        return (Byte) primitiveArrayPut(array, idx, newValue);
-//    }
-//
-//    public static Character putAt(char[] array, int idx, Object newValue) {
-//        if (newValue instanceof String) {
-//            String s = (String) newValue;
-//            if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
-//            char c = s.charAt(0);
-//            newValue = new Character(c);
-//        }
-//        return (Character) primitiveArrayPut(array, idx, newValue);
-//    }
-//
-//    public static Short putAt(short[] array, int idx, Object newValue) {
-//        if (!(newValue instanceof Short)) {
-//            Number n = (Number) newValue;
-//            newValue = new Short(n.shortValue());
-//        }
-//        return (Short) primitiveArrayPut(array, idx, newValue);
-//    }
-//
-//    public static Integer putAt(int[] array, int idx, Object newValue) {
-//        if (!(newValue instanceof Integer)) {
-//            Number n = (Number) newValue;
-//            newValue = Integer.valueOf(n.intValue());
-//        }
-//        array [normaliseIndex(idx,array.length)] = ((Integer)newValue).intValue();
-//        return (Integer) newValue;
-//    }
-//
-//    public static Long putAt(long[] array, int idx, Object newValue) {
-//        if (!(newValue instanceof Long)) {
-//            Number n = (Number) newValue;
-//            newValue = new Long(n.longValue());
-//        }
-//        return (Long) primitiveArrayPut(array, idx, newValue);
-//    }
-//
-//    public static Float putAt(float[] array, int idx, Object newValue) {
-//        if (!(newValue instanceof Float)) {
-//            Number n = (Number) newValue;
-//            newValue = new Float(n.floatValue());
-//        }
-//        return (Float) primitiveArrayPut(array, idx, newValue);
-//    }
-//
-//    public static Double putAt(double[] array, int idx, Object newValue) {
-//        if (!(newValue instanceof Double)) {
-//            Number n = (Number) newValue;
-//            newValue = new Double(n.doubleValue());
-//        }
-//        return (Double) primitiveArrayPut(array, idx, newValue);
-//    }
-
     /**
      * Support assigning a range of values with a single assignment statement.
      *
