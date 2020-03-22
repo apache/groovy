@@ -207,5 +207,6 @@ sonarqube {
         property "sonar.projectKey", "apache_groovy"
         property "sonar.organization", "apache"
         property "sonar.host.url", "https://sonarcloud.io"
+//        property "sonar.coverage.jacoco.xmlReportPaths", "${rootProject.buildDir}/reports/jacoco/jacocoAllReport/jacocoAllReport.xml"
     }
 }
