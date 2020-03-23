@@ -2714,7 +2714,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the collection of items which this Object represents and returns each item that matches
      * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements.  This method can be used with different
+     * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
      * <pre class="groovyTestCase">
@@ -2745,7 +2745,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the collection of items and returns each item that matches
      * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements.  This method can be used with different
+     * method used by switch statements. method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
      * <pre class="groovyTestCase">
@@ -2775,7 +2775,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the collection of items and returns each item that matches
      * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements.  This method can be used with different
+     * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
      * <pre class="groovyTestCase">
@@ -2798,7 +2798,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the collection of items and returns each item that matches
      * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
-     * method used by switch statements.  This method can be used with different
+     * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
      * <pre class="groovyTestCase">
@@ -6200,7 +6200,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items in an Iterable.  This is equivalent to invoking the
+     * Sums the items in an Iterable. This is equivalent to invoking the
      * "plus" method on all items in the Iterable.
      * <pre class="groovyTestCase">assert 1+2+3+4 == [1,2,3,4].sum()</pre>
      *
@@ -6213,7 +6213,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items in an array.  This is equivalent to invoking the
+     * Sums the items in an array. This is equivalent to invoking the
      * "plus" method on all items in the array.
      *
      * @param self The array of values to add together
@@ -6226,7 +6226,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items from an Iterator.  This is equivalent to invoking the
+     * Sums the items from an Iterator. This is equivalent to invoking the
      * "plus" method on all items from the Iterator. The iterator will become
      * exhausted of elements after determining the sum value.
      *
@@ -6360,7 +6360,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items from an Iterator, adding the result to some initial value.  This is
+     * Sums the items from an Iterator, adding the result to some initial value. This is
      * equivalent to invoking the "plus" method on all items from the Iterator. The iterator
      * will become exhausted of elements after determining the sum value.
      *
@@ -6644,7 +6644,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Averages the items in an Iterable.  This is equivalent to invoking the
+     * Averages the items in an Iterable. This is equivalent to invoking the
      * "plus" method on all items in the Iterable and then dividing by the
      * total count using the "div" method for the resulting sum.
      * <pre class="groovyTestCase">assert 3 == [1, 2, 6].average()</pre>
@@ -6673,7 +6673,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Averages the items in an array.  This is equivalent to invoking the
+     * Averages the items in an array. This is equivalent to invoking the
      * "plus" method on all items in the array and then dividing by the
      * total count using the "div" method for the resulting sum.
      * <pre class="groovyTestCase">assert 3 == ([1, 2, 6] as Integer[]).average()</pre>
@@ -6691,7 +6691,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Averages the items from an Iterator.  This is equivalent to invoking the
+     * Averages the items from an Iterator. This is equivalent to invoking the
      * "plus" method on all items in the array and then dividing by the
      * total count using the "div" method for the resulting sum.
      * The iterator will become exhausted of elements after determining the average value.
@@ -13108,7 +13108,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Determines if the contents of this array are equal to the
-     * contents of the given list, in the same order.  This returns
+     * contents of the given list, in the same order. This returns
      * <code>false</code> if either collection is <code>null</code>.
      *
      * @param left  an array
@@ -13122,7 +13122,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Determines if the contents of this list are equal to the
-     * contents of the given array in the same order.  This returns
+     * contents of the given array in the same order. This returns
      * <code>false</code> if either collection is <code>null</code>.
      * <pre class="groovyTestCase">assert [1, "a"].equals( [ 1, "a" ] as Object[] )</pre>
      *
@@ -13619,7 +13619,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten a Collection.  This Collection and any nested arrays or
+     * Flatten a Collection. This Collection and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
      *
@@ -13632,7 +13632,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an Iterable.  This Iterable and any nested arrays or
+     * Flatten an Iterable. This Iterable and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
      *
@@ -13645,7 +13645,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten a List.  This List and any nested arrays or
+     * Flatten a List. This List and any nested arrays or
      * collections have their contents (recursively) added to the new List.
      * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
      *
@@ -13658,7 +13658,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten a Set.  This Set and any nested arrays or
+     * Flatten a Set. This Set and any nested arrays or
      * collections have their contents (recursively) added to the new Set.
      * <pre class="groovyTestCase">assert [1,2,3,4,5] as Set == ([1,[2,3],[[4]],[],5] as Set).flatten()</pre>
      *
@@ -13671,7 +13671,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten a SortedSet.  This SortedSet and any nested arrays or
+     * Flatten a SortedSet. This SortedSet and any nested arrays or
      * collections have their contents (recursively) added to the new SortedSet.
      * <pre class="groovyTestCase">
      * Set nested = [[0,1],[2],3,[4],5]
@@ -13689,7 +13689,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self an Array to flatten
@@ -13701,7 +13701,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self a boolean Array to flatten
@@ -13713,7 +13713,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self a byte Array to flatten
@@ -13725,7 +13725,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self a char Array to flatten
@@ -13737,7 +13737,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self a short Array to flatten
@@ -13749,7 +13749,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self an int Array to flatten
@@ -13761,7 +13761,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self a long Array to flatten
@@ -13773,7 +13773,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self a float Array to flatten
@@ -13785,7 +13785,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an array.  This array and any nested arrays or
+     * Flatten an array. This array and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      *
      * @param self a double Array to flatten
@@ -13821,7 +13821,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten an Iterable.  This Iterable and any nested arrays or
+     * Flatten an Iterable. This Iterable and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
      * For any non-Array, non-Collection object which represents some sort
      * of collective type, the supplied closure should yield the contained items;
@@ -16585,7 +16585,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the absolute value of that Number
      * @since 1.0
      */
-    //Note:  This method is NOT called if number is a BigInteger or BigDecimal because
+    //Note: This method is NOT called if number is a BigInteger or BigDecimal because
     //those classes implement a method with a better exact match.
     public static int abs(Number number) {
         return Math.abs(number.intValue());
@@ -17088,7 +17088,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //    }
 
     /**
-     * Allows a simple syntax for using timers.  This timer will execute the
+     * Allows a simple syntax for using timers. This timer will execute the
      * given closure after the given delay.
      *
      * @param timer   a timer object
