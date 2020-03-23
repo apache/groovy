@@ -3554,8 +3554,16 @@ options {
             // This will fix the issue GROOVY-766 (infinite loop).
             ~('\n'|'\r'|'\uffff')
         )*
+        ONE_NL[true]
+        ("#!"
+          (
+              options {  greedy = true;  }:
+              // '\uffff' means the EOF character.
+              // This will fix the issue GROOVY-766 (infinite loop).
+              ~('\n'|'\r'|'\uffff')
+          )* ONE_NL[true]
+        )*
         { if (!whitespaceIncluded)  $setType(Token.SKIP); }
-        //ONE_NL  //Never a significant newline, but might as well separate it.
     ;
 
 // multiple-line comments

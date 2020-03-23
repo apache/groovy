@@ -948,7 +948,7 @@ SL_COMMENT
 // Script-header comments.
 // The very first characters of the file may be "#!".  If so, ignore the first line.
 SH_COMMENT
-    :   '#!' { require(0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, true); } ~[\r\n\uFFFF]* -> skip
+    : '#!' { require(0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, true); } ~[\r\n\uFFFF]* LineTerminator ('#!' ~[\r\n\uFFFF]* LineTerminator)* -> skip
     ;
 
 // Unexpected characters will be handled by groovy parser later.
