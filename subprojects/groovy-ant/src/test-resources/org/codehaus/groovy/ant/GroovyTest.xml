@@ -39,6 +39,34 @@
         <groovy src="GroovyTest1.groovy"/>
     </target>
 
+    <target name="groovyCodeInExternalFileset" depends="defineTask">
+        <groovy>
+            <fileset file="GroovyTest1.groovy"/>
+            <!-- skip over copyright header, just as an example -->
+            <filterchain>
+                <headfilter skip="18"/>
+            </filterchain>
+        </groovy>
+    </target>
+
+    <target name="groovyCodeInExternalFileResource" depends="defineTask">
+        <groovy>
+            <file file="GroovyTest1.groovy"/>
+        </groovy>
+    </target>
+
+    <target name="groovyCodeInExternalJavaConstantResource" depends="defineTask">
+        <groovy>
+            <javaconstant name="org.codehaus.groovy.ant.GroovyTest.CODE_FRAGMENT"/>
+        </groovy>
+    </target>
+
+    <target name="groovyCodeInExternalURLResource" depends="defineTask">
+        <groovy>
+            <url url="https://raw.githubusercontent.com/apache/groovy/master/subprojects/groovy-ant/src/test-resources/org/codehaus/groovy/ant/GroovyTest1.groovy"/>
+        </groovy>
+    </target>
+
     <target name="groovyCodeInExternalFileWithOtherClass" depends="defineTask">
         <groovy src="GroovyTest2.groovy"/>
     </target>
@@ -98,6 +126,10 @@
 
     <target name="groovyErrorMsg_ExternalFile" depends="defineTask">
         <groovy src="GroovyTest_errorMessage.groovy"/>
+    </target>
+
+    <target name="groovyErrorMsg_NonExistingFile" depends="defineTask">
+        <groovy src="Does_not_exist.groovy"/>
     </target>
 
     <target name="defineTask">
