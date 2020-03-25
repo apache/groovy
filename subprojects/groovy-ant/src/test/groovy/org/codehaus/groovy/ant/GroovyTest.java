@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
  */
 public class GroovyTest extends GroovyTestCase {
     public static String FLAG = null;
+    public static final String CODE_FRAGMENT = "org.codehaus.groovy.ant.GroovyTest.FLAG = \"from Java constant resource\"";
     private final File antFile = new File("src/test-resources/org/codehaus/groovy/ant/GroovyTest.xml");
     private Project project;
 
@@ -51,6 +52,10 @@ public class GroovyTest extends GroovyTestCase {
         TestSuite suite = new TestSuite();
         suite.addTest(new GroovyTest("testGroovyCodeWithinTag"));
         suite.addTest(new GroovyTest("testGroovyCodeExternalFile"));
+        suite.addTest(new GroovyTest("testGroovyCodeExternalFileset"));
+        suite.addTest(new GroovyTest("testGroovyCodeExternalFileResource"));
+        suite.addTest(new GroovyTest("testGroovyCodeExternalURLResource"));
+        suite.addTest(new GroovyTest("testGroovyCodeExternalJavaConstantResource"));
         suite.addTest(new GroovyTest("testGroovyCodeInExternalFileWithOtherClass"));
         suite.addTest(new GroovyTest("testPropertiesWithoutFork"));
         suite.addTest(new GroovyTest("testClasspath_missing"));
@@ -59,6 +64,7 @@ public class GroovyTest extends GroovyTestCase {
         suite.addTest(new GroovyTest("testClasspath_nestedclasspath"));
         suite.addTest(new GroovyTest("testGroovyArgUsage"));
         suite.addTest(new GroovyTest("testFileNameInStackTrace"));
+        suite.addTest(new GroovyTest("testNonExistingFile"));
         return suite;
     }
 
@@ -84,6 +90,30 @@ public class GroovyTest extends GroovyTestCase {
         assertNull(FLAG);
         project.executeTarget("groovyCodeInExternalFile");
         assertEquals("from groovy file called from ant", FLAG);
+    }
+
+    public void testGroovyCodeExternalFileset() {
+        assertNull(FLAG);
+        project.executeTarget("groovyCodeInExternalFileset");
+        assertEquals("from groovy file called from ant", FLAG);
+    }
+
+    public void testGroovyCodeExternalFileResource() {
+        assertNull(FLAG);
+        project.executeTarget("groovyCodeInExternalFileResource");
+        assertEquals("from groovy file called from ant", FLAG);
+    }
+
+    public void testGroovyCodeExternalURLResource() {
+        assertNull(FLAG);
+        project.executeTarget("groovyCodeInExternalURLResource");
+        assertEquals("from groovy file called from ant", FLAG);
+    }
+
+    public void testGroovyCodeExternalJavaConstantResource() {
+        assertNull(FLAG);
+        project.executeTarget("groovyCodeInExternalJavaConstantResource");
+        assertEquals("from Java constant resource", FLAG);
     }
 
     public void testPropertiesWithoutFork() {
@@ -129,6 +159,16 @@ public class GroovyTest extends GroovyTestCase {
         assertNull(FLAG);
         project.executeTarget("groovyArgUsage");
         assertEquals("from groovytest3.GroovyTest3Class.doSomethingWithArgs() 1 2 3", FLAG);
+    }
+
+    public void testNonExistingFile() {
+        try {
+            project.executeTarget("groovyErrorMsg_NonExistingFile");
+            fail();
+        }
+        catch (final BuildException e) {
+            assertTrue(e.getMessage().contains("Source resource does not exist!"));
+        }
     }
 
     /**

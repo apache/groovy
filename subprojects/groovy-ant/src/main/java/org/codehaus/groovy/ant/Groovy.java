@@ -28,11 +28,16 @@ import groovy.util.CharsetToolkit;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.filters.util.ChainReaderHelper;
 import org.apache.tools.ant.taskdefs.Java;
 import org.apache.tools.ant.types.Commandline;
 import org.apache.tools.ant.types.FileSet;
+import org.apache.tools.ant.types.FilterChain;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
+import org.apache.tools.ant.types.Resource;
+import org.apache.tools.ant.types.ResourceCollection;
+import org.apache.tools.ant.types.resources.FileResource;
 import org.apache.tools.ant.util.FileUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -42,11 +47,15 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -55,6 +64,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.List;
 import java.util.Vector;
 
 /**
@@ -69,6 +79,11 @@ public class Groovy extends Java {
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     /**
+     * encoding; set to null or empty means 'default'
+     */
+    private String encoding = null;
+
+    /**
      * output encoding; set to null or empty means 'default'
      */
     private String outputEncoding = null;
@@ -81,9 +96,9 @@ public class Groovy extends Java {
     private final Vector<FileSet> filesets = new Vector<FileSet>();
 
     /**
-     * input file
+     * The input resource
      */
-    private File srcFile = null;
+    private Resource src = null;
 
     /**
      * input command
@@ -91,7 +106,7 @@ public class Groovy extends Java {
     private String command = "";
 
     /**
-     * Results Output file.
+     * Results Output file
      */
     private File output = null;
 
@@ -108,6 +123,8 @@ public class Groovy extends Java {
     private boolean indy = false;
     private String scriptBaseClass;
     private String configscript;
+
+    private final List<FilterChain> filterChains = new Vector<>();
 
     /**
      * Compiler configuration.
@@ -141,6 +158,18 @@ public class Groovy extends Java {
     }
 
     /**
+     * Declare the encoding to use when inputting from a resource;
+     * If not supplied or the empty encoding is supplied, a guess will be made for file resources,
+     * otherwise the platform's default encoding will be used.
+     *
+     * @param encoding the character encoding to use.
+     * @since 3.0.3
+     */
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+
+    /**
      * Should a new GroovyShell be used when forking. Special variables won't be available
      * but you don't need Ant in the classpath.
      *
@@ -171,12 +200,12 @@ public class Groovy extends Java {
 
     /**
      * Set the name of the file to be run. The folder of the file is automatically added to the classpath.
-     * Required unless statements are enclosed in the build file
+     * Required unless statements are enclosed in the build file or a nested resource is supplied.
      *
      * @param srcFile the file containing the groovy script to execute
      */
     public void setSrc(final File srcFile) {
-        this.srcFile = srcFile;
+        addConfigured(new FileResource(srcFile));
     }
 
     /**
@@ -186,14 +215,14 @@ public class Groovy extends Java {
      * @param txt the inline groovy commands to execute
      */
     public void addText(String txt) {
-        log("addText('" + txt + "')", Project.MSG_VERBOSE);
+        log.verbose("addText('" + txt + "')");
         this.command += txt;
     }
 
     /**
-     * Adds a set of files (nested fileset attribute).
+     * Adds a fileset (nested fileset attribute) which should represent a single source file.
      *
-     * @param set the fileset representing source files
+     * @param set the fileset representing a source file
      */
     public void addFileset(FileSet set) {
         filesets.addElement(set);
@@ -311,14 +340,28 @@ public class Groovy extends Java {
 
         command = command.trim();
 
-        if (srcFile == null && command.length() == 0 && filesets.isEmpty()) {
-            throw new BuildException("Source file does not exist!", getLocation());
+        // process filesets
+        for (FileSet next : filesets) {
+            for (Resource res : next) {
+                if (src == null) {
+                    src = res;
+                } else {
+                    throw new BuildException("A single source resource must be provided!", getLocation());
+                }
+            }
         }
 
-        if (srcFile != null && !srcFile.exists()) {
-            throw new BuildException("Source file does not exist!", getLocation());
+        if (src == null && command.length() == 0) {
+            throw new BuildException("Source does not exist!", getLocation());
         }
 
+        if (src != null && !src.isExists()) {
+            throw new BuildException("Source resource does not exist!", getLocation());
+        }
+
+        if (outputEncoding == null || outputEncoding.isEmpty()) {
+            outputEncoding = Charset.defaultCharset().name();
+        }
         try {
             PrintStream out = System.out;
             try {
@@ -326,21 +369,55 @@ public class Groovy extends Java {
                     log.verbose("Opening PrintStream to output file " + output);
                     BufferedOutputStream bos = new BufferedOutputStream(
                             new FileOutputStream(output.getAbsolutePath(), append));
-                    out = new PrintStream(bos, false,
-                            (outputEncoding == null || outputEncoding.isEmpty()) ? Charset.defaultCharset().name() : outputEncoding);
+                    out = new PrintStream(bos, false, outputEncoding);
                 }
 
                 // if there are no groovy statements between the enclosing Groovy tags
-                // then read groovy statements in from a text file using the src attribute
+                // then read groovy statements in from a resource using the src attribute
                 if (command == null || command.trim().length() == 0) {
-                    if (srcFile == null || !srcFile.exists()) {
-                        throw new BuildException("Source file does not exist!", getLocation());
+                    Reader reader;
+                    if (src instanceof FileResource) {
+                        File file = ((FileResource) src).getFile();
+                        createClasspath().add(new Path(getProject(), file.getParentFile().getCanonicalPath()));
+                        if (encoding != null && !encoding.isEmpty()) {
+                            reader = new LineNumberReader(new InputStreamReader(new FileInputStream(file), encoding));
+                        } else {
+                            reader = new CharsetToolkit(file).getReader();
+                        }
+                    } else {
+                        if (encoding != null && !encoding.isEmpty()) {
+                            reader = new InputStreamReader(new BufferedInputStream(src.getInputStream()), encoding);
+                        } else {
+                            reader = new InputStreamReader(new BufferedInputStream(src.getInputStream()), Charset.defaultCharset());
+                        }
                     }
-                    createClasspath().add(new Path(getProject(), srcFile.getParentFile().getCanonicalPath()));
-                    command = getText(new CharsetToolkit(srcFile).getReader());
+                    try {
+                        final long len = src.getSize();
+                        log.debug("resource size = " + (len != Resource.UNKNOWN_SIZE ? String.valueOf(len) : "unknown"));
+                        if (len == 0) {
+                            log.info("Ignoring empty resource");
+                            command = null;
+                        } else {
+                            try (ChainReaderHelper.ChainReader chainReader = new ChainReaderHelper(getProject(), reader, filterChains).with(crh -> {
+                                if (len != Resource.UNKNOWN_SIZE && len <= Integer.MAX_VALUE) {
+                                    crh.setBufferSize((int) len);
+                                }
+                            }).getAssembledReader()) {
+                                command = chainReader.readFully();
+                            }
+                        }
+                    } catch (final IOException ioe) {
+                        throw new BuildException("Unable to load resource: ", ioe, getLocation());
+                    }
+                } else {
+                    if (src != null) {
+                        log.info("Ignoring supplied resource as direct script text found");
+                    }
                 }
 
-                execGroovy(command, out);
+                if (command != null) {
+                    execGroovy(command, out);
+                }
 
             } finally {
                 if (out != null && out != System.out) {
@@ -351,24 +428,30 @@ public class Groovy extends Java {
             throw new BuildException(e, getLocation());
         }
 
-        log.verbose("statements executed successfully");
-    }
-
-    private static String getText(BufferedReader reader) throws IOException {
-        StringBuilder answer = new StringBuilder();
-        // reading the content of the file within a char buffer allow to keep the correct line endings
-        char[] charBuffer = new char[4096];
-        int nbCharRead = 0;
-        while ((nbCharRead = reader.read(charBuffer)) != -1) {
-            // appends buffer
-            answer.append(charBuffer, 0, nbCharRead);
-        }
-        reader.close();
-        return answer.toString();
+        log.verbose("Statements executed successfully");
     }
 
     public Commandline.Argument createArg() {
         return cmdline.createArgument();
+    }
+
+    /**
+     * Add the FilterChain element.
+     * @param filter the filter to add
+     */
+    public final void addFilterChain(FilterChain filter) {
+        filterChains.add(filter);
+    }
+
+    /**
+     * Set the source resource.
+     * @param a the resource to load as a single element Resource collection.
+     */
+    public void addConfigured(ResourceCollection a) {
+        if (a.size() != 1) {
+            throw new BuildException("Only single argument resource collections are supported");
+        }
+        src = a.iterator().next();
     }
 
     /**
@@ -630,8 +713,9 @@ public class Groovy extends Java {
      * @return the name to use when compiling the script
      */
     private String computeScriptName() {
-        if (srcFile != null) {
-            return srcFile.getAbsolutePath();
+        if (src instanceof FileResource) {
+            FileResource fr = (FileResource) src;
+            return fr.getFile().getAbsolutePath();
         } else {
             String name = PREFIX;
             if (getLocation().getFileName().length() > 0)
@@ -663,8 +747,8 @@ public class Groovy extends Java {
      */
     protected void printResults(PrintStream out) {
         log.debug("printResults()");
-        StringBuilder line = new StringBuilder();
-        out.println(line);
+//        StringBuilder line = new StringBuilder();
+//        out.println(line);
         out.println();
     }
 
