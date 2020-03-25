@@ -67,10 +67,11 @@ public class Groovy extends Java {
     private static final String PREFIX = "embedded_script_in_";
     private static final String SUFFIX = "groovy_Ant_task";
     private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
     /**
-     * encoding; set to null or empty means 'default'
+     * output encoding; set to null or empty means 'default'
      */
-    private String encoding = null;
+    private String outputEncoding = null;
 
     private final LoggingHelper log = new LoggingHelper(this);
 
@@ -130,13 +131,13 @@ public class Groovy extends Java {
 
     /**
      * Declare the encoding to use when outputting to a file;
-     * Use "" for the platform's default encoding.
+     * Leave unspecified or use "" for the platform's default encoding.
      *
      * @param encoding the character encoding to use.
      * @since 3.0.3
      */
-    public void setEncoding(String encoding) {
-        this.encoding = encoding;
+    public void setOutputEncoding(String encoding) {
+        this.outputEncoding = encoding;
     }
 
     /**
@@ -326,7 +327,7 @@ public class Groovy extends Java {
                     BufferedOutputStream bos = new BufferedOutputStream(
                             new FileOutputStream(output.getAbsolutePath(), append));
                     out = new PrintStream(bos, false,
-                            (encoding == null || encoding.isEmpty()) ? Charset.defaultCharset().name() : encoding);
+                            (outputEncoding == null || outputEncoding.isEmpty()) ? Charset.defaultCharset().name() : outputEncoding);
                 }
 
                 // if there are no groovy statements between the enclosing Groovy tags
