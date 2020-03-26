@@ -1689,14 +1689,19 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @throws IllegalStateException if the initialisation is incomplete yet
      */
     protected void checkInitalised() {
-        if (!isInitialized())
-            throw new IllegalStateException(
-                    "initialize must be called for meta " +
-                            "class of " + theClass +
-                            "(" + this.getClass() + ") " +
-                            "to complete initialisation process " +
-                            "before any invocation or field/property " +
-                            "access can be done");
+        if (!isInitialized()) {
+            try {
+                initialize();
+            } catch (Throwable t) {
+                throw new IllegalStateException(
+                        "initialize must be called for meta " +
+                                "class of " + theClass +
+                                "(" + this.getClass() + ") " +
+                                "to complete initialisation process " +
+                                "before any invocation or field/property " +
+                                "access can be done", t);
+            }
+        }
     }
 
     /**
