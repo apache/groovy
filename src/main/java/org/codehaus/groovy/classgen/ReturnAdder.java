@@ -114,7 +114,7 @@ public class ReturnAdder {
             Expression expression = ((ExpressionStatement) statement).getExpression();
             ReturnStatement returnStatement = new ReturnStatement(expression);
             returnStatement.copyStatementLabels(statement);
-            returnStatement.setSourcePosition(statement);
+            returnStatement.setSourcePosition(statement.getLineNumber() < 0 ? expression : statement);
             listener.returnStatementAdded(returnStatement);
             return returnStatement;
         }
