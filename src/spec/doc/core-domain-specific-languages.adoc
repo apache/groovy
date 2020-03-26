@@ -1045,11 +1045,11 @@ link:type-checking-extensions.html[type checking extensions].
 
 ==== MarkupBuilder
 
-See <<_markupbuilder,Creating Xml - MarkupBuilder>>.
+See <<xml-userguide.adoc#_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 ==== StreamingMarkupBuilder
 
-See <<_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
+See <<xml-userguide.adoc#_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
 include::{projectdir}/subprojects/groovy-xml/{specfolder}/sax-builder.adoc[leveloffset=+3]
 
