@@ -780,13 +780,17 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void exitDesktop(EventObject evt = null, quitResponse = null) {
-        exit(evt)
-        quitResponse.performQuit()
+        if (exit(evt)) {
+            quitResponse.performQuit()
+        } else {
+            quitResponse.cancelQuit()
+        }
     }
 
-    void exit(EventObject evt = null) {
+    boolean exit(EventObject evt = null) {
         if (askToInterruptScript()) {
-            if (askToSaveFile()) {
+            def exit = askToSaveFile()
+            if (exit) {
                 if (frame instanceof Window) {
                     frame.hide()
                     frame.dispose()
@@ -799,6 +803,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     systemErrorInterceptor.stop()
                 }
             }
+            return exit
         }
     }
 
