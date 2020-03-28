@@ -16,28 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy
 
-import groovy.test.GroovyTestCase
-
-class CurlyBracketLayoutTest extends GroovyTestCase
-{
-    void testBracketPlacement()
-    {
-        def foo = "abc"
-
-        if (foo.contains("b"))
-        {
-            // expected
-        }
-        else
-        {
-            fail("Should have found 'b' inside $foo")
-        }
-
-        def list = [1, 2, 3]
-        list.each {
-            assert it >= 1 && it <= 3
-        }
-    }
-}
+modification                                | expected
+{ Instant i, ZoneId z -> i.plusSeconds(1) } | defaultInstant.plusSeconds(1)

@@ -22,39 +22,34 @@ class ClosuresSpecTest extends GroovyTestCase {
     static void sink(Closure cl) {}
 
     void testClosureSyntax() {
-        sink
                 // tag::closure_syntax_1[]
-                { item++ }                                          // <1>
+        sink    { item++ }                                          // <1>
                 // end::closure_syntax_1[]
-        sink
+
                 // tag::closure_syntax_1bis[]
-                { -> item++ }                                       // <2>
+        sink    { -> item++ }                                       // <2>
                 // end::closure_syntax_1bis[]
-        sink
+
                 // tag::closure_syntax_2[]
-                { println it }                                      // <3>
+        sink    { println it }                                      // <3>
                 // end::closure_syntax_2[]
 
-        sink
                 // tag::closure_syntax_3[]
-                { it -> println it }                                // <4>
+        sink    { it -> println it }                                // <4>
                 // end::closure_syntax_3[]
 
-        sink
                 // tag::closure_syntax_4[]
-                { name -> println name }                            // <5>
+        sink    { name -> println name }                            // <5>
                 // end::closure_syntax_4[]
 
-        sink
                 // tag::closure_syntax_5[]
-                { String x, int y ->                                // <6>
+        sink    { String x, int y ->                                // <6>
                     println "hey ${x} the value is ${y}"
                 }
                 // end::closure_syntax_5[]
 
-        sink
                 // tag::closure_syntax_6[]
-                { reader ->                                         // <7>
+        sink    { reader ->                                         // <7>
                     def line = reader.readLine()
                     line.trim()
                 }

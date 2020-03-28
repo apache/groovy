@@ -141,10 +141,11 @@ final class TestUtils {
     */
 
     @CompileDynamic
-    static unzipAndFail(String path, String entryName, conf, Map<String, String> replacementsMap = null, boolean toCheckNewParserOnly = false) {
+    static unzipAndFail(String path, String entryName, conf, Map<Object, String> replacementsMap = null, boolean toCheckNewParserOnly = false) {
         String text = readZipEntry(path, entryName)
-        replacementsMap?.each { k, v ->
-            text = text.replace(k, v)
+
+        replacementsMap?.each {k, v ->
+            text = k instanceof String ? text.replace(k, v) : text.replaceAll(k, v);
         }
 
         def (newAST, newElapsedTime) = profile { buildAST(text, antlr4Config) }

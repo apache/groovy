@@ -919,11 +919,11 @@ pathElement returns [int t]
         |
             DOT nls NEW creator[1]
             { $t = 6; }
-
-            // Can always append a block, as foo{bar}
-        |   closureOrLambdaExpression
-            { $t = 3; }
         )
+
+        // Can always append a block, as foo{bar}
+    |   closureOrLambdaExpression
+        { $t = 3; }
 
     |   arguments
         { $t = 2; }
