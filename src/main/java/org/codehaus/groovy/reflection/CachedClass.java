@@ -379,7 +379,9 @@ public class CachedClass {
           if (metaClass.getClass() == MetaClassImpl.class) {
               classInfo.setStrongMetaClass(null);
               updateSetNewMopMethods(arr);
-              classInfo.setStrongMetaClass(new MetaClassImpl(metaClass.getTheClass()));
+              MetaClassImpl mci = new MetaClassImpl(metaClass.getTheClass());
+              mci.initialize();
+              classInfo.setStrongMetaClass(mci);
               return;
           }
 
