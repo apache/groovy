@@ -2569,7 +2569,7 @@ It is often considered bad practice to reassign parameters of a method or constr
 By adding the final modifier to all parameter declarations you can avoid this practice entirely.
 Some programmers feel that adding final everywhere increases the amount of boilerplate code and makes the
 method signatures somewhat noisy. An alternative might instead be to use a code review process or apply
-a http://codenarc.org[codenarc] http://codenarc.sourceforge.net/codenarc-rules-convention.html#ParameterReassignment[rule]
+a http://codenarc.org[codenarc] https://codenarc.github.io/CodeNarc/codenarc-rules-convention.html#parameterreassignment-rule[rule]
 to give warnings if that practice is observed but these alternatives might lead to delayed feedback during
 quality checking rather than within the IDE or during compilation. The `@AutoFinal` annotation aims to
 maximise compiler/IDE feedback while retaining succinct code with minimum boilerplate noise.
