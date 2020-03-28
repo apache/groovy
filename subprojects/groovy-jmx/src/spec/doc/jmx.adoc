@@ -388,9 +388,8 @@ We started the Groovy application with the `-Dcom.sun.management.jmxremote` JVM 
 
 See also:
 
-- <<_dynamic-language-beans-in-spring,Dynamic language beans in Spring>>
-- <<_using-spring-factories-with-groovy,Using Spring Factories with Groovy>>
-- http://static.springsource.org/spring/docs/3.2.x/spring-framework-reference/html/jmx.html[Spring JMX Documentation]
+- https://docs.spring.io/spring/docs/current/spring-framework-reference/languages.html#dynamic-language-beans[Dynamic language beans in Spring]
+- https://docs.spring.io/spring/docs/current/spring-framework-reference/integration.html#jmx[Spring JMX Documentation]
 
 == Troubleshooting
 
