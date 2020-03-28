@@ -918,6 +918,11 @@ JavaLetterOrDigitInGString
     :   JavaLetterOrDigit  { _input.LA(-1) != '$' }?
     ;
 
+fragment
+ShCommand
+    :   ~[\r\n\uFFFF]*
+    ;
+
 //
 // Additional symbols not defined in the lexical specification
 //
@@ -948,7 +953,7 @@ SL_COMMENT
 // Script-header comments.
 // The very first characters of the file may be "#!".  If so, ignore the first line.
 SH_COMMENT
-    :   '#!' { require(0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, true); } ~[\r\n\uFFFF]* -> skip
+    :   '#!' { require(0 == this.tokenIndex, "Shebang comment should appear at the first line", -2, true); } ShCommand (LineTerminator '#!' ShCommand)* -> skip
     ;
 
 // Unexpected characters will be handled by groovy parser later.
