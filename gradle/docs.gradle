@@ -33,6 +33,9 @@ task asciidocAll(type: Copy) {
 def javadocSpec = {
     maxMemory = javaDoc_mx
     project.configure(options) {
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption('html5', true)
+        }
         windowTitle = doc.title
         docTitle = doc.title
         locale = 'en_US'
