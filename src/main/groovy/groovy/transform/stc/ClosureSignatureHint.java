@@ -92,11 +92,11 @@ public abstract class ClosureSignatureHint {
      * }</code>
      *
      * <p>The <i>collect</i> method accepts a closure, but normally, the type checker doesn't have enough type information
-     * in the sole {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#collect(java.util.Collection, groovy.lang.Closure)} method
+     * in the sole {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#collect(java.lang.Iterable, groovy.lang.Closure)} method
      * signature to infer the type of <i>it</i>. With the annotation, it will now try to find an annotation on the closure parameter.
      * If it finds it, then an instance of the hint class is created and the type checker calls it with the following arguments:</p>
      * <ul>
-     *     <li>the method node corresponding to the target method (here, the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#collect(java.util.Collection, groovy.lang.Closure)} method</li>
+     *     <li>the method node corresponding to the target method (here, the {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#collect(java.lang.Iterable, groovy.lang.Closure)} method</li>
      *     <li>the (optional) list of options found in the annotation</li>
      * </ul>
      *
