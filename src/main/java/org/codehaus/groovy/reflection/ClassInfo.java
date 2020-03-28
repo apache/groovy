@@ -77,21 +77,7 @@ public class ClassInfo implements Finalizable {
     private final LockableObject lock = new LockableObject();
     public final int hash = -1;
     private final WeakReference<Class<?>> classRef;
-
-    // TODO: should be able to remove the klazz field once 2.5 becomes the mainline release
-    // Gradle has a cleanup mechanism in place to reflectively access this klazz field.
-    // The klazz field is being kept for compatibility so as to not break builds that depend
-    // on versions of Groovy after the field was changed to a WeakReference (classRef).  It
-    // appears that Gradle only performs the cleanup when it detects a groovy version of 2.4.x,
-    // so the klazz field and placeholder Sentinel class can likely be safely removed once
-    // the release version bumps to 2.5 (or beyond).
-    // See:
-    // https://github.com/gradle/gradle/blob/711f64/subprojects/core/src/main/java/org/gradle/api/internal/classloading/LeakyOnJava7GroovySystemLoader.java#L74
-    private static final class Sentinel {}
-    private static final Class<?> klazz = Sentinel.class;
-
     private final AtomicInteger version = new AtomicInteger();
-
     private MetaClass strongMetaClass;
     private ManagedReference<MetaClass> weakMetaClass;
     MetaMethod[] dgmMetaMethods = MetaMethod.EMPTY_ARRAY;
