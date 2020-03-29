@@ -35,7 +35,7 @@ def javadocSpec = {
     project.configure(options) {
         windowTitle = doc.title
         docTitle = doc.title
-        classpath += file('src/main/java')
+        classpath += project.file('src/main/java')
         locale = 'en_US'
         encoding = 'UTF-8'
         version = true
