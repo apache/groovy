@@ -29,9 +29,7 @@ import static org.codehaus.groovy.control.ParserPluginFactory.antlr4
 final class Groovy9213 {
     @Test(timeout=15000L)
     void testUnmatchedParenInLongScript4() {
-        def config = new CompilerConfiguration()
-        config.pluginFactory = antlr4(config)
-
+        def config = new CompilerConfiguration(pluginFactory: antlr4())
         new GroovyShell(config).evaluate('''
             int a = 0
             (

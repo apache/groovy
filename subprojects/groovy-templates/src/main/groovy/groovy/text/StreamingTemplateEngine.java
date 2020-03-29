@@ -18,6 +18,7 @@
  */
 package groovy.text;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.Closure;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
@@ -42,6 +43,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Processes template source files substituting variables and expressions into
@@ -148,7 +150,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
     private static final String TEMPLATE_SCRIPT_PREFIX = "StreamingTemplateScript";
 
     private final ClassLoader parentLoader;
-    private static int counter = 1;
+    private static AtomicInteger counter = new AtomicInteger(0);
 
     /**
      * Create a streaming template engine instance using the default class loader
@@ -372,11 +374,12 @@ public class StreamingTemplateEngine extends TemplateEngine {
             }
         }
 
+        @SuppressFBWarnings(value = "SR_NOT_CHECKED", justification = "safe to ignore return value of skip from reader backed by StringReader")
         private int getLinesInSource() throws IOException {
             int result = 0;
 
             try (LineNumberReader reader = new LineNumberReader(new StringReader(templateSource.toString()))) {
-                reader.skip(Long.MAX_VALUE);
+                reader.skip(Long.MAX_VALUE); // SR_NOT_CHECKED
                 result = reader.getLineNumber();
             }
 
@@ -600,7 +603,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
             });
             final Class groovyClass;
             try {
-                groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + counter++ + ".groovy", "x"));
+                groovyClass = loader.parseClass(new GroovyCodeSource(target.toString(), TEMPLATE_SCRIPT_PREFIX + counter.incrementAndGet() + ".groovy", "x"));
             } catch (MultipleCompilationErrorsException e) {
                 throw mangleMultipleCompilationErrorsException(e, sections);
 

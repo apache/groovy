@@ -41,6 +41,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -252,12 +253,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                     source.getErrorCollector().addError(new SimpleMessage(error, source));
                 }
 
-                Stream.concat(Stream.of(transformClassNames), Stream.of(transformClasses).map(Class::getName)).forEach(transformClassName -> {
-                    Class<?> transformClass = loadTransformClass(transformClassName, annotation);
-                    if (transformClass != null) {
-                        verifyAndAddTransform(annotation, transformClass);
-                    }
-                });
+                Stream.concat(Stream.of(transformClassNames), Stream.of(transformClasses).map(Class::getName)).map(transformClassName -> loadTransformClass(transformClassName, annotation)).filter(Objects::nonNull).forEach(transformClass -> verifyAndAddTransform(annotation, transformClass));
             } catch (ReflectiveOperationException | RuntimeException e) {
                 source.getErrorCollector().addError(new ExceptionMessage(e, true, source));
             }

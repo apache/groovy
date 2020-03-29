@@ -243,4 +243,11 @@ class JSR223Test extends GroovyTestCase {
         '''
     }
 
+    void testGroovy9430() {
+        ScriptEngineFactory factory = new GroovyScriptEngineFactory()
+        ScriptEngine engine = factory.getScriptEngine()
+        ScriptContext context = new SimpleScriptContext()
+        context.setAttribute(ScriptEngine.FILENAME, "testGroovy9430.groovy", ScriptContext.ENGINE_SCOPE)
+        assert 'testGroovy9430.groovy' == engine.generateScriptName(context)
+    }
 }

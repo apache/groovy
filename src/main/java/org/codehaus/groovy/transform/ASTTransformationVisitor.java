@@ -333,9 +333,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                     if (instance instanceof CompilationUnitAware) {
                         ((CompilationUnitAware) instance).setCompilationUnit(compilationUnit);
                     }
-                    CompilationUnit.ISourceUnitOperation suOp = source -> {
-                        instance.visit(new ASTNode[]{source.getAST()}, source);
-                    };
+                    CompilationUnit.ISourceUnitOperation suOp = source -> instance.visit(new ASTNode[]{source.getAST()}, source);
                     if (isFirstScan) {
                         compilationUnit.addPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
                     } else {
@@ -347,9 +345,10 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         + entry.getValue().toExternalForm() + " is not an ASTTransformation.", null));
                 }
             } catch (Exception e) {
+                Throwable effectiveException = e instanceof InvocationTargetException ? e.getCause() : e;
                 compilationUnit.getErrorCollector().addError(new SimpleMessage(
                     "Could not instantiate global transform class " + entry.getKey() + " specified at "
-                    + entry.getValue().toExternalForm() + "  because of exception " + e.toString(), null));
+                    + entry.getValue().toExternalForm() + "  because of exception " + effectiveException.toString(), null));
             }
         }
     }

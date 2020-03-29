@@ -22,6 +22,7 @@ import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.TokenStreamRecognitionException;
 import antlr.collections.AST;
+import groovy.transform.Trait;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -610,7 +611,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (enumConstantBeingDef) {
             classNode = new EnumConstantClassNode(outerClass, innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         } else {
-            classNode = new InnerClassNode(outerClass, innerClassName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+            classNode = new InnerClassNode(outerClass, innerClassName, 0, ClassHelper.OBJECT_TYPE);
         }
         ((InnerClassNode) classNode).setAnonymous(true);
         classNode.setEnclosingMethod(methodNode);
@@ -630,7 +631,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         List<AnnotationNode> annotations = new ArrayList<>();
 
         if (isType(TRAIT_DEF, classDef)) {
-            annotations.add(new AnnotationNode(ClassHelper.make("groovy.transform.Trait")));
+            annotations.add(new AnnotationNode(ClassHelper.makeCached(Trait.class)));
         }
 
         AST node = classDef.getFirstChild();

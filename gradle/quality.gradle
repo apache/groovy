@@ -19,7 +19,7 @@
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 
-allprojects {
+allprojects { proj ->
     apply plugin: "org.nosphere.apache.rat"
     //apply plugin: "com.github.hierynomus.license"
     apply plugin: 'checkstyle'
@@ -36,12 +36,17 @@ allprojects {
             substitute module("org.codehaus.groovy:groovy-xml") with project(":groovy-xml")
             substitute module("org.codehaus.groovy:groovy-groovydoc") with project(":groovy-groovydoc")
         }
-        
+
         exclude module: 'groovy-all'
     }
-    
+
     dependencies {
+        checkstyle "com.puppycrawl.tools:checkstyle:$checkstyleVersion"
         codenarc "org.codenarc:CodeNarc:1.5"
+        spotbugs "com.github.spotbugs:spotbugs:$spotbugsVersion"
+        if (proj.name.contains('jaxb') && JavaVersion.current().isJava9Compatible()) {
+            spotbugs 'javax.xml.bind:jaxb-api:2.3.0'
+        }
         codenarc project(":groovy-templates")
     }
 
@@ -132,23 +137,24 @@ allprojects {
         }
     }
 
-    spotbugs {
-        toolVersion = '3.1.7'
-        // continue build despite warnings
-        ignoreFailures = true
-        //defining source set is needless
-        //just run ./gradlew spotbugsMain then it will parse src/main/java.
-        //To parse test cases, you need to use ./gradlew spotbugsTest.
-    }
-
-    // To generate an HTML report instead of XML
     tasks.withType(SpotBugsTask) {
+        // TODO work out why the following aren't being set automatically
+        if (proj.name.contains('jaxb')) {
+            reportsDir = file("$buildDir/reports/spotbugs")
+            projectName = proj.name
+            release = rootProject.version
+        }
+        excludeFilter = file("$rootProject.projectDir/config/spotbugs/exclude.xml")
+        ignoreFailures = true
         effort = 'max'
+        maxHeapSize = '2g'
         reports {
             xml.enabled = false
-            html.enabled = true
+            html {
+                enabled = true
+                stylesheet = 'fancy-hist.xsl'
+            }
         }
-        maxHeapSize '2g'
     }
 }
 
@@ -179,11 +185,13 @@ rat {
     inputDir = projectDir
     excludes = [ 'subprojects/**', // covered above
                  'benchmark/**', // benchmarking files excluded from src zip
+                 '.asf.yaml', // ASF metadata for github integration excluded from src zip
                  'config/**',
                  'src/install/**', // CI file excluded from src zip
                  'src/test/org/codehaus/groovy/ast/LineColumnCheck.txt', // test file
                  'security/groovykeys', // excluded from src zip
                  '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
+                 'artifactory.properties',  // potential file on CI server
                  'gradle.properties',  // artifactory release plugin removes header when bumping version
                  '**/target/**', '**/build/**', 'licenses/**', 'notices/**',
                  'out/**', '*.ipr',  '**/*.iml', '*.iws', '.idea/**', // Intellij files
@@ -194,3 +202,13 @@ rat {
 }
 
 apply from: 'gradle/jacoco/jacoco.gradle'
+
+sonarqube {
+    properties {
+        property "sonar.projectName", "Apache Groovy"
+        property "sonar.projectKey", "apache_groovy"
+        property "sonar.organization", "apache"
+        property "sonar.host.url", "https://sonarcloud.io"
+//        property "sonar.coverage.jacoco.xmlReportPaths", "${rootProject.buildDir}/reports/jacoco/jacocoAllReport/jacocoAllReport.xml"
+    }
+}

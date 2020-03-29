@@ -19,10 +19,20 @@
 
 //////////////////////////////////////////
 
+[[title-heading]]
 = The <groovy> Ant Task
 
+[NOTE]
+Here we describe an Ant task for using Groovy
+from within an Ant build file.
+You may also be interested in
+Ant's built-in https://ant.apache.org/manual/Tasks/script.html[`script`] task
+which supports Groovy and other languages, or
+<<ant-builder.adoc#title-heading,`AntBuilder`>> which lets you write Ant build scripts
+in Groovy rather than XML.
+
 Executes a series of Groovy statements from http://ant.apache.org/[Apache Ant].
-Statements can either be read in from a text file using the `src` attribute or from between the enclosing Groovy tags.
+Statements can either be read in from a resource or as direct text between the enclosing Groovy tags.
 
 == Required taskdef
 
@@ -38,14 +48,7 @@ the `groovy` task being invoked.
          classpathref="my.classpath"/>
 ----
 
-Now use the task like this:
-
-[source,xml]
-----
-<groovy src="..." otherAttributes="...">
-----
-
-Or this:
+You can simply place statements between the `groovy` tags like this:
 
 [source,xml]
 ----
@@ -53,6 +56,53 @@ Or this:
 ...
 </groovy>
 ----
+
+Or you can supply the Groovy source script as a resource. You can specify the pathname using the `src` attribute like this:
+
+[source,xml]
+----
+<groovy src="/some/path/MyGroovyScript.groovy" otherAttributes="...">
+----
+
+Or as a nested `fileset` like this (though the fileset definition is expected to select just one file):
+
+[source,xml]
+----
+<groovy>
+    <fileset file="MyGroovyScript.groovy"/>
+</groovy>
+----
+
+Or as a nested single element https://ant.apache.org/manual/Types/resources.html#collection[resource collection] which could look like any of these:
+
+[source,xml]
+----
+<groovy>
+    <file file="MyGroovyScript.groovy"/>
+</groovy>
+
+<groovy>
+    <url url="https://some.domain/some/path/to/MyGroovyScript.groovy"/>
+</groovy>
+
+<groovy>
+    <javaconstant name="some.packagename.SomeClass.MY_CODE_FRAGMENT"/>
+</groovy>
+----
+
+You may also supply a https://ant.apache.org/manual/Types/filterchain.html[filter chain] like this:
+
+[source,xml]
+----
+<groovy>
+    <fileset file="MyGroovyScript.groovy"/>
+    <!-- take 5 lines after skipping 18 lines, just as an example -->
+    <filterchain>
+        <headfilter lines="5" skip="18"/>
+    </filterchain>
+</groovy>
+----
+
 
 You might need to use the _contextClassLoader_ attribute (see below) if any of your modules load services via the classpath, e.g. `groovy-json`.
 

@@ -859,6 +859,19 @@ assert foo.dm.x == '123'
             assert new B().s == '456'
         '''
     }
+
+    // GROOVY-9414
+    void testDelegateToPropertyViaGetter() {
+        assertScript '''
+            class Bar {
+                String name
+            }
+            class BarDelegate {
+                @Delegate(includes = "getName") Bar bar = new Bar(name: 'Baz')
+            }
+            assert new BarDelegate().name == 'Baz'
+        '''
+    }
 }
 
 interface DelegateFoo {

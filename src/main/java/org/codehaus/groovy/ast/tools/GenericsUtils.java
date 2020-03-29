@@ -678,6 +678,14 @@ public class GenericsUtils {
     private static final boolean PARAMETERIZED_TYPE_CACHE_ENABLED = Boolean.parseBoolean(getSystemPropertySafe("groovy.enable.parameterized.type.cache", "true"));
 
     /**
+     * Convenience method for {@link #findParameterizedTypeFromCache(ClassNode, ClassNode, boolean)}
+     * when the {@code tryToFindExactType} boolean is {@code false}.
+     */
+    public static ClassNode findParameterizedTypeFromCache(final ClassNode genericsClass, final ClassNode actualType) {
+        return findParameterizedTypeFromCache(genericsClass, actualType, false);
+    }
+
+    /**
      * Try to get the parameterized type from the cache.
      * If no cached item found, cache and return the result of {@link #findParameterizedType(ClassNode, ClassNode, boolean)}
      */
@@ -692,7 +700,15 @@ public class GenericsUtils {
     }
 
     /**
-     * Get the parameterized type by search the whole class hierarchy according to generics class and actual receiver.
+     * Convenience method for {@link #findParameterizedType(ClassNode, ClassNode, boolean)}
+     * when the {@code tryToFindExactType} boolean is {@code false}.
+     */
+    public static ClassNode findParameterizedType(final ClassNode genericsClass, final ClassNode actualType) {
+        return findParameterizedType(genericsClass, actualType, false);
+    }
+
+    /**
+     * Get the parameterized type by searching the whole class hierarchy according to generics class and actual receiver.
      * {@link #findParameterizedTypeFromCache(ClassNode, ClassNode, boolean)} is strongly recommended for better performance.
      *
      * @param genericsClass the generics class

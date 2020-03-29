@@ -72,6 +72,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
 
     public Object getProperty(String property) {
         PropertyBinding pb;
+        final Object model = getModel();
         synchronized (propertyBindings) {
             // should we verify the property is valid?
             pb = propertyBindings.get(property);
@@ -88,7 +89,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
     }
 
     public void setProperty(String property, Object value) {
-        throw new ReadOnlyPropertyException(property, model.getClass());
+        throw new ReadOnlyPropertyException(property, getModel().getClass());
     }
 
     public void bind() {

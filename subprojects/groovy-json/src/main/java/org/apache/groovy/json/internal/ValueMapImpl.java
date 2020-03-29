@@ -41,6 +41,7 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
     /**
      * The items held in the map.
      */
+    @SuppressWarnings("unchecked")
     private Entry<String, Value>[] items = new Entry[20];
 
     /* The current length of the map. */

@@ -26,54 +26,54 @@ import java.io.File;
 
 public class Groovy2365Bug extends Groovy2365Base {
 
-    public void testDeadlock () {
+    public void testDeadlock() {
         String path = createData();
 
         try {
-            for (int i = 0; i != 100; ++i ) {
-                    final GroovyClassLoader groovyLoader = new GroovyClassLoader ();
-                    groovyLoader.addClasspath(path);
+            for (int i = 0; i != 100; ++i) {
+                final GroovyClassLoader groovyLoader = new GroovyClassLoader();
+                groovyLoader.addClasspath(path);
 
-                    Class _script1Class = null;
+                Class _script1Class = null;
+                try {
+                    _script1Class = groovyLoader.loadClass("Script1", true, true);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                final Class script1Class = _script1Class;
+
+                // setup two threads to try a deadlock
+
+                // thread one: newInstance script foo
+                final boolean completed[] = new boolean[2];
+                Thread thread1 = new Thread(() -> {
                     try {
-                        _script1Class = groovyLoader.loadClass("Script1", true, true);
-                    } catch (ClassNotFoundException e) {
+                        Script script = (Script) script1Class.getDeclaredConstructor().newInstance();
+                        script.run();
+                        completed[0] = true;
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-                    final Class script1Class = _script1Class;
+                });
 
-                    // setup two threads to try a deadlock
+                Thread thread2 = new Thread(() -> {
+                    try {
+                        Class cls = groovyLoader.loadClass("Script2", true, true);
+                        Script script = (Script) cls.getDeclaredConstructor().newInstance();
+                        script.run();
+                        completed[1] = true;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
 
-                    // thread one: newInstance script foo
-                    final boolean completed [] = new boolean[2] ;
-                    Thread thread1 = new Thread(() -> {
-                        try {
-                            Script script = (Script) script1Class.getDeclaredConstructor().newInstance();
-                            script.run();
-                            completed [0] = true;
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
-
-                    Thread thread2 = new Thread(() -> {
-                        try {
-                            Class cls = groovyLoader.loadClass("Script2", true, true);
-                            Script script = (Script) cls.getDeclaredConstructor().newInstance();
-                            script.run();
-                            completed [1] = true;
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
-
-                    // let's see if we get a deadlock
-                    thread2.start();
-                    thread1.start();
+                // let's see if we get a deadlock
+                thread2.start();
+                thread1.start();
 
                 try {
-                    thread1.join(5000);
-                    thread2.join(5000);
+                    thread1.join(10000);
+                    thread2.join(10000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

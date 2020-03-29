@@ -113,7 +113,7 @@ public class CachedClass {
                 superClass.getMethods(); // populate mopMethods
                 Collections.addAll(mopMethods, superClass.mopMethods);
             }
-            Collections.sort(mopMethods, CachedMethodComparatorByName.INSTANCE);
+            mopMethods.sort(CachedMethodComparatorByName.INSTANCE);
             CachedClass.this.mopMethods = mopMethods.toArray(CachedMethod.EMPTY_ARRAY);
 
             return methods.toArray(CachedMethod.EMPTY_ARRAY);
@@ -379,7 +379,9 @@ public class CachedClass {
           if (metaClass.getClass() == MetaClassImpl.class) {
               classInfo.setStrongMetaClass(null);
               updateSetNewMopMethods(arr);
-              classInfo.setStrongMetaClass(new MetaClassImpl(metaClass.getTheClass()));
+              MetaClassImpl mci = new MetaClassImpl(metaClass.getTheClass());
+              mci.initialize();
+              classInfo.setStrongMetaClass(mci);
               return;
           }
 

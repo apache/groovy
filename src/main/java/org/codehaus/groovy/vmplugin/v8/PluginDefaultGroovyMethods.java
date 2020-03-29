@@ -19,10 +19,17 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.Closure;
+import groovy.lang.EmptyRange;
+import groovy.lang.GString;
+import groovy.lang.IntRange;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.RangeInfo;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -63,7 +70,7 @@ import java.util.stream.StreamSupport;
  *
  * @since 2.5.0
  */
-public class PluginDefaultGroovyMethods {
+public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     // No instances, static methods only
     private PluginDefaultGroovyMethods() {
@@ -126,7 +133,7 @@ public class PluginDefaultGroovyMethods {
 
     /**
      * Tests given value against specified type and changes generics of result.
-     * This is equivalent to: <code>self.filter(it -> it instanceof Type).map(it -> (Type) it)</code>
+     * This is equivalent to: <code>self.filter(it -&gt; it instanceof Type).map(it -&gt; (Type) it)</code>
      * <pre class="groovyTestCase">
      * assert !Optional.empty().filter(Number).isPresent()
      * assert !Optional.of('x').filter(Number).isPresent()
@@ -145,10 +152,10 @@ public class PluginDefaultGroovyMethods {
      * the given predicate and returns the optional if the test returns true or
      * else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalInt.empty().filter(i -> true).isPresent()
-     * assert  OptionalInt.of(1234).filter(i -> true).isPresent()
-     * assert !OptionalInt.of(1234).filter(i -> false).isPresent()
-     * assert  OptionalInt.of(1234).filter(i -> true).getAsInt() == 1234
+     * assert !OptionalInt.empty().filter(i -&gt; true).isPresent()
+     * assert  OptionalInt.of(1234).filter(i -&gt; true).isPresent()
+     * assert !OptionalInt.of(1234).filter(i -&gt; false).isPresent()
+     * assert  OptionalInt.of(1234).filter(i -&gt; true).getAsInt() == 1234
      * </pre>
      *
      * @since 3.0.0
@@ -165,10 +172,10 @@ public class PluginDefaultGroovyMethods {
      * the given predicate and returns the optional if the test returns true or
      * else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalLong.empty().filter(n -> true).isPresent()
-     * assert  OptionalLong.of(123L).filter(n -> true).isPresent()
-     * assert !OptionalLong.of(123L).filter(n -> false).isPresent()
-     * assert  OptionalLong.of(123L).filter(n -> true).getAsLong() == 123L
+     * assert !OptionalLong.empty().filter(n -&gt; true).isPresent()
+     * assert  OptionalLong.of(123L).filter(n -&gt; true).isPresent()
+     * assert !OptionalLong.of(123L).filter(n -&gt; false).isPresent()
+     * assert  OptionalLong.of(123L).filter(n -&gt; true).getAsLong() == 123L
      * </pre>
      *
      * @since 3.0.0
@@ -185,10 +192,10 @@ public class PluginDefaultGroovyMethods {
      * the given predicate and returns the optional if the test returns true or
      * empty otherwise.
      * <pre class="groovyTestCase">
-     * assert !OptionalDouble.empty().filter(n -> true).isPresent()
-     * assert  OptionalDouble.of(Math.PI).filter(n -> true).isPresent()
-     * assert !OptionalDouble.of(Math.PI).filter(n -> false).isPresent()
-     * assert  OptionalDouble.of(Math.PI).filter(n -> true).getAsDouble() == Math.PI
+     * assert !OptionalDouble.empty().filter(n -&gt; true).isPresent()
+     * assert  OptionalDouble.of(Math.PI).filter(n -&gt; true).isPresent()
+     * assert !OptionalDouble.of(Math.PI).filter(n -&gt; false).isPresent()
+     * assert  OptionalDouble.of(Math.PI).filter(n -&gt; true).getAsDouble() == Math.PI
      * </pre>
      *
      * @since 3.0.0
@@ -204,9 +211,9 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalInt}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalInt.empty().mapToObj(x -> new Object()).isPresent()
-     * assert  OptionalInt.of(1234).mapToObj(x -> new Object()).isPresent()
-     * assert !OptionalInt.of(1234).mapToObj(x -> null).isPresent()
+     * assert !OptionalInt.empty().mapToObj(x -&gt; new Object()).isPresent()
+     * assert  OptionalInt.of(1234).mapToObj(x -&gt; new Object()).isPresent()
+     * assert !OptionalInt.of(1234).mapToObj(x -&gt; null).isPresent()
      * assert  OptionalInt.of(1234).mapToObj(Integer::toString).get() == '1234'
      * </pre>
      *
@@ -223,9 +230,9 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalLong}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalLong.empty().mapToObj(x -> new Object()).isPresent()
-     * assert  OptionalLong.of(123L).mapToObj(x -> new Object()).isPresent()
-     * assert !OptionalLong.of(123L).mapToObj(x -> null).isPresent()
+     * assert !OptionalLong.empty().mapToObj(x -&gt; new Object()).isPresent()
+     * assert  OptionalLong.of(123L).mapToObj(x -&gt; new Object()).isPresent()
+     * assert !OptionalLong.of(123L).mapToObj(x -&gt; null).isPresent()
      * assert  OptionalLong.of(1234L).mapToObj(Long::toString).get() == '1234'
      * </pre>
      *
@@ -242,9 +249,9 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalDouble}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !OptionalDouble.empty().mapToObj(x -> new Object()).isPresent()
-     * assert  OptionalDouble.of(Math.PI).mapToObj(x -> new Object()).isPresent()
-     * assert !OptionalDouble.of(Math.PI).mapToObj(x -> null).isPresent()
+     * assert !OptionalDouble.empty().mapToObj(x -&gt; new Object()).isPresent()
+     * assert  OptionalDouble.of(Math.PI).mapToObj(x -&gt; new Object()).isPresent()
+     * assert !OptionalDouble.of(Math.PI).mapToObj(x -&gt; null).isPresent()
      * assert  OptionalDouble.of(Math.PI).mapToObj(Double::toString).get().startsWith('3.14')
      * </pre>
      *
@@ -261,8 +268,8 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalInt}, returns an {@code OptionalInt}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !Optional.empty().mapToInt(x -> 42).isPresent()
-     * assert  Optional.of('x').mapToInt(x -> 42).getAsInt() == 42
+     * assert !Optional.empty().mapToInt(x -&gt; 42).isPresent()
+     * assert  Optional.of('x').mapToInt(x -&gt; 42).getAsInt() == 42
      * </pre>
      *
      * @since 3.0.0
@@ -278,8 +285,8 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalLong}, returns an {@code OptionalLong}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !Optional.empty().mapToLong(x -> 42L).isPresent()
-     * assert  Optional.of('x').mapToLong(x -> 42L).getAsLong() == 42L
+     * assert !Optional.empty().mapToLong(x -&gt; 42L).isPresent()
+     * assert  Optional.of('x').mapToLong(x -&gt; 42L).getAsLong() == 42L
      * </pre>
      *
      * @since 3.0.0
@@ -295,8 +302,8 @@ public class PluginDefaultGroovyMethods {
      * If a value is present in the {@code OptionalDouble}, returns an {@code OptionalDouble}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
-     * assert !Optional.empty().mapToDouble(x -> Math.PI).isPresent()
-     * assert  Optional.of('x').mapToDouble(x -> Math.PI).getAsDouble() == Math.PI
+     * assert !Optional.empty().mapToDouble(x -&gt; Math.PI).isPresent()
+     * assert  Optional.of('x').mapToDouble(x -&gt; Math.PI).getAsDouble() == Math.PI
      * </pre>
      *
      * @since 3.0.0
@@ -352,6 +359,111 @@ public class PluginDefaultGroovyMethods {
         Objects.requireNonNull(self);
         Objects.requireNonNull(transform);
         return new TransformedFuture<T>(self, transform);
+    }
+
+    /**
+     * This method is called by the ++ operator for enums. It will invoke
+     * Groovy's default next behaviour for enums do not have their own
+     * next method.
+     *
+     * @param self an Enum
+     * @return the next defined enum from the enum class
+     */
+    public static Object next(final Enum self) {
+        for (Method method : self.getClass().getMethods()) {
+            if (method.getName().equals("next") && method.getParameterCount() == 0) {
+                return InvokerHelper.invokeMethod(self, "next", InvokerHelper.EMPTY_ARGS);
+            }
+        }
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", InvokerHelper.EMPTY_ARGS);
+        int index = Arrays.asList(values).indexOf(self);
+        return values[index < values.length - 1 ? index + 1 : 0];
+    }
+
+    /**
+     * This method is called by the -- operator for enums. It will invoke
+     * Groovy's default previous behaviour for enums that do not have
+     * their own previous method.
+     *
+     * @param self an Enum
+     * @return the previous defined enum from the enum class
+     */
+    public static Object previous(final Enum self) {
+        for (Method method : self.getClass().getMethods()) {
+            if (method.getName().equals("previous") && method.getParameterCount() == 0) {
+                return InvokerHelper.invokeMethod(self, "previous", InvokerHelper.EMPTY_ARGS);
+            }
+        }
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", InvokerHelper.EMPTY_ARGS);
+        int index = Arrays.asList(values).indexOf(self);
+        return values[index > 0 ? index - 1 : values.length - 1];
+    }
+
+    /**
+     * Standard Groovy size() method for StringBuilders.
+     *
+     * @param builder a StringBuilder
+     * @return the length of the StringBuilder
+     */
+    public static int size(final StringBuilder builder) {
+        return builder.length();
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append multiple
+     * objects as string representations to a StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param value a value to append
+     * @return the StringBuilder on which this operation was invoked
+     */
+    public static StringBuilder leftShift(final StringBuilder self, final Object value) {
+        if (value instanceof GString) {
+            // Force the conversion of the GString to string now, or appending
+            // is going to be extremely expensive, due to calls to GString#charAt,
+            // which is going to re-evaluate the GString for each character!
+            return self.append(value.toString());
+        }
+        if (value instanceof CharSequence) {
+            return self.append((CharSequence)value);
+        }
+        return self.append(value);
+    }
+
+    /**
+     * Support the range subscript operator for StringBuilder.
+     * Index values are treated as characters within the builder.
+     *
+     * @param self  a StringBuilder
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(final StringBuilder self, final IntRange range, final Object value) {
+        RangeInfo info = DefaultGroovyMethodsSupport.subListBorders(self.length(), range);
+        self.replace(info.from, info.to, value.toString());
+    }
+
+    /**
+     * Support the range subscript operator for StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(final StringBuilder self, final EmptyRange range, final Object value) {
+        RangeInfo info = DefaultGroovyMethodsSupport.subListBorders(self.length(), range);
+        self.replace(info.from, info.to, value.toString());
+    }
+
+    /**
+     * Appends a String to this StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param value a String
+     * @return a String
+     */
+    public static String plus(final StringBuilder self, final String value) {
+        return self + value;
     }
 
     private static class TransformedFuture<E> implements Future<E> {

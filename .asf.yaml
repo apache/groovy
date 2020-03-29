@@ -1,0 +1,13 @@
+# see https://s.apache.org/asfyaml
+github:
+  description: "Apache Groovy: A powerful multi-faceted programming language for the JVM platform"
+  homepage: https://groovy-lang.org/
+  labels:
+    - groovy
+    - jvm-languages
+    - programming-language
+    - metaprogramming
+    - functional-programming
+    - dynamic-typing
+    - static-typing
+    - compiler

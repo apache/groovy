@@ -21,16 +21,34 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class FileOutputTool implements OutputTool {
     public void makeOutputArea(String filename) {
-        File dir = new File(filename);
-        dir.mkdirs();
+        Path path = Paths.get(filename);
+        if (Files.exists(path)) {
+            return;
+        }
+        try {
+            Files.createDirectories(path);
+        } catch (IOException e) {
+            System.err.println("Unable to create directory '" + filename + "' due to '" + e.getMessage() + "'; attempting to continue...");
+        }
     }
 
     public void writeToOutput(String fileName, String text, String charset) throws Exception {
         File file = new File(fileName);
-        file.getParentFile().mkdirs();
+        Path path = file.getParentFile().toPath();
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectories(path);
+            } catch (IOException e) {
+                System.err.println("Unable to create parent directory '" + path + "' due to '" + e.getMessage() + "'; attempting to continue...");
+            }
+        }
         ResourceGroovyMethods.write(file, text, charset, true);
     }
 }

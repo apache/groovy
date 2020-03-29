@@ -31,8 +31,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
@@ -42,7 +40,13 @@ import org.objectweb.asm.Opcodes;
 import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper implements Opcodes {
 
@@ -368,7 +372,6 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
     private void addThisReference(ConstructorNode node) {
         if (!shouldHandleImplicitThisForInnerClass(classNode)) return;
-        Statement code = node.getCode();
 
         // add "this$0" field init
 
@@ -382,27 +385,19 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         newParams[0] = thisPara;
         node.setParameters(newParams);
 
-        BlockStatement block = null;
-        if (code == null) {
-            block = new BlockStatement();
-        } else if (!(code instanceof BlockStatement)) {
-            block = new BlockStatement();
-            block.addStatement(code);
-        } else {
-            block = (BlockStatement) code;
-        }
-        BlockStatement newCode = new BlockStatement();
+        BlockStatement block = getCodeAsBlock(node);
+        BlockStatement newCode = block();
         addFieldInit(thisPara, thisField, newCode);
         ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
         if (cce == null) {
-            cce = new ConstructorCallExpression(ClassNode.SUPER, new TupleExpression());
-            block.getStatements().add(0, new ExpressionStatement(cce));
+            cce = ctorSuperX(new TupleExpression());
+            block.getStatements().add(0, stmt(cce));
         }
         if (shouldImplicitlyPassThisPara(cce)) {
             // add thisPara to this(...)
             TupleExpression args = (TupleExpression) cce.getArguments();
             List<Expression> expressions = args.getExpressions();
-            VariableExpression ve = new VariableExpression(thisPara.getName());
+            VariableExpression ve = varX(thisPara.getName());
             ve.setAccessedVariable(thisPara);
             expressions.add(0, ve);
         }
@@ -446,19 +441,4 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         return namePrefix;
     }
 
-    private static ConstructorCallExpression getFirstIfSpecialConstructorCall(BlockStatement code) {
-        if (code == null) return null;
-
-        final List<Statement> statementList = code.getStatements();
-        if (statementList.isEmpty()) return null;
-
-        final Statement statement = statementList.get(0);
-        if (!(statement instanceof ExpressionStatement)) return null;
-
-        Expression expression = ((ExpressionStatement) statement).getExpression();
-        if (!(expression instanceof ConstructorCallExpression)) return null;
-        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
-        if (cce.isSpecialCall()) return cce;
-        return null;
-    }
 }

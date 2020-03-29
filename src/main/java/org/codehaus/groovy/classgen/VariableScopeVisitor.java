@@ -460,6 +460,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * Sets the current class node context.
+     */
+    public void prepareVisit(ClassNode node) {
+        currentClass = node;
+        currentScope.setClassScope(node);
+    }
+
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
         boolean oldInSpecialCtorFlag = inSpecialConstructorCall;

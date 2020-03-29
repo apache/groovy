@@ -21,87 +21,89 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * Represents a tuple expression {1, 2, 3} which creates an immutable List
- */
 public class TupleExpression extends Expression implements Iterable<Expression> {
+
     private final List<Expression> expressions;
 
     public TupleExpression() {
         this(0);
     }
 
-    public TupleExpression(Expression expr) {
+    public TupleExpression(final Expression expr) {
         this(1);
         addExpression(expr);
     }
 
-    public TupleExpression(Expression expr1, Expression expr2) {
+    public TupleExpression(final Expression expr1, final Expression expr2) {
         this(2);
         addExpression(expr1);
         addExpression(expr2);
     }
 
-    public TupleExpression(Expression expr1, Expression expr2, Expression expr3) {
+    public TupleExpression(final Expression expr1, final Expression expr2, final Expression expr3) {
         this(3);
         addExpression(expr1);
         addExpression(expr2);
         addExpression(expr3);
     }
-    
-    public TupleExpression(int length) {
-        this.expressions = new ArrayList<Expression>(length);
-    }
-    
-    public TupleExpression(List<Expression> expressions) {
-        this.expressions = expressions;
-    }
-    
-    public TupleExpression(Expression[] expressionArray) {
-        this();
-        expressions.addAll(Arrays.asList(expressionArray));
+
+    public TupleExpression(final int capacity) {
+        this.expressions = new ArrayList<>(capacity);
     }
 
-    public TupleExpression addExpression(Expression expression) {
+    public TupleExpression(final List<Expression> expressions) {
+        this.expressions = expressions;
+    }
+
+    public TupleExpression(final Expression[] expressionArray) {
+        this(expressionArray.length);
+        for (Expression e : expressionArray) expressions.add(e);
+    }
+
+    public TupleExpression addExpression(final Expression expression) {
         expressions.add(expression);
         return this;
     }
-    
-    public List<Expression> getExpressions() {
-        return expressions;
+
+    public Expression getExpression(final int i) {
+        return expressions.get(i);
     }
 
-    public void visit(GroovyCodeVisitor visitor) {
+    public List<Expression> getExpressions() {
+        return expressions;
+        // TODO: return Collections.unmodifiableList(expressions);
+        // see also org.codehaus.groovy.ast.expr.MethodCallExpression.NO_ARGUMENTS
+    }
+
+    public Iterator<Expression> iterator() {
+        // TODO: return getExpressions().iterator();
+        return Collections.unmodifiableList(expressions).iterator();
+    }
+
+    public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitTupleExpression(this);
     }
 
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new TupleExpression(transformExpressions(getExpressions(), transformer)); 
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        Expression ret = new TupleExpression(transformExpressions(getExpressions(), transformer));
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         return ret;
     }
 
-    public Expression getExpression(int i) {
-        return expressions.get(i);
-    }
-
     public String getText() {
         StringBuilder buffer = new StringBuilder("(");
         boolean first = true;
-        for (Expression expression : expressions) {
+        for (Expression expression : getExpressions()) {
             if (first) {
                 first = false;
-            }
-            else {
+            } else {
                 buffer.append(", ");
             }
-            
             buffer.append(expression.getText());
         }
         buffer.append(")");
@@ -109,10 +111,6 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
     }
 
     public String toString() {
-        return super.toString() + expressions;
-    }
-
-    public Iterator<Expression> iterator() {
-        return Collections.unmodifiableList(expressions).iterator();
+        return super.toString() + getExpressions();
     }
 }

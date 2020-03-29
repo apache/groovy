@@ -17,8 +17,8 @@
  *  under the License.
  */
 dependencies {
-    implementation rootProject
-    compileOnly "info.picocli:picocli:$picocliVersion"
+    api rootProject   // CliBuilder uses Option...
+    implementation "info.picocli:picocli:$picocliVersion"
     testImplementation rootProject.sourceSets.test.output
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-dateutil')

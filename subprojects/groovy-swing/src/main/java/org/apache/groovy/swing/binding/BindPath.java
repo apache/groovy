@@ -210,22 +210,26 @@ public class BindPath {
         for (Map.Entry<String, TriggerBinding> syntheticEntry : synthetics.entrySet()) {
             if (syntheticEntry.getKey().endsWith(endName)) {
                 if (localSynthetics == null) {
-                    localSynthetics = new TreeMap();
+                    localSynthetics = new TreeMap<>();
                 }
                 localSynthetics.put(syntheticEntry.getKey(), syntheticEntry.getValue());
             }
         }
     }
 
+    synchronized Map<String, TriggerBinding> getLocalSynthetics() {
+        return localSynthetics;
+    }
+
     public TriggerBinding getSyntheticTriggerBinding(Object newObject) {
+        final Map<String, TriggerBinding> localSynthetics = getLocalSynthetics();
         if (localSynthetics == null) {
             return null;
         }
-        Class currentClass = newObject.getClass();
+        Class<?> currentClass = newObject.getClass();
         while (currentClass != null) {
             // should we check interfaces as well?  if so at what level?
-            TriggerBinding trigger =
-                    localSynthetics.get(currentClass.getName() + "#" + propertyName);
+            TriggerBinding trigger = localSynthetics.get(currentClass.getName() + "#" + propertyName);
             if (trigger != null) {
                 return trigger;
             }

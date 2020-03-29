@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.vmplugin.v5.Java5;
+import org.codehaus.groovy.vmplugin.v8.Java8;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureVisitor;
 
@@ -30,9 +30,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 abstract class TypeSignatureParser extends SignatureVisitor {
+
     private final AsmReferenceResolver resolver;
 
-    public TypeSignatureParser(AsmReferenceResolver resolver) {
+    public TypeSignatureParser(final AsmReferenceResolver resolver) {
         super(CompilerConfiguration.ASM_API_VERSION);
         this.resolver = resolver;
     }
@@ -40,15 +41,15 @@ abstract class TypeSignatureParser extends SignatureVisitor {
     abstract void finished(ClassNode result);
 
     private String baseName;
-    private final List<GenericsType> arguments = new ArrayList<GenericsType>();
+    private final List<GenericsType> arguments = new ArrayList<>();
 
     @Override
-    public void visitTypeVariable(String name) {
-        finished(Java5.configureTypeVariableReference(name));
+    public void visitTypeVariable(final String name) {
+        finished(Java8.configureTypeVariableReference(name));
     }
 
     @Override
-    public void visitBaseType(char descriptor) {
+    public void visitBaseType(final char descriptor) {
         finished(resolver.resolveType(Type.getType(String.valueOf(descriptor))));
     }
 
@@ -64,13 +65,13 @@ abstract class TypeSignatureParser extends SignatureVisitor {
     }
 
     @Override
-    public void visitClassType(String name) {
+    public void visitClassType(final String name) {
         baseName = AsmDecompiler.fromInternalName(name);
     }
 
     @Override
     public void visitTypeArgument() {
-        arguments.add(createWildcard(new ClassNode[]{ClassHelper.OBJECT_TYPE}, null));
+        arguments.add(createWildcard(null, null));
     }
 
     @Override
@@ -90,7 +91,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         };
     }
 
-    private static GenericsType createWildcard(ClassNode[] upper, ClassNode lower) {
+    private static GenericsType createWildcard(final ClassNode[] upper, final ClassNode lower) {
         ClassNode base = ClassHelper.makeWithoutCaching("?");
         base.setRedirect(ClassHelper.OBJECT_TYPE);
         GenericsType t = new GenericsType(base, upper, lower);
@@ -99,7 +100,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
     }
 
     @Override
-    public void visitInnerClassType(String name) {
+    public void visitInnerClassType(final String name) {
         baseName += "$" + name;
         arguments.clear();
     }
@@ -116,5 +117,4 @@ abstract class TypeSignatureParser extends SignatureVisitor {
         bound.setGenericsTypes(arguments.toArray(GenericsType.EMPTY_ARRAY));
         finished(bound);
     }
-
 }

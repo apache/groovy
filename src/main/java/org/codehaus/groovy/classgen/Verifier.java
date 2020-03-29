@@ -90,9 +90,12 @@ import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
@@ -162,13 +165,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
         metaClassField =
                 node.addField("metaClass", ACC_PRIVATE | ACC_TRANSIENT | ACC_SYNTHETIC, ClassHelper.METACLASS_TYPE,
-                        new BytecodeExpression(ClassHelper.METACLASS_TYPE) {
-                            @Override
-                            public void visit(MethodVisitor mv) {
-                                mv.visitVarInsn(ALOAD, 0);
-                                mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "$getStaticMetaClass", "()Lgroovy/lang/MetaClass;", false);
-                            }
-                        });
+                        bytecodeX(ClassHelper.METACLASS_TYPE, mv -> {
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "$getStaticMetaClass", "()Lgroovy/lang/MetaClass;", false);
+                        })
+                );
         metaClassField.setSynthetic(true);
         return metaClassField;
     }
@@ -460,8 +461,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ConstructorCallExpression cce = new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class), text);
                 setMetaClassCode = new ExpressionStatement(cce);
             } else {
-                List list = new ArrayList();
-                list.add(new BytecodeInstruction() {
+                setMetaClassCode = new BytecodeSequence(new BytecodeInstruction() {
                     @Override
                     public void visit(MethodVisitor mv) {
                         /*
@@ -475,7 +475,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         mv.visitInsn(RETURN);
                     }
                 });
-                setMetaClassCode = new BytecodeSequence(list);
             }
 
             MethodNode methodNode = addMethod(node, !shouldAnnotate,
@@ -993,15 +992,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (addSwapInit) {
-            BytecodeSequence seq = new BytecodeSequence(
-                    new BytecodeInstruction() {
-                        @Override
-                        public void visit(MethodVisitor mv) {
-                            mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(node), SWAP_INIT, "()V", false);
-                        }
-                    });
+            BytecodeSequence seq = new BytecodeSequence(new BytecodeInstruction() {
+                @Override
+                public void visit(MethodVisitor mv) {
+                    mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(node), SWAP_INIT, "()V", false);
+                }
+            });
 
-            List<Statement> swapCall = new ArrayList<Statement>(1);
+            List<Statement> swapCall = new ArrayList<>(1);
             swapCall.add(seq);
             node.addStaticInitializerStatements(swapCall, true);
         }
@@ -1045,15 +1043,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         statements.addAll(node.getObjectInitializerStatements());
 
-        Statement code = constructorNode.getCode();
-        BlockStatement block = new BlockStatement();
+        BlockStatement block = getCodeAsBlock(constructorNode);
         List<Statement> otherStatements = block.getStatements();
-        if (code instanceof BlockStatement) {
-            block = (BlockStatement) code;
-            otherStatements = block.getStatements();
-        } else if (code != null) {
-            otherStatements.add(code);
-        }
         if (!otherStatements.isEmpty()) {
             if (first != null) {
                 // it is super(..) since this(..) is already covered
@@ -1123,16 +1114,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
         return false;
-    }
-
-    private static ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
-        if (!(code instanceof ExpressionStatement)) return null;
-
-        Expression expression = ((ExpressionStatement) code).getExpression();
-        if (!(expression instanceof ConstructorCallExpression)) return null;
-        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
-        if (cce.isSpecialCall()) return cce;
-        return null;
     }
 
     protected void addFieldInitialization(List list, List staticList, FieldNode fieldNode,
@@ -1413,34 +1394,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 oldMethod.getExceptions(),
                 null
         );
-        List instructions = new ArrayList(1);
-        instructions.add(
-                new BytecodeInstruction() {
-                    @Override
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        Parameter[] para = oldMethod.getParameters();
-                        Parameter[] goal = overridingMethod.getParameters();
-                        int doubleSlotOffset = 0;
-                        for (int i = 0; i < para.length; i++) {
-                            ClassNode type = para[i].getType();
-                            BytecodeHelper.load(mv, type, i + 1 + doubleSlotOffset);
-                            if (type.redirect() == ClassHelper.double_TYPE ||
-                                    type.redirect() == ClassHelper.long_TYPE) {
-                                doubleSlotOffset++;
-                            }
-                            if (!type.equals(goal[i].getType())) {
-                                BytecodeHelper.doCast(mv, goal[i].getType());
-                            }
-                        }
-                        mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(classNode), overridingMethod.getName(), BytecodeHelper.getMethodDescriptor(overridingMethod.getReturnType(), overridingMethod.getParameters()), false);
-
-                        BytecodeHelper.doReturn(mv, oldMethod.getReturnType());
+        newMethod.setCode(new BytecodeSequence(new BytecodeInstruction() {
+            @Override
+            public void visit(MethodVisitor mv) {
+                mv.visitVarInsn(ALOAD, 0);
+                Parameter[] para = oldMethod.getParameters();
+                Parameter[] goal = overridingMethod.getParameters();
+                int doubleSlotOffset = 0;
+                for (int i = 0; i < para.length; i++) {
+                    ClassNode type = para[i].getType();
+                    BytecodeHelper.load(mv, type, i + 1 + doubleSlotOffset);
+                    if (type.redirect() == ClassHelper.double_TYPE ||
+                            type.redirect() == ClassHelper.long_TYPE) {
+                        doubleSlotOffset++;
+                    }
+                    if (!type.equals(goal[i].getType())) {
+                        BytecodeHelper.doCast(mv, goal[i].getType());
                     }
                 }
+                mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(classNode), overridingMethod.getName(), BytecodeHelper.getMethodDescriptor(overridingMethod.getReturnType(), overridingMethod.getParameters()), false);
 
-        );
-        newMethod.setCode(new BytecodeSequence(instructions));
+                BytecodeHelper.doReturn(mv, oldMethod.getReturnType());
+            }
+        }));
         return newMethod;
     }
 

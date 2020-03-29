@@ -160,7 +160,8 @@ The following list represents all the keywords of the Groovy language:
 |true
 |try
 
-|while | | |
+|var
+|while | |
 
 |===
 
@@ -320,11 +321,11 @@ Some special characters also use the backslash as escape character:
 |Escape sequence
 |Character
 
-|\t
-|tabulation
-
 |\b
 |backspace
+
+|\f
+|formfeed
 
 |\n
 |newline
@@ -332,8 +333,11 @@ Some special characters also use the backslash as escape character:
 |\r
 |carriage return
 
-|\f
-|formfeed
+|\s
+|single space
+
+|\t
+|tabulation
 
 |\\
 |backslash

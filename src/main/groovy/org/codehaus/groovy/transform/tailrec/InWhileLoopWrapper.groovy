@@ -77,6 +77,7 @@ class InWhileLoopWrapper {
 /**
  * Exception will be thrown by recursive calls in closures and caught in while loop to continue to LOOP_LABEL
  */
+@CompileStatic
 class GotoRecurHereException extends Exception {
-
+    private static final long serialVersionUID = -193137033604506378L
 }

@@ -69,11 +69,13 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      */
     boolean mapChopped = false;
 
+    @SuppressWarnings("unchecked")
     public LazyValueMap(boolean lazyChop) {
         this.items = new Entry[5];
         this.lazyChop = lazyChop;
     }
 
+    @SuppressWarnings("unchecked")
     public LazyValueMap(boolean lazyChop, int initialSize) {
         this.items = new Entry[initialSize];
         this.lazyChop = lazyChop;

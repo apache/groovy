@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-def x = (a.b) + c()
+//def x = (a.b) + c()
 
 def x = 1
 def y = 2

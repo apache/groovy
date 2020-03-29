@@ -58,18 +58,6 @@ class GroovyRunnerRegistryTest extends GroovyTestCase {
         }
     }
 
-    void testLegacyCustomRunner() {
-        LegacyDummyRunner customRunner = new LegacyDummyRunner()
-        GroovyRunnerRegistry realRegistry = GroovyRunnerRegistry.getInstance()
-        realRegistry.put('LegacyDummyRunner', customRunner)
-        try {
-            def result = new GroovyShell().run('class LegacyDummyClass {}', 'LegacyDummyClass.groovy', [])
-            assert result == 'LegacyDummyClass was run'
-        } finally {
-            realRegistry.remove('LegacyDummyRunner')
-        }
-    }
-
     void testSize() {
         assert registry.size() == knownRunners.size()
     }
@@ -182,17 +170,4 @@ class GroovyRunnerRegistryTest extends GroovyTestCase {
             return 'DummyClass was run'
         }
     }
-
-    static class LegacyDummyRunner implements org.codehaus.groovy.plugin.GroovyRunner {
-        @Override
-        boolean canRun(Class<?> scriptClass, GroovyClassLoader loader) {
-            return scriptClass.getSimpleName() == 'LegacyDummyClass'
-        }
-
-        @Override
-        Object run(Class<?> scriptClass, GroovyClassLoader loader) {
-            return 'LegacyDummyClass was run'
-        }
-    }
-
 }

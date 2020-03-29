@@ -22,6 +22,7 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.FileSet;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -32,8 +33,7 @@ import java.util.List;
  */
 public class FileScanner extends Task {
 
-    /** FileSets */
-    private final List filesets = new ArrayList();
+    private final List<FileSet> filesets = new ArrayList<>();
 
     public FileScanner() {
     }
@@ -42,11 +42,11 @@ public class FileScanner extends Task {
         setProject(project);
     }
     
-    public Iterator iterator() {
+    public Iterator<File> iterator() {
         return new FileIterator(getProject(), filesets.iterator());
     }
 
-    public Iterator directories() {
+    public Iterator<File> directories() {
         return new FileIterator(getProject(), filesets.iterator(), true);
     }
 

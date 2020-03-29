@@ -29,7 +29,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -44,17 +43,17 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  * 3) attach groovydoc to AST node as metadata
  */
 public class GroovydocManager {
+
     public static final String DOC_COMMENT = GroovydocHolder.DOC_COMMENT; // keys for meta data
     private static final String GROOVYDOC_PREFIX = "/**";
     private static final String RUNTIME_GROOVYDOC_PREFIX = GROOVYDOC_PREFIX + "@";
     private static final String VALUE = "value";
     private static final Pattern SPACES_PATTERN = Pattern.compile("\\s+");
-    private final boolean groovydocEnabled;
-    private final boolean runtimeGroovydocEnabled;
+    private final boolean groovydocEnabled, runtimeGroovydocEnabled;
 
-    public GroovydocManager(CompilerConfiguration compilerConfiguration) {
-        this.groovydocEnabled = compilerConfiguration.isGroovydocEnabled();
-        this.runtimeGroovydocEnabled = compilerConfiguration.isRuntimeGroovydocEnabled();
+    public GroovydocManager(final boolean groovydocEnabled, final boolean runtimeGroovydocEnabled) {
+        this.groovydocEnabled = groovydocEnabled;
+        this.runtimeGroovydocEnabled = runtimeGroovydocEnabled;
     }
 
     /**

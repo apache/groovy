@@ -19,7 +19,6 @@
 package org.codehaus.groovy.vmplugin;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.vmplugin.v7.Java7;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -46,9 +45,6 @@ public class VMPluginFactory {
         VMPlugin target = createPlugin(JDK9_CLASSNAME_CHECK, JDK9_PLUGIN_NAME);
         if (target == null) {
             target = createPlugin(JDK8_CLASSNAME_CHECK, JDK8_PLUGIN_NAME);
-            if (target == null) {
-                target = new Java7();
-            }
         }
 
         PLUGIN = target;

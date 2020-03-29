@@ -29,7 +29,7 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
         project.afterEvaluate {
             tasks.withType(JacocoReport) {
                 if (name != 'jacocoAllReport' && name != 'jacocoAllIndyReport') {
-                    sourceDirectories += files(project.sourceSets.main.allGroovy.srcDirs)
+                    sourceDirectories.from = sourceDirectories.from + files(project.sourceSets.main.allGroovy.srcDirs)
 //                    classDirectories += files(project.sourceSets.main.output)
                 }
             }
@@ -42,6 +42,7 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
 
     task jacocoMerge(type: JacocoMerge) {
         destinationFile = file("$buildDir/jacoco/jacoco-all.exec")
+
         allprojects {
             project.plugins.withType(JavaPlugin) {
                 project.tasks.withType(Test) { task ->
@@ -51,6 +52,8 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
                 }
             }
         }
+
+        executionData = files(executionData).filter { f -> f.exists() }
     }
 
     task jacocoMergeIndy(type: JacocoMerge) {
@@ -64,32 +67,59 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
                 }
             }
         }
+
+        executionData = files(executionData).filter { f -> f.exists() }
     }
 
     task jacocoAllReport(type: JacocoReport, dependsOn: 'jacocoMerge') {
         executionData jacocoMerge.destinationFile
+        reports {
+            xml {
+                enabled true
+            }
+            html {
+                enabled true
+            }
+        }
+
         allprojects {
             project.plugins.withType(JavaPlugin) {
-                def sd = sourceDirectories ?: files()
-                def cd = classDirectories ?: files()
-                sourceDirectories = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
-                classDirectories = cd + files(compileGroovy.destinationDir)
+                def sd = sourceDirectories.from ?: files()
+                def cd = classDirectories.from ?: files()
+                sourceDirectories.from = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
+                classDirectories.from = cd + files(compileGroovy.destinationDir)
             }
         }
     }
 
     task jacocoAllIndyReport(type: JacocoReport, dependsOn: 'jacocoMergeIndy') {
         executionData jacocoMergeIndy.destinationFile
+        reports {
+            xml {
+                enabled true
+            }
+            html {
+                enabled true
+            }
+        }
+
         allprojects {
             project.plugins.withType(JavaPlugin) {
-                def sd = sourceDirectories ?: files()
-                def cd = classDirectories ?: files()
-                sourceDirectories = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
-                classDirectories = cd + files(compileGroovyWithIndy.destinationDir)
+                def sd = sourceDirectories.from ?: files()
+                def cd = classDirectories.from ?: files()
+                sourceDirectories.from = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
+                classDirectories.from = cd + files(compileGroovyWithIndy.destinationDir)
             }
         }
     }
 
     check.dependsOn jacocoAllReport
-    check.dependsOn jacocoAllIndyReport
+    if (!rootProject.hasProperty('skipIndy')) {
+        check.dependsOn jacocoAllIndyReport
+    }
+
+    tasks.sonarqube.dependsOn jacocoAllReport
+    if (!rootProject.hasProperty('skipIndy')) {
+        tasks.sonarqube.dependsOn jacocoAllIndyReport
+    }
 }

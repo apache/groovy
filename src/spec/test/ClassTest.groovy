@@ -41,6 +41,24 @@ class ClassTest extends GroovyTestCase {
         '''
     }
 
+    void testInnerInstantiation() {
+        assertScript '''
+            // tag::inner_instantiation[]
+            class Computer {
+                class Cpu {
+                    int coreNumber
+            
+                    Cpu(int coreNumber) {
+                        this.coreNumber = coreNumber
+                    }
+                }
+            }
+
+            assert 4 == new Computer().new Cpu(4).coreNumber
+            // end::inner_instantiation[]
+        '''
+    }
+
     void testInnerClass() {
         assertScript '''
             // tag::inner_class[]

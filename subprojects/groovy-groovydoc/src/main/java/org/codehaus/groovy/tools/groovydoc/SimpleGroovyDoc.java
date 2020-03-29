@@ -23,6 +23,7 @@ import org.codehaus.groovy.groovydoc.GroovyTag;
 
 import java.text.BreakIterator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -245,7 +246,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
 //    public GroovySeeTag[] seeTags() {/*todo*/return null;}
 
     public GroovyTag[] tags() {
-        return tags;
+        return tags == null ? null : Arrays.copyOf(tags, tags.length);
     }
 
 //    public GroovyTag[] tags(String arg0) {/*todo*/return null;}

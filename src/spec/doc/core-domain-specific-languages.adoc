@@ -699,7 +699,7 @@ give it a `ClosureExpression`, like in the following example:
 
 [source,groovy]
 --------------------------------------------------------------------------------------------------------------
-include::{projectdir}/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
+include::{projectdir}/subprojects/groovy-astbuilder/src/spec/test/CustomizersTest.groovy[tags=ast_cz_closure,indent=0]
 --------------------------------------------------------------------------------------------------------------
 
 For a complete list of options, please refer to gapi:org.codehaus.groovy.control.customizers.ASTTransformationCustomizer[]
@@ -1045,11 +1045,11 @@ link:type-checking-extensions.html[type checking extensions].
 
 ==== MarkupBuilder
 
-See <<_markupbuilder,Creating Xml - MarkupBuilder>>.
+See <<xml-userguide.adoc#_markupbuilder,Creating Xml - MarkupBuilder>>.
 
 ==== StreamingMarkupBuilder
 
-See <<_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
+See <<xml-userguide.adoc#_streamingmarkupbuilder,Creating Xml - StreamingMarkupBuilder>>.
 
 include::{projectdir}/subprojects/groovy-xml/{specfolder}/sax-builder.adoc[leveloffset=+3]
 

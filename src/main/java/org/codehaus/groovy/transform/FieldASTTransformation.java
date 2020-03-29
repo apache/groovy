@@ -273,7 +273,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
 
     @Override
     public void visitMethod(MethodNode node) {
-        Boolean oldInsideScriptBody = insideScriptBody;
+        boolean oldInsideScriptBody = insideScriptBody;
         if (node.isScriptBody()) insideScriptBody = true;
         super.visitMethod(node);
         insideScriptBody = oldInsideScriptBody;

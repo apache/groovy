@@ -52,7 +52,7 @@ public enum JsonTokenType {
     STRING          ( "a string",                           new Closure(null) {
         private Pattern replacePattern = Pattern.compile("(?:\\\\[\"\\\\bfnrt\\/]|\\\\u[0-9a-fA-F]{4})");
         private Pattern validatePattern = Pattern.compile("\"[^\"\\\\]*\"");
-        boolean doCall(String it) {
+        public boolean doCall(String it) {
             return validatePattern.matcher(replacePattern.matcher(it).replaceAll("@")).matches();
         }
     });

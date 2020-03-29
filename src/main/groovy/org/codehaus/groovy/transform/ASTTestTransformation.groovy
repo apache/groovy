@@ -162,9 +162,8 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
             }
             sample
         }
-
     }
-    
+
     private static class ProgressCallbackChain implements CompilationUnit.ProgressCallback {
 
         private final List<CompilationUnit.ProgressCallback> chain = new LinkedList<CompilationUnit.ProgressCallback>()
@@ -178,7 +177,7 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         void addCallback(CompilationUnit.ProgressCallback callback) {
             chain << callback
         }
-        
+
         @Override
         void call(final ProcessingUnit context, final int phase) {
             chain*.call(context, phase)
@@ -220,12 +219,11 @@ class ASTTestTransformation extends AbstractASTTransformation implements Compila
         @Override
         protected void visitStatement(final Statement statement) {
             super.visitStatement(statement)
-            if (statement.statementLabel==label) targets << statement
+            if (label in statement.statementLabels) targets << statement
         }
 
         List<Statement> getTargets() {
             Collections.unmodifiableList(targets)
         }
     }
-
 }

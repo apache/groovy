@@ -201,7 +201,7 @@ public class GenericsType extends ASTNode {
             return true; // diamond always matches
         }
         if (classNode.isGenericsPlaceHolder()) {
-            // if the classnode we compare to is a generics placeholder (like <E>) then we
+            // if the compare type is a generics placeholder (like <E>) then we
             // only need to check that the names are equal
             if (genericsTypes == null) {
                 return true;
@@ -223,20 +223,18 @@ public class GenericsType extends ASTNode {
             return genericsTypes[0].name.equals(name);
         }
         if (isWildcard() || isPlaceholder()) {
+            // if the generics spec is a wildcard or a placeholder then check the bounds
             ClassNode lowerBound = getLowerBound();
-            ClassNode[] upperBounds = getUpperBounds();
-            // if the current generics spec is a wildcard spec or a placeholder spec
-            // then we must check lower and upper bounds
             if (lowerBound != null) {
-                // if a lower bound is declared, then we must perform the same checks that for an upper bound
-                // but with reversed arguments
+                // for a lower bound, perform the upper bound checks with reversed arguments
                 if (!implementsInterfaceOrIsSubclassOf(lowerBound, classNode)) {
                     return false;
                 }
                 return checkGenerics(classNode);
             }
+            ClassNode[] upperBounds = getUpperBounds();
             if (upperBounds != null) {
-                // check that the provided classnode is a subclass of all provided upper bounds
+                // check that provided type extends or implements all upper bounds
                 for (ClassNode upperBound : upperBounds) {
                     if (!implementsInterfaceOrIsSubclassOf(classNode, upperBound)) {
                         return false;
@@ -315,7 +313,7 @@ public class GenericsType extends ASTNode {
         if (classNode == null) {
             return false;
         }
-        if (!bound.isUsingGenerics() || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null)) {
+        if (bound.getGenericsTypes() == null || (classNode.getGenericsTypes() == null && classNode.redirect().getGenericsTypes() != null)) {
             // if the bound is not using generics or the class node is a raw type, there's nothing to compare with
             return true;
         }

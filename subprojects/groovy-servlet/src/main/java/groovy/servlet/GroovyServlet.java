@@ -110,8 +110,7 @@ public class GroovyServlet extends AbstractHttpServlet {
 
         // Run the script
         try {
-            Closure closure = new Closure(gse) {
-
+            Closure<?> closure = new Closure<Object>(gse) {
                 public Object call() {
                     try {
                         return ((GroovyScriptEngine) getDelegate()).run(scriptUri, binding);

@@ -27,10 +27,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -79,7 +76,17 @@ import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
@@ -121,7 +128,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
-    public void makeGetPropertySite(Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
+    public void makeGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
         Object dynamic = receiver.getNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY);
         if (dynamic != null) {
             makeDynamicGetProperty(receiver, propertyName, safe);
@@ -166,7 +173,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             controller.getOperandStack().replace(int_TYPE);
             return;
         } else if (isOrImplements(receiverType, COLLECTION_TYPE) && ("size".equals(propertyName) || "length".equals(propertyName))) {
-            MethodCallExpression expr = new MethodCallExpression(receiver, "size", ArgumentListExpression.EMPTY_ARGUMENTS);
+            MethodCallExpression expr = callX(receiver, "size");
             expr.setMethodTarget(COLLECTION_SIZE_METHOD);
             expr.setImplicitThis(implicitThis);
             expr.setSafe(safe);
@@ -210,17 +217,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (getterMethod == null) {
                 getterMethod = OBJECT_TYPE.getGetterMethod(getterName);
             }
-
             if (getterMethod != null) {
-                MethodCallExpression call = new MethodCallExpression(
-                        receiver,
-                        getterName,
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                call.setMethodTarget(getterMethod);
+                MethodCallExpression call = callX(receiver, getterName);
                 call.setImplicitThis(false);
-                call.setSourcePosition(receiver);
+                call.setMethodTarget(getterMethod);
                 call.setSafe(safe);
+                call.setSourcePosition(receiver);
                 call.visit(controller.getAcg());
                 return;
             }
@@ -229,19 +231,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         // GROOVY-5568: we would be facing a DGM call, but instead of foo.getText(), have foo.text
         List<MethodNode> methods = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, getterName, ClassNode.EMPTY_ARRAY);
         for (MethodNode dgm : findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), receiverType, altGetterName, ClassNode.EMPTY_ARRAY)) {
-            if (Boolean_TYPE.equals(getWrapper(dgm.getReturnType()))) methods.add(dgm);
+            if (Boolean_TYPE.equals(getWrapper(dgm.getReturnType()))) {
+                methods.add(dgm);
+            }
         }
         if (!methods.isEmpty()) {
             List<MethodNode> methodNodes = chooseBestMethod(receiverType, methods, ClassNode.EMPTY_ARRAY);
             if (methodNodes.size() == 1) {
                 MethodNode getter = methodNodes.get(0);
-                MethodCallExpression call = new MethodCallExpression(
-                        receiver,
-                        getter.getName(),
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                call.setMethodTarget(getter);
+                MethodCallExpression call = callX(receiver, getter.getName());
                 call.setImplicitThis(false);
+                call.setMethodTarget(getter);
                 call.setSafe(safe);
                 call.setSourcePosition(receiver);
                 call.visit(controller.getAcg());
@@ -263,15 +263,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
 
     private void makeDynamicGetProperty(final Expression receiver, final String propertyName, final boolean safe) {
         MethodNode target = safe ? INVOKERHELPER_GETPROPERTYSAFE_METHOD : INVOKERHELPER_GETPROPERTY_METHOD;
-        MethodCallExpression mce = new MethodCallExpression(
-                new ClassExpression(INVOKERHELPER_TYPE),
+        MethodCallExpression call = callX(
+                classX(INVOKERHELPER_TYPE),
                 target.getName(),
-                new ArgumentListExpression(receiver, new ConstantExpression(propertyName))
+                args(receiver, constX(propertyName))
         );
-        mce.setSafe(false);
-        mce.setImplicitThis(false);
-        mce.setMethodTarget(target);
-        mce.visit(controller.getAcg());
+        call.setImplicitThis(false);
+        call.setMethodTarget(target);
+        call.setSafe(false);
+        call.visit(controller.getAcg());
     }
 
     private void writeMapDotProperty(final Expression receiver, final String propertyName, final MethodVisitor mv, final boolean safe) {
@@ -318,11 +318,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             mv.visitLabel(doGet);
         }
 
-        Variable tmpList = new VariableExpression("tmpList", ClassHelper.make(ArrayList.class));
+        Variable tmpList = varX("tmpList", ClassHelper.make(ArrayList.class));
         int var = compileStack.defineTemporaryVariable(tmpList, false);
-        Variable iterator = new VariableExpression("iterator", Iterator_TYPE);
+        Variable iterator = varX("iterator", Iterator_TYPE);
         int it = compileStack.defineTemporaryVariable(iterator, false);
-        Variable nextVar = new VariableExpression("next", componentType);
+        Variable nextVar = varX("next", componentType);
         final int next = compileStack.defineTemporaryVariable(nextVar, false);
 
         mv.visitTypeInsn(NEW, "java/util/ArrayList");
@@ -351,18 +351,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         Label l4 = new Label();
         mv.visitLabel(l4);
         mv.visitVarInsn(ALOAD, var);
-        final ClassNode finalComponentType = componentType;
-        PropertyExpression pexp = new PropertyExpression(new BytecodeExpression() {
-            @Override
-            public void visit(final MethodVisitor mv) {
-                mv.visitVarInsn(ALOAD, next);
-            }
-
-            @Override
-            public ClassNode getType() {
-                return finalComponentType;
-            }
-        }, propertyName);
+        PropertyExpression pexp = propX(
+                bytecodeX(componentType, v -> v.visitVarInsn(ALOAD, next)),
+                propertyName
+        );
         pexp.visit(controller.getAcg());
         controller.getOperandStack().box();
         controller.getOperandStack().remove(1);
@@ -382,28 +374,20 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         controller.getCompileStack().removeVar(var);
     }
 
-    @SuppressWarnings("unchecked")
     private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = receiverType.getField(fieldName);
         ClassNode outerClass = receiverType.getOuterClass();
         if (field == null && implicitThis && outerClass != null && !receiverType.isStaticClass()) {
             Expression pexp;
             if (controller.isInGeneratedFunction()) {
-                MethodCallExpression mce = new MethodCallExpression(
-                        new VariableExpression("this"),
-                        "getThisObject",
-                        ArgumentListExpression.EMPTY_ARGUMENTS
-                );
-                mce.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getOutermostClass());
-                mce.setImplicitThis(true);
-                mce.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
-                pexp = new CastExpression(controller.getOutermostClass(),mce);
+                MethodCallExpression call = callThisX("getThisObject");
+                call.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, controller.getOutermostClass());
+                call.setImplicitThis(true);
+                call.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
+                pexp = castX(controller.getOutermostClass(), call);
             } else {
-                pexp = new PropertyExpression(
-                        new ClassExpression(outerClass),
-                        "this"
-                );
-                ((PropertyExpression)pexp).setImplicitThis(true);
+                pexp = propX(classX(outerClass), "this");
+                ((PropertyExpression) pexp).setImplicitThis(true);
             }
             pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, outerClass);
             pexp.setSourcePosition(receiver);
@@ -416,12 +400,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (accessors != null) {
                 MethodNode methodNode = accessors.get(fieldName);
                 if (methodNode != null) {
-                    MethodCallExpression mce = new MethodCallExpression(receiver, methodNode.getName(),
-                            new ArgumentListExpression(field.isStatic() ? new ConstantExpression(null) : receiver));
-                    mce.setImplicitThis(implicitThis);
-                    mce.setMethodTarget(methodNode);
-                    mce.setSafe(safe);
-                    mce.visit(controller.getAcg());
+                    MethodCallExpression call = callX(receiver, methodNode.getName(), args(field.isStatic() ? nullX() : receiver));
+                    call.setImplicitThis(implicitThis);
+                    call.setMethodTarget(methodNode);
+                    call.setSafe(safe);
+                    call.visit(controller.getAcg());
                     return true;
                 }
             }
@@ -445,18 +428,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 if (currentCall != null && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) != null) {
                     property = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
                     String[] props = property.split("\\.");
-                    BytecodeExpression thisLoader = new BytecodeExpression() {
-                        @Override
-                        public void visit(final MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0); // load this
-                        }
-                    };
-                    thisLoader.setType(CLOSURE_TYPE);
-                    Expression pexp = new PropertyExpression(thisLoader, new ConstantExpression(props[0]), safe);
+                    BytecodeExpression thisLoader = bytecodeX(CLOSURE_TYPE, mv -> mv.visitVarInsn(ALOAD, 0));
+                    PropertyExpression pexp = propX(thisLoader, constX(props[0]), safe);
                     for (int i = 1, n = props.length; i < n; i += 1) {
-                        final String prop = props[i];
                         pexp.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, CLOSURE_TYPE);
-                        pexp = new PropertyExpression(pexp, prop);
+                        pexp = propX(pexp, props[i]);
                     }
                     pexp.visit(controller.getAcg());
                     return;
@@ -468,14 +444,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, property, safe, implicitThis)) return;
         if (makeGetField(receiver, receiverType, property, safe, implicitThis)) return;
 
-        MethodCallExpression call = new MethodCallExpression(
-                receiver,
-                "getProperty",
-                new ArgumentListExpression(new ConstantExpression(property))
-        );
+        MethodCallExpression call = callX(receiver, "getProperty", args(constX(property)));
         call.setImplicitThis(implicitThis);
-        call.setSafe(safe);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
+        call.setSafe(safe);
         call.visit(controller.getAcg());
     }
 
@@ -517,15 +489,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             if (propertyNode.isStatic()) getterNode.setModifiers(ACC_PUBLIC + ACC_STATIC);
         }
         if (getterNode != null) {
-            MethodCallExpression call = new MethodCallExpression(
-                    receiver,
-                    getterName,
-                    ArgumentListExpression.EMPTY_ARGUMENTS
-            );
-            call.setSourcePosition(receiver);
-            call.setMethodTarget(getterNode);
+            MethodCallExpression call = callX(receiver, getterName);
             call.setImplicitThis(implicitThis);
+            call.setMethodTarget(getterNode);
             call.setSafe(safe);
+            call.setSourcePosition(receiver);
             call.visit(controller.getAcg());
             return true;
         }
@@ -650,7 +618,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
-    public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments, boolean safe) {
+    public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments, final boolean safe) {
         TypeChooser typeChooser = controller.getTypeChooser();
         ClassNode classNode = controller.getClassNode();
         ClassNode rType = typeChooser.resolveType(receiver, classNode);
@@ -701,17 +669,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 // check if a getAt method can be found on the receiver
                 ClassNode current = rType;
                 MethodNode getAtNode = null;
-                while (current!=null && getAtNode==null) {
+                while (current != null && getAtNode == null) {
                     getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(aType, "index")});
                     if (getAtNode == null) {
                         getAtNode = getCompatibleMethod(current, "getAt", aType);
                     }
-                    if (getAtNode==null && isPrimitiveType(aType)) {
+                    if (getAtNode == null && isPrimitiveType(aType)) {
                         getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(getWrapper(aType), "index")});
                         if (getAtNode == null) {
                             getAtNode = getCompatibleMethod(current, "getAt", getWrapper(aType));
                         }
-                    } else if (getAtNode==null && aType.isDerivedFrom(Number_TYPE)) {
+                    } else if (getAtNode == null && aType.isDerivedFrom(Number_TYPE)) {
                         getAtNode = current.getDeclaredMethod("getAt", new Parameter[]{new Parameter(getUnwrapper(aType), "index")});
                         if (getAtNode == null) {
                             getAtNode = getCompatibleMethod(current, "getAt", getUnwrapper(aType));
@@ -719,17 +687,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     }
                     current = current.getSuperClass();
                 }
-                if (getAtNode!=null) {
-                    MethodCallExpression call = new MethodCallExpression(
-                            receiver,
-                            "getAt",
-                            arguments
-                    );
-
-                    call.setSafe(safe);
-                    call.setSourcePosition(arguments);
+                if (getAtNode != null) {
+                    MethodCallExpression call = callX(receiver, "getAt", arguments);
                     call.setImplicitThis(false);
                     call.setMethodTarget(getAtNode);
+                    call.setSafe(safe);
+                    call.setSourcePosition(arguments);
                     call.visit(controller.getAcg());
                     return true;
                 }
@@ -747,32 +710,21 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                 }
                 nodes = StaticTypeCheckingSupport.chooseBestMethod(rType, nodes, args);
                 if (nodes.size() == 1 || (nodes.size() > 1 && acceptAnyMethod)) {
-                    MethodNode methodNode = nodes.get(0);
-                    MethodCallExpression call = new MethodCallExpression(
-                            receiver,
-                            message,
-                            arguments
-                    );
-
+                    MethodCallExpression call = callX(receiver, message, arguments);
+                    call.setImplicitThis(false);
+                    call.setMethodTarget(nodes.get(0));
                     call.setSafe(safe);
                     call.setSourcePosition(arguments);
-                    call.setImplicitThis(false);
-                    call.setMethodTarget(methodNode);
                     call.visit(controller.getAcg());
                     return true;
                 }
                 if (implementsInterfaceOrIsSubclassOf(rType, MAP_TYPE)) {
                     // fallback to Map#get
-                    MethodCallExpression call = new MethodCallExpression(
-                            receiver,
-                            "get",
-                            arguments
-                    );
-
-                    call.setSafe(safe);
-                    call.setMethodTarget(MAP_GET_METHOD);
-                    call.setSourcePosition(arguments);
+                    MethodCallExpression call = callX(receiver, "get", arguments);
                     call.setImplicitThis(false);
+                    call.setMethodTarget(MAP_GET_METHOD);
+                    call.setSafe(safe);
+                    call.setSourcePosition(arguments);
                     call.visit(controller.getAcg());
                     return true;
                 }
@@ -781,7 +733,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         return false;
     }
 
-    private MethodNode getCompatibleMethod(ClassNode current, String getAt, ClassNode aType) {
+    private MethodNode getCompatibleMethod(final ClassNode current, final String getAt, final ClassNode aType) {
         // TODO this really should find "best" match or find all matches and complain about ambiguity if more than one
         // TODO handle getAt with more than one parameter
         // TODO handle default getAt methods on Java 8 interfaces
@@ -807,10 +759,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         int m2 = operandStack.getStackLength();
         // array access
         controller.getMethodVisitor().visitInsn(AALOAD);
-        operandStack.replace(rType.getComponentType(), m2-m1);
+        operandStack.replace(rType.getComponentType(), m2 - m1);
     }
 
-    private void writeOperatorCall(Expression receiver, Expression arguments, String operator) {
+    private void writeOperatorCall(final Expression receiver, final Expression arguments, final String operator) {
         prepareSiteAndReceiver(receiver, operator, false, controller.getCompileStack().isLHS());
         controller.getOperandStack().doGroovyCast(Number_TYPE);
         visitBoxedArgument(arguments);
@@ -820,10 +772,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         controller.getOperandStack().replace(Number_TYPE, 2);
     }
 
-    private void writePowerCall(Expression receiver, Expression arguments, final ClassNode rType, ClassNode aType) {
+    private void writePowerCall(final Expression receiver, final Expression arguments, final ClassNode rType, final ClassNode aType) {
         OperandStack operandStack = controller.getOperandStack();
         int m1 = operandStack.getStackLength();
-        //slow Path
+        // slow path
         prepareSiteAndReceiver(receiver, "power", false, controller.getCompileStack().isLHS());
         operandStack.doGroovyCast(getWrapper(rType));
         visitBoxedArgument(arguments);
@@ -845,22 +797,22 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     private void writeStringPlusCall(final Expression receiver, final String message, final Expression arguments) {
-        // todo: performance would be better if we created a StringBuilder
+        // TODO: performance would be better if we created a StringBuilder
         OperandStack operandStack = controller.getOperandStack();
         int m1 = operandStack.getStackLength();
-        //slow Path
+        // slow path
         prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
         visitBoxedArgument(arguments);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "plus", "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;", false);
-        controller.getOperandStack().replace(STRING_TYPE, m2-m1);
+        controller.getOperandStack().replace(STRING_TYPE, m2 - m1);
     }
 
     private void writeNumberNumberCall(final Expression receiver, final String message, final Expression arguments) {
         OperandStack operandStack = controller.getOperandStack();
         int m1 = operandStack.getStackLength();
-        //slow Path
+        // slow path
         prepareSiteAndReceiver(receiver, message, false, controller.getCompileStack().isLHS());
         controller.getOperandStack().doGroovyCast(Number_TYPE);
         visitBoxedArgument(arguments);
@@ -872,10 +824,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     @Override
-    public void fallbackAttributeOrPropertySite(PropertyExpression expression, Expression objectExpression, String name, MethodCallerMultiAdapter adapter) {
-        if (name!=null &&
-            (adapter == AsmClassGenerator.setField || adapter == AsmClassGenerator.setGroovyObjectField)
-        ) {
+    public void fallbackAttributeOrPropertySite(final PropertyExpression expression, final Expression objectExpression, final String name, final MethodCallerMultiAdapter adapter) {
+        if (name != null && (adapter == AsmClassGenerator.setField || adapter == AsmClassGenerator.setGroovyObjectField)) {
             TypeChooser typeChooser = controller.getTypeChooser();
             ClassNode classNode = controller.getClassNode();
             ClassNode rType = typeChooser.resolveType(objectExpression, classNode);
@@ -889,10 +839,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
     }
 
     // this is just a simple set field handling static and non-static, but not Closure and inner classes
-    private boolean setField(PropertyExpression expression, Expression objectExpression, ClassNode rType, String name) {
+    private boolean setField(final PropertyExpression expression, final Expression objectExpression, final ClassNode rType, final String name) {
         if (expression.isSafe()) return false;
         FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), rType, name, false);
-        if (fn==null) return false;
+        if (fn == null) return false;
         OperandStack stack = controller.getOperandStack();
         stack.doGroovyCast(fn.getType());
 
@@ -918,7 +868,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         return true;
     }
 
-    private boolean getField(PropertyExpression expression, Expression receiver, ClassNode receiverType, String name) {
+    private boolean getField(final PropertyExpression expression, final Expression receiver, ClassNode receiverType, final String name) {
         boolean safe = expression.isSafe();
         boolean implicitThis = expression.isImplicitThis();
 

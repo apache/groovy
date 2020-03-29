@@ -30,7 +30,6 @@ import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
@@ -42,6 +41,7 @@ import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 
 /**
  * An unary expression helper which generates optimized bytecode depending on
@@ -63,27 +63,24 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
     public void writeBitwiseNegate(final BitwiseNegationExpression expression) {
         expression.getExpression().visit(controller.getAcg());
         if (isPrimitiveOnTop()) {
-            final ClassNode top = getTopOperand();
-            if (top==int_TYPE || top==short_TYPE || top==byte_TYPE || top==char_TYPE || top==long_TYPE) {
-                BytecodeExpression bytecodeExpression = new BytecodeExpression() {
-                    @Override
-                    public void visit(final MethodVisitor mv) {
-                        if (long_TYPE==top) {
-                            mv.visitLdcInsn(-1);
-                            mv.visitInsn(LXOR);
-                        } else {
-                            mv.visitInsn(ICONST_M1);
-                            mv.visitInsn(IXOR);
-                            if (byte_TYPE==top) {
-                                mv.visitInsn(I2B);
-                            } else if (char_TYPE==top) {
-                                mv.visitInsn(I2C);
-                            } else if (short_TYPE==top) {
-                                mv.visitInsn(I2S);
-                            }
+            ClassNode top = getTopOperand();
+            if (top == int_TYPE || top == short_TYPE || top == byte_TYPE || top == char_TYPE || top == long_TYPE) {
+                BytecodeExpression bytecodeExpression = bytecodeX(mv -> {
+                    if (long_TYPE == top) {
+                        mv.visitLdcInsn(-1);
+                        mv.visitInsn(LXOR);
+                    } else {
+                        mv.visitInsn(ICONST_M1);
+                        mv.visitInsn(IXOR);
+                        if (byte_TYPE == top) {
+                            mv.visitInsn(I2B);
+                        } else if (char_TYPE == top) {
+                            mv.visitInsn(I2C);
+                        } else if (short_TYPE == top) {
+                            mv.visitInsn(I2S);
                         }
                     }
-                };
+                });
                 bytecodeExpression.visit(controller.getAcg());
                 controller.getOperandStack().remove(1);
                 return;
@@ -100,19 +97,16 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
         if (typeChooser.resolveType(subExpression, classNode) == boolean_TYPE) {
             subExpression.visit(controller.getAcg());
             controller.getOperandStack().doGroovyCast(boolean_TYPE);
-            BytecodeExpression bytecodeExpression = new BytecodeExpression() {
-                @Override
-                public void visit(final MethodVisitor mv) {
-                    Label ne = new Label();
-                    mv.visitJumpInsn(IFNE, ne);
-                    mv.visitInsn(ICONST_1);
-                    Label out = new Label();
-                    mv.visitJumpInsn(GOTO, out);
-                    mv.visitLabel(ne);
-                    mv.visitInsn(ICONST_0);
-                    mv.visitLabel(out);
-                }
-            };
+            BytecodeExpression bytecodeExpression = bytecodeX(mv -> {
+                Label ne = new Label();
+                mv.visitJumpInsn(IFNE, ne);
+                mv.visitInsn(ICONST_1);
+                Label out = new Label();
+                mv.visitJumpInsn(GOTO, out);
+                mv.visitLabel(ne);
+                mv.visitInsn(ICONST_0);
+                mv.visitLabel(out);
+            });
             bytecodeExpression.visit(controller.getAcg());
             controller.getOperandStack().remove(1);
             return;
@@ -124,29 +118,26 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper impl
     public void writeUnaryMinus(final UnaryMinusExpression expression) {
         expression.getExpression().visit(controller.getAcg());
         if (isPrimitiveOnTop()) {
-            final ClassNode top = getTopOperand();
-            if (top!=boolean_TYPE) {
-                BytecodeExpression bytecodeExpression = new BytecodeExpression() {
-                    @Override
-                    public void visit(final MethodVisitor mv) {
-                        if (int_TYPE == top || short_TYPE == top || byte_TYPE==top || char_TYPE==top) {
-                            mv.visitInsn(INEG);
-                            if (byte_TYPE==top) {
-                                mv.visitInsn(I2B);
-                            } else if (char_TYPE==top) {
-                                mv.visitInsn(I2C);
-                            } else if (short_TYPE==top) {
-                                mv.visitInsn(I2S);
-                            }
-                        } else if (long_TYPE == top) {
-                            mv.visitInsn(LNEG);
-                        } else if (float_TYPE == top) {
-                            mv.visitInsn(FNEG);
-                        } else if (double_TYPE == top) {
-                            mv.visitInsn(DNEG);
+            ClassNode top = getTopOperand();
+            if (top != boolean_TYPE) {
+                BytecodeExpression bytecodeExpression = bytecodeX(mv -> {
+                    if (int_TYPE == top || short_TYPE == top || byte_TYPE == top || char_TYPE == top) {
+                        mv.visitInsn(INEG);
+                        if (byte_TYPE == top) {
+                            mv.visitInsn(I2B);
+                        } else if (char_TYPE == top) {
+                            mv.visitInsn(I2C);
+                        } else if (short_TYPE == top) {
+                            mv.visitInsn(I2S);
                         }
+                    } else if (long_TYPE == top) {
+                        mv.visitInsn(LNEG);
+                    } else if (float_TYPE == top) {
+                        mv.visitInsn(FNEG);
+                    } else if (double_TYPE == top) {
+                        mv.visitInsn(DNEG);
                     }
-                };
+                });
                 bytecodeExpression.visit(controller.getAcg());
                 controller.getOperandStack().remove(1);
                 return;

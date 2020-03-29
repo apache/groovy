@@ -88,6 +88,8 @@ import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 
 public class OptimizingStatementWriter extends StatementWriter {
 
+    private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(BytecodeInterface8.class, "disabledStandardMetaClass");
+
     // values correspond to BinaryExpressionMultiTypeDispatcher.typeMapKeyNames
     private static final MethodCaller[] guards = {
         null,
@@ -101,19 +103,17 @@ public class OptimizingStatementWriter extends StatementWriter {
         MethodCaller.newStatic(BytecodeInterface8.class, "isOrigZ"),
     };
 
-    private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(BytecodeInterface8.class, "disabledStandardMetaClass");
-    private final WriterController controller;
     private boolean fastPathBlocked;
 
     public OptimizingStatementWriter(final WriterController controller) {
         super(controller);
-        this.controller = controller;
     }
 
-    private FastPathData writeGuards(final StatementMeta meta, final Statement statement) {
+    private FastPathData writeGuards(final StatementMeta meta, final ASTNode node) {
         if (fastPathBlocked || controller.isFastPath() || meta == null || !meta.optimize) return null;
 
-        controller.getAcg().onLineNumber(statement, null);
+        controller.getAcg().onLineNumber(node, null);
+
         MethodVisitor mv = controller.getMethodVisitor();
         FastPathData fastPathData = new FastPathData();
         Label slowPath = new Label();
@@ -126,10 +126,9 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
 
         // meta class check with boolean holder
-        String owner = BytecodeHelper.getClassInternalName(controller.getClassNode());
         MethodNode mn = controller.getMethodNode();
         if (mn != null) {
-            mv.visitFieldInsn(GETSTATIC, owner, Verifier.STATIC_METACLASS_BOOL, "Z");
+            mv.visitFieldInsn(GETSTATIC, controller.getInternalClassName(), Verifier.STATIC_METACLASS_BOOL, "Z");
             mv.visitJumpInsn(IFNE, slowPath);
         }
 

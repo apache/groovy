@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.transform.trait.SuperCallTraitTransformer.UNRESOLVED_HELPER_CLASS;
 
@@ -227,7 +228,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 if (!methodNode.isAbstract()) {
                     MethodNode newMethod = processMethod(cNode, helper, methodNode, fieldHelper, fieldNames);
                     if (methodNode.getName().equals("<clinit>")) {
-                        staticInitStatements = getStatements(newMethod.getCode());
+                        staticInitStatements = getCodeAsBlock(newMethod).getStatements();
                     } else {
                         // add non-abstract methods; abstract methods covered from trait interface
                         helper.addMethod(newMethod);
@@ -309,15 +310,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             targetMethod.setCode(toBlock);
         }
         return toBlock;
-    }
-
-    private List<Statement> getStatements(Statement stmt) {
-        if (stmt instanceof BlockStatement) {
-            return ((BlockStatement) stmt).getStatements();
-        }
-        List<Statement> result = new ArrayList<Statement>();
-        result.add(stmt);
-        return result;
     }
 
     private static MethodNode createInitMethod(final boolean isStatic, final ClassNode cNode, final ClassNode helper) {

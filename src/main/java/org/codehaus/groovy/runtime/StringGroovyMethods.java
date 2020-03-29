@@ -21,12 +21,14 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.EmptyRange;
 import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.lang.Range;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.util.CharSequenceReader;
 
@@ -34,6 +36,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -2519,6 +2524,19 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Compare a String representing a number to another.
+     * A fluent api style alias for {@code compareTo} on {@code BigDecimal}.
+     *
+     * @param left  a String representing a number
+     * @param right a String representing a number
+     * @return true if the value represented by left is equal to or bigger than the value represented by right
+     * @since 3.0.1
+     */
+    public static Boolean isAtLeast(String left, String right) {
+        return DefaultGroovyMethods.isAtLeast(new BigDecimal(left), right);
+    }
+
+    /**
      * Convenience method to split a CharSequence (with whitespace as delimiter).
      * Similar to tokenize, but returns an Array of String instead of a List.
      *
@@ -2597,6 +2615,29 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             if (runningCount == 0) break;
         }
         return stripIndent(self, runningCount == -1 ? 0 : runningCount);
+    }
+
+    /**
+     * Same logic to {@link #stripIndent(CharSequence)} if {@code forceGroovyBehavior} is {@code true},
+     * otherwise Java13's {@code stripIndent} will be invoked
+     *
+     * @param self The CharSequence to strip the leading spaces from
+     * @param forceGroovyBehavior force groovy behavior to avoid conflicts with Java13's stripIndent
+     * @since 3.0.0
+     */
+    @Incubating
+    public static String stripIndent(CharSequence self, boolean forceGroovyBehavior) {
+        if (!forceGroovyBehavior) {
+            try {
+                MethodHandle mh = MethodHandles.lookup().findVirtual(self.getClass(), "stripIndent", MethodType.methodType(String.class));
+                return (String) mh.bindTo(self).invokeWithArguments();
+            } catch (NoSuchMethodException | IllegalAccessException ignored) {
+            } catch (Throwable t) {
+                throw new GroovyRuntimeException(t);
+            }
+        }
+
+        return stripIndent(self);
     }
 
     /**

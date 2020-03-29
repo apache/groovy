@@ -37,89 +37,101 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import java.lang.reflect.Method;
 
 /**
- * Base class for all call sites
+ * Base class for all call sites.
  */
 public class AbstractCallSite implements CallSite {
+
     protected final int index;
     protected final String name;
     protected final CallSiteArray array;
 
-    public AbstractCallSite(CallSiteArray array, int index, String name) {
+    public AbstractCallSite(final CallSiteArray array, final int index, final String name) {
         this.name = name;
         this.index = index;
         this.array = array;
     }
 
-    public AbstractCallSite(CallSite prev) {
+    public AbstractCallSite(final CallSite prev) {
         this.name = prev.getName();
         this.index = prev.getIndex();
         this.array = prev.getArray();
     }
 
+    @Override
     public int getIndex() {
         return index;
     }
 
+    @Override
     public CallSiteArray getArray() {
         return array;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
-    public final Object callSafe(Object receiver, Object[] args) throws Throwable {
+    @Override
+    public final Object callSafe(final Object receiver, final Object[] args) throws Throwable {
         if (receiver == null)
             return null;
 
         return call(receiver, args);
     }
 
-    public final Object callSafe(Object receiver) throws Throwable {
+    @Override
+    public final Object callSafe(final Object receiver) throws Throwable {
         if (receiver == null)
             return null;
 
         return call(receiver);
     }
 
-    public final Object callSafe(Object receiver, Object arg1) throws Throwable {
+    @Override
+    public final Object callSafe(final Object receiver, final Object arg1) throws Throwable {
         if (receiver == null)
             return null;
 
         return call(receiver, arg1);
     }
 
-    public final Object callSafe(Object receiver, Object arg1, Object arg2) throws Throwable {
+    @Override
+    public final Object callSafe(final Object receiver, final Object arg1, final Object arg2) throws Throwable {
         if (receiver == null)
             return null;
 
         return call(receiver, arg1, arg2);
     }
 
-    public final Object callSafe(Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+    @Override
+    public final Object callSafe(final Object receiver, final Object arg1, final Object arg2, final Object arg3) throws Throwable {
         if (receiver == null)
             return null;
 
         return call(receiver, arg1, arg2, arg3);
     }
 
-    public Object callSafe(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+    @Override
+    public Object callSafe(final Object receiver, final Object arg1, final Object arg2, final Object arg3, final Object arg4) throws Throwable {
         if (receiver == null)
             return null;
 
         return call(receiver, arg1, arg2, arg3, arg4);
     }
 
-
-    public Object call(Object receiver, Object[] args) throws Throwable {
+    @Override
+    public Object call(final Object receiver, final Object[] args) throws Throwable {
         return CallSiteArray.defaultCall(this, receiver, args);
     }
 
-    public Object call(Object receiver) throws Throwable {
+    @Override
+    public Object call(final Object receiver) throws Throwable {
         return call(receiver, CallSiteArray.NOPARAM);
     }
 
-    public Object call(Object receiver, Object arg1) throws Throwable {
+    @Override
+    public Object call(final Object receiver, final Object arg1) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.call(receiver, arg1);
@@ -127,7 +139,8 @@ public class AbstractCallSite implements CallSite {
         return call(receiver, ArrayUtil.createArray(arg1));
     }
 
-    public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
+    @Override
+    public Object call(final Object receiver, final Object arg1, final Object arg2) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.call(receiver, arg1, arg2);
@@ -135,7 +148,8 @@ public class AbstractCallSite implements CallSite {
         return call(receiver, ArrayUtil.createArray(arg1, arg2));
     }
 
-    public Object call(Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+    @Override
+    public Object call(final Object receiver, final Object arg1, final Object arg2, final Object arg3) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.call(receiver, arg1, arg2, arg3);
@@ -143,7 +157,8 @@ public class AbstractCallSite implements CallSite {
         return call(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
     }
 
-    public Object call(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+    @Override
+    public Object call(final Object receiver, final Object arg1, final Object arg2, final Object arg3, final Object arg4) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.call(receiver, arg1, arg2, arg3, arg4);
@@ -151,16 +166,18 @@ public class AbstractCallSite implements CallSite {
         return call(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
     }
 
-
-    public Object callCurrent(GroovyObject receiver, Object[] args) throws Throwable {
+    @Override
+    public Object callCurrent(final GroovyObject receiver, final Object[] args) throws Throwable {
         return CallSiteArray.defaultCallCurrent(this, receiver, args);
     }
 
-    public Object callCurrent(GroovyObject receiver) throws Throwable {
+    @Override
+    public Object callCurrent(final GroovyObject receiver) throws Throwable {
         return callCurrent(receiver, CallSiteArray.NOPARAM);
     }
 
-    public Object callCurrent(GroovyObject receiver, Object arg1) throws Throwable {
+    @Override
+    public Object callCurrent(final GroovyObject receiver, final Object arg1) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callCurrent(receiver, arg1);
@@ -168,7 +185,8 @@ public class AbstractCallSite implements CallSite {
         return callCurrent(receiver, ArrayUtil.createArray(arg1));
     }
 
-    public Object callCurrent(GroovyObject receiver, Object arg1, Object arg2) throws Throwable {
+    @Override
+    public Object callCurrent(final GroovyObject receiver, final Object arg1, final Object arg2) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callCurrent(receiver, arg1, arg2);
@@ -176,7 +194,8 @@ public class AbstractCallSite implements CallSite {
         return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2));
     }
 
-    public Object callCurrent(GroovyObject receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+    @Override
+    public Object callCurrent(final GroovyObject receiver, final Object arg1, final Object arg2, final Object arg3) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callCurrent(receiver, arg1, arg2, arg3);
@@ -184,7 +203,8 @@ public class AbstractCallSite implements CallSite {
         return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
     }
 
-    public Object callCurrent(GroovyObject receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+    @Override
+    public Object callCurrent(final GroovyObject receiver, final Object arg1, final Object arg2, final Object arg3, final Object arg4) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callCurrent(receiver, arg1, arg2, arg3, arg4);
@@ -192,15 +212,18 @@ public class AbstractCallSite implements CallSite {
         return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
     }
 
-    public Object callStatic(Class receiver, Object[] args) throws Throwable {
+    @Override
+    public Object callStatic(final Class receiver, final Object[] args) throws Throwable {
         return CallSiteArray.defaultCallStatic(this, receiver, args);
     }
 
-    public Object callStatic(Class receiver) throws Throwable {
+    @Override
+    public Object callStatic(final Class receiver) throws Throwable {
         return callStatic(receiver, CallSiteArray.NOPARAM);
     }
 
-    public Object callStatic(Class receiver, Object arg1) throws Throwable {
+    @Override
+    public Object callStatic(final Class receiver, final Object arg1) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callStatic(receiver, arg1);
@@ -208,7 +231,8 @@ public class AbstractCallSite implements CallSite {
         return callStatic(receiver, ArrayUtil.createArray(arg1));
     }
 
-    public Object callStatic(Class receiver, Object arg1, Object arg2) throws Throwable {
+    @Override
+    public Object callStatic(final Class receiver, final Object arg1, final Object arg2) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callStatic(receiver, arg1, arg2);
@@ -216,7 +240,8 @@ public class AbstractCallSite implements CallSite {
         return callStatic(receiver, ArrayUtil.createArray(arg1, arg2));
     }
 
-    public Object callStatic(Class receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+    @Override
+    public Object callStatic(final Class receiver, final Object arg1, final Object arg2, final Object arg3) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callStatic(receiver, arg1, arg2, arg3);
@@ -224,7 +249,8 @@ public class AbstractCallSite implements CallSite {
         return callStatic(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
     }
 
-    public Object callStatic(Class receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+    @Override
+    public Object callStatic(final Class receiver, final Object arg1, final Object arg2, final Object arg3, final Object arg4) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callStatic(receiver, arg1, arg2, arg3, arg4);
@@ -232,16 +258,18 @@ public class AbstractCallSite implements CallSite {
         return callStatic(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
     }
 
-
-    public Object callConstructor(Object receiver, Object[] args) throws Throwable {
+    @Override
+    public Object callConstructor(final Object receiver, final Object[] args) throws Throwable {
         return CallSiteArray.defaultCallConstructor(this, receiver, args);
     }
 
-    public Object callConstructor(Object receiver) throws Throwable {
+    @Override
+    public Object callConstructor(final Object receiver) throws Throwable {
         return callConstructor(receiver, CallSiteArray.NOPARAM);
     }
 
-    public Object callConstructor(Object receiver, Object arg1) throws Throwable {
+    @Override
+    public Object callConstructor(final Object receiver, final Object arg1) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callConstructor(receiver, arg1);
@@ -249,7 +277,8 @@ public class AbstractCallSite implements CallSite {
         return callConstructor(receiver, ArrayUtil.createArray(arg1));
     }
 
-    public Object callConstructor(Object receiver, Object arg1, Object arg2) throws Throwable {
+    @Override
+    public Object callConstructor(final Object receiver, final Object arg1, final Object arg2) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callConstructor(receiver, arg1, arg2);
@@ -257,7 +286,8 @@ public class AbstractCallSite implements CallSite {
         return callConstructor(receiver, ArrayUtil.createArray(arg1, arg2));
     }
 
-    public Object callConstructor(Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+    @Override
+    public Object callConstructor(final Object receiver, final Object arg1, final Object arg2, final Object arg3) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callConstructor(receiver, arg1, arg2, arg3);
@@ -265,7 +295,8 @@ public class AbstractCallSite implements CallSite {
         return callConstructor(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
     }
 
-    public Object callConstructor(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+    @Override
+    public Object callConstructor(final Object receiver, final Object arg1, final Object arg2, final Object arg3, final Object arg4) throws Throwable {
         CallSite stored = array.array[index];
         if (stored!=this) {
             return stored.callConstructor(receiver, arg1, arg2, arg3, arg4);
@@ -273,7 +304,7 @@ public class AbstractCallSite implements CallSite {
         return callConstructor(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
     }
 
-    static boolean noCoerce(ParameterTypes metaMethod, Object[] args) {
+    static boolean noCoerce(final ParameterTypes metaMethod, final Object[] args) {
         final CachedClass[] paramClasses = metaMethod.getParameterTypes();
         if (paramClasses.length != args.length)
             return false;
@@ -286,19 +317,20 @@ public class AbstractCallSite implements CallSite {
         return false;
     }
 
-    static boolean noWrappers(Object[] args) {
-        for (int i = 0; i != args.length; ++i)
+    static boolean noWrappers(final Object[] args) {
+        for (int i = 0; i != args.length; i += 1)
             if (args[i] instanceof Wrapper)
                 return false;
         return true;
     }
 
-
-    public Object callGetProperty(Object receiver) throws Throwable {
+    @Override
+    public Object callGetProperty(final Object receiver) throws Throwable {
         return acceptGetProperty(receiver).getProperty(receiver);
     }
 
-    public Object callGroovyObjectGetProperty(Object receiver) throws Throwable {
+    @Override
+    public Object callGroovyObjectGetProperty(final Object receiver) throws Throwable {
         if (receiver == null) {
             try {
                 return InvokerHelper.getProperty(NullObject.getNullObject(), name);
@@ -310,27 +342,27 @@ public class AbstractCallSite implements CallSite {
         }
     }
 
-    public CallSite acceptGetProperty(Object receiver) {
+    public CallSite acceptGetProperty(final Object receiver) {
         return createGetPropertySite(receiver);
     }
 
-    public CallSite acceptGroovyObjectGetProperty(Object receiver) {
+    public CallSite acceptGroovyObjectGetProperty(final Object receiver) {
         return createGroovyObjectGetPropertySite(receiver);
     }
 
-    protected final CallSite createGetPropertySite(Object receiver) {
+    protected final CallSite createGetPropertySite(final Object receiver) {
         if (receiver == null) {
             return new NullCallSite(this);
         } else if (receiver instanceof GroovyObject) {
             return createGroovyObjectGetPropertySite(receiver);
         } else if (receiver instanceof Class) {
-            return createClassMetaClassGetPropertySite((Class) receiver);
+            return createClassMetaClassGetPropertySite((Class<?>) receiver);
         }
         return createPojoMetaClassGetPropertySite(receiver);
     }
 
-    protected final CallSite createGroovyObjectGetPropertySite(Object receiver) {
-        Class aClass = receiver.getClass();
+    protected final CallSite createGroovyObjectGetPropertySite(final Object receiver) {
+        Class<?> aClass = receiver.getClass();
         try {
             final Method method = aClass.getMethod("getProperty", String.class);
             if (method != null && (method.isSynthetic() || isMarkedInternal(method)) && ((GroovyObject) receiver).getMetaClass() instanceof MetaClassImpl)
@@ -339,21 +371,22 @@ public class AbstractCallSite implements CallSite {
             // fall threw
         }
         if (receiver instanceof Class) {
-            return createClassMetaClassGetPropertySite((Class) receiver);
+            return createClassMetaClassGetPropertySite((Class<?>) receiver);
         } else {
             return createPogoGetPropertySite(aClass);
         }
     }
 
-    private boolean isMarkedInternal(Method method) {
+    private boolean isMarkedInternal(final Method method) {
         return method.getAnnotation(Internal.class) != null;
     }
 
-    public Object getProperty(Object receiver) throws Throwable {
+    @Override
+    public Object getProperty(final Object receiver) throws Throwable {
         throw new UnsupportedOperationException();
     }
 
-    private CallSite createPojoMetaClassGetPropertySite(Object receiver) {
+    private CallSite createPojoMetaClassGetPropertySite(final Object receiver) {
         final MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
 
         CallSite site;
@@ -375,13 +408,13 @@ public class AbstractCallSite implements CallSite {
         return site;
     }
 
-    private CallSite createClassMetaClassGetPropertySite(Class aClass) {
+    private CallSite createClassMetaClassGetPropertySite(final Class<?> aClass) {
         CallSite site = new ClassMetaClassGetPropertySite(this, aClass);
         array.array[index] = site;
         return site;
     }
 
-    private CallSite createPogoMetaClassGetPropertySite(GroovyObject receiver) {
+    private CallSite createPogoMetaClassGetPropertySite(final GroovyObject receiver) {
         MetaClass metaClass = receiver.getMetaClass();
 
         CallSite site;
@@ -403,25 +436,21 @@ public class AbstractCallSite implements CallSite {
         return site;
     }
 
-    private CallSite createPogoGetPropertySite(Class aClass) {
+    private CallSite createPogoGetPropertySite(final Class<?> aClass) {
         CallSite site = new PogoGetPropertySite(this, aClass);
         array.array[index] = site;
         return site;
     }
 
-    public final Object callGetPropertySafe(Object receiver) throws Throwable {
-        if (receiver == null)
-            return null;
-        else
-            return callGetProperty(receiver);
+    @Override
+    public final Object callGetPropertySafe(final Object receiver) throws Throwable {
+        if (receiver == null) return null;
+        return callGetProperty(receiver);
     }
 
-    public final Object callGroovyObjectGetPropertySafe(Object receiver) throws Throwable {
-        if (receiver == null)
-            return null;
-        else
-            return callGroovyObjectGetProperty(receiver);
+    @Override
+    public final Object callGroovyObjectGetPropertySafe(final Object receiver) throws Throwable {
+        if (receiver == null) return null;
+        return callGroovyObjectGetProperty(receiver);
     }
-
 }
-

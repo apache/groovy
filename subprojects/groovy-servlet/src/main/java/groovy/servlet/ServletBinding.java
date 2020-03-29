@@ -303,8 +303,9 @@ public class ServletBinding extends Binding {
         super.setVariable("html", builder);
 
         try {
+            // load using reflection to avoid needing a hard requirement on groovy-json for those not needing JSON support
             Class jsonBuilderClass = this.getClass().getClassLoader().loadClass("groovy.json.StreamingJsonBuilder");
-            Constructor writerConstructor = jsonBuilderClass.getConstructor(Writer.class);
+            Constructor writerConstructor = getWriterConstructor(jsonBuilderClass);
             super.setVariable("json", writerConstructor.newInstance(output.getWriter()));
         } catch (Throwable t) {
             t.printStackTrace();
@@ -321,6 +322,11 @@ public class ServletBinding extends Binding {
         // bind redirect method
         c = new MethodClosure(this, "redirect");
         super.setVariable("redirect", c);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Constructor getWriterConstructor(Class jsonBuilderClass) throws NoSuchMethodException {
+        return jsonBuilderClass.getConstructor(Writer.class);
     }
 
     private static void validateArgs(String name, String message) {

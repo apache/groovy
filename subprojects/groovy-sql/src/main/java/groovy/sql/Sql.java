@@ -269,7 +269,7 @@ public class Sql implements AutoCloseable {
 
     private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
     private final Map<String, String> namedParamSqlCache = new HashMap<String, String>();
-    private final Map<String, List<Tuple>> namedParamIndexPropCache = new HashMap<String, List<Tuple>>();
+    private final Map<String, List<Tuple<?>>> namedParamIndexPropCache = new HashMap<>();
     private List<String> keyColumnNames;
 
     /**
@@ -4482,7 +4482,7 @@ public class Sql implements AutoCloseable {
         }
 
         String newSql;
-        List<Tuple> propList;
+        List<Tuple<?>> propList;
         if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
             newSql = namedParamSqlCache.get(sql);
             propList = namedParamIndexPropCache.get(sql);

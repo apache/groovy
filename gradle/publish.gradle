@@ -22,16 +22,26 @@ ext.artifactoryUser = project.hasProperty('artifactoryUser') ? project.artifacto
 ext.artifactoryPassword = project.hasProperty('artifactoryPassword') ? project.artifactoryPassword : System.getenv('ARTIFACTORY_PASSWORD')
 
 if (!artifactoryUser) {
-    // try to read from properties
-    def artifactoryFile = file('artifactory.properties')
+    // try to read artifactory.properties
+    def base = file(projectDir)
+    def artifactoryFile = new File(base, 'artifactory.properties')
+    while (!artifactoryFile.exists()) {
+        base = base.parentFile
+        if (!base) break
+        artifactoryFile = new File(base, 'artifactory.properties')
+    }
     if (artifactoryFile.exists()) {
+        logger.lifecycle 'Found artifactory.properties in ' + base.path
         def props = new Properties()
         props.load(artifactoryFile.newReader())
         ext.artifactoryUser = props.getProperty('artifactoryUser','')
         ext.artifactoryPassword = props.getProperty('artifactoryPassword','')
+    } else {
+        logger.lifecycle 'No artifactory.properties file found'
     }
 }
 
+logger.lifecycle "user.dir: ${System.getProperty('user.dir')}"
 logger.lifecycle "ArtifactoryUser user: $artifactoryUser"
 
 allprojects {
@@ -47,30 +57,31 @@ allprojects {
             }
             publish {
                 excludePatterns = [
-//                        'org/codehaus/groovy/groovy/**',
-//                        'org/codehaus/groovy/groovy-ant/**',
-//                        'org/codehaus/groovy/groovy-backports-compat23/**',
-//                        'org/codehaus/groovy/groovy-binary/**',
-//                        'org/codehaus/groovy/groovy-bsf/**',
-//                        'org/codehaus/groovy/groovy-console/**',
-//                        'org/codehaus/groovy/groovy-docgenerator/**',
-//                        'org/codehaus/groovy/groovy-groovydoc/**',
-//                        'org/codehaus/groovy/groovy-groovysh/**',
-//                        'org/codehaus/groovy/groovy-jmx/**',
-//                        'org/codehaus/groovy/groovy-json/**',
-//                        'org/codehaus/groovy/groovy-jsr223/**',
-//                        'org/codehaus/groovy/groovy-macro/**',
-//                        'org/codehaus/groovy/groovy-nio/**',
-//                        'org/codehaus/groovy/groovy-servlet/**',
-//                        'org/codehaus/groovy/groovy-sql/**',
-//                        'org/codehaus/groovy/groovy-swing/**',
-//                        'org/codehaus/groovy/groovy-templates/**',
-//                        'org/codehaus/groovy/groovy-test/**',
-//                        'org/codehaus/groovy/groovy-testng/**',
-//                        'org/codehaus/groovy/groovy-xml/**',
-                        'org/codehaus/groovy/groovy/*/groovy-all-*',
-                        'org/codehaus/groovy/groovy/*/groovy-backports-*',
-                        'org/codehaus/groovy/groovy/*/groovy-binary-*'
+//                        'org/apache/groovy/groovy/**',
+//                        'org/apache/groovy/groovy-ant/**',
+//                        'org/apache/groovy/groovy-backports-compat23/**',
+//                        'org/apache/groovy/groovy-binary/**',
+//                        'org/apache/groovy/groovy-bsf/**',
+//                        'org/apache/groovy/groovy-console/**',
+//                        'org/apache/groovy/groovy-docgenerator/**',
+//                        'org/apache/groovy/groovy-groovydoc/**',
+//                        'org/apache/groovy/groovy-groovysh/**',
+//                        'org/apache/groovy/groovy-jmx/**',
+//                        'org/apache/groovy/groovy-json/**',
+//                        'org/apache/groovy/groovy-jsr223/**',
+//                        'org/apache/groovy/groovy-macro/**',
+//                        'org/apache/groovy/groovy-nio/**',
+//                        'org/apache/groovy/groovy-servlet/**',
+//                        'org/apache/groovy/groovy-sql/**',
+//                        'org/apache/groovy/groovy-swing/**',
+//                        'org/apache/groovy/groovy-templates/**',
+//                        'org/apache/groovy/groovy-test/**',
+//                        'org/apache/groovy/groovy-testng/**',
+//                        'org/apache/groovy/groovy-xml/**',
+                        'org/apache/groovy/groovy/*/groovy-all-*',
+                        'org/apache/groovy/groovy/*/groovy-bom-*',
+                        'org/apache/groovy/groovy/*/groovy-backports-*',
+                        'org/apache/groovy/groovy/*/groovy-binary-*'
                 ].join(',')
                 repository {
                     repoKey = project.hasProperty('artifactoryRepoKey') ? project.artifactoryRepoKey : 'oss-snapshot-local'
@@ -88,7 +99,7 @@ allprojects {
 artifactoryPublish {
     def curDate = new Date()
     def pomSource = { a -> "$projectDir/target/poms/pom-${a.name - 'groovy-'}.xml" }
-    def destBase = { a -> "org/codehaus/groovy/${a.name}/${version}/${a.name}-${version}${a.classifier ? '-' + a.classifier : ''}" }
+    def destBase = { a -> "org/apache/groovy/${a.name}/${version}/${a.name}-${version}${a.classifier ? '-' + a.classifier : ''}" }
     def newDetails = { orig, newFile, newExt, newType -> gradleDeployDetails(new DefaultPublishArtifact(
             orig.name, newExt, newType, orig.classifier, curDate, newFile), 'artifacts', destBase(orig) + '.' + newExt) }
     def makeTransformedDetails = { orig -> newDetails(orig, orig.file, orig.extension, orig.extension) }
@@ -110,9 +121,11 @@ artifactoryPublish {
             }
         }
         deployDetails.add(makeTransformedPomDetails(name: 'groovy-all'))
+        deployDetails.add(makeTransformedPomDetails(name: 'groovy-bom'))
 
         if (isReleaseVersion) {
             deployDetails.add(makeTransformedPomSigDetails(name: 'groovy-all'))
+            deployDetails.add(makeTransformedPomSigDetails(name: 'groovy-bom'))
             allprojects {
                 if (project == rootProject || rootProject.ext.modules().contains(project)) {
                     configurations.archives.artifacts.findAll {

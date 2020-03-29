@@ -37,15 +37,15 @@ import static org.apache.groovy.parser.antlr4.TestUtils.doTest
 /**
  * Some basic test cases for the new parser
  */
-class GroovyParserTest extends GroovyTestCase {
-
-    void setUp() {}
-
-    void tearDown() {}
+final class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - Comments"() {
         doTest('core/Comments_01.groovy', [ExpressionStatement])
         doTestAttachedComments()
+    }
+
+    void "test groovy core - Shebang Comments"() {
+        doRunAndTestAntlr4('core/Comments_03x.groovy')
     }
 
     // java.lang.ClassFormatError: Illegal method name "test IO stream/reader closed by the parser properly" when using Java9
@@ -55,8 +55,7 @@ class GroovyParserTest extends GroovyTestCase {
             def a = 123
         '''
 
-        def antlr4Parser = new org.apache.groovy.parser.Antlr4Parser()
-        antlr4Parser.parse(f)
+        TestUtils.createAntlr4Shell().evaluate(f)
 
         boolean deleted = f.delete()
         assert deleted: "Failed to delete file: ${f.getAbsolutePath()}"
@@ -339,12 +338,12 @@ class GroovyParserTest extends GroovyTestCase {
 
     void "test groovy core - InterfaceDeclaration"() {
         doTest('core/InterfaceDeclaration_01.groovy')
-        doTest('core/InterfaceDeclaration_02.groovy')
+        doTest('core/InterfaceDeclaration_02.groovy', [PropertyNode, FieldNode])
         doTest('core/InterfaceDeclaration_03.groovy')
     }
 
     void "test groovy core - EnumDeclaration"() {
-        doTest('core/EnumDeclaration_01.groovy')
+        doTest('core/EnumDeclaration_01.groovy', [PropertyNode, FieldNode])
         doTest('core/EnumDeclaration_02.groovy', [ExpressionStatement])
         doTest('core/EnumDeclaration_03.groovy')
         doTest('core/EnumDeclaration_04.groovy')
@@ -441,5 +440,18 @@ class GroovyParserTest extends GroovyTestCase {
         doTest('bugs/BUG-GROOVY-8641.groovy')
         doTest('bugs/BUG-GROOVY-8913.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-8991.groovy')
+        doTest('bugs/BUG-GROOVY-9399.groovy')
+    }
+
+    void "test groovy core - GROOVY-9427"() {
+        doTest('bugs/BUG-GROOVY-9427.groovy');
+    }
+
+    void "test groovy core - GROOVY-9433"() {
+        doTest('bugs/BUG-GROOVY-9433.groovy');
+    }
+
+    void "test groovy core - GROOVY-9449"() {
+        doTest('bugs/BUG-GROOVY-9449.groovy');
     }
 }

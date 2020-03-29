@@ -194,7 +194,7 @@ public class MopWriter {
             operandStack.remove(parameters.length);
             ClassNode declaringClass = method.getDeclaringClass();
             // JDK 8 support for default methods in interfaces
-            // TODO: this should probably be strenghtened when we support the A.super.foo() syntax
+            // TODO: this should probably be strengthened when we support the A.super.foo() syntax
             int opcode = declaringClass.isInterface() ? INVOKEINTERFACE : INVOKESPECIAL;
             mv.visitMethodInsn(opcode, BytecodeHelper.getClassInternalName(declaringClass), method.getName(), methodDescriptor, declaringClass.isInterface());
             BytecodeHelper.doReturn(mv, method.getReturnType());
@@ -202,5 +202,10 @@ public class MopWriter {
             mv.visitEnd();
             controller.getClassNode().addMethod(name, ACC_PUBLIC | ACC_SYNTHETIC, method.getReturnType(), parameters, null, null);
         }
+    }
+
+    @Deprecated
+    public static boolean equalParameterTypes(Parameter[] p1, Parameter[] p2) {
+        return ParameterUtils.parametersEqual(p1, p2);
     }
 }

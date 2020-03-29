@@ -197,10 +197,15 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
             name = parent.name() + "$" + name;
         }
         currentClassDoc = new SimpleGroovyClassDoc(imports, aliases, name.replace('$', '.'), links);
+        NodeList<Modifier> mods = n.getModifiers();
         if (parent != null) {
             parent.addNested(currentClassDoc);
+            if (parent.isInterface()) {
+                // an inner interface/class within an interface is public
+                mods.add(Modifier.publicModifier());
+            }
         }
-        setModifiers(n.getModifiers(), currentClassDoc);
+        setModifiers(mods, currentClassDoc);
         processAnnotations(currentClassDoc, n);
         currentClassDoc.setFullPathName(withSlashes(packagePath + FS + name));
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
@@ -270,7 +275,11 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     private void setConstructorOrMethodCommon(CallableDeclaration<? extends CallableDeclaration<?>> n, SimpleGroovyExecutableMemberDoc methOrCons) {
         n.getJavadocComment().ifPresent(javadocComment ->
                 methOrCons.setRawCommentText(javadocComment.getContent()));
-        setModifiers(n.getModifiers(), methOrCons);
+        NodeList<Modifier> mods = n.getModifiers();
+        if (currentClassDoc.isInterface()) {
+            mods.add(Modifier.publicModifier());
+        }
+        setModifiers(mods, methOrCons);
         processAnnotations(methOrCons, n);
         for (Parameter param : n.getParameters()) {
             SimpleGroovyParameter p = new SimpleGroovyParameter(param.getNameAsString());

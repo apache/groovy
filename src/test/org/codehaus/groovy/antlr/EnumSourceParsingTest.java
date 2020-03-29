@@ -25,47 +25,72 @@ import java.io.StringReader;
  */
 public final class EnumSourceParsingTest extends SourceParserTest {
 
-    public void testParseEnumConstants() {
+    public void testParseEnumConstants1() {
+        parse(getMethodName(), new StringReader(
+            "enum E { X, Y, Z }\n"
+        ));
+    }
+
+    public void testParseEnumConstants2() {
         parse(getMethodName(), new StringReader(
             "enum E {\n" +
             "    X, Y, Z\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
-    public void testParseEnumConstantsMultiLine() {
+    public void testParseEnumConstants3() {
         parse(getMethodName(), new StringReader(
             "enum E {\n" +
             "    X,\n" +
             "    Y,\n" +
             "    Z,\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
-    public void testParseEnumConstantsMultiLine2() {
+    public void testParseEnumConstants4() {
+        parse(getMethodName(), new StringReader(
+            "enum E {\n" +
+            "    X,\n" +
+            "    Y,\n" +
+            "    Z,\n" +
+            "     ;\n" +
+            "}\n"
+        ));
+    }
+
+    public void testParseEnumConstants5() {
         parse(getMethodName(), new StringReader(
             "enum E\n" +
             "{\n" +
             "    X,\n" +
             "    Y,\n" +
             "    Z\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
-    public void testParseEnumImplementsMultiLine() {
+    public void testParseEnumImplements1() {
+        parse(getMethodName(), new StringReader(
+            "enum E implements I {\n" +
+            "    X, Y, Z\n" +
+            "}\n"
+        ));
+    }
+
+    public void testParseEnumImplements2() {
         parse(getMethodName(), new StringReader(
             "enum E implements I\n" +
             "{\n" +
             "    X,\n" +
             "    Y,\n" +
             "    Z\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
-    public void testParseEnumImplementsMultiLine2() {
+    public void testParseEnumImplements3() {
         parse(getMethodName(), new StringReader(
             "enum E\n" +
             "implements I\n" +
@@ -73,22 +98,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    X,\n" +
             "    Y,\n" +
             "    Z\n" +
-            "}\n")
-        );
-    }
-
-    public void testParseEnumConstantsOneLiner() {
-        parse(getMethodName(), new StringReader(
-            "enum E { X, Y, Z }\n")
-        );
-    }
-
-    public void testParseEnumImplements() {
-        parse(getMethodName(), new StringReader(
-            "enum E implements I {\n" +
-            "    X, Y, Z\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithValues() {
@@ -99,8 +110,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "        this.value = value\n" +
             "    }\n\n" +
             "    private final int value\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithValues2() {
@@ -111,8 +122,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "        this.value = value\n" +
             "    }\n\n" +
             "    private final int value\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithValues3() {
@@ -123,8 +134,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    E(value) {\n" +
             "        this.value = value\n" +
             "    }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     // GROOVY-9301
@@ -136,8 +147,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    E(value) {\n" +
             "        this.value = value\n" +
             "    }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithValues4() {
@@ -156,8 +167,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    Suit(Color color) {\n" +
             "        this.color = color\n" +
             "    }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithMethodDefinitions1() {
@@ -167,8 +178,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    def m1() { }\n" +
             "    public m2(args) { }\n" +
             "    int m3(String arg) { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithMethodDefinitions2() {
@@ -176,8 +187,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z\n\n" +
             "    def <T> T m() { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithMethodDefinitions2a() {
@@ -185,8 +196,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z\n\n" +
             "    final <T> T m() { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithMethodDefinitions2b() {
@@ -194,8 +205,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z\n\n" +
             "    public <T> T m() { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithAnnotatedMethodDefinition1() {
@@ -207,8 +218,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    String toString() {\n" +
             "        name().toLowerCase().capitalize()\n" +
             "    }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     // GROOVY-9301
@@ -221,8 +232,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    String toString() {\n" +
             "        name().toLowerCase().capitalize()\n" +
             "    }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     // GROOVY-9301
@@ -233,8 +244,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    \n" +
             "    @Deprecated <T> T whatever() {\n" +
             "    }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseCompleteEnum() {
@@ -244,8 +255,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "    Y {\n" +
             "        double eval(int v) { return (double) v + 1 }\n" +
             "    }, Z\n" +
-            "}")
-        );
+            "}"
+        ));
     }
 
     public void testParseEnumWithInnerClass1() {
@@ -253,8 +264,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z\n" +
             "    class C { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     // GROOVY-8507
@@ -263,8 +274,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z,\n" + // trailing comma
             "    class C { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithInnerClass2() {
@@ -272,8 +283,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z\n" +
             "    enum E2 { A, B, C }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     // GROOVY-8507
@@ -282,8 +293,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z,\n" + // trailing comma
             "    enum Another { A, B, C }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithInnerClass3() {
@@ -291,8 +302,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z\n" +
             "    interface I { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     // GROOVY-8507
@@ -301,8 +312,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z,\n" + // trailing comma
             "    interface I { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void _FIXME_testParseEnumWithInnerClass4() {
@@ -310,8 +321,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z\n" +
             "    @interface A { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void _FIXME_testParseEnumWithInnerClass4a() {
@@ -319,8 +330,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z,\n" + // trailing comma
             "    @interface A { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     public void testParseEnumWithInnerClass5() {
@@ -328,8 +339,8 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z\n" +
             "    trait T { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 
     // GROOVY-8507
@@ -338,7 +349,7 @@ public final class EnumSourceParsingTest extends SourceParserTest {
             "enum E {\n" +
             "    X, Y, Z,\n" + // trailing comma
             "    trait T { }\n" +
-            "}\n")
-        );
+            "}\n"
+        ));
     }
 }

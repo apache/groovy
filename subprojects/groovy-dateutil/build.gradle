@@ -17,7 +17,7 @@
  *  under the License.
  */
 dependencies {
-    implementation rootProject
+    api rootProject  // DateUtilExtensions has methods with Closure params...
     testImplementation project(':groovy-test')
 }
 

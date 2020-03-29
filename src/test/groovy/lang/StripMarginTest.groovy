@@ -57,7 +57,7 @@ class StripMarginTest extends GroovyTestCase {
             def method() {
                 return 'bar'
             }
-        """.stripIndent()
+        """.stripIndent(true)
 
         def expected = """
     return 'foo'
@@ -79,7 +79,7 @@ def method() {
             def method() {
                 return 'bar'
             }
-        """.stripIndent()
+        """.stripIndent(true)
         
         def expected = """\
     return 'foo'

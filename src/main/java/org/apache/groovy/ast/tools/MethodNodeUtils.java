@@ -21,6 +21,8 @@ package org.apache.groovy.ast.tools;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 
@@ -94,4 +96,28 @@ public class MethodNodeUtils {
     }
 
     private MethodNodeUtils() { }
+
+    /**
+     * Gets the code for a method (or constructor) as a block.
+     * If no code is found, an empty block will be returned.
+     * If a single non-block statement is found, a block containing that statement will be returned.
+     * Otherwise the existing block statement will be returned.
+     * The original {@code node} is not modified.
+     *
+     * @param node the method (or constructor) node
+     * @return the found or created block statement
+     */
+    public static BlockStatement getCodeAsBlock(MethodNode node) {
+        Statement code = node.getCode();
+        BlockStatement block;
+        if (code == null) {
+            block = new BlockStatement();
+        } else if (!(code instanceof BlockStatement)) {
+            block = new BlockStatement();
+            block.addStatement(code);
+        } else {
+            block = (BlockStatement) code;
+        }
+        return block;
+    }
 }

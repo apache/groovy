@@ -17,7 +17,7 @@
  *  under the License.
  */
 dependencies {
-    implementation rootProject
+    api rootProject  // SwingBuilder extends FactoryBuilderSupport...
     testImplementation rootProject.sourceSets.test.runtimeClasspath
     testImplementation project(':groovy-test')
 }

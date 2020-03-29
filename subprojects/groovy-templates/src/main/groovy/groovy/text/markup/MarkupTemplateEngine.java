@@ -290,7 +290,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         }
 
         public boolean hasLocale() {
-            return locale != null && !"".equals(locale);
+            return locale != null && !locale.isEmpty();
         }
     }
 

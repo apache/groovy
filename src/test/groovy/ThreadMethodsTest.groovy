@@ -27,14 +27,14 @@ class ThreadMethodsTest extends GroovyTestCase {
     final CyclicBarrier barrier = new CyclicBarrier(2)
     void testThreadNaming() {
         def t = Thread.start("MyNamedThread") {
-            barrier.await(3L, TimeUnit.SECONDS) // Signal Thread Start
-            barrier.await(3L, TimeUnit.SECONDS) // Wait for thread stop signal
+            barrier.await(4L, TimeUnit.SECONDS) // Signal Thread Start
+            barrier.await(4L, TimeUnit.SECONDS) // Wait for thread stop signal
         }
 
-        barrier.await(3L, TimeUnit.SECONDS) // Wait for thread start signal
+        barrier.await(4L, TimeUnit.SECONDS) // Wait for thread start signal
         boolean threadFoundByName = Thread.allStackTraces.keySet().any { thread -> thread.name == 'MyNamedThread' }
-        barrier.await(3L, TimeUnit.SECONDS) // Send thread stop signal
-        t.join(100L)
+        barrier.await(4L, TimeUnit.SECONDS) // Send thread stop signal
+        t.join(200L)
         assert threadFoundByName
     }
 }

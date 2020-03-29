@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.vmplugin.v9;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
@@ -27,7 +28,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionUtils;
-import org.codehaus.groovy.vmplugin.v5.Java5;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.vmplugin.v8.Java8;
 
 import java.lang.invoke.MethodHandle;
@@ -42,20 +43,80 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Additional Java 9 based functions will be added here as needed.
  */
 public class Java9 extends Java8 {
+    private static final Logger LOGGER = Logger.getLogger(Java9.class.getName());
+
+    @Override
+    public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
+        List<String> javaPns = new ArrayList<>(4);
+        List<String> groovyPns = new ArrayList<>(4);
+        for (String prefix : packageNames) {
+            String pn = prefix.substring(0, prefix.length() - 1).replace('.', '/');
+
+            if (pn.startsWith("java/")) {
+                javaPns.add(pn);
+            } else if (pn.startsWith("groovy/")) {
+                groovyPns.add(pn);
+            } else {
+                throw new GroovyBugError("unexpected package: " + pn);
+            }
+        }
+
+        Map<String, Set<String>> result = new LinkedHashMap<>(2048);
+        try (GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader())) {
+            result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
+
+            URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
+            result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
+
+            // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `GrapeIvy`(groovy class) are all packaged in the groovy-core jar file,
+            // but in Groovy development environment, groovy-core classes are distributed in different directories
+            URI giLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.grape.GrapeIvy")).toURI();
+            if (!gsLocation.equals(giLocation)) {
+                result.putAll(doFindClasses(giLocation, "groovy", groovyPns));
+            }
+        } catch (Exception ignore) {
+            if (LOGGER.isLoggable(Level.FINEST)) {
+                LOGGER.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
+            }
+        }
+
+        return result;
+    }
+
+    private static Map<String, Set<String>> doFindClasses(URI uri, String packageName, List<String> defaultPackageNames) {
+        Map<String, Set<String>> result = ClassFinder.find(uri, packageName, true)
+                .entrySet().stream()
+                .filter(e -> e.getValue().stream().anyMatch(defaultPackageNames::contains))
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> entry.getValue().stream()
+                                        .filter(e -> defaultPackageNames.contains(e))
+                                        .map(e -> e.replace('/', '.') + ".")
+                                        .collect(Collectors.toSet())
+                        )
+                );
+        return result;
+    }
 
     private static class LookupHolder {
         private static final Method PRIVATE_LOOKUP;
@@ -120,7 +181,7 @@ public class Java9 extends Java8 {
 
     /**
      * This method may be used by a caller in class C to check whether to enable access to a member of declaring class D successfully
-     * if {@link Java5#checkCanSetAccessible(java.lang.reflect.AccessibleObject, java.lang.Class)} returns true and any of the following hold:
+     * if {@link Java8#checkCanSetAccessible(java.lang.reflect.AccessibleObject, java.lang.Class)} returns true and any of the following hold:
      * <p>
      * 1) C and D are in the same module.
      * 2) The member is public and D is public in a package that the module containing D exports to at least the module containing C.

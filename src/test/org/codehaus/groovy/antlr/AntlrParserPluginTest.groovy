@@ -76,7 +76,6 @@ class AntlrParserPluginTest extends GroovyTestCase {
         assert statement.lastLineNumber == 4
         assert statement.columnNumber == 21
         assert statement.lastColumnNumber == 34
-        assert statement.statementLabel == 'label'
+        assert statement.statementLabels[0] == 'label'
     }
-
 }

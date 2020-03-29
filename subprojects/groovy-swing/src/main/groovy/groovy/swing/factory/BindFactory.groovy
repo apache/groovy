@@ -231,7 +231,7 @@ class BindFactory extends AbstractFactory {
             fb.bind()
         }
 
-        if ((attributes.group instanceof AggregateBinding) && (fb instanceof BindingUpdatable)) {
+        if ((attributes.group instanceof AggregateBinding) && fb != null) {
             attributes.remove('group').addBinding(fb)
         }
 
@@ -364,7 +364,7 @@ class BindFactory extends AbstractFactory {
         List propertiesToBeSkipped = ['group']
         bindAttrs.each { k, v -> if (!(k in propertiesToBeSkipped)) fb."$k" = v }
 
-        if ((bindAttrs.group instanceof AggregateBinding) && (fb instanceof BindingUpdatable)) {
+        if ((bindAttrs.group instanceof AggregateBinding) && fb != null) {
             bindAttrs.group.addBinding(fb)
         }
 

@@ -17,7 +17,7 @@
  *  under the License.
  */
 dependencies {
-    implementation rootProject
+    api rootProject // ScriptExtensions use Binding...
     testImplementation project(':groovy-test')
 }
 

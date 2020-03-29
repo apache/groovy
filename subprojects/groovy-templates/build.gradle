@@ -23,27 +23,20 @@ repositories {
 }
 
 dependencies {
-    implementation rootProject
-    api project(':groovy-xml')
+    api rootProject // Template uses Writable...
+    implementation project(':groovy-xml')
     testImplementation rootProject.sourceSets.test.runtimeClasspath
     testImplementation project(':groovy-test')
-    // temporarily disable spock tests since it doesn't support 4 yet
-    if (!spockVersion.startsWith('1.3') || !groovyVersion.startsWith('4')) {
-        testImplementation ("org.spockframework:spock-core:$spockVersion") {
-            exclude group: 'org.codehaus.groovy'
-        }
+    testImplementation ("org.spockframework:spock-core:$spockVersion") {
+        exclude group: 'org.codehaus.groovy'
+    }
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:$junit5Version") {
+        because 'for JUnit 3/4 tests as well as JUnit 5'
     }
 }
 
-// temporarily disable spock tests since it doesn't support 4 yet
-if (spockVersion.startsWith('1.3') && groovyVersion.startsWith('4')) {
-    sourceSets {
-        test {
-            groovy {
-                exclude 'groovy/text/StreamingTemplateEngineSpecification.groovy'
-            }
-        }
-    }
+test {
+    useJUnitPlatform()
 }
 
 task backportJar(type:Jar) {

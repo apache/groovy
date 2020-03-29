@@ -23,6 +23,7 @@ import groovy.lang.GroovyObjectSupport;
 import groovy.lang.Reference;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.security.PrivilegedAction;
@@ -78,16 +79,16 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
                     Object[] args = new Object[paramCount];
                     args[0] = delegate;
                     for (int i = 1; i < paramCount; i++) {
-                        args[i] = new Reference(new BindPathSnooper());
+                        args[i] = new Reference<Object>(new BindPathSnooper());
                     }
                     try {
-                        boolean acc = constructor.isAccessible();
+                        boolean acc = isAccessible(constructor);
                         ReflectionUtils.trySetAccessible(constructor);
                         Closure localCopy = (Closure) constructor.newInstance(args);
                         if (!acc) { constructor.setAccessible(false); }
                         localCopy.setResolveStrategy(Closure.DELEGATE_ONLY);
                         for (Field f:closureClass.getDeclaredFields()) {
-                            acc = f.isAccessible();
+                            acc = isAccessible(f);
                             ReflectionUtils.trySetAccessible(f);
                             if (f.getType() == Reference.class) {
                                 delegate.fields.put(f.getName(),
@@ -126,6 +127,12 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         fb.setTargetBinding(target);
         fb.bindPaths = rootPaths.toArray(EMPTY_BINDPATH_ARRAY);
         return fb;
+    }
+
+    // TODO when JDK9+ is minimum, use canAccess and remove suppression
+    @SuppressWarnings("deprecation")
+    private boolean isAccessible(AccessibleObject accessibleObject) {
+        return accessibleObject.isAccessible();
     }
 
     public Object getSourceValue() {

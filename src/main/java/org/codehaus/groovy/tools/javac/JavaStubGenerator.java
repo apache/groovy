@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 
@@ -531,27 +532,6 @@ public class JavaStubGenerator {
         return "\"" + escapeSpecialChars(s) + "\"";
     }
 
-    private static ConstructorCallExpression getConstructorCallExpression(ConstructorNode constructorNode) {
-        Statement code = constructorNode.getCode();
-        if (!(code instanceof BlockStatement))
-            return null;
-
-        BlockStatement block = (BlockStatement) code;
-        List stats = block.getStatements();
-        if (stats == null || stats.isEmpty())
-            return null;
-
-        Statement stat = (Statement) stats.get(0);
-        if (!(stat instanceof ExpressionStatement))
-            return null;
-
-        Expression expr = ((ExpressionStatement) stat).getExpression();
-        if (!(expr instanceof ConstructorCallExpression))
-            return null;
-
-        return (ConstructorCallExpression) expr;
-    }
-
     private void printConstructor(PrintWriter out, ClassNode clazz, ConstructorNode constructorNode) {
         printAnnotations(out, constructorNode);
         // printModifiers(out, constructorNode.getModifiers());
@@ -564,8 +544,11 @@ public class JavaStubGenerator {
 
         printParams(out, constructorNode);
 
-        ConstructorCallExpression constrCall = getConstructorCallExpression(constructorNode);
-        if (constrCall == null || !constrCall.isSpecialCall()) {
+        ClassNode[] exceptions = constructorNode.getExceptions();
+        printExceptions(out, exceptions);
+
+        ConstructorCallExpression constrCall = getFirstIfSpecialConstructorCall(constructorNode.getCode());
+        if (constrCall == null) {
             out.println(" {}");
         } else {
             out.println(" {");
@@ -715,15 +698,7 @@ public class JavaStubGenerator {
         printParams(out, methodNode);
 
         ClassNode[] exceptions = methodNode.getExceptions();
-        for (int i = 0; i < exceptions.length; i++) {
-            ClassNode exception = exceptions[i];
-            if (i == 0) {
-                out.print("throws ");
-            } else {
-                out.print(", ");
-            }
-            printType(out, exception);
-        }
+        printExceptions(out, exceptions);
 
         if (Traits.isTrait(clazz)) {
             out.println(";");
@@ -757,6 +732,18 @@ public class JavaStubGenerator {
             ClassNode retType = methodNode.getReturnType();
             printReturn(out, retType);
             out.println("}");
+        }
+    }
+
+    private void printExceptions(PrintWriter out, ClassNode[] exceptions) {
+        for (int i = 0; i < exceptions.length; i++) {
+            ClassNode exception = exceptions[i];
+            if (i == 0) {
+                out.print("throws ");
+            } else {
+                out.print(", ");
+            }
+            printType(out, exception);
         }
     }
 
@@ -836,7 +823,7 @@ public class JavaStubGenerator {
             printType(out, type.getComponentType());
             out.print("[]");
         } else if (java5 && type.isGenericsPlaceHolder()) {
-            out.print(type.getGenericsTypes()[0].getName());
+            out.print(type.getUnresolvedName());
         } else {
             printGenericsBounds(out, type, false);
         }

@@ -202,8 +202,7 @@ class Groovysh extends Shell {
                     try {
                         setLastResult(result = interp.evaluate(buff))
                     } catch(MultipleCompilationErrorsException t) {
-                        // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
-                        if (t.message.contains('Unexpected input:') || t.message.contains("Missing ')'")) {
+                        if (isIncompleteCaseOfAntlr4(t)) {
                             // treat like INCOMPLETE case
                             buffers.updateSelected(current)
                             break
@@ -215,8 +214,7 @@ class Groovysh extends Shell {
                     try {
                         result = evaluateWithStoredBoundVars(importsSpec, current)
                     } catch(MultipleCompilationErrorsException t) {
-                        // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
-                        if (t.message.contains('Unexpected input:') || t.message.contains("Missing ')'")) {
+                        if (isIncompleteCaseOfAntlr4(t)) {
                             // treat like INCOMPLETE case
                             buffers.updateSelected(current)
                             break
@@ -242,6 +240,18 @@ class Groovysh extends Shell {
         }
 
         return result
+    }
+
+    @CompileStatic
+    private boolean isIncompleteCaseOfAntlr4(MultipleCompilationErrorsException t) {
+        // TODO antlr4 parser errors pop out here - can we rework to be like antlr2?
+        (
+                t.message.contains('Unexpected input:') && !(
+                            t.message.contains('Unexpected input: \'}\';')
+                        || t.message.contains('Unexpected input: \')\';')
+                        || t.message.contains('Unexpected input: \']\';')
+                )
+        ) || t.message.contains("Missing ')'")
     }
 
     /**

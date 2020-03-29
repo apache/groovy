@@ -30,6 +30,8 @@ import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.isAtLeast;
+
 /**
  * <p>{@code GroovyAssert} contains a set of static assertion and test helper methods and is supposed to be a Groovy
  * extension of JUnit 4's {@link org.junit.Assert} class. In case JUnit 3 is the choice, the {@link groovy.test.GroovyTestCase}
@@ -341,7 +343,7 @@ public class GroovyAssert extends org.junit.Assert {
     public static boolean isAtLeastJdk(String specVersion) {
         boolean result = false;
         try {
-            result = new BigDecimal(System.getProperty("java.specification.version")).compareTo(new BigDecimal(specVersion)) >= 0;
+            result = isAtLeast(new BigDecimal(System.getProperty("java.specification.version")), specVersion);
         } catch (Exception ignore) {
         }
         return result;

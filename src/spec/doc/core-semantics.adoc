@@ -27,16 +27,25 @@ This chapter covers the semantics of the Groovy programming language.
 
 === Variable definition
 
-Variables can be defined using either their type (like `String`) or by using the keyword `def`:
+Variables can be defined using either their type (like `String`) or by using the keyword `def` (or `var`) followed by a variable name:
 
 [source,groovy]
 ----
 include::{projectdir}/src/spec/test/SemanticsTest.groovy[tags=variable_definition_example,indent=0]
 ----
 
-`def` is a replacement for a type name. In variable definitions it is used to indicate that you don't care about the type. In variable definitions it is mandatory to either provide a type name explicitly or to use "def" in replacement. This is needed to make variable definitions detectable for the Groovy parser.
+`def` and `var` act as a type placeholder, i.e. a replacement for the type name,
+when you do not want to give an explicit type.
+It could be that you don't care about the type at compile time
+or are relying on type inference (with Groovy's static nature).
+It is mandatory for variable definitions to have a type or placeholder.
+If left out, the type name will be deemed to refer to an existing variable (presumably declared earlier).
+For scripts, undeclared variables are assumed to come from the Script binding.
+In other cases, you will get a missing property (dynamic Groovy) or compile time error (static Groovy).
+If you think of `def` and `var` as an alias of `Object`, you will understand in an instant.
 
-You can think of `def` as an alias of `Object` and you will understand it in an instant.
+Variable definitions can provide an initial value,
+in which case it's like having a declaration and assignment (which we cover next) all in one.
 
 [NOTE]
 Variable definition types can be refined by using generics, like in `List<String> names`.
@@ -454,7 +463,7 @@ As an example, you can specify a path to an object or element of interest:
 
 In both cases, the GPath expression can be viewed as a query on an object graph.  For POJOs, the object graph is most often built by the
 program being written through object instantiation and composition; for XML processing, the object graph is the result of `parsing`
-the XML text, most often with classes like XmlParser or XmlSlurper. See <<{projectdir}/subprojects/groovy-xml/{specfolder}/xml-userguide.adoc#Processing XML,Processing XML>>
+the XML text, most often with classes like XmlParser or XmlSlurper. See <<xml-userguide.adoc#Processing XML,Processing XML>>
 for more in-depth details on consuming XML in Groovy.
 
 [TIP]

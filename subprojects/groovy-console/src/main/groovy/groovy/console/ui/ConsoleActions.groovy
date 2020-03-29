@@ -204,6 +204,14 @@ runAction = action(
         shortDescription: 'Execute Groovy Script'
 )
 
+runJavaAction = action(
+        name: 'Run as Java',
+        closure: controller.&runJava,
+        mnemonic: 'J',
+        accelerator: shortcut('alt R'),
+        shortDescription: 'Execute Java Code'
+)
+
 loopModeAction = action(
         name: 'Loop Mode',
         closure: controller.&loopMode,
@@ -217,6 +225,11 @@ runSelectionAction = action(
         mnemonic: 'E',
         keyStroke: shortcut('shift ENTER'),
         accelerator: shortcut('shift R')
+)
+
+runJavaSelectionAction = action(
+        name: 'Run Selection as Java',
+        closure: controller.&runSelectedJava
 )
 
 addClasspathJar = action(
@@ -257,10 +270,17 @@ inspectVariablesAction = action(
 )
 
 inspectAstAction = action(
-        name: 'Inspect Ast',
+        name: 'Inspect AST',
         closure: controller.&inspectAst,
         mnemonic: 'A',
         accelerator: shortcut('T'),
+)
+
+inspectCstAction = action(
+        name: 'Inspect CST',
+        closure: controller.&inspectCst,
+        mnemonic: 'C',
+        accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_T, InputEvent.CTRL_DOWN_MASK + InputEvent.ALT_DOWN_MASK)
 )
 
 inspectTokensAction = action(
@@ -401,6 +421,12 @@ compileAction = action(
         mnemonic: 'L',
         accelerator: shortcut('L'),
         shortDescription: 'Compile Groovy Script'
+)
+
+compileJavaAction = action(
+        name: 'Compile as Java',
+        closure: controller.&compileAsJava,
+        shortDescription: 'Compile as Java'
 )
 
 commentAction = action(

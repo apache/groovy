@@ -18,6 +18,6 @@
  */
 package org.codehaus.groovy.tools.groovydoc.testfiles
 
-public interface GroovyInterface1 {
+interface GroovyInterface1 {
 
 }

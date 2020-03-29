@@ -30,6 +30,6 @@ public class PowerAssertionError extends java.lang.AssertionError {
 
     @Override
     public String toString() {
-        return String.format("Assertion failed: \n\n%s\n", getMessage());
+        return String.format("Assertion failed: %n%n%s%n", getMessage());
     }
 }

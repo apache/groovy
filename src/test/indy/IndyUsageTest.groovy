@@ -33,7 +33,7 @@ final class IndyUsageTest {
             try {
                 foo()
             } catch (e) {
-                assert e.stackTrace.find { it.className == 'org.codehaus.groovy.vmplugin.v7.IndyInterface' }
+                assert e.stackTrace.find { it.className == 'org.codehaus.groovy.vmplugin.v8.IndyInterface' }
             }
         '''
     }

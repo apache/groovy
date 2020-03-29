@@ -240,7 +240,8 @@ class AsmDecompilerTest extends TestCase {
 
         def wildcard = ret.genericsTypes[0]
         assert wildcard.wildcard
-        assert wildcard.upperBounds[0].name == Object.name
+        assert wildcard.lowerBound == null
+        assert wildcard.upperBounds == null
     }
 
     void "test non-generic exceptions"() {

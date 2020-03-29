@@ -289,4 +289,15 @@ public class ArrayClassDocWrapper implements GroovyClassDoc {
     public int compareTo(Object o) {
         return delegate.compareTo(o);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ArrayClassDocWrapper ? delegate.equals(((ArrayClassDocWrapper) obj).delegate) : delegate.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        assert false : "hashCode not designed";
+        return 42; // any arbitrary constant will do
+    }
 }
