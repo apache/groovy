@@ -25,10 +25,8 @@ allprojects {
         if (JavaVersion.current().isJava9Compatible()) {
             jvmArgs (*common, *jdk9)
             systemProperty "groovy.force.illegal.access", findProperty("groovy.force.illegal.access")
-        } else if (JavaVersion.current().isJava8Compatible()) {
-            jvmArgs (*common, *jdk8)
         } else {
-            jvmArgs (*common, "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}")
+            jvmArgs (*common, *jdk8)
         }
         def headless = System.properties['java.awt.headless']
         if (headless == 'true') {

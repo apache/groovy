@@ -193,11 +193,9 @@ task docGDK {
 
 javadocAll.options.source = '1.8'
 
-if (JavaVersion.current().isJava8Compatible()) {
-    allprojects {
-        tasks.withType(Javadoc) {
-            // disable the crazy super-strict doclint tool in Java 8
-            options.addStringOption('Xdoclint:none', '-quiet')
-        }
+allprojects {
+    tasks.withType(Javadoc) {
+        // disable the crazy super-strict doclint tool in Java 8
+        options.addStringOption('Xdoclint:none', '-quiet')
     }
 }

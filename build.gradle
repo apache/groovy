@@ -219,10 +219,6 @@ sourceSets {
     main {
         java {
             srcDir "$generatedDirectory/antlr2/src/main"
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
@@ -230,10 +226,6 @@ sourceSets {
         }
         groovy {
             srcDir "$generatedDirectory/antlr2/src/main"
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
@@ -251,10 +243,6 @@ sourceSets {
     test {
         groovy {
             srcDirs = ['src/test']
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
