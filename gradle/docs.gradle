@@ -160,7 +160,6 @@ task docGDK {
                     arg(value: 'org.codehaus.groovy.runtime.ResourceGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.SocketGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.StringGroovyMethods')
-                    arg(value: 'org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods')
                     arg(value: 'org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods')
                     // TODO don't hard-code these
                     arg(value: 'subprojects/groovy-dateutil/src/main/java/org/apache/groovy/dateutil/extensions/DateUtilExtensions.java')
