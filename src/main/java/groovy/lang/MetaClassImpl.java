@@ -3328,6 +3328,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return msg.toString();
     }
 
+    protected static long handleMatches(long matchesDistance, LinkedList matches, Object method, long dist) {
+        if (matches.isEmpty()) {
+            matches.add(method);
+            matchesDistance = dist;
+        } else if (dist < matchesDistance) {
+            matchesDistance = dist;
+            matches.clear();
+            matches.add(method);
+        } else if (dist == matchesDistance) {
+            matches.add(method);
+        }
+        return matchesDistance;
+    }
+
     protected static void handleMatches(long[] matchesDistances, LinkedList matches, Object method, long dist, long dist2) {
         if (matches.isEmpty()) {
             matches.add(method);
