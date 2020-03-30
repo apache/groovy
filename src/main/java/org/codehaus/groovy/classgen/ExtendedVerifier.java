@@ -207,6 +207,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                     }
                 }
                 if (repeatable != null) {
+                    if (nonSourceAnnotations.containsKey(repeatable.getName())) {
+                        addError("Cannot specify duplicate annotation on the same member. Explicit " + repeatable.getName()
+                                + " found when creating implicit container for " + next.getKey(), node);
+                    }
                     AnnotationNode collector = new AnnotationNode(repeatable);
                     if (repeatee.hasRuntimeRetention()) {
                         collector.setRuntimeRetention(true);

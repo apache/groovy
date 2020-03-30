@@ -728,12 +728,20 @@ final class AnnotationTest extends CompilableTestSupport {
                 @MyAnnotation(value = "val2")
                 String method2() { 'method2' }
 
+                // another control (okay to mix one uncontained with one explicit container)
+                @MyAnnotationArray([@MyAnnotation("val1"), @MyAnnotation("val2")])
+                @MyAnnotation(value = "val3")
+                String method3() { 'method3' }
+
                 static void main(String... args) {
                     MyClass myc = new MyClass()
                     assert 'method1' == myc.method1()
                     assert 'method2' == myc.method2()
                     assert expected.contains(checkAnnos(myc, "method1"))
                     assert expected.contains(checkAnnos(myc, "method2"))
+                    assert 'method3' == myc.method3()
+                    def m3 = myc.getClass().getMethod('method3')
+                    assert m3.getAnnotationsByType(MyAnnotation).size() == 3
                 }
 
                 private static String checkAnnos(MyClass myc, String name) {
@@ -756,6 +764,32 @@ final class AnnotationTest extends CompilableTestSupport {
                 MyAnnotation[] value()
             }
         '''
+    }
+
+    // GROOVY-9452
+    void testDuplicationAnnotationOnClassWithParams() {
+        def err = shouldFail '''
+            import java.lang.annotation.*
+
+            @Target(ElementType.TYPE)
+            @Retention(RetentionPolicy.RUNTIME)
+            @Repeatable(As)
+            @interface A {
+                String value()
+            }
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface As {
+                A[] value()
+            }
+
+            @A("a")
+            @A("b")
+            @As([@A("c")])
+            class Foo {}
+        '''
+
+        assert err =~ /Cannot specify duplicate annotation/
     }
 
     void testVariableExpressionsReferencingConstantsSeenForAnnotationAttributes() {
