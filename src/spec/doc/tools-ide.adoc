@@ -21,7 +21,7 @@
 
 = IDE integration
 
-The Groovy language is supported by lots of IDEs and text editors.
+Many IDEs and text editors support the Groovy programming language.
 
 [cols="1,1,1,1",options="header,footer"]
 |===============================================================
@@ -35,5 +35,5 @@ The Groovy language is supported by lots of IDEs and text editors.
 |http://www.ultraedit.com/[UltraEdit]|Yes|No|No
 |https://www.slickedit.com/products/slickedit/419-the-most-powerful-groovy-editor-in-the-world/[SlickEdit]|Yes|No|No
 |https://editrocket.com/features/groovy_editor.html[EditRocket]|Yes|No|No
-|https://code.visualstudio.com/[VSCode]|Yes|No|Yes
+|https://code.visualstudio.com/[VSCode]|Yes|No|https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-groovy-lint[Yes]
 |===============================================================
