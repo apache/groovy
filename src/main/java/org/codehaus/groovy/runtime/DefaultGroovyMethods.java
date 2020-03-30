@@ -3630,7 +3630,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self       an Iterable
      * @param projection a projecting Closure returning a collection of items
      * @return a list created from the projected collections concatenated (flattened) together
-     * @see #sum(java.util.Collection, groovy.lang.Closure)
+     * @see #sum(java.lang.Iterable, groovy.lang.Closure)
      * @since 2.2.0
      */
     public static <T,E> List<T> collectMany(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
@@ -5401,7 +5401,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an array to group and count
      * @param closure a closure mapping items to the frequency keys
      * @return a new Map grouped by keys with frequency counts
-     * @see #countBy(Collection, Closure)
+     * @see #countBy(java.lang.Iterable, Closure)
      * @since 1.8.0
      */
     public static <K,E> Map<K, Integer> countBy(E[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
@@ -5421,7 +5421,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an iterator to group and count
      * @param closure a closure mapping items to the frequency keys
      * @return a new Map grouped by keys with frequency counts
-     * @see #countBy(Collection, Closure)
+     * @see #countBy(java.lang.Iterable, Closure)
      * @since 1.8.0
      */
     public static <K,E> Map<K, Integer> countBy(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<K> closure) {
@@ -6822,7 +6822,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterator
      * @return the minimum value
-     * @see #min(java.util.Collection)
+     * @see #min(java.lang.Iterable)
      * @since 1.5.5
      */
     public static <T> T min(Iterator<T> self) {
@@ -6834,7 +6834,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the minimum value
-     * @see #min(java.util.Collection)
+     * @see #min(java.lang.Iterable)
      * @since 1.5.5
      */
     public static <T> T min(T[] self) {
@@ -6870,7 +6870,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self       an Iterator
      * @param comparator a Comparator
      * @return the minimum value
-     * @see #min(java.util.Collection, java.util.Comparator)
+     * @see #min(java.lang.Iterable, java.util.Comparator)
      * @since 1.5.5
      */
     public static <T> T min(Iterator<T> self, Comparator<T> comparator) {
@@ -6883,7 +6883,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self       an array
      * @param comparator a Comparator
      * @return the minimum value
-     * @see #min(java.util.Collection, java.util.Comparator)
+     * @see #min(java.lang.Iterable, java.util.Comparator)
      * @since 1.5.5
      */
     public static <T> T min(T[] self, Comparator<T> comparator) {
@@ -7037,7 +7037,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an Iterator
      * @param closure a Closure used to determine the correct ordering
      * @return the minimum value
-     * @see #min(java.util.Collection, groovy.lang.Closure)
+     * @see #min(java.lang.Iterable, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static <T> T min(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
@@ -7060,7 +7060,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an array
      * @param closure a Closure used to determine the correct ordering
      * @return the minimum value
-     * @see #min(java.util.Collection, groovy.lang.Closure)
+     * @see #min(java.lang.Iterable, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static <T> T min(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
@@ -7100,7 +7100,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the maximum value
-     * @see #max(java.util.Collection)
+     * @see #max(java.lang.Iterable)
      * @since 1.5.5
      */
     public static <T> T max(T[] self) {
@@ -7173,7 +7173,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an Iterator
      * @param closure a Closure used to determine the correct ordering
      * @return the maximum value
-     * @see #max(java.util.Collection, groovy.lang.Closure)
+     * @see #max(java.lang.Iterable, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static <T> T max(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
@@ -7196,7 +7196,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    an array
      * @param closure a Closure used to determine the correct ordering
      * @return the maximum value
-     * @see #max(java.util.Collection, groovy.lang.Closure)
+     * @see #max(java.lang.Iterable, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static <T> T max(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
@@ -16735,7 +16735,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * def first = ChronoUnit.findIndexOf(nameStartsWithM)
      * def last  = ChronoUnit.findLastIndexOf(nameStartsWithM)
      * // should have found 2 unique index values for MICROS, MILLIS, MINUTES, MONTHS, ...
-     * assert first != -1 && last != -1 && first != last
+     * assert first != -1 &amp;&amp; last != -1 &amp;&amp; first != last
      * </pre>
      *
      * @param self      the iteration object over which to iterate

@@ -675,7 +675,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                     memberOrClass.setPackagePrivate(true);
                 }
             }
-            if (memberOrClass instanceof GroovyFieldDoc && isGroovy && !hasNonPublicVisibility & !hasPublicVisibility) {
+            if (memberOrClass instanceof GroovyFieldDoc && isGroovy && !hasNonPublicVisibility && !hasPublicVisibility) {
                 if (isPackageScope(modifiers)) {
                     memberOrClass.setPackagePrivate(true);
                     hasNonPublicVisibility = true;
@@ -692,7 +692,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 memberOrClass.setPackagePrivate(true);
             }
         }
-        return memberOrClass instanceof GroovyFieldDoc && isGroovy && !hasNonPublicVisibility & !hasPublicVisibility;
+        return memberOrClass instanceof GroovyFieldDoc && isGroovy && !hasNonPublicVisibility && !hasPublicVisibility;
     }
 
     private boolean isPackageScope(GroovySourceAST modifiers) {

@@ -44,6 +44,10 @@ final class GroovyParserTest extends GroovyTestCase {
         doTestAttachedComments()
     }
 
+    void "test groovy core - Shebang Comments"() {
+        doRunAndTestAntlr4('core/Comments_03x.groovy')
+    }
+
     // java.lang.ClassFormatError: Illegal method name "test IO stream/reader closed by the parser properly" when using Java9
     void "test IO reader closed by the parser properly"() {
         def f = File.createTempFile("Script${System.nanoTime()}", ".groovy")

@@ -33,8 +33,12 @@ task asciidocAll(type: Copy) {
 def javadocSpec = {
     maxMemory = javaDoc_mx
     project.configure(options) {
+        if (JavaVersion.current().isJava9Compatible()) {
+            options.addBooleanOption('html5', true)
+        }
         windowTitle = doc.title
         docTitle = doc.title
+        classpath += project.file('src/main/java')
         locale = 'en_US'
         encoding = 'UTF-8'
         version = true
@@ -156,7 +160,6 @@ task docGDK {
                     arg(value: 'org.codehaus.groovy.runtime.ResourceGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.SocketGroovyMethods')
                     arg(value: 'org.codehaus.groovy.runtime.StringGroovyMethods')
-                    arg(value: 'org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods')
                     arg(value: 'org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods')
                     // TODO don't hard-code these
                     arg(value: 'subprojects/groovy-dateutil/src/main/java/org/apache/groovy/dateutil/extensions/DateUtilExtensions.java')
@@ -189,11 +192,9 @@ task docGDK {
 
 javadocAll.options.source = '1.8'
 
-if (JavaVersion.current().isJava8Compatible()) {
-    allprojects {
-        tasks.withType(Javadoc) {
-            // disable the crazy super-strict doclint tool in Java 8
-            options.addStringOption('Xdoclint:none', '-quiet')
-        }
+allprojects {
+    tasks.withType(Javadoc) {
+        // disable the crazy super-strict doclint tool in Java 8
+        options.addStringOption('Xdoclint:none', '-quiet')
     }
 }

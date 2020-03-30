@@ -128,7 +128,7 @@ configurations {
 
 ext {
     antVersion = '1.10.7'
-    asmVersion = '7.3.1'
+    asmVersion = '8.0'
     antlrVersion = '2.7.7'
     antlr4Version = '4.7.4'
     bridgerVersion = '1.5.Final'
@@ -138,7 +138,7 @@ ext {
     ivyVersion = '2.5.0'
     jansiVersion = '1.18'
     jarjarVersion = '1.7.2'
-    javaParserVersion = '3.15.15'
+    javaParserVersion = '3.15.17'
     jlineVersion = '2.14.6'
     jmockVersion = '1.2.0'
     logbackVersion = '1.1.7'
@@ -219,10 +219,6 @@ sourceSets {
     main {
         java {
             srcDir "$generatedDirectory/antlr2/src/main"
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
@@ -230,10 +226,6 @@ sourceSets {
         }
         groovy {
             srcDir "$generatedDirectory/antlr2/src/main"
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
@@ -251,10 +243,6 @@ sourceSets {
     test {
         groovy {
             srcDirs = ['src/test']
-            if (!JavaVersion.current().isJava8Compatible()) {
-                exclude '**/v8/*'
-                exclude '**/vm8/*'
-            }
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
