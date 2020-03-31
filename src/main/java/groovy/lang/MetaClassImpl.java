@@ -3135,6 +3135,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return initialized;
     }
 
+    protected void setInitialized(boolean initialized) {
+        this.initialized = initialized;
+    }
+
     /**
      * @return {@code false}: add method
      *         {@code null} : ignore method
@@ -3391,7 +3395,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 // Introspection failure...
                 // May happen in Android
             }
-            initialized = true;
+            setInitialized(true);
         }
     }
 
