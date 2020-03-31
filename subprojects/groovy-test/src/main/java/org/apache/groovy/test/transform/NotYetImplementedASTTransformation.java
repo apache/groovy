@@ -22,7 +22,9 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
@@ -31,9 +33,6 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
-
-import java.util.Arrays;
-import junit.framework.AssertionFailedError;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
@@ -53,22 +52,29 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 public class NotYetImplementedASTTransformation extends AbstractASTTransformation {
 
     private static final ClassNode CATCH_TYPE = ClassHelper.make(Throwable.class);
-    private static final ClassNode THROW_TYPE = ClassHelper.make(AssertionFailedError.class); // TODO: java.lang.AssertionError
+    private static final ClassNode DEFAULT_THROW_TYPE = ClassHelper.make(AssertionError.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (!(nodes.length == 2 && nodes[0] instanceof AnnotationNode && nodes[1] instanceof MethodNode)) {
-            throw new RuntimeException("Internal error: expecting [AnnotationNode, MethodNode] but got: " + Arrays.toString(nodes));
-        }
-
+        init(nodes, source);
+        AnnotationNode anno = (AnnotationNode) nodes[0];
         MethodNode methodNode = (MethodNode) nodes[1];
 
-        if (methodNode.getCode() instanceof BlockStatement && !((BlockStatement) methodNode.getCode()).isEmpty()) {
+        ClassNode exception = getMemberClassValue(anno, "exception");
+        if (exception == null) {
+            exception = DEFAULT_THROW_TYPE;
+        }
+        ConstructorNode cons = exception.getDeclaredConstructor(new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "dummy")});
+        if (cons == null) {
+            addError("Error during @NotYetImplemented processing: supplied exception " + exception.getNameWithoutPackage() + " doesn't have expected String constructor", methodNode);
+        }
+
+        if (methodNode.getCode() instanceof BlockStatement && !methodNode.getCode().isEmpty()) {
             // wrap code in try/catch with return for failure path followed by throws for success path
 
             TryCatchStatement tryCatchStatement = tryCatchS(methodNode.getCode());
             tryCatchStatement.addCatch(catchS(param(CATCH_TYPE, "ignore"), ReturnStatement.RETURN_NULL_OR_VOID));
 
-            ThrowStatement throwStatement = throwS(ctorX(THROW_TYPE, args(constX("Method is marked with @NotYetImplemented but passes unexpectedly"))));
+            ThrowStatement throwStatement = throwS(ctorX(exception, args(constX("Method is marked with @NotYetImplemented but passes unexpectedly"))));
 
             methodNode.setCode(block(tryCatchStatement, throwStatement));
         }
