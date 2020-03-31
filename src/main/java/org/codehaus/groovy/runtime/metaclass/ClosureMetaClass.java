@@ -436,6 +436,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         attributeInitDone = !attributes.isEmpty();
     }
 
+    @Override
     public synchronized void initialize() {
         if (!isInitialized()) {
             CachedMethod[] methodArray = theCachedClass.getMethods();
@@ -446,8 +447,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 }
             }
             assignMethodChooser();
-
-            initialized = true;
+            setInitialized(true);
         }
     }
 
@@ -585,8 +585,14 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return null;
     }
 
+    @Override
     protected boolean isInitialized() {
         return initialized;
+    }
+
+    @Override
+    protected void setInitialized(boolean initialized) {
+        this.initialized = initialized;
     }
 
     public MetaMethod getStaticMetaMethod(String name, Object[] args) {
