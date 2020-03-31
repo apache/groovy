@@ -272,7 +272,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     // These two properties are used when no ExpandoMetaClassCreationHandle is present
 
     private MetaClass myMetaClass;
-    private boolean initialized;
+    private volatile boolean initialized;
     private volatile boolean modified;
 
     private boolean initCalled;
@@ -502,6 +502,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * Checks if the meta class is initialized.
      * @see groovy.lang.MetaClassImpl#isInitialized()
      */
+    @Override
     protected boolean isInitialized() {
         try {
             readLock.lock();
@@ -511,6 +512,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
+    @Override
     protected void setInitialized(boolean b) {
         this.initialized = b;
     }
