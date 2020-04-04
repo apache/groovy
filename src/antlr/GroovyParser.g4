@@ -97,8 +97,7 @@ options {
 
 // starting point for parsing a groovy file
 compilationUnit
-    :   nls
-        packageDeclaration? sep? scriptStatements? EOF
+    :   nls (packageDeclaration sep?)? scriptStatements? EOF
     ;
 
 scriptStatements
