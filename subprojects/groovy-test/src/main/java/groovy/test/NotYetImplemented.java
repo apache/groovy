@@ -33,7 +33,8 @@ import java.lang.annotation.Target;
  * This is helpful for tests that don't currently work but should work one day,
  * when the tested functionality has been implemented.
  * <p>
- * Note: JUnit 3 users should use the optional {@code exception} attribute, e.g. {@code @NotYetImplemented(exception=junit.framework.AssertionFailedError)}.
+ * Note: JUnit 3 users should use the optional {@code exception} attribute, e.g. {@code @NotYetImplemented(exception=junit.framework.AssertionFailedError)}
+ * or the legacy {@code groovy.transform.NotYetImplemented} annotation.
  *
  * @since 3.0.0
  */

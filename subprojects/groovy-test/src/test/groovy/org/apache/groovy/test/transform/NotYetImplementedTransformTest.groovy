@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.test.transform
 
+import junit.framework.AssertionFailedError
 import org.junit.Test
 
 final class NotYetImplementedTransformTest {
@@ -58,6 +59,26 @@ final class NotYetImplementedTransformTest {
         ''')
 
         assert output.wasSuccessful() : 'test method throwing exception marked with @NotYetImplemented must NOT throw an AssertionError'
+    }
+
+    @Test
+    @Deprecated
+    void testNotYetImplementedLegacyJunit3PassThrough() {
+        def output = shell.evaluate('''
+            import groovy.test.GroovyTestCase
+            import groovy.transform.NotYetImplemented
+
+            class MyTests extends GroovyTestCase {
+                @NotYetImplemented void testThatPasses()  {
+                    assertTrue(true)
+                }
+            }
+
+            junit.textui.TestRunner.run(new junit.framework.TestSuite(MyTests))
+        ''')
+
+        assert output.failureCount() == 1 : 'succeeding test method marked with legacy @NotYetImplemented must throw an AssertionFailedError'
+        assert output.failures().nextElement().thrownException() instanceof AssertionFailedError : 'succeeding test method marked with legacy @NotYetImplemented must throw an AssertionFailedError'
     }
 
     @Test

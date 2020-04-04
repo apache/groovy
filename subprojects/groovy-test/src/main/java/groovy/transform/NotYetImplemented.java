@@ -42,6 +42,6 @@ import java.lang.annotation.Target;
 @java.lang.annotation.Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-@GroovyASTTransformationClass("org.apache.groovy.test.transform.NotYetImplementedASTTransformation")
+@GroovyASTTransformationClass("org.apache.groovy.test.transform.NotYetImplementedLegacyASTTransformation")
 public @interface NotYetImplemented {
 }
