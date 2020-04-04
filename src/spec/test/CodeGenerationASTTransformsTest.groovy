@@ -1678,4 +1678,24 @@ class EmptyIterator implements java.util.Iterator<String> {
 */
         '''
     }
+
+    void testNullCheck() {
+        assertScript '''
+ import groovy.transform.NullCheck
+ import static groovy.test.GroovyAssert.shouldFail
+
+// tag::nullcheck[]
+@NullCheck
+String longerOf(String first, String second) {
+    first.size() >= second.size() ? first : second
+}
+
+assert longerOf('cat', 'canary') == 'canary'
+def ex = shouldFail(IllegalArgumentException) {
+    longerOf('cat', null)
+}
+assert ex.message == 'second cannot be null'
+// end::nullcheck[]
+'''
+    }
 }
