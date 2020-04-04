@@ -1729,6 +1729,20 @@ It is also worthwhile examining the equivalent generated code where the `next` m
 include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=autoimplement_code_equiv,indent=0]
 ----
 
+[[xform-NullCheck]]
+===== `@groovy.transform.NullCheck`
+
+The `@NullCheck` AST transformation adds null-check guard statements to constructors and methods
+which cause those methods to fail early when supplied with null arguments.
+It can be seen as a form of defensive programming.
+The annotation can be added to individual methods or constructors, or to the class
+in which case it will apply to all methods/constructors.
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/CodeGenerationASTTransformsTest.groovy[tags=nullcheck,indent=0]
+----
+
 ==== Class design annotations
 
 This category of annotations are aimed at simplifying the implementation of well-known design patterns (delegation,
