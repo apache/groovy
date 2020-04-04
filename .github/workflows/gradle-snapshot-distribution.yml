@@ -23,7 +23,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-18.04]
-        java: [11.0.5]
+        java: [11.0.6]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
