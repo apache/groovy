@@ -33,11 +33,10 @@ public class FastStringUtils {
         static final FastStringService INSTANCE = loadService();
 
         private static FastStringService loadService() {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
 // left classloading very simple in light of potential changes needed for jdk9
 // that means you might need @GrabConfig(systemClassLoader=true) if getting json via grab
 //            ClassLoader rootLoader = DefaultGroovyMethods.getRootLoader(loader);
-            ServiceLoader<FastStringServiceFactory> serviceLoader = ServiceLoader.load(FastStringServiceFactory.class, loader);
+            ServiceLoader<FastStringServiceFactory> serviceLoader = ServiceLoader.load(FastStringServiceFactory.class);
             FastStringService found = null;
             for (FastStringServiceFactory factory : serviceLoader) {
                 FastStringService service = factory.getService();
