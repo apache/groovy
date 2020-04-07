@@ -20,19 +20,19 @@ package org.codehaus.groovy.syntax.parser;
 
 import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
-
 
 /**
  * An abstract base class useful for AST parser related test cases
  */
 public abstract class TestParserSupport extends GroovyTestCase {
-
-    public ModuleNode parse(String text, String description) throws Exception {
+    public ModuleNode parse(String text, String description) {
         SourceUnit unit = SourceUnit.create(description, text);
-        unit.parse();
-        unit.convert();
-
+        CompilationUnit compUnit = new CompilationUnit();
+        compUnit.addSource(unit);
+        compUnit.compile(Phases.CONVERSION);
         return unit.getAST();
     }
 }
