@@ -27,14 +27,11 @@ import java.util.List;
  */
 public class ModuleNodeTest extends TestParserSupport {
 
-    public void testStatementClass_FAILS() throws Exception {
-        if (notYetImplemented()) return;
-
+    public void testStatementClass() {
         ModuleNode module = parse("x = [1, 2, 3]; println(x)", "Cheese.groovy");
+        assertFalse("Should have statements", module.getStatementBlock().isEmpty());
 
-        assertTrue("Should have statements", !module.getStatementBlock().isEmpty());
-
-        List classes = module.getClasses();
+        List<ClassNode> classes = module.getClasses();
         assertEquals("Number of classes", 1, classes.size());
 
         ClassNode classNode = (ClassNode) classes.get(0);
