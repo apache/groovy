@@ -408,12 +408,12 @@ public class ModuleNode extends ASTNode implements Opcodes {
             URI uri = new URI(answer);
             String path = uri.getPath();
             String schemeSpecific = uri.getSchemeSpecificPart();
-            if (path!=null) {
+            if (path != null && !path.isEmpty()) {
                 answer = path;
-            } else if (schemeSpecific!=null) {
+            } else if (schemeSpecific != null && !schemeSpecific.isEmpty()) {
                 answer = schemeSpecific;
             }
-        } catch (URISyntaxException e) {}
+        } catch (URISyntaxException ignore) {}
         // let's strip off everything after the last '.'
         int slashIdx = answer.lastIndexOf('/');
         int separatorIdx = answer.lastIndexOf(File.separatorChar);

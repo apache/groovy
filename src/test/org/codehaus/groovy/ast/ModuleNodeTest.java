@@ -38,7 +38,14 @@ public class ModuleNodeTest extends TestParserSupport {
         assertEquals("Number of classes", 1, classes.size());
 
         ClassNode classNode = (ClassNode) classes.get(0);
-
         assertEquals("Class name", "Cheese", classNode.getName());
+    }
+
+    // GROOVY-9194
+    public void testScriptStartingWithHash() {
+        ModuleNode mn = new ModuleNode((CompileUnit) null);
+        mn.setDescription("#script.groovy");
+        ClassNode cn = mn.getScriptClassDummy();
+        assertEquals("Dummy class name should not be empty", "#script", cn.getName());
     }
 }
