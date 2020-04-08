@@ -31,6 +31,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileReader;
 
+@Deprecated
 class Main {
 
     static boolean whitespaceIncluded = false;

@@ -27,6 +27,7 @@ import java.util.List;
 /**
  * A simple iterator over an ordered (flat) List of the nodes of the AST.
  */
+@Deprecated
 public class FlatNodeListTraversal extends TraversalHelper {
     
     public FlatNodeListTraversal(Visitor visitor) {

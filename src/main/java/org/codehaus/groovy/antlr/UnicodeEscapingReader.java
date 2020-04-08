@@ -31,6 +31,7 @@ import java.io.Reader;
  * <p>
  * No attempt has been made to optimize this class for speed or space.
  */
+@Deprecated
 public class UnicodeEscapingReader extends Reader {
 
     private final Reader reader;

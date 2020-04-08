@@ -23,6 +23,7 @@ import antlr.LexerSharedInputState;
 /**
  * GRECLIPSE-805 Support for unicode escape sequences
  */
+@Deprecated
 public class UnicodeLexerSharedInputState extends LexerSharedInputState {
     private final UnicodeEscapingReader escapingReader;
 

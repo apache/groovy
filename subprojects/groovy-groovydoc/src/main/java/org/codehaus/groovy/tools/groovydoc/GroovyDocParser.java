@@ -44,6 +44,7 @@ import java.util.Properties;
 /*
  *  todo: order methods alphabetically (implement compareTo enough?)
  */
+@Deprecated
 public class GroovyDocParser implements GroovyDocParserI {
     private final List<LinkArgument> links;
     private final Properties properties;

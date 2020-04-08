@@ -23,6 +23,7 @@ import antlr.collections.AST;
 /**
  * Used within the Groovy's AntlrParserPlugin
  */
+@Deprecated
 public class ASTRuntimeException extends RuntimeException {
     private static final long serialVersionUID = 238104771184624613L;
     private final AST ast;

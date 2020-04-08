@@ -29,6 +29,7 @@ import java.util.List;
 /**
  * Helper Class for Antlr AST traversal and visitation.
  */
+@Deprecated
 public abstract class TraversalHelper implements AntlrASTProcessor {
     protected List<GroovySourceAST> unvisitedNodes;
     private final Visitor v;
