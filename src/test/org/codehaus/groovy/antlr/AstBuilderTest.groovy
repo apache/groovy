@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.stmt.Statement
 import static org.codehaus.groovy.control.CompilePhase.CONVERSION
 
 /**
- * Test for AstBuilderTest.
+ * Test for AstBuilder.
  */
 class AstBuilderTest extends GroovyTestCase {
 
