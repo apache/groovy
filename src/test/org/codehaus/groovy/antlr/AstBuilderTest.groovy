@@ -28,9 +28,9 @@ import org.codehaus.groovy.ast.stmt.Statement
 import static org.codehaus.groovy.control.CompilePhase.CONVERSION
 
 /**
- * Test for AntlrParserPlugin.
+ * Test for AstBuilderTest.
  */
-class AntlrParserPluginTest extends GroovyTestCase {
+class AstBuilderTest extends GroovyTestCase {
 
     void testInnerClassLineNumbers() {
 
