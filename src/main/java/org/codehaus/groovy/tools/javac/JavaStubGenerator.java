@@ -309,7 +309,7 @@ public class JavaStubGenerator {
 
             String className = classNode.getNameWithoutPackage();
             if (classNode instanceof InnerClassNode)
-                className = className.substring(className.lastIndexOf("$") + 1);
+                className = className.substring(className.lastIndexOf('$') + 1);
             out.println(className);
             printGenericsBounds(out, classNode, true);
 
@@ -539,7 +539,7 @@ public class JavaStubGenerator {
         out.print("public "); // temporary hack
         String className = clazz.getNameWithoutPackage();
         if (clazz instanceof InnerClassNode)
-            className = className.substring(className.lastIndexOf("$") + 1);
+            className = className.substring(className.lastIndexOf('$') + 1);
         out.println(className);
 
         printParams(out, constructorNode);

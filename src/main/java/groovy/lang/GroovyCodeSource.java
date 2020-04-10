@@ -167,7 +167,7 @@ public class GroovyCodeSource {
             throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
         }
         this.url = url;
-        // TODO: GROOVY-6561: GroovyMain got the name this way: script.substring(script.lastIndexOf("/") + 1)
+        // TODO: GROOVY-6561: GroovyMain got the name this way: script.substring(script.lastIndexOf('/') + 1)
         this.name = url.toExternalForm();
         this.codeSource = new CodeSource(url, (java.security.cert.Certificate[]) null);
         try {
