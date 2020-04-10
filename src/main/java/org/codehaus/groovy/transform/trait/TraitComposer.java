@@ -198,7 +198,7 @@ public abstract class TraitComposer {
             for (MethodNode methodNode : declaredMethods) {
                 String fieldName = methodNode.getName();
                 if (fieldName.endsWith(Traits.DIRECT_GETTER_SUFFIX) || fieldName.endsWith(Traits.DIRECT_SETTER_SUFFIX)) {
-                    int suffixIdx = fieldName.lastIndexOf("$");
+                    int suffixIdx = fieldName.lastIndexOf('$');
                     fieldName = fieldName.substring(0, suffixIdx);
                     String operation = methodNode.getName().substring(suffixIdx + 1);
                     boolean getter = "get".equals(operation);

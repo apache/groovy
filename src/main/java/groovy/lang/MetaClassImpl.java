@@ -563,7 +563,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             private String[] decomposeMopName(final String mopName) {
-                int idx = mopName.indexOf("$");
+                int idx = mopName.indexOf('$');
                 if (idx > 0) {
                     int eidx = mopName.indexOf("$", idx + 1);
                     if (eidx > 0) {

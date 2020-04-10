@@ -80,7 +80,7 @@ import static org.codehaus.groovy.transform.AbstractASTTransformation.getMemberS
 @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
 public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implements ASTTransformation, CompilationUnitAware {
     private static final String GRAB_CLASS_NAME = Grab.class.getName();
-    private static final String GRAB_DOT_NAME = GRAB_CLASS_NAME.substring(GRAB_CLASS_NAME.lastIndexOf("."));
+    private static final String GRAB_DOT_NAME = GRAB_CLASS_NAME.substring(GRAB_CLASS_NAME.lastIndexOf('.'));
     private static final String GRAB_SHORT_NAME = GRAB_DOT_NAME.substring(1);
 
     private static final String GRABEXCLUDE_CLASS_NAME = GrabExclude.class.getName();
@@ -116,7 +116,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     private static final String SYSTEM_PROPERTIES_SETTING = Grape.SYSTEM_PROPERTIES_SETTING;
 
     private static String dotName(String className) {
-        return className.substring(className.lastIndexOf("."));
+        return className.substring(className.lastIndexOf('.'));
     }
 
     private static String shortName(String className) {
