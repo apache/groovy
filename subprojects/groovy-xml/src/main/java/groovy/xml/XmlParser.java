@@ -493,7 +493,7 @@ public class XmlParser implements ContentHandler {
             return name;
         }
         if (qName != null && qName.length() > 0 && namespaceAware) {
-            int index = qName.lastIndexOf(":");
+            int index = qName.lastIndexOf(':');
             if (index > 0) {
                 prefix = qName.substring(0, index);
             }

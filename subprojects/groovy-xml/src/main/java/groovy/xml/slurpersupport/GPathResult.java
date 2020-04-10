@@ -123,14 +123,14 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
             return depthFirst();
         } else if (property.startsWith("@")) {
             if (property.contains(":") && !this.namespaceTagHints.isEmpty()) {
-                final int i = property.indexOf(":");
+                final int i = property.indexOf(':');
                 return new Attributes(this, "@" + property.substring(i + 1), property.substring(1, i), this.namespaceTagHints);
             } else {
                 return new Attributes(this, property, this.namespaceTagHints);
             }
         } else {
             if (property.contains(":") && !this.namespaceTagHints.isEmpty()) {
-                final int i = property.indexOf(":");
+                final int i = property.indexOf(':');
                 return new NodeChildren(this, property.substring(i + 1), property.substring(0, i), this.namespaceTagHints);
             } else {
                 return new NodeChildren(this, property, this.namespaceTagHints);

@@ -454,10 +454,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         if (type.startsWith("? super ")) return "? super " + getDocUrl(type.substring(8), full, links, relativePath, rootDoc, classDoc);
 
         String label = null;
-        int lt = type.indexOf("<");
+        int lt = type.indexOf('<');
         if (lt != -1) {
             String outerType = type.substring(0, lt);
-            int gt = type.lastIndexOf(">");
+            int gt = type.lastIndexOf('>');
             if (gt != -1) {
                 if (gt > lt) {
                     String allTypeArgs = type.substring(lt + 1, gt);
@@ -581,7 +581,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 //        if (name.equals("T") || name.equals("U") || name.equals("K") || name.equals("V") || name.equals("G")) {
 //            name = "java/lang/Object";
 //        }
-        int slashIndex = name.lastIndexOf("/");
+        int slashIndex = name.lastIndexOf('/');
         if (rootDoc != null) {
             GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name);
             if (doc != null) return doc;
@@ -685,7 +685,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private GroovyClassDoc resolveInternalClassDocFromSamePackage(GroovyRootDoc rootDoc, String baseName) {
         if (isPrimitiveType(baseName)) return null;
         if (baseName.contains(".")) return null;
-        int lastSlash = fullPathName.lastIndexOf("/");
+        int lastSlash = fullPathName.lastIndexOf('/');
         if (lastSlash < 0) return null;
         String pkg = fullPathName.substring(0, lastSlash + 1);
         return ((SimpleGroovyRootDoc)rootDoc).classNamedExact(pkg + baseName);
@@ -928,7 +928,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     if ("see".equals(tagname) || "link".equals(tagname)) {
                         content = getDocUrl(content);
                     } else if ("param".equals(tagname)) {
-                        int index = content.indexOf(" ");
+                        int index = content.indexOf(' ');
                         if (index >= 0) {
                             content = "<code>" + content.substring(0, index) + "</code> - " + content.substring(index);
                         }

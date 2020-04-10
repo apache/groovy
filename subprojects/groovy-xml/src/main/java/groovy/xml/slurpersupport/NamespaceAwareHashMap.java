@@ -72,7 +72,7 @@ public class NamespaceAwareHashMap extends HashMap<String, String> {
         if (keyString.contains("{") || namespaceTagHints == null || namespaceTagHints.isEmpty() || !keyString.contains(":")) {
             return key;
         }
-        final int i = keyString.indexOf(":");
+        final int i = keyString.indexOf(':');
         return new QName(namespaceTagHints.get(keyString.substring(0, i)).toString(), keyString.substring(i + 1)).toString();
     }
 }
