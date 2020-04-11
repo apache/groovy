@@ -171,9 +171,7 @@ public class NodeChildren extends GPathResult {
     }
 
     public GPathResult find(final Closure closure) {
-        final Iterator iter = iterator();
-        while (iter.hasNext()) {
-            final Object node = iter.next();
+        for (Object node : this) {
             if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{node}))) {
                 return (GPathResult) node;
             }
@@ -209,25 +207,22 @@ public class NodeChildren extends GPathResult {
     }
 
     protected void replaceNode(final Closure newValue) {
-        final Iterator iter = iterator();
-        while (iter.hasNext()) {
-            final NodeChild result = (NodeChild) iter.next();
+        for (Object o : this) {
+            final NodeChild result = (NodeChild) o;
             result.replaceNode(newValue);
         }
     }
 
     protected void replaceBody(final Object newValue) {
-        final Iterator iter = iterator();
-        while (iter.hasNext()) {
-            final NodeChild result = (NodeChild) iter.next();
+        for (Object o : this) {
+            final NodeChild result = (NodeChild) o;
             result.replaceBody(newValue);
         }
     }
 
     protected void appendNode(final Object newValue) {
-        final Iterator iter = iterator();
-        while (iter.hasNext()) {
-            final NodeChild result = (NodeChild) iter.next();
+        for (Object o : this) {
+            final NodeChild result = (NodeChild) o;
             result.appendNode(newValue);
         }
     }
