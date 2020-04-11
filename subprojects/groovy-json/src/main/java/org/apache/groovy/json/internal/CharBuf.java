@@ -21,10 +21,10 @@ package org.apache.groovy.json.internal;
 import groovy.json.JsonException;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 public class CharBuf extends Writer implements CharSequence {
 
@@ -44,12 +44,8 @@ public class CharBuf extends Writer implements CharSequence {
 
     public CharBuf(byte[] bytes) {
         this.buffer = null;
-        try {
-            String str = new String(bytes, "UTF-8");
-            __init__(FastStringUtils.toCharArray(str));
-        } catch (UnsupportedEncodingException e) {
-            Exceptions.handle(e);
-        }
+        String str = new String(bytes, StandardCharsets.UTF_8);
+        __init__(FastStringUtils.toCharArray(str));
     }
 
     public static CharBuf createExact(final int capacity) {
