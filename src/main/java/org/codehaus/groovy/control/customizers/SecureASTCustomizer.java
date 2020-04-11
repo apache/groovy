@@ -700,7 +700,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 // we should now check if the import is in the star imports
                 String packageName = getWildCardImport(className);
                 if (!staticStarImportsWhitelist.contains(className + ".*")
-                        && !staticStarImportsWhitelist.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith)) {
+                        && staticStarImportsWhitelist.stream().filter(it -> it.endsWith(".")).noneMatch(packageName::startsWith)) {
                     throw new SecurityException("Importing [" + fqn + "] is not allowed");
                 }
             } else {
