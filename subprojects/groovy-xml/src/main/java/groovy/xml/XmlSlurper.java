@@ -339,11 +339,7 @@ public class XmlSlurper extends DefaultHandler {
      * @param base The URL used to resolve relative URLs
      */
     public void setEntityBaseUrl(final URL base) {
-        reader.setEntityResolver(new EntityResolver() {
-            public InputSource resolveEntity(final String publicId, final String systemId) throws IOException {
-                return new InputSource(new URL(base, systemId).openStream());
-            }
-        });
+        reader.setEntityResolver((publicId, systemId) -> new InputSource(new URL(base, systemId).openStream()));
     }
 
     /* (non-Javadoc)
