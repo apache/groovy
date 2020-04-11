@@ -21,6 +21,7 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -61,7 +62,7 @@ public class TupleExpression extends Expression implements Iterable<Expression> 
 
     public TupleExpression(final Expression[] expressionArray) {
         this(expressionArray.length);
-        for (Expression e : expressionArray) expressions.add(e);
+        expressions.addAll(Arrays.asList(expressionArray));
     }
 
     public TupleExpression addExpression(final Expression expression) {
