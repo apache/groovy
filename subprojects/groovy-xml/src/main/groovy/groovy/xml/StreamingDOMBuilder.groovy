@@ -37,7 +37,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         attrs.each {target, instruction ->
             def pi = null
             if (instruction instanceof Map) {
-                pi = dom.document.createProcessingInstruction(target, toMapString(instruction))
+                pi = dom.document.createProcessingInstruction(target, toMapStringClosure(instruction))
             } else {
                 pi = dom.document.createProcessingInstruction(target, instruction)
             }
