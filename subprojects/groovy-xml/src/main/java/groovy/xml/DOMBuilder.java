@@ -33,7 +33,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -190,8 +189,8 @@ public class DOMBuilder extends BuilderSupport {
 
     protected Object createNode(Object name, Map attributes) {
         Element element = (Element) createNode(name);
-        for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Object o : attributes.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
             String attrName = entry.getKey().toString();
             Object value = entry.getValue();
             if ("xmlns".equals(attrName)) {
