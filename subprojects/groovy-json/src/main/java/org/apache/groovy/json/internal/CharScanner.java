@@ -476,7 +476,7 @@ public class CharScanner {
             buf.addLine(new String(array, lastLineIndex, count));
         } catch (Exception ex) {
             try {
-                int start = index = (index - 10 < 0) ? 0 : index - 10;
+                int start = index = Math.max(index - 10, 0);
 
                 buf.addLine(new String(array, start, index));
             } catch (Exception ex2) {

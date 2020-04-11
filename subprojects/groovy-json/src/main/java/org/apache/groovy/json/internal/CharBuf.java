@@ -401,7 +401,7 @@ public class CharBuf extends Writer implements CharSequence {
 
         int sizeNeeded = (ensureThisMuch) + _location;
         if (sizeNeeded > capacity) {
-            int growBy = (_buffer.length * 2) < sizeNeeded ? sizeNeeded : (_buffer.length * 2);
+            int growBy = Math.max((_buffer.length * 2), sizeNeeded);
             _buffer = Chr.grow(buffer, growBy);
             capacity = _buffer.length;
         }
