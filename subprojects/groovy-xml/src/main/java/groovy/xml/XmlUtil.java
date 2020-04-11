@@ -48,9 +48,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Used for pretty printing XML content and other XML related utilities.
@@ -437,12 +437,7 @@ public class XmlUtil {
     }
 
     private static void serialize(Source source, OutputStream os) {
-        try {
-            serialize(source, new StreamResult(new OutputStreamWriter(os, "UTF-8")));
-        }
-        catch (UnsupportedEncodingException e) {
-            // ignore
-        }
+        serialize(source, new StreamResult(new OutputStreamWriter(os, StandardCharsets.UTF_8)));
     }
 
     private static void serialize(Source source, Writer w) {
