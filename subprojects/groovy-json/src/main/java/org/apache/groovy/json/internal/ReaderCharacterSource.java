@@ -241,7 +241,7 @@ public class ReaderCharacterSource implements CharacterSource {
             if (index >= length && more) {
                 ensureBuffer();
                 if (length != 0) {
-                    char results2[] = readNumber();
+                    char[] results2 = readNumber();
                     return Chr.add(results, results2);
                 } else {
                     return results;
