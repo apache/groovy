@@ -565,7 +565,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             private String[] decomposeMopName(final String mopName) {
                 int idx = mopName.indexOf('$');
                 if (idx > 0) {
-                    int eidx = mopName.indexOf("$", idx + 1);
+                    int eidx = mopName.indexOf('$', idx + 1);
                     if (eidx > 0) {
                         return new String[]{
                                 mopName.substring(0, idx + 1),
