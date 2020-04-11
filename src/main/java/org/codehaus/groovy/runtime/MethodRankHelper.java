@@ -428,7 +428,7 @@ public class MethodRankHelper{
         int[][] vals = new int[3][n + 1];
 
 
-        int _d[]; //placeholder to assist in rotating vals
+        int[] _d; //placeholder to assist in rotating vals
 
         // indexes into strings s and t
         int i; // iterates through s
@@ -519,7 +519,7 @@ public class MethodRankHelper{
         int[][] vals = new int[3][n + 1];
 
 
-        int _d[]; //placeholder to assist in rotating vals
+        int[] _d; //placeholder to assist in rotating vals
 
         // indexes into arrays s and t
         int i; // iterates through s

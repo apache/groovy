@@ -33,7 +33,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 public class StaticMetaMethodSite extends MetaMethodSite {
     private final int version;
 
-    public StaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+    public StaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
         super(site, metaClass, metaMethod, params);
         version = metaClass.getVersion ();
     }
@@ -122,7 +122,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
      */
     public static class StaticMetaMethodSiteNoUnwrap extends StaticMetaMethodSite {
 
-        public StaticMetaMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+        public StaticMetaMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
             super(site, metaClass, metaMethod, params);
         }
 
@@ -140,7 +140,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
      */
     public static class StaticMetaMethodSiteNoUnwrapNoCoerce extends StaticMetaMethodSite {
 
-        public StaticMetaMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+        public StaticMetaMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
             super(site, metaClass, metaMethod, params);
         }
 

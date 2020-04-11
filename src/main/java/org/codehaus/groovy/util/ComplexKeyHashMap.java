@@ -37,7 +37,7 @@ public class ComplexKeyHashMap
     }
   }
 
-  protected Entry table [];
+  protected Entry[] table;
 
   protected static final int DEFAULT_CAPACITY = 32;
   protected static final int MINIMUM_CAPACITY = 4;

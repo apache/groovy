@@ -82,7 +82,7 @@ public class FastArray implements Cloneable, Serializable {
           return;
         final int newSize = this.size + size;
         if (newSize > data.length) {
-            Object nd [] = new Object [newSize];
+            Object[] nd = new Object [newSize];
             System.arraycopy(data, 0, nd, 0, this.size);
             data = nd;
         }

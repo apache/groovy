@@ -77,7 +77,7 @@ public abstract class AbstractConcurrentMapBase {
                         if (o instanceof Entry) {
                             count++;
                         } else {
-                            Object arr[] = (Object[]) o;
+                            Object[] arr = (Object[]) o;
                             count += arr.length;
                         }
                     }
@@ -102,7 +102,7 @@ public abstract class AbstractConcurrentMapBase {
                             if (e.isValid())
                                 count++;
                         } else {
-                            Object arr[] = (Object[]) o;
+                            Object[] arr = (Object[]) o;
                             for (Object value : arr) {
                                 Entry info = (Entry) value;
                                 if (info != null && info.isValid())
@@ -131,7 +131,7 @@ public abstract class AbstractConcurrentMapBase {
                             if (e.isValid())
                                 result.add(e);
                         } else {
-                            Object arr[] = (Object[]) o;
+                            Object[] arr = (Object[]) o;
                             for (Object value : arr) {
                                 Entry info = (Entry) value;
                                 if (info != null && info.isValid())
@@ -179,7 +179,7 @@ public abstract class AbstractConcurrentMapBase {
                         }
                     }
                     else {
-                        Object arr [] = (Object[]) o;
+                        Object[] arr = (Object[]) o;
                         Object res = null;
                         for (Object value : arr) {
                             Entry info = (Entry) value;
@@ -231,7 +231,7 @@ public abstract class AbstractConcurrentMapBase {
                         }
                     }
                     else {
-                        Object arr [] = (Object[]) o;
+                        Object[] arr = (Object[]) o;
                         int localCount = 0;
                         for (int index = 0; index < arr.length; index++) {
                             Entry e = (Entry) arr[index];
@@ -263,7 +263,7 @@ public abstract class AbstractConcurrentMapBase {
                             newCount++;
                         }
                     } else {
-                        Object arr[] = (Object[]) o;
+                        Object[] arr = (Object[]) o;
                         for (Object value : arr) {
                             Entry e = (Entry) value;
                             if (e != null && e.isValid()) {
@@ -286,15 +286,15 @@ public abstract class AbstractConcurrentMapBase {
             Object o = tab[index];
             if (o != null) {
                 if (o instanceof Entry) {
-                    Object arr [] = new Object [2];
+                    Object[] arr = new Object [2];
                     arr [0] = ee;
                     arr [1] = o;
                     tab[index] = arr;
                     return;
                 }
                 else {
-                    Object arr [] = (Object[]) o;
-                    Object newArr [] = new Object[arr.length+1];
+                    Object[] arr = (Object[]) o;
+                    Object[] newArr = new Object[arr.length+1];
                     newArr [0] = ee;
                     System.arraycopy(arr, 0, newArr, 1, arr.length);
                     tab [index] = newArr;
@@ -307,14 +307,14 @@ public abstract class AbstractConcurrentMapBase {
         private static Object put(Entry ee, Object o) {
             if (o != null) {
                 if (o instanceof Entry) {
-                    Object arr [] = new Object [2];
+                    Object[] arr = new Object [2];
                     arr [0] = ee;
                     arr [1] = o;
                     return arr;
                 }
                 else {
-                    Object arr [] = (Object[]) o;
-                    Object newArr [] = new Object[arr.length+1];
+                    Object[] arr = (Object[]) o;
+                    Object[] newArr = new Object[arr.length+1];
                     newArr [0] = ee;
                     System.arraycopy(arr, 0, newArr, 1, arr.length);
                     return newArr;

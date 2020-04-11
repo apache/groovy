@@ -212,7 +212,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param theClass The class
      * @param add      The methods
      */
-    public MetaClassImpl(MetaClassRegistry registry, final Class theClass, MetaMethod add[]) {
+    public MetaClassImpl(MetaClassRegistry registry, final Class theClass, MetaMethod[] add) {
         this(theClass, add);
         this.registry = registry;
         this.constructors = new FastArray(theCachedClass.getConstructors());
@@ -620,7 +620,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private void inheritInterfaceNewMetaMethods(Set<CachedClass> interfaces) {
         // add methods declared by DGM for interfaces
         for (CachedClass cls : interfaces) {
-            MetaMethod methods[] = getNewMetaMethods(cls);
+            MetaMethod[] methods = getNewMetaMethods(cls);
             for (MetaMethod method : methods) {
                 boolean skip = false;
                 // skip DGM methods on an interface if the class already has the method
@@ -3169,7 +3169,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return;
         }
 
-        Object data[] = list.getArray();
+        Object[] data = list.getArray();
         for (int j = 0; j != len; ++j) {
             MetaMethod aMethod = (MetaMethod) data[j];
             Boolean match = getMatchKindForCategory(aMethod, method);
@@ -3217,7 +3217,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (methods instanceof FastArray) {
             FastArray m = (FastArray) methods;
             final int len = m.size;
-            final Object data[] = m.getArray();
+            final Object[] data = m.getArray();
             for (int i = 0; i != len; ++i) {
                 MetaMethod method = (MetaMethod) data[i];
                 if (method.isMethod(aMethod)) {
@@ -3278,7 +3278,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             Object matchingMethods = null;
 
             final int len = methods.size;
-            Object data[] = methods.getArray();
+            Object[] data = methods.getArray();
             for (int i = 0; i != len; ++i) {
                 Object method = data[i];
 
