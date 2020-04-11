@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.LocatedMessage;
 import org.codehaus.groovy.control.messages.Message;
@@ -92,6 +93,13 @@ public class ErrorCollector implements Serializable {
             errors = new LinkedList<>();
         }
         errors.add(message);
+    }
+
+    public void addErrorAndContinue(String error, ASTNode node, SourceUnit source) {
+        addErrorAndContinue(new SyntaxErrorMessage(
+                new SyntaxException(error,
+                        node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
+                source));
     }
 
     /**

@@ -34,8 +34,6 @@ import org.codehaus.groovy.ast.tools.PropertyNodeUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
 
@@ -110,10 +108,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             addListenerToClass(source, (ClassNode) nodes[1]);
         } else {
             if ((((FieldNode)nodes[1]).getModifiers() & Opcodes.ACC_FINAL) != 0) {
-                source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                        new SyntaxException("@groovy.beans.Vetoable cannot annotate a final property.",
-                                node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                        source));
+                source.getErrorCollector().addErrorAndContinue("@groovy.beans.Vetoable cannot annotate a final property.", node, source);
             }
 
             addListenerToProperty(source, node, (AnnotatedNode) nodes[1]);
@@ -131,10 +126,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             if (propertyNode.getName().equals(fieldName)) {
                 if (field.isStatic()) {
                     //noinspection ThrowableInstanceNeverThrown
-                    source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                            new SyntaxException("@groovy.beans.Vetoable cannot annotate a static property.",
-                                    node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                            source));
+                    source.getErrorCollector().addErrorAndContinue("@groovy.beans.Vetoable cannot annotate a static property.", node, source);
                 } else {
                     createListenerSetter(source, bindable, declaringClass, propertyNode);
                 }
@@ -142,10 +134,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             }
         }
         //noinspection ThrowableInstanceNeverThrown
-        source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                new SyntaxException("@groovy.beans.Vetoable must be on a property, not a field.  Try removing the private, protected, or public modifier.",
-                        node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                source));
+        source.getErrorCollector().addErrorAndContinue("@groovy.beans.Vetoable must be on a property, not a field.  Try removing the private, protected, or public modifier.", node, source);
     }
 
 

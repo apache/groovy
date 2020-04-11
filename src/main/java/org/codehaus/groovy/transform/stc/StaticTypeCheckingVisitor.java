@@ -104,9 +104,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
@@ -5426,10 +5424,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void addError(final String msg, final ASTNode expr) {
         Long err = ((long) expr.getLineNumber()) << 16 + expr.getColumnNumber();
         if ((DEBUG_GENERATED_CODE && expr.getLineNumber() < 0) || !typeCheckingContext.reportedErrors.contains(err)) {
-            typeCheckingContext.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                    new SyntaxException(msg + '\n', expr.getLineNumber(), expr.getColumnNumber(), expr.getLastLineNumber(), expr.getLastColumnNumber()),
-                    getSourceUnit())
-            );
+            typeCheckingContext.getErrorCollector().addErrorAndContinue(msg + '\n', expr, getSourceUnit());
             typeCheckingContext.reportedErrors.add(err);
         }
     }
