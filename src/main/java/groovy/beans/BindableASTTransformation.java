@@ -34,8 +34,6 @@ import org.codehaus.groovy.ast.tools.PropertyNodeUtils;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
@@ -115,10 +113,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         ClassNode declaringClass = parent.getDeclaringClass();
         if (parent instanceof FieldNode) {
             if ((((FieldNode) parent).getModifiers() & Opcodes.ACC_FINAL) != 0) {
-                source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                        new SyntaxException("@groovy.beans.Bindable cannot annotate a final property.",
-                                node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                        source));
+                source.getErrorCollector().addErrorAndContinue("@groovy.beans.Bindable cannot annotate a final property.", node, source);
             }
 
             if (VetoableASTTransformation.hasVetoableAnnotation(parent.getDeclaringClass())) {
@@ -137,10 +132,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             if (propertyNode.getName().equals(fieldName)) {
                 if (field.isStatic()) {
                     //noinspection ThrowableInstanceNeverThrown
-                    source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                            new SyntaxException("@groovy.beans.Bindable cannot annotate a static property.",
-                                    node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                            source));
+                    source.getErrorCollector().addErrorAndContinue("@groovy.beans.Bindable cannot annotate a static property.", node, source);
                 } else {
                     if (needsPropertyChangeSupport(declaringClass, source)) {
                         addPropertyChangeSupport(declaringClass);
@@ -151,10 +143,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             }
         }
         //noinspection ThrowableInstanceNeverThrown
-        source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(
-                new SyntaxException("@groovy.beans.Bindable must be on a property, not a field.  Try removing the private, protected, or public modifier.",
-                        node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()),
-                source));
+        source.getErrorCollector().addErrorAndContinue("@groovy.beans.Bindable must be on a property, not a field.  Try removing the private, protected, or public modifier.", node, source);
     }
 
     private void addListenerToClass(SourceUnit source, ClassNode classNode) {

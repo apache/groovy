@@ -37,8 +37,6 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -196,9 +194,7 @@ public class AnnotationCollectorTransform {
      * @param source    the source unit for the error report
      */
     protected void addError(String message, ASTNode node, SourceUnit source) {
-        source.getErrorCollector().addErrorAndContinue(new SyntaxErrorMessage(new SyntaxException(
-                message,  node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber()
-                ), source));
+        source.getErrorCollector().addErrorAndContinue(message, node, source);
     }
 
     private List<AnnotationNode> getTargetListFromValue(AnnotationNode collector, AnnotationNode aliasAnnotationUsage, SourceUnit source) {
