@@ -292,6 +292,7 @@ public class CachedClass {
         return distance;
     }
 
+    @Override
     public int hashCode() {
         if (hashCode == 0) {
           hashCode = super.hashCode();
@@ -486,6 +487,7 @@ public class CachedClass {
     public static class CachedMethodComparatorWithString implements Comparator {
         public static final Comparator INSTANCE = new CachedMethodComparatorWithString();
 
+        @Override
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
                 return ((CachedMethod) o1).getName().compareTo((String) o2);
