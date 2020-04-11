@@ -35,7 +35,7 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
     def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
         attrs.each {target, instruction ->
             if (instruction instanceof Map) {
-                contentHandler.processingInstruction(target, toMapString(instruction))
+                contentHandler.processingInstruction(target, toMapStringClosure(instruction))
             } else {
                 contentHandler.processingInstruction(target, instruction)
             }
