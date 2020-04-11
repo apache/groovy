@@ -420,7 +420,7 @@ public class XmlSlurper extends DefaultHandler {
         currentNode = newElement;
     }
 
-    public void ignorableWhitespace(char buffer[], int start, int len) throws SAXException {
+    public void ignorableWhitespace(char[] buffer, int start, int len) throws SAXException {
         if (keepIgnorableWhitespace) characters(buffer, start, len);
     }
 
