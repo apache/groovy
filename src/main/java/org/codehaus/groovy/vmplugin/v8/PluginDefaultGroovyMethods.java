@@ -601,7 +601,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static Stream<Integer> stream(final int[] self) {
-        return Arrays.stream(self).mapToObj(Integer::valueOf);
+        return Arrays.stream(self).boxed();
     }
 
     /**
@@ -614,7 +614,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static Stream<Long> stream(final long[] self) {
-        return Arrays.stream(self).mapToObj(Long::valueOf);
+        return Arrays.stream(self).boxed();
     }
 
     /**
@@ -627,7 +627,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static Stream<Double> stream(final double[] self) {
-        return Arrays.stream(self).mapToObj(Double::valueOf);
+        return Arrays.stream(self).boxed();
     }
 
     /**
