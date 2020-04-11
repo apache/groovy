@@ -41,7 +41,7 @@ public class CharScanner {
     static final String MIN_INT_STR_NO_SIGN = String.valueOf(Integer.MIN_VALUE);
     static final String MAX_INT_STR = String.valueOf(Integer.MAX_VALUE);
 
-    private static double powersOf10[] = {
+    private static double[] powersOf10 = {
             1.0,
             10.0,
             100.0,
@@ -285,7 +285,7 @@ public class CharScanner {
         return c == COMMA || c == CLOSED_CURLY || c == CLOSED_BRACKET;
     }
 
-    public static Number parseJsonNumber(char[] buffer, int from, int max, int size[]) {
+    public static Number parseJsonNumber(char[] buffer, int from, int max, int[] size) {
         Number value = null;
         boolean simple = true;
         int digitsPastPoint = 0;
