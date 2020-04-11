@@ -75,7 +75,10 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
             out.unescaped() << "<?"
             if (instruction instanceof Map) {
                 out.unescaped() << target
-                out.unescaped() << toMapString(instruction, {value -> value.toString().contains('\'') || (useDoubleQuotes && !value.toString().contains('"'))})
+                out.unescaped() << toMapString(instruction) { value ->
+                    def valueStr = value.toString()
+                    valueStr.contains('\'') || (useDoubleQuotes && !valueStr.contains('"'))
+                }
             } else {
                 out.unescaped() << "$target $instruction"
             }
