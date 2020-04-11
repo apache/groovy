@@ -170,7 +170,7 @@ public class LoaderConfiguration {
             if (propertyIndexStart == -1) break;
             result.append(str, propertyIndexEnd, propertyIndexStart);
 
-            propertyIndexEnd = str.indexOf("}", propertyIndexStart);
+            propertyIndexEnd = str.indexOf('}', propertyIndexStart);
             if (propertyIndexEnd == -1) break;
 
             String propertyKey = str.substring(propertyIndexStart + 2, propertyIndexEnd);
