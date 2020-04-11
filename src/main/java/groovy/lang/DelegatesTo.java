@@ -83,7 +83,7 @@ public @interface DelegatesTo {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @java.lang.annotation.Target({ElementType.PARAMETER})
-    public static @interface Target {
+    @interface Target {
 
         /**
          * An identifier that should be used to disambiguate targets when there are
