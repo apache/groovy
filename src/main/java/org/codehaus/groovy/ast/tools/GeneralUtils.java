@@ -610,7 +610,7 @@ public class GeneralUtils {
         return new ListExpression(args);
     }
 
-    public static ListExpression list2args(final List<? extends Object> args) {
+    public static ListExpression list2args(final List<?> args) {
         ListExpression result = new ListExpression();
         for (Object o : args) {
             result.addExpression(constX(o));
