@@ -29,13 +29,14 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  *  A ReaderSource for source files.
  */
 public class FileReaderSource extends AbstractReaderSource {
     private final File file;  // The File from which we produce Readers.
-    private final Charset UTF8 = Charset.forName("UTF-8");
+    private final Charset UTF8 = StandardCharsets.UTF_8;
 
    /**
     *  Creates the ReaderSource from a File descriptor.
