@@ -62,6 +62,17 @@ class AbstractStreamingBuilder {
     }
     def getNamespaceClosure = {doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces]}
 
+    def toMapString = { Map instruction ->
+        def buf = new StringBuilder()
+        instruction.each { name, value ->
+            if (value.toString().contains('"'))
+                buf.append(" $name='$value'")
+            else
+                buf.append(" $name=\"$value\"")
+        }
+        return buf.toString()
+    }
+
     def specialTags = ['declareNamespace':namespaceSetupClosure,
                            'declareAlias':aliasSetupClosure,
                           'getNamespaces':getNamespaceClosure]
