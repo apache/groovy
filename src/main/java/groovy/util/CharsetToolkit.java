@@ -277,7 +277,7 @@ public class CharsetToolkit {
      * @return true if it's a continuation char.
      */
     private static boolean isContinuationChar(byte b) {
-        return -128 <= b && b <= -65;
+        return b <= -65;
     }
 
     /**
