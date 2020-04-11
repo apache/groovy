@@ -75,7 +75,7 @@ public @interface Slf4j {
 
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Slf4jLoggingStrategy.class;
 
-    public static class Slf4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
+    class Slf4jLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
         private static final String LOGGER_NAME = "org.slf4j.Logger";
         private static final String FACTORY_NAME = "org.slf4j.LoggerFactory";
 
