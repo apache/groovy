@@ -226,4 +226,37 @@ class XmlSlurperTest extends GroovyTestCase {
         assert root.'t:child'.text() == 'c'
         assert root.'t:child'.@'t:id' == '1'
     }
+
+    void testParsePath() {
+
+        def file = File.createTempFile('test','xml')
+        file.deleteOnExit()
+        file.text = '''
+            <definitions name="AgencyManagementService"
+                         xmlns:ns1="http://www.example.org/NS1"
+                         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                         xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                         xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+                         xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                         xmlns="http://schemas.xmlsoap.org/wsdl/">
+                <message name="SomeRequest">
+                    <part name="parameters" element="ns1:SomeReq" />
+                </message>
+                <message name="SomeResponse">
+                    <part name="result" element="ns1:SomeRsp" />
+                </message>
+            </definitions>
+        '''
+
+        def xml = new XmlSlurper().parse(file.toPath())
+        assert xml.message.part.@element*.text().findAll {it =~ /.Req$/}.size() == 1
+        assert xml.message.part.findAll { true }.size() == 2
+        assert xml.message.part.find { it.name() == 'part' }.name() == 'part'
+        assert xml.message.findAll { true }.size() == 2
+        assert xml.message.part.lookupNamespace("ns1") == "http://www.example.org/NS1"
+        assert xml.message.part.lookupNamespace("") == "http://schemas.xmlsoap.org/wsdl/"
+        assert xml.message.part.lookupNamespace("undefinedPrefix") == null
+        xml.message.findAll { true }.each { assert it.name() == "message"}
+
+    }
 }
