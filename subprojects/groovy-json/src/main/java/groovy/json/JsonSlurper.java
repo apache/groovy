@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 
 /**
@@ -332,6 +334,27 @@ public class JsonSlurper {
             default:
                 return new JsonParserCharArray();
         }
+    }
+
+    /**
+     * Parse a JSON data structure from content within a given Path.
+     *
+     * @param path {@link Path} containing JSON content
+     * @return a data structure of lists and maps
+     */
+    public Object parse(Path path) throws IOException {
+        return parse(Files.newInputStream(path));
+    }
+
+    /**
+     * Parse a JSON data structure from content within a given Path.
+     *
+     * @param path {@link Path} containing JSON content
+     * @param charset the charset for this File
+     * @return a data structure of lists and maps
+     */
+    public Object parse(Path path, String charset) throws IOException {
+        return parse(Files.newInputStream(path), charset);
     }
 
     /**
