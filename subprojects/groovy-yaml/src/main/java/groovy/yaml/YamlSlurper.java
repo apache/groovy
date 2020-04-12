@@ -21,8 +21,13 @@ package groovy.yaml;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.yaml.util.YamlConverter;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  *  Represents a YAML parser
@@ -54,5 +59,36 @@ public class YamlSlurper {
      */
     public Object parse(Reader reader) {
         return jsonSlurper.parse(new StringReader(YamlConverter.convertYamlToJson(reader)));
+    }
+
+    /**
+     * Parse the content of the specified reader into a tree of Nodes.
+     *
+     * @param stream the reader of yaml
+     * @return the root node of the parsed tree of Nodes
+     */
+    public Object parse(InputStream stream) {
+        return parse(new InputStreamReader(stream));
+    }
+
+    /**
+     * Parse the content of the specified file into a tree of Nodes.
+     *
+     * @param file the reader of yaml
+     * @return the root node of the parsed tree of Nodes
+     */
+    public Object parse(java.io.File file) throws IOException {
+        return parse(file.toPath());
+    }
+
+    /**
+     * Parse the content of the specified path into a tree of Nodes.
+     *
+     * @param path the reader of yaml
+     * @return the root node of the parsed tree of Nodes
+     */
+    public Object parse(Path path) throws IOException {
+        // note: convert to an input stream to allow the support of foreign file objects
+        return parse(Files.newInputStream(path));
     }
 }

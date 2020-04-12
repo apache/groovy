@@ -45,9 +45,12 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+
 
 /**
  * Parse XML into a document tree that may be traversed similar to XPath
@@ -266,6 +269,10 @@ public class XmlSlurper extends DefaultHandler {
      */
     public GPathResult parse(final String uri) throws IOException, SAXException {
         return parse(new InputSource(uri));
+    }
+
+    public GPathResult parse(final Path path) throws IOException, SAXException {
+       return parse(Files.newInputStream(path));
     }
 
     /**
