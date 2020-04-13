@@ -122,6 +122,9 @@ public class CompilerConfiguration {
      */
     public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
 
+    /**
+    * The valid instruction sets.
+    */
     public static final int ASM_API_VERSION = Opcodes.ASM8;
 
     /**
