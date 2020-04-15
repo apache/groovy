@@ -245,6 +245,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             h(longOpt: 'help', messages['cli.option.help.description'])
             V(longOpt: 'version', messages['cli.option.version.description'])
             pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
+            pr(longOpt: 'enable-preview', messages['cli.option.enable.preview.description'])
             i(longOpt: 'indy', messages['cli.option.indy.description'])
             D(longOpt: 'define', type: Map, argName: 'name=value', messages['cli.option.define.description'])
             _(longOpt: 'configscript', args: 1, messages['cli.option.configscript.description'])
