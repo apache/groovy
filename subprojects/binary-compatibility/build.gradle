@@ -45,7 +45,7 @@ tasks.check {
 
 // for comparing between versions with different modules, set excludeModules to differing modules, e.g.
 Set excludeModules = [
-        "performance", "binary-compatibility"
+        "performance", "binary-compatibility", "tests-preview"
 ]
 
 def compatibilityBaselineVersion = "3.0.2"
