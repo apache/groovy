@@ -56,12 +56,6 @@ generateGrammarSource {
     }
 }
 
-configurations {
-    implementation {
-        extendsFrom = extendsFrom.findAll { it != configurations.antlr2 }
-    }
-}
-
 dependencies {
     antlr "com.tunnelvisionlabs:antlr4:$antlr4Version"
     implementation "com.tunnelvisionlabs:antlr4-runtime:$antlr4Version"

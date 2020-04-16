@@ -19,7 +19,6 @@
 package groovy.transform.stc
 
 import groovy.test.NotYetImplemented
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 
 /**
  * Unit tests for static type checking : generics.
@@ -465,13 +464,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             new Test()
         '''
 
-        if (config.pluginFactory instanceof AntlrParserPluginFactory) {
-            shouldFailWithMessages code, 'Cannot find matching method java.lang.Object#getAt(int)'
-        } else {
-            shouldFailWithMessages code,
-                    'Cannot find matching method java.lang.Object#getAt(int)',
-                    'Cannot find matching method java.lang.Object#toInteger()'
-        }
+        shouldFailWithMessages code,
+                'Cannot find matching method java.lang.Object#getAt(int)',
+                'Cannot find matching method java.lang.Object#toInteger()'
     }
 
     void testAssignmentOfNewInstance() {

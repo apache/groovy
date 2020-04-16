@@ -18,13 +18,23 @@
  */
 package org.codehaus.groovy.antlr;
 
+import groovy.lang.GroovyShell;
+import groovy.test.GroovyTestCase;
+import groovy.test.NotYetImplemented;
+
 import java.io.StringReader;
 
 /**
- * Parsing annotations.
+ * Parsing annotations
  */
-public class AnnotationSourceParsingTest extends SourceParserTest {
+public class AnnotationSourceParsingTest extends GroovyTestCase {
+    private void parse(String methodName, StringReader stringReader) {
+        new GroovyShell().parse(stringReader, methodName);
+    }
+
+    // GROOVY-9511
     public void testMultiLineAttributes() {
+        if (notYetImplemented()) return;
         StringReader reader = new StringReader(
                 "class OtherSection\n"
                         + "{\n"
