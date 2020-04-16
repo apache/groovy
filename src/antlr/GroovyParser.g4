@@ -509,7 +509,7 @@ annotationsOpt
     ;
 
 annotation
-    :   AT annotationName ( LPAREN elementValues? rparen)?
+    :   AT annotationName (nls LPAREN elementValues? rparen)?
     ;
 
 elementValues
