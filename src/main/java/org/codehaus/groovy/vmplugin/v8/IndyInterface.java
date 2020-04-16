@@ -48,6 +48,7 @@ import java.util.stream.Stream;
  */
 public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 100_000L);
+    private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 100_000L);
 
     /**
      * flags for method and property calls
@@ -285,7 +286,7 @@ public class IndyInterface {
 
             final MethodHandle defaultTarget = cacheableCallSite.getDefaultTarget();
             final long fallbackCount = cacheableCallSite.incrementFallbackCount();
-            if ((fallbackCount > INDY_OPTIMIZE_THRESHOLD) && (cacheableCallSite.getTarget() != defaultTarget)) {
+            if ((fallbackCount > INDY_FALLBACK_THRESHOLD) && (cacheableCallSite.getTarget() != defaultTarget)) {
                 cacheableCallSite.setTarget(defaultTarget);
                 if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
 
