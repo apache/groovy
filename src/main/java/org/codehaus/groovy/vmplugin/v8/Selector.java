@@ -930,17 +930,19 @@ public abstract class Selector {
             Class<?>[] pt = handle.type().parameterArray();
             for (int i = 0; i < args.length; i++) {
                 Object arg = args[i];
+                Class<?> paramType = pt[i];
                 MethodHandle test;
+
                 if (arg == null) {
-                    test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
+                    test = IS_NULL.asType(MethodType.methodType(boolean.class, paramType));
                     if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
                 } else {
                     Class<?> argClass = arg.getClass();
-                    if (pt[i].isPrimitive()) continue;
+                    if (paramType.isPrimitive()) continue;
                     //if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
                     test = SAME_CLASS.
                             bindTo(argClass).
-                            asType(MethodType.methodType(boolean.class, pt[i]));
+                            asType(MethodType.methodType(boolean.class, paramType));
                     if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
                 }
                 Class<?>[] drops = new Class[i];
