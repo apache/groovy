@@ -1,8 +1,3 @@
-package org.codehaus.groovy.antlr
-
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.antlr.parser.GroovyLexer
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -21,7 +16,10 @@ import org.codehaus.groovy.antlr.parser.GroovyLexer
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+package org.codehaus.groovy.antlr
+
+import groovy.test.GroovyTestCase
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 class GStringEndTest extends GroovyTestCase {
     void testInvalidEndContainsLineNumber(){
@@ -31,20 +29,20 @@ class GStringEndTest extends GroovyTestCase {
             '''
         } catch (MultipleCompilationErrorsException mcee) {
             def text = mcee.toString();
-            assert text.contains("line 2, column 41") ||  // the old parser
-                        text.contains("line 2, column 40") // parrot: column 40 is more accurate than the original 41
+            assert text.contains("line 2, column 40")
         }
     }
 
     void testErrorReportOnStringEndWithOutParser() {
         // GROOVY-6608: the code did throw a NPE
-        def s = '''
-def scanFolders()
-{ doThis( ~"(?i)^sometext$", 
-'''
-        def lexer = new GroovyLexer(new StringReader(s))
         try {
-            while (lexer.nextToken()!=null) {}
-        } catch (antlr.TokenStreamRecognitionException se) {}
+            assertScript '''
+            def scanFolders()
+            { doThis( ~"(?i)^sometext$", 
+            '''
+        } catch (MultipleCompilationErrorsException mcee) {
+            def text = mcee.toString();
+            assert text.contains("line 3, column 39")
+        }
     }
 }

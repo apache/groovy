@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast
 
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.ArrayExpression
 import org.codehaus.groovy.ast.expr.AttributeExpression
@@ -101,11 +100,7 @@ final class LineColumnCheckTest extends ASTTest {
         List testdata = extractData("${TEST_FILE_PREFIX}.txt")
         //flip if condition as per below and swap antlr2/4 ordering once antlr4 is the default
         //if (System.getProperty('groovy.antlr4') != 'false') {
-        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
-            testdata += extractData("${TEST_FILE_PREFIX}_antlr2.txt")
-        } else {
-            testdata += extractData("${TEST_FILE_PREFIX}_antlr4.txt")
-        }
+        testdata += extractData("${TEST_FILE_PREFIX}_antlr4.txt")
         testdata
     }
 

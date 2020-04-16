@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
-
 /**
  * Units tests aimed at testing the behavior of {@link DelegatesTo} in combination
  * with static type checking.
@@ -636,19 +634,15 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
 
         String msg = 'Cannot find matching method'
 
-        if (config.pluginFactory instanceof AntlrParserPluginFactory) {
-            shouldFailWithMessages code, msg
-        } else {
-            /*
-             * Because the Parrot parser provides more accurate node position information,
-             * org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.addError will not be interfered by wrong node position.
-             *
-             * 1) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method TestScripttestDelegatesToGenericArgumentTypeAndTypo0#getname(). Please check if the declared type is correct and if the method exists.
-             * 2) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is correct and if the method exists.
-             *
-             */
-            shouldFailWithMessages code, msg, msg
-        }
+        /*
+         * Because the Parrot parser provides more accurate node position information,
+         * org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.addError will not be interfered by wrong node position.
+         *
+         * 1) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method TestScripttestDelegatesToGenericArgumentTypeAndTypo0#getname(). Please check if the declared type is correct and if the method exists.
+         * 2) TestScripttestDelegatesToGenericArgumentTypeAndTypo0.groovy: 17: [Static type checking] - Cannot find matching method java.lang.Object#toUpperCase(). Please check if the declared type is correct and if the method exists.
+         *
+         */
+        shouldFailWithMessages code, msg, msg
     }
 
     // GROOVY-6323, GROOVY-6325, GROOVY-6332

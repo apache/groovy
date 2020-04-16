@@ -122,14 +122,12 @@ repositories {
 configurations {
     compilerCompile
     tools
-    antlr2
     spec
 }
 
 ext {
     antVersion = '1.10.7'
     asmVersion = '8.0.1'
-    antlrVersion = '2.7.7'
     antlr4Version = '4.7.4'
     bridgerVersion = '1.5.Final'
     coberturaVersion = '1.9.4.1'
@@ -164,7 +162,6 @@ dependencies {
     // for internal usage of things like Opcode
     api "org.ow2.asm:asm:$asmVersion" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
     // for internal usage by the parser but manually excluded later in assemble.gradle - modules will use shaded version
-    api "antlr:antlr:$antlrVersion"
     implementation "org.ow2.asm:asm-analysis:$asmVersion"
     implementation "org.ow2.asm:asm-commons:$asmVersion"
     implementation "org.ow2.asm:asm-tree:$asmVersion"
@@ -204,8 +201,6 @@ dependencies {
     tools "org.ow2.asm:asm:$asmVersion"
     tools "com.thoughtworks.qdox:qdox:$qdoxVersion"
 
-    antlr2 "org.apache.ant:ant-antlr:$antVersion"
-
     testImplementation project(':groovy-ant')
     testImplementation project(':groovy-xml')
     testImplementation project(':groovy-dateutil')
@@ -218,14 +213,12 @@ ext.generatedDirectory = "${buildDir}/generated/sources"
 sourceSets {
     main {
         java {
-            srcDir "$generatedDirectory/antlr2/src/main"
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
             }
         }
         groovy {
-            srcDir "$generatedDirectory/antlr2/src/main"
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
@@ -233,11 +226,6 @@ sourceSets {
         }
         resources {
             srcDirs = ['src/resources']
-        }
-    }
-    antlr2 {
-        resources {
-            srcDirs = ['src/main/antlr2']
         }
     }
     test {
@@ -262,7 +250,6 @@ task sourceJar(type: Jar) {
     classifier = 'sources'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from sourceSets.main.allSource
-    from sourceSets.antlr2.allSource
 }
 
 subprojects {
@@ -275,37 +262,7 @@ subprojects {
 
 apply from: 'subprojects/parser-antlr4/build.gradle'
 
-task ensureGrammars {
-    outputs.cacheIf { true }
-    description = 'Ensure all the Antlr2 generated files are up to date.'
-    ext.antlrDirectory = "$projectDir/src/main/antlr2/org/codehaus/groovy/antlr"
-    ext.javaParserDirectory = "$ext.antlrDirectory/java"
-    ext.genPath = "$generatedDirectory/antlr2/src/main/org/codehaus/groovy/antlr"
-    ext.groovyOutDir = "$ext.genPath/parser"
-    ext.javaOutDir = "$ext.genPath/java"
-    inputs.dir(antlrDirectory)
-    outputs.dir(groovyOutDir)
-    outputs.dir(javaOutDir)
-    doFirst {
-        new File(groovyOutDir).mkdirs()
-        new File(javaOutDir).mkdirs()
-        ant {
-            taskdef(name: 'antlr2',
-                    classname: 'org.apache.tools.ant.taskdefs.optional.ANTLR',
-                    classpath: configurations.antlr2.asPath)
-
-            antlr2(target: "$ext.antlrDirectory/groovy.g", outputdirectory: ext.groovyOutDir) {
-                classpath path: configurations.compileClasspath.asPath
-            }
-            antlr2(target: "$ext.javaParserDirectory/java.g", outputdirectory: ext.javaOutDir) {
-                classpath path: configurations.compileClasspath.asPath
-            }
-        }
-    }
-}
-
 compileJava {
-    dependsOn ensureGrammars, generateGrammarSource
     options.fork(memoryMaximumSize: javacMain_mx)
 
     doLast {

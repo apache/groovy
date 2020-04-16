@@ -19,7 +19,6 @@
 dependencies {
     api rootProject // GroovydocVisitor extends ClassCodeVisitorSupport...
     api "com.github.javaparser:javaparser-core:$javaParserVersion" // GroovydocJavaVisitor extends VoidVisitorAdapter...
-    compileOnly "antlr:antlr:$antlrVersion" // shaded
     implementation project(':groovy-templates')
     implementation project(':groovy-docgenerator')
     testImplementation rootProject.sourceSets.test.runtimeClasspath

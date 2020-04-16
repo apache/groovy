@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
 /**
@@ -911,13 +910,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             closure(*strings)
         '''
 
-        if (config.pluginFactory instanceof AntlrParserPluginFactory) {
-            shouldFailWithMessages code, 'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
-        } else {
-            shouldFailWithMessages code,
-                    'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
-                    'Closure argument types: [java.lang.String, java.lang.String, java.lang.String] do not match with parameter types: [java.lang.Object]'
-        }
+        shouldFailWithMessages code,
+                'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+                'Closure argument types: [java.lang.String, java.lang.String, java.lang.String] do not match with parameter types: [java.lang.Object]'
     }
 
     void testBoxingShouldCostMore() {

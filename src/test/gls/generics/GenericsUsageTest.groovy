@@ -19,8 +19,6 @@
 package gls.generics
 
 import gls.CompilableTestSupport
-import org.codehaus.groovy.antlr.AntlrParserPluginFactory
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 final class GenericsUsageTest extends CompilableTestSupport {
@@ -153,81 +151,42 @@ final class GenericsUsageTest extends CompilableTestSupport {
     }
 
     void testCompilationWithMissingClosingBracketsInGenerics() {
-        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
-            shouldFailCompilationWithDefaultMessage """
-                def list1 = new ArrayList<Integer()
-            """
+        shouldFailCompilationWithMessage """
+            def list1 = new ArrayList<Integer()
+        """, "Unexpected input: '('"
 
-            shouldFailCompilationWithDefaultMessage """
-                List<Integer list2 = new ArrayList<Integer>()
-            """
+        shouldFailCompilationWithMessage """
+            List<Integer list2 = new ArrayList<Integer>()
+        """, "Unexpected input: 'List<Integer'"
 
-            shouldFailCompilationWithDefaultMessage """
-                def c = []
-                for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
-            """
+        shouldFailCompilationWithMessage """
+            def c = []
+            for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
+        """, "Unexpected input: 'Iterator<String i'"
 
-            shouldFailCompilationWithDefaultMessage """
-                def m(Class<Integer someParam) {}
-            """
+        shouldFailCompilationWithMessage """
+            def m(Class<Integer someParam) {}
+        """, "Unexpected input: 'Class<Integer someParam'"
 
-            shouldFailCompilationWithDefaultMessage """
-                abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
-            """
+        shouldFailCompilationWithMessage """
+            abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
+        """, "Unexpected input: 'implements'"
 
-            shouldFailCompilationWithDefaultMessage """
-                abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
-            """
+        shouldFailCompilationWithMessage """
+            abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
+        """, "Unexpected input: '<'"
 
-            shouldFailCompilationWithDefaultMessage """
-                abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
-            """
+        shouldFailCompilationWithMessage """
+            abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
+        """, "Unexpected input: '<'"
 
-            shouldFailCompilationWithDefaultMessage """
-                def List<List<Integer> history = new ArrayList<List<Integer>>()
-            """
+        shouldFailCompilationWithMessage """
+            def List<List<Integer> history = new ArrayList<List<Integer>>()
+        """, "Unexpected input: 'def List<List<Integer> history'"
 
-            shouldFailCompilationWithDefaultMessage """
-                def List<List<Integer>> history = new ArrayList<List<Integer>()
-            """
-        } else {
-            shouldFailCompilationWithMessage """
-                def list1 = new ArrayList<Integer()
-            """, "Unexpected input: '('"
-
-            shouldFailCompilationWithMessage """
-                List<Integer list2 = new ArrayList<Integer>()
-            """, "Unexpected input: 'List<Integer'"
-
-            shouldFailCompilationWithMessage """
-                def c = []
-                for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
-            """, "Unexpected input: 'Iterator<String i'"
-
-            shouldFailCompilationWithMessage """
-                def m(Class<Integer someParam) {}
-            """, "Unexpected input: 'Class<Integer someParam'"
-
-            shouldFailCompilationWithMessage """
-                abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
-            """, "Unexpected input: 'implements'"
-
-            shouldFailCompilationWithMessage """
-                abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
-            """, "Unexpected input: '<'"
-
-            shouldFailCompilationWithMessage """
-                abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
-            """, "Unexpected input: '<'"
-
-            shouldFailCompilationWithMessage """
-                def List<List<Integer> history = new ArrayList<List<Integer>>()
-            """, "Unexpected input: 'def List<List<Integer> history'"
-
-            shouldFailCompilationWithMessage """
-                def List<List<Integer>> history = new ArrayList<List<Integer>()
-            """, "Unexpected input: '('"
-        }
+        shouldFailCompilationWithMessage """
+            def List<List<Integer>> history = new ArrayList<List<Integer>()
+        """, "Unexpected input: '('"
     }
 
     private void shouldFailCompilationWithDefaultMessage(scriptText) {
@@ -305,15 +264,9 @@ final class GenericsUsageTest extends CompilableTestSupport {
             class MyList extends ArrayList<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
 
-        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
-            shouldFailCompilationWithMessages '''
-                class MyList extends ArrayList<> {}
-            ''', ['(supplied with 0 type parameters)', 'which takes 1 parameter', 'invalid Diamond <> usage?']
-        } else {
-            shouldFailCompilationWithMessages '''
-                class MyList extends ArrayList<> {}
-            ''', ['Unexpected input: \'<\'']
-        }
+        shouldFailCompilationWithMessages '''
+            class MyList extends ArrayList<> {}
+        ''', ['Unexpected input: \'<\'']
 
         shouldFailCompilationWithMessages '''
             class MyMap extends HashMap<String> {}
@@ -322,15 +275,9 @@ final class GenericsUsageTest extends CompilableTestSupport {
             class MyList implements List<String, String> {}
         ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
 
-        if (CompilerConfiguration.DEFAULT.pluginFactory instanceof AntlrParserPluginFactory) {
-            shouldFailCompilationWithMessages '''
-                class MyList implements Map<> {}
-            ''', ['(supplied with 0 type parameters)', 'which takes 2 parameters', 'invalid Diamond <> usage?']
-        } else {
-            shouldFailCompilationWithMessages '''
-                class MyList implements Map<> {}
-            ''', ['Unexpected input: \'<\'']
-        }
+        shouldFailCompilationWithMessages '''
+            class MyList implements Map<> {}
+        ''', ['Unexpected input: \'<\'']
 
 
         shouldFailCompilationWithMessages '''
