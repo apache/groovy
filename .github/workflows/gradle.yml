@@ -42,27 +42,3 @@ jobs:
         timeout-minutes: 60
         env:
           GRADLE_SCANS_ACCEPT: yes
-  testWithIndy:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-18.04]
-        java: [8.0.232, 11.0.6]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v1
-      - name: Set up JDK
-        uses: actions/setup-java@v1
-        with:
-          java-version: ${{ matrix.java }}
-      - name: Cache Gradle Repository
-        uses: actions/cache@v1
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: ${{ runner.os }}-gradle
-      - name: Test with Gradle
-        run: ./gradlew testWithIndy
-        timeout-minutes: 60
-        env:
-          GRADLE_SCANS_ACCEPT: yes

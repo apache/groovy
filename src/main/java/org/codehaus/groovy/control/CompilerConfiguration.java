@@ -436,13 +436,17 @@ public class CompilerConfiguration {
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
-        handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy");
+        handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy", "true");
         handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
         handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
     }
 
     private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName) {
-        String propValue = getSystemPropertySafe(sysOptionName);
+        handleOptimizationOption(options, optionName, sysOptionName, null);
+    }
+
+    private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName, String def) {
+        String propValue = getSystemPropertySafe(sysOptionName, def);
         boolean optionEnabled = propValue == null
                 ? (DEFAULT != null && Boolean.TRUE.equals(DEFAULT.getOptimizationOptions().get(optionName)))
                 : Boolean.parseBoolean(propValue);

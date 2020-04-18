@@ -45,27 +45,6 @@ allprojects {
         }
     }
 
-    // create an Indy test suite
-    if (rootProject.indyCapable()) {
-        def dependencies = configurations.testRuntime.incoming.dependencies.findAll {
-            it.name.startsWith('groovy')
-        }.collect {
-            it.name
-        }
-        task testWithIndy(type: Test) {
-            systemProperties 'groovy.target.indy': true
-            dependsOn 'jarWithIndy'
-            dependencies.each { dependsOn "${it}:jarWithIndy" }
-            classpath = classpath - files(jar.archivePath, *dependencies.collect { project(it).jar }) +
-                    files({ [jarWithIndy.archivePath, *dependencies.collect { project(it).jarWithIndy }] })
-        }
-        task testAll {
-            description = "Runs both the normal and indy test suites"
-            dependsOn test, testWithIndy
-        }
-        check.dependsOn testWithIndy
-    }
-
     sourceSets {
         test {
             groovy {
@@ -117,13 +96,8 @@ def buildExcludeFilter(boolean legacyTestSuite) {
         excludes << 'groovy/grape/'
     }
 
-    if (legacyTestSuite) {
-        // indy tests will only be executed in indy test suite
-        excludes += ['indy', 'Indy']
-    } else {
-        // tests not passing with indy : investigation required!
-        excludes += ['Log4j2Test', 'ASTTransformationCustomizerTest']
-    }
+    // tests not passing with indy : investigation required!
+    excludes += ['Log4j2Test', 'ASTTransformationCustomizerTest']
 
     return { f ->
         excludes.any { f.file =~ it }

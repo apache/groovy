@@ -25,21 +25,6 @@ install:
 
 matrix:
   include:
-    - env: BC='legacy'
-      jdk: openjdk14
-    - env: BC='legacy'
-      jdk: openjdk13
-    - env: BC='legacy'
-      jdk: openjdk12
-    - env: BC='legacy'
-      jdk: openjdk11
-    - env: BC='legacy'
-      jdk: openjdk10
-    - env: BC='legacy'
-      jdk: oraclejdk9
-    - env: BC='legacy'
-      jdk: oraclejdk8
-
     - env: BC='indy'
       jdk: openjdk14
     - env: BC='indy'
@@ -63,7 +48,7 @@ before_script:
 
 script:
   - ./gradlew -version
-  - if [ "$BC" == "legacy" ]; then travis_wait 60 ./gradlew test; elif [ "$BC" == "sonar" ]; then travis_wait 60 ./gradlew sonarqube -Dsonar.login=$SONAR_LOGIN -Pcoverage=true -x testWithIndy; else travis_wait 60 ./gradlew testWithIndy; fi
+  - if [ "$BC" == "indy" ]; then travis_wait 60 ./gradlew test; elif [ "$BC" == "sonar" ]; then travis_wait 60 ./gradlew sonarqube -Dsonar.login=$SONAR_LOGIN -Pcoverage=true; fi
 
 # As recommended in:
 # https://docs.travis-ci.com/user/languages/java/#Caching
