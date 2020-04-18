@@ -87,7 +87,7 @@ public class WriterController {
             this.optimizeForInt = false;
             // set other optimizations options to false here
         } else {
-            if (Boolean.TRUE.equals(optOptions.get(CompilerConfiguration.INVOKEDYNAMIC))) invokedynamic = true;
+            if (config.isIndyEnabled()) invokedynamic = true;
             if (Boolean.FALSE.equals(optOptions.get("int"))) this.optimizeForInt = false;
             if (invokedynamic) this.optimizeForInt = false;
             // set other optimizations options to false here

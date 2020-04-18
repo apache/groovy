@@ -118,7 +118,6 @@ You might need to use the _contextClassLoader_ attribute (see below) if any of y
 |append|If enabled and output is to a file, append to existing file rather than overwrite. Defaults to false.|No
 |fork|If enabled the script will be executed in a forked JVM process (disabled by default).|No
 |scriptBaseClass|The name of the base class for scripts.|No
-|indy|If enabled the script will be executed with `invokedynamic` (disabled by default).|No
 |parameters|Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
 |useGroovyShell|If enabled a new GroovyShell is used to run the script. Special variables won't be available but you don't need Ant in the classpath. Defaults to false. |No
 |includeAntRuntime|If enabled the system classpath will be included on the classpath when forking. Defaults to true. |No

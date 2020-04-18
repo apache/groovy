@@ -120,7 +120,6 @@ public class Groovy extends Java {
     private boolean includeAntRuntime = true;
     private boolean useGroovyShell = false;
 
-    private boolean indy = false;
     private String scriptBaseClass;
     private String configscript;
 
@@ -298,14 +297,6 @@ public class Groovy extends Java {
         this.configscript = configscript;
     }
 
-    /**
-     * Sets the indy flag to enable or disable invokedynamic
-     *
-     * @param indy true means invokedynamic support is active
-     */
-    public void setIndy(final boolean indy) {
-        this.indy = indy;
-    }
 
     /**
      * Set the script base class name
@@ -567,10 +558,6 @@ public class Groovy extends Java {
     private void configureCompiler() {
         if (scriptBaseClass != null) {
             configuration.setScriptBaseClass(scriptBaseClass);
-        }
-        if (indy) {
-            configuration.getOptimizationOptions().put("indy", Boolean.TRUE);
-            configuration.getOptimizationOptions().put("int", Boolean.FALSE);
         }
         if (configscript != null) {
             Binding binding = new Binding();

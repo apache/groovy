@@ -119,7 +119,6 @@ import java.util.StringTokenizer;
  * <li>includeDestClasses</li>
  * <li>jointCompilationOptions</li>
  * <li>stacktrace</li>
- * <li>indy</li>
  * <li>scriptBaseClass</li>
  * <li>stubdir</li>
  * <li>keepStubs</li>
@@ -218,7 +217,6 @@ public class Groovyc extends MatchingTask {
     private File stubDir;
     private boolean keepStubs;
     private boolean forceLookupUnnamedFiles;
-    private boolean useIndy;
     private String scriptBaseClass;
     private String configscript;
 
@@ -705,24 +703,6 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Set the indy flag.
-     *
-     * @param useIndy the indy flag
-     */
-    public void setIndy(boolean useIndy) {
-        this.useIndy = useIndy;
-    }
-
-    /**
-     * Get the value of the indy flag.
-     *
-     * @return if to use indy
-     */
-    public boolean getIndy() {
-        return this.useIndy;
-    }
-
-    /**
      * Set the base script class name for the scripts (must derive from Script)
      *
      * @param scriptBaseClass Base class name for scripts (must derive from Script)
@@ -1205,9 +1185,6 @@ public class Groovyc extends MatchingTask {
         }
         if (previewFeatures) {
             commandLineList.add("--enable-preview");
-        }
-        if (useIndy) {
-            commandLineList.add("--indy");
         }
         if (scriptBaseClass != null) {
             commandLineList.add("-b");
