@@ -28,7 +28,7 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
 
         project.afterEvaluate {
             tasks.withType(JacocoReport) {
-                if (name != 'jacocoAllReport' && name != 'jacocoAllIndyReport') {
+                if (name != 'jacocoAllReport') {
                     sourceDirectories.from = sourceDirectories.from + files(project.sourceSets.main.allGroovy.srcDirs)
 //                    classDirectories += files(project.sourceSets.main.output)
                 }
@@ -37,7 +37,6 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
     }
 
     // To avoid "Can't add different class with same name" fatal error
-    // due to different classes generated when using Indy, create two reports
     // No need to include Java class directories since Groovy one includes those classes
 
     task jacocoMerge(type: JacocoMerge) {
@@ -46,22 +45,7 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
         allprojects {
             project.plugins.withType(JavaPlugin) {
                 project.tasks.withType(Test) { task ->
-                    if (sourceSets.test.allSource.srcDirs.any { it.exists() } && !task.name.contains('Indy')) {
-                        executionData(task)
-                    }
-                }
-            }
-        }
-
-        executionData = files(executionData).filter { f -> f.exists() }
-    }
-
-    task jacocoMergeIndy(type: JacocoMerge) {
-        destinationFile = file("$buildDir/jacoco/jacoco-all-indy.exec")
-        allprojects {
-            project.plugins.withType(JavaPlugin) {
-                project.tasks.withType(Test) { task ->
-                    if (sourceSets.test.allSource.srcDirs.any { it.exists() } && task.name.contains('Indy')) {
+                    if (sourceSets.test.allSource.srcDirs.any { it.exists() }) {
                         executionData(task)
                     }
                 }
@@ -92,34 +76,6 @@ if (rootProject.hasProperty('coverage') && Boolean.valueOf(rootProject.getProper
         }
     }
 
-    task jacocoAllIndyReport(type: JacocoReport, dependsOn: 'jacocoMergeIndy') {
-        executionData jacocoMergeIndy.destinationFile
-        reports {
-            xml {
-                enabled true
-            }
-            html {
-                enabled true
-            }
-        }
-
-        allprojects {
-            project.plugins.withType(JavaPlugin) {
-                def sd = sourceDirectories.from ?: files()
-                def cd = classDirectories.from ?: files()
-                sourceDirectories.from = sd + files(project.sourceSets.main.allGroovy.srcDirs, project.sourceSets.main.allJava.srcDirs)
-                classDirectories.from = cd + files(compileGroovyWithIndy.destinationDir)
-            }
-        }
-    }
-
     check.dependsOn jacocoAllReport
-    if (!rootProject.hasProperty('skipIndy')) {
-        check.dependsOn jacocoAllIndyReport
-    }
-
     tasks.sonarqube.dependsOn jacocoAllReport
-    if (!rootProject.hasProperty('skipIndy')) {
-        tasks.sonarqube.dependsOn jacocoAllIndyReport
-    }
 }

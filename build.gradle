@@ -64,7 +64,6 @@ ext.modules = {
 ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith("snapshot")
 
 apply from: 'gradle/bad-practices.gradle'
-//apply from: 'gradle/indy.gradle'
 apply from: 'gradle/publish.gradle'
 apply plugin: "com.github.jk1.dependency-license-report"
 
@@ -100,7 +99,6 @@ allprojects {
     }
 
     apply plugin: 'groovy'
-    apply from: "${rootProject.projectDir}/gradle/indy.gradle"
     apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
 
     tasks.withType(org.asciidoctor.gradle.AsciidoctorTask) {
@@ -326,17 +324,6 @@ allprojects {
 
         if (classpath) {
             classpath = classpath + files(dgmConverter.outputDir)
-        }
-    }
-
-    if (rootProject.indyCapable()) {
-        task compileGroovyWithIndy(type: GroovyCompile) {
-            source = sourceSets.main.groovy
-            classpath = compileGroovy.classpath
-            sourceCompatibility = 1.8
-            targetCompatibility = 1.8
-            groovyOptions.optimizationOptions['indy'] = true
-            destinationDir = file("$buildDir/classes/indy")
         }
     }
 

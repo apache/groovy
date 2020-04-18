@@ -173,18 +173,6 @@ allprojects {
             }
         }
     }
-    if (rootProject.indyCapable()) {
-        task jarWithIndy(type: Jar) {
-            dependsOn compileGroovyWithIndy
-            archiveClassifier = 'indy'
-            archiveAppendix = 'raw'
-            from sourceSets.main.java.outputDir
-            from sourceSets.main.groovy.outputDir
-            from compileGroovyWithIndy.destinationDir
-            from "${project.buildDir}/resources/main"
-        }
-        producedJars << jarWithIndy
-    }
     producedJars.each { arch ->
         arch.metaInf {
             from("$projectDir/licenses/LICENSE-JARJAR")
@@ -289,9 +277,6 @@ allprojects {
 }
 
 def producedJars = [jar]
-if (rootProject.indyCapable()) {
-    producedJars << jarWithIndy
-}
 
 producedJars.each {
     it.dependsOn('dgmConverter')
@@ -389,12 +374,6 @@ ext.distSpec = copySpec {
     into('lib/extras-jaxb') {
         from project(':groovy-jaxb').configurations.jaxb
         from project(':groovy-jaxb').configurations.jaxbRuntime
-    }
-    if (!rootProject.hasProperty('skipIndy')) {
-        into('indy') {
-            from jarjarWithIndy
-            from modules()*.jarjarWithIndy
-        }
     }
     if (!rootProject.hasProperty('skipGrooid')) {
         into('grooid') {
