@@ -24,11 +24,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
 /**
  * A syntax reduction, produced by the <code>Parser</code>.
  *
- * @see antlr.Parser
  * @see Token
  * @see CSTNode
  * @see Types

@@ -47,7 +47,7 @@ def javadocSpec = {
         source = '1.8'
         links('https://docs.oracle.com/javase/8/docs/api/', 'https://docs.oracle.com/javaee/7/api/',
                 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'https://junit.org/junit4/javadoc/latest/',
-                'https://docs.oracle.com/javaee/6/api/', 'https://www.antlr2.org/javadoc/')
+                'https://docs.oracle.com/javaee/6/api/')
     }
 }
 
@@ -64,7 +64,6 @@ def groovydocBaseSpec = {
     link 'https://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
     link 'https://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
     link 'https://junit.org/junit5/docs/current/api/', 'org.junit.jupiter.', 'org.junit.platform.'
-    link 'https://www.antlr2.org/javadoc/', 'antlr.'
     link 'https://www.antlr.org/api/Java/', 'org.antlr.v4.'
     link 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
     link 'https://picocli.info/apidocs/', 'picocli.'

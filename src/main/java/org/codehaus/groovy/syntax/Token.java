@@ -23,8 +23,6 @@ import org.codehaus.groovy.GroovyBugError;
 /**
  * A <code>CSTNode</code> produced by the <code>Lexer</code>.
  *
- * @see antlr.Parser
- * @see antlr.Token
  * @see Reduction
  * @see Types
  */

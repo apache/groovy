@@ -191,7 +191,6 @@ allprojects {
             from("$projectDir/licenses") {
                 into('licenses')
                 include('asm-license.txt')
-                include('antlr2-license.txt')
                 include('antlr4-license.txt')
             }
             from("$projectDir/notices/NOTICE-JARJAR")
@@ -223,7 +222,6 @@ allprojects {
                     'groovy/cli/picocli/OptionAccessor*.class'
             ]
             patterns = [
-                    'antlr.**': 'groovyjarjarantlr.@1', // antlr2
                     'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
                     'org.objectweb.**': 'groovyjarjarasm.@1',
                     'picocli.**': 'groovyjarjarpicocli.@1'
@@ -421,7 +419,6 @@ ext.distSpec = copySpec {
     }
     into('licenses') {
         from 'licenses'
-        include 'antlr2-license.txt'
         include 'antlr4-license.txt'
         include 'asm-license.txt'
         include 'hamcrest-license.txt'

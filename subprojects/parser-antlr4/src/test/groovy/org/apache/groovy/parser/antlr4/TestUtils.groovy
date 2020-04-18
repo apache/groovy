@@ -185,7 +185,7 @@ final class TestUtils {
     }
 
     static void doRunAndTest(String path) {
-        doRunAndTestAntlr2(path)
+//        doRunAndTestAntlr2(path)
         doRunAndTestAntlr4(path)
     }
 
@@ -194,7 +194,7 @@ final class TestUtils {
     }
 
     static void doRunAndTestAntlr2(String path, CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
-//        assert executeScript(createAntlr2Shell(compilerConfiguration), "$RESOURCES_PATH/$path")
+        throw new UnsupportedOperationException("Antlr2 is no longer supported")
     }
 
     static GroovyShell createAntlr4Shell(CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
@@ -202,8 +202,7 @@ final class TestUtils {
     }
 
     static GroovyShell createAntlr2Shell(CompilerConfiguration compilerConfiguration = CompilerConfiguration.DEFAULT) {
-        return null
-//        return new GroovyShell(getAntlr2Config(compilerConfiguration))
+        throw new UnsupportedOperationException("Antlr2 is no longer supported")
     }
 
     //--------------------------------------------------------------------------
