@@ -801,8 +801,8 @@ public class InvokerHelper {
         return argBuf.toString();
     }
 
-    private static Set<String> DEFAULT_IMPORT_PKGS = new HashSet<String>();
-    private static Set<String> DEFAULT_IMPORT_CLASSES = new HashSet<String>();
+    private static final Set<String> DEFAULT_IMPORT_PKGS = new HashSet<String>();
+    private static final Set<String> DEFAULT_IMPORT_CLASSES = new HashSet<String>();
     static {
         for (String pkgName : ResolveVisitor.DEFAULT_IMPORTS) {
             DEFAULT_IMPORT_PKGS.add(pkgName.substring(0, pkgName.length() - 1));
