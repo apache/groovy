@@ -47,6 +47,7 @@ a number of command line switches:
 | -e | --exception | Displays the stack trace in case of compilation error | groovyc -e script.groovy
 | -j | --jointCompilation* | Enables joint compilation | groovyc -j A.groovy B.java
 | -b | --basescript | Base class name for scripts (must derive from Script)|
+| -indy | --indy | Enables invokedynamic support. Requires Java 7+ | groovyc --indy Person.groovy
 | | --configscript | Advanced compiler configuration script | groovyc --configscript config/config.groovy src/Person.groovy
 | -Jproperty=value | | Properties to be passed to `javac` if joint compilation is enabled | groovyc -j -Jtarget=1.6 -Jsource=1.6 A.groovy B.java
 | -Fflag | | Flags to be passed to `javac` if joint compilation is enabled | groovyc -j -Fnowarn A.groovy B.java

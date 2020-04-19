@@ -19,6 +19,7 @@
 package groovy.bugs
 
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.Test
 
 @CompileStatic
@@ -26,7 +27,8 @@ final class Groovy9271 {
 
     @Test
     void testBracketsInMethodNameWithIndy() {
-        new GroovyShell().evaluate '''
+        def config = new CompilerConfiguration(optimizationOptions: [indy: true])
+        new GroovyShell(config).evaluate '''
             class Bar {
                 private char letter = 'o'
                 int 'foo$()bar'() {

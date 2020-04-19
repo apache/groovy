@@ -54,6 +54,7 @@ int (disable any int based optimizations) |
 | -e <script> | | specify an inline command line script | groovy -e "println new Date()"
 | -h | --help | Displays usage information for the command line groovy command | groovy --help
 | -i <extension> | | modify files in place; create backup if extension is given (e.g. '.bak') |
+| | --indy | Enables invokedynamic support. Requires Java 7+ | groovy --indy Person.groovy
 | -l <port> | | listen on a port and process inbound lines (default: 1960) |
 | -n | | process files line by line using implicit 'line' variable |
 | -p | | process files line by line and print result (see also -n) |

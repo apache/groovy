@@ -48,6 +48,9 @@ import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
  */
 public class CompilerConfiguration {
 
+    /** Optimization Option for enabling <code>invokedynamic</code> compilation. */
+    public static final String INVOKEDYNAMIC = "indy";
+
     /** Optimization Option for enabling attaching groovydoc as AST node metadata. */
     public static final String GROOVYDOC = "groovydoc";
 
@@ -412,6 +415,7 @@ public class CompilerConfiguration {
      * <blockquote>
      * <table summary="Groovy Compiler Optimization Options Configuration Properties">
      *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
+     *   <tr><td><code>groovy.target.indy</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.attach.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.attach.runtime.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      * </table>
@@ -432,6 +436,7 @@ public class CompilerConfiguration {
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
         optimizationOptions = new HashMap<>(4);
+        handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy", "true");
         handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
         handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
     }
@@ -1060,7 +1065,8 @@ public class CompilerConfiguration {
      * Checks if invoke dynamic is enabled.
      */
     public boolean isIndyEnabled() {
-        return true;
+        Boolean indyEnabled = getOptimizationOptions().get(INVOKEDYNAMIC);
+        return Optional.ofNullable(indyEnabled).orElse(Boolean.FALSE);
     }
 
     /**

@@ -24,6 +24,7 @@ import groovy.console.ui.view.BasicMenuBar
 import groovy.console.ui.view.MacOSXMenuBar
 import groovy.swing.GroovySwingTestCase
 import groovy.swing.SwingBuilder
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.rules.TemporaryFolder
 
 import javax.swing.JTextPane
@@ -590,10 +591,12 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 console.inputEditor.textEditor.text = scriptSource
 
                 console.runScript(new EventObject([:]))
+                assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
 
                 console.outputArea.text = ''
                 console.runScript(new EventObject([:]))
+                assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(Thread)
