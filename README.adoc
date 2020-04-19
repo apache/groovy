@@ -174,18 +174,6 @@ All code samples of the documentation guide are pulled from actual test cases. T
 
 (Note the omission of package name: class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`.)
 
-== InvokeDynamic support
-
-The Groovy build supports the JVM instruction `invokedynamic`. If you want to build Groovy with invokedynamic, you can use the project property `indy`:
-
-    gradlew -Pindy=true clean test
-
-Please note that the following Gradle tasks generate both indy and non indy variants of the jars, so you don't need to use the system property:
-
-* dist
-* install
-* uploadArchives
-
 == Continuous Integration Server
 
 The official CI server runs {groovy-ci}[here] and is sponsored by http://www.jetbrains.com[JetBrains].
