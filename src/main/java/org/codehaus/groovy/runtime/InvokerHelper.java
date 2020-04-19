@@ -287,11 +287,11 @@ public class InvokerHelper {
         }
         if (value instanceof Short) {
             Short number = (Short) value;
-            return -number;
+            return (short) -number;
         }
         if (value instanceof Byte) {
             Byte number = (Byte) value;
-            return -number;
+            return (byte) -number;
         }
         if (value instanceof ArrayList) {
             // value is a list.
