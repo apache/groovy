@@ -611,7 +611,7 @@ class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 void test() {}
             }
 
-        ''', Phases.CLASS_GENERATION, true) as TreeNode
+        ''', Phases.CLASS_GENERATION) as TreeNode
 
         def classNodeTest = root.children().find { it.toString() == 'ClassNode - Test' }
         def methods = classNodeTest.children().find { it.toString() == 'Methods' }
