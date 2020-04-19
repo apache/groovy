@@ -378,9 +378,6 @@ public class FileSystemCompiler {
         @Option(names = "-F", paramLabel = "<flag>", description = "Passed to javac for joint compilation")
         private List<String> flags;
 
-        @Option(names = {"--indy"}, description = "Enables compilation using invokedynamic")
-        private boolean indy;
-
         @Option(names = {"--configscript"}, paramLabel = "<script>", description = "A script for tweaking the configuration options")
         private String configScript;
 
@@ -423,11 +420,6 @@ public class FileSystemCompiler {
                 compilerOptions.put("flags", javacFlags());
                 compilerOptions.put("namedValues", javacNamedValues());
                 configuration.setJointCompilationOptions(compilerOptions);
-            }
-
-            if (indy) {
-                configuration.getOptimizationOptions().put("int", Boolean.FALSE);
-                configuration.getOptimizationOptions().put("indy", Boolean.TRUE);
             }
 
             final List<String> transformations = new ArrayList<>();

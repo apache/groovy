@@ -216,9 +216,6 @@ public class GroovyMain {
         @Option(names = {"-a", "--autosplit"}, arity = "0..1", paramLabel = "<splitPattern>", description = "Split lines using splitPattern (default '\\s') using implicit 'split' variable")
         private String splitPattern;
 
-        @Option(names = {"--indy"}, description = "Enables compilation using invokedynamic")
-        private boolean indy;
-
         @Option(names = {"--configscript"}, paramLabel = "<script>", description = "A script for tweaking the configuration options")
         private String configscript;
 
@@ -293,11 +290,6 @@ public class GroovyMain {
 
             for (String optimization : disableopt) {
                 main.conf.getOptimizationOptions().put(optimization, false);
-            }
-
-            if (indy) {
-                System.setProperty("groovy.target.indy", "true");
-                main.conf.getOptimizationOptions().put("indy", true);
             }
 
             if (scriptBaseClass != null) {
