@@ -152,20 +152,31 @@ public class JavaStubGenerator {
                 ),
                 Charset.forName(encoding)
         );
-        generateStubContent(classNode, writer);
+        if (classNode.getNameWithoutPackage().equals("package-info")) {
+            // should just output the package statement
+            try (PrintWriter out = new PrintWriter(writer)) {
+                printPackage(out, classNode);
+            }
+        } else {
+            generateStubContent(classNode, writer);
+        }
 
         javaStubCompilationUnitSet.add(new RawJavaFileObject(createJavaStubFile(fileName).toPath().toUri()));
     }
 
     private void generateStubContent(ClassNode classNode, Writer writer) {
         try (PrintWriter out = new PrintWriter(writer)) {
-            String packageName = classNode.getPackageName();
-            if (packageName != null) {
-                out.println("package " + packageName + ";\n");
-            }
-
+            printPackage(out, classNode);
             printImports(out, classNode);
             printClassContents(out, classNode);
+        }
+    }
+
+    private void printPackage(PrintWriter out, ClassNode classNode) {
+        String packageName = classNode.getPackageName();
+        if (packageName != null) {
+            printAnnotations(out, classNode.getPackage());
+            out.println("package " + packageName + ";\n");
         }
     }
 
