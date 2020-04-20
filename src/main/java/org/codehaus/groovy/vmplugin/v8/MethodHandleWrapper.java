@@ -61,4 +61,16 @@ class MethodHandleWrapper {
     public long getLatestHitCount() {
         return latestHitCount.get();
     }
+
+    public static MethodHandleWrapper getNullMethodHandleWrapper() {
+        return NullMethodHandleWrapper.INSTANCE;
+    }
+
+    private static class NullMethodHandleWrapper extends MethodHandleWrapper {
+        public static final NullMethodHandleWrapper INSTANCE = new NullMethodHandleWrapper(null, null, false);
+
+        private NullMethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, boolean canSetTarget) {
+            super(cachedMethodHandle, targetMethodHandle, canSetTarget);
+        }
+    }
 }

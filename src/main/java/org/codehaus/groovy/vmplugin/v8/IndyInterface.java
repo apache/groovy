@@ -34,6 +34,7 @@ import java.lang.invoke.SwitchPoint;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -57,6 +58,7 @@ public class IndyInterface {
             SAFE_NAVIGATION = 1, THIS_CALL = 2,
             GROOVY_OBJECT = 4, IMPLICIT_THIS = 8,
             SPREAD_CALL = 16, UNCACHED_CALL = 32;
+    private static final MethodHandleWrapper NULL_METHOD_HANDLE_WRAPPER = MethodHandleWrapper.getNullMethodHandleWrapper();
 
     /**
      * Enum for easy differentiation between call types
@@ -255,15 +257,28 @@ public class IndyInterface {
      * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
      */
     public static Object fromCache(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+        Supplier<MethodHandleWrapper> fallbackSupplier = () -> fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+
         MethodHandleWrapper mhw =
                 doWithCallSite(
                         callSite, arguments,
                         (cs, receiver) ->
                                 cs.getAndPut(
                                         receiver.getClass().getName(),
-                                        c -> fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments)
+                                        c -> {
+                                            MethodHandleWrapper fbMhw = fallbackSupplier.get();
+                                            return fbMhw.isCanSetTarget() ? fbMhw : NULL_METHOD_HANDLE_WRAPPER;
+                                        }
                                 )
                 );
+
+        if (NULL_METHOD_HANDLE_WRAPPER == mhw) {
+            final MethodHandleWrapper fbMhw = fallbackSupplier.get();
+            if (fbMhw.isCanSetTarget()) {
+                doWithCallSite(callSite, arguments, (cs, receiver) -> cs.put(receiver.getClass().getName(), fbMhw));
+            }
+            mhw = fbMhw;
+        }
 
         if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD)) {
             callSite.setTarget(mhw.getTargetMethodHandle());
