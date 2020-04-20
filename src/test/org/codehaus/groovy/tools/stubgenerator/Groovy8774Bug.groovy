@@ -26,7 +26,7 @@ class Groovy8774Bug extends StringSourcesStubTestCase {
                     public interface Dummy { }
                 ''',
                 'test/package-info.groovy': '''
-                    @groovy.transform.Generated
+                    @java.lang.Deprecated
                     package test
                 '''
         ]
@@ -38,7 +38,9 @@ class Groovy8774Bug extends StringSourcesStubTestCase {
 //    }
 
     void verifyStubs() {
-        assert stubJavaSourceFor('test/package-info').contains('@groovy.transform.Generated')
+        assert stubJavaSourceFor('test/package-info').contains('@java.lang.Deprecated')
         assert stubJavaSourceFor('test/package-info').contains('package test;')
+        def piClass = loader.loadClass('test.package-info')
+        assert piClass.isInterface()
     }
 }
