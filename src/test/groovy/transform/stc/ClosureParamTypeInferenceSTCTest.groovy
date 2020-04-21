@@ -545,7 +545,7 @@ import groovy.transform.stc.ClosureParams
             assert sum == 110
         '''
     }
-    
+
     void testInferenceForDGM_upto() {
         assertScript '''
             BigDecimal sum = 0
@@ -1338,6 +1338,41 @@ method()
             }
 
             assert foo() == ['FEE', 'FO']
+        '''
+    }
+
+    void testGroovy9518() {
+        assertScript '''
+            class C {
+                C(String s, Comparable<List<Integer>> c) {
+                }
+            }
+
+            new C('blah', { list -> list.get(0) })
+        '''
+    }
+
+    void testGroovy9518a() {
+        assertScript '''
+            class C {
+                C(String s, Comparable<List<Integer>> c) {
+                }
+            }
+
+            new C('blah', { it.get(0) })
+        '''
+    }
+
+    void testGroovy9518b() {
+        assertScript '''
+            import groovy.transform.stc.*
+
+            class C {
+                C(String s, @ClosureParams(value=SimpleType, options='java.util.List') Closure<Integer> c) {
+                }
+            }
+
+            new C('blah', { list -> list.get(0) })
         '''
     }
 }

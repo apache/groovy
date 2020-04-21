@@ -2185,18 +2185,21 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
-        super.visitConstructorCallExpression(call);
         if (extension.beforeMethodCall(call)) {
             extension.afterMethodCall(call);
             return;
         }
-        ClassNode receiver = call.isThisCall() ? typeCheckingContext.getEnclosingClassNode() :
-                call.isSuperCall() ? typeCheckingContext.getEnclosingClassNode().getSuperClass() : call.getType();
+        ClassNode receiver = call.getType();
+        if (call.isThisCall()) {
+            receiver = typeCheckingContext.getEnclosingClassNode();
+        } else if (call.isSuperCall()) {
+            receiver = typeCheckingContext.getEnclosingClassNode().getSuperClass();
+        }
         Expression arguments = call.getArguments();
-
         ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
 
         checkForbiddenSpreadArgument(argumentList);
+        visitMethodCallArguments(receiver, argumentList, false, null);
 
         ClassNode[] args = getArgumentTypes(argumentList);
         if (args.length > 0 &&
@@ -2226,7 +2229,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else {
                 typeCheckMethodsWithGenericsOrFail(receiver, args, node, call);
             }
-            if (node != null) storeTargetMethod(call, node);
+            if (node != null) {
+                storeTargetMethod(call, node);
+                visitMethodCallArguments(receiver, argumentList, true, node);
+            }
         }
 
         // GROOVY-9327: check for AIC in STC method with non-STC enclosing class
