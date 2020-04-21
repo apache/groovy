@@ -241,35 +241,32 @@ public class AsmClassGenerator extends ClassGenerator {
                     // pull them out of package node but treat them like they were on class node
                     visitAnnotations(classNode, packageNode, classVisitor);
                 }
-                classVisitor.visitEnd();
-                return;
             } else {
                 visitAnnotations(classNode, classVisitor);
-            }
-
-            if (classNode.isInterface()) {
-                ClassNode owner = classNode;
-                if (owner instanceof InnerClassNode) {
-                    owner = owner.getOuterClass();
+                if (classNode.isInterface()) {
+                    ClassNode owner = classNode;
+                    if (owner instanceof InnerClassNode) {
+                        owner = owner.getOuterClass();
+                    }
+                    String outerClassName = classNode.getName();
+                    String name = outerClassName + "$" + context.getNextInnerClassIdx();
+                    controller.setInterfaceClassLoadingClass(
+                            new InterfaceHelperClassNode (
+                                    owner, name, ACC_SUPER | ACC_SYNTHETIC | ACC_STATIC, ClassHelper.OBJECT_TYPE,
+                                    controller.getCallSiteWriter().getCallSites()));
+                    super.visitClass(classNode);
+                    createInterfaceSyntheticStaticFields();
+                } else {
+                    super.visitClass(classNode);
+                    MopWriter.Factory mopWriterFactory = classNode.getNodeMetaData(MopWriter.Factory.class);
+                    if (mopWriterFactory == null) {
+                        mopWriterFactory = MopWriter.FACTORY;
+                    }
+                    MopWriter mopWriter = mopWriterFactory.create(controller);
+                    mopWriter.createMopMethods();
+                    controller.getCallSiteWriter().generateCallSiteArray();
+                    createSyntheticStaticFields();
                 }
-                String outerClassName = classNode.getName();
-                String name = outerClassName + "$" + context.getNextInnerClassIdx();
-                controller.setInterfaceClassLoadingClass(
-                        new InterfaceHelperClassNode (
-                                owner, name, ACC_SUPER | ACC_SYNTHETIC | ACC_STATIC, ClassHelper.OBJECT_TYPE,
-                                controller.getCallSiteWriter().getCallSites()));
-                super.visitClass(classNode);
-                createInterfaceSyntheticStaticFields();
-            } else {
-                super.visitClass(classNode);
-                MopWriter.Factory mopWriterFactory = classNode.getNodeMetaData(MopWriter.Factory.class);
-                if (mopWriterFactory == null) {
-                    mopWriterFactory = MopWriter.FACTORY;
-                }
-                MopWriter mopWriter = mopWriterFactory.create(controller);
-                mopWriter.createMopMethods();
-                controller.getCallSiteWriter().generateCallSiteArray();
-                createSyntheticStaticFields();
             }
 
             // GROOVY-6750 and GROOVY-6808
