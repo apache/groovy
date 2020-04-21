@@ -34,7 +34,6 @@ import java.lang.invoke.SwitchPoint;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -253,11 +252,44 @@ public class IndyInterface {
         return mh.asCollector(Object[].class, type.parameterCount()).asType(type);
     }
 
+    private static class FallbackSupplier {
+        private final MutableCallSite callSite;
+        private final Class<?> sender;
+        private final String methodName;
+        private final int callID;
+        private final Boolean safeNavigation;
+        private final Boolean thisCall;
+        private final Boolean spreadCall;
+        private final Object dummyReceiver;
+        private final Object[] arguments;
+        private MethodHandleWrapper result;
+
+        FallbackSupplier(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
+            this.callSite = callSite;
+            this.sender = sender;
+            this.methodName = methodName;
+            this.callID = callID;
+            this.safeNavigation = safeNavigation;
+            this.thisCall = thisCall;
+            this.spreadCall = spreadCall;
+            this.dummyReceiver = dummyReceiver;
+            this.arguments = arguments;
+        }
+
+        MethodHandleWrapper get() {
+            if (null == result) {
+                result = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+            }
+
+            return result;
+        }
+    }
+
     /**
      * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
      */
     public static Object fromCache(MutableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
-        Supplier<MethodHandleWrapper> fallbackSupplier = () -> fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+        FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
         MethodHandleWrapper mhw =
                 doWithCallSite(
