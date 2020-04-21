@@ -2165,7 +2165,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         typeCheckingContext.pushEnclosingConstructorCall(call);
         try {
-            super.visitConstructorCallExpression(call);
             if (extension.beforeMethodCall(call)) {
                 extension.afterMethodCall(call);
                 return;
@@ -2177,6 +2176,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ArgumentListExpression argumentList = InvocationWriter.makeArgumentList(arguments);
 
             checkForbiddenSpreadArgument(argumentList);
+            visitMethodCallArguments(receiver, argumentList, false, null);
 
             ClassNode[] args = getArgumentTypes(argumentList);
             if (args.length > 0 &&
@@ -2188,7 +2188,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     !call.getType().isStaticClass()) {
                 args[0] = CLOSURE_TYPE;
             }
-
 
             MethodNode node;
             if (looksLikeNamedArgConstructor(receiver, args)
@@ -2209,7 +2208,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else {
                     typeCheckMethodsWithGenericsOrFail(receiver, args, node, call);
                 }
-                if (node != null) storeTargetMethod(call, node);
+                if (node != null) {
+                    storeTargetMethod(call, node);
+                    visitMethodCallArguments(receiver, argumentList, true, node);
+                }
             }
             extension.afterMethodCall(call);
         } finally {
