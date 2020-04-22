@@ -1175,29 +1175,28 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return true;
     }
 
-    private void addPrecisionErrors(final ClassNode leftRedirect, final ClassNode lhsType, final ClassNode inferredrhsType, final Expression rightExpression) {
-        if (isNumberType(leftRedirect) && isNumberType(inferredrhsType)) {
-            if (checkPossibleLossOfPrecision(leftRedirect, inferredrhsType, rightExpression)) {
-                addStaticTypeError("Possible loss of precision from " + inferredrhsType + " to " + leftRedirect, rightExpression);
-                return;
+    private void addPrecisionErrors(final ClassNode leftRedirect, final ClassNode lhsType, final ClassNode rhsType, final Expression rightExpression) {
+        if (isNumberType(leftRedirect)) {
+            if (isNumberType(rhsType) && checkPossibleLossOfPrecision(leftRedirect, rhsType, rightExpression)) {
+                addStaticTypeError("Possible loss of precision from " + rhsType.toString(false) + " to " + lhsType.toString(false), rightExpression);
             }
+            return;
         }
-        // if left type is array, we should check the right component types
-        if (!lhsType.isArray()) return;
-        ClassNode leftComponentType = lhsType.getComponentType();
-        ClassNode rightRedirect = rightExpression.getType().redirect();
-        if (rightRedirect.isArray()) {
-            ClassNode rightComponentType = rightRedirect.getComponentType();
-            if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + lhsType.toString(false), rightExpression);
-            }
-        } else if (rightExpression instanceof ListExpression) {
-            for (Expression element : ((ListExpression) rightExpression).getExpressions()) {
-                ClassNode rightComponentType = this.getType(element);
-                if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)
-                        && !(isNullConstant(element) && !isPrimitiveType(leftComponentType))) {
+        if (!leftRedirect.isArray()) return;
+        // left type is an array, check the right component types
+        if (rightExpression instanceof ListExpression) {
+            ClassNode leftComponentType = leftRedirect.getComponentType();
+            for (Expression expression : ((ListExpression) rightExpression).getExpressions()) {
+                ClassNode rightComponentType = getType(expression);
+                if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType) && !(isNullConstant(expression) && !isPrimitiveType(leftComponentType))) {
                     addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + lhsType.toString(false), rightExpression);
                 }
+            }
+        } else if (rhsType.redirect().isArray()) {
+            ClassNode leftComponentType = leftRedirect.getComponentType();
+            ClassNode rightComponentType = rhsType.redirect().getComponentType();
+            if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
+                addStaticTypeError("Cannot assign value of type " + rightComponentType.toString(false) + " into array of type " + lhsType.toString(false), rightExpression);
             }
         }
     }
