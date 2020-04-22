@@ -83,7 +83,7 @@ import java.util.StringTokenizer;
  *   &lt;/taskdef&gt;
  *
  *   &lt;target name="compile" description="compile groovy sources"&gt;
- *     &lt;groovyc srcdir="src" destdir="bin" fork="true" listfiles="true" includeantruntime="false"/&gt;
+ *     &lt;groovyc srcdir="src" destdir="bin" fork="true" listfiles="true" includeantruntime="false"&gt;
  *       &lt;classpath&gt;
  *         &lt;fileset dir="${groovy.home}/lib" includes="groovy-*${groovy.version}.jar" excludes="groovy-ant-${groovy.version}.jar"/&gt;
  *       &lt;/classpath&gt;
