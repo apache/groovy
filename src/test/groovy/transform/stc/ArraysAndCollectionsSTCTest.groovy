@@ -91,6 +91,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             for (int i in arr) { }
         ''', 'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
+
     void testJava5StyleForLoopWithArray() {
         assertScript '''
             String[] arr = ['1','2','3']
@@ -321,6 +322,20 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot assign value of type Foo[] to variable of type FooAnother'
     }
 
+    // GROOVY-9517
+    void testShouldAllowArrayAssignment() {
+        assertScript '''
+            void test(File directory) {
+                File[] files = directory.listFiles()
+                files = files?.sort { it.name }
+                for (file in files) {
+                    // ...
+                }
+            }
+            println 'works'
+        '''
+    }
+
     void testListPlusEquals() {
         assertScript '''
             List<String> list = ['a','b']
@@ -334,7 +349,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert list == ['a','b','c']
         '''
     }
-    
+
     void testObjectArrayGet() {
         assertScript '''
             Object[] arr = [new Object()]
@@ -478,18 +493,21 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5793
     void testShouldNotForceAsTypeWhenListOfNullAssignedToArray() {
         assertScript '''
-        Integer[] m() {
-          Integer[] arr = [ null, null ]
-        }
-        assert m().length == 2
+            Integer[] m() {
+                Integer[] array = [ null, null ]
+                return array
+            }
+            assert m().length == 2
         '''
     }
+
     void testShouldNotForceAsTypeWhenListOfNullAssignedToArrayUnlessPrimitive() {
         shouldFailWithMessages '''
-        int[] m() {
-          int[] arr = [ null, null ]
-        }
-        ''', 'into array of type'
+            int[] m() {
+                int[] array = [ null, null ]
+                return array
+            }
+        ''', 'Cannot assign value of type java.lang.Object into array of type int[]'
     }
 
     // GROOVY-6131
@@ -512,7 +530,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert AR.'key'[0] == ['val1']
         """
     }
-    
+
     // GROOVY-6311
     void testSetSpread() {
         assertScript """
@@ -525,7 +543,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             assert res[0].contains('def')
         """
     }
-    
+
     // GROOVY-6241
     void testAsImmutable() {
         assertScript """
@@ -535,7 +553,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             Map<String, Integer> immutableMap = [foo: 123, bar: 456].asImmutable()
         """
     }
-    
+
     // GROOVY-6350
     void testListPlusList() {
         assertScript """
@@ -566,8 +584,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 Set<Foo> foos = [new Foo(name: 'pls'), new Foo(name: 'bar')].toSet()
                 foos*.name
             }
-            assert meth().toSet() == ['pls', 'bar'].toSet()            
+            assert meth().toSet() == ['pls', 'bar'].toSet()
         '''
     }
 }
-
