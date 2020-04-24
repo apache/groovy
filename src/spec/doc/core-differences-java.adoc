@@ -360,7 +360,7 @@ In addition, Groovy has the following keywords:
 * `trait`
 * `it` // within closures
 
-Groovy is less stringent that Java in that it allows some keywords to appear in places that would be illegal in Java,
+Groovy is less stringent than Java in that it allows some keywords to appear in places that would be illegal in Java,
 e.g. the following is valid: `var var = [def: 1, as: 2, in: 3, trait: 4]`.
 Never-the-less, you are discouraged from using the above keywords in places that might cause confusion even when
 the compiler might be happy. In particular, avoid using them for variable, method and class names,
