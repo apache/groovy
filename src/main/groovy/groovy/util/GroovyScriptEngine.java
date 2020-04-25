@@ -24,6 +24,7 @@ import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyResourceLoader;
 import groovy.lang.Script;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -209,7 +210,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                                 precompiledEntries.put(origName, path);
                             }
                             if (clazz != null) {
-                                ClassNode cn = new ClassNode(clazz);
+                                ClassNode cn = ClassHelper.make(clazz);
                                 return new LookupResult(null, cn);
                             }
                         } catch (ResourceException re) {
