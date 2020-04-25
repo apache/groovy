@@ -703,6 +703,26 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * Legacy method to set the indy flag (only true is allowed)
+     *
+     * @param indy true means invokedynamic support is active
+     */
+    @Deprecated
+    public void setIndy(final boolean indy) {
+        if (!indy) {
+            throw new BuildException("Disabling indy is no longer supported!", getLocation());
+        }
+    }
+
+    /**
+     * Get the value of the indy flag (always true).
+     */
+    @Deprecated
+    public boolean getIndy() {
+        return true;
+    }
+
+    /**
      * Set the base script class name for the scripts (must derive from Script)
      *
      * @param scriptBaseClass Base class name for scripts (must derive from Script)

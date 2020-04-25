@@ -297,6 +297,17 @@ public class Groovy extends Java {
         this.configscript = configscript;
     }
 
+    /**
+     * Legacy method to set the indy flag (only true is allowed)
+     *
+     * @param indy true means invokedynamic support is active
+     */
+    @Deprecated
+    public void setIndy(final boolean indy) {
+        if (!indy) {
+            throw new BuildException("Disabling indy is no longer supported!", getLocation());
+        }
+    }
 
     /**
      * Set the script base class name
