@@ -97,7 +97,7 @@ def buildExcludeFilter(boolean legacyTestSuite) {
     }
 
     // tests not passing with indy : investigation required!
-    excludes += ['Log4j2Test', 'ASTTransformationCustomizerTest']
+    excludes += ['Log4j2Test']
 
     return { f ->
         excludes.any { f.file =~ it }
