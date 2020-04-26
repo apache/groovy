@@ -340,7 +340,79 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
-    void testUsageOfOuterMethodoverridden() {
+    // GROOVY-9501
+    void testUsageOfOuterField7() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+
+            abstract class Outer {
+                private static volatile boolean flag
+
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+
+                private final class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
+    // inner class is static instead of final
+    void testUsageOfOuterField8() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+
+            abstract class Outer {
+                private static volatile boolean flag
+
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+
+                private static class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
+    void testUsageOfOuterMethodOverridden() {
         assertScript """
             interface Run {
                 def run()

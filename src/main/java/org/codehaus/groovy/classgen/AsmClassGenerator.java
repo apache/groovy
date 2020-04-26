@@ -979,11 +979,11 @@ public class AsmClassGenerator extends ClassGenerator {
                         if (field==null && classNode instanceof InnerClassNode) {
                             ClassNode outer = classNode.getOuterClass();
                             FieldNode outerClassField;
-                            while (outer!=null) {
+                            while (outer != null) {
                                 outerClassField = outer.getDeclaredField(name);
-                                if (outerClassField!=null && outerClassField.isStatic() && outerClassField.isFinal()) {
-                                    if (outer!=classNode.getOuterClass() && outerClassField.isPrivate()) {
-                                        throw new GroovyBugError("Trying to access private constant field ["+outerClassField.getDeclaringClass()+"#"+outerClassField.getName()+"] from inner class");
+                                if (outerClassField != null && outerClassField.isStatic()) {
+                                    if (outer != classNode.getOuterClass() && outerClassField.isPrivate()) {
+                                        throw new GroovyBugError("Trying to access private constant field [" + outerClassField.getDeclaringClass() + "#" + outerClassField.getName() + "] from inner class");
                                     }
                                     PropertyExpression pexp = new PropertyExpression(
                                             new ClassExpression(outer),
