@@ -1042,7 +1042,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     if (field == null && outer != null) {
                         do {
                             FieldNode outerClassField = outer.getDeclaredField(name);
-                            if (outerClassField != null && outerClassField.isStatic() && outerClassField.isFinal()) {
+                            if (outerClassField != null && outerClassField.isStatic()) {
                                 if (outerClassField.isPrivate() && classNode.getOuterClass() != outer) {
                                     throw new GroovyBugError("Trying to access private field [" + outerClassField.getDeclaringClass() + "#" + outerClassField.getName() + "] from inner class");
                                 }
