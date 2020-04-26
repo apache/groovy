@@ -19,12 +19,14 @@
 package gls.innerClass
 
 import groovy.test.NotYetImplemented
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
+@CompileStatic
 final class InnerClassTest {
 
     @Test
@@ -633,10 +635,24 @@ final class InnerClassTest {
         '''
     }
 
-    @Test
+    @Test // GROOVY-4028
     void testImplicitThisPassingWithNamedArguments() {
-        def oc = new MyOuterClass4028()
-        assert oc.foo().propMap.size() == 2
+        assertScript '''
+            class Outer {
+                def inner() {
+                    new Inner(fName: 'Roshan', lName: 'Dawrani')
+                }
+                class Inner {
+                    Map props
+                    Inner(Map props) {
+                        this.props = props
+                    }
+                }
+            }
+            def outer = new Outer()
+            def inner = outer.inner()
+            assert inner.props.size() == 2
+        '''
     }
 
     @Test
@@ -1123,16 +1139,4 @@ class Parent8914 {
 
 class Outer8914 {
     static class Nested extends Parent8914.Nested {}
-}
-
-class MyOuterClass4028 {
-    def foo() {
-        new MyInnerClass4028(fName: 'Roshan', lName: 'Dawrani')
-    }
-    class MyInnerClass4028 {
-        Map propMap
-        def MyInnerClass4028(Map propMap) {
-            this.propMap = propMap
-        }
-    }
 }

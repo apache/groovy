@@ -124,6 +124,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 
 /**
  * Generates Java class versions of Groovy classes using ASM.
@@ -1302,9 +1303,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void processClassVariable(final VariableExpression expression) {
         if (passingParams && controller.isInScriptBody()) {
-            //TODO: check if this part is actually used
+            // TODO: check if this part is actually used
             MethodVisitor mv = controller.getMethodVisitor();
-            // let's create a ScriptReference to pass into the closure
+            // create a ScriptReference to pass into the closure
             mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
             mv.visitInsn(DUP);
 
@@ -1313,10 +1314,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
             mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
         } else {
-            PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), expression.getName());
+            PropertyExpression pexp = thisPropX(true, expression.getName());
             pexp.getObjectExpression().setSourcePosition(expression);
             pexp.getProperty().setSourcePosition(expression);
-            pexp.setImplicitThis(true);
             visitPropertyExpression(pexp);
         }
     }
