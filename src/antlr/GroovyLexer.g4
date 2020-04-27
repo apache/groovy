@@ -366,6 +366,8 @@ fragment DollarSlashyStringCharacter
 // Groovy keywords
 AS              : 'as';
 DEF             : 'def';
+VAL             : 'val';
+LET             : 'let';
 IN              : 'in';
 TRAIT           : 'trait';
 THREADSAFE      : 'threadsafe'; // reserved keyword

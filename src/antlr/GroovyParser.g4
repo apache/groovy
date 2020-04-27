@@ -131,6 +131,8 @@ modifier
           |   VOLATILE
           |   DEF
           |   VAR
+          |   VAL
+          |   LET
           )
     ;
 
@@ -170,6 +172,8 @@ variableModifier
     |   m=( FINAL
           | DEF
           | VAR
+          | VAL
+          | LET
           // Groovy supports declaring local variables as instance/class fields,
           // e.g. import groovy.transform.*; @Field static List awe = [1, 2, 3]
           // e.g. import groovy.transform.*; def a = { @Field public List awe = [1, 2, 3] }
@@ -1142,6 +1146,8 @@ identifier
     :   Identifier
     |   CapitalizedIdentifier
     |   VAR
+    |   VAL
+    |   LET
     |   IN
 //    |   DEF
     |   TRAIT
@@ -1200,6 +1206,8 @@ keywords
     |   THREADSAFE
     |   TRY
     |   VAR
+    |   VAL
+    |   LET
     |   VOLATILE
     |   WHILE
 

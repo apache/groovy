@@ -37,6 +37,8 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.STRICTFP;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SYNCHRONIZED;
 import static org.apache.groovy.parser.antlr4.GroovyParser.TRANSIENT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
+import static org.apache.groovy.parser.antlr4.GroovyParser.VAL;
+import static org.apache.groovy.parser.antlr4.GroovyParser.LET;
 import static org.apache.groovy.parser.antlr4.GroovyParser.VOLATILE;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
@@ -57,6 +59,8 @@ public class ModifierNode extends ASTNode {
             ANNOTATION_TYPE, 0,
             DEF, 0,
             VAR, 0,
+            VAL, Opcodes.ACC_FINAL, // -> final var
+            LET, Opcodes.ACC_FINAL, // -> final var
 
             NATIVE, Opcodes.ACC_NATIVE,
             SYNCHRONIZED, Opcodes.ACC_SYNCHRONIZED,
@@ -127,7 +131,12 @@ public class ModifierNode extends ASTNode {
     }
 
     public boolean isDef() {
-        return Objects.equals(DEF, this.type) || Objects.equals(VAR, this.type);
+        return Objects.equals(DEF, this.type) ||
+        		Objects.equals(VAR, this.type) ||
+        		
+        		// includes "final" modifier
+        		Objects.equals(VAL, this.type) ||
+        		Objects.equals(LET, this.type);
     }
 
     public Integer getType() {

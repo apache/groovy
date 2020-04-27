@@ -41,6 +41,8 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.FINAL;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.NATIVE;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.STATIC;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.VOLATILE;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.VAL;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.LET;
 
 /**
  * Process modifiers for AST nodes
@@ -52,161 +54,172 @@ class ModifierManager {
             ConstructorNode.class, Arrays.asList(STATIC, FINAL, ABSTRACT, NATIVE),
             MethodNode.class, Arrays.asList(VOLATILE/*, TRANSIENT*/)
     );
-    private AstBuilder astBuilder;
-    private List<ModifierNode> modifierNodeList;
+	private AstBuilder astBuilder;
+	private List<ModifierNode> modifierNodeList;
 
-    public ModifierManager(AstBuilder astBuilder, List<ModifierNode> modifierNodeList) {
-        this.astBuilder = astBuilder;
-        this.validate(modifierNodeList);
-        this.modifierNodeList = Collections.unmodifiableList(modifierNodeList);
-    }
+	public ModifierManager(AstBuilder astBuilder, List<ModifierNode> modifierNodeList) {
+		this.astBuilder = astBuilder;
+		this.validate(modifierNodeList);
+		this.modifierNodeList = Collections.unmodifiableList(modifierNodeList);
+	}
 
-    public int getModifierCount() {
-        return modifierNodeList.size();
-    }
+	public int getModifierCount() {
+		return modifierNodeList.size();
+	}
 
-    private void validate(List<ModifierNode> modifierNodeList) {
-        Map<ModifierNode, Integer> modifierNodeCounter = new LinkedHashMap<>(modifierNodeList.size());
-        int visibilityModifierCnt = 0;
+	private void validate(List<ModifierNode> modifierNodeList) {
+		Map<ModifierNode, Integer> modifierNodeCounter = new LinkedHashMap<>(modifierNodeList.size());
+		int visibilityModifierCnt = 0;
 
-        for (ModifierNode modifierNode : modifierNodeList) {
-            Integer cnt = modifierNodeCounter.get(modifierNode);
+		for (ModifierNode modifierNode : modifierNodeList) {
+			Integer cnt = modifierNodeCounter.get(modifierNode);
 
-            if (null == cnt) {
-                modifierNodeCounter.put(modifierNode, 1);
-            } else if (1 == cnt && !modifierNode.isRepeatable()) {
+			if (null == cnt) {
+				modifierNodeCounter.put(modifierNode, 1);
+			} else if (1 == cnt && !modifierNode.isRepeatable()) {
                 throw astBuilder.createParsingFailedException("Cannot repeat modifier[" + modifierNode.getText() + "]", modifierNode);
-            }
+			}
 
-            if (modifierNode.isVisibilityModifier()) {
-                visibilityModifierCnt++;
+			if (modifierNode.isVisibilityModifier()) {
+				visibilityModifierCnt++;
 
-                if (visibilityModifierCnt > 1) {
+				if (visibilityModifierCnt > 1) {
                     throw astBuilder.createParsingFailedException("Cannot specify modifier[" + modifierNode.getText() + "] when access scope has already been defined", modifierNode);
-                }
-            }
-        }
-    }
+				}
+			}
+		}
+	}
 
-    public void validate(MethodNode methodNode) {
-        validate(INVALID_MODIFIERS_MAP.get(MethodNode.class), methodNode);
-    }
+	public void validate(MethodNode methodNode) {
+		validate(INVALID_MODIFIERS_MAP.get(MethodNode.class), methodNode);
+	}
 
-    public void validate(ConstructorNode constructorNode) {
-        validate(INVALID_MODIFIERS_MAP.get(ConstructorNode.class), constructorNode);
-    }
+	public void validate(ConstructorNode constructorNode) {
+		validate(INVALID_MODIFIERS_MAP.get(ConstructorNode.class), constructorNode);
+	}
 
-    private void validate(List<Integer> invalidModifierList, MethodNode methodNode) {
-        modifierNodeList.forEach(e -> {
-            if (invalidModifierList.contains(e.getType())) {
+	private void validate(List<Integer> invalidModifierList, MethodNode methodNode) {
+		modifierNodeList.forEach(e -> {
+			if (invalidModifierList.contains(e.getType())) {
                 throw astBuilder.createParsingFailedException(methodNode.getClass().getSimpleName().replace("Node", "") + " has an incorrect modifier '" + e + "'.", methodNode);
-            }
-        });
-    }
+			}
+		});
+	}
 
-    // t    1: class modifiers value; 2: class member modifiers value
-    private int calcModifiersOpValue(int t) {
-        int result = 0;
+	// t 1: class modifiers value; 2: class member modifiers value
+	private int calcModifiersOpValue(int t) {
+		int result = 0;
 
-        for (ModifierNode modifierNode : modifierNodeList) {
-            result |= modifierNode.getOpcode();
-        }
+		for (ModifierNode modifierNode : modifierNodeList) {
+			result |= modifierNode.getOpcode();
+		}
 
-        if (!this.containsVisibilityModifier()) {
-            if (1 == t) {
-                result |= Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PUBLIC;
-            } else if (2 == t) {
-                result |= Opcodes.ACC_PUBLIC;
-            }
-        }
 
-        return result;
-    }
+		if (1 == t) {
+			if (!this.containsVisibilityModifier()) {
+				result |= Opcodes.ACC_SYNTHETIC | Opcodes.ACC_PUBLIC;
+			}
+		} else if (2 == t) {
+			if (this.containsAny(LET, VAL)) {
+				result |= Opcodes.ACC_FINAL;
+			}
+			
+			if (!this.containsVisibilityModifier()) {
+				result |= Opcodes.ACC_PUBLIC;
+			}
+		}
 
-    public int getClassModifiersOpValue() {
-        return this.calcModifiersOpValue(1);
-    }
+		return result;
+	}
 
-    public int getClassMemberModifiersOpValue() {
-        return this.calcModifiersOpValue(2);
-    }
+	public int getClassModifiersOpValue() {
+		return this.calcModifiersOpValue(1);
+	}
 
-    public List<AnnotationNode> getAnnotations() {
+	public int getClassMemberModifiersOpValue() {
+		return this.calcModifiersOpValue(2);
+	}
+
+	public List<AnnotationNode> getAnnotations() {
         return modifierNodeList.stream()
                 .filter(ModifierNode::isAnnotation)
                 .map(ModifierNode::getAnnotationNode)
-                .collect(Collectors.toList());
-    }
+				.collect(Collectors.toList());
+	}
 
-    public boolean containsAny(final int... modifierTypes) {
-        return modifierNodeList.stream().anyMatch(e -> {
-            for (int modifierType : modifierTypes) {
-                if (modifierType == e.getType()) {
-                    return true;
-                }
-            }
+	public boolean containsAny(final int... modifierTypes) {
+		return modifierNodeList.stream().anyMatch(e -> {
+			for (int modifierType : modifierTypes) {
+				if (modifierType == e.getType()) {
+					return true;
+				}
+			}
 
-            return false;
-        });
-    }
+			return false;
+		});
+	}
 
-    public Optional<ModifierNode> get(int modifierType) {
-        return modifierNodeList.stream().filter(e -> modifierType == e.getType()).findFirst();
-    }
+	public Optional<ModifierNode> get(int modifierType) {
+		return modifierNodeList.stream().filter(e -> modifierType == e.getType()).findFirst();
+	}
 
-    public boolean containsAnnotations() {
-        return modifierNodeList.stream().anyMatch(ModifierNode::isAnnotation);
-    }
+	public boolean containsAnnotations() {
+		return modifierNodeList.stream().anyMatch(ModifierNode::isAnnotation);
+	}
 
-    public boolean containsVisibilityModifier() {
-        return modifierNodeList.stream().anyMatch(ModifierNode::isVisibilityModifier);
-    }
+	public boolean containsVisibilityModifier() {
+		return modifierNodeList.stream().anyMatch(ModifierNode::isVisibilityModifier);
+	}
 
-    public boolean containsNonVisibilityModifier() {
-        return modifierNodeList.stream().anyMatch(ModifierNode::isNonVisibilityModifier);
-    }
+	public boolean containsNonVisibilityModifier() {
+		return modifierNodeList.stream().anyMatch(ModifierNode::isNonVisibilityModifier);
+	}
 
-    public Parameter processParameter(Parameter parameter) {
-        modifierNodeList.forEach(e -> {
-            parameter.setModifiers(parameter.getModifiers() | e.getOpcode());
+	public Parameter processParameter(Parameter parameter) {
+		modifierNodeList.forEach(e -> {
+			parameter.setModifiers(parameter.getModifiers() | e.getOpcode());
 
-            if (e.isAnnotation()) {
-                parameter.addAnnotation(e.getAnnotationNode());
-            }
-        });
+			if (e.isAnnotation()) {
+				parameter.addAnnotation(e.getAnnotationNode());
+			}
+		});
 
-        return parameter;
-    }
+		return parameter;
+	}
 
-    public int clearVisibilityModifiers(int modifiers) {
-        return modifiers & ~Opcodes.ACC_PUBLIC & ~Opcodes.ACC_PROTECTED & ~Opcodes.ACC_PRIVATE;
-    }
+	public int clearVisibilityModifiers(int modifiers) {
+		return modifiers & ~Opcodes.ACC_PUBLIC & ~Opcodes.ACC_PROTECTED & ~Opcodes.ACC_PRIVATE;
+	}
 
-    public MethodNode processMethodNode(MethodNode mn) {
-        modifierNodeList.forEach(e -> {
+	public MethodNode processMethodNode(MethodNode mn) {
+		modifierNodeList.forEach(e -> {
             mn.setModifiers((e.isVisibilityModifier() ? clearVisibilityModifiers(mn.getModifiers()) : mn.getModifiers()) | e.getOpcode());
 
-            if (e.isAnnotation()) {
-                mn.addAnnotation(e.getAnnotationNode());
-            }
-        });
+			if (e.isAnnotation()) {
+				mn.addAnnotation(e.getAnnotationNode());
+			}
+		});
 
-        return mn;
-    }
+		return mn;
+	}
 
-    public VariableExpression processVariableExpression(VariableExpression ve) {
-        modifierNodeList.forEach(e -> {
-            ve.setModifiers(ve.getModifiers() | e.getOpcode());
+	public VariableExpression processVariableExpression(VariableExpression ve) {
+		modifierNodeList.forEach(e -> {
+			ve.setModifiers(ve.getModifiers() | e.getOpcode());
 
-            // local variable does not attach annotations
-        });
+			// local variable does not attach annotations
+		});
 
-        return ve;
-    }
+		if (this.containsAny(LET, VAL)) {
+			ve.setModifiers(ve.getModifiers() | Opcodes.ACC_FINAL);
+		}
 
-    public <T extends AnnotatedNode> T attachAnnotations(T node) {
-        this.getAnnotations().forEach(node::addAnnotation);
+		return ve;
+	}
 
-        return node;
-    }
+	public <T extends AnnotatedNode> T attachAnnotations(T node) {
+		this.getAnnotations().forEach(node::addAnnotation);
+
+		return node;
+	}
 }

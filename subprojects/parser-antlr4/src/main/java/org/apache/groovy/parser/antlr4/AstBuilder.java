@@ -190,6 +190,8 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.CreatedNameContex
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.CreatorContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.DEC;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.DEF;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.VAL;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.LET;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.DEFAULT;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.DimContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.DoWhileStmtAltContext;
@@ -1508,7 +1510,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public MethodNode visitMethodDeclaration(MethodDeclarationContext ctx) {
         ModifierManager modifierManager = createModifierManager(ctx);
 
-        if (modifierManager.containsAny(VAR)) {
+        if (modifierManager.containsAny(VAR, VAL, LET)) {
             throw createParsingFailedException("var cannot be used for method declarations", ctx);
         }
 
@@ -4357,7 +4359,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return true;
         }
 
-        if (hasReturnType && (modifierManager.containsAny(DEF, VAR))) {
+        if (hasReturnType && (modifierManager.containsAny(DEF, VAR, VAL, LET))) {
             return true;
         }
 

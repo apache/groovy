@@ -355,6 +355,18 @@ final class SyntaxErrorTest extends GroovyTestCase {
         TestUtils.doRunAndShouldFail('fail/Var_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Var_02x.groovy')
     }
+	
+	void 'test groovy core - val'() {
+		TestUtils.doRunAndShouldFail('fail/Val_01x.groovy')
+		TestUtils.doRunAndShouldFail('fail/Val_02x.groovy')
+		TestUtils.doRunAndShouldFail('fail/Val_03x.groovy')
+	}
+	
+	void 'test groovy core - let'() {
+		TestUtils.doRunAndShouldFail('fail/Let_01x.groovy')
+		TestUtils.doRunAndShouldFail('fail/Let_02x.groovy')
+		TestUtils.doRunAndShouldFail('fail/Let_03x.groovy')
+	}
 
     void 'test groovy core - String'() {
         TestUtils.doRunAndShouldFail('fail/String_01x.groovy')
