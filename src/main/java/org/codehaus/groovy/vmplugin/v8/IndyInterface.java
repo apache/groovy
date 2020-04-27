@@ -305,11 +305,7 @@ public class IndyInterface {
                 );
 
         if (NULL_METHOD_HANDLE_WRAPPER == mhw) {
-            final MethodHandleWrapper fbMhw = fallbackSupplier.get();
-            if (fbMhw.isCanSetTarget()) {
-                doWithCallSite(callSite, arguments, (cs, receiver) -> cs.put(receiver.getClass().getName(), fbMhw));
-            }
-            mhw = fbMhw;
+            mhw = fallbackSupplier.get();
         }
 
         if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD)) {
