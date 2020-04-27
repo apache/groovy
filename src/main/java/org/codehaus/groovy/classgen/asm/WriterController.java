@@ -79,10 +79,17 @@ public class WriterController {
 
     public void init(final AsmClassGenerator asmClassGenerator, final GeneratorContext gcon, final ClassVisitor cv, final ClassNode cn) {
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
-        boolean invokedynamic = config.isIndyEnabled();
         Map<String,Boolean> optOptions = config.getOptimizationOptions();
-        if (!invokedynamic && Boolean.FALSE.equals(optOptions.get("all"))) {
+        boolean invokedynamic = false;
+        if (optOptions.isEmpty()) {
+            // IGNORE
+        } else if (Boolean.FALSE.equals(optOptions.get("all"))) {
             this.optimizeForInt = false;
+            // set other optimizations options to false here
+        } else {
+            if (config.isIndyEnabled()) invokedynamic = true;
+            if (Boolean.FALSE.equals(optOptions.get("int"))) this.optimizeForInt = false;
+            if (invokedynamic) this.optimizeForInt = false;
             // set other optimizations options to false here
         }
         this.classNode = cn;
