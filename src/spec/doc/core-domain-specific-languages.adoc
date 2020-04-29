@@ -1603,6 +1603,26 @@ image::assets/img/usageMessageSpec.png[]
 *New property: parser*
 
 The `parser` property gives access to the picocli `ParserSpec` object that can be used to customize the parser behavior.
+
+This can be useful when the `CliBuilder` options to control the parser are not fine-grained enough.
+For example, for backward compatibility with the Commons CLI implementation of `CliBuilder`, by default `CliBuilder` stops looking for options when an unknown option is encountered, and subsequent command line arguments are treated as positional parameters.
+`CliBuilder` provides a `stopAtNonOption` property, and by setting this to `false` you can make the parser more strict, so an unknown option results in `error: Unknown option: '-x'`.
+
+But what if you want to treat unknown options as positional parameters, and still process subsequent command line arguments as options?
+
+This can be accomplished with the `parser` property.
+For example:
+
+[source,groovy]
+----
+def cli = new CliBuilder()
+cli.parser.stopAtPositional(false)
+cli.parser.unmatchedOptionsArePositionalParams(true)
+// ...
+def opts = cli.parse(args)
+// ...
+----
+
 See the http://picocli.info/apidocs/picocli/CommandLine.Model.ParserSpec.html[documentation] for details.
 
 *Map options*
