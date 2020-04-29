@@ -1091,7 +1091,7 @@ Usage: groovy [-hiV] [-cp] [-pa] [-pr] [--configscript=PARAM]
     }
 
     // GROOVY-9519
-    testIntOptionWithDefaultZeroShouldNotConvertToBooleanFalse() {
+    void testIntOptionWithDefaultZeroShouldNotConvertToBooleanFalse() {
         def cli = new CliBuilder()
         cli.i(type: Integer, longOpt: 'intTest', required: false, args: 1, defaultValue: '0', 'Testing integer with default value 0')
 
