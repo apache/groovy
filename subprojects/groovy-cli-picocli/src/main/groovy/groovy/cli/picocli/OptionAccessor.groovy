@@ -126,6 +126,8 @@ class OptionAccessor {
         if (parseResult.commandSpec().findOption(name)) { // requested option was not matched: return its default
             def option = parseResult.commandSpec().findOption(name)
             def result = option.value
+            Class userSpecifiedType = savedTypeOptions[name]?.type // GROOVY-9519: zero default for non-Boolean type options should not be converted to false
+            if (userSpecifiedType && Boolean != userSpecifiedType) { return result }
             return result ? result : false
         }
         if (name.size() > 1 && name.endsWith('s')) { // user wants multi-value result
