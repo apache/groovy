@@ -1090,4 +1090,15 @@ Usage: groovy [-hiV] [-cp] [-pa] [-pr] [--configscript=PARAM]
         assertNull(optionAccessor)
     }
 
+    // GROOVY-9519
+    testIntOptionWithDefaultZeroShouldNotConvertToBooleanFalse() {
+        def cli = new CliBuilder()
+        cli.i(type: Integer, longOpt: 'intTest', required: false, args: 1, defaultValue: '0', 'Testing integer with default value 0')
+
+        def opts = cli.parse([]) // no args, so defaults are applied
+        assert opts
+
+        assert Integer == opts.i.getClass()
+        assert opts.i == 0
+    }
 }
