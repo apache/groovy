@@ -1114,10 +1114,9 @@ def options = cli.parse(args)                              <5>
 if (options.h) cli.usage()                                 <6>
 else println "Hello ${options.a ? options.a : 'World'}"    <7>
 ---------------------------
-<1> Earlier versions of Groovy had a CliBuilder in the groovy.util package and no import was necessary.
-While still supported, this approach is now deprecated and you should instead choose the groovy.cli.picocli
-or groovy.cli.commons version. The groovy.util version points to the commons-cli version for backwards compatibility
-but will be removed in a future version of Groovy.
+<1> Earlier versions of Groovy had a CliBuilder in the `groovy.util` package and no import was necessary.
+In Groovy 2.5, this approach became deprecated: applications should instead choose the `groovy.cli.picocli` or `groovy.cli.commons` version.
+The groovy.util version in Groovy 2.5 points to the commons-cli version for backwards compatibility but has been removed in Groovy 3.0.
 <2> define a new `CliBuilder` instance specifying an optional usage string
 <3> specify a `-a` option taking a single argument with an optional long variant `--audience`
 <4> specify a `-h` option taking no arguments with an optional long variant `--help`
