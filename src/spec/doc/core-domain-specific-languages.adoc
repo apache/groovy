@@ -1599,7 +1599,7 @@ Gives this output:
 
 image::assets/img/usageMessageSpec.png[]
 
-*New property: parser*
+*Property: parser*
 
 The `parser` property gives access to the picocli `ParserSpec` object that can be used to customize the parser behavior.
 
