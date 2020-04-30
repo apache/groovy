@@ -558,6 +558,17 @@ class CliBuilderTest extends GroovyTestCase {
         assert options.arguments() == ['foo']
     }
 
+    // GROOVY-9528
+    void testRequiredParamsWithUnknownArgumentLikeParams() {
+        def cli = new CliBuilder()
+        cli.parser.stopAtPositional(false)
+        cli.parser.unmatchedOptionsArePositionalParams(true)
+        cli.a(type: String, longOpt: 'optA', required: true, args: 1, 'Option a (required)')
+        cli.c(type: String, longOpt: 'optC', required: true, args: 1, 'Option c (required)')
+        def opts = cli.parse('-a A -b B -c C'.split(' '))
+        assert opts.arguments() == ['-b', 'B']
+    }
+
     interface PersonI {
         @Option String first()
         @Option String last()
