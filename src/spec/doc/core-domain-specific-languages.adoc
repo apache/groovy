@@ -1642,6 +1642,18 @@ include::{projectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBu
 <6> Picocli returns the key-value pairs as a `Map`
 <7> Both keys and values of the map can be strongly typed
 
+*Controlling the Picocli version*
+
+If necessary, you can use the `@Grab` annotation to control the version of picocli to use in `CliBuilder`.
+
+[source,groovy]
+----
+@GrabConfig(systemClassLoader=true)
+@Grab('info.picocli:picocli:4.2.0')
+import groovy.cli.picocli.CliBuilder
+
+def cli = new CliBuilder()
+----
 
 ==== ObjectGraphBuilder
 
