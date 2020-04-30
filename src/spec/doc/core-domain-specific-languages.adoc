@@ -1644,7 +1644,8 @@ include::{projectdir}/subprojects/groovy-cli-picocli/src/spec/test/builder/CliBu
 
 *Controlling the Picocli version*
 
-If necessary, you can use the `@Grab` annotation to control the version of picocli to use in `CliBuilder`.
+To use a specific version of picocli, add a dependency to that version in your build configuration.
+If running scripts using a pre-installed version of Groovy, use the `@Grab` annotation to control the version of picocli to use in `CliBuilder`.
 
 [source,groovy]
 ----
