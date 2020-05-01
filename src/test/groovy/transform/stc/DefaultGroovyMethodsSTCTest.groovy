@@ -66,12 +66,12 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
             true.equals { it }
         '''
     }
-  
+
     void testShouldAcceptMethodFromDefaultDateMethods() {
       assertScript '''
-        def s = new Date()
-        println s.year
-        println s.format("yyyyMMdd")
+          def s = new Date()
+          println s.year
+          println s.format("yyyyMMdd")
       '''
     }
 
@@ -88,7 +88,8 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5584
     void testEachOnMap() {
-        assertScript '''import org.codehaus.groovy.transform.stc.ExtensionMethodNode
+        assertScript '''
+            import org.codehaus.groovy.transform.stc.ExtensionMethodNode
             import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value= {
@@ -195,10 +196,58 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
                 def results = [:]
                 Functions.values().eachWithIndex { val, idx -> results[idx] = val.name() }
                 results
-            } 
+            }
             assert m() == ['A', 'B', 'C']
             assert m2() == [0: 'A', 1: 'B', 2: 'C']
         '''
     }
 
+    // GROOVY-9420
+    void testMapGetVsGetAt() {
+        assertScript '''
+            void check(String val) {
+                assert val == 'bar'
+            }
+
+            Object getKey() {
+                return 'foo'
+            }
+
+            void test() {
+                Map<String, String> map = [foo: 'bar']
+
+                def one = map.get(key)
+                check(one)
+
+                def two = map[key]
+                check(two)
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-9529
+    void testMapGetAtVsObjectGetAt() {
+        assertScript '''
+            interface X extends Map<Object, Object> {}
+
+            interface Y extends X {}
+
+            class C extends HashMap<Object, Object> implements Y {}
+
+            Y newMap() {
+                new C().tap {
+                    put('foo', 'bar')
+                }
+            }
+
+            void test() {
+                def map = newMap()
+                assert map['foo'] == 'bar'
+            }
+
+            test()
+        '''
+    }
 }
