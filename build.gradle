@@ -214,6 +214,7 @@ sourceSets {
             if (!JavaVersion.current().isJava9Compatible()) {
                 exclude '**/v9/*'
                 exclude '**/vm9/*'
+                exclude '**/PlatformLog.java'
             }
         }
         groovy {

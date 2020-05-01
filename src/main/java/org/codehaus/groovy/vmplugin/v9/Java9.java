@@ -46,6 +46,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -63,6 +64,16 @@ import java.util.stream.Collectors;
  */
 public class Java9 extends Java8 {
     private static final Logger LOGGER = Logger.getLogger(Java9.class.getName());
+
+    private final Class<?>[] PLUGIN_DGM;
+
+    public Java9() {
+        super();
+        List<Class<?>> dgmClasses = new ArrayList<>();
+        Collections.addAll(dgmClasses, super.getPluginDefaultGroovyMethods());
+        dgmClasses.add(PluginDefaultGroovyMethods.class);
+        PLUGIN_DGM = dgmClasses.toArray(new Class<?>[0]);
+    }
 
     @Override
     public Map<String, Set<String>> getDefaultImportClasses(String[] packageNames) {
@@ -162,6 +173,11 @@ public class Java9 extends Java8 {
         } catch (final InvocationTargetException e) {
             throw new GroovyRuntimeException(e);
         }
+    }
+
+    @Override
+    public Class<?>[] getPluginDefaultGroovyMethods() {
+        return PLUGIN_DGM;
     }
 
     @Override
