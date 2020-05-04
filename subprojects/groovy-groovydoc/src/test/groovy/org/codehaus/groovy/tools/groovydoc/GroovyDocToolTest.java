@@ -811,6 +811,46 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("The Groovy method details should have type parameters", methodDetailsTypeParams.matcher(groovydoc).find());
     }
 
+    public void testMethodParamTypeParams() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Java.java",
+                base + "/Groovy.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+
+        final Pattern methodSummary = Pattern.compile(Pattern.quote(
+                "<code><strong><a href=\"#compare(Class, Class)\">compare</a></strong>"
+                        + "("
+                        + "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;A&gt; a, "
+                        + "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;B&gt; b"
+                        + ")"
+                        + "</code>"
+        ));
+        final Pattern methodDetailAnchor = Pattern.compile(Pattern.quote(
+                "<a name=\"compare(Class, Class)\"><!-- --></a>"
+        ));
+        final Pattern methodDetailTitle = Pattern.compile(Pattern.quote(
+                "<strong>compare</strong>" +
+                        "(" +
+                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;A&gt; a, " +
+                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;B&gt; b" +
+                        ")"
+        ));
+
+        assertTrue("The Java method summary should include type parameters", methodSummary.matcher(javadoc).find());
+        assertTrue("The Java method detail anchor should NOT include type parameters", methodDetailAnchor.matcher(javadoc).find());
+        assertTrue("The Java method detail title should include type parameters", methodDetailTitle.matcher(javadoc).find());
+        assertTrue("The Groovy method summary should include type parameters", methodSummary.matcher(groovydoc).find());
+        assertTrue("The Groovy method detail anchor should NOT include type parameters", methodDetailAnchor.matcher(groovydoc).find());
+        assertTrue("The Groovy method detail title should include type parameters", methodDetailTitle.matcher(groovydoc).find());
+    }
+
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");

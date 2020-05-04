@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
@@ -101,7 +102,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         if (node instanceof InnerClassNode) {
             name = name.replace('$', '.');
         }
-        currentClassDoc = new SimpleGroovyClassDoc(imports, aliases, name, links);
+        currentClassDoc = new SimpleGroovyClassDoc(withDefaultImports(imports), aliases, name, links);
         if (node.isEnum()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.ENUM_DEF);
         } else if (node.isAnnotationDefinition()) {
@@ -157,6 +158,15 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             parent.addNested(currentClassDoc);
             currentClassDoc = parent;
         }
+    }
+
+    private List<String> withDefaultImports(List<String> imports) {
+        imports = imports != null ? imports : new ArrayList<>();
+        imports.add(packagePath + "/*");  // everything in this package
+        for (String pkg : ResolveVisitor.DEFAULT_IMPORTS) {
+            imports.add(pkg.replace('.', '/') + "*");
+        }
+        return imports;
     }
 
     private static final Pattern JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
@@ -289,7 +299,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     private String makeType(ClassNode node) {
-        return node.getName().replace('.', '/').replace('$', '.');
+        return node.getName().replace('.', '/').replace('$', '.')
+                + genericTypesAsString(node.getGenericsTypes())
+                ;
     }
 
     @Override
