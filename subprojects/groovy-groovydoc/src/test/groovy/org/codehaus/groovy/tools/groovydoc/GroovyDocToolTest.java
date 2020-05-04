@@ -785,6 +785,32 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("The Groovy method doc should have type parameters definitions", methodTypeParams.matcher(groovydoc).find());
     }
 
+    public void testMethodTypeParams() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Java.java",
+                base + "/Groovy.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+
+        final Pattern methodSummaryTypeParams = Pattern.compile(
+                "<td class=\"colFirst\"><code>&lt;A, B&gt;</code></td>"
+        );
+        final Pattern methodDetailsTypeParams = Pattern.compile(
+                "<h4>&lt;A, B&gt; (public&nbsp;)?static&nbsp;int <strong>compare</strong>"
+        );
+
+        assertTrue("The Java method summary should have type parameters", methodSummaryTypeParams.matcher(javadoc).find());
+        assertTrue("The Groovy method summary should have type parameters", methodSummaryTypeParams.matcher(groovydoc).find());
+        assertTrue("The Java method details should have type parameters", methodDetailsTypeParams.matcher(javadoc).find());
+        assertTrue("The Groovy method details should have type parameters", methodDetailsTypeParams.matcher(groovydoc).find());
+    }
+
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");

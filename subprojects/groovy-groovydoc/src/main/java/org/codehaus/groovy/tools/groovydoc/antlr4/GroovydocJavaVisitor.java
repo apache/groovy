@@ -256,6 +256,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     @Override
     public void visit(MethodDeclaration m, Object arg) {
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(m.getNameAsString(), currentClassDoc);
+        meth.setTypeParameters(genericTypesAsString(m.getTypeParameters()));
         meth.setReturnType(makeType(m.getType()));
         setConstructorOrMethodCommon(m, meth);
         currentClassDoc.add(meth);
