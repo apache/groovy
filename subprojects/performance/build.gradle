@@ -31,7 +31,7 @@ configurations {
 dependencies {
     jmh rootProject
     testImplementation rootProject
-    stats 'org.apache.commons:commons-math3:3.6'
+    stats 'org.apache.commons:commons-math3:3.6.1'
 }
 
 jmh {
