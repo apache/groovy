@@ -152,7 +152,7 @@ allprojects { proj ->
             xml.enabled = false
             html {
                 enabled = true
-                stylesheet = 'plain.xsl'
+                stylesheet = 'fancy.xsl'
             }
         }
     }
