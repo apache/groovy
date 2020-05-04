@@ -721,6 +721,25 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("The constructor parameter link text should be Foo", "Foo", constructor.group(3));
     }
 
+    public void testJavaGenericsTitle() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Java.java"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+
+        final Matcher title = Pattern.compile(Pattern.quote(
+                "<h2 title=\"[Java] Class Java&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;\" class=\"title\">"+
+                "[Java] Class Java&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;</h2>"
+        )).matcher(javadoc);
+
+        assertTrue("The title should have the generics information", title.find());
+    }
+
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
