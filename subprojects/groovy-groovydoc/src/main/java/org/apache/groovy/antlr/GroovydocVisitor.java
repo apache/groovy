@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyAnnotationRef;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc;
@@ -205,19 +206,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     private String genericTypesAsString(GenericsType[] genericsTypes) {
-        if (genericsTypes == null) return "";
-        StringBuilder result = new StringBuilder("<");
-        boolean first = true;
-        for (GenericsType genericsType : genericsTypes) {
-            if (!first) {
-                result.append(", ");
-            } else {
-                first = false;
-            }
-            result.append(genericsType.getName());
-        }
-        result.append(">");
-        return result.toString();
+        if (genericsTypes == null || genericsTypes.length == 0)
+            return "";
+        return "<" + DefaultGroovyMethods.join(genericsTypes, ", ") + ">";
     }
 
     private void processPropertiesFromGetterSetter(SimpleGroovyMethodDoc currentMethodDoc) {

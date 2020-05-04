@@ -740,6 +740,25 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("The title should have the generics information", title.find());
     }
 
+    public void testGroovyGenericsTitle() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Groovy.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+
+        final Matcher title = Pattern.compile(Pattern.quote(
+                "<h2 title=\"[Groovy] Trait Groovy&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;\" class=\"title\">"+
+                        "[Groovy] Trait Groovy&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;</h2>"
+        )).matcher(groovydoc);
+
+        assertTrue("The title should have the generics information", title.find());
+    }
+
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
