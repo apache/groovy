@@ -469,6 +469,7 @@ public class Java9 extends Java8 {
     }
 
     private static String[] JAVA8_PACKAGES() {
+        // The following package list should NOT be changed!
         return new String[] {
                 "apple.applescript",
                 "apple.laf",
