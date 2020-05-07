@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
@@ -719,6 +718,136 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("The implemented interface link text should be Foo", "Foo", interfacesAndTraits.group(2));
         assertEquals("The constructor parameter should link to lib.Foo", "lib", constructor.group(2));
         assertEquals("The constructor parameter link text should be Foo", "Foo", constructor.group(3));
+    }
+
+    public void testJavaGenericsTitle() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Java.java"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+
+        final Matcher title = Pattern.compile(Pattern.quote(
+                "<h2 title=\"[Java] Class Java&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;\" class=\"title\">"+
+                "[Java] Class Java&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;</h2>"
+        )).matcher(javadoc);
+
+        assertTrue("The title should have the generics information", title.find());
+    }
+
+    public void testGroovyGenericsTitle() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Groovy.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+
+        final Matcher title = Pattern.compile(Pattern.quote(
+                "<h2 title=\"[Groovy] Trait Groovy&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;\" class=\"title\">"+
+                        "[Groovy] Trait Groovy&lt;N extends Number & Comparable&lt;? extends Number&gt;&gt;</h2>"
+        )).matcher(groovydoc);
+
+        assertTrue("The title should have the generics information", title.find());
+    }
+
+    public void testParamTagForTypeParams() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Java.java",
+                base + "/Groovy.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+
+        final Pattern classTypeParams = Pattern.compile(
+                "<DL><DT><B>Type Parameters:</B></DT><DD><code>N</code> -  Doc.</DD></DL>"
+        );
+        final Pattern methodTypeParams = Pattern.compile(
+                "<DL><DT><B>Type Parameters:</B></DT><DD><code>A</code> -  Doc.</DD><DD><code>B</code> -  Doc.</DD></DL>"
+        );
+
+        assertTrue("The Java class doc should have type parameters definitions", classTypeParams.matcher(javadoc).find());
+        assertTrue("The Groovy class doc should have type parameters definitions", classTypeParams.matcher(groovydoc).find());
+        assertTrue("The Java method doc should have type parameters definitions", methodTypeParams.matcher(javadoc).find());
+        assertTrue("The Groovy method doc should have type parameters definitions", methodTypeParams.matcher(groovydoc).find());
+    }
+
+    public void testMethodTypeParams() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Java.java",
+                base + "/Groovy.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+
+        final Pattern methodSummaryTypeParams = Pattern.compile(
+                "<td class=\"colFirst\"><code>&lt;A, B&gt;</code></td>"
+        );
+        final Pattern methodDetailsTypeParams = Pattern.compile(
+                "<h4>&lt;A, B&gt; (public&nbsp;)?static&nbsp;int <strong>compare</strong>"
+        );
+
+        assertTrue("The Java method summary should have type parameters", methodSummaryTypeParams.matcher(javadoc).find());
+        assertTrue("The Groovy method summary should have type parameters", methodSummaryTypeParams.matcher(groovydoc).find());
+        assertTrue("The Java method details should have type parameters", methodDetailsTypeParams.matcher(javadoc).find());
+        assertTrue("The Groovy method details should have type parameters", methodDetailsTypeParams.matcher(groovydoc).find());
+    }
+
+    public void testMethodParamTypeParams() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+        htmlTool.add(Arrays.asList(
+                base + "/Java.java",
+                base + "/Groovy.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+
+        final Pattern methodSummary = Pattern.compile(Pattern.quote(
+                "<code><strong><a href=\"#compare(Class, Class)\">compare</a></strong>"
+                        + "("
+                        + "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;A&gt; a, "
+                        + "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;B&gt; b"
+                        + ")"
+                        + "</code>"
+        ));
+        final Pattern methodDetailAnchor = Pattern.compile(Pattern.quote(
+                "<a name=\"compare(Class, Class)\"><!-- --></a>"
+        ));
+        final Pattern methodDetailTitle = Pattern.compile(Pattern.quote(
+                "<strong>compare</strong>" +
+                        "(" +
+                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;A&gt; a, " +
+                        "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>&lt;B&gt; b" +
+                        ")"
+        ));
+
+        assertTrue("The Java method summary should include type parameters", methodSummary.matcher(javadoc).find());
+        assertTrue("The Java method detail anchor should NOT include type parameters", methodDetailAnchor.matcher(javadoc).find());
+        assertTrue("The Java method detail title should include type parameters", methodDetailTitle.matcher(javadoc).find());
+        assertTrue("The Groovy method summary should include type parameters", methodSummary.matcher(groovydoc).find());
+        assertTrue("The Groovy method detail anchor should NOT include type parameters", methodDetailAnchor.matcher(groovydoc).find());
+        assertTrue("The Groovy method detail title should include type parameters", methodDetailTitle.matcher(groovydoc).find());
     }
 
     public void testScript() throws Exception {

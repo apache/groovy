@@ -185,7 +185,9 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     }
 
     private String genericTypesAsString(NodeList<TypeParameter> typeParameters) {
-        return DefaultGroovyMethods.join(typeParameters, ", ");
+        if (typeParameters == null || typeParameters.size() == 0)
+            return "";
+        return "<" + DefaultGroovyMethods.join(typeParameters, ", ") + ">";
     }
 
     private SimpleGroovyClassDoc visit(TypeDeclaration<?> n) {
@@ -254,6 +256,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     @Override
     public void visit(MethodDeclaration m, Object arg) {
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(m.getNameAsString(), currentClassDoc);
+        meth.setTypeParameters(genericTypesAsString(m.getTypeParameters()));
         meth.setReturnType(makeType(m.getType()));
         setConstructorOrMethodCommon(m, meth);
         currentClassDoc.add(meth);

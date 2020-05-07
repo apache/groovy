@@ -74,6 +74,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         TAG_TEXT.put("author", "Authors");
         TAG_TEXT.put("version", "Version");
         TAG_TEXT.put("default", "Default");
+        // typeparam is used internally as a specialization of param to separate type params from regular params.
+        TAG_TEXT.put("typeparam", "Type Parameters");
     }
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
@@ -930,7 +932,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                     } else if ("param".equals(tagname)) {
                         int index = content.indexOf(' ');
                         if (index >= 0) {
-                            content = "<code>" + content.substring(0, index) + "</code> - " + content.substring(index);
+                            String paramName = content.substring(0, index);
+                            String paramDesc = content.substring(index);
+                            if (paramName.startsWith("<") && paramName.endsWith(">")) {
+                                paramName = paramName.substring(1, paramName.length() - 1);
+                                tagname = "typeparam";
+                            }
+                            content = "<code>" + paramName + "</code> - " + paramDesc;
                         }
                     }
                     if (TAG_TEXT.containsKey(tagname)) {
