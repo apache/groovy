@@ -33,9 +33,11 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyAnnotationRef;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc;
@@ -100,7 +102,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         if (node instanceof InnerClassNode) {
             name = name.replace('$', '.');
         }
-        currentClassDoc = new SimpleGroovyClassDoc(imports, aliases, name, links);
+        currentClassDoc = new SimpleGroovyClassDoc(withDefaultImports(imports), aliases, name, links);
         if (node.isEnum()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.ENUM_DEF);
         } else if (node.isAnnotationDefinition()) {
@@ -158,6 +160,15 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private List<String> withDefaultImports(List<String> imports) {
+        imports = imports != null ? imports : new ArrayList<>();
+        imports.add(packagePath + "/*");  // everything in this package
+        for (String pkg : ResolveVisitor.DEFAULT_IMPORTS) {
+            imports.add(pkg.replace('.', '/') + "*");
+        }
+        return imports;
+    }
+
     private static final Pattern JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
 
     private String getDocContent(Groovydoc groovydoc) {
@@ -205,19 +216,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     private String genericTypesAsString(GenericsType[] genericsTypes) {
-        if (genericsTypes == null) return "";
-        StringBuilder result = new StringBuilder("<");
-        boolean first = true;
-        for (GenericsType genericsType : genericsTypes) {
-            if (!first) {
-                result.append(", ");
-            } else {
-                first = false;
-            }
-            result.append(genericsType.getName());
-        }
-        result.append(">");
-        return result.toString();
+        if (genericsTypes == null || genericsTypes.length == 0)
+            return "";
+        return "<" + DefaultGroovyMethods.join(genericsTypes, ", ") + ">";
     }
 
     private void processPropertiesFromGetterSetter(SimpleGroovyMethodDoc currentMethodDoc) {
@@ -298,7 +299,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     private String makeType(ClassNode node) {
-        return node.getName().replace('.', '/').replace('$', '.');
+        return node.getName().replace('.', '/').replace('$', '.')
+                + genericTypesAsString(node.getGenericsTypes())
+                ;
     }
 
     @Override

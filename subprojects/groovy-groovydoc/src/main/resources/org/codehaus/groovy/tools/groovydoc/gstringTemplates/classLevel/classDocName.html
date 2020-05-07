@@ -80,7 +80,8 @@
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
     def paramsOf = { n, boolean brief -> n.parameters().collect{ param -> (brief?'':annotations(param, ' ')) + linkable(param.isTypeAvailable()?param.type():param.typeName()) + (param.vararg()?'... ':' ') + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
-    def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
+    def rawType = { n -> def g = n.indexOf("<"); g >= 0 ? n.substring(0, g) : n }
+    def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> rawType(param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName()) }.join(', ') + ')' }
     def nameFromJavaParams = { n -> n.getName() + '(' + n.parameterTypes.collect{ param -> param.getName() }.join(', ') + ')' }
 %>
 <html>
