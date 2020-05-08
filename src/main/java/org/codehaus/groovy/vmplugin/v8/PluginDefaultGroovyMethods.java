@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.RangeInfo;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -502,8 +503,37 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns an array containing the elements of the stream.
+     * <pre class="groovyTestCase">
+     * assert Arrays.equals([].stream().toArray(Object), new Object[0])
+     * assert Arrays.equals([].stream().toArray(String), new String[0])
+     * assert Arrays.equals(['x'].stream().toArray(Object), ['x'].toArray())
+     * assert Arrays.equals(['x'].stream().toArray(String), ['x'] as String[])
+     * assert Arrays.equals(['x'].stream().toArray(CharSequence), ['x'] as CharSequence[])
+     *
+     * groovy.test.GroovyAssert.shouldFail(ArrayStoreException) {
+     *   ['x'].stream().toArray(Thread)
+     * }
+     *
+     * // Stream#toArray(IntFunction) should still be used for closure literal:
+     * assert Arrays.equals(['x'].stream().toArray { n -> new String[n] }, ['x'] as String[])
+     *
+     * // Stream#toArray(IntFunction) should still be used for method reference:
+     * assert Arrays.equals(['x'].stream().toArray(String[]::new), ['x'] as String[])
+     * </pre>
+     *
+     * @param self the stream
+     * @param type the array element type
+     *
+     * @since x.y.z
+     */
+    public static <T> T[] toArray(final Stream<? extends T> self, final Class<T> type) {
+        return self.toArray(length -> (T[]) Array.newInstance(type, length));
+    }
+
+    /**
      * Accumulates the elements of stream into a new List.
-     * @param self the Stream
+     * @param self the stream
      * @param <T> the type of element
      * @return a new {@code java.util.List} instance
      *
@@ -515,7 +545,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Accumulates the elements of stream into a new Set.
-     * @param self the Stream
+     * @param self the stream
      * @param <T> the type of element
      * @return a new {@code java.util.Set} instance
      *
