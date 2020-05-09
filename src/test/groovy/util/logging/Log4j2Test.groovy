@@ -19,10 +19,8 @@
 package groovy.util.logging
 
 import groovy.test.GroovyTestCase
-import groovy.test.NotYetImplemented
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.Filter
 import org.apache.logging.log4j.core.Layout
 import org.apache.logging.log4j.core.LogEvent
@@ -36,7 +34,7 @@ import static java.lang.reflect.Modifier.*
 
 class Log4j2Test extends GroovyTestCase {
 
-    class Log4j2InterceptingAppender extends AbstractAppender {
+    static class Log4j2InterceptingAppender extends AbstractAppender {
         List<Map> events
         boolean isLogGuarded = true
 
@@ -52,23 +50,12 @@ class Log4j2Test extends GroovyTestCase {
         }
     }
 
-    Log4j2InterceptingAppender appender
-    Logger logger
+    Log4j2InterceptingAppender appender = new Log4j2InterceptingAppender('MyAppender', null, createLayout())
 
-    protected void setUp() {
-        super.setUp()
-
-        PatternLayout layout = createLayout('%m', Charset.forName('UTF-8'))
-        appender = new Log4j2InterceptingAppender('MyAppender', null, layout)
-        logger = LogManager.getLogger('MyClass')
-        logger.addAppender(appender)
-        logger.setLevel(Level.ALL)
-    }
-
-    private static PatternLayout createLayout(String pattern, Charset charset) {
+    private static PatternLayout createLayout() {
         return PatternLayout.newBuilder()
-                .withPattern(pattern)
-                .withCharset(charset)
+                .withPattern('%m')
+                .withCharset(Charset.forName('UTF-8'))
                 .withAlwaysWriteExceptions(true)
                 .withNoConsoleNoAnsi(false)
                 .withHeader('')
@@ -76,16 +63,11 @@ class Log4j2Test extends GroovyTestCase {
                 .build()
     }
 
-    protected void tearDown() {
-        super.tearDown()
-        logger.removeAppender(appender)
-    }
-
     void testPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
-              @groovy.util.logging.Log4j2
-              class MyClass {
-              } ''')
+            @groovy.util.logging.Log4j2
+            class MyClass { }
+        ''')
 
         assert clazz.declaredFields.find { Field field ->
             field.name == 'log' &&
@@ -101,8 +83,8 @@ class Log4j2Test extends GroovyTestCase {
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PRIVATE)
             @groovy.util.logging.Log4j2
-            class MyClass {
-            } ''')
+            class MyClass { }
+        ''')
 
         assert clazz.declaredFields.find { Field field ->
             field.name == 'log' &&
@@ -118,9 +100,8 @@ class Log4j2Test extends GroovyTestCase {
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PACKAGE_PRIVATE)
             @groovy.util.logging.Log4j2
-            class MyClass {
-            }
-            ''')
+            class MyClass { }
+        ''')
 
         assert clazz.declaredFields.find { Field field ->
             field.name == 'log' &&
@@ -138,9 +119,8 @@ class Log4j2Test extends GroovyTestCase {
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PROTECTED)
             @groovy.util.logging.Log4j2
-            class MyClass {
-            }
-            ''')
+            class MyClass { }
+        ''')
 
         assert clazz.declaredFields.find { Field field ->
             field.name == 'log' &&
@@ -156,9 +136,8 @@ class Log4j2Test extends GroovyTestCase {
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PUBLIC)
             @groovy.util.logging.Log4j2
-            class MyClass {
-            }
-            ''')
+            class MyClass { }
+        ''')
 
         assert clazz.declaredFields.find { Field field ->
             field.name == 'log' &&
@@ -172,9 +151,8 @@ class Log4j2Test extends GroovyTestCase {
     void testUnknownAccessPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j2
-            class MyClass {
-            }
-            ''')
+            class MyClass { }
+        ''')
 
         assert clazz.declaredFields.find { Field field ->
             field.name == 'log' &&
@@ -192,8 +170,7 @@ class Log4j2Test extends GroovyTestCase {
                 class MyClass {
                     String log
                 }
-                ''')
-
+            ''')
             assert clazz.getConstructor().newInstance()
         }
     }
@@ -205,31 +182,27 @@ class Log4j2Test extends GroovyTestCase {
                 class MyClass {
                     String logger
                 }
-                ''')
-
+            ''')
             assert clazz.getConstructor().newInstance()
         }
     }
 
-    @NotYetImplemented
+    @Log4j2
+    static class MyClassLogInfo {
+        def loggingMethod() {
+            log.fatal ('fatal called')
+            log.error ('error called')
+            log.warn  ('warn called')
+            log.info  ('info called')
+            log.debug ('debug called')
+            log.trace ('trace called')
+        }
+    }
+
     void testLogInfo() {
-        Class clazz = new GroovyClassLoader().parseClass('''
-            @groovy.util.logging.Log4j2
-            class MyClass {
-
-                def loggingMethod() {
-                    log.fatal ('fatal called')
-                    log.error ('error called')
-                    log.warn  ('warn called')
-                    log.info  ('info called')
-                    log.debug ('debug called')
-                    log.trace ('trace called')
-                }
-            }
-            new MyClass().loggingMethod()
-            ''')
-
-        clazz.getConstructor().newInstance().run()
+        MyClassLogInfo.log.addAppender(appender)
+        MyClassLogInfo.log.setLevel(Level.ALL)
+        new MyClassLogInfo().loggingMethod()
 
         int ind = 0
         def events = appender.getEvents()
@@ -248,19 +221,17 @@ class Log4j2Test extends GroovyTestCase {
         assert events[ind].message == 'trace called'
     }
 
-    @NotYetImplemented
-    void testLogFromStaticMethods() {
-        Class clazz = new GroovyClassLoader().parseClass('''
-            @groovy.util.logging.Log4j2
-            class MyClass {
-                static loggingMethod() {
-                  log.info   ('(static) info called')
-                }
-            }
-            MyClass.loggingMethod()
-            ''')
+    @Log4j2
+    static class MyClassLogFromStaticMethods {
+        static loggingMethod() {
+            log.info   ('(static) info called')
+        }
+    }
 
-        clazz.getConstructor().newInstance().run()
+    void testLogFromStaticMethods() {
+        MyClassLogFromStaticMethods.log.addAppender(appender)
+        MyClassLogFromStaticMethods.log.setLevel(Level.ALL)
+        MyClassLogFromStaticMethods.loggingMethod()
 
         def events = appender.getEvents()
         assert events.size() == 1
@@ -268,25 +239,22 @@ class Log4j2Test extends GroovyTestCase {
         assert events[0].message == '(static) info called'
     }
 
-    @NotYetImplemented
+    @Log4j2('logger')
+    static class MyClassLogInfoForNamedLogger {
+        def loggingMethod() {
+            logger.fatal ('fatal called')
+            logger.error ('error called')
+            logger.warn  ('warn called')
+            logger.info  ('info called')
+            logger.debug ('debug called')
+            logger.trace ('trace called')
+        }
+    }
+
     void testLogInfoForNamedLogger() {
-        Class clazz = new GroovyClassLoader().parseClass('''
-            @groovy.util.logging.Log4j2('logger')
-            class MyClass {
-
-                def loggingMethod() {
-                    logger.fatal ('fatal called')
-                    logger.error ('error called')
-                    logger.warn  ('warn called')
-                    logger.info  ('info called')
-                    logger.debug ('debug called')
-                    logger.trace ('trace called')
-                }
-            }
-            new MyClass().loggingMethod()
-            ''')
-
-        clazz.getConstructor().newInstance().run()
+        MyClassLogInfoForNamedLogger.logger.addAppender(appender)
+        MyClassLogInfoForNamedLogger.logger.setLevel(Level.ALL)
+        new MyClassLogInfoForNamedLogger().loggingMethod()
 
         int ind = 0
         def events = appender.getEvents()
@@ -305,10 +273,11 @@ class Log4j2Test extends GroovyTestCase {
         assert events[ind].message == 'trace called'
     }
 
+    // TODO check this is actually working, my suspicion is we have two contexts here
     void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j2
-            class MyClass {
+            class MyClassLogGuard {
                 def loggingMethod() {
                     log.setLevel(org.apache.logging.log4j.Level.OFF)
                     log.fatal (prepareLogMessage())
@@ -320,51 +289,45 @@ class Log4j2Test extends GroovyTestCase {
                 }
 
                 def prepareLogMessage() {
-                  log.getAppender('MyAppender')?.isLogGuarded = false
-                  return 'formatted log message'
+                    log.appenders['MyAppender']?.isLogGuarded = false
+                    return 'formatted log message'
                 }
             }
-            new MyClass().loggingMethod()
             ''')
 
-        clazz.getConstructor().newInstance().run()
-
+        clazz.log.addAppender(appender)
+        clazz.log.setLevel(Level.ALL)
+        clazz.getConstructor().newInstance().loggingMethod()
         assert appender.isLogGuarded
     }
 
-    @NotYetImplemented
-    void testDefaultCategory() {
-        Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.Log4j2
-                class MyClass {
-                    static loggingMethod() {
-                      log.info('info called')
-                    }
-                }
-                ''')
+    @Log4j2
+    static class MyClassDefaultCategory {
+        static loggingMethod() {
+            log.info('info called')
+        }
+    }
 
-        clazz.getConstructor().newInstance().loggingMethod()
+    void testDefaultCategory() {
+        MyClassDefaultCategory.log.addAppender(appender)
+        MyClassDefaultCategory.log.setLevel(Level.ALL)
+        MyClassDefaultCategory.loggingMethod()
 
         assert appender.getEvents().size() == 1
     }
 
-    @NotYetImplemented
+    @Log4j2(category='customCategory')
+    static class MyClassCustomCategory {
+        static loggingMethod() {
+            log.error('error called')
+        }
+    }
+
     void testCustomCategory() {
-        PatternLayout layout = createLayout('%m', Charset.forName('UTF-8'))
-        Log4j2InterceptingAppender appenderForCustomCategory = new Log4j2InterceptingAppender('Appender4CustomCategory', null, layout)
+        def appenderForCustomCategory = new Log4j2InterceptingAppender('Appender4CustomCategory', null, createLayout())
         def loggerForCustomCategory = LogManager.getLogger('customCategory')
         loggerForCustomCategory.addAppender(appenderForCustomCategory)
-
-        Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.Log4j2(category='customCategory')
-                class MyClass {
-                    static loggingMethod() {
-                      log.error('error called')
-                    }
-                }
-                ''')
-
-        clazz.getConstructor().newInstance().loggingMethod()
+        MyClassCustomCategory.loggingMethod()
 
         assert appenderForCustomCategory.getEvents().size() == 1
         assert appender.getEvents().size() == 0
