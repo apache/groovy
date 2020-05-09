@@ -301,6 +301,42 @@ class Log4j2Test extends GroovyTestCase {
         assert appender.isLogGuarded
     }
 
+    /*
+    @Log4j2
+    static class MyClassLogGuard {
+        def loggingMethod() {
+            log.fatal (prepareLogMessage())
+            log.error (prepareLogMessage())
+            log.warn  (prepareLogMessage())
+            log.info  (prepareLogMessage())
+            log.debug (prepareLogMessage())
+            log.trace (prepareLogMessage())
+        }
+
+        def prepareLogMessage() {
+            log.appenders['MyAppender']?.isLogGuarded = false
+            println log.privateConfig.intLevel
+            println "" + log.isInfoEnabled() + " " + log.isWarnEnabled() + " " + log.isFatalEnabled() + " " + log.isEnabled(Level.TRACE)
+            println 'isLogGuarded = false CALLED!!'
+            return 'should never see message'
+        }
+    }
+
+    void testLogGuard() {
+        MyClassLogGuard.log.addAppender(appender)
+        MyClassLogGuard.log.setLevel(Level.OFF)
+        new MyClassLogGuard().loggingMethod()
+        println appender.isLogGuarded
+
+        // reset
+        log.appenders['MyAppender']?.isLogGuarded = true
+        MyClassLogGuard.log.setLevel(Level.ALL)
+        new MyClassLogGuard().loggingMethod()
+        println !appender.isLogGuarded
+    }
+    */
+
+
     @Log4j2
     static class MyClassDefaultCategory {
         static loggingMethod() {
