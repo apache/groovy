@@ -225,6 +225,8 @@ if (classDoc.isInterface()) {
                 <dt>All Implemented Interfaces and Traits:</dt>
                 <dd>${interfaces.collect{ linkable(it) }.join(', ')}</dd>
             </dl>
+    <% } %>
+<% } %>
             <!-- todo: direct known subclasses -->
             <hr>
             <br>
@@ -235,8 +237,6 @@ if (classDoc.isInterface()) {
 %>extends ${linkable(classDoc.superclass())}
 <% } %>
 </pre>
-<% } %>
-<% } %>
 <% if (classDoc.commentText()) { %>
     <p>${classDoc.commentText()}</p>
 <% } %>

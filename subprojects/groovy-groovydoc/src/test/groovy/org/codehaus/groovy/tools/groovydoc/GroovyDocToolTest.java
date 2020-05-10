@@ -720,6 +720,27 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("The constructor parameter link text should be Foo", "Foo", constructor.group(3));
     }
 
+    public void testClassDeclarationHeader() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/a";
+        htmlTool.add(Arrays.asList(
+                base + "/Base.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String basedoc = output.getText(MOCK_DIR + "/" + base + "/Base.html");
+
+        final Matcher classDecl = Pattern.compile(Pattern.quote(
+                "<pre>class Base\n"+
+                        "extends <a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html' title='Object'>Object</a>\n"+
+                        "\n"+
+                        "</pre>"
+        )).matcher(basedoc);
+
+        assertTrue("The class declaration header should exist in class description", classDecl.find());
+    }
+
     public void testJavaGenericsTitle() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
         htmlTool.add(Arrays.asList(
