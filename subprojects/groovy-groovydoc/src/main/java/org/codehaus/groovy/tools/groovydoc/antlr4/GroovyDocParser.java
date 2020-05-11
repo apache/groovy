@@ -79,11 +79,7 @@ public class GroovyDocParser implements GroovyDocParserI {
         ModuleNode root = unit.getAST();
         GroovydocVisitor visitor = new GroovydocVisitor(unit, packagePath, links);
         visitor.visitClass(root.getClasses().get(0));
-        Map<String, GroovyClassDoc> groovyClassDocs = visitor.getGroovyClassDocs();
-        for (GroovyClassDoc classDoc : groovyClassDocs.values()) {
-            replaceTags((SimpleGroovyClassDoc) classDoc);
-        }
-        return groovyClassDocs;
+        return visitor.getGroovyClassDocs();
     }
 
     private void replaceTags(SimpleGroovyClassDoc sgcd) {
