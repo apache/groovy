@@ -18,6 +18,14 @@
  */
 package org.codehaus.groovy.tools.groovydoc.testfiles
 
+/**
+ * {@link JavaClassWithDiamond#link() Java}
+ * @see JavaClassWithDiamond
+ */
 interface GroovyInterface1 {
-
+    /**
+     * {@link JavaClassWithDiamond#link() Java link}
+     * @see JavaClassWithDiamond#link()
+     */
+    void link()
 }
