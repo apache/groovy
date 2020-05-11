@@ -940,6 +940,50 @@ public class GroovyDocToolTest extends GroovyTestCase {
         )).matcher(javadoc).find());
     }
 
+    public void testLinksToSamePackage() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(Arrays.asList(
+                base + "/GroovyInterface1.groovy",
+                base + "/JavaClassWithDiamond.java"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/GroovyInterface1.html");
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/JavaClassWithDiamond.html");
+
+        final Matcher groovyClassComment = Pattern.compile(Pattern.quote(
+                "<p> <a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithDiamond.html#link()' title='Java'>Java</a> " +
+                        "<DL><DT><B>See Also:</B></DT>" +
+                        "<DD><a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithDiamond.html' title='JavaClassWithDiamond'>JavaClassWithDiamond</a></DD>" +
+                        "</DL></p>"
+        )).matcher(groovydoc);
+        final Matcher groovyMethodComment = Pattern.compile(Pattern.quote(
+                "<p> <a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithDiamond.html#link()' title='Java link'>Java link</a> " +
+                        "<DL><DT><B>See Also:</B></DT>" +
+                        "<DD><a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithDiamond.html#link()' title='JavaClassWithDiamond.link'>JavaClassWithDiamond.link</a></DD>" +
+                        "</DL></p>"
+        )).matcher(groovydoc);
+        final Matcher javaClassComment = Pattern.compile(Pattern.quote(
+                "<p> <a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.html#link()' title='Groovy link'>Groovy link</a>\n" +
+                        "  <DL><DT><B>See Also:</B></DT>" +
+                        "<DD><a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.html' title='GroovyInterface1'>GroovyInterface1</a></DD>" +
+                        "</DL></p>"
+        )).matcher(javadoc);
+        final Matcher javaMethodComment = Pattern.compile(Pattern.quote(
+                "<p> <a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.html#link()' title='Groovy link'>Groovy link</a>\n" +
+                        "      <DL><DT><B>See Also:</B></DT>" +
+                        "<DD><a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.html#link()' title='GroovyInterface1.link'>GroovyInterface1.link</a></DD>" +
+                        "</DL></p>"
+        )).matcher(javadoc);
+
+        assertTrue("The Groovy class comment should contain links", groovyClassComment.find());
+        assertTrue("The Groovy method comment should contain links", groovyMethodComment.find());
+        assertTrue("The Java class comment should contain links", javaClassComment.find());
+        assertTrue("The Java method comment should contain links", javaMethodComment.find());
+    }
+
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
