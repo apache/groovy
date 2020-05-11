@@ -179,7 +179,8 @@ if (location.href.indexOf('is-external=true') == -1) {
 <%
 def pkg = classDoc.containingPackage().nameWithDots()
 def name = classDoc.getNameWithTypeArgs() ?: classDoc.name()
-String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} ${org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(name)}"
+final nameEncoded = org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(name)
+String classDesc = "${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} $nameEncoded"
 if (pkg != "DefaultPackage") {
 %>
     <div class="subTitle">Package: <strong>${pkg}</strong></div>
@@ -230,13 +231,25 @@ if (classDoc.isInterface()) {
             <!-- todo: direct known subclasses -->
             <hr>
             <br>
-<pre>${annotations(classDoc, '\n') + modifiersWithOptions(classDoc, classDoc.isGroovy(), classDoc.isInterface() || classDoc.isAnnotationType()) + classDoc.typeSourceDescription + ' ' + classDoc.name()}
-<% if (classDoc.isInterface() && classDoc.interfaces()) {
-%>extends ${classDoc.interfaces().collect{ linkable(it) }.join(', ')}
-<% } else if (classDoc.superclass()) {
-%>extends ${linkable(classDoc.superclass())}
-<% } %>
-</pre>
+<%
+def declaration = annotations(classDoc, '\n') +
+    modifiersWithOptions(classDoc, classDoc.isGroovy(), classDoc.isInterface() || classDoc.isAnnotationType()) +
+    classDoc.typeSourceDescription +
+    ' ' +
+    nameEncoded
+final interfaces = classDoc.interfaces().collect{ linkable(it) }.join(', ')
+if (classDoc.isInterface() && classDoc.interfaces()) {
+    if (interfaces) {
+        declaration += "\nextends $interfaces"
+    }
+} else if (classDoc.superclass()) {
+    declaration += "\nextends ${linkable(classDoc.superclass())}"
+    if (interfaces) {
+        declaration += "\nimplements $interfaces"
+    }
+}
+%>
+<pre>${declaration}</pre>
 <% if (classDoc.commentText()) { %>
     <p>${classDoc.commentText()}</p>
 <% } %>

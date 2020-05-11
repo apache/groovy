@@ -721,24 +721,66 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testClassDeclarationHeader() throws Exception {
-        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/a";
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         htmlTool.add(Arrays.asList(
-                base + "/Base.groovy"
+                base + "/JavaInterfaceWithTypeParam.java",
+                base + "/GroovyInterfaceWithTypeParam.groovy",
+                base + "/JavaInterfaceWithMultipleInterfaces.java",
+                base + "/GroovyInterfaceWithMultipleInterfaces.groovy",
+                base + "/ClassWithMethodComment.java",
+                base + "/DocumentedClass.groovy",
+                base + "/JavaClassWithMultipleInterfaces.java",
+                base + "/GroovyClassWithMultipleInterfaces.groovy"
         ));
 
         final MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
 
-        final String basedoc = output.getText(MOCK_DIR + "/" + base + "/Base.html");
+        final String javaBaseInterface = output.getText(MOCK_DIR + "/" + base + "/JavaInterfaceWithTypeParam.html");
+        final String groovyBaseInterface = output.getText(MOCK_DIR + "/" + base + "/GroovyInterfaceWithTypeParam.html");
+        final String javaDerivedInterface = output.getText(MOCK_DIR + "/" + base + "/JavaInterfaceWithMultipleInterfaces.html");
+        final String groovyDerivedInterface = output.getText(MOCK_DIR + "/" + base + "/GroovyInterfaceWithMultipleInterfaces.html");
+        final String javaBaseClass = output.getText(MOCK_DIR + "/" + base + "/ClassWithMethodComment.html");
+        final String groovyBaseClass = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        final String javaDerivedClass = output.getText(MOCK_DIR + "/" + base + "/JavaClassWithMultipleInterfaces.html");
+        final String groovyDerivedClass = output.getText(MOCK_DIR + "/" + base + "/GroovyClassWithMultipleInterfaces.html");
 
-        final Matcher classDecl = Pattern.compile(Pattern.quote(
-                "<pre>class Base\n"+
-                        "extends <a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html' title='Object'>Object</a>\n"+
-                        "\n"+
-                        "</pre>"
-        )).matcher(basedoc);
+        final String object = Pattern.quote(
+            "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html' title='Object'>Object</a>");
+        final String interfaces = Pattern.quote(
+            "org.codehaus.groovy.tools.groovydoc.testfiles.GroovyInterface1, " +
+            "org.codehaus.groovy.tools.groovydoc.testfiles.JavaInterface1, " +
+            "<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html' title='Runnable'>Runnable</a>");
 
-        assertTrue("The class declaration header should exist in class description", classDecl.find());
+        final Pattern baseInterface = Pattern.compile(
+            "<pre>" +
+            "(public&nbsp;)?interface (Java|Groovy)InterfaceWithTypeParam&lt;T&gt;" +
+            "</pre>");
+        final Pattern derivedInterface = Pattern.compile(
+            "<pre>" +
+            "(public&nbsp;)?interface (Java|Groovy)InterfaceWithMultipleInterfaces\n" +
+            "extends " + interfaces +
+            "</pre>");
+        final Pattern baseClass = Pattern.compile(
+            "<pre>" +
+            "(public&nbsp;)?class (ClassWithMethodComment|DocumentedClass)\n" +
+            "extends " + object +
+            "</pre>");
+        final Pattern derivedClass = Pattern.compile(
+            "<pre>" +
+            "(public&nbsp;)?abstract&nbsp;class (Java|Groovy)ClassWithMultipleInterfaces\n" +
+            "extends " + object + "\n" +
+            "implements " + interfaces +
+            "</pre>");
+
+        assertTrue("The Java base interface declaration header should match", baseInterface.matcher(javaBaseInterface).find());
+        assertTrue("The Groovy base interface declaration header should match", baseInterface.matcher(groovyBaseInterface).find());
+        assertTrue("The Java derived interface declaration header should match", derivedInterface.matcher(javaDerivedInterface).find());
+        assertTrue("The Groovy derived interface declaration header should match", derivedInterface.matcher(groovyDerivedInterface).find());
+        assertTrue("The Java base class declaration header should match", baseClass.matcher(javaBaseClass).find());
+        assertTrue("The Groovy base class declaration header should match", baseClass.matcher(groovyBaseClass).find());
+        assertTrue("The Java derived class declaration header should match", derivedClass.matcher(javaDerivedClass).find());
+        assertTrue("The Groovy derived class declaration header should match", derivedClass.matcher(groovyDerivedClass).find());
     }
 
     public void testJavaGenericsTitle() throws Exception {
