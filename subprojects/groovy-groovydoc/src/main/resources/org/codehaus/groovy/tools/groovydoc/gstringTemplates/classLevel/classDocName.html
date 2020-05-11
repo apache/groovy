@@ -71,7 +71,7 @@
         (t.isStatic()?"static&nbsp;":"")
     }
     def annotations = { t, sepChar ->
-        t.annotations() ? t.annotations().collect{ it.isTypeAvailable()?'@'+linkable(it.type().typeName())+(it.description()-('@'+it.type().typeName())):it.description()}.join(sepChar) + sepChar : ''
+        t.annotations() ? t.annotations().collect{ it.isTypeAvailable()?'@'+linkable(it.type().typeName())+it.description():it.description()}.join(sepChar) + sepChar : ''
     }
     def elementTypes = [
         "required":"true",

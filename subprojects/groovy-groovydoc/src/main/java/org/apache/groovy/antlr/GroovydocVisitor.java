@@ -185,14 +185,14 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private void processAnnotations(SimpleGroovyProgramElementDoc element, AnnotatedNode node) {
         for (AnnotationNode an : node.getAnnotations()) {
             String name = an.getClassNode().getName();
-            element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, name));
+            element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, an.getText()));
         }
     }
 
     private void processAnnotations(SimpleGroovyParameter param, AnnotatedNode node) {
         for (AnnotationNode an : node.getAnnotations()) {
             String name = an.getClassNode().getName();
-            param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, name));
+            param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, an.getText()));
         }
     }
 
