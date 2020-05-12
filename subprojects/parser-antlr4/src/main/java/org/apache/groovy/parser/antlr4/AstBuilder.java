@@ -201,8 +201,8 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValuePairs
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ElementValuesContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EmptyDimsContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EmptyDimsOptContext;
-import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedArgumentListContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedArgumentListElementContext;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedArgumentListInParContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedForControlContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnhancedStatementExpressionContext;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.EnumConstantContext;
@@ -2018,7 +2018,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Expression visitCommandExpression(CommandExpressionContext ctx) {
-        boolean hasArgumentList = asBoolean(ctx.enhancedArgumentList());
+        boolean hasArgumentList = asBoolean(ctx.enhancedArgumentListInPar());
         boolean hasCommandArgument = asBoolean(ctx.commandArgument());
 
         if (visitingArrayInitializerCnt > 0 && (hasArgumentList || hasCommandArgument)) {
@@ -2042,7 +2042,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         MethodCallExpression methodCallExpression = null;
 
         if (hasArgumentList) {
-            Expression arguments = this.visitEnhancedArgumentList(ctx.enhancedArgumentList());
+            Expression arguments = this.visitEnhancedArgumentListInPar(ctx.enhancedArgumentListInPar());
 
             if (baseExpr instanceof PropertyExpression) { // e.g. obj.a 1, 2
                 methodCallExpression =
@@ -2104,7 +2104,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         Expression primaryExpr = (Expression) this.visit(ctx.primary());
 
-        if (asBoolean(ctx.enhancedArgumentList())) { // e.g. x y a b
+        if (asBoolean(ctx.enhancedArgumentListInPar())) { // e.g. x y a b
             if (baseExpr instanceof PropertyExpression) { // the branch should never reach, because a.b.c will be parsed as a path expression, not a method call
                 throw createParsingFailedException("Unsupported command argument: " + ctx.getText(), ctx);
             }
@@ -2114,7 +2114,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     new MethodCallExpression(
                             baseExpr,
                             this.createConstantExpression(primaryExpr),
-                            this.visitEnhancedArgumentList(ctx.enhancedArgumentList())
+                            this.visitEnhancedArgumentListInPar(ctx.enhancedArgumentListInPar())
                     );
             methodCallExpression.setImplicitThis(false);
 
@@ -2493,19 +2493,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Expression visitArguments(ArgumentsContext ctx) {
-        if (asBoolean(ctx) && asBoolean(ctx.COMMA()) && !asBoolean(ctx.enhancedArgumentList())) {
+        if (asBoolean(ctx) && asBoolean(ctx.COMMA()) && !asBoolean(ctx.enhancedArgumentListInPar())) {
             throw createParsingFailedException("Expression expected", ctx.COMMA());
         }
 
-        if (!asBoolean(ctx) || !asBoolean(ctx.enhancedArgumentList())) {
+        if (!asBoolean(ctx) || !asBoolean(ctx.enhancedArgumentListInPar())) {
             return new ArgumentListExpression();
         }
 
-        return configureAST(this.visitEnhancedArgumentList(ctx.enhancedArgumentList()), ctx);
+        return configureAST(this.visitEnhancedArgumentListInPar(ctx.enhancedArgumentListInPar()), ctx);
     }
 
     @Override
-    public Expression visitEnhancedArgumentList(EnhancedArgumentListContext ctx) {
+    public Expression visitEnhancedArgumentListInPar(EnhancedArgumentListInParContext ctx) {
         if (!asBoolean(ctx)) {
             return null;
         }
