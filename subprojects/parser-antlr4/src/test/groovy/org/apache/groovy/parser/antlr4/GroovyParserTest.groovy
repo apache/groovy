@@ -462,4 +462,8 @@ final class GroovyParserTest extends GroovyTestCase {
     void "test groovy core - GROOVY-9507"() {
         doTest('bugs/BUG-GROOVY-9507.groovy');
     }
+
+    void "test groovy core - GROOVY-9522"() {
+        doTest('bugs/BUG-GROOVY-9522.groovy');
+    }
 }

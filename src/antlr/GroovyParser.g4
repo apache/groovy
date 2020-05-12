@@ -1008,6 +1008,13 @@ options { baseContext = primary; }
     |   parExpression                                                                       #parenPrmrAlt
     ;
 
+namedArgPrimary
+options { baseContext = primary; }
+    :   identifier                                                                          #identifierPrmrAlt
+    |   literal                                                                             #literalPrmrAlt
+    |   gstring                                                                             #gstringPrmrAlt
+    ;
+
 commandPrimary
 options { baseContext = primary; }
     :   identifier                                                                          #identifierPrmrAlt
@@ -1047,6 +1054,12 @@ options { baseContext = mapEntry; }
     |   MUL COLON nls expression
     ;
 
+namedArg
+options { baseContext = mapEntry; }
+    :   namedArgLabel COLON nls expression
+    |   MUL COLON nls expression
+    ;
+
 mapEntryLabel
     :   keywords
     |   primary
@@ -1056,6 +1069,12 @@ namedPropertyArgLabel
 options { baseContext = mapEntryLabel; }
     :   keywords
     |   namedPropertyArgPrimary
+    ;
+
+namedArgLabel
+options { baseContext = mapEntryLabel; }
+    :   keywords
+    |   namedArgPrimary
     ;
 
 /**
@@ -1100,28 +1119,49 @@ typeArgumentsOrDiamond
     ;
 
 arguments
-    :   LPAREN enhancedArgumentList? COMMA? rparen
+    :   LPAREN enhancedArgumentListInPar? COMMA? rparen
     ;
 
 argumentList
-options { baseContext = enhancedArgumentList; }
-    :   argumentListElement
+options { baseContext = enhancedArgumentListInPar; }
+    :   firstArgumentListElement
         (   COMMA nls
             argumentListElement
         )*
     ;
 
 enhancedArgumentList
+options { baseContext = enhancedArgumentListInPar; }
+    :   firstEnhancedArgumentListElement
+        (   COMMA nls
+            enhancedArgumentListElement
+        )*
+    ;
+
+enhancedArgumentListInPar
     :   enhancedArgumentListElement
         (   COMMA nls
             enhancedArgumentListElement
         )*
     ;
 
+firstArgumentListElement
+options { baseContext = enhancedArgumentListElement; }
+    :   expressionListElement[true]
+    |   namedArg
+    ;
+
 argumentListElement
 options { baseContext = enhancedArgumentListElement; }
     :   expressionListElement[true]
     |   namedPropertyArg
+    ;
+
+firstEnhancedArgumentListElement
+options { baseContext = enhancedArgumentListElement; }
+    :   expressionListElement[true]
+    |   standardLambdaExpression
+    |   namedArg
     ;
 
 enhancedArgumentListElement
