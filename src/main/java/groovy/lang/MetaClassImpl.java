@@ -36,16 +36,7 @@ import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
-import org.codehaus.groovy.runtime.ArrayTypeUtils;
-import org.codehaus.groovy.runtime.ConvertedClosure;
-import org.codehaus.groovy.runtime.CurriedClosure;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.GeneratedClosure;
-import org.codehaus.groovy.runtime.GroovyCategorySupport;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.AbstractCallSite;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.ConstructorSite;
@@ -94,19 +85,7 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -3315,15 +3294,25 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected static Object doChooseMostSpecificParams(String theClassName, String name, List matchingMethods, Class[] arguments, boolean checkParametersCompatible) {
-        long matchesDistance = -1;
+        long[] matchesDistances = new long[] { -1, -1 };
         LinkedList matches = new LinkedList();
+        // when some argument is null, prefer NullObject than Object.
+        boolean hasNull = false;
+        for (int i = 0; i < arguments.length; ++i) {
+            hasNull = hasNull || (arguments[i] == null);
+        }
         for (Object method : matchingMethods) {
             final ParameterTypes parameterTypes = (ParameterTypes) method;
             if (checkParametersCompatible && !MetaClassHelper.parametersAreCompatible(arguments, parameterTypes.getNativeParameterTypes()))
                 continue;
             long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
-            if (dist == 0) return method;
-            matchesDistance = handleMatches(matchesDistance, matches, method, dist);
+            // check prefer NullObject version distance when some argument is null
+            long dis2 = 0;
+            if (hasNull) {
+                dis2 = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes, true);
+            }
+            if (dist == 0 && dis2 == 0) return method;
+            handleMatches(matchesDistances, matches, method, dist, dis2);
         }
 
         int size = matches.size();
@@ -3363,6 +3352,27 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             matches.add(method);
         }
         return matchesDistance;
+    }
+
+    protected static void handleMatches(long[] matchesDistances, LinkedList matches, Object method, long dist, long dist2) {
+        if (matches.isEmpty()) {
+            matches.add(method);
+            matchesDistances[0] = dist;
+            matchesDistances[1] = dist2;
+        } else if (matchesDistances[0] != 0 && (dist < matchesDistances[0] || dist == 0)) { // matchesDistances[0] may be -1
+            matchesDistances[0] = dist;
+            matchesDistances[1] = dist2;
+            matches.clear();
+            matches.add(method);
+        } else if (dist == matchesDistances[0]) {
+            if ((matchesDistances[1] != 0 && (dist2 < matchesDistances[1] || dist2 == 0))) {
+                matchesDistances[1] = dist2;
+                matches.clear();
+                matches.add(method);
+            } else if (dist2 == matchesDistances[1]) {
+                matches.add(method);
+            }
+        }
     }
 
     private static boolean isGenericGetMethod(MetaMethod method) {
