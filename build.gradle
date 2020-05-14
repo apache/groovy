@@ -141,7 +141,7 @@ configurations {
 }
 
 ext {
-    antVersion = '1.9.13'
+    antVersion = '1.9.15'
     asmVersion = '7.3.1'
     antlrVersion = '2.7.7'
     bridgerVersion = '1.5.Final'
