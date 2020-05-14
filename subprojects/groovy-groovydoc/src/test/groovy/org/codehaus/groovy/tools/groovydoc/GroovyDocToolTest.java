@@ -22,6 +22,7 @@ import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
 import java.nio.charset.Charset;
@@ -993,7 +994,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         htmlTool.renderToOutput(output, MOCK_DIR);
 
         final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/GroovyInterface1.html");
-        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/JavaClassWithDiamond.html");
+        final String javadoc = StringGroovyMethods.normalize(output.getText(MOCK_DIR + "/" + base + "/JavaClassWithDiamond.html"));
 
         final Matcher groovyClassComment = Pattern.compile(Pattern.quote(
                 "<p> <a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithDiamond.html#link()' title='Java'>Java</a> " +
