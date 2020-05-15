@@ -209,7 +209,7 @@ image:{sponsors-silver-img}[]
 
 image:{sponsors-bronze-img}[]
 
-* Thank you to our backers(donating monthly):
+* Thank you to our backers (donating monthly):
 
 image:{backers-monthly-img}[]
 
