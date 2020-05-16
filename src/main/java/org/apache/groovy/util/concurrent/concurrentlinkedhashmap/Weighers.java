@@ -44,7 +44,7 @@ public final class Weighers {
       final Weigher<? super V> weigher) {
     return (weigher == singleton())
         ? Weighers.entrySingleton()
-        : new EntryWeigherView<K, V>(weigher);
+        : new EntryWeigherView<>(weigher);
   }
 
   /**
