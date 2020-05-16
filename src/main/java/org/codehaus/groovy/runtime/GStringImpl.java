@@ -29,7 +29,7 @@ import groovy.lang.GString;
  */
 public class GStringImpl extends GString {
     private static final long serialVersionUID = 3581289038662723858L;
-    private String[] strings;
+    private final String[] strings;
 
     /**
      * Create a new GString with values and strings.
@@ -56,6 +56,7 @@ public class GStringImpl extends GString {
      * the values will result in changes of the GString. It is not recommended
      * to do so.
      */
+    @Override
     public String[] getStrings() {
         return strings;
     }
