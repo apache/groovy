@@ -161,9 +161,9 @@ class CliBuilderTest extends GroovyTestCase {
         cli.parse([])
         // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
         assert stringWriter.toString() == String.format(
-                "error: Missing required option '-x'%n" +\
+                "error: Missing required option: '-x'%n" +\
                 "Usage: groovy -x%n" +\
-                "  -x           message%n")
+                "  -x     message%n")
     }
 
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
