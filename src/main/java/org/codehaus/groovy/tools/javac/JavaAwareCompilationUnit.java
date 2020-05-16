@@ -74,6 +74,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             Object memStub = options.get(CompilerConfiguration.MEM_STUB);
             if (memStub == null) {
                 memStub = SystemUtil.getSystemPropertySafe("groovy.generate.stub.in.memory", "false");
+                options.put(CompilerConfiguration.MEM_STUB, Boolean.parseBoolean((String) memStub));
             }
 
             this.keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
