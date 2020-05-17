@@ -505,14 +505,22 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns an array containing the elements of the stream.
      * <pre class="groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     *
      * assert Arrays.equals([].stream().toArray(Object), new Object[0])
      * assert Arrays.equals([].stream().toArray(String), new String[0])
+     * assert Arrays.equals([].stream().toArray(String[]), new String[0][])
      * assert Arrays.equals(['x'].stream().toArray(Object), ['x'].toArray())
      * assert Arrays.equals(['x'].stream().toArray(String), ['x'] as String[])
+     * assert Arrays.deepEquals([['x'] as String[]].stream().toArray(String[]), [['x'] as String[]] as String[][])
      * assert Arrays.equals(['x'].stream().toArray(CharSequence), ['x'] as CharSequence[])
      *
-     * groovy.test.GroovyAssert.shouldFail(ArrayStoreException) {
-     *   ['x'].stream().toArray(Thread)
+     * shouldFail(ArrayStoreException) {
+     *     ['x'].stream().toArray(Thread)
+     * }
+     *
+     * shouldFail(IllegalArgumentException) {
+     *     ['x'].stream().toArray((Class) null)
      * }
      *
      * // Stream#toArray(IntFunction) should still be used for closure literal:
@@ -525,9 +533,10 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the stream
      * @param type the array element type
      *
-     * @since x.y.z
+     * @since 3.0.4
      */
     public static <T> T[] toArray(final Stream<? extends T> self, final Class<T> type) {
+        if (type == null) throw new IllegalArgumentException("type cannot be null");
         return self.toArray(length -> (T[]) Array.newInstance(type, length));
     }
 
