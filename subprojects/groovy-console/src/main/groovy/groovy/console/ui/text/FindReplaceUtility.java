@@ -87,6 +87,7 @@ public final class FindReplaceUtility {
     private static final Segment SEGMENT = new Segment();
 
     private static final FocusAdapter TEXT_FOCUS_LISTENER = new FocusAdapter() {
+        @Override
         public void focusGained(FocusEvent fe) {
             textComponent = (JTextComponent) fe.getSource();
             attributeSet =
