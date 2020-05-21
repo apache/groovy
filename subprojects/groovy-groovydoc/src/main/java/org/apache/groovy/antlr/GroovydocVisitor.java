@@ -139,14 +139,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
         super.visitClass(node);
         SimpleGroovyClassDoc parent = currentClassDoc;
-        boolean explicitCons = false;
-        for (GroovyMethodDoc meth : currentClassDoc.methods()) {
-            if (meth instanceof SimpleGroovyConstructorDoc) {
-                explicitCons = true;
-                break;
-            }
-        }
-        if (!explicitCons) {
+        if (currentClassDoc.constructors().length == 0) {
             // add default no-arg constructor
             SimpleGroovyConstructorDoc cons = new SimpleGroovyConstructorDoc(name, currentClassDoc);
             cons.setPublic(true);
