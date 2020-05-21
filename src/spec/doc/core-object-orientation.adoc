@@ -529,6 +529,13 @@ a|
 ----
 include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=multi_method_distance_interface_over_super,indent=0]
 ----
+
+| For a primitive argument type, a declared parameter type which is the same or slightly larger is preferred.
+a|
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/objectorientation/MethodsTest.groovy[tags=primitive_larger_over_smaller,indent=0]
+----
 |====
 
 In the case where two variants have exactly the same distance, this is deemed ambiguous and will cause a runtime exception:
