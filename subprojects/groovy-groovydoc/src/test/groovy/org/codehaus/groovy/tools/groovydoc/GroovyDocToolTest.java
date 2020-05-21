@@ -1027,6 +1027,22 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("The Java method comment should contain links", javaMethodComment.find());
     }
 
+    public void testPrivateDefaultConstructor() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(Arrays.asList(
+            base + "/GroovyClassWithMultipleInterfaces.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/GroovyClassWithMultipleInterfaces.html");
+
+        final Matcher matcher = Pattern.compile(Pattern.quote("GroovyClassWithMultipleInterfaces()")).matcher(groovydoc);
+
+        assertFalse("Private ctor should not be listed", matcher.find());
+    }
+
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
