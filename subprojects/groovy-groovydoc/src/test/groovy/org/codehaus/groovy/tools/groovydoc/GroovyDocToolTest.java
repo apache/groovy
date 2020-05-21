@@ -983,6 +983,28 @@ public class GroovyDocToolTest extends GroovyTestCase {
         )).matcher(javadoc).find());
     }
 
+    public void testAbstractMethods() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(Arrays.asList(
+            base + "/GroovyClassWithMultipleInterfaces.groovy",
+            base + "/JavaClassWithDiamond.java"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/GroovyClassWithMultipleInterfaces.html");
+        final String javadoc = StringGroovyMethods.normalize(output.getText(MOCK_DIR + "/" + base + "/JavaClassWithDiamond.html"));
+
+        final Pattern methodSummary = Pattern.compile("<code>(public&nbsp;)?abstract&nbsp;void</code>");
+        final Pattern methodDetails = Pattern.compile("<h4>(public&nbsp;)?abstract&nbsp;void <strong>link</strong>");
+
+        assertTrue("The Groovy method summary should contain 'abstract'", methodSummary.matcher(groovydoc).find());
+        assertTrue("The Java method summary should contain 'abstract'", methodSummary.matcher(javadoc).find());
+        assertTrue("The Groovy method details should contain 'abstract'", methodDetails.matcher(groovydoc).find());
+        assertTrue("The Java method details should contain 'abstract'", methodDetails.matcher(javadoc).find());
+    }
+
     public void testLinksToSamePackage() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         htmlTool.add(Arrays.asList(

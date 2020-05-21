@@ -523,7 +523,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                         <% visibleMethods.eachWithIndex { method, i -> %>
                         <tr class="${i%2==0?'altColor':'rowColor'}">
                             <td class="colFirst"><code>${org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(method.typeParameters()) ?: ''}</code></td>
-                            <td class="colLast"><code>${modifiersBrief(method)}${linkable(method.returnType())}</code></td>
+                            <td class="colLast"><code>${modifiers(method)}${linkable(method.returnType())}</code></td>
                             <td class="colLast"><code><strong><a href="#${nameFromParams(method)}">${method.name()}</a></strong>(${paramsOf(method, true)})</code><br>${method.firstSentenceCommentText()}</td>
                         </tr>
                         <% } %>
