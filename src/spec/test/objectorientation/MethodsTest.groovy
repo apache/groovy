@@ -239,6 +239,16 @@ class MethodsTest extends GroovyTestCase {
         '''
 
         assertScript '''
+            // tag::primitive_larger_over_smaller[]
+            def method(Long l) { 'Long' }
+            def method(Short s) { 'Short' }
+            def method(BigInteger bi) { 'BigInteger' }
+
+            assert method(35) == 'Long'
+            // end::primitive_larger_over_smaller[]
+        '''
+
+        assertScript '''
             // tag::multi_method_distance_interface_over_super[]
             interface I {}
             class Base {}
