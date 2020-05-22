@@ -281,7 +281,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         String name = node.getName();
         SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
-        int mods = node.getField().getModifiers();
+        int mods = node.getModifiers();
         if (!hasAnno(node.getField(), "PackageScope")) {
             processModifiers(fieldDoc, node.getField(), mods);
             Groovydoc groovydoc = node.getGroovydoc();
