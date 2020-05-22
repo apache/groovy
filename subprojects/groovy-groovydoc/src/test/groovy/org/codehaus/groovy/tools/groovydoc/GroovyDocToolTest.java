@@ -1065,6 +1065,30 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertFalse("Private ctor should not be listed", matcher.find());
     }
 
+    public void testProperty() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(Arrays.asList(
+            base + "/Alias.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/Alias.html");
+
+        final Matcher summary = Pattern.compile(Pattern.quote(
+            "<code><strong><a href='https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html' " +
+                "title='ArrayList'>ArrayList</a></strong></code>"
+        )).matcher(groovydoc);
+        final Matcher detail = Pattern.compile(Pattern.quote(
+            "<h4><a href='https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html' " +
+                "title='ArrayList'>ArrayList</a> <strong>arrayList</strong></h4>"
+        )).matcher(groovydoc);
+
+        assertTrue("Property summary should be found", summary.find());
+        assertTrue("Property detail should be found", detail.find());
+    }
+
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
