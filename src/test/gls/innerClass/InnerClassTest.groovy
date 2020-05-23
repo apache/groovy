@@ -594,31 +594,33 @@ final class InnerClassTest {
         '''
     }
 
-    /*@Test
+    @Test
     void testUsageOfOuterField_WrongCallToSuper() {
         shouldFail '''
-            class InnerAccessOuter {
+            class Outer {
                 protected static final String OUTER_CONSTANT = 'Constant Value'
 
-                class InnerClass {
-                    InnerClass() {
-                        // there's no Object#<init>(String) method, but it throws a VerifyError when a new instance
-                        // is created, meaning a wrong super call is generated
+                class Inner {
+                    Inner() {
+                        // there is no Object#<init>(String) method, but it throws a VerifyError for uninitialized this
                         super(OUTER_CONSTANT)
                     }
-                    String m() {
-                         OUTER_CONSTANT
+
+                    String access() {
+                        return OUTER_CONSTANT
                     }
                 }
 
-                void testInnerClassAccessOuter() {
-                    def inner = new InnerClass()
-                    inner.m()
+                void testInnerClassAccessOuterConst() {
+                    def inner = new Inner()
+                    inner.access()
                 }
             }
-            new InnerAccessOuter().testInnerClassAccessOuter()
+
+            def outer = new Outer()
+            outer.testInnerClassAccessOuterConst()
         '''
-    }*/
+    }
 
     @Test
     void testUsageOfOuterFieldOverridden() {
