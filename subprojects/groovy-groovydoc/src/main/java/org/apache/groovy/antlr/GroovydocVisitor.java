@@ -288,6 +288,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             fieldDoc.setRawCommentText(groovydoc == null ? "" : getDocContent(groovydoc));
             currentClassDoc.addProperty(fieldDoc);
         }
+        processAnnotations(fieldDoc, node.getField());
         super.visitProperty(node);
     }
 
