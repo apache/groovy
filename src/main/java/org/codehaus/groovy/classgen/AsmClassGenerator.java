@@ -125,6 +125,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 
 /**
  * Generates Java class versions of Groovy classes using ASM.
@@ -359,9 +366,6 @@ public class AsmClassGenerator extends ClassGenerator {
         modifiers = fixInnerClassModifiers(classNode, modifiers);
         modifiers = fixInterfaceModifiers(classNode, modifiers);
         return modifiers;
-    }
-
-    public void visitGenericType(final GenericsType genericsType) {
     }
 
     @Override
@@ -1009,6 +1013,40 @@ public class AsmClassGenerator extends ClassGenerator {
         return classNode.getSuperClass().getGetterMethod(getterMethodName);
     }
 
+    private boolean checkStaticOuterField(final PropertyExpression pexp, final String name) {
+        for (final ClassNode outer : controller.getClassNode().getOuterClasses()) {
+            FieldNode field = outer.getDeclaredField(name);
+            if (field != null) {
+                if (!field.isStatic()) break;
+
+                Expression outerClass = classX(outer);
+                outerClass.setNodeMetaData(PROPERTY_OWNER, outer);
+                outerClass.setSourcePosition(pexp.getObjectExpression());
+
+                Expression outerField = attrX(outerClass, pexp.getProperty());
+                outerField.setSourcePosition(pexp);
+                outerField.visit(this);
+                return true;
+            } else {
+                field = outer.getField(name); // checks supers
+                if (field != null && !field.isPrivate() && (field.isPublic() || field.isProtected()
+                        || Objects.equals(field.getDeclaringClass().getPackageName(), outer.getPackageName()))) {
+                    if (!field.isStatic()) break;
+
+                    Expression upperClass = classX(field.getDeclaringClass());
+                    upperClass.setNodeMetaData(PROPERTY_OWNER, field.getDeclaringClass());
+                    upperClass.setSourcePosition(pexp.getObjectExpression());
+
+                    Expression upperField = propX(upperClass, pexp.getProperty());
+                    upperField.setSourcePosition(pexp);
+                    upperField.visit(this);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private boolean isGroovyObject(final Expression objectExpression) {
         if (isThisExpression(objectExpression)) return true;
         if (objectExpression instanceof ClassExpression) return false;
@@ -1035,35 +1073,25 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (isSuperExpression(objectExpression)) {
                     field = classNode.getSuperClass().getDeclaredField(name);
                     privateSuperField = (field != null && field.isPrivate());
-                } else if (expression.isImplicitThis() || !controller.isInGeneratedFunction()) {
+                } else if (controller.isInGeneratedFunction()) {
+                    if (expression.isImplicitThis())
+                        field = classNode.getDeclaredField(name); // params are stored as fields
+                } else {
                     field = classNode.getDeclaredField(name);
-
-                    ClassNode outer = classNode.getOuterClass();
-                    if (field == null && outer != null) {
-                        do {
-                            FieldNode outerClassField = outer.getDeclaredField(name);
-                            if (outerClassField != null && outerClassField.isStatic()) {
-                                if (outerClassField.isPrivate() && classNode.getOuterClass() != outer) {
-                                    throw new GroovyBugError("Trying to access private field [" + outerClassField.getDeclaringClass() + "#" + outerClassField.getName() + "] from inner class");
-                                }
-                                PropertyExpression staticOuterField = new PropertyExpression(new ClassExpression(outer), expression.getProperty());
-                                staticOuterField.getObjectExpression().setSourcePosition(objectExpression);
-                                staticOuterField.visit(this);
-                                return;
-                            }
-                            outer = outer.getSuperClass();
-                        } while (outer != null);
+                    if (field == null && !isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
+                        // GROOVY-5259, GROOVY-9501, GROOVY-9569
+                        if (checkStaticOuterField(expression, name)) return;
                     }
                 }
 
                 if (field != null && !privateSuperField) { // GROOVY-4497: don't visit super field if it is private
-                    visitFieldExpression(new FieldExpression(field));
+                    fieldX(field).visit(this);
                     visited = true;
                 } else if (isSuperExpression(objectExpression)) {
                     if (controller.getCompileStack().isLHS()) {
                         setPropertyOfSuperClass(classNode, expression, controller.getMethodVisitor());
                     } else {
-                        visitMethodCallExpression(new MethodCallExpression(objectExpression, "get" + capitalize(name), MethodCallExpression.NO_ARGUMENTS));
+                        callX(objectExpression, "get" + capitalize(name)).visit(this); // TODO: "is"
                     }
                     visited = true;
                 }
@@ -1306,9 +1334,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void processClassVariable(final VariableExpression expression) {
         if (passingParams && controller.isInScriptBody()) {
-            //TODO: check if this part is actually used
+            // TODO: check if this part is actually used
             MethodVisitor mv = controller.getMethodVisitor();
-            // let's create a ScriptReference to pass into the closure
+            // create a ScriptReference to pass into the closure
             mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
             mv.visitInsn(DUP);
 
@@ -1317,10 +1345,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
             mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
         } else {
-            PropertyExpression pexp = new PropertyExpression(new VariableExpression("this"), expression.getName());
+            PropertyExpression pexp = thisPropX(true, expression.getName());
             pexp.getObjectExpression().setSourcePosition(expression);
             pexp.getProperty().setSourcePosition(expression);
-            pexp.setImplicitThis(true);
             visitPropertyExpression(pexp);
         }
     }

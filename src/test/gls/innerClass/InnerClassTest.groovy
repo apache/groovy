@@ -429,7 +429,7 @@ final class InnerClassTest {
         '''
     }
 
-    @Test  // inner class is static instead of final
+    @Test // inner class is static instead of final
     void testUsageOfOuterField8() {
         assertScript '''
             class Main extends Outer {
@@ -464,6 +464,159 @@ final class InnerClassTest {
             }
         '''
     }
+
+    @Test // GROOVY-9569
+    void testUsageOfOuterField9() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+
+            @groovy.transform.CompileStatic
+            abstract class Outer {
+                private static volatile boolean flag
+
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+
+                private static class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterField10() {
+        assertScript '''
+            class Outer {
+                static final String OUTER_CONSTANT = 'Constant Value'
+
+                class Inner {
+                    String access() {
+                        return OUTER_CONSTANT
+                    }
+                }
+
+                void testInnerClassAccessOuterConst() {
+                    def inner = new Inner()
+                    assert inner.access() == OUTER_CONSTANT
+                }
+            }
+
+            def outer = new Outer()
+            outer.testInnerClassAccessOuterConst()
+        '''
+    }
+
+    @Test // GROOVY-5259
+    void testUsageOfOuterField11() {
+        assertScript '''
+            class Base {
+                Base(String string) {
+                }
+            }
+
+            class Outer {
+                static final String OUTER_CONSTANT = 'Constant Value'
+
+                class Inner extends Base {
+                    Inner() {
+                        super(OUTER_CONSTANT) // "this" is not initialized yet
+                    }
+
+                    String access() {
+                        return OUTER_CONSTANT
+                    }
+                }
+
+                void testInnerClassAccessOuterConst() {
+                    def inner = new Inner()
+                    assert inner.access() == OUTER_CONSTANT
+                }
+            }
+
+            def outer = new Outer()
+            outer.testInnerClassAccessOuterConst()
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterSuperField() {
+        assertScript '''
+            class InnerBase {
+                InnerBase(String string) {
+                }
+            }
+
+            class OuterBase {
+                protected static final String OUTER_CONSTANT = 'Constant Value'
+            }
+
+            class Outer extends OuterBase {
+
+                class Inner extends InnerBase {
+                    Inner() {
+                        super(OUTER_CONSTANT)
+                    }
+
+                    String access() {
+                        return OUTER_CONSTANT
+                    }
+                }
+
+                void testInnerClassAccessOuterConst() {
+                    def inner = new Inner()
+                    assert inner.access() == OUTER_CONSTANT
+                }
+            }
+
+            def outer = new Outer()
+            outer.testInnerClassAccessOuterConst()
+        '''
+    }
+
+    /*@Test
+    void testUsageOfOuterField_WrongCallToSuper() {
+        shouldFail '''
+            class InnerAccessOuter {
+                protected static final String OUTER_CONSTANT = 'Constant Value'
+
+                class InnerClass {
+                    InnerClass() {
+                        // there's no Object#<init>(String) method, but it throws a VerifyError when a new instance
+                        // is created, meaning a wrong super call is generated
+                        super(OUTER_CONSTANT)
+                    }
+                    String m() {
+                         OUTER_CONSTANT
+                    }
+                }
+
+                void testInnerClassAccessOuter() {
+                    def inner = new InnerClass()
+                    inner.m()
+                }
+            }
+            new InnerAccessOuter().testInnerClassAccessOuter()
+        '''
+    }*/
 
     @Test
     void testUsageOfOuterFieldOverridden() {
