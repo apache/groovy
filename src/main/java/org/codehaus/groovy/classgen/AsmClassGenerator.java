@@ -1078,7 +1078,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 } else {
                     field = classNode.getDeclaredField(name);
                     if (field == null && !isValidFieldNodeForByteCodeAccess(classNode.getField(name), classNode)) {
-                        // GROOVY-5259, GROOVY-9501, GROOVY-9569
+                        // GROOVY-9501, GROOVY-9569
                         if (checkStaticOuterField(expression, name)) return;
                     }
                 }
@@ -1275,28 +1275,29 @@ public class AsmClassGenerator extends ClassGenerator {
 
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
-        String variableName = expression.getName();
-
-        //-----------------------------------------------------------------------
-        // SPECIAL CASES
-
-        // "this" for static methods is the Class instance
-        ClassNode classNode = controller.getClassNode();
+        final String variableName = expression.getName();
 
         if (expression.isThisExpression()) {
-            if (controller.isStaticMethod() || (!controller.getCompileStack().isImplicitThis() && controller.isStaticContext())) {
-                if (controller.isInGeneratedFunction()) classNode = controller.getOutermostClass();
-                visitClassExpression(new ClassExpression(classNode));
+            // "this" in static context is Class instance
+            if (controller.isStaticMethod() || controller.getCompileStack().isInSpecialConstructorCall()
+                    || (!controller.getCompileStack().isImplicitThis() && controller.isStaticContext())) {
+                ClassNode thisType = controller.getClassNode();
+                if (controller.isInGeneratedFunction()) {
+                    do { thisType = thisType.getOuterClass();
+                    } while (ClassHelper.isGeneratedFunction(thisType));
+                }
+                classX(thisType).visit(this);
             } else {
                 loadThis(expression);
             }
             return;
         }
 
-        // "super" also requires special handling
         if (expression.isSuperExpression()) {
+            // "super" in static context is Class instance
             if (controller.isStaticMethod()) {
-                visitClassExpression(new ClassExpression(classNode.getSuperClass()));
+                ClassNode superType = controller.getClassNode().getSuperClass();
+                classX(superType).visit(this);
             } else {
                 loadThis(expression);
             }
@@ -1304,11 +1305,22 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         BytecodeVariable variable = controller.getCompileStack().getVariable(variableName, false);
-        if (variable == null) {
-            processClassVariable(expression);
-        } else {
+        if (variable != null) {
             controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
+        } else if (passingParams && controller.isInScriptBody()) {
+            MethodVisitor mv = controller.getMethodVisitor();
+            mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
+            mv.visitInsn(DUP);
+            loadThisOrOwner();
+            mv.visitLdcInsn(variableName);
+            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
+        } else {
+            PropertyExpression pexp = thisPropX(true, variableName);
+            pexp.getObjectExpression().setSourcePosition(expression);
+            pexp.getProperty().setSourcePosition(expression);
+            pexp.visit(this);
         }
+
         if (!controller.getCompileStack().isLHS()) {
             controller.getAssertionWriter().record(expression);
         }
@@ -1328,26 +1340,6 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         } else {
             controller.getOperandStack().push(controller.getClassNode());
-        }
-    }
-
-    private void processClassVariable(final VariableExpression expression) {
-        if (passingParams && controller.isInScriptBody()) {
-            // TODO: check if this part is actually used
-            MethodVisitor mv = controller.getMethodVisitor();
-            // create a ScriptReference to pass into the closure
-            mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
-            mv.visitInsn(DUP);
-
-            loadThisOrOwner();
-            mv.visitLdcInsn(expression.getName());
-
-            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
-        } else {
-            PropertyExpression pexp = thisPropX(true, expression.getName());
-            pexp.getObjectExpression().setSourcePosition(expression);
-            pexp.getProperty().setSourcePosition(expression);
-            visitPropertyExpression(pexp);
         }
     }
 
