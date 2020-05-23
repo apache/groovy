@@ -950,7 +950,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
                         "<strong>annotatedField</strong></h4>"
         )).matcher(javadoc).find());
 
-        // TODO: Annotations for properties are missing, for some reason.
+        assertTrue("The Groovy property details should have the annotation", Pattern.compile(Pattern.quote(
+            "<h4>@<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>\n" +
+                "<a href='https://docs.oracle.com/javase/8/docs/api/java/util/List.html' title='List'>List</a> <strong>annotatedProperty</strong></h4>"
+        )).matcher(groovydoc).find());
+
+        // Java doesn't have properties section
 
         assertTrue("The Groovy ctor details should have the annotation", Pattern.compile(Pattern.quote(
                 "<h4>@groovy.transform.NamedVariant\n" +
