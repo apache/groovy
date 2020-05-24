@@ -93,8 +93,6 @@ public class Java9 extends Java8 {
 
         Map<String, Set<String>> result = new LinkedHashMap<>(2048);
         try (GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader())) {
-            result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
-
             URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
             result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
 
@@ -104,6 +102,8 @@ public class Java9 extends Java8 {
             if (!gsLocation.equals(giLocation)) {
                 result.putAll(doFindClasses(giLocation, "groovy", groovyPns));
             }
+
+            result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
         } catch (Exception ignore) {
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
