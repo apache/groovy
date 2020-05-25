@@ -359,7 +359,6 @@ project.ext.pomConfigureClosureWithoutTweaks = {
             developer {
                 id 'sunlan'
                 name 'Daniel Sun'
-                email 'realbluesun@hotmail.com'
                 roles {
                     role 'Developer'
                     role 'Despot'
