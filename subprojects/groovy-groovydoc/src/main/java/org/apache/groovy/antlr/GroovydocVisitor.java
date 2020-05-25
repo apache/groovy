@@ -199,6 +199,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethod(MethodNode node) {
+        if (currentClassDoc.isEnum() && "$INIT".equals(node.getName()))
+            return;
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(node.getName(), currentClassDoc);
         meth.setReturnType(new SimpleGroovyType(makeType(node.getReturnType())));
         setConstructorOrMethodCommon(node, meth);
