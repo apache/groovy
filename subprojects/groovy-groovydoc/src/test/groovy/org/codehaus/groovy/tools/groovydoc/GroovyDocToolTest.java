@@ -157,6 +157,23 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue(constructorDoc.indexOf("<parameter type=\"java.lang.ClassLoader\" name=\"parent\" />") > 0);
     }
 
+    public void testInterfaceConstructor() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        final String groovyInterface = "GroovyInterface1";
+        htmlTool.add(Arrays.asList(
+            base + "/"+ groovyInterface +".groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/"+ groovyInterface +".html");
+
+        final Matcher ctor = Pattern.compile(Pattern.quote("GroovyInterface1()")).matcher(groovydoc);
+
+        assertFalse("The Groovy interface should not have default constructor", ctor.find());
+    }
+
     public void testClassComment() throws Exception {
         List<String> srcList = new ArrayList<String>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
