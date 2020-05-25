@@ -685,6 +685,23 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertEquals("There has to be a reference to class Enum", "Enum", m.group(3));
     }
 
+    public void testEnumInitNotDocumented() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        final String klass = "EnumWithDeprecatedConstants";
+        htmlTool.add(Arrays.asList(
+            base + "/"+ klass +".groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/"+ klass +".html");
+
+        final Matcher ctor = Pattern.compile(Pattern.quote("$INIT")).matcher(groovydoc);
+
+        assertFalse("enum $INIT static method should not be documented", ctor.find());
+    }
+
     public void testClassAliasing() throws Exception {
 
         List<String> srcList = new ArrayList<String>();
