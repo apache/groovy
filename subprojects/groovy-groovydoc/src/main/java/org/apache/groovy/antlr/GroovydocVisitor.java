@@ -139,8 +139,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
         super.visitClass(node);
         SimpleGroovyClassDoc parent = currentClassDoc;
-        if (currentClassDoc.constructors().length == 0) {
-            // add default no-arg constructor
+        if (currentClassDoc.isClass() && currentClassDoc.constructors().length == 0) {
+            // add default no-arg constructor, but not for interfaces, traits, enums, or annotation definitions
             SimpleGroovyConstructorDoc cons = new SimpleGroovyConstructorDoc(name, currentClassDoc);
             cons.setPublic(true);
             currentClassDoc.add(cons);
