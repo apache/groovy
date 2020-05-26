@@ -271,6 +271,106 @@ class InnerClassTest extends CompilableTestSupport {
         '''
     }
 
+    // GROOVY-9501
+    void testUsageOfOuterField2() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+            abstract class Outer {
+                private static volatile boolean flag
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+                private final class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
+    // inner class is static instead of final
+    void testUsageOfOuterField3() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+            abstract class Outer {
+                private static volatile boolean flag
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+                private static class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
+    // GROOVY-9569
+    void testUsageOfOuterField4() {
+        assertScript '''
+            class Main extends Outer {
+                static main(args) {
+                    newInstance().newThread()
+                    assert Outer.Inner.error == null
+                }
+            }
+            @groovy.transform.CompileStatic
+            abstract class Outer {
+                private static volatile boolean flag
+                void newThread() {
+                    Thread thread = new Inner()
+                    thread.start()
+                    thread.join()
+                }
+                private static class Inner extends Thread {
+                    @Override
+                    void run() {
+                        try {
+                            if (!flag) {
+                                // do work
+                            }
+                        } catch (e) {
+                            error = e
+                        }
+                    }
+                    public static error
+                }
+            }
+        '''
+    }
+
     void testUsageOfOuterFieldOverridden_FAILS() {
         if (notYetImplemented()) return
 
