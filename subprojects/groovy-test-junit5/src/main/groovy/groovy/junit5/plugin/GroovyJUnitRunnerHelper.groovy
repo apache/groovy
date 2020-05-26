@@ -38,7 +38,7 @@ class GroovyJUnitRunnerHelper {
         launcher.registerTestExecutionListeners(listener)
         launcher.registerTestExecutionListeners(LoggingListener.forJavaUtilLogging())
         launcher.execute(request)
-        println listener.summary.with{ "JUnit5 launcher: passed=$testsSucceededCount, failed=$testsFailedCount, skipped=$testsSkippedCount, time=${timeFinished-timeStarted}ms" }
+        println listener.summary.with{ "JUnit5 launcher: passed=$testsSucceededCount, aborted=$testsAbortedCount, failed=$testsFailedCount, skipped=$testsSkippedCount, time=${timeFinished-timeStarted}ms" }
         if (listener.summary.failures) {
             listener.summary.printFailuresTo(new PrintWriter(System.out, true))
             return listener.summary.failures[0].exception
