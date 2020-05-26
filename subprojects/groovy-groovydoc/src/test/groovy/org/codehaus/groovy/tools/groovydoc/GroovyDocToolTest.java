@@ -1094,6 +1094,27 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("Property detail should be found", detail.find());
     }
 
+    public void testArray() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(Arrays.asList(
+            base + "/GroovyInterface1.groovy"
+        ));
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/GroovyInterface1.html");
+
+        final String klass = Pattern.quote("<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html' title='Class'>Class</a>");
+        final String groovyInterface1 = Pattern.quote("<a href='../../../../../../org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.html' title='GroovyInterface1'>GroovyInterface1</a>");
+
+        final Matcher klassArray = Pattern.compile(klass + "&lt;\\? extends " + groovyInterface1 + "&gt;\\[]").matcher(groovydoc);
+        final Matcher primArray = Pattern.compile(Pattern.quote("byte[]")).matcher(groovydoc);
+
+        assertTrue("Class<? extends GroovyInterface1>[] is found instead of Class[]", klassArray.find());
+        assertTrue("byte[] is found instead of [B", primArray.find());
+    }
+
     public void testScript() throws Exception {
         List<String> srcList = new ArrayList<String>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
