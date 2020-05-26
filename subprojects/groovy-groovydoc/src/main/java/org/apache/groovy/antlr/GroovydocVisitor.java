@@ -293,9 +293,11 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     private String makeType(ClassNode node) {
-        return node.getName().replace('.', '/').replace('$', '.')
-                + genericTypesAsString(node.getGenericsTypes())
-                ;
+        final ClassNode cn = node.isArray() ? node.getComponentType() : node;
+        return cn.getName().replace('.', '/').replace('$', '.')
+            + genericTypesAsString(cn.getGenericsTypes())
+            + (node.isArray() ? "[]" : "")
+            ;
     }
 
     @Override
