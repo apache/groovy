@@ -28,4 +28,6 @@ interface GroovyInterface1 {
      * @see JavaClassWithDiamond#link()
      */
     void link()
+
+    Class<? extends GroovyInterface1>[] parse(byte[] data)
 }
