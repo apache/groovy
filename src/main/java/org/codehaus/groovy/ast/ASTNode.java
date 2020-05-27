@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -120,10 +119,5 @@ public class ASTNode implements NodeMetaDataHandler {
     @Override
     public void setMetaDataMap(Map<?, ?> metaDataMap) {
         this.metaDataMap = metaDataMap;
-    }
-
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(new int[] {lineNumber, columnNumber, lastLineNumber, lastColumnNumber});
     }
 }
