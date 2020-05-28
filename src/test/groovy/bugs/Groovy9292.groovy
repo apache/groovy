@@ -18,7 +18,6 @@
  */
 package groovy.bugs
 
-import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -27,27 +26,56 @@ final class Groovy9292 {
 
     private final GroovyShell shell = new GroovyShell()
 
-    @Test @NotYetImplemented
-    void 'test accessing a private super class field inside a closure - same package'() {
+    @Test
+    void 'test accessing a private super class field inside a closure - same module'() {
         shouldFail(MissingPropertyException) {
             shell.evaluate '''
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 class B extends A {
                     @groovy.transform.CompileStatic
                     def test() {
                         'something'.with {
-                            return superField // ClassCastException: a.B$_test_closure1 cannot be cast to a.A
+                            return superField
                         }
                     }
                 }
 
-                def obj = new B()
-                assert obj.test() == "works"
+                new B().test()
+            '''
+        }
+    }
+
+    @Test
+    void 'test accessing a private super class field inside a closure - same package'() {
+        shouldFail(MissingPropertyException) {
+            shell.evaluate '''
+                package a
+
+                class A {
+                    private String superField
+                }
+
+                assert true
+            '''
+
+            shell.evaluate '''
+                package a
+
+                class B extends A {
+                    @groovy.transform.CompileStatic
+                    def test() {
+                        'something'.with {
+                            return superField
+                        }
+                    }
+                }
+
+                new B().test()
             '''
         }
     }
@@ -59,7 +87,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 assert true
@@ -89,7 +117,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 class B extends A {
@@ -101,8 +129,7 @@ final class Groovy9292 {
                     }
                 }
 
-                def obj = new B()
-                assert obj.test() == "works"
+                new B().test()
             '''
         }
     }
@@ -114,7 +141,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 assert true
@@ -144,7 +171,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 class B extends A {
@@ -156,8 +183,7 @@ final class Groovy9292 {
                     }
                 }
 
-                def obj = new B()
-                assert obj.test() == "works"
+                new B().test()
             '''
         }
     }
@@ -169,7 +195,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 assert true
@@ -199,7 +225,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 class B extends A {
@@ -211,8 +237,7 @@ final class Groovy9292 {
                     }
                 }
 
-                def obj = new B()
-                assert obj.test() == "works"
+                new B().test()
             '''
         }
     }
@@ -224,7 +249,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 assert true
@@ -254,7 +279,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 class B extends A {
@@ -266,8 +291,7 @@ final class Groovy9292 {
                     }
                 }
 
-                def obj = new B()
-                assert obj.test() == "works"
+                new B().test()
             '''
         }
     }
@@ -279,7 +303,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 assert true
@@ -309,7 +333,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 class B extends A {
@@ -321,8 +345,7 @@ final class Groovy9292 {
                     }
                 }
 
-                def obj = new B()
-                assert obj.test() == "works"
+                new B().test()
             '''
         }
     }
@@ -334,7 +357,7 @@ final class Groovy9292 {
                 package a
 
                 class A {
-                    private String superField = 'works'
+                    private String superField
                 }
 
                 assert true
