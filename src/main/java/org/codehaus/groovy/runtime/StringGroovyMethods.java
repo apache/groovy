@@ -2620,7 +2620,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the length of the String
      *
      * @since 1.0
+     *
+     * @see #size(CharSequence)
      */
+    @Deprecated
     public static int size(final String self) {
         return self.length();
     }
@@ -2632,7 +2635,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the length of the StringBuffer
      *
      * @since 1.0
+     *
+     * @see #size(CharSequence)
      */
+    @Deprecated
     public static int size(final StringBuffer self) {
         return self.length();
     }
