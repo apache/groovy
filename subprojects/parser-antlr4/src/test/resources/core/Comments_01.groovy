@@ -19,7 +19,7 @@
  */
 
 /**
- * Created by Daniel.Sun on 2016/08/16.
+ * Created on 2016/08/16.
  */
 
 // this is a line comment
