@@ -23,12 +23,6 @@ import org.codehaus.groovy.reflection.ReflectionUtils
 // note, this must be in a package other than org.codehause.groovy.reflection or else
 // the tests will incorrectly miss the target
 
-/**
- * Created by IntelliJ IDEA.
- * User: Danno.Ferrin
- * Date: Jun 24, 2008
- * Time: 9:45:15 PM
- */
 class ReflectionUtilsTest extends GroovyTestCase {
 
     private Class privateCaller() {
