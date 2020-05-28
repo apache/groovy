@@ -20,12 +20,6 @@ package groovy.grape
 
 import groovy.test.GroovyTestCase
 
-/**
- * Created by IntelliJ IDEA.
- * User: Danno
- * Date: Jan 20, 2008
- * Time: 5:14:11 PM
- */
 class GrapeClassLoaderTest extends GroovyTestCase {
 
     public GrapeClassLoaderTest() {
