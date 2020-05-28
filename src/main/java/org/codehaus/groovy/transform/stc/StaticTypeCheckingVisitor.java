@@ -91,7 +91,6 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
-import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -484,6 +483,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private static ClassNode getOutermost(ClassNode cn) {
+        while (cn.getOuterClass() != null) {
+            cn = cn.getOuterClass();
+        }
+        return cn;
+    }
+
     @SuppressWarnings("unchecked")
     private static void addPrivateFieldOrMethodAccess(Expression source, ClassNode cn, StaticTypesMarker type, ASTNode accessedMember) {
         Set<ASTNode> set = (Set<ASTNode>) cn.getNodeMetaData(type);
@@ -496,44 +502,22 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Given a field node, checks if we are accessing or setting a private field from an inner class.
+     * Checks for private field access from inner or outer class.
      */
-    private void checkOrMarkPrivateAccess(Expression source, FieldNode fn, boolean lhsOfAssignment) {
-        if (fn == null) return;
-        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
+    private void checkOrMarkPrivateAccess(final Expression source, final FieldNode fn, final boolean lhsOfAssignment) {
+        if (fn == null || !fn.isPrivate()) return;
         ClassNode declaringClass = fn.getDeclaringClass();
-        if (fn.isPrivate() &&
-                (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) &&
-                declaringClass.getModule() == enclosingClassNode.getModule()) {
-            if (!lhsOfAssignment && enclosingClassNode.isDerivedFrom(declaringClass)) {
-                // check for a public/protected getter since JavaBean getters haven't been recognised as properties
-                // at this point and we don't want private field access for that case which will be handled later
-                boolean isPrimBool = fn.getOriginType().equals(ClassHelper.boolean_TYPE);
-                String suffix = Verifier.capitalize(fn.getName());
-                MethodNode getterNode = findValidGetter(enclosingClassNode, "get" + suffix);
-                if (getterNode == null && isPrimBool) {
-                    getterNode = findValidGetter(enclosingClassNode, "is" + suffix);
-                }
-                if (getterNode != null) {
-                    source.putNodeMetaData(INFERRED_TYPE, getterNode.getReturnType());
-                    return;
-                }
-            }
-            StaticTypesMarker marker = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
-            addPrivateFieldOrMethodAccess(source, declaringClass, marker, fn);
-        }
-    }
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        if (declaringClass == enclosingClass && typeCheckingContext.getEnclosingClosure() == null) return;
 
-    private MethodNode findValidGetter(ClassNode classNode, String name) {
-        MethodNode getterMethod = classNode.getGetterMethod(name);
-        if (getterMethod != null && (getterMethod.isPublic() || getterMethod.isProtected())) {
-            return getterMethod;
+        if (declaringClass == enclosingClass || getOutermost(declaringClass) == getOutermost(enclosingClass)) {
+            StaticTypesMarker accessKind = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
+            addPrivateFieldOrMethodAccess(source, declaringClass, accessKind, fn);
         }
-        return null;
     }
 
     /**
-     * Given a method node, checks if we are calling a private method from an inner class.
+     * Checks for private method call from inner or outer class.
      */
     private void checkOrMarkPrivateAccess(Expression source, MethodNode mn) {
         if (mn == null) {
