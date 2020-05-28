@@ -423,6 +423,33 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-9562
+    void testSuperPropertyAccessInAIC() {
+        assertScript '''
+            abstract class One {
+                int prop = 1
+            }
+
+            abstract class Two {
+                int prop = 2
+
+                abstract baz()
+            }
+
+            class Foo extends One {
+                Two bar() {
+                    new Two() {
+                        def baz() {
+                            prop
+                        }
+                    }
+                }
+            }
+
+            assert new Foo().bar().baz() == 2
+        '''
+    }
+
     // GROOVY-5737
     void testAccessGeneratedFieldFromClosure() {
         assertScript '''

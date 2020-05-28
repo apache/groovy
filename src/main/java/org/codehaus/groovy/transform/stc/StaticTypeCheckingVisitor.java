@@ -98,7 +98,6 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
 import org.codehaus.groovy.classgen.ReturnAdder;
-import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -485,47 +484,35 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private static ClassNode getOutermost(ClassNode cn) {
+        while (cn.getOuterClass() != null) {
+            cn = cn.getOuterClass();
+        }
+        return cn;
+    }
+
     private static void addPrivateFieldOrMethodAccess(final Expression source, final ClassNode cn, final StaticTypesMarker key, final ASTNode accessedMember) {
         cn.getNodeMetaData(key, x -> new LinkedHashSet<>()).add(accessedMember);
         source.putNodeMetaData(key, accessedMember);
     }
 
     /**
-     * Given a field node, checks if we are accessing or setting a private field from an inner class.
+     * Checks for private field access from inner or outer class.
      */
     private void checkOrMarkPrivateAccess(final Expression source, final FieldNode fn, final boolean lhsOfAssignment) {
-        if (fn == null) return;
-        ClassNode declaringClass = fn.getDeclaringClass(), enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        if (fn.isPrivate() && (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null)
-                && declaringClass.getModule() == enclosingClassNode.getModule()) {
-            if (!lhsOfAssignment && enclosingClassNode.isDerivedFrom(declaringClass)) {
-                // check for a public/protected getter since JavaBean getters haven't been recognised as properties
-                // at this point and we don't want private field access for that case which will be handled later
-                String suffix = Verifier.capitalize(fn.getName());
-                MethodNode getter = findValidGetter(enclosingClassNode, "get" + suffix);
-                if (getter == null && boolean_TYPE.equals(fn.getOriginType())) {
-                    getter = findValidGetter(enclosingClassNode, "is" + suffix);
-                }
-                if (getter != null) {
-                    source.putNodeMetaData(INFERRED_TYPE, getter.getReturnType());
-                    return;
-                }
-            }
-            StaticTypesMarker marker = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
-            addPrivateFieldOrMethodAccess(source, declaringClass, marker, fn);
-        }
-    }
+        if (fn == null || !fn.isPrivate()) return;
+        ClassNode declaringClass = fn.getDeclaringClass();
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        if (declaringClass == enclosingClass && typeCheckingContext.getEnclosingClosure() == null) return;
 
-    private MethodNode findValidGetter(final ClassNode classNode, final String name) {
-        MethodNode getterMethod = classNode.getGetterMethod(name);
-        if (getterMethod != null && (getterMethod.isPublic() || getterMethod.isProtected())) {
-            return getterMethod;
+        if (declaringClass == enclosingClass || getOutermost(declaringClass) == getOutermost(enclosingClass)) {
+            StaticTypesMarker accessKind = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
+            addPrivateFieldOrMethodAccess(source, declaringClass, accessKind, fn);
         }
-        return null;
     }
 
     /**
-     * Given a method node, checks if we are calling a private method from an inner class.
+     * Checks for private method call from inner or outer class.
      */
     private void checkOrMarkPrivateAccess(final Expression source, final MethodNode mn) {
         if (mn == null) {
