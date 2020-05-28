@@ -411,7 +411,10 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the length of the StringBuilder
      *
      * @since 1.5.2
+     *
+     * @see org.codehaus.groovy.runtime.StringGroovyMethods#size(CharSequence)
      */
+    @Deprecated
     public static int size(final StringBuilder self) {
         return self.length();
     }
