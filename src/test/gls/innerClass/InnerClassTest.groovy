@@ -37,6 +37,7 @@ final class InnerClassTest {
 
             Timer timer = new Timer()
             timer.schedule(new TimerTask() {
+                @Override
                 void run() {
                     called.countDown()
                 }
@@ -47,23 +48,36 @@ final class InnerClassTest {
     }
 
     @Test
-    void testAICReferenceInClosure() {
+    void testAccessLocalVariableFromClosureInAIC() {
         assertScript '''
-            def y = [true]
+            def x = [true]
             def o = new Object() {
-              def foo() {
-                def c = {
-                  assert y[0]
+                def m() {
+                    def c = { ->
+                        assert x[0]
+                    }
+                    c()
                 }
-                c()
-              }
             }
-            o.foo()
+            o.m()
+        '''
+
+        shouldFail '''
+            def x = [false]
+            def o = new Object() {
+                def m() {
+                    def c = { ->
+                        assert x[0]
+                    }
+                    c()
+                }
+            }
+            o.m()
         '''
     }
 
     @Test
-    void testExtendsObjectAndAccessAFinalVariableInScope() {
+    void testAccessFinalLocalVariableFromMethodInAIC() {
         assertScript '''
             final String objName = "My name is Guillaume"
 
@@ -73,8 +87,34 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-9499
+    void testAccessStaticMethodFromAICInSuperCtorCall() {
+        assertScript '''
+            class One {
+                One(ref) {
+                    HASH_CODE = ref.hashCode()
+                }
+                public static int HASH_CODE
+            }
+
+            class Two extends One {
+              Two() {
+                super(new Object() { // AIC before special ctor call completes
+                  int hashCode() {
+                    hash() // should be able to call static method safely
+                  }
+                })
+              }
+              static int hash() { 42 }
+            }
+
+            def obj = new Two()
+            assert One.HASH_CODE == 42
+        '''
+    }
+
     @Test
-    void testExtendsObjectAndReferenceAMethodParameterWithinAGString() {
+    void testAccessMethodParameterFromGStringInAICMethod() {
         assertScript '''
             Object makeObj0(String name) {
                 new Object() {
@@ -87,7 +127,7 @@ final class InnerClassTest {
     }
 
     @Test
-    void testExtendsObjectAndReferenceAGStringPropertyDependingOnAMethodParameter() {
+    void testAccessMethodParameterFromGStringInAICProperty() {
         assertScript '''
             Object makeObj1(String name) {
                  new Object() {
