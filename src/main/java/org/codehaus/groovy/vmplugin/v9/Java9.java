@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -423,8 +424,8 @@ public class Java9 extends Java8 {
                 .map(ModuleReference::descriptor)
                 .forEach(md -> md.packages().forEach(pn -> map.putIfAbsent(pn, md)));
 
-        final Map<String, Set<String>> concealedPackagesToOpen = new HashMap<>();
-        final Map<String, Set<String>> exportedPackagesToOpen = new HashMap<>();
+        final Map<String, Set<String>> concealedPackagesToOpen = new ConcurrentHashMap<>();
+        final Map<String, Set<String>> exportedPackagesToOpen = new ConcurrentHashMap<>();
 
         Arrays.stream(JAVA8_PACKAGES())
                 .forEach(pn -> {
