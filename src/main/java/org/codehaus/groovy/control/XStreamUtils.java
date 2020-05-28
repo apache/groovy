@@ -59,9 +59,10 @@ public abstract class XStreamUtils {
      */
     private static File astFile(final String uriOrFileName) {
         try {
-            final String astFileName = uriOrFileName + ".xml";
+            final String astFileName = uriOrFileName.replaceAll(" ", "%20") + ".xml";
             return uriOrFileName.startsWith("file:") ? new File(URI.create(astFileName)) : new File(astFileName);
         } catch (IllegalArgumentException e) {
+            System.err.println("e = " + e);
             return null;
         }
     }
