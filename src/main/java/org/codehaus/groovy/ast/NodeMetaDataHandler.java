@@ -90,14 +90,7 @@ public interface NodeMetaDataHandler {
      *                        data under that key
      */
     default void setNodeMetaData(Object key, Object value) {
-        if (key == null) throw new GroovyBugError("Tried to set meta data with null key on " + this + ".");
-
-        Map metaDataMap = this.getMetaDataMap();
-        if (metaDataMap == null) {
-            metaDataMap = new ListHashMap();
-            this.setMetaDataMap(metaDataMap);
-        }
-        Object old = metaDataMap.put(key, value);
+        Object old = putNodeMetaData(key, value);
         if (old != null) throw new GroovyBugError("Tried to overwrite existing meta data " + this + ".");
     }
 
