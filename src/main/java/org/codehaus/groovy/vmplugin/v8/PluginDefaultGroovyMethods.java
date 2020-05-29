@@ -363,9 +363,8 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Overloads the {@code ++} operator for enums. It will invoke
-     * Groovy's default next behaviour for enums do not have their own
-     * next method.
+     * Overloads the {@code ++} operator for enums. It will invoke Groovy's
+     * default next behaviour for enums that do not have their own next method.
      *
      * @param self an Enum
      * @return the next defined enum from the enum class
@@ -384,9 +383,8 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Overloads the {@code --} operator for enums. It will invoke
-     * Groovy's default previous behaviour for enums that do not have
-     * their own previous method.
+     * Overloads the {@code --} operator for enums. It will invoke Groovy's
+     * default previous behaviour for enums that do not have their own previous method.
      *
      * @param self an Enum
      * @return the previous defined enum from the enum class
