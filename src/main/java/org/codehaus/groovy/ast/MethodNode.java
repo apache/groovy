@@ -31,7 +31,7 @@ import java.util.Optional;
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
 
-    private String name;
+    private final String name;
     private int modifiers;
     private boolean syntheticPublic;
     private ClassNode returnType;
@@ -40,8 +40,8 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
-    private ClassNode[] exceptions;
-    private boolean staticConstructor;
+    private final ClassNode[] exceptions;
+    private final boolean staticConstructor;
 
     // type spec for generics
     private GenericsType[] genericsTypes;
@@ -49,16 +49,20 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     // cached data
     private String typeDescriptor;
 
-    protected MethodNode() {}
+    protected MethodNode() {
+        this.name = null;
+        this.exceptions = null;
+        this.staticConstructor = false;
+    }
 
-    public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+    public MethodNode(final String name, final int modifiers, final ClassNode returnType, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
         this.name = name;
         this.modifiers = modifiers;
+        this.exceptions = exceptions;
         this.code = code;
         setReturnType(returnType);
         setParameters(parameters);
-        this.exceptions = exceptions;
-        this.staticConstructor = (name != null && name.equals("<clinit>"));
+        this.staticConstructor = "<clinit>".equals(name);
     }
 
     /**
