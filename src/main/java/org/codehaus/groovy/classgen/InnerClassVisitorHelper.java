@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -46,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
+
     protected static void setPropertyGetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
         List<ConstantExpression> gStringStrings = new ArrayList<ConstantExpression>();
         gStringStrings.add(new ConstantExpression(""));
@@ -102,9 +102,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
     }
 
     protected static boolean isStatic(InnerClassNode node) {
-        VariableScope scope = node.getVariableScope();
-        if (scope != null) return scope.getParent().isInStaticContext();
-        return (node.getModifiers() & Opcodes.ACC_STATIC) != 0;
+        return node.getDeclaredField("this$0") == null;
     }
 
     protected static ClassNode getClassNode(ClassNode node, boolean isStatic) {
