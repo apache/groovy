@@ -44,22 +44,16 @@ import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.nonGeneric;
-
 public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcodes {
 
-    private final SourceUnit sourceUnit;
     private ClassNode classNode;
-    private FieldNode thisField;
-    private MethodNode currentMethod;
     private FieldNode currentField;
-    private boolean processingObjInitStatements;
-    private boolean inClosure;
+    private MethodNode currentMethod;
+    private final SourceUnit sourceUnit;
+    private boolean inClosure, processingObjInitStatements;
 
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -73,12 +67,11 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
     @Override
     public void visitClass(ClassNode node) {
         classNode = node;
-        thisField = null;
         InnerClassNode innerClass = null;
         if (!node.isEnum() && !node.isInterface() && node instanceof InnerClassNode) {
             innerClass = (InnerClassNode) node;
-            if (!isStatic(innerClass) && innerClass.getVariableScope() == null) {
-                thisField = innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, node.getOuterClass().getPlainNodeReference(), null);
+            if (innerClass.getVariableScope() == null && (innerClass.getModifiers() & ACC_STATIC) == 0) {
+                innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, node.getOuterClass().getPlainNodeReference(), null);
             }
         }
 
@@ -140,7 +133,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
     }
 
     @Override
-    public void visitConstructorCallExpression(final ConstructorCallExpression call) {
+    public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
         if (!call.isUsingAnonymousInnerClass()) {
             passThisReference(call);
@@ -159,49 +152,24 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
 
         VariableScope scope = innerClass.getVariableScope();
         if (scope == null) return;
-
-        int additionalParamCount = scope.getReferencedLocalVariablesCount();
-        final boolean[] precedesSuperOrThisCall = new boolean[1];
-        if (currentMethod instanceof ConstructorNode) {
-            ConstructorNode ctor = (ConstructorNode) currentMethod;
-            GroovyCodeVisitor visitor = new CodeVisitorSupport() {
-                @Override
-                public void visitConstructorCallExpression(ConstructorCallExpression cce) {
-                    if (cce == call) {
-                        precedesSuperOrThisCall[0] = true;
-                    } else {
-                        super.visitConstructorCallExpression(cce);
-                    }
-                }
-            };
-            if (ctor.firstStatementIsSpecialConstructorCall()) currentMethod.getFirstStatement().visit(visitor);
-            for (Parameter p : ctor.getParameters()) {
-                if (p.hasInitialExpression()) {
-                    p.getInitialExpression().visit(visitor);
-                }
-            }
-        }
-        if (!precedesSuperOrThisCall[0]) additionalParamCount += 1;
+        boolean isStatic = !inClosure && isStatic(innerClass, scope, call);
 
         // expressions = constructor call arguments
         List<Expression> expressions = ((TupleExpression) call.getArguments()).getExpressions();
         // block = init code for the constructor we produce
         BlockStatement block = new BlockStatement();
         // parameters = parameters of the constructor
+        int additionalParamCount = (isStatic ? 0 : 1) + scope.getReferencedLocalVariablesCount();
         List<Parameter> parameters = new ArrayList<>(expressions.size() + additionalParamCount);
         // superCallArguments = arguments for the super call == the constructor call arguments
         List<Expression> superCallArguments = new ArrayList<>(expressions.size());
 
-        // first we add a super() call for all expressions given in the
-        // constructor call expression
-        int pCount = additionalParamCount;
-        for (Expression expr : expressions) {
-            pCount++;
-            // add one parameter for each expression in the
-            // constructor call
-            Parameter param = new Parameter(ClassHelper.OBJECT_TYPE, "p" + pCount);
+        // first we add a super() call for all expressions given in the constructor call expression
+        for (int i = 0, n = expressions.size(); i < n; i += 1) {
+            // add one parameter for each expression in the constructor call
+            Parameter param = new Parameter(ClassHelper.OBJECT_TYPE, "p" + additionalParamCount + i);
             parameters.add(param);
-            // add to super call
+            // add the corresponsing argument to the super constructor call
             superCallArguments.add(new VariableExpression(param));
         }
 
@@ -213,45 +181,38 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
 
         block.addStatement(new ExpressionStatement(cce));
 
-        pCount = 0;
-        boolean isStatic = isStaticThis(innerClass, scope);
-        ClassNode outerClassType;
-        if (!isStatic && inClosure) {
-            outerClassType = ClassHelper.CLOSURE_TYPE.getPlainNodeReference();
-        } else {
-            outerClassType = getClassNode(outerClass, isStatic).getPlainNodeReference();
-        }
-        if (!precedesSuperOrThisCall[0]) {
+        int pCount = 0;
+        if (!isStatic) {
             // need to pass "this" to access unknown methods/properties
             expressions.add(pCount, VariableExpression.THIS_EXPRESSION);
 
-            Parameter thisParameter = new Parameter(outerClassType, "p" + pCount);
-            parameters.add(pCount, thisParameter);
+            ClassNode enclosingType = (inClosure ? ClassHelper.CLOSURE_TYPE : outerClass).getPlainNodeReference();
+            Parameter thisParameter = new Parameter(enclosingType, "p" + pCount);
+            parameters.add(pCount++, thisParameter);
 
             // "this" reference is saved in a field named "this$0"
-            thisField = innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, outerClassType, null);
+            FieldNode thisField = innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, enclosingType, null);
             addFieldInit(thisParameter, thisField, block);
-        }/* else {
-            thisField = innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, nonGeneric(ClassHelper.CLASS_Type), classX(outerClassType));
-        }*/
+        }
 
         // for each shared variable, add a Reference field
         for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext();) {
-            pCount++;
             Variable var = it.next();
+
             VariableExpression ve = new VariableExpression(var);
             ve.setClosureSharedVariable(true);
             ve.setUseReferenceDirectly(true);
             expressions.add(pCount, ve);
 
-            ClassNode rawReferenceType = ClassHelper.REFERENCE_TYPE.getPlainNodeReference();
-            Parameter p = new Parameter(rawReferenceType, "p" + pCount);
-            parameters.add(pCount, p);
+            ClassNode referenceType = ClassHelper.REFERENCE_TYPE.getPlainNodeReference();
+            Parameter p = new Parameter(referenceType, "p" + pCount);
             p.setOriginType(var.getOriginType());
+            parameters.add(pCount++, p);
+
             VariableExpression initial = new VariableExpression(p);
             initial.setSynthetic(true);
             initial.setUseReferenceDirectly(true);
-            FieldNode pField = innerClass.addFieldFirst(ve.getName(), ACC_PUBLIC | ACC_SYNTHETIC, rawReferenceType, initial);
+            FieldNode pField = innerClass.addFieldFirst(ve.getName(), ACC_PUBLIC | ACC_SYNTHETIC, referenceType, initial);
             pField.setHolder(true);
             pField.setOriginType(ClassHelper.getWrapper(var.getOriginType()));
         }
@@ -259,17 +220,42 @@ public class InnerClassVisitor extends InnerClassVisitorHelper implements Opcode
         innerClass.addConstructor(ACC_SYNTHETIC, parameters.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, block);
     }
 
-    private boolean isStaticThis(InnerClassNode innerClass, VariableScope scope) {
-        if (inClosure) return false;
-        boolean ret = innerClass.isStaticClass();
-        if (innerClass.getEnclosingMethod() != null) {
-            ret = ret || innerClass.getEnclosingMethod().isStatic();
-        } else if (currentField != null) {
-            ret = ret || currentField.isStatic();
-        } else if (currentMethod != null && "<clinit>".equals(currentMethod.getName())) {
-            ret = true;
+    private boolean isStatic(InnerClassNode innerClass, VariableScope scope, final ConstructorCallExpression call) {
+        boolean isStatic = innerClass.isStaticClass();
+        if (!isStatic) {
+            if (currentMethod != null) {
+                if (currentMethod instanceof ConstructorNode) {
+                    ConstructorNode ctor = (ConstructorNode) currentMethod;
+                    final boolean[] precedesSuperOrThisCall = new boolean[1];
+
+                    GroovyCodeVisitor visitor = new CodeVisitorSupport() {
+                        @Override
+                        public void visitConstructorCallExpression(ConstructorCallExpression cce) {
+                            if (cce == call) {
+                                precedesSuperOrThisCall[0] = true;
+                            } else {
+                                super.visitConstructorCallExpression(cce);
+                            }
+                        }
+                    };
+                    if (ctor.firstStatementIsSpecialConstructorCall()) {
+                        currentMethod.getFirstStatement().visit(visitor);
+                    }
+                    for (Parameter param : ctor.getParameters()) {
+                        if (param.hasInitialExpression()) {
+                            param.getInitialExpression().visit(visitor);
+                        }
+                    }
+
+                    isStatic = precedesSuperOrThisCall[0];
+                } else {
+                    isStatic = currentMethod.isStatic();
+                }
+            } else if (currentField != null) {
+                isStatic = currentField.isStatic();
+            }
         }
-        return ret;
+        return isStatic;
     }
 
     // this is the counterpart of addThisReference(). To non-static inner classes, outer this should be
