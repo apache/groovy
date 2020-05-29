@@ -34,7 +34,6 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.stream.IntStream;
 
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
@@ -51,10 +50,14 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 public class ExpressionUtils {
 
     // NOTE: values are sorted in ascending order
-    private static final int[] HANDLED_TYPES = IntStream.of(
+    private static final int[] HANDLED_TYPES = {
             PLUS, MINUS, MULTIPLY, DIVIDE, POWER,
             LEFT_SHIFT, RIGHT_SHIFT, RIGHT_SHIFT_UNSIGNED,
-            BITWISE_OR, BITWISE_AND, BITWISE_XOR).sorted().toArray();
+            BITWISE_OR, BITWISE_AND, BITWISE_XOR
+    };
+    static {
+        Arrays.sort(HANDLED_TYPES);
+    }
 
     private ExpressionUtils() {
     }
