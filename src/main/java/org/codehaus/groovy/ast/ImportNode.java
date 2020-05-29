@@ -18,12 +18,12 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.objectweb.asm.Opcodes;
+import static java.util.Objects.requireNonNull;
 
 /**
- * Represents an import statement of a single class
+ * Represents an import statement.
  */
-public class ImportNode extends AnnotatedNode implements Opcodes {
+public class ImportNode extends AnnotatedNode {
 
     private final ClassNode type;
     private final String alias;
@@ -33,13 +33,13 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
     private final boolean isStatic;
 
     /**
-     * Represent an import of an entire package, i.e.&#160;import package.Classname
+     * An import of a single type, i.e.&#160;{@code import pack.Type} or {@code import pack.Type as Alias}
      *
-     * @param type  the referenced class
+     * @param type  the type reference
      * @param alias optional alias
      */
-    public ImportNode(ClassNode type, String alias) {
-        this.type = type;
+    public ImportNode(final ClassNode type, final String alias) {
+        this.type = requireNonNull(type);
         this.alias = alias;
         this.isStar = false;
         this.isStatic = false;
@@ -48,26 +48,26 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Represent an import of an entire package, i.e.&#160;import package.*
+     * An import of all types in a package, i.e.&#160;{@code import pack.*}
      *
      * @param packageName the name of the package
      */
-    public ImportNode(String packageName) {
+    public ImportNode(final String packageName) {
         this.type = null;
         this.alias = null;
         this.isStar = true;
         this.isStatic = false;
-        this.packageName = packageName;
+        this.packageName = requireNonNull(packageName);
         this.fieldName = null;
     }
 
     /**
-     * Represent a static import of a Class, i.e.&#160;import static package.Classname.*
+     * An import of all static members of a type, i.e.&#160;{@code import static pack.Type.*}
      *
-     * @param type the referenced class
+     * @param type the type reference
      */
-    public ImportNode(ClassNode type) {
-        this.type = type;
+    public ImportNode(final ClassNode type) {
+        this.type = requireNonNull(type);
         this.alias = null;
         this.isStar = true;
         this.isStatic = true;
@@ -76,24 +76,25 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Represent a static import of a field or method, i.e.&#160;import static package.Classname.name
+     * An import of a static field or method of a type, i.e.&#160;{@code import static pack.Type.name} or {@code import static pack.Type.name as alias}
      *
-     * @param type      the referenced class
+     * @param type      the type reference
      * @param fieldName the field name
      * @param alias     optional alias
      */
-    public ImportNode(ClassNode type, String fieldName, String alias) {
-        this.type = type;
+    public ImportNode(final ClassNode type, final String fieldName, final String alias) {
+        this.type = requireNonNull(type);
         this.alias = alias;
         this.isStar = false;
         this.isStatic = true;
         this.packageName = null;
-        this.fieldName = fieldName;
+        this.fieldName = requireNonNull(fieldName);
     }
 
     /**
      * @return the text display of this import
      */
+    @Override
     public String getText() {
         String typeName = getClassName();
         if (isStar && !isStatic) {
@@ -114,14 +115,6 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
         return "import " + typeName + " as " + alias;
     }
 
-    public String getPackageName() {
-        return packageName;
-    }
-
-    public String getFieldName() {
-        return fieldName;
-    }
-
     public boolean isStar() {
         return isStar;
     }
@@ -134,15 +127,23 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
         return alias;
     }
 
+    public String getClassName() {
+        return (type == null ? null : type.getName());
+    }
+
+    public String getFieldName() {
+        return fieldName;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
     public ClassNode getType() {
         return type;
     }
 
-    public String getClassName() {
-        return type == null ? null : type.getName();
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
     }
-
-    public void visit(GroovyCodeVisitor visitor) {
-    }
-
 }

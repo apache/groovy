@@ -18,15 +18,16 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ImportNode
+import org.junit.Test
 
-class Groovy4193Bug extends GroovyTestCase {
-    void testNPEOnImportNode() {
-        def imp = new ImportNode(null, "GROOVY-4193")
-        
-        assertNull imp.className // no NPE
-        
-        assertNotNull imp.text // no NPE
+@CompileStatic
+final class Groovy4193 {
+    @Test
+    void testImportNodeGetClassNameForNullType() {
+        def imp = new ImportNode('GROOVY-4193')
+        assert imp.className == null // no NPE
+        assert imp.text != null // no NPE
     }
 }

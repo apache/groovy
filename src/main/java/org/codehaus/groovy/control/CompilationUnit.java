@@ -112,12 +112,12 @@ public class CompilationUnit extends ProcessingUnit {
         }
     }
 
-    /** Controls behavior of {@link #classgen} and other routines. */
+    /** Controls behavior of {@link #classgen()} and other routines. */
     protected boolean debug;
     /** True after the first {@link #configure(CompilerConfiguration)} operation. */
     protected boolean configured;
 
-    /** A callback for use during {@link #classgen} */
+    /** A callback for use during {@link #classgen()} */
     protected ClassgenCallback classgenCallback;
     /** A callback for use during {@link #compile()} */
     protected ProgressCallback progressCallback;
@@ -219,7 +219,9 @@ public class CompilationUnit extends ProcessingUnit {
             }
         }, Phases.SEMANTIC_ANALYSIS);
 
-        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> TraitComposer.doExtendTraits(classNode, source, this), Phases.CANONICALIZATION);
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            TraitComposer.doExtendTraits(classNode, source, this);
+        }, Phases.CANONICALIZATION);
 
         addPhaseOperation(source -> {
             List<ClassNode> classes = source.getAST().getClasses();
@@ -447,7 +449,7 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     /**
-     * @return the class loader for loading AST transformations
+     * Returns the class loader for loading AST transformations.
      */
     public GroovyClassLoader getTransformLoader() {
         return Optional.ofNullable(getASTTransformationsContext().getTransformLoader()).orElseGet(this::getClassLoader);
