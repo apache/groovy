@@ -29,15 +29,11 @@ import java.io.IOException;
  * provides common functionality.
  */
 public abstract class AbstractReaderSource implements ReaderSource {
-    protected CompilerConfiguration configuration;   // Configuration data
 
-    public AbstractReaderSource(CompilerConfiguration configuration) {
-        if (configuration == null) {
-            throw new IllegalArgumentException("Compiler configuration must not be null!");
-            // ... or more relaxed?
-            // configuration = CompilerConfiguration.DEFAULT;
-        }
-        this.configuration = configuration;
+    protected CompilerConfiguration configuration;
+
+    public AbstractReaderSource(final CompilerConfiguration configuration) {
+        this.configuration = configuration != null ? configuration : CompilerConfiguration.DEFAULT;
     }
 
     /**

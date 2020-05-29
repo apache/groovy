@@ -32,12 +32,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -57,7 +57,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
     private List<ClassNode> classes = new LinkedList<>();
     private final List<MethodNode> methods = new ArrayList<>();
-    private final Map<String, ImportNode> imports = new HashMap<>();
+    private final List<ImportNode> imports = new ArrayList<>();
     private final List<ImportNode> starImports = new ArrayList<>();
     private final Map<String, ImportNode> staticImports = new LinkedHashMap<>();
     private final Map<String, ImportNode> staticStarImports = new LinkedHashMap<>();
@@ -96,7 +96,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public List<ImportNode> getImports() {
-        return new ArrayList<>(imports.values());
+        return Collections.unmodifiableList(imports);
     }
 
     public List<ImportNode> getStarImports() {
@@ -125,7 +125,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
      * @return the import node for the given alias or null if none is available
      */
     public ImportNode getImport(final String alias) {
-        return imports.get(alias);
+        Map<String, ImportNode> aliases = getNodeMetaData("import.aliases", x ->
+            imports.stream().collect(Collectors.toMap(ImportNode::getAlias, n -> n, (n, m) -> m)));
+        return aliases.get(alias);
     }
 
     public void addImport(final String alias, final ClassNode type) {
@@ -135,8 +137,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
     public void addImport(final String alias, final ClassNode type, final List<AnnotationNode> annotations) {
         ImportNode importNode = new ImportNode(type, alias);
         importNode.addAnnotations(annotations);
-        imports.put(alias, importNode);
+        imports.add(importNode);
 
+        removeNodeMetaData("import.aliases");
         storeLastAddedImportNode(importNode);
     }
 
