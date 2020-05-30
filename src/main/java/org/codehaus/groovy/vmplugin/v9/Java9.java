@@ -83,17 +83,19 @@ public class Java9 extends Java8 {
 
         Map<String, Set<String>> result = new LinkedHashMap<>(2048);
         try (GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader())) {
-            URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
-            result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
+            try {
+                URI gsLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
+                result.putAll(doFindClasses(gsLocation, "groovy", groovyPns));
 
-            // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `GrapeIvy`(groovy class) are all packaged in the groovy-core jar file,
-            // but in Groovy development environment, groovy-core classes are distributed in different directories
-            URI giLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.grape.GrapeIvy")).toURI();
-            if (!gsLocation.equals(giLocation)) {
-                result.putAll(doFindClasses(giLocation, "groovy", groovyPns));
+                // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `GrapeIvy`(groovy class) are all packaged in the groovy-core jar file,
+                // but in Groovy development environment, groovy-core classes are distributed in different directories
+                URI giLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.grape.GrapeIvy")).toURI();
+                if (!gsLocation.equals(giLocation)) {
+                    result.putAll(doFindClasses(giLocation, "groovy", groovyPns));
+                }
+            } finally {
+                result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
             }
-
-            result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPns));
         } catch (Exception ignore) {
             if (LOGGER.isLoggable(Level.FINEST)) {
                 LOGGER.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
