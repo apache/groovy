@@ -2102,7 +2102,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public static boolean containsSpreadExpression(final Expression arguments) {
-        List<Expression> args = null;
+        List<Expression> args;
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
             args = tupleExpression.getExpressions();
