@@ -515,7 +515,19 @@ public class GroovyShell extends GroovyObjectSupport {
      * @return the parsed script which is ready to be run via {@link Script#run()}
      */
     public Script parse(final Reader reader, final String fileName) throws CompilationFailedException {
-        return parse(new GroovyCodeSource(reader, fileName, DEFAULT_CODE_BASE));
+        return parse(reader, fileName, context);
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     *
+     * @param reader    the stream reading the script
+     * @param fileName  is the logical file name of the script (which is used to create the class name of the script)
+     * @param binding   the context eval the script
+     * @return the parsed script which is ready to be run via {@link Script#run()}
+     */
+    public Script parse(final Reader reader, final String fileName, Binding binding) throws CompilationFailedException {
+        return parse(new GroovyCodeSource(reader, fileName, DEFAULT_CODE_BASE), binding);
     }
 
     /**
@@ -532,10 +544,23 @@ public class GroovyShell extends GroovyObjectSupport {
      * given to the script.
      *
      * @param codeSource
+     * @param binding
+     * @return ready to run script
+     */
+    public Script parse(final GroovyCodeSource codeSource, Binding binding) throws CompilationFailedException {
+        return InvokerHelper.createScript(parseClass(codeSource), binding);
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run.  When running in a secure environment
+     * (-Djava.security.manager) codeSource.getCodeSource() determines what policy grants should be
+     * given to the script.
+     *
+     * @param codeSource
      * @return ready to run script
      */
     public Script parse(final GroovyCodeSource codeSource) throws CompilationFailedException {
-        return InvokerHelper.createScript(parseClass(codeSource), context);
+        return parse(codeSource, context);
     }
 
     /**
@@ -560,14 +585,28 @@ public class GroovyShell extends GroovyObjectSupport {
      * Parses the given script and returns it ready to be run
      *
      * @param scriptText the text of the script
+     * @param binding the context eval the script
+     */
+    public Script parse(String scriptText, Binding binding) throws CompilationFailedException {
+        return parse(scriptText, generateScriptName(), binding);
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     *
+     * @param scriptText the text of the script
      */
     public Script parse(String scriptText) throws CompilationFailedException {
-        return parse(scriptText, generateScriptName());
+        return parse(scriptText, context);
+    }
+
+    public Script parse(final String scriptText, final String fileName, Binding binding) throws CompilationFailedException {
+        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE));
+        return parse(gcs, binding);
     }
 
     public Script parse(final String scriptText, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = AccessController.doPrivileged((PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE));
-        return parse(gcs);
+        return parse(scriptText, fileName, context);
     }
 
     /**
@@ -576,7 +615,17 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      */
     public Script parse(Reader in) throws CompilationFailedException {
-        return parse(in, generateScriptName());
+        return parse(in, generateScriptName(), context);
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     *
+     * @param in the stream reading the script
+     * @param binding the context eval the script
+     */
+    public Script parse(Reader in, Binding binding) throws CompilationFailedException {
+        return parse(in, generateScriptName(), binding);
     }
 
     protected String generateScriptName() {
