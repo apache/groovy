@@ -18,13 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.StatementMetaTypeChooser;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
@@ -35,25 +34,18 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
-        ASTNode target = exp instanceof VariableExpression ? getTarget((VariableExpression) exp) : exp;
+        Expression target = exp instanceof VariableExpression && !((VariableExpression) exp).isClosureSharedVariable() ? getTarget((VariableExpression) exp) : exp;
 
         ClassNode inferredType = target.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);
         if (inferredType == null) {
             inferredType = target.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-            if (inferredType == null && target instanceof VariableExpression) {
-                Variable variable = ((VariableExpression) target).getAccessedVariable();
-                if (variable instanceof Parameter) {
-                    target = (Parameter) variable;
-                    inferredType = variable.getOriginType();
-                }
-            }
         }
         if (inferredType != null && !ClassHelper.VOID_TYPE.equals(inferredType)) {
             return inferredType;
         }
 
-        if (target instanceof VariableExpression && ((VariableExpression) target).isThisExpression()) {
-            // AsmClassGenerator may create "this" expressions that the type checker knows nothing about
+        // AsmClassGenerator may create "this" expressions that the type checker knows nothing about
+        if (AsmClassGenerator.isThisExpression(target)) {
             return current;
         }
 
