@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
 class StaticCompileFlowTypingTest extends AbstractBytecodeTestCase {
+
     void testFlowTyping() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -33,6 +34,44 @@ class StaticCompileFlowTypingTest extends AbstractBytecodeTestCase {
                 o = o.toInteger()
             }
             assert m() == 123
+        '''
+    }
+
+    // GROOVY-9344
+    void testFlowTyping2() {
+        assertScript '''
+            class A {}
+            class B {}
+
+            @groovy.transform.CompileStatic
+            String m() {
+                def x = new A()
+                def c = { ->
+                    x = new B()
+                    x.class.simpleName
+                }
+                c()
+            }
+            assert m() == 'B'
+        '''
+    }
+
+    // GROOVY-9344
+    void testFlowTyping3() {
+        assertScript '''
+            class A {}
+            class B {}
+
+            @groovy.transform.CompileStatic
+            String m() {
+                def x = new A()
+                def c = { ->
+                    x = new B()
+                }
+                c()
+                x.class.simpleName
+            }
+            assert m() == 'B'
         '''
     }
 
@@ -90,7 +129,6 @@ class StaticCompileFlowTypingTest extends AbstractBytecodeTestCase {
             assert a.foo(arr[0]) == 1
             assert a.foo(arr[1]) == 2
             assert a.foo(arr[2]) == 3
-
         '''
     }
 }

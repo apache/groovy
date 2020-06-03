@@ -25,20 +25,18 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
     void testClosureWithoutArguments() {
         assertScript '''
-        def clos = { println "hello!" }
+            def clos = { println "hello!" }
 
-        println "Executing the Closure:"
-        clos() //prints "hello!"
+            println "Executing the Closure:"
+            clos() //prints "hello!"
         '''
     }
 
+    // GROOVY-9079: no params to statically type check but shouldn't get NPE
     void testClosureWithoutArgumentsExplicit() {
-        // GROOVY-9079: no params to statically type check but shouldn't get NPE
         assertScript '''
-            import groovy.transform.CompileStatic
             import java.util.concurrent.Callable
 
-            @CompileStatic
             String makeFoo() {
                 Callable<String> call = { -> 'foo' }
                 call()
@@ -244,9 +242,63 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     void testClosureSharedVariableWithIncompatibleType() {
         shouldFailWithMessages '''
             def x = '123';
-            { -> x = 1 }
-            x.charAt(0)
-        ''', 'A closure shared variable [x] has been assigned with various types and the method [charAt(int)] does not exist in the lowest upper bound'
+            { -> x = 123 }
+            x.charAt(0) // available in String but not available in Integer
+        ''',
+        'Cannot find matching method java.io.Serializable or java.lang.Comparable'
+    }
+
+    // GROOVY-9516
+    void testClosureSharedVariable3() {
+        shouldFailWithMessages '''
+            class A {}
+            class B extends A { def m() {} }
+            class C extends A {}
+
+            void test() {
+              def x = new B();
+              { -> x = new C() }();
+              def c = x
+              c.m()
+            }
+        ''',
+        'Cannot find matching method A#m()'
+    }
+
+    // GROOVY-9607
+    void testClosureSharedVariableInferredType1() {
+        assertScript '''
+            static help(Runnable runner) {
+                runner.run()
+            }
+            void test(item, MetaProperty prop) {
+              def name = prop.name
+              help(new Runnable() {
+                void run() {
+                  assert item[name] == 'bar' // STC throws GBE if 'name' to infers as Object
+                }
+              })
+            }
+            test([foo:'bar'], new MetaBeanProperty('foo', null, null, null))
+        '''
+    }
+
+    // GROOVY-9607
+    void testClosureSharedVariableInferredType2() {
+        assertScript '''
+            static help(Runnable runner) {
+                runner.run()
+            }
+            void test(item, name, MetaProperty prop) {
+              name = prop.name
+              help(new Runnable() {
+                void run() {
+                  assert item[name] == 'bar' // STC throws GBE if 'name' to infers as Object
+                }
+              })
+            }
+            test([foo:'bar'], null, new MetaBeanProperty('foo', null, null, null))
+        '''
     }
 
     void testClosureCallAsAMethod() {

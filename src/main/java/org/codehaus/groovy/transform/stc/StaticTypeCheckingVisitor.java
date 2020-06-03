@@ -2451,6 +2451,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 VariableExpression ve = entry.getKey();
                 ListHashMap metadata = entry.getValue();
                 for (StaticTypesMarker marker : StaticTypesMarker.values()) {
+                    // GROOVY-9344, GROOVY-9516
+                    if (marker == INFERRED_TYPE) continue;
+
                     ve.removeNodeMetaData(marker);
                     Object value = metadata.get(marker);
                     if (value != null) ve.setNodeMetaData(marker, value);
@@ -2464,6 +2467,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // GROOVY-6921: We must force a call to getType in order to update closure shared variable whose
             // types are inferred thanks to closure parameter type inference
             getType(ve);
+
+            Variable v; // GROOVY-9344
+            while ((v = ve.getAccessedVariable()) != ve && v instanceof VariableExpression) {
+                ve = (VariableExpression) v;
+            }
+
             ListHashMap<StaticTypesMarker, Object> metadata = new ListHashMap<StaticTypesMarker, Object>();
             for (StaticTypesMarker marker : StaticTypesMarker.values()) {
                 Object value = ve.getNodeMetaData(marker);
@@ -2472,10 +2481,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             typesBeforeVisit.put(ve, metadata);
-            Variable accessedVariable = ve.getAccessedVariable();
-            if (accessedVariable != ve && accessedVariable instanceof VariableExpression) {
-                saveVariableExpressionMetadata(Collections.singleton((VariableExpression) accessedVariable), typesBeforeVisit);
-            }
         }
     }
 
