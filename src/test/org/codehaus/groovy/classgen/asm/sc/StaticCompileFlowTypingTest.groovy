@@ -43,7 +43,7 @@ final class StaticCompileFlowTypingTest {
         '''
     }
 
-    @NotYetImplemented @Test // GROOVY-9344
+    @Test // GROOVY-9344
     void testFlowTyping2() {
         assertScript '''
             class A {}
@@ -51,15 +51,33 @@ final class StaticCompileFlowTypingTest {
 
             @groovy.transform.CompileStatic
             String m() {
-                def var
-                var = new A()
+                def var = new A()
+                def c = { ->
+                    var = new B()
+                    var.class.simpleName
+                }
+                c()
+            }
+            assert m() == 'B'
+        '''
+    }
+
+    @NotYetImplemented @Test // GROOVY-9344
+    void testFlowTyping3() {
+        assertScript '''
+            class A {}
+            class B {}
+
+            @groovy.transform.CompileStatic
+            String m() {
+                def var = new A()
                 def c = { ->
                     var = new B()
                 }
                 c()
-                var.toString()
+                var.class.simpleName
             }
-            assert m() != null
+            assert m() == 'B'
         '''
     }
 

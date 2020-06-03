@@ -108,7 +108,6 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
-import org.codehaus.groovy.util.ListHashMap;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.InvocationTargetException;
@@ -117,6 +116,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2300,20 +2300,25 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean oldStaticContext = typeCheckingContext.isInStaticContext;
         typeCheckingContext.isInStaticContext = false;
 
-        // collect every variable expression used in the loop body
-        Map<VariableExpression, ClassNode> varOrigType = new HashMap<>();
-        Statement code = expression.getCode();
-        code.visit(new VariableExpressionTypeMemoizer(varOrigType));
+        // collect every variable expression used in the closure body
+        Map<VariableExpression, ClassNode> variableTypes = new HashMap<>();
+        expression.getCode().visit(new VariableExpressionTypeMemoizer(variableTypes));
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
-
-        // first, collect closure shared variables and reinitialize types
         SharedVariableCollector collector = new SharedVariableCollector(getSourceUnit());
         collector.visitClosureExpression(expression);
-        Set<VariableExpression> closureSharedExpressions = collector.getClosureSharedExpressions();
-        Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit = null;
-        if (!closureSharedExpressions.isEmpty()) {
-            typesBeforeVisit = new HashMap<>();
-            saveVariableExpressionMetadata(closureSharedExpressions, typesBeforeVisit);
+
+        Set<VariableExpression> closureSharedVariables = collector.getClosureSharedExpressions();
+        Map<VariableExpression, Map<StaticTypesMarker, Object>> variableMetadata;
+        if (!closureSharedVariables.isEmpty()) {
+            // GROOVY-6921: call getType in order to update closure shared variables
+            // whose types are inferred thanks to closure parameter type inference
+            for (VariableExpression ve : closureSharedVariables) {
+                getType(ve);
+            }
+            variableMetadata = new HashMap<>();
+            saveVariableExpressionMetadata(closureSharedVariables, variableMetadata);
+        } else {
+            variableMetadata = null;
         }
 
         // perform visit
@@ -2332,7 +2337,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
         super.visitClosureExpression(expression);
         typeCheckingContext.delegationMetadata = typeCheckingContext.delegationMetadata.getParent();
-        MethodNode node = new MethodNode("dummy", 0, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, code);
+        MethodNode node = new MethodNode("dummy", 0, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, expression.getCode());
         returnAdder.visitMethod(node);
 
         TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
@@ -2352,11 +2357,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         typeCheckingContext.popEnclosingClosure();
 
-        boolean typeChanged = isSecondPassNeededForControlStructure(varOrigType, oldTracker);
+        boolean typeChanged = isSecondPassNeededForControlStructure(variableTypes, oldTracker);
         if (typeChanged) visitClosureExpression(expression);
 
         // restore original metadata
-        restoreVariableExpressionMetadata(typesBeforeVisit);
+        restoreVariableExpressionMetadata(variableMetadata);
         typeCheckingContext.isInStaticContext = oldStaticContext;
         for (Parameter parameter : getParametersSafe(expression)) {
             typeCheckingContext.controlStructureVariables.remove(parameter);
@@ -2389,10 +2394,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     protected void saveVariableExpressionMetadata(final Set<VariableExpression> closureSharedExpressions, final Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit) {
         for (VariableExpression ve : closureSharedExpressions) {
-            // GROOVY-6921: We must force a call to getType in order to update closure shared variable whose
-            // types are inferred thanks to closure parameter type inference
-            getType(ve);
-            Map<StaticTypesMarker, Object> metadata = new ListHashMap<>();
+            Variable v;
+            while ((v = ve.getAccessedVariable()) != ve && v instanceof VariableExpression) {
+                ve = (VariableExpression) v;
+            }
+
+            Map<StaticTypesMarker, Object> metadata = new EnumMap<>(StaticTypesMarker.class);
             for (StaticTypesMarker marker : StaticTypesMarker.values()) {
                 Object value = ve.getNodeMetaData(marker);
                 if (value != null) {
@@ -2400,10 +2407,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
             typesBeforeVisit.put(ve, metadata);
-            Variable accessedVariable = ve.getAccessedVariable();
-            if (accessedVariable != ve && accessedVariable instanceof VariableExpression) {
-                saveVariableExpressionMetadata(Collections.singleton((VariableExpression) accessedVariable), typesBeforeVisit);
-            }
         }
     }
 
