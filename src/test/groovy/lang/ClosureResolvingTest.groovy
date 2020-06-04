@@ -84,7 +84,33 @@ class ClosureResolvingTest extends GroovyTestCase {
         assertEquals "stuff", c.call()
         c.delegate = new TestResolve1()
         assertEquals "foo", c.call()
+    }
 
+    // GROOVY-7701
+    void testResolveDelegateFirst2() {
+        assertScript '''
+            class Foo {
+                List type
+            }
+            class Bar {
+                int type = 10
+                List<Foo> something = { ->
+                    List<Foo> tmp = []
+                    def foo = new Foo()
+                    foo.with {
+                        type = ['String']
+                    //  ^^^^ should be Foo.type, not Bar.type
+                    }
+                    tmp.add(foo)
+                    return tmp
+                }()
+            }
+
+            def bar = new Bar()
+            assert bar.type == 10
+            assert bar.something*.type == [['String']]
+            assert bar.type == 10
+        '''
     }
 
     void testResolveOwnerFirst() {
@@ -125,7 +151,6 @@ class ClosureResolvingTest extends GroovyTestCase {
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.delegate = new TestResolve1()
         assertEquals "foo", c.call()
-
     }
 
     void testResolveOwnerOnly() {
@@ -142,7 +167,6 @@ class ClosureResolvingTest extends GroovyTestCase {
         c.resolveStrategy = Closure.OWNER_ONLY
         c.delegate = new TestResolve1()
         assertEquals "stuff", c.call()
-
     }
 
     void testOwnerDelegateChain() {
@@ -196,10 +220,9 @@ class TestResolve2 {
 class TestResolve3 {
     def del;
 
-    String toString() {del}
+    String toString() { del }
 
     def whoisThis() { return this }
 
     def met() { return "I'm the method inside '" + del + "'" }
 }
-

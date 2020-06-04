@@ -380,8 +380,8 @@ public class BinaryExpressionHelper {
             operandStack.loadOrStoreVariable(var, false);
             return;
         }
-
-        // let's evaluate the RHS and store the result
+        // evaluate the RHS and store the result
+        // TODO: LHS has not been visited, it could be a variable in a closure and type chooser is not aware.
         ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
         if (rightExpression instanceof ListExpression && lhsType.isArray()) {
             ListExpression list = (ListExpression) rightExpression;
@@ -469,11 +469,7 @@ public class BinaryExpressionHelper {
         } else {
             // normal assignment
             int mark = operandStack.getStackLength();
-            // to leave a copy of the rightExpression value on the stack after the assignment.
             rhsValueLoader.visit(acg);
-            TypeChooser typeChooser = controller.getTypeChooser();
-            ClassNode targetType = typeChooser.resolveType(leftExpression, controller.getClassNode());
-            operandStack.doGroovyCast(targetType);
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength() - mark);
         }
