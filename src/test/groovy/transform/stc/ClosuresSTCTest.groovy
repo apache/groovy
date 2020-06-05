@@ -127,6 +127,36 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-7701
+    void testWithDelegateVsOwnerField() {
+        assertScript '''
+            class Foo {
+                List type
+            }
+
+            class Bar {
+                int type = 10
+
+                @Lazy
+                List<Foo> something = { ->
+                    List<Foo> tmp = []
+                    def foo = new Foo()
+                    foo.with {
+                        type = ['String']
+                    //  ^^^^ should be Foo.type, not Bar.type
+                    }
+                    tmp.add(foo)
+                    tmp
+                }()
+            }
+
+            def bar = new Bar()
+            assert bar.type == 10
+            assert bar.something*.type == [['String']]
+            assert bar.type == 10
+        '''
+    }
+
     void testClosureShouldNotChangeInferredType() {
         assertScript '''
             def x = '123';
