@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -446,18 +447,14 @@ public class BinaryExpressionHelper {
             TupleExpression tuple = (TupleExpression) leftExpression;
             int i = 0;
             for (Expression e : tuple.getExpressions()) {
-                VariableExpression var = (VariableExpression) e;
-                MethodCallExpression call = new MethodCallExpression(
-                        rhsValueLoader, "getAt",
-                        new ArgumentListExpression(new ConstantExpression(i)));
-                call.visit(acg);
-                i += 1;
+                callX(rhsValueLoader, "getAt", args(constX(i++))).visit(acg);
                 if (defineVariable) {
-                    operandStack.doGroovyCast(var);
-                    compileStack.defineVariable(var, true);
+                    Variable v = (Variable) e;
+                    operandStack.doGroovyCast(v);
+                    compileStack.defineVariable(v, true);
                     operandStack.remove(1);
                 } else {
-                    acg.visitVariableExpression(var);
+                    e.visit(acg);
                 }
             }
         } else if (defineVariable) {
