@@ -202,9 +202,10 @@ dependencies {
 
     testImplementation project(':groovy-ant')
     testImplementation project(':groovy-xml')
-    testImplementation project(':groovy-dateutil')
+    testImplementation project(':groovy-json')
     testImplementation project(':groovy-test')
     testImplementation project(':groovy-macro')
+    testImplementation project(':groovy-dateutil')
 }
 
 ext.generatedDirectory = "${buildDir}/generated/sources"
