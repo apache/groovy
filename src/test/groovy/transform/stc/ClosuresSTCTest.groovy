@@ -536,5 +536,16 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert foo { -> 1 }  == 1
         '''
     }
+
+    // GROOVY-9558
+    void testPutAtClosureDelegateProperty() {
+        assertScript '''
+            def config = new org.codehaus.groovy.control.CompilerConfiguration()
+            config.tap {
+                optimizationOptions['indy'] = true
+                optimizationOptions.indy = true
+            }
+        '''
+    }
 }
 

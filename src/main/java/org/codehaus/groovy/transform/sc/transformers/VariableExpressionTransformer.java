@@ -67,6 +67,7 @@ public class VariableExpressionTransformer {
             receiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, owner);
             receiver.putNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER, val);
         }
+        pexp.removeNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
 
         return pexp;
     }
