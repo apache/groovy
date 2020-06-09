@@ -715,7 +715,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
                     rType = rType.getPlainNodeReference();
                     nodes = findDGMMethodsByNameAndArguments(controller.getSourceUnit().getClassLoader(), rType, message, args);
                 }
-                nodes = chooseBestMethod(rType, nodes, args);
                 if (nodes.size() == 1 || (nodes.size() > 1 && acceptAnyMethod)) {
                     MethodCallExpression call = callX(receiver, message, arguments);
                     call.setImplicitThis(false);
