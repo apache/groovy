@@ -47,7 +47,7 @@ class Interpreter implements Evaluator
     }
 
     Binding getContext() {
-        return shell.context
+        return shell.getContext()
     }
 
     GroovyClassLoader getClassLoader() {
