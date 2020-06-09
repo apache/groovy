@@ -202,6 +202,57 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testListGetAtNext() {
+        assertScript '''
+            def test() {
+                def list = [0, 1, 2, 3]
+                for (i in 1..2) {
+                    list[i-1]++
+                }
+                list
+            }
+            assert test() == [1, 2, 2, 3]
+        '''
+    }
+
+    // GROOVY-8840
+    void testListGetAtGetAtNext() {
+        assertScript '''
+            def test() {
+                def list = [0, 1, 2, 3]
+                List<Integer> other = [1]
+                list[other[0]]++
+                //   ^^^^^^^^ puts T on operand stack, not int/Integer
+                list
+            }
+            assert test() == [0, 2, 2, 3]
+        '''
+    }
+
+    void testListGetAtGetAtNext2() {
+        assertScript '''
+            def test() {
+                def list = [0, 1, 2, 3]
+                List<Integer> other = [1]
+                list[(int)other[0]]++
+                list
+            }
+            assert test() == [0, 2, 2, 3]
+        '''
+    }
+
+    void testListGetAtFirstNext() {
+        assertScript '''
+            def test() {
+                def list = [0, 1, 2, 3]
+                List<Integer> other = [1]
+                list[other.first()]++
+                list
+            }
+            assert test() == [0, 2, 2, 3]
+        '''
+    }
+
     // GROOVY-9420
     void testMapGetVsGetAt() {
         assertScript '''
