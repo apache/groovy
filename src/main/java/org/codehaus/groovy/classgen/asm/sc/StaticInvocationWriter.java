@@ -82,7 +82,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.isNullConstant;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.isSuperExpression;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.isThisExpression;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.missesGenericsTypes;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
@@ -316,8 +315,6 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (ClassHelper.VOID_TYPE.equals(returnType)) {
                 returnType = ClassHelper.OBJECT_TYPE;
                 mv.visitInsn(ACONST_NULL);
-            } else if (missesGenericsTypes(returnType)) {
-                returnType = returnType.redirect();
             }
             controller.getOperandStack().push(returnType);
             return true;
