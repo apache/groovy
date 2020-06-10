@@ -51,7 +51,8 @@ class Interpreter implements Evaluator
     }
 
     Binding getContext() {
-        return shell.context
+        // GROOVY-9584: leave as call to getter not property access to avoid potential context variable in binding
+        return shell.getContext()
     }
 
     GroovyClassLoader getClassLoader() {
