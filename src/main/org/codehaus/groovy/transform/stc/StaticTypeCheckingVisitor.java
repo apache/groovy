@@ -683,6 +683,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    private static ClassNode getOutermost(ClassNode cn) {
+        while (cn.getOuterClass() != null) {
+            cn = cn.getOuterClass();
+        }
+        return cn;
+    }
+
+    private static boolean equalPackageNames(ClassNode a, ClassNode b) {
+        String pkgA = a.getPackageName();
+        String pkgB = b.getPackageName();
+        return (pkgA == pkgB) || (pkgA != null && pkgA.equals(pkgB));
+    }
+
     @Override
     public void visitBinaryExpression(BinaryExpression expression) {
         int op = expression.getOperation().getType();
@@ -784,6 +797,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else if (lType.isUsingGenerics() && !lType.isEnum() && hasRHSIncompleteGenericTypeInfo(resultType)) {
                     // for example, LHS is List<ConcreteClass> and RHS is List<T> where T is a placeholder
                     resultType = lType;
+                } else {
+                    // GROOVY-7549: RHS type may not be accessible to enclosing class
+                    int modifiers = resultType.getModifiers();
+                    ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
+                    if (!Modifier.isPublic(modifiers) && !enclosingType.equals(resultType)
+                            && !getOutermost(enclosingType).equals(getOutermost(resultType))
+                            && (Modifier.isPrivate(modifiers) || !equalPackageNames(enclosingType, resultType))) {
+                        resultType = originType; // TODO: Find accesible type in hierarchy of resultType?
+                    }
                 }
 
                 // make sure we keep primitive types
