@@ -99,7 +99,7 @@ class GroovySecurityManager {
 
     private static GroovySecurityManager instance = new GroovySecurityManager();
 
-    private Set<String> blacklist = new HashSet<String>();
+    private Set<String> forbiddenList = new HashSet<String>();
 
     private GroovySecurityManager() { }
 
@@ -122,11 +122,11 @@ class GroovySecurityManager {
     }
 
     public void forbid(String instruction) {
-        blacklist.add(instruction);
+        forbiddenList.add(instruction);
     }
 
     public boolean isForbidden(String instruction) {
-        for (String forbidden : blacklist)
+        for (String forbidden : forbiddenList)
             if (instruction.startsWith(forbidden))
                 return true;
 
