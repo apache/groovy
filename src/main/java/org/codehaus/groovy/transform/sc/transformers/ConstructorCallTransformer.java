@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -122,6 +123,18 @@ public class ConstructorCallTransformer {
                     ? ((TupleExpression) originalCall.getArguments()).getExpressions()
                     : null;
             this.innerClassCall = originalExpressions != null && originalExpressions.size() == 2;
+        }
+
+        @Override
+        public Expression transformExpression(final ExpressionTransformer transformer) {
+            Expression result = new MapStyleConstructorCall(
+                    staticCompilationTransformer, declaringClass,
+                    (MapExpression) map.transformExpression(transformer),
+                    (ConstructorCallExpression) originalCall.transformExpression(transformer)
+            );
+            result.copyNodeMetaData(this);
+            result.setSourcePosition(this);
+            return result;
         }
 
         @Override

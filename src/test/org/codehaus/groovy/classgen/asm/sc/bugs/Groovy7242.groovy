@@ -102,6 +102,32 @@ final class Groovy7242 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
+    // GROOVY-7512
+    void testCallTraitMethodFromTraitClosureInMapConstructor() {
+        assertScript '''
+            class Foo {
+                Closure bar
+            }
+
+            trait T {
+                Foo getFoo() {
+                    new Foo(bar: { ->
+                        baz 'xyz' // ClassCastException: java.lang.Class cannot be cast to T
+                    })
+                }
+                def baz(text) {
+                    text
+                }
+            }
+
+            class C implements T {
+            }
+
+            Foo foo = new C().foo
+            assert foo.bar.call() == 'xyz'
+        '''
+    }
+
     // GROOVY-9586
     void testDelegateVsOwnerMethodFromTraitClosure1() {
         assertScript '''
