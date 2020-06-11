@@ -16,86 +16,115 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class Groovy7242Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-    void testCallMethodOfTraitInsideClosure() {
+
+    void testWriteTraitPropertyFromTraitClosure() {
         assertScript '''
-            trait MyTrait {
-                def f() {
-                    ['a'].collect {String it -> f2(it)}
-                }
-
-                def f2(String s) {
-                    s.toUpperCase()
-                }
-            }
-
-            class A implements MyTrait {}
-            def a = new A()
-            assert a.f() == ['A']
-        '''
-    }
-
-    void testCallMethodOfTraitInsideClosureAndClosureParamTypeInference() {
-        assertScript '''
-            trait MyTrait {
-                def f() {
-                    ['a'].collect {f2(it)}
-                }
-
-                def f2(String s) {
-                    s.toUpperCase()
-                }
-            }
-
-            class A implements MyTrait {}
-            def a = new A()
-            assert a.f() == ['A']
-        '''
-    }
-
-    void testAccessTraitPropertyFromClosureInTrait() {
-        assertScript '''
-            trait MyTrait {
-                int x
-                def f() {
+            trait T {
+                void p() {
                     [1].each { x = it }
                 }
+                int x
             }
-            class A implements MyTrait {}
-            def a = new A()
-            a.f()
-            assert a.x == 1
+
+            class C implements T {
+            }
+
+            def c = new C()
+            c.p()
+            assert c.x == 1
         '''
     }
 
-    void testCallPrivateMethodOfTraitInsideClosure() {
+    void testCallTraitMethodFromTraitClosure() {
         assertScript '''
-            trait MyTrait {
+            trait T {
                 def f() {
-                    ['a'].collect {String it -> f2(it)}
+                    ['a'].collect { String s -> g(s) }
                 }
 
-                private f2(String s) {
+                String g(String s) {
                     s.toUpperCase()
                 }
             }
 
-            class A implements MyTrait {}
-            def a = new A()
-            assert a.f() == ['A']
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.f() == ['A']
+        '''
+    }
+
+    void testCallTraitMethodFromTraitClosure_ImplicitParameter() {
+        assertScript '''
+            trait T {
+                def f() {
+                    ['a'].collect { g(it) }
+                }
+
+                String g(String s) {
+                    s.toUpperCase()
+                }
+            }
+
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.f() == ['A']
+        '''
+    }
+
+    // GROOVY-7456
+    void testCallPrivateTraitMethodFromTraitClosure() {
+        assertScript '''
+            trait T {
+                def f() {
+                    ['a'].collect { String s -> g(s) }
+                }
+
+                private String g(String s) {
+                    s.toUpperCase()
+                }
+            }
+
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.f() == ['A']
+        '''
+    }
+
+    // GROOVY-7512
+    void testCallTraitMethodFromTraitClosureInMapConstructor() {
+        assertScript '''
+            class Foo {
+                Closure bar
+            }
+
+            trait T {
+                Foo getFoo() {
+                    new Foo(bar: { ->
+                        baz 'xyz' // ClassCastException: java.lang.Class cannot be cast to T
+                    })
+                }
+                def baz(text) {
+                    text
+                }
+            }
+
+            class C implements T {
+            }
+
+            Foo foo = new C().foo
+            assert foo.bar.call() == 'xyz'
         '''
     }
 }
