@@ -127,4 +127,56 @@ class Groovy7242Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             assert foo.bar.call() == 'xyz'
         '''
     }
+
+    // GROOVY-9586
+    void testDelegateVsOwnerMethodFromTraitClosure1() {
+        assertScript '''
+            class C {
+                def m(@DelegatesTo(strategy=Closure.DELEGATE_ONLY, value=C) Closure<?> block) {
+                    block.setResolveStrategy(Closure.OWNER_ONLY)
+                    block.setDelegate(this)
+                    return block.call()
+                }
+                def x() { 'C' }
+            }
+
+            trait T {
+                def test() {
+                    new C().m { -> x() } // "x" must come from delegate
+                }
+                def x() { 'T' }
+            }
+
+            class U implements T {
+            }
+
+            assert new U().test() == 'C'
+        '''
+    }
+
+    // GROOVY-9586
+    void testDelegateVsOwnerMethodFromTraitClosure2() {
+        assertScript '''
+            class C {
+                def m(@DelegatesTo(strategy=Closure.OWNER_ONLY, type='Void') Closure<?> block) {
+                    block.setResolveStrategy(Closure.OWNER_ONLY)
+                    block.setDelegate(null)
+                    return block.call()
+                }
+                def x() { 'C' }
+            }
+
+            trait T {
+                def test() {
+                    new C().m { -> x() } // "x" must come from owner
+                }
+                def x() { 'T' }
+            }
+
+            class U implements T {
+            }
+
+            assert new U().test() == 'T'
+        '''
+    }
 }

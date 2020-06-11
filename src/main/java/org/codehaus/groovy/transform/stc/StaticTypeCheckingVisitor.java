@@ -90,7 +90,7 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
-import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
+import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -277,7 +277,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.READONLY_PROPE
  */
 public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
-    private static final boolean DEBUG_GENERATED_CODE = Boolean.valueOf(System.getProperty("groovy.stc.debug", "false"));
+    private static final boolean DEBUG_GENERATED_CODE = Boolean.getBoolean("groovy.stc.debug");
     private static final AtomicLong UNIQUE_LONG = new AtomicLong();
 
     protected static final Object ERROR_COLLECTOR = ErrorCollector.class;
@@ -356,9 +356,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return ext;
     }
 
-    //        @Override
     protected SourceUnit getSourceUnit() {
-        return typeCheckingContext.source;
+        return typeCheckingContext.getSource();
     }
 
     public void initialize() {
@@ -375,12 +374,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return typeCheckingContext;
     }
 
-    public void addTypeCheckingExtension(TypeCheckingExtension extension) {
+    public void addTypeCheckingExtension(final TypeCheckingExtension extension) {
         this.extension.addHandler(extension);
     }
 
-    public void setCompilationUnit(CompilationUnit cu) {
-        typeCheckingContext.setCompilationUnit(cu);
+    public void setCompilationUnit(final CompilationUnit compilationUnit) {
+        typeCheckingContext.setCompilationUnit(compilationUnit);
     }
 
     @Override
@@ -418,22 +417,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         extension.afterVisitClass(node);
     }
 
-    protected boolean shouldSkipClassNode(final ClassNode node) {
-        if (isSkipMode(node)) return true;
-        return false;
-    }
-
     /**
-     * Returns the list of type checking annotations class nodes. Subclasses may override this method
-     * in order to provide additional classes which must be looked up when checking if a method or
-     * a class node should be skipped.
+     * Returns array of type checking annotations. Subclasses may override this
+     * method in order to provide additional types which must be looked up when
+     * checking if a method or a class node should be skipped.
      * <p>
      * The default implementation returns {@link TypeChecked}.
-     *
-     * @return array of class nodes
      */
     protected ClassNode[] getTypeCheckingAnnotations() {
         return TYPECHECKING_ANNOTATIONS;
+    }
+
+    protected boolean shouldSkipClassNode(final ClassNode node) {
+        return isSkipMode(node);
     }
 
     public boolean isSkipMode(final AnnotatedNode node) {
@@ -458,17 +454,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (node instanceof MethodNode) {
             return isSkipMode(node.getDeclaringClass());
         }
-        if (isSkippedInnerClass(node)) return true;
-        return false;
+        return isSkippedInnerClass(node);
     }
 
     /**
-     * Test if a node is an inner class node, and if it is, then checks if the enclosing method is skipped.
+     * Tests if a node is an inner class node, and if it is, then checks if the enclosing method is skipped.
      *
-     * @param node
      * @return true if the inner class node should be skipped
      */
-    protected boolean isSkippedInnerClass(AnnotatedNode node) {
+    protected boolean isSkippedInnerClass(final AnnotatedNode node) {
         if (!(node instanceof InnerClassNode)) return false;
         MethodNode enclosingMethod = ((InnerClassNode) node).getEnclosingMethod();
         return enclosingMethod != null && isSkipMode(enclosingMethod);
@@ -1435,9 +1429,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         boolean foundGetterOrSetter = false;
-        List<Receiver<String>> receivers = new LinkedList<Receiver<String>>();
-        List<Receiver<String>> owners = makeOwnerList(objectExpression);
-        addReceivers(receivers, owners, pexp.isImplicitThis());
+        List<Receiver<String>> receivers = new ArrayList<>();
+        addReceivers(receivers, makeOwnerList(objectExpression), pexp.isImplicitThis());
 
         String capName = MetaClassHelper.capitalize(propertyName);
         boolean isAttributeExpression = pexp instanceof AttributeExpression;
@@ -3284,10 +3277,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
-        receivers.add(new Receiver<String>(delegate, path));
-        if (Traits.isTrait(delegate.getOuterClass())) {
-            receivers.add(new Receiver<String>(delegate.getOuterClass(), path));
+        for (Receiver<String> receiver : receivers) {
+            if (receiver.getType().equals(delegate)) return;
         }
+        receivers.add(new Receiver<>(delegate, path));
     }
 
     @Override
@@ -3415,9 +3408,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 //   - the actual receiver as found in the method call expression
                 //   - any of the potential receivers found in the instanceof temporary table
                 // in that order
-                List<Receiver<String>> receivers = new LinkedList<Receiver<String>>();
-                List<Receiver<String>> owners = makeOwnerList(objectExpression);
-                addReceivers(receivers, owners, call.isImplicitThis());
+                List<Receiver<String>> receivers = new ArrayList<>();
+                addReceivers(receivers, makeOwnerList(objectExpression), call.isImplicitThis());
+
                 List<MethodNode> mn = null;
                 Receiver<String> chosenReceiver = null;
                 for (Receiver<String> currentReceiver : receivers) {
@@ -3607,20 +3600,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         nodes.add(arg);
                     }
                 }
-                return new LowestUpperBoundClassNode(returnType.getName() + "Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
+                return new WideningCategories.LowestUpperBoundClassNode(returnType.getName() + "Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
             }
         }
         return returnType;
     }
 
     /**
-     * add various getAt and setAt methods for primitive arrays
+     * Adds various getAt and setAt methods for primitive arrays.
      *
      * @param receiver the receiver class
      * @param name     the name of the method
      * @param args     the argument classes
      */
-    private static void addArrayMethods(List<MethodNode> methods, ClassNode receiver, String name, ClassNode[] args) {
+    private static void addArrayMethods(final List<MethodNode> methods, final ClassNode receiver, final String name, final ClassNode[] args) {
         if (args.length != 1) return;
         if (!receiver.isArray()) return;
         if (!isIntCategory(getUnwrapper(args[0]))) return;
@@ -3642,7 +3635,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @param callArguments the argument list from the <em>Object#with(Closure)</em> call, ie. a single closure expression
      * @return the inferred closure return type or <em>null</em>
      */
-    protected ClassNode getInferredReturnTypeFromWithClosureArgument(Expression callArguments) {
+    protected ClassNode getInferredReturnTypeFromWithClosureArgument(final Expression callArguments) {
         if (!(callArguments instanceof ArgumentListExpression)) return null;
 
         ArgumentListExpression argList = (ArgumentListExpression) callArguments;
@@ -3650,11 +3643,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
         visitClosureExpression(closure);
 
-        if (getInferredReturnType(closure) != null) {
-            return getInferredReturnType(closure);
-        }
-
-        return null;
+        return getInferredReturnType(closure);
     }
 
     /**
@@ -3664,21 +3653,24 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @return the list of types the receiver may be
      */
     protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
-        final ClassNode receiver = getType(objectExpression);
-        List<Receiver<String>> owners = new LinkedList<Receiver<String>>();
-        owners.add(Receiver.<String>make(receiver));
+        ClassNode receiver = getType(objectExpression);
+        List<Receiver<String>> owners = new ArrayList<>();
         if (isClassClassNodeWrappingConcreteType(receiver)) {
-            GenericsType clazzGT = receiver.getGenericsTypes()[0];
-            owners.add(0, Receiver.<String>make(clazzGT.getType()));
+            ClassNode staticType = receiver.getGenericsTypes()[0].getType();
+            owners.add(Receiver.<String>make(staticType)); // Type from Class<Type>
+            addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
+            owners.add(Receiver.<String>make(receiver)); // Class<Type>
+        } else {
+            owners.add(Receiver.<String>make(receiver));
+            if (receiver.isInterface()) {
+                owners.add(Receiver.<String>make(OBJECT_TYPE));
+            }
+            addSelfTypes(receiver, owners);
+            addTraitType(receiver, owners);
         }
-        if (receiver.isInterface()) {
-            // GROOVY-xxxx
-            owners.add(Receiver.<String>make(OBJECT_TYPE));
-        }
-        addSelfTypes(receiver, owners);
-        if (!typeCheckingContext.temporaryIfBranchTypeInformation.empty()) {
+        if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
             List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
-            if (potentialReceiverType != null) {
+            if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
                 for (ClassNode node : potentialReceiverType) {
                     owners.add(Receiver.<String>make(node));
                 }
@@ -3702,13 +3694,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static void addSelfTypes(final ClassNode receiver, final List<Receiver<String>> owners) {
-        LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<ClassNode>();
-        for (ClassNode selfType : Traits.collectSelfTypes(receiver, selfTypes)) {
+        for (ClassNode selfType : Traits.collectSelfTypes(receiver, new LinkedHashSet<ClassNode>())) {
             owners.add(Receiver.<String>make(selfType));
         }
     }
 
-    protected void checkForbiddenSpreadArgument(ArgumentListExpression argumentList) {
+    private static void addTraitType(final ClassNode receiver, final List<Receiver<String>> owners) {
+        if (Traits.isTrait(receiver.getOuterClass()) && receiver.getName().endsWith("$Helper")) {
+            ClassNode traitType = receiver.getOuterClass();
+            owners.add(Receiver.<String>make(traitType));
+            addSelfTypes(traitType, owners);
+        }
+    }
+
+    protected void checkForbiddenSpreadArgument(final ArgumentListExpression argumentList) {
         for (Expression arg : argumentList.getExpressions()) {
             if (arg instanceof SpreadExpression) {
                 addStaticTypeError("The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time", arg);
