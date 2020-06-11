@@ -1449,7 +1449,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         boolean foundGetterOrSetter = false;
         String capName = capitalize(propertyName);
         Set<ClassNode> handledNodes = new HashSet<>();
-        List<Receiver<String>> receivers = new LinkedList<>();
+        List<Receiver<String>> receivers = new ArrayList<>();
         addReceivers(receivers, makeOwnerList(objectExpression), pexp.isImplicitThis());
 
         for (Receiver<String> receiver : receivers) {
@@ -3204,9 +3204,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
-        receivers.add(new Receiver<>(delegate, path));
-        if (Traits.isTrait(delegate.getOuterClass())) {
-            receivers.add(new Receiver<>(delegate.getOuterClass(), path));
+        if (receivers.stream().map(Receiver::getType).noneMatch(delegate::equals)) {
+            receivers.add(new Receiver<>(delegate, path));
         }
     }
 
@@ -3335,9 +3334,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 //   - the actual receiver as found in the method call expression
                 //   - any of the potential receivers found in the instanceof temporary table
                 // in that order
-                List<Receiver<String>> receivers = new LinkedList<>();
-                List<Receiver<String>> owners = makeOwnerList(objectExpression);
-                addReceivers(receivers, owners, call.isImplicitThis());
+                List<Receiver<String>> receivers = new ArrayList<>();
+                addReceivers(receivers, makeOwnerList(objectExpression), call.isImplicitThis());
+
                 List<MethodNode> mn = null;
                 Receiver<String> chosenReceiver = null;
                 for (Receiver<String> currentReceiver : receivers) {
@@ -3644,19 +3643,23 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      */
     protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
         ClassNode receiver = getType(objectExpression);
-        List<Receiver<String>> owners = new LinkedList<>();
-        owners.add(Receiver.make(receiver));
+        List<Receiver<String>> owners = new ArrayList<>();
         if (isClassClassNodeWrappingConcreteType(receiver)) {
-            GenericsType clazzGT = receiver.getGenericsTypes()[0];
-            owners.add(0, Receiver.make(clazzGT.getType()));
+            ClassNode staticType = receiver.getGenericsTypes()[0].getType();
+            owners.add(Receiver.make(staticType)); // Type from Class<Type>
+            addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
+            owners.add(Receiver.make(receiver)); // Class<Type>
+        } else {
+            owners.add(Receiver.make(receiver));
+            if (receiver.isInterface()) {
+                owners.add(Receiver.make(OBJECT_TYPE));
+            }
+            addSelfTypes(receiver, owners);
+            addTraitType(receiver, owners);
         }
-        if (receiver.isInterface()) {
-            owners.add(Receiver.make(OBJECT_TYPE));
-        }
-        addSelfTypes(receiver, owners);
         if (!typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
             List<ClassNode> potentialReceiverType = getTemporaryTypesForExpression(objectExpression);
-            if (potentialReceiverType != null) {
+            if (potentialReceiverType != null && !potentialReceiverType.isEmpty()) {
                 for (ClassNode node : potentialReceiverType) {
                     owners.add(Receiver.make(node));
                 }
@@ -3680,9 +3683,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private static void addSelfTypes(final ClassNode receiver, final List<Receiver<String>> owners) {
-        LinkedHashSet<ClassNode> selfTypes = new LinkedHashSet<>();
-        for (ClassNode selfType : Traits.collectSelfTypes(receiver, selfTypes)) {
+        for (ClassNode selfType : Traits.collectSelfTypes(receiver, new LinkedHashSet<>())) {
             owners.add(Receiver.make(selfType));
+        }
+    }
+
+    private static void addTraitType(final ClassNode receiver, final List<Receiver<String>> owners) {
+        if (Traits.isTrait(receiver.getOuterClass()) && receiver.getName().endsWith("$Helper")) {
+            ClassNode traitType = receiver.getOuterClass();
+            owners.add(Receiver.make(traitType));
+            addSelfTypes(traitType, owners);
         }
     }
 
