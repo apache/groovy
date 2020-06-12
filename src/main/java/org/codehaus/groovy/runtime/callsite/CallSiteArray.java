@@ -26,6 +26,7 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.stream.IntStream;
@@ -109,6 +110,16 @@ public final class CallSiteArray {
         return site;
     }
 
+    private static CallSite createProxySite(final CallSite callSite, final Object receiver) {
+        if (receiver instanceof GroovyObject) {
+            return new PogoInterceptableSite(callSite);
+        } else {
+            ClassInfo classInfo = ClassInfo.getClassInfo(receiver.getClass());
+            MetaClass metaClass = classInfo.getMetaClass(receiver);
+            return new PojoMetaClassSite(callSite, metaClass);
+        }
+    }
+
     // for MetaClassImpl we try to pick meta method,
     // otherwise or if method doesn't exist we make call via POJO meta class
     private static CallSite createPojoSite(CallSite callSite, Object receiver, Object[] args) {
@@ -154,6 +165,8 @@ public final class CallSiteArray {
         CallSite site;
         if (receiver instanceof Class) {
             site = createCallStaticSite(callSite, (Class) receiver, args);
+        } else if (Proxy.isProxyClass(receiver.getClass())) {
+            site = createProxySite(callSite, receiver);
         } else if (receiver instanceof GroovyObject) {
             site = createPogoSite(callSite, receiver, args);
         } else {

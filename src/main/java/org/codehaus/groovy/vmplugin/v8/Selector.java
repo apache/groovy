@@ -62,6 +62,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -568,15 +569,20 @@ public abstract class Selector {
             Object receiver = args[0];
             if (receiver == null) {
                 mc = NullObject.getNullObject().getMetaClass();
-            } else if (receiver instanceof GroovyObject) {
-                mc = ((GroovyObject) receiver).getMetaClass();
             } else if (receiver instanceof Class) {
                 Class<?> c = (Class<?>) receiver;
                 mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
-                this.cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
+                cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
+            } else if (Proxy.isProxyClass(receiver.getClass())) {
+                // GROOVY-5410: receiver.getMetaClass() returns meta class for proxied object;
+                // later when metaClass.getTheClass() is called, the $ProxyN reference is lost
+                mc = GroovySystem.getMetaClassRegistry().getMetaClass(receiver.getClass());
+                cache = false;
+            } else if (receiver instanceof GroovyObject) {
+                mc = ((GroovyObject) receiver).getMetaClass();
             } else {
                 mc = ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(receiver);
-                this.cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
+                cache &= !ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
             }
             mc.initialize();
 
