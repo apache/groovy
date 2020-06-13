@@ -42,26 +42,21 @@ import java.util.Set;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isInnerClass;
 
 /**
- * Verifier to check non-static access in static contexts
+ * Checks for dynamic variables in static contexts.
  */
 public class StaticVerifier extends ClassCodeVisitorSupport {
-    private boolean inSpecialConstructorCall;
-    private boolean inPropertyExpression; // TODO use it or lose it
-    private boolean inClosure;
-    private MethodNode currentMethod;
-    private SourceUnit source;
-
-    public void visitClass(ClassNode node, SourceUnit source) {
-        this.source = source;
-        super.visitClass(node);
-    }
+    private boolean inClosure, inSpecialConstructorCall;
+    private MethodNode methodNode;
+    private SourceUnit sourceUnit;
 
     @Override
-    public void visitVariableExpression(VariableExpression ve) {
-        Variable v = ve.getAccessedVariable();
-        if (v instanceof DynamicVariable) {
-            if (!inPropertyExpression || inSpecialConstructorCall) addStaticVariableError(ve);
-        }
+    protected SourceUnit getSourceUnit() {
+        return sourceUnit;
+    }
+
+    public void visitClass(ClassNode node, SourceUnit unit) {
+        sourceUnit = unit;
+        visitClass(node);
     }
 
     @Override
@@ -82,11 +77,11 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
 
     @Override
     public void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
-        MethodNode oldCurrentMethod = currentMethod;
-        currentMethod = node;
+        MethodNode oldMethodNode = methodNode;
+        methodNode = node;
         super.visitConstructorOrMethod(node, isConstructor);
         if (isConstructor) {
-            final Set<String> exceptions = new HashSet<String>();
+            final Set<String> exceptions = new HashSet<>();
             for (final Parameter param : node.getParameters()) {
                 exceptions.add(param.getName());
                 if (param.hasInitialExpression()) {
@@ -120,12 +115,12 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
                 }
             }
         }
-        currentMethod = oldCurrentMethod;
+        methodNode = oldMethodNode;
     }
 
     @Override
     public void visitMethodCallExpression(MethodCallExpression mce) {
-        if (inSpecialConstructorCall && !isInnerClass(currentMethod.getDeclaringClass())) {
+        if (inSpecialConstructorCall && !isInnerClass(methodNode.getDeclaringClass())) {
             Expression objectExpression = mce.getObjectExpression();
             if (objectExpression instanceof VariableExpression) {
                 VariableExpression ve = (VariableExpression) objectExpression;
@@ -138,40 +133,38 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         super.visitMethodCallExpression(mce);
     }
 
-    @Override
+    @Override // TODO: dead code?
     public void visitPropertyExpression(PropertyExpression pe) {
-        if (!inSpecialConstructorCall) checkStaticScope(pe);
+        if (!inClosure && !inSpecialConstructorCall) {
+            for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
+                if (it instanceof PropertyExpression) continue;
+                if (it instanceof VariableExpression) {
+                    VariableExpression ve = (VariableExpression) it;
+                    if (ve.isThisExpression() || ve.isSuperExpression()) return;
+                    if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
+                    if (methodNode != null && methodNode.isStatic()) {
+                        FieldNode fieldNode = getDeclaredOrInheritedField(methodNode.getDeclaringClass(), ve.getName());
+                        if (fieldNode != null && fieldNode.isStatic()) return;
+                    }
+                    Variable v = ve.getAccessedVariable();
+                    if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
+                    addVariableError(ve);
+                }
+                return;
+            }
+        }
     }
 
     @Override
-    protected SourceUnit getSourceUnit() {
-        return source;
-    }
-
-
-    private void checkStaticScope(PropertyExpression pe) {
-        if (inClosure) return;
-        for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
-            if (it instanceof PropertyExpression) continue;
-            if (it instanceof VariableExpression) {
-                addStaticVariableError((VariableExpression) it);
+    public void visitVariableExpression(VariableExpression ve) {
+        if (ve.getAccessedVariable() instanceof DynamicVariable && (ve.isInStaticContext() || inSpecialConstructorCall) && !inClosure) {
+            // GROOVY-5687: interface constants not visible to implementing sub-class in static context
+            if (methodNode != null && methodNode.isStatic()) {
+                FieldNode fieldNode = getDeclaredOrInheritedField(methodNode.getDeclaringClass(), ve.getName());
+                if (fieldNode != null && fieldNode.isStatic()) return;
             }
-            return;
+            addVariableError(ve);
         }
-    }
-
-    private void addStaticVariableError(VariableExpression ve) {
-        // closures are always dynamic
-        // propertyExpressions will handle the error a bit differently
-        if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
-        if (ve.isThisExpression() || ve.isSuperExpression()) return;
-        Variable v = ve.getAccessedVariable();
-        if (currentMethod != null && currentMethod.isStatic()) {
-            FieldNode fieldNode = getDeclaredOrInheritedField(currentMethod.getDeclaringClass(), ve.getName());
-            if (fieldNode != null && fieldNode.isStatic()) return;
-        }
-        if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
-        addVariableError(ve);
     }
 
     private void addVariableError(VariableExpression ve) {
@@ -188,7 +181,7 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         while (node != null) {
             FieldNode fn = node.getDeclaredField(fieldName);
             if (fn != null) return fn;
-            List<ClassNode> interfacesToCheck = new ArrayList<ClassNode>(Arrays.asList(node.getInterfaces()));
+            List<ClassNode> interfacesToCheck = new ArrayList<>(Arrays.asList(node.getInterfaces()));
             while (!interfacesToCheck.isEmpty()) {
                 ClassNode nextInterface = interfacesToCheck.remove(0);
                 fn = nextInterface.getDeclaredField(fieldName);
@@ -199,5 +192,4 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         }
         return null;
     }
-
 }
