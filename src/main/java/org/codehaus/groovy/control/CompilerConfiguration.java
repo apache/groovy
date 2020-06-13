@@ -491,6 +491,8 @@ public class CompilerConfiguration {
         if (jointCompilationOptions != null) {
             jointCompilationOptions = new HashMap<>(jointCompilationOptions);
         }
+        // TODO GROOVY-9585: add line below once gradle build issues fixed
+//        compilationCustomizers.addAll(configuration.getCompilationCustomizers());
         setJointCompilationOptions(jointCompilationOptions);
         setPluginFactory(configuration.getPluginFactory());
         setDisabledGlobalASTTransformations(configuration.getDisabledGlobalASTTransformations());
