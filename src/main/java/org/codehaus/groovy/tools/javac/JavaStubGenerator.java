@@ -75,6 +75,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
@@ -1034,7 +1035,7 @@ public class JavaStubGenerator {
     }
 
     public void clean() {
-        javaStubCompilationUnitSet.stream().peek(FileObject::delete);
+        javaStubCompilationUnitSet.stream().peek(FileObject::delete).collect(Collectors.counting());
         javaStubCompilationUnitSet.clear();
     }
 
