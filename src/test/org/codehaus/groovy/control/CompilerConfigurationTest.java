@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control;
 
 import groovy.util.GroovyTestCase;
+import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.io.File;
@@ -128,6 +129,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         final Map initJoint = new HashMap();
         initJoint.put("somekey", "somevalue");
         init.setJointCompilationOptions(initJoint);
+        init.addCompilationCustomizers(new ImportCustomizer().addStarImports("groovy.transform"));
 
         final ParserPluginFactory initPPF = ParserPluginFactory.newInstance();
         init.setPluginFactory(initPPF);
@@ -151,6 +153,7 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         assertEquals(".jpp", init.getDefaultScriptExtension());
         assertEquals(initJoint, init.getJointCompilationOptions());
         assertEquals(initPPF, init.getPluginFactory());
+        assertEquals(1, init.getCompilationCustomizers().size());
 
         final CompilerConfiguration config = new CompilerConfiguration(init);
 
@@ -172,7 +175,8 @@ public class CompilerConfigurationTest extends GroovyTestCase {
         assertEquals(".jpp", config.getDefaultScriptExtension());
         assertEquals(initJoint, config.getJointCompilationOptions());
         assertEquals(initPPF, config.getPluginFactory());
-
+        // TODO GROOVY-9585: re-enable below assertion once prod code is fixed
+//        assertEquals(1, config.getCompilationCustomizers().size());
     }
 
     public void testCopyConstructor2() {
