@@ -1035,6 +1035,7 @@ public class JavaStubGenerator {
     }
 
     public void clean() {
+        // DON'T replace `collect(Collectors.counting())` with `count()` here, otherwise peek will NOT be triggered
         javaStubCompilationUnitSet.stream().peek(FileObject::delete).collect(Collectors.counting());
         javaStubCompilationUnitSet.clear();
     }
