@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -25,6 +26,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 /**
  * This object represents a Groovy script
@@ -57,12 +59,29 @@ public abstract class Script extends GroovyObjectSupport {
     }
 
     public void setProperty(String property, Object newValue) {
-        if ("binding".equals(property))
+        if ("binding".equals(property)) {
             setBinding((Binding) newValue);
-        else if("metaClass".equals(property))
-            setMetaClass((MetaClass)newValue);
-        else
+        } else if ("metaClass".equals(property)) {
+            setMetaClass((MetaClass) newValue);
+        } else if (!binding.hasVariable(property)
+                // GROOVY-9554: @Field adds setter
+                && hasSetterMethodFor(property)) {
+            super.setProperty(property, newValue);
+        } else {
             binding.setVariable(property, newValue);
+        }
+    }
+
+    private boolean hasSetterMethodFor(String property) {
+        String setterName = "set" + BeanUtils.capitalize(property);
+        for (Method method : getClass().getDeclaredMethods()) {
+            if (method.getParameterCount() == 1
+                    // TODO: Test modifiers or return type?
+                    && method.getName().equals(setterName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

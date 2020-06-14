@@ -260,6 +260,22 @@ class FieldTransformTest extends CompilableTestSupport {
         '''
     }
 
+    void testClosureReferencesToField() {
+        // GROOVY-9554
+        assertScript '''
+            @groovy.transform.Field String abc
+            binding.variables.clear()
+            abc = 'abc'
+            assert !binding.hasVariable('abc')
+            ['D','E','F'].each {
+                abc += it
+            }
+            assert !binding.hasVariable('abc')
+            assert this.@abc == 'abcDEF'
+            assert abc == 'abcDEF'
+        '''
+    }
+
     void testFieldTransformWithFinalField() {
         // GROOVY-8430
         assertScript '''
