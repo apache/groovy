@@ -74,6 +74,7 @@ public final class CompilerConfigurationTest {
     public void testSetViaSystemProperties() {
         System.setProperty("groovy.warnings", "PaRaNoiA");
         System.setProperty("groovy.output.verbose", "trUE");
+        System.setProperty("groovy.mem.stub", "true");
         System.setProperty("groovy.generate.stub.in.memory", "true");
         System.setProperty("groovy.recompile.minimumInterval", "867892345");
 
