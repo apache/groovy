@@ -96,7 +96,6 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
-import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
 import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -793,11 +792,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
-            if (leftExpression instanceof VariableExpression) {
-                VariableExpression leftVar = (VariableExpression) leftExpression;
-                if (leftVar.isClosureSharedVariable()) {
-                    typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression));
-                }
+            if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isClosureSharedVariable()) {
+                typeCheckingContext.secondPassExpressions.add(new SecondPassExpression(expression));
             }
 
             boolean isAssignment = isAssignment(expression.getOperation().getType());
@@ -1937,13 +1933,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     protected boolean isSecondPassNeededForControlStructure(final Map<VariableExpression, ClassNode> varOrigType, final Map<VariableExpression, List<ClassNode>> oldTracker) {
-        Map<VariableExpression, ClassNode> assignedVars = popAssignmentTracking(oldTracker);
-        for (Map.Entry<VariableExpression, ClassNode> entry : assignedVars.entrySet()) {
+        for (Map.Entry<VariableExpression, ClassNode> entry : popAssignmentTracking(oldTracker).entrySet()) {
             Variable key = findTargetVariable(entry.getKey());
-            if (key instanceof VariableExpression) {
+            if (key instanceof VariableExpression && varOrigType.containsKey(key)) {
                 ClassNode origType = varOrigType.get(key);
                 ClassNode newType = entry.getValue();
-                if (varOrigType.containsKey(key) && (!newType.equals(origType))) {
+                if (!newType.equals(origType)) {
                     return true;
                 }
             }
@@ -2396,12 +2391,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected void restoreVariableExpressionMetadata(final Map<VariableExpression, Map<StaticTypesMarker, Object>> typesBeforeVisit) {
         if (typesBeforeVisit != null) {
             for (Map.Entry<VariableExpression, Map<StaticTypesMarker, Object>> entry : typesBeforeVisit.entrySet()) {
-                VariableExpression ve = entry.getKey();
-                Map<StaticTypesMarker, Object> metadata = entry.getValue();
                 for (StaticTypesMarker marker : StaticTypesMarker.values()) {
-                    ve.removeNodeMetaData(marker);
-                    Object value = metadata.get(marker);
-                    if (value != null) ve.setNodeMetaData(marker, value);
+                    Object value = entry.getValue().get(marker);
+                    if (value == null) {
+                        entry.getKey().removeNodeMetaData(marker);
+                    } else {
+                        entry.getKey().putNodeMetaData(marker, value);
+                    }
                 }
             }
         }
@@ -3397,7 +3393,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 if (mn.isEmpty() && typeCheckingContext.getEnclosingClosure() != null && args.length == 0) {
-                    // add special handling of getDelegate() and getOwner()
+                    // add special handling of "delegate", "owner", and "this" in a closure
                     switch (name) {
                         case "getDelegate":
                             mn = Collections.singletonList(GET_DELEGATE);
@@ -3603,7 +3599,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         nodes.add(arg);
                     }
                 }
-                return new LowestUpperBoundClassNode(returnType.getName() + "Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
+                return new WideningCategories.LowestUpperBoundClassNode(returnType.getName() + "Composed", OBJECT_TYPE, nodes.toArray(ClassNode.EMPTY_ARRAY));
             }
         }
         return returnType;
@@ -5494,8 +5490,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (expression instanceof BinaryExpression) {
                 Expression left = ((BinaryExpression) expression).getLeftExpression();
                 if (left instanceof VariableExpression) {
-                    // should always be the case
-                    // this should always be the case, but adding a test is safer
                     Variable target = findTargetVariable((VariableExpression) left);
                     if (target instanceof VariableExpression) {
                         VariableExpression var = (VariableExpression) target;

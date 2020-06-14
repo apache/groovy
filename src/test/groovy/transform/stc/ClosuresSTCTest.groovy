@@ -35,10 +35,8 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     void testClosureWithoutArgumentsExplicit() {
         // GROOVY-9079: no params to statically type check but shouldn't get NPE
         assertScript '''
-            import groovy.transform.CompileStatic
             import java.util.concurrent.Callable
 
-            @CompileStatic
             String makeFoo() {
                 Callable<String> call = { -> 'foo' }
                 call()
@@ -157,19 +155,19 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testClosureShouldNotChangeInferredType() {
+    void testClosureSharedVariable1() {
         assertScript '''
             def x = '123';
             { -> x = new StringBuffer() }
-            x.charAt(0)
+            x.charAt(0) // available in String and StringBuffer
         '''
     }
 
-    void testClosureSharedVariableWithIncompatibleType() {
+    void testClosureSharedVariable2() {
         shouldFailWithMessages '''
             def x = '123';
-            { -> x = 1 }
-            x.charAt(0)
+            { -> x = 123 }
+            x.charAt(0) // available in String but not available in Integer
         ''', 'A closure shared variable [x] has been assigned with various types and the method [charAt(int)] does not exist in the lowest upper bound'
     }
 
@@ -216,7 +214,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             fib.fib(2)
         '''
     }
-    
+
     void testClosureRecursionWithoutClosureTypeArgument() {
         shouldFailWithMessages '''
             Closure fib
@@ -262,6 +260,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
         '''
     }
+
     // a case in Grails
     void testShouldNotThrowClosureSharedVariableError2() {
         assertScript '''
@@ -336,9 +335,9 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'Cannot find matching method'
     }
-    
-    //GROOVY-6189
-    void testSAMsInMethodSelection(){
+
+    // GROOVY-6189
+    void testSAMsInMethodSelection() {
         // simple direct case
         assertScript """
             interface MySAM {
@@ -347,7 +346,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             def foo(MySAM sam) {sam.someMethod()}
             assert foo {1} == 1
         """
-  
+
         // overloads with classes implemented by Closure
         ["java.util.concurrent.Callable", "Object", "Closure", "GroovyObjectSupport", "Cloneable", "Runnable", "GroovyCallable", "Serializable", "GroovyObject"].each {
             className ->
@@ -361,7 +360,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             """
         }
     }
-    
+
     void testSAMVariable() {
         assertScript """
             interface SAM { def foo(); }
@@ -384,7 +383,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert s.accept(1) == -1
         """
     }
-    
+
     void testSAMProperty() {
         assertScript """
             interface SAM { def foo(); }
@@ -395,7 +394,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             assert x.s.foo() == 1
         """
     }
-    
+
     void testSAMAttribute() {
         assertScript """
             interface SAM { def foo(); }
@@ -476,7 +475,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             }
         ''', 'Reference to method is ambiguous. Cannot choose between'
     }
-    
+
     void testSAMType() {
         assertScript """
             interface Foo {int foo()}
@@ -578,4 +577,3 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 }
-
