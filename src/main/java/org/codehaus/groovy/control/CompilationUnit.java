@@ -73,6 +73,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
@@ -626,6 +627,10 @@ public class CompilationUnit extends ProcessingUnit {
                 if (dequeued()) continue;
             }
 
+            if (phase == Phases.CONVERSION) {
+                buildASTsInParallel();
+            }
+
             processPhaseOperations(phase);
             // Grab processing may have brought in new AST transforms into various phases, process them as well
             processNewPhaseOperations(phase);
@@ -645,6 +650,21 @@ public class CompilationUnit extends ProcessingUnit {
         }
 
         getErrorCollector().failIfErrors();
+    }
+
+    private void buildASTsInParallel() {
+        Boolean parallelParseEnabled = configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE);
+        if (null != parallelParseEnabled && !parallelParseEnabled) {
+            return;
+        }
+
+        // no need to build AST with parallel stream when we just have one/no source unit
+        if (sources.size() < 2) {
+            return;
+        }
+
+        // DON'T replace `collect(Collectors.counting())` with `count()` here, otherwise peek will NOT be triggered
+        sources.values().parallelStream().peek(SourceUnit::buildAST).collect(Collectors.counting());
     }
 
     private void processPhaseOperations(final int phase) {

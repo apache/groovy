@@ -240,6 +240,19 @@ public class SourceUnit extends ProcessingUnit {
 
         //
         // Build the AST
+        buildAST();
+
+        String property = (String) AccessController.doPrivileged((PrivilegedAction) () -> System.getProperty("groovy.ast"));
+
+        if ("xml".equals(property)) {
+            XStreamUtils.serialize(name, ast);
+        }
+    }
+
+    public ModuleNode buildAST() {
+        if (null != this.ast) {
+            return this.ast;
+        }
 
         try {
             this.ast = parserPlugin.buildAST(this, this.classLoader, this.cst);
@@ -252,11 +265,7 @@ public class SourceUnit extends ProcessingUnit {
             getErrorCollector().addError(new SyntaxErrorMessage(e, this));
         }
 
-        String property = (String) AccessController.doPrivileged((PrivilegedAction) () -> System.getProperty("groovy.ast"));
-
-        if ("xml".equals(property)) {
-            XStreamUtils.serialize(name, ast);
-        }
+        return this.ast;
     }
 
     //---------------------------------------------------------------------------
