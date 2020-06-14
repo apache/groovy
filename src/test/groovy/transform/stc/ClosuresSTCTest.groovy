@@ -168,7 +168,23 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             def x = '123';
             { -> x = 123 }
             x.charAt(0) // available in String but not available in Integer
-        ''', 'A closure shared variable [x] has been assigned with various types and the method [charAt(int)] does not exist in the lowest upper bound'
+        ''', 'Cannot find matching method java.io.Serializable or java.lang.Comparable'
+    }
+
+    // GROOVY-9516
+    void testClosureSharedVariable3() {
+        shouldFailWithMessages '''
+            class A {}
+            class B extends A { def m() {} }
+            class C extends A {}
+
+            void test() {
+              def x = new B();
+              { -> x = new C() }();
+              def c = x
+              c.m()
+            }
+        ''', 'Cannot find matching method A#m()'
     }
 
     void testClosureCallAsAMethod() {
