@@ -2393,6 +2393,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (typesBeforeVisit != null) {
             for (Map.Entry<VariableExpression, Map<StaticTypesMarker, Object>> entry : typesBeforeVisit.entrySet()) {
                 for (StaticTypesMarker marker : StaticTypesMarker.values()) {
+                    // GROOVY-9344, GROOVY-9516
+                    if (marker == INFERRED_TYPE) continue;
+
                     Object value = entry.getValue().get(marker);
                     if (value == null) {
                         entry.getKey().removeNodeMetaData(marker);
