@@ -57,6 +57,9 @@ public class CompilerConfiguration {
     /** Optimization Option for enabling attaching {@link groovy.lang.Groovydoc} annotation. */
     public static final String RUNTIME_GROOVYDOC = "runtimeGroovydoc";
 
+    /** Optimization Option for enabling parallel parsing. */
+    public static final String PARALLEL_PARSE = "parallelParse";
+
     /** Joint Compilation Option for enabling generating stubs in memory. */
     public static final String MEM_STUB = "memStub";
 
@@ -440,6 +443,7 @@ public class CompilerConfiguration {
         handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy");
         handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
         handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
+        handleOptimizationOption(optimizationOptions, PARALLEL_PARSE, "groovy.parallel.parse", "true");
     }
 
     private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName) {

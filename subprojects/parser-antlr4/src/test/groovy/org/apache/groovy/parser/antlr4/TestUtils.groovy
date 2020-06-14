@@ -171,6 +171,18 @@ final class TestUtils {
         assert genSrc(ast1) == genSrc(ast2)
     }
 
+    static boolean compareAST(ModuleNode ast1, ModuleNode ast2) {
+        boolean r1 = ast1 != null && ast2 != null
+        boolean r2
+        ASTComparatorCategory.apply(ASTComparatorCategory.DEFAULT_CONFIGURATION) {
+            r2 = ast1 == ast2
+        }
+
+        boolean r3 = genSrc(ast1) == genSrc(ast2)
+
+        return r1 && r2 && r3
+    }
+
     static String genSrc(ModuleNode ast) {
         return new AstDumper(ast).gen()
     }
