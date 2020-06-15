@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.tools;
 
+import groovy.lang.MetaProperty;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -857,7 +858,7 @@ public class GeneralUtils {
     }
 
     public static String getSetterName(final String name) {
-        return "set" + capitalize(name);
+        return MetaProperty.getSetterName(name);
     }
 
     /**

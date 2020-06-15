@@ -62,6 +62,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 
 /**
  * Visitor to resolve constants and method calls from static imports.
@@ -503,7 +504,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     private String getAccessorName(String name) {
-        return (inLeftExpression ? "set" : "get") + capitalize(name);
+        return inLeftExpression ? getSetterName(name) : "get" + capitalize(name);
     }
 
     private Expression findStaticPropertyAccessorGivenArgs(ClassNode staticImportType, String propName, Expression args) {

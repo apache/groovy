@@ -184,6 +184,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
@@ -1313,7 +1314,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             " for class: " + receiverType.getName(), receiver);
                 } else {
                     ClassNode valueType = getType(entryExpression.getValueExpression());
-                    MethodNode setter = receiverType.getSetterMethod("set" + capitalize(pexp.getPropertyAsString()), false);
+                    MethodNode setter = receiverType.getSetterMethod(getSetterName(pexp.getPropertyAsString()), false);
                     ClassNode toBeAssignedTo = setter == null ? lookup.get() : setter.getParameters()[0].getType();
                     if (!isAssignableTo(valueType, toBeAssignedTo)
                             && !extension.handleIncompatibleAssignment(toBeAssignedTo, valueType, entryExpression)) {
@@ -1517,7 +1518,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 getter = allowStaticAccessToMember(getter, staticOnly);
                 if (getter == null) getter = findGetter(current, "is" + capName, pexp.isImplicitThis());
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                List<MethodNode> setters = findSetters(current, "set" + capName, false);
+                List<MethodNode> setters = findSetters(current, getSetterName(propertyName), false);
                 setters = allowStaticAccessToMember(setters, staticOnly);
 
                 // need to visit even if we only look for setters for compatibility

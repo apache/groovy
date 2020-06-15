@@ -128,6 +128,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
@@ -1003,7 +1004,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private static MethodNode findSetterOfSuperClass(final ClassNode classNode, final FieldNode fieldNode) {
-        String setterMethodName = "set" + capitalize(fieldNode.getName());
+        String setterMethodName = getSetterName(fieldNode.getName());
         return classNode.getSuperClass().getSetterMethod(setterMethodName);
     }
 

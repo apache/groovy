@@ -51,6 +51,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notNullX;
@@ -212,7 +213,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
     private static void createSoftSetter(FieldNode fieldNode, ClassNode type) {
         final BlockStatement body = new BlockStatement();
         final Expression fieldExpr = varX(fieldNode);
-        final String name = "set" + capitalize(fieldNode.getName().substring(1));
+        final String name = getSetterName(fieldNode.getName().substring(1));
         final Parameter parameter = param(type, "value");
         final Expression paramExpr = varX(parameter);
         body.addStatement(ifElseS(
