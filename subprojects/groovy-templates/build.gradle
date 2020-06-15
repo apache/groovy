@@ -37,6 +37,9 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    if (groovyVersion.startsWith('4')) {
+        systemProperty "spock.iKnowWhatImDoing.disableGroovyVersionCheck", "true"
+    }
 }
 
 task backportJar(type:Jar) {
