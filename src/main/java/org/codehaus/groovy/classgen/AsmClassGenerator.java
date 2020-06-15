@@ -1007,6 +1007,20 @@ public class AsmClassGenerator extends ClassGenerator {
         return true;
     }
 
+    private static boolean getterAndSetterExists(final MethodNode setter, final MethodNode getter) {
+        return setter != null && getter != null && setter.getDeclaringClass().equals(getter.getDeclaringClass());
+    }
+
+    private static MethodNode findSetterOfSuperClass(final ClassNode classNode, final FieldNode fieldNode) {
+        String setterMethodName = getSetterName(fieldNode.getName());
+        return classNode.getSuperClass().getSetterMethod(setterMethodName);
+    }
+
+    private static MethodNode findGetterOfSuperClass(final ClassNode classNode, final FieldNode fieldNode) {
+        String getterMethodName = "get" + capitalize(fieldNode.getName());
+        return classNode.getSuperClass().getGetterMethod(getterMethodName);
+    }
+
     private boolean checkStaticOuterField(final PropertyExpression pexp, final String propertyName) {
         for (final ClassNode outer : controller.getClassNode().getOuterClasses()) {
             FieldNode field = outer.getDeclaredField(propertyName);

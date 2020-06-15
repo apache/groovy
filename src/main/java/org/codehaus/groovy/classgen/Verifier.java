@@ -99,6 +99,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
@@ -670,7 +671,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         FieldNode field = node.getField();
 
         String getterName = "get" + capitalize(name);
-        String setterName = "set" + capitalize(name);
+        String setterName = getSetterName(name);
 
         int accessorModifiers = adjustPropertyModifiersForMethod(node);
 

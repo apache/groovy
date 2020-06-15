@@ -59,7 +59,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
@@ -73,6 +72,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -288,7 +288,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             }
         }
         if (!isAttribute) {
-            String setter = "set" + capitalize(property);
+            String setter = getSetterName(property);
             MethodNode setterMethod = receiverType.getSetterMethod(setter, false);
             ClassNode declaringClass = setterMethod != null ? setterMethod.getDeclaringClass() : null;
             if (isThisExpression && declaringClass != null && declaringClass.equals(controller.getClassNode())) {

@@ -51,6 +51,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
@@ -173,7 +174,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      */
     private static void wrapSetterMethod(ClassNode classNode, String propertyName) {
         String getterName = "get" + capitalize(propertyName);
-        MethodNode setter = classNode.getSetterMethod("set" + capitalize(propertyName));
+        MethodNode setter = classNode.getSetterMethod(getSetterName(propertyName));
 
         if (setter != null) {
             // Get the existing code block
@@ -201,7 +202,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createListenerSetter(ClassNode classNode, PropertyNode propertyNode) {
-        String setterName = "set" + capitalize(propertyNode.getName());
+        String setterName = getSetterName(propertyNode.getName());
         if (classNode.getMethods(setterName).isEmpty()) {
             Statement setterBlock = createBindableStatement(propertyNode, fieldX(propertyNode.getField()));
 
