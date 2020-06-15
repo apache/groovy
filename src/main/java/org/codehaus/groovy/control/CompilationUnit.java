@@ -898,8 +898,8 @@ public class CompilationUnit extends ProcessingUnit {
          */
         @Override
         default void doPhaseOperation(final CompilationUnit unit) throws CompilationFailedException {
-            for (String name : unit.sources.keySet()) {
-                SourceUnit source = unit.sources.get(name);
+            for (Map.Entry<String, SourceUnit> entry : unit.sources.entrySet()) {
+                SourceUnit source = entry.getValue();
                 if (source.phase < unit.phase || (source.phase == unit.phase && !source.phaseComplete)) {
                     try {
                         this.call(source);
