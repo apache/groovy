@@ -16,12 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-repositories {
-    maven {
-        url 'https://oss.sonatype.org/content/repositories/snapshots'
-    }
-}
-
 dependencies {
     api rootProject  // NioExtensions uses Closure...
     testImplementation project(':groovy-test')

@@ -151,7 +151,7 @@ ext {
     slf4jVersion = '1.7.25'
     xmlunitVersion = '1.6'
     xstreamVersion = '1.4.12'
-    spockVersion = '2.0-M2-groovy-3.0'
+    spockVersion = '2.0-M3-groovy-3.0'
     spotbugsVersion = '4.0.3'
     spotbugsAnnotationsVersion = '4.0.3'
     checkstyleVersion = '8.32'
