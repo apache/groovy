@@ -443,7 +443,7 @@ public class CompilerConfiguration {
         handleOptimizationOption(optimizationOptions, INVOKEDYNAMIC, "groovy.target.indy");
         handleOptimizationOption(optimizationOptions, GROOVYDOC, "groovy.attach.groovydoc");
         handleOptimizationOption(optimizationOptions, RUNTIME_GROOVYDOC, "groovy.attach.runtime.groovydoc");
-        handleOptimizationOption(optimizationOptions, PARALLEL_PARSE, "groovy.parallel.parse", "true");
+        handleOptimizationOption(optimizationOptions, PARALLEL_PARSE, "groovy.parallel.parse");
     }
 
     private void handleOptimizationOption(final Map<String, Boolean> options, final String optionName, final String sysOptionName) {
