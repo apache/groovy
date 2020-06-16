@@ -336,10 +336,10 @@ class CompilerCustomizationBuilderTest extends GroovyTestCase {
         def config = new CompilerConfiguration()
         CompilerCustomizationBuilder.withConfig(config) {
             secureAst {
-                importsWhitelist = []
+                allowedImports = []
             }
         }
-        assert config.compilationCustomizers.first().importsWhitelist == []
+        assert config.compilationCustomizers.first().allowedImports == []
     }
 
     // GROOVY-9035

@@ -423,11 +423,11 @@ class SecureASTCustomizerTest extends GroovyTestCase {
     // GROOVY-6153
     void testDeterministicWhitelistBehaviour() {
         def shell = new GroovyShell(configuration)
-        def classWhiteList = ["java.lang.Object", "test"]
+        def allowedClasses = ["java.lang.Object", "test"]
         customizer.with {
             setIndirectImportCheckEnabled(true);
-            setImportsWhitelist(classWhiteList);
-            setReceiversWhiteList(classWhiteList);
+            setAllowedImports(allowedClasses);
+            setAllowedReceivers(allowedClasses);
             setPackageAllowed(true);
             setClosuresAllowed(true);
             setMethodDefinitionAllowed(true);
@@ -443,11 +443,11 @@ class SecureASTCustomizerTest extends GroovyTestCase {
     // GROOVY-6153
     void testDeterministicWhitelistBehaviour2() {
         def shell = new GroovyShell(configuration)
-        def classWhiteList = ["java.lang.Object", "test"]
+        def allowedClasses = ["java.lang.Object", "test"]
         customizer.with {
             setIndirectImportCheckEnabled(true);
-            setConstantTypesWhiteList(classWhiteList);
-            setReceiversWhiteList(classWhiteList);
+            setAllowedConstantTypes(allowedClasses);
+            setAllowedReceivers(allowedClasses);
             setPackageAllowed(true);
             setClosuresAllowed(true);
             setMethodDefinitionAllowed(true);

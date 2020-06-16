@@ -707,9 +707,10 @@ For a complete list of options, please refer to gapi:org.codehaus.groovy.control
 === Secure AST customizer
 
 This customizer will allow the developer of a DSL to restrict the
-*grammar* of the language, to prevent users from using some constructs,
-for example. It is only ``secure'' in that sense only and it is very
-important to understand that it does *not* replace a security manager.
+*grammar* of the language, for example, to prevent users from using particular constructs.
+It is only ``secure'' in that one aspect, i.e. limiting the allowable constructs within a DSL.
+It does *not* replace a security manager which might additionally
+be needed as an orthogonal aspect of overall security.
 The only reason for it to exist is to limit the expressiveness of the
 language. This customizer only works at the AST (abstract syntax tree)
 level, not at runtime! It can be strange at first glance, but it makes
@@ -727,12 +728,12 @@ allows arithmetic operations, but this customizer allows you to:
 * restrict the tokens (grammar-wise) a user can use
 * restrict the types of the constants that can be used in code
 
-For all those features, the secure AST customizer works using either a
-whitelist (list of elements that are allowed) *or* a blacklist (list of
-elements that are disallowed). For each type of feature (imports,
-tokens, …) you have the choice to use either a whitelist or a blacklist,
-but you can mix whitelists and blacklists for distinct features. In
-general, you will choose whitelists (disallow all, allow selected).
+For all those features, the secure AST customizer works using either an
+allowed list (list of elements that are permitted) *or* a disallowed list (list of
+elements that are not permitted). For each type of feature (imports,
+tokens, …) you have the choice to use either an allowed or disallowed list,
+but you can mix dis/allowed lists for distinct features. Typically,
+you will choose allowed lists (which permits only the constructs listed and disallows all others).
 
 [source,groovy]
 -------------------------------------------------------------------------------------
