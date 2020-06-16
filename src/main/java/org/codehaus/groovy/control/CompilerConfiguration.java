@@ -672,8 +672,8 @@ public class CompilerConfiguration {
         text = configuration.getProperty("groovy.disabled.global.ast.transformations");
         if (text != null) {
             String[] classNames = text.split(",\\s*}");
-            Set<String> blacklist = new HashSet<String>(Arrays.asList(classNames));
-            setDisabledGlobalASTTransformations(blacklist);
+            Set<String> disabledTransforms = new HashSet<String>(Arrays.asList(classNames));
+            setDisabledGlobalASTTransformations(disabledTransforms);
         }
     }
 
