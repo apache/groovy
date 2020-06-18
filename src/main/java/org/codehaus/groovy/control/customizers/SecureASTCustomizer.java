@@ -109,7 +109,7 @@ import java.util.Map;
  * out, but new language features are then implicitly also available and this may not be desirable.
  * The implication is that you might need to update your configuration with each new release.
  * <p>
- * If you set neither an allowed list nor a disallowed list, then everything is permitted.
+ * If neither an allowed list nor a disallowed list is set, then everything is permitted.
  * <p>
  * Combinations of import and star import constraints are authorized as long as you use the same type of list for both.
  * For example, you may use an import allowed list and a star import allowed list together, but you cannot use an import
@@ -762,10 +762,10 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      *
      * Please note that since Groovy is a dynamic language, and
      * this class performs a static type check, it will be relatively
-     * simple to bypass any disallowed list unless the receivers disallowed list contains, at
+     * simple to bypass any disallowed list unless the disallowed receivers list contains, at
      * a minimum, Object, Script, GroovyShell, and Eval. Additionally,
      * it is necessary to also have MethodPointerExpression in the
-     * disallowed expressions list for the receivers disallowed list to function
+     * disallowed expressions list for the disallowed receivers list to function
      * as a security check.
      *
      * @param disallowedReceivers the list of refused classes, as fully qualified names
