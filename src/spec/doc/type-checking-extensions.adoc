@@ -60,7 +60,7 @@ before running the script (adding imports, applying AST transforms,
 extending a base script,…). Often, user written scripts come to
 production without testing because the DSL logic comes to a point
 where *any* user may write code using the DSL syntax. In the end, a user
-may just ignore that what he writes is actually *code*. This adds some
+may just ignore that what they write is actually *code*. This adds some
 challenges for the DSL implementer, such as securing execution of user
 code or, in this case, early reporting of errors.
 
