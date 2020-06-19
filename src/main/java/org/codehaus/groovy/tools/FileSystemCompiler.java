@@ -352,7 +352,7 @@ public class FileSystemCompiler {
     /**
      * @since 2.5
      */
-    static class VersionProvider implements IVersionProvider {
+    public static class VersionProvider implements IVersionProvider {
         @Override
         public String[] getVersion() {
             return new String[]{
