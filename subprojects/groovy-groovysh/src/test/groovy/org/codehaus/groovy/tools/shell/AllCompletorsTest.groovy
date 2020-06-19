@@ -44,7 +44,7 @@ class AllCompletorsTest extends GroovyTestCase {
      * code copied from Jline console Handler,
      * need this logic to ensure completers are combined in the right way
      * The Jline contract is that completers are tried in sequence, and as
-     * soon as one returns something else than -1, his canidates are used and following
+     * soon as one returns something other than -1, the candidates are used and the following
      * completers ignored.
      *
      */

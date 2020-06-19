@@ -278,7 +278,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     /**
      * if oldMc is null, newMc will replace whatever meta class was used before.
-     * if oldMc is not null, then newMc will be used only if he stored mc is
+     * if oldMc is not null, then newMc will be used only if the stored mc is
      * the same as oldMc
      */
     private void setMetaClass(Class theClass, MetaClass oldMc, MetaClass newMc) {

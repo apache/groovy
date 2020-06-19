@@ -97,18 +97,18 @@ class GStringTest extends GroovyTestCase {
         check(/$name\?/, "Bob\\?")
         check(/$name$/, "Bob\$")
 
-        def guy = [name: name]
-        check("${guy.name}", "Bob")
-        check("$guy.name", "Bob")
-        check("$guy.name.", "Bob.")
-        check("$guy.name...", "Bob...")
-        check("$guy.name?", "Bob?")
-        check(/$guy.name/, "Bob")
-        check(/$guy.name./, "Bob.")
-        check(/$guy.name.../, "Bob...")
-        check(/$guy.name?/, "Bob?")
-        check(/$guy.name\?/, "Bob\\?")
-        check(/$guy.name$/, "Bob\$")
+        def person = [name: name]
+        check("${person.name}", "Bob")
+        check("$person.name", "Bob")
+        check("$person.name.", "Bob.")
+        check("$person.name...", "Bob...")
+        check("$person.name?", "Bob?")
+        check(/$person.name/, "Bob")
+        check(/$person.name./, "Bob.")
+        check(/$person.name.../, "Bob...")
+        check(/$person.name?/, "Bob?")
+        check(/$person.name\?/, "Bob\\?")
+        check(/$person.name$/, "Bob\$")
     }
 
     void testWithTwoVariables() {

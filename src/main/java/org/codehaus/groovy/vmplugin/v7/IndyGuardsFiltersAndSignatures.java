@@ -127,7 +127,7 @@ public class IndyGuardsFiltersAndSignatures {
     protected static final MethodHandle NULL_REF = MethodHandles.constant(Object.class, null);
 
     /**
-     * This method is called by he handle to realize the bean constructor
+     * This method is called by the handle to realize the bean constructor
      * with property map.
      */
     public static Object setBeanProperties(MetaClass mc, Object bean, Map properties) {
