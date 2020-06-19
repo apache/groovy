@@ -152,7 +152,7 @@ public class GroovyMain {
         }
     }
 
-    static class VersionProvider implements IVersionProvider {
+    public static class VersionProvider implements IVersionProvider {
         @Override
         public String[] getVersion() {
             return new String[] {
