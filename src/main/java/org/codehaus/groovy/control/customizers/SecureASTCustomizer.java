@@ -266,6 +266,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedImports()}
      */
+    @Deprecated
     public List<String> getImportsBlacklist() {
         return getDisallowedImports();
     }
@@ -280,6 +281,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedImports(List)}
      */
+    @Deprecated
     public void setImportsBlacklist(final List<String> disallowedImports) {
         setDisallowedImports(disallowedImports);
     }
@@ -291,6 +293,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedImports()}
      */
+    @Deprecated
     public List<String> getImportsWhitelist() {
         return getAllowedImports();
     }
@@ -305,6 +308,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedImports(List)}
      */
+    @Deprecated
     public void setImportsWhitelist(final List<String> allowedImports) {
         setAllowedImports(allowedImports);
     }
@@ -316,6 +320,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedStarImports()}
      */
+    @Deprecated
     public List<String> getStarImportsBlacklist() {
         return getDisallowedStarImports();
     }
@@ -331,6 +336,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedStarImports(List)}
      */
+    @Deprecated
     public void setStarImportsBlacklist(final List<String> disallowedStarImports) {
         setDisallowedStarImports(disallowedStarImports);
     }
@@ -342,6 +348,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedStarImports()}
      */
+    @Deprecated
     public List<String> getStarImportsWhitelist() {
         return getAllowedStarImports();
     }
@@ -357,6 +364,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedStarImports(List)}
      */
+    @Deprecated
     public void setStarImportsWhitelist(final List<String> allowedStarImports) {
         setAllowedStarImports(allowedStarImports);
     }
@@ -384,6 +392,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedStaticImports()}
      */
+    @Deprecated
     public List<String> getStaticImportsBlacklist() {
         return getDisallowedStaticImports();
     }
@@ -398,6 +407,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedStaticImports(List)}
      */
+    @Deprecated
     public void setStaticImportsBlacklist(final List<String> disallowedStaticImports) {
         setDisallowedStaticImports(disallowedStaticImports);
     }
@@ -409,6 +419,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedStaticImports()}
      */
+    @Deprecated
     public List<String> getStaticImportsWhitelist() {
         return getAllowedStaticImports();
     }
@@ -423,6 +434,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedStaticImports(List)}
      */
+    @Deprecated
     public void setStaticImportsWhitelist(final List<String> allowedStaticImports) {
         setAllowedStaticImports(allowedStaticImports);
     }
@@ -434,6 +446,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedStaticStarImports()}
      */
+    @Deprecated
     public List<String> getStaticStarImportsBlacklist() {
         return getDisallowedStaticStarImports();
     }
@@ -449,6 +462,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedStaticStarImports(List)}
      */
+    @Deprecated
     public void setStaticStarImportsBlacklist(final List<String> disallowedStaticStarImports) {
         setDisallowedStaticStarImports(disallowedStaticStarImports);
     }
@@ -460,6 +474,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedStaticStarImports()}
      */
+    @Deprecated
     public List<String> getStaticStarImportsWhitelist() {
         return getAllowedStaticStarImports();
     }
@@ -475,6 +490,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedStaticStarImports(List)}
      */
+    @Deprecated
     public void setStaticStarImportsWhitelist(final List<String> allowedStaticStarImports) {
         setAllowedStaticStarImports(allowedStaticStarImports);
     }
@@ -486,6 +502,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedExpressions()}
      */
+    @Deprecated
     public List<Class<? extends Expression>> getExpressionsBlacklist() {
         return getDisallowedExpressions();
     }
@@ -500,6 +517,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedExpressions(List)}
      */
+    @Deprecated
     public void setExpressionsBlacklist(final List<Class<? extends Expression>> disallowedExpressions) {
         setDisallowedExpressions(disallowedExpressions);
     }
@@ -511,6 +529,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedExpressions()}
      */
+    @Deprecated
     public List<Class<? extends Expression>> getExpressionsWhitelist() {
         return getAllowedExpressions();
     }
@@ -525,6 +544,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedExpressions(List)}
      */
+    @Deprecated
     public void setExpressionsWhitelist(final List<Class<? extends Expression>> allowedExpressions) {
         setAllowedExpressions(allowedExpressions);
     }
@@ -536,6 +556,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedStatements()}
      */
+    @Deprecated
     public List<Class<? extends Statement>> getStatementsBlacklist() {
         return getDisallowedStatements();
     }
@@ -550,6 +571,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedStatements(List)}
      */
+    @Deprecated
     public void setStatementsBlacklist(final List<Class<? extends Statement>> disallowedStatements) {
         setDisallowedStatements(disallowedStatements);
     }
@@ -561,6 +583,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedStatements()}
      */
+    @Deprecated
     public List<Class<? extends Statement>> getStatementsWhitelist() {
         return getAllowedStatements();
     }
@@ -575,6 +598,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedStatements(List)}
      */
+    @Deprecated
     public void setStatementsWhitelist(final List<Class<? extends Statement>> allowedStatements) {
         setAllowedStatements(allowedStatements);
     }
@@ -601,6 +625,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedTokens()}
      */
+    @Deprecated
     public List<Integer> getTokensBlacklist() {
         return getDisallowedTokens();
     }
@@ -618,8 +643,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     /**
-     * Alias for {@link #setDisallowedTokens(List)}.
+     * Legacy alias for {@link #setDisallowedTokens(List)}.
      */
+    @Deprecated
     public void setTokensBlacklist(final List<Integer> disallowedTokens) {
         setDisallowedTokens(disallowedTokens);
     }
@@ -631,6 +657,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedTokens()}
      */
+    @Deprecated
     public List<Integer> getTokensWhitelist() {
         return getAllowedTokens();
     }
@@ -650,6 +677,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedTokens(List)}
      */
+    @Deprecated
     public void setTokensWhitelist(final List<Integer> allowedTokens) {
         setAllowedTokens(allowedTokens);
     }
@@ -669,6 +697,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedConstantTypes()}
      */
+    @Deprecated
     public List<String> getConstantTypesBlackList() {
         return getDisallowedConstantTypes();
     }
@@ -687,6 +716,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedStatements()}
      */
+    @Deprecated
     public List<String> getConstantTypesWhiteList() {
         return getAllowedConstantTypes();
     }
@@ -701,6 +731,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedConstantTypes(List)}
      */
+    @Deprecated
     public void setConstantTypesWhiteList(final List<String> allowedConstantTypes) {
         setAllowedConstantTypes(allowedConstantTypes);
     }
@@ -721,6 +752,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedConstantTypesClasses(List)}
      */
+    @Deprecated
     public void setConstantTypesClassesWhiteList(final List<Class> allowedConstantTypes) {
         setAllowedConstantTypesClasses(allowedConstantTypes);
     }
@@ -741,6 +773,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedConstantTypesClasses(List)}
      */
+    @Deprecated
     public void setConstantTypesClassesBlackList(final List<Class> disallowedConstantTypes) {
         setDisallowedConstantTypesClasses(disallowedConstantTypes);
     }
@@ -752,6 +785,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getDisallowedReceivers()}
      */
+    @Deprecated
     public List<String> getReceiversBlackList() {
         return getDisallowedReceivers();
     }
@@ -779,6 +813,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedReceivers(List)}
      */
+    @Deprecated
     public void setReceiversBlackList(final List<String> disallowedReceivers) {
         setDisallowedReceivers(disallowedReceivers);
     }
@@ -799,6 +834,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setDisallowedReceiversClasses(List)}.
      */
+    @Deprecated
     public void setReceiversClassesBlackList(final List<Class> disallowedReceivers) {
         setDisallowedReceiversClasses(disallowedReceivers);
     }
@@ -810,6 +846,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #getAllowedReceivers()}
      */
+    @Deprecated
     public List<String> getReceiversWhiteList() {
         return getAllowedReceivers();
     }
@@ -829,6 +866,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedReceivers(List)}
      */
+    @Deprecated
     public void setReceiversWhiteList(final List<String> allowedReceivers) {
         if (disallowedReceivers != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -852,6 +890,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     /**
      * Legacy alias for {@link #setAllowedReceiversClasses(List)}
      */
+    @Deprecated
     public void setReceiversClassesWhiteList(final List<Class> allowedReceivers) {
         setAllowedReceiversClasses(allowedReceivers);
     }
