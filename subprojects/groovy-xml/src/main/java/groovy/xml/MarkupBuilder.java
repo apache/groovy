@@ -270,7 +270,7 @@ public class MarkupBuilder extends BuilderSupport {
             this.nodeIsEmpty = false;
             out.print(">");
         }
-        if (state == 2 || state == 3) {
+        if (state == 0 || state == 2 || state == 3) {
             out.print(escaping ? escapeElementContent(value) : value);
         }
     }
