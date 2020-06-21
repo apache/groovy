@@ -330,7 +330,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented // GROOVY-9604
+    // GROOVY-9604
     void testClosureResolveStrategy() {
         assertScript '''
             class C {

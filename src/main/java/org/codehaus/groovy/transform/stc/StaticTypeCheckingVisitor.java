@@ -134,6 +134,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.ClassHelper.BigDecimal_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.BigInteger_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Boolean_TYPE;
@@ -218,7 +219,6 @@ import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
@@ -570,15 +570,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitVariableExpression(VariableExpression vexp) {
         super.visitVariableExpression(vexp);
-
-        if (storeTypeForThis(vexp)) return;
         if (storeTypeForSuper(vexp)) return;
+        if (storeTypeForThis(vexp)) return;
+
+        final String name = vexp.getName();
         final Variable accessedVariable = vexp.getAccessedVariable();
+        final TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
+
         if (accessedVariable instanceof PropertyNode) {
             // we must be careful, because the property node may be of a wrong type:
             // if a class contains a getter and a setter of different types or
             // overloaded setters, the type of the property node is arbitrary!
-            if (tryVariableExpressionAsProperty(vexp, vexp.getName())) {
+            if (tryVariableExpressionAsProperty(vexp, name)) {
                 BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                 if (enclosingBinaryExpression != null) {
                     Expression leftExpression = enclosingBinaryExpression.getLeftExpression();
@@ -595,18 +598,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (accessedVariable instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) accessedVariable;
 
-            TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
             if (enclosingClosure != null) {
                 // GROOVY-8562
                 // when vexp has the same name as a property of the owner,
                 // the IMPLICIT_RECEIVER must be set in case it's the delegate
-                if (tryVariableExpressionAsProperty(vexp, vexp.getName())) {
+                if (tryVariableExpressionAsProperty(vexp, name)) {
                     // IMPLICIT_RECEIVER is handled elsewhere
                     // however other access needs to be fixed for private access
                     if (vexp.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
                         ClassNode owner = (ClassNode) vexp.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
                         if (owner != null) {
-                            FieldNode veFieldNode = owner.getField(vexp.getName());
+                            FieldNode veFieldNode = owner.getField(name);
                             if (veFieldNode != null) {
                                 fieldNode = veFieldNode;
                                 boolean lhsOfEnclosingAssignment = isLHSOfEnclosingAssignment(vexp);
@@ -625,28 +627,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else {
                     storeType(vexp, getType(vexp));
                 }
-            }
-        }
-
-        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-        if (enclosingClosure != null) {
-            switch (vexp.getName()) {
-                case "delegate":
-                    DelegationMetadata md = getDelegationMetadata(enclosingClosure.getClosureExpression());
-                    if (md != null) {
-                        storeType(vexp, md.getType());
-                        return;
-                    }
-                    // falls through
-                case "owner":
-                    if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
-                        storeType(vexp, CLOSURE_TYPE);
-                        return;
-                    }
-                    // falls through
-                case "thisObject":
-                    storeType(vexp, typeCheckingContext.getEnclosingClassNode());
-                    return;
             }
         }
 
@@ -670,10 +650,40 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         // a dynamic variable is either a closure property, a class member referenced from a closure, or an undeclared variable
-        if (tryVariableExpressionAsProperty(vexp, vexp.getName())) return;
+
+        if (enclosingClosure != null) {
+            switch (name) {
+              case "delegate":
+                DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
+                if (dm != null) {
+                    storeType(vexp, dm.getType());
+                    return;
+                }
+                // falls through
+              case "owner":
+                if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
+                    storeType(vexp, CLOSURE_TYPE);
+                    return;
+                }
+                // falls through
+              case "thisObject":
+                storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+                return;
+              case "parameterTypes":
+                storeType(vexp, CLASS_Type.makeArray());
+                return;
+              case "maximumNumberOfParameters":
+              case "resolveStrategy":
+              case "directive":
+                storeType(vexp, int_TYPE);
+                return;
+            }
+        }
+
+        if (tryVariableExpressionAsProperty(vexp, name)) return;
 
         if (!extension.handleUnresolvedVariableExpression(vexp)) {
-            addStaticTypeError("The variable [" + vexp.getName() + "] is undeclared.", vexp);
+            addStaticTypeError("The variable [" + name + "] is undeclared.", vexp);
         }
     }
 
@@ -1533,7 +1543,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     int fieldModifiers = field.getModifiers();
                     if (Modifier.isProtected(fieldModifiers) || isPackagePrivate(fieldModifiers)) {
                         if (null != typeCheckingContext.getEnclosingClosure() && CLOSURE_IMPLICIT_VARIABLE_SET.contains(objectExpression.getText())) {
-                            objectExpression.putNodeMetaData(RECEIVER_OF_DYNAMIC_PROPERTY, OBJECT_TYPE);
+                            objectExpression.putNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY, OBJECT_TYPE);
                         }
                     }
                 }
@@ -3441,7 +3451,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             boolean callArgsVisited = false;
             if (isCallOnClosure) {
                 // this is a closure.call() call
-                if (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isThisExpression()) {
+                if (isThisExpression(objectExpression)) {
                     // isClosureCall() check verified earlier that a field exists
                     FieldNode field = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
                     GenericsType[] genericsTypes = field.getType().getGenericsTypes();
@@ -3519,7 +3529,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     // ensure that all methods are either static or declared by the current receiver or a superclass
                     if (!mn.isEmpty()
                             && (typeCheckingContext.isInStaticContext || Modifier.isStatic(receiverType.getModifiers()))
-                            && (call.isImplicitThis() || (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isThisExpression()))) {
+                            && (call.isImplicitThis() || isThisExpression(objectExpression))) {
                         // we create separate method lists just to be able to print out
                         // a nice error message to the user
                         // a method is accessible if it is static, or if we are not in a static context and it is
@@ -3548,14 +3558,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         break;
                     }
                 }
-                if (mn.isEmpty() && typeCheckingContext.getEnclosingClosure() != null && args.length == 0) {
-                    // add special handling of getDelegate() and getOwner()
-                    if ("getDelegate".equals(name)) {
-                        mn = Collections.singletonList(GET_DELEGATE);
-                    } else if ("getOwner".equals(name)) {
-                        mn = Collections.singletonList(GET_OWNER);
-                    } else if ("getThisObject".equals(name)) {
-                        mn = Collections.singletonList(GET_THISOBJECT);
+                if (mn.isEmpty() && call.isImplicitThis() && isThisExpression(objectExpression) && typeCheckingContext.getEnclosingClosure() != null) {
+                    mn = CLOSURE_TYPE.getDeclaredMethods(name);
+                    if (!mn.isEmpty()) {
+                        chosenReceiver = Receiver.make(CLOSURE_TYPE);
+                        objectExpression.removeNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
                     }
                 }
                 if (mn.isEmpty()) {
@@ -3592,11 +3599,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             returnType = irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType;
                             callArgsVisited = true;
                         }
+                        // GROOVY-6091: use of "delegate" or "getDelegate()" does not make use of @DelegatesTo metadata
                         if (directMethodCallCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
                             DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
-                            returnType = typeCheckingContext.getEnclosingClassNode();
                             if (md != null) {
                                 returnType = md.getType();
+                            } else {
+                                returnType = typeCheckingContext.getEnclosingClassNode();
                             }
                         }
                         // GROOVY-8961, GROOVY-9734
@@ -3851,7 +3860,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected boolean isClosureCall(final String name, final Expression objectExpression, final Expression arguments) {
         if (objectExpression instanceof ClosureExpression && ("call".equals(name) || "doCall".equals(name)))
             return true;
-        if (objectExpression instanceof VariableExpression && ((VariableExpression) objectExpression).isThisExpression()) {
+        if (isThisExpression(objectExpression)) {
             FieldNode fieldNode = typeCheckingContext.getEnclosingClassNode().getDeclaredField(name);
             if (fieldNode != null) {
                 ClassNode type = fieldNode.getType();
