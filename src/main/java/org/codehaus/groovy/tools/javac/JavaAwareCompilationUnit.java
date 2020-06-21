@@ -73,9 +73,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
             String sourceEncoding = this.configuration.getSourceEncoding();
             Object memStub = options.get(CompilerConfiguration.MEM_STUB);
             if (memStub == null) {
-                memStub = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.mem.stub", "false"))
-                                // the following JVM option will be removed since Groovy 4
-                            || Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.generate.stub.in.memory", "false"));
+                memStub = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.mem.stub", "false"));
                 options.put(CompilerConfiguration.MEM_STUB, memStub);
             }
 
