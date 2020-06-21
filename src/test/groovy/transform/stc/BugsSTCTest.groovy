@@ -190,70 +190,87 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         new StaticGroovy2()'''
     }
 
-    void testClosureDelegateThisOwner() {
+    void testClosureThisObjectDelegateOwnerProperty() {
         assertScript '''
-            class A {
-                A that = this
+            class C {
                 void m() {
-                    def cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                    C that = this;
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = this
-                        assert this == that
-                    }
-                    cl()
-                    cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        def ref = thisObject
+                        assert ref == that
+                    }();
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = delegate
-                        assert delegate == that
-                    }
-                    cl()
-                    cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        def ref = delegate
+                        assert ref == that
+                    }();
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = owner
-                        assert owner == that
-                    }
+                        def ref = owner
+                        assert ref == that
+                    }();
                 }
             }
-            new A().m()
+            new C().m()
         '''
     }
-    void testClosureDelegateThisOwnerUsingGetters() {
+
+    void testClosureThisObjectDelegateOwnerAccessor() {
         assertScript '''
-            class A {
-                A that = this
+            class C {
                 void m() {
-                    def cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                    C that = this;
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = getThisObject()
-                        assert getThisObject() == that
-                    }
-                    cl()
-                    cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        def ref = getThisObject()
+                        assert ref == that
+                    }();
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = getDelegate()
-                        assert getDelegate() == that
-                    }
-                    cl()
-                    cl = {
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'A'
+                        def ref = getDelegate()
+                        assert ref == that
+                    }();
+
+                    { ->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
                         })
-                        def foo = getOwner()
-                        assert getOwner() == that
-                    }
+                        def ref = getOwner()
+                        assert ref == that
+                    }();
                 }
             }
-            new A().m()
+            new C().m()
+        '''
+    }
+
+    // GROOVY-9604
+    void testClosureResolveStrategy() {
+        assertScript '''
+            class C {
+                def m() {
+                    return { ->
+                        resolveStrategy + getResolveStrategy()
+                    }();
+                }
+            }
+            assert new C().m() == 0
         '''
     }
 

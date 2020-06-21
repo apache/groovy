@@ -442,42 +442,40 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6091
     void testExplicitUseOfDelegateProperty() {
         assertScript '''
-            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure arg) {
-                arg.delegate = target
-                arg.setResolveStrategy(Closure.DELEGATE_FIRST)
-                arg()
+            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure block) {
+                block.resolveStrategy = Closure.DELEGATE_FIRST
+                block.delegate = target
+                block.call()
             }
 
             def test() {
-                def obj = [1, 2]
-                with(obj) {
-                    print(delegate.last()) //error is here
+                def list = [1, 2]
+                with(list) {
+                    delegate.last() // error is here
                 }
             }
 
-            test()
-
+            assert test() == 2
         '''
     }
 
     // GROOVY-6091
     void testExplicitUseOfDelegateMethod() {
         assertScript '''
-            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure arg) {
-                arg.delegate = target
-                arg.setResolveStrategy(Closure.DELEGATE_FIRST)
-                arg()
+            def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = Closure.DELEGATE_FIRST) Closure block) {
+                block.resolveStrategy = Closure.DELEGATE_FIRST
+                block.delegate = target
+                block.call()
             }
 
             def test() {
-                def obj = [1, 2]
-                with(obj) {
-                    print(getDelegate().last()) //error is here
+                def list = [1, 2]
+                with(list) { ->
+                    getDelegate().last() // error is here
                 }
             }
 
-            test()
-
+            assert test() == 2
         '''
     }
 

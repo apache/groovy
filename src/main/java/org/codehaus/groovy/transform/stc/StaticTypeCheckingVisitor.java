@@ -546,34 +546,43 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         super.visitVariableExpression(vexp);
         if (storeTypeForSuper(vexp)) return;
         if (storeTypeForThis(vexp)) return;
-        String name = vexp.getName();
 
-        TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
-        if (enclosingClosure != null) {
-            switch (name) {
-                case "delegate":
-                    DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
-                    if (dm != null) {
-                        storeType(vexp, dm.getType());
-                        return;
-                    }
-                    // falls through
-                case "owner":
-                    if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
-                        storeType(vexp, CLOSURE_TYPE);
-                        return;
-                    }
-                    // falls through
-                case "thisObject":
-                    storeType(vexp, typeCheckingContext.getEnclosingClassNode());
-                    return;
-            }
-        }
+        final String name = vexp.getName();
+        final Variable accessedVariable = vexp.getAccessedVariable();
+        final TypeCheckingContext.EnclosingClosure enclosingClosure = typeCheckingContext.getEnclosingClosure();
 
-        Variable accessedVariable = vexp.getAccessedVariable();
         VariableExpression localVariableExpression = null;
         if (accessedVariable instanceof DynamicVariable) {
-            // a dynamic variable is either a class member used in a 'with' or an undeclared variable
+            // a dynamic variable is either a closure property, a class member referenced from a closure, or an undeclared variable
+
+            if (enclosingClosure != null) {
+                switch (name) {
+                    case "delegate":
+                        DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
+                        if (dm != null) {
+                            storeType(vexp, dm.getType());
+                            return;
+                        }
+                        // falls through
+                    case "owner":
+                        if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
+                            storeType(vexp, CLOSURE_TYPE);
+                            return;
+                        }
+                        // falls through
+                    case "thisObject":
+                        storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+                        return;
+                    case "parameterTypes":
+                        storeType(vexp, CLASS_Type.makeArray());
+                        return;
+                    case "maximumNumberOfParameters":
+                    case "resolveStrategy":
+                    case "directive":
+                        storeType(vexp, int_TYPE);
+                        return;
+                }
+            }
 
             if (tryVariableExpressionAsProperty(vexp, name)) return;
 
@@ -3392,18 +3401,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         break;
                     }
                 }
-                if (mn.isEmpty() && typeCheckingContext.getEnclosingClosure() != null && args.length == 0) {
-                    // add special handling of "delegate", "owner", and "this" in a closure
-                    switch (name) {
-                        case "getDelegate":
-                            mn = Collections.singletonList(GET_DELEGATE);
-                            break;
-                        case "getOwner":
-                            mn = Collections.singletonList(GET_OWNER);
-                            break;
-                        case "getThisObject":
-                            mn = Collections.singletonList(GET_THISOBJECT);
-                            break;
+                if (mn.isEmpty() && call.isImplicitThis() && isThisExpression(objectExpression) && typeCheckingContext.getEnclosingClosure() != null) {
+                    mn = CLOSURE_TYPE.getDeclaredMethods(name);
+                    if (!mn.isEmpty()) {
+                        chosenReceiver = Receiver.make(CLOSURE_TYPE);
+                        objectExpression.removeNodeMetaData(INFERRED_TYPE);
                     }
                 }
                 if (mn.isEmpty()) {
@@ -3436,11 +3438,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                             returnType = (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType) ? irtg : returnType);
                             callArgsVisited = true;
                         }
+                        // GROOVY-6091: use of "delegate" or "getDelegate()" does not make use of @DelegatesTo metadata
                         if (directMethodCallCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
                             DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
-                            returnType = typeCheckingContext.getEnclosingClassNode();
                             if (md != null) {
                                 returnType = md.getType();
+                            } else {
+                                returnType = typeCheckingContext.getEnclosingClassNode();
                             }
                         }
                         if (typeCheckMethodsWithGenericsOrFail(chosenReceiver.getType(), args, mn.get(0), call)) {
