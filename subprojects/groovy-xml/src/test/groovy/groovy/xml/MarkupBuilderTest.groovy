@@ -242,6 +242,22 @@ class MarkupBuilderTest extends BuilderTestSupport {
         '''
     }
 
+    void testMkpYield() {
+        xml.mkp.yieldUnescaped("<?xml version='1.0' encoding='UTF-8'?>\n")
+        xml.element {
+            mkp.yield("<>")
+            xml.inner("foo") { mkp.yield('bar') }
+            mkp.yieldUnescaped("\n  <inside>wow</inside>")
+        }
+        String expectedXml = '''\
+<?xml version='1.0' encoding='UTF-8'?>
+<element>&lt;&gt;
+  <inner>foobar</inner>
+  <inside>wow</inside>
+</element>'''
+        assertEquals expectedXml, fixEOLs(writer.toString())
+    }
+
     void testWithIndentPrinter() {
         xml = new MarkupBuilder(new IndentPrinter(new PrintWriter(writer), "", false))
         xml.element(att1:'attr') { subelement('foo') }
