@@ -655,14 +655,12 @@ public class CompilationUnit extends ProcessingUnit {
     }
 
     private void buildASTs() {
-        Boolean parallelParseEnabled = configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE);
-        if (null != parallelParseEnabled && !parallelParseEnabled) {
-            return;
-        }
+        Boolean bpe = configuration.getOptimizationOptions().get(CompilerConfiguration.PARALLEL_PARSE);
+        boolean parallelParseEnabled = null != bpe && bpe;
 
         Collection<SourceUnit> sourceUnits = sources.values();
         Stream<SourceUnit> sourceUnitStream =
-                sourceUnits.size() < 2
+                (!parallelParseEnabled || sourceUnits.size() < 2)
                         ? sourceUnits.stream() // no need to build AST with parallel stream when we just have one/no source unit
                         : sourceUnits.parallelStream();
 
