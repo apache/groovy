@@ -1221,19 +1221,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final Expression rightExpression) {
-        // if left type is not a list but right type is a map, then we're in the case of a groovy
-        // constructor type : A a = [x:2, y:3]
-        // In this case, more checks can be performed
-        if (!implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE) && rightExpression instanceof MapExpression) {
-            if (!(leftExpression instanceof VariableExpression) || !((VariableExpression) leftExpression).isDynamicTyped()) {
-                ArgumentListExpression argList = args(rightExpression);
-                ClassNode[] argTypes = getArgumentTypes(argList);
-                checkGroovyStyleConstructor(leftRedirect, argTypes, rightExpression);
-                // perform additional type checking on arguments
-                MapExpression mapExpression = (MapExpression) rightExpression;
-                checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
-            }
+        if (!(rightExpression instanceof MapExpression) || (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isDynamicTyped())
+                || leftRedirect.equals(OBJECT_TYPE) || implementsInterfaceOrIsSubclassOf(leftRedirect, MAP_TYPE)) {
+            return;
         }
+
+        // groovy constructor shorthand: A a = [x:2, y:3]
+        ClassNode[] argTypes = getArgumentTypes(args(rightExpression));
+        checkGroovyStyleConstructor(leftRedirect, argTypes, rightExpression);
+        // perform additional type checking on arguments
+        MapExpression mapExpression = (MapExpression) rightExpression;
+        checkGroovyConstructorMap(leftExpression, leftRedirect, mapExpression);
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode wrappedRHS, final Expression rightExpression) {
