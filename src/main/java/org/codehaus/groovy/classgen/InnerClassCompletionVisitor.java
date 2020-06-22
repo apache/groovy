@@ -18,14 +18,12 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -38,21 +36,28 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
-import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper implements Opcodes {
 
-    private final SourceUnit sourceUnit;
     private ClassNode classNode;
-    private FieldNode thisField = null;
+    private FieldNode thisField;
+    private final SourceUnit sourceUnit;
 
     private static final String
             CLOSURE_INTERNAL_NAME   = BytecodeHelper.getClassInternalName(CLOSURE_TYPE),
@@ -69,7 +74,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
 
     @Override
     public void visitClass(ClassNode node) {
-        this.classNode = node;
+        classNode = node;
         thisField = null;
         InnerClassNode innerClass = null;
         if (!node.isEnum() && !node.isInterface() && node instanceof InnerClassNode) {
@@ -85,7 +90,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         if (node.getInnerClasses().hasNext()) addDispatcherMethods(node);
         if (innerClass == null) return;
         super.visitClass(node);
-        addDefaultMethods(innerClass);
+        addMopMethods(innerClass);
     }
 
     @Override
@@ -109,57 +114,40 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         // add the dispatcher methods
 
         // add method dispatcher
-        Parameter[] parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name"),
-                new Parameter(ClassHelper.OBJECT_TYPE, "args")
-        };
+        BlockStatement block = new BlockStatement();
         MethodNode method = classNode.addSyntheticMethod(
                 "this$dist$invoke$" + objectDistance,
-                ACC_PUBLIC + ACC_SYNTHETIC,
-                ClassHelper.OBJECT_TYPE,
-                parameters,
+                ACC_PUBLIC,
+                OBJECT_TYPE,
+                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
                 ClassNode.EMPTY_ARRAY,
-                null
+                block
         );
-
-        BlockStatement block = new BlockStatement();
-        setMethodDispatcherCode(block, VariableExpression.THIS_EXPRESSION, parameters);
-        method.setCode(block);
+        setMethodDispatcherCode(block, VariableExpression.THIS_EXPRESSION, method.getParameters());
 
         // add property setter
-        parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name"),
-                new Parameter(ClassHelper.OBJECT_TYPE, "value")
-        };
+        block = new BlockStatement();
         method = classNode.addSyntheticMethod(
                 "this$dist$set$" + objectDistance,
-                ACC_PUBLIC + ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                parameters,
+                ACC_PUBLIC,
+                VOID_TYPE,
+                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
                 ClassNode.EMPTY_ARRAY,
-                null
+                block
         );
-
-        block = new BlockStatement();
-        setPropertySetterDispatcher(block, VariableExpression.THIS_EXPRESSION, parameters);
-        method.setCode(block);
+        setPropertySetterDispatcher(block, VariableExpression.THIS_EXPRESSION, method.getParameters());
 
         // add property getter
-        parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name")
-        };
+        block = new BlockStatement();
         method = classNode.addSyntheticMethod(
                 "this$dist$get$" + objectDistance,
-                ACC_PUBLIC + ACC_SYNTHETIC,
-                ClassHelper.OBJECT_TYPE,
-                parameters,
+                ACC_PUBLIC,
+                OBJECT_TYPE,
+                params(param(STRING_TYPE, "name")),
                 ClassNode.EMPTY_ARRAY,
-                null
+                block
         );
-
-        block = new BlockStatement();
-        setPropertyGetterDispatcher(block, VariableExpression.THIS_EXPRESSION, parameters);
-        method.setCode(block);
+        setPropertyGetterDispatcher(block, VariableExpression.THIS_EXPRESSION, method.getParameters());
     }
 
     private void getThis(MethodVisitor mv, String classInternalName, String outerClassDescriptor, String innerClassInternalName) {
@@ -173,201 +161,137 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         }
     }
 
-    private void addDefaultMethods(InnerClassNode node) {
+    private void addMopMethods(final InnerClassNode node) {
         final boolean isStatic = isStatic(node);
-
-        ClassNode outerClass = node.getOuterClass();
+        final ClassNode outerClass = node.getOuterClass();
+        final int outerClassDistance = getObjectDistance(outerClass);
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
         final String outerClassInternalName = getInternalName(outerClass, isStatic);
         final String outerClassDescriptor = getTypeDescriptor(outerClass, isStatic);
-        final int objectDistance = getObjectDistance(outerClass);
 
-        // add missing method dispatcher
-        Parameter[] parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name"),
-                new Parameter(ClassHelper.OBJECT_TYPE, "args")
-        };
-
-        String methodName = "methodMissing";
-        if (isStatic)
-            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
-
-        MethodNode method = node.addSyntheticMethod(
-                methodName,
-                Opcodes.ACC_PUBLIC,
-                ClassHelper.OBJECT_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
+        addSyntheticMethod(node,
+                "methodMissing",
+                ACC_PUBLIC,
+                OBJECT_TYPE,
+                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
+                (methodBody, parameters) -> {
+                    if (isStatic) {
+                        setMethodDispatcherCode(methodBody, classX(outerClass), parameters);
+                    } else {
+                        methodBody.addStatement(
+                                new BytecodeSequence(new BytecodeInstruction() {
+                                    @Override
+                                    public void visit(final MethodVisitor mv) {
+                                        getThis(mv, classInternalName, outerClassDescriptor, outerClassInternalName);
+                                        mv.visitVarInsn(ALOAD, 1);
+                                        mv.visitVarInsn(ALOAD, 2);
+                                        mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$invoke$" + outerClassDistance, "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
+                                        mv.visitInsn(ARETURN);
+                                    }
+                                })
+                        );
+                    }
+                }
         );
 
-        BlockStatement block = new BlockStatement();
-        if (isStatic) {
-            setMethodDispatcherCode(block, new ClassExpression(outerClass), parameters);
-        } else {
-            block.addStatement(
-                    new BytecodeSequence(new BytecodeInstruction() {
-                        public void visit(MethodVisitor mv) {
-                            getThis(mv,classInternalName,outerClassDescriptor,outerClassInternalName);
-                            mv.visitVarInsn(ALOAD, 1);
-                            mv.visitVarInsn(ALOAD, 2);
-                            mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$invoke$" + objectDistance, "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
-                            mv.visitInsn(ARETURN);
-                        }
-                    })
-            );
-        }
-        method.setCode(block);
-
-        // add static missing method dispatcher
-        methodName = "$static_methodMissing";
-        if (isStatic)
-            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
-
-        method = node.addSyntheticMethod(
-                methodName,
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                ClassHelper.OBJECT_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
+        addSyntheticMethod(node,
+                "$static_methodMissing",
+                ACC_PUBLIC | ACC_STATIC,
+                OBJECT_TYPE,
+                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
+                (methodBody, parameters) -> {
+                    setMethodDispatcherCode(methodBody, classX(outerClass), parameters);
+                }
         );
 
-        block = new BlockStatement();
-        setMethodDispatcherCode(block, new ClassExpression(outerClass), parameters);
-        method.setCode(block);
-
-        // add property setter dispatcher
-        parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name"),
-                new Parameter(ClassHelper.OBJECT_TYPE, "val")
-        };
-
-        methodName = "propertyMissing";
-        if (isStatic)
-            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
-
-        method = node.addSyntheticMethod(
-                methodName,
-                Opcodes.ACC_PUBLIC,
-                ClassHelper.VOID_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
+        addSyntheticMethod(node,
+                "propertyMissing",
+                ACC_PUBLIC,
+                VOID_TYPE,
+                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
+                (methodBody, parameters) -> {
+                    if (isStatic) {
+                        setPropertySetterDispatcher(methodBody, classX(outerClass), parameters);
+                    } else {
+                        methodBody.addStatement(
+                                new BytecodeSequence(new BytecodeInstruction() {
+                                    @Override
+                                    public void visit(final MethodVisitor mv) {
+                                        getThis(mv, classInternalName, outerClassDescriptor, outerClassInternalName);
+                                        mv.visitVarInsn(ALOAD, 1);
+                                        mv.visitVarInsn(ALOAD, 2);
+                                        mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$set$" + outerClassDistance, "(Ljava/lang/String;Ljava/lang/Object;)V", false);
+                                        mv.visitInsn(RETURN);
+                                    }
+                                })
+                        );
+                    }
+                }
         );
 
-        block = new BlockStatement();
-        if (isStatic) {
-            setPropertySetterDispatcher(block, new ClassExpression(outerClass), parameters);
-        } else {
-            block.addStatement(
-                    new BytecodeSequence(new BytecodeInstruction() {
-                        public void visit(MethodVisitor mv) {
-                            getThis(mv,classInternalName,outerClassDescriptor,outerClassInternalName);
-                            mv.visitVarInsn(ALOAD, 1);
-                            mv.visitVarInsn(ALOAD, 2);
-                            mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$set$" + objectDistance, "(Ljava/lang/String;Ljava/lang/Object;)V", false);
-                            mv.visitInsn(RETURN);
-                        }
-                    })
-            );
-        }
-        method.setCode(block);
-
-        // add static property missing setter dispatcher
-        methodName = "$static_propertyMissing";
-        if (isStatic)
-            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
-
-        method = node.addSyntheticMethod(
-                methodName,
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                ClassHelper.VOID_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
+        addSyntheticMethod(node,
+                "$static_propertyMissing",
+                ACC_PUBLIC | ACC_STATIC,
+                VOID_TYPE,
+                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
+                (methodBody, parameters) -> {
+                    setPropertySetterDispatcher(methodBody, classX(outerClass), parameters);
+                }
         );
 
-        block = new BlockStatement();
-        setPropertySetterDispatcher(block, new ClassExpression(outerClass), parameters);
-        method.setCode(block);
-
-        // add property getter dispatcher
-        parameters = new Parameter[]{
-                new Parameter(ClassHelper.STRING_TYPE, "name")
-        };
-
-        methodName = "propertyMissing";
-        if (isStatic)
-            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
-
-        method = node.addSyntheticMethod(
-                methodName,
-                Opcodes.ACC_PUBLIC,
-                ClassHelper.OBJECT_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
+        addSyntheticMethod(node,
+                "propertyMissing",
+                ACC_PUBLIC,
+                OBJECT_TYPE,
+                params(param(STRING_TYPE, "name")),
+                (methodBody, parameters) -> {
+                    if (isStatic) {
+                        setPropertyGetterDispatcher(methodBody, classX(outerClass), parameters);
+                    } else {
+                        methodBody.addStatement(
+                                new BytecodeSequence(new BytecodeInstruction() {
+                                    @Override
+                                    public void visit(final MethodVisitor mv) {
+                                        getThis(mv, classInternalName, outerClassDescriptor, outerClassInternalName);
+                                        mv.visitVarInsn(ALOAD, 1);
+                                        mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$get$" + outerClassDistance, "(Ljava/lang/String;)Ljava/lang/Object;", false);
+                                        mv.visitInsn(ARETURN);
+                                    }
+                                })
+                        );
+                    }
+                }
         );
 
-        block = new BlockStatement();
-        if (isStatic) {
-            setPropertyGetterDispatcher(block, new ClassExpression(outerClass), parameters);
-        } else {
-            block.addStatement(
-                    new BytecodeSequence(new BytecodeInstruction() {
-                        public void visit(MethodVisitor mv) {
-                            getThis(mv,classInternalName,outerClassDescriptor,outerClassInternalName);
-                            mv.visitVarInsn(ALOAD, 1);
-                            mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$get$" + objectDistance, "(Ljava/lang/String;)Ljava/lang/Object;", false);
-                            mv.visitInsn(ARETURN);
-                        }
-                    })
-            );
-        }
-        method.setCode(block);
-
-        // add static property missing getter dispatcher
-        methodName = "$static_propertyMissing";
-        if (isStatic)
-            addCompilationErrorOnCustomMethodNode(node, methodName, parameters);
-
-        method = node.addSyntheticMethod(
-                methodName,
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                ClassHelper.OBJECT_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                null
+        addSyntheticMethod(node,
+                "$static_propertyMissing",
+                ACC_PUBLIC | ACC_STATIC,
+                OBJECT_TYPE,
+                params(param(STRING_TYPE, "name")),
+                (methodBody, parameters) -> {
+                    setPropertyGetterDispatcher(methodBody, classX(outerClass), parameters);
+                }
         );
-
-        block = new BlockStatement();
-        setPropertyGetterDispatcher(block, new ClassExpression(outerClass), parameters);
-        method.setCode(block);
     }
 
-    /**
-     * Adds a compilation error if a {@link MethodNode} with the given <tt>methodName</tt> and
-     * <tt>parameters</tt> exists in the {@link InnerClassNode}.
-     */
-    private void addCompilationErrorOnCustomMethodNode(InnerClassNode node, String methodName, Parameter[] parameters) {
-        MethodNode existingMethodNode = node.getMethod(methodName, parameters);
-        // if there is a user-defined methodNode, add compiler error msg and continue
-        if (existingMethodNode != null && !isSynthetic(existingMethodNode))  {
-            addError("\"" +methodName + "\" implementations are not supported on static inner classes as " +
+    private void addSyntheticMethod(final InnerClassNode node, final String methodName, final int modifiers,
+            final ClassNode returnType, final Parameter[] parameters, final BiConsumer<BlockStatement, Parameter[]> consumer) {
+        MethodNode method = node.getMethod(methodName, parameters);
+        if (method != null) {
+            // GROOVY-8914: pre-compiled classes lose synthetic boolean - TODO fix earlier as per GROOVY-4346 then remove extra check here
+            if (isStatic(node) && !method.isSynthetic() && (method.getModifiers() & ACC_SYNTHETIC) == 0) {
+                // if there is a user-defined methodNode, add compiler error and continue
+                addError("\"" + methodName + "\" implementations are not supported on static inner classes as " +
                     "a synthetic version of \"" + methodName + "\" is added during compilation for the purpose " +
                     "of outer class delegation.",
-                    existingMethodNode);
+                    method);
+            }
+            return;
         }
-    }
 
-    // GROOVY-8914: pre-compiled classes lose synthetic boolean - TODO fix earlier as per GROOVY-4346 then remove extra check here
-    private boolean isSynthetic(MethodNode existingMethodNode) {
-        return existingMethodNode.isSynthetic() || hasSyntheticModifier(existingMethodNode);
-    }
-
-    private boolean hasSyntheticModifier(MethodNode existingMethodNode) {
-        return (existingMethodNode.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+        BlockStatement methodBody = block();
+        consumer.accept(methodBody, parameters);
+        node.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, methodBody);
     }
 
     private void addThisReference(ConstructorNode node) {
@@ -440,5 +364,4 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper impleme
         addError("unable to find a unique prefix name for synthetic this reference in inner class constructor", node);
         return namePrefix;
     }
-
 }
