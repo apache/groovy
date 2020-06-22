@@ -1086,4 +1086,16 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
         assert Integer == opts.i.getClass()
         assert opts.i == 0
     }
+
+    // GROOVY-9599
+    void testStringOptionWithDefaultEmptyStringShouldNotConvertToFalseOrNullObject() {
+        def cli = new CliBuilder()
+        cli.s(type: String, longOpt: 'strTest', required: false, args: 1, defaultValue: '', 'Testing string with default empty string')
+
+        def opts = cli.parse([]) // no args, so defaults are applied
+        assert opts
+
+        assert String == opts.s.getClass()
+        assert opts.s == ''
+    }
 }
