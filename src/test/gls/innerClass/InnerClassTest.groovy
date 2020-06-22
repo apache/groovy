@@ -1207,6 +1207,30 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-8274
+    void testMissingMethodHandling() {
+        assertScript '''
+            class A {
+                class B {
+                    def methodMissing(String name, args) {
+                        return name
+                    }
+                }
+
+                def test(Closure c) {
+                    c.resolveStrategy = Closure.DELEGATE_ONLY
+                    c.delegate = new B()
+                    c.call()
+                }
+            }
+
+            def x = new A().test { ->
+                hello() // missing
+            }
+            assert x == 'hello'
+        '''
+    }
+
     @Test // GROOVY-6831
     void testNestedPropertyHandling() {
         assertScript '''
