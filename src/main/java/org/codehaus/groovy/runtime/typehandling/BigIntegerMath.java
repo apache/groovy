@@ -81,4 +81,12 @@ public final class BigIntegerMath extends NumberMath {
     protected Number xorImpl(Number left, Number right) {
         return toBigInteger(left).xor(toBigInteger(right));
     }
+
+    protected Number leftShiftImpl(Number left, Number right) {
+        return toBigInteger(left).shiftLeft(right.intValue());
+    }
+
+    protected Number rightShiftImpl(Number left, Number right) {
+        return toBigInteger(left).shiftRight(right.intValue());
+    }
 }

@@ -137,6 +137,19 @@ class OperatorsTest extends CompilableTestSupport {
         // end::bitwise_op[]
     }
 
+    void testBitShiftOperators() {
+        // tag::bit_shift_op[]
+        assert 12.equals(3 << 2)           // <1>
+        assert 24L.equals(3L << 3)         // <1>
+        assert 48G.equals(3G << 4)         // <1>
+
+        assert 4095 == -200 >>> 20
+        assert -1 == -200 >> 20
+        assert 2G == 5G >> 1
+        assert -3G == -5G >> 1
+        // end::bit_shift_op[]
+    }
+
     void testLogicalOperatorPrecedence() {
         // tag::logical_precendence_1[]
         assert (!false && false) == false   // <1>

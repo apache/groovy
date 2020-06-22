@@ -93,6 +93,8 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=plusplus_minusminu
 <3> The prefix increment will increment `e` before the expression is evaluated and assigned into `f`
 <4> The prefix decrement will decrement `g` before the expression is evaluated and assigned into `h`
 
+For the unary not operator on Booleans, see <<#_conditional_operators>>.
+
 === Assignment arithmetic operators
 
 The binary arithmetic operators we have seen above are also available in an assignment form:
@@ -203,16 +205,21 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=logical_shortcircu
 <4> Likewise for `&&`, we confirm that the function is not called with a false left operand
 <5> But the function is called with a true left operand
 
-== Bitwise operators
+== Bitwise and bit shift operators
 
-Groovy offers 4 bitwise operators:
+=== Bitwise operators
+
+Groovy offers four bitwise operators:
 
 * `&`: bitwise "and"
 * `|`: bitwise "or"
 * `^`: bitwise "xor" (exclusive "or")
 * `~`: bitwise negation
 
-Bitwise operators can be applied on a `byte` or an `int` and return an `int`:
+Bitwise operators can be applied on arguments which are of type `byte`, `short`, `int`, `long`, or `BigInteger`.
+If one of the arguments is a `BigInteger`, the result will be of type `BigInteger`;
+otherwise, if one of the arguments is a `long`, the result will be of type `long`;
+otherwise, the result will be of type `int`:
 
 [source,groovy]
 ----
@@ -230,7 +237,29 @@ include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=bitwise_op,indent=
 It's worth noting that the internal representation of primitive types follow the http://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html[Java Language Specification]. In particular,
 primitive types are signed, meaning that for a bitwise negation, it is always good to use a mask to retrieve only the necessary bits.
 
-In Groovy, bitwise operators have the particularity of being <<Operator-Overloading,overloadable>>, meaning that you can define the behavior of those operators for any kind of object.
+In Groovy, bitwise operators are <<Operator-Overloading,overloadable>>, meaning that you can define the behavior of those operators for any kind of object.
+
+=== Bit shift operators
+
+Groovy offers three bit shift operators:
+
+* `<<`: left shift
+* `>>`: right shift
+* `>>>`: right shift unsigned
+
+All three operators are applicable where the left argument is of type `byte`, `short`, `int`, or `long`.
+The first two operators can also be applied where the left argument is of type `BigInteger`.
+If the left argument is a `BigInteger`, the result will be of type `BigInteger`;
+otherwise, if the left argument is a `long`, the result will be of type `long`;
+otherwise, the result will be of type `int`:
+
+[source,groovy]
+----
+include::{projectdir}/src/spec/test/OperatorsTest.groovy[tags=bit_shift_op,indent=0]
+----
+<1> `equals` method used instead of `==` to confirm result type
+
+In Groovy, bit shift operators are <<Operator-Overloading,overloadable>>, meaning that you can define the behavior of those operators for any kind of object.
 
 == Conditional operators
 
