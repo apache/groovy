@@ -116,9 +116,16 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
     void testConstructMap() {
         assertScript '''
             def a = [:]
+            assert a instanceof Map
+
             Map b = [:]
+            assert b instanceof Map
+
             Object c = [:]
+            assert c instanceof Map
+
             HashMap d = [:]
+            assert d instanceof HashMap
         '''
     }
 
@@ -131,6 +138,30 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             A a = [x:100, y:200]
             assert a.x == 100
             assert a.y == 200
+        '''
+    }
+
+    // GROOVY-9603
+    void testDoNotConstructFromValuedMap() {
+        assertScript '''
+            void test(Map<String, Object> map) {
+                // assign to local variable to establish standard behavior
+                def foobar = [foo: 'bar']
+                map.proper = foobar
+                assert map.proper['foo'] == 'bar'
+
+                // put map literal into "map" parameter in various forms:
+
+                map.put('proper', [key: 'abc'])
+                assert map.proper['key'] == 'abc'
+
+                map['proper'] = [key: 'def']
+                assert map.proper['key'] == 'def'
+
+                map.proper = [key: 'ghi']
+                assert map.proper['key'] == 'ghi'
+            }
+            test([:])
         '''
     }
 
