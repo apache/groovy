@@ -276,10 +276,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> OptionalInt mapToInt(final Optional<T> self, final ToIntFunction<? super T> mapper) {
-        if (!self.isPresent()) {
-            return OptionalInt.empty();
-        }
-        return OptionalInt.of(mapper.applyAsInt(self.get()));
+        return self.map(t -> OptionalInt.of(mapper.applyAsInt(t))).orElseGet(OptionalInt::empty);
     }
 
     /**
@@ -293,10 +290,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> OptionalLong mapToLong(final Optional<T> self, final ToLongFunction<? super T> mapper) {
-        if (!self.isPresent()) {
-            return OptionalLong.empty();
-        }
-        return OptionalLong.of(mapper.applyAsLong(self.get()));
+        return self.map(t -> OptionalLong.of(mapper.applyAsLong(t))).orElseGet(OptionalLong::empty);
     }
 
     /**
@@ -310,10 +304,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> OptionalDouble mapToDouble(final Optional<T> self, final ToDoubleFunction<? super T> mapper) {
-        if (!self.isPresent()) {
-            return OptionalDouble.empty();
-        }
-        return OptionalDouble.of(mapper.applyAsDouble(self.get()));
+        return self.map(t -> OptionalDouble.of(mapper.applyAsDouble(t))).orElseGet(OptionalDouble::empty);
     }
 
     /**
@@ -333,10 +324,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <S,T> Optional<T> collect(final Optional<S> self, @ClosureParams(FirstParam.FirstGenericType.class) final Closure<T> transform) {
         Objects.requireNonNull(self);
         Objects.requireNonNull(transform);
-        if (!self.isPresent()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(transform.call(self.get()));
+        return self.map(transform::call);
     }
 
     /**

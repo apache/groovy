@@ -2005,9 +2005,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private void visitPrefixOrPostifExpression(final Expression origin, final Expression operand, final int operator) {
         Optional<Token> token = TokenUtil.asAssignment(operator);
-        if (token.isPresent()) { // push "operand += 1" or "operand -= 1" onto stack for LHS checks
-            typeCheckingContext.pushEnclosingBinaryExpression(binX(operand, token.get(), constX(1)));
-        }
+        // push "operand += 1" or "operand -= 1" onto stack for LHS checks
+        token.ifPresent(value -> typeCheckingContext.pushEnclosingBinaryExpression(binX(operand, value, constX(1))));
         try {
             operand.visit(this);
             SetterInfo setterInfo = removeSetterInfo(operand);
