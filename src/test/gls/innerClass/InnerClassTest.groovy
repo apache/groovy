@@ -600,6 +600,26 @@ final class InnerClassTest {
     }
 
     @Test
+    void testUsageOfOuterField12() {
+        def err = shouldFail '''
+            class C {
+                int count
+                static def m() {
+                    new LinkedList() {
+                        def get(int i) {
+                            count += 1
+                            super.get(i)
+                        }
+                    }
+                }
+            }
+            C.m()
+        '''
+
+        assert err =~ /Apparent variable 'count' was found in a static scope but doesn't refer to a local variable, static field or class./
+    }
+
+    @Test
     void testUsageOfOuterSuperField() {
         assertScript '''
             class InnerBase {
@@ -631,6 +651,24 @@ final class InnerClassTest {
 
             def outer = new Outer()
             outer.testInnerClassAccessOuterConst()
+        '''
+    }
+
+    @Test
+    void testUsageOfOuterSuperField2() {
+        assertScript '''
+            interface I {
+                String CONST = 'value'
+            }
+            class A implements I {
+                static class B {
+                    def test() {
+                        CONST
+                    }
+                }
+            }
+            def x = new A.B().test()
+            assert x == 'value'
         '''
     }
 
