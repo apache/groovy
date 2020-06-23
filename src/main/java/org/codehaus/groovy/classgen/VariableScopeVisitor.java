@@ -56,6 +56,7 @@ import java.util.LinkedList;
 import java.util.function.BiConsumer;
 
 import static java.lang.reflect.Modifier.isFinal;
+import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 
 /**
@@ -191,10 +192,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (pn.getName().equals(name)) return pn;
         }
 
-        Variable ret = findClassMember(cn.getSuperClass(), name);
-        if (ret != null) return ret;
-        if (isAnonymous(cn)) return null;
-        return findClassMember(cn.getOuterClass(), name);
+        for (ClassNode face : cn.getInterfaces()) {
+            FieldNode fn = face.getDeclaredField(name);
+            if (fn != null) return fn;
+        }
+
+        return findClassMember(cn.getSuperClass(), name);
     }
 
     private Variable findVariableDeclaration(final String name) {
@@ -225,9 +228,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 break;
             }
 
-            ClassNode classScope = scope.getClassScope();
-            if (classScope != null) {
-                Variable member = findClassMember(classScope, name);
+            ClassNode node = scope.getClassScope();
+            if (node != null) {
+                Variable member = findClassMember(node, name);
+                while (member == null && node.getOuterClass() != null && !isAnonymous(node)) {
+                    crossingStaticContext = (crossingStaticContext || isStatic(node.getModifiers()));
+                    member = findClassMember((node = node.getOuterClass()), name);
+                }
                 if (member != null) {
                     boolean staticScope = (crossingStaticContext || inSpecialConstructorCall), staticMember = member.isInStaticContext();
                     // prevent a static context (e.g. a static method) from accessing a non-static variable (e.g. a non-static field)
@@ -236,7 +243,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     }
                 }
                 // GROOVY-5961
-                if (!isAnonymous(classScope)) break;
+                if (!isAnonymous(scope.getClassScope())) break;
             }
             scope = scope.getParent();
         }
@@ -458,14 +465,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         markClosureSharedVariables();
 
         popState();
-    }
-
-    /**
-     * Sets the current class node context.
-     */
-    public void prepareVisit(ClassNode node) {
-        currentClass = node;
-        currentScope.setClassScope(node);
     }
 
     @Override
