@@ -146,6 +146,20 @@ public class JavaStubGenerator {
         }
     }
 
+    private static Iterable<ClassNode> findTraits(ClassNode node) {
+        Set<ClassNode> traits = new LinkedHashSet<>();
+
+        LinkedList<ClassNode> todo = new LinkedList<>();
+        Collections.addAll(todo, node.getInterfaces());
+        while (!todo.isEmpty()) {
+            ClassNode next = todo.removeLast();
+            if (Traits.isTrait(next)) traits.add(next);
+            Collections.addAll(todo, next.getInterfaces());
+        }
+
+        return traits;
+    }
+
     private void printClassContents(PrintWriter out, ClassNode classNode) throws FileNotFoundException {
         if (classNode instanceof InnerClassNode && ((InnerClassNode) classNode).isAnonymous()) {
             // if it is an anonymous inner class, don't generate the stub code for it.
@@ -169,20 +183,6 @@ public class JavaStubGenerator {
                             traitProperty.setType(traitPropertyType);
                         }
                     }
-                }
-
-                private Iterable<ClassNode> findTraits(ClassNode node) {
-                    Set<ClassNode> traits = new LinkedHashSet<>();
-
-                    LinkedList<ClassNode> todo = new LinkedList<>();
-                    Collections.addAll(todo, node.getInterfaces());
-                    while (!todo.isEmpty()) {
-                        ClassNode next = todo.removeLast();
-                        if (Traits.isTrait(next)) traits.add(next);
-                        Collections.addAll(todo, next.getInterfaces());
-                    }
-
-                    return traits;
                 }
 
                 @Override
@@ -348,9 +348,12 @@ public class JavaStubGenerator {
         }
 
         // print the methods from traits
-        for (ClassNode trait : Traits.findTraits(classNode)) {
+        for (ClassNode trait : findTraits(classNode)) {
+            Map<String, ClassNode> generics = trait.isUsingGenerics() ? createGenericsSpec(trait) : null;
             List<MethodNode> traitMethods = trait.getMethods();
-            for (MethodNode traitMethod : traitMethods) {
+            for (MethodNode traitOrigMethod : traitMethods) {
+                // GROOVY-9606: replace method return type and parameter type placeholder with resolved type from trait generics
+                MethodNode traitMethod = correctToGenericsSpec(generics, traitOrigMethod);
                 MethodNode existingMethod = classNode.getMethod(traitMethod.getName(), traitMethod.getParameters());
                 if (existingMethod != null) continue;
                 for (MethodNode propertyMethod : propertyMethods) {
