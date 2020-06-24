@@ -431,35 +431,39 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public ModuleNode visitCompilationUnit(CompilationUnitContext ctx) {
         this.visit(ctx.packageDeclaration());
 
-        this.visitScriptStatements(ctx.scriptStatements())
-                .forEach(e -> {
-                    if (e instanceof DeclarationListStatement) { // local variable declaration
-                        ((DeclarationListStatement) e).getDeclarationStatements().forEach(moduleNode::addStatement);
-                    } else if (e instanceof Statement) {
-                        moduleNode.addStatement((Statement) e);
-                    } else if (e instanceof MethodNode) { // script method
-                        moduleNode.addMethod((MethodNode) e);
-                    }
-                });
+        for (ASTNode node : this.visitScriptStatements(ctx.scriptStatements())) {
+            if (node instanceof DeclarationListStatement) { // local variable declaration(s)
+                for (Statement stmt: ((DeclarationListStatement) node).getDeclarationStatements()) {
+                    this.moduleNode.addStatement(stmt);
+                }
+            } else if (node instanceof Statement) {
+                this.moduleNode.addStatement((Statement) node);
+            } else if (node instanceof MethodNode) {
+                this.moduleNode.addMethod((MethodNode) node);
+            }
+        }
 
-        this.classNodeList.forEach(moduleNode::addClass);
+        for (ClassNode node : this.classNodeList) {
+            this.moduleNode.addClass(node);
+        }
 
         if (this.isPackageInfoDeclaration()) {
-            this.addPackageInfoClassNode();
-        } else {
-            // if groovy source file only contains blank(including EOF), add "return null" to the AST
-            if (this.isBlankScript()) {
-                this.addEmptyReturnStatement();
+            ClassNode packageInfo = ClassHelper.make(this.moduleNode.getPackageName() + PACKAGE_INFO);
+            if (!this.moduleNode.getClasses().contains(packageInfo)) {
+                this.moduleNode.addClass(packageInfo);
             }
+        } else if (this.isBlankScript()) {
+            // add "return null" if script has no statements/methods/classes
+            this.moduleNode.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
         }
 
         this.configureScriptClassNode();
 
-        if (null != this.numberFormatError) {
+        if (this.numberFormatError != null) {
             throw createParsingFailedException(this.numberFormatError.getV2().getMessage(), this.numberFormatError.getV1());
         }
 
-        return moduleNode;
+        return this.moduleNode;
     }
 
     @Override
@@ -1801,7 +1805,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private DeclarationListStatement createFieldDeclarationListStatement(VariableDeclarationContext ctx, ModifierManager modifierManager, ClassNode variableType, List<DeclarationExpression> declarationExpressionList, ClassNode classNode) {
-        for (int i = 0, n = declarationExpressionList.size(); i < n; i++) {
+        for (int i = 0, n = declarationExpressionList.size(); i < n; i += 1) {
             DeclarationExpression declarationExpression = declarationExpressionList.get(i);
             VariableExpression variableExpression = (VariableExpression) declarationExpression.getLeftExpression();
 
@@ -2427,7 +2431,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             // e.g.  m { return 1; }
             MethodCallExpression methodCallExpression =
                     new MethodCallExpression(
-                            VariableExpression.THIS_EXPRESSION,
+                            new VariableExpression("this"),
 
                             (baseExpr instanceof VariableExpression)
                                     ? this.createConstantExpression(baseExpr)
@@ -3092,14 +3096,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             for (Tuple3<Expression, List<AnnotationNode>, TerminalNode> dim : dimList) {
                 if (null == dim.getV1()) {
                     emptyDimList.add(dim);
-                    exprEmpty = true;
+                    exprEmpty = Boolean.TRUE;
                 } else {
-                    if (null != exprEmpty && exprEmpty) {
+                    if (Boolean.TRUE.equals(exprEmpty)) {
                         invalidDimLBrack = latestDim.getV3();
                     }
 
                     dimWithExprList.add(dim);
-                    exprEmpty = false;
+                    exprEmpty = Boolean.FALSE;
                 }
 
                 latestDim = dim;
@@ -3574,7 +3578,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public Parameter[] visitStandardLambdaParameters(final StandardLambdaParametersContext ctx) {
+    public Parameter[] visitStandardLambdaParameters(StandardLambdaParametersContext ctx) {
         if (asBoolean(ctx.variableDeclaratorId())) {
             VariableExpression variable = this.visitVariableDeclaratorId(ctx.variableDeclaratorId());
             Parameter parameter = new Parameter(ClassHelper.OBJECT_TYPE, variable.getName());
@@ -4206,8 +4210,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // e.g. m(1, 2) or m 1, 2
     private MethodCallExpression createMethodCallExpression(Expression baseExpr, Expression arguments) {
-        return new MethodCallExpression(
-                VariableExpression.THIS_EXPRESSION,
+        MethodCallExpression methodCallExpression = new MethodCallExpression(
+                new VariableExpression("this"),
 
                 (baseExpr instanceof VariableExpression)
                         ? this.createConstantExpression(baseExpr)
@@ -4215,6 +4219,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
                 arguments
         );
+
+        return methodCallExpression;
     }
 
     private Parameter processFormalParameter(GroovyParserRuleContext ctx,
@@ -4390,9 +4396,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private boolean isPackageInfoDeclaration() {
         String name = this.sourceUnit.getName();
-
-        return null != name && name.endsWith(PACKAGE_INFO_FILE_NAME);
-
+        return name != null && name.endsWith(PACKAGE_INFO_FILE_NAME);
     }
 
     private boolean isBlankScript() {
@@ -4401,29 +4405,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private boolean isInsideParentheses(NodeMetaDataHandler nodeMetaDataHandler) {
         Integer insideParenLevel = nodeMetaDataHandler.getNodeMetaData(INSIDE_PARENTHESES_LEVEL);
-
-        return null != insideParenLevel && insideParenLevel > 0;
-
-    }
-
-    private void addEmptyReturnStatement() {
-        moduleNode.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
-    }
-
-    private void addPackageInfoClassNode() {
-        List<ClassNode> classNodeList = moduleNode.getClasses();
-        ClassNode packageInfoClassNode = ClassHelper.make(moduleNode.getPackageName() + PACKAGE_INFO);
-
-        if (!classNodeList.contains(packageInfoClassNode)) {
-            moduleNode.addClass(packageInfoClassNode);
-        }
+        return insideParenLevel != null && insideParenLevel > 0;
     }
 
     private org.codehaus.groovy.syntax.Token createGroovyTokenByType(Token token, int type) {
-        if (null == token) {
+        if (token == null) {
             throw new IllegalArgumentException("token should not be null");
         }
-
         return new org.codehaus.groovy.syntax.Token(type, token.getText(), token.getLine(), token.getCharPositionInLine());
     }
 
@@ -4444,7 +4432,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * set the script source position
+     * Sets the script source position.
      */
     private void configureScriptClassNode() {
         ClassNode scriptClassNode = moduleNode.getScriptClassDummy();
@@ -4462,13 +4450,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             scriptClassNode.setLastColumnNumber(lastStatement.getLastColumnNumber());
             scriptClassNode.setLastLineNumber(lastStatement.getLastLineNumber());
         }
-
     }
 
     private String getOriginalText(ParserRuleContext context) {
-        CharStream charStream = lexer.getInputStream();
-        return charStream.getText(Interval.of(context.getStart().getStartIndex(), context.getStop().getStopIndex()));
-
+        return lexer.getInputStream().getText(Interval.of(context.getStart().getStartIndex(), context.getStop().getStopIndex()));
     }
 
     private boolean isTrue(NodeMetaDataHandler nodeMetaDataHandler, String key) {
