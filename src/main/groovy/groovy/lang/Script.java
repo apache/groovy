@@ -18,7 +18,6 @@
  */
 package groovy.lang;
 
-import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -27,6 +26,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+
+import static org.codehaus.groovy.runtime.MetaClassHelper.capitalize;
 
 /**
  * This object represents a Groovy script
@@ -73,9 +74,9 @@ public abstract class Script extends GroovyObjectSupport {
     }
 
     private boolean hasSetterMethodFor(String property) {
-        String setterName = "set" + BeanUtils.capitalize(property);
+        String setterName = "set" + capitalize(property);
         for (Method method : getClass().getDeclaredMethods()) {
-            if (method.getParameterCount() == 1
+            if (method.getParameterTypes().length == 1
                     // TODO: Test modifiers or return type?
                     && method.getName().equals(setterName)) {
                 return true;
