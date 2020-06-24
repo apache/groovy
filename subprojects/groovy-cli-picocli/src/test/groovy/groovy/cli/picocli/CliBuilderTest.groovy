@@ -523,8 +523,8 @@ class CliBuilderTest extends GroovyTestCase {
         cli.writer = printWriter
         options = cli.parse(['-abacus', 'foo'])
         assert options == null
-        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument'))
-        assertTrue(stringWriter.toString().contains('-us'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unmatched argument'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().contains('-us'))
     }
 
     void testMixedBurstingAndLongOptions_singleHyphen() {
@@ -933,16 +933,16 @@ class CliBuilderTest extends GroovyTestCase {
         resetPrintWriter()
         cli.writer = printWriter
         assert cli.parse(['-indy']) == null
-        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument'))
-        assertTrue(stringWriter.toString().contains('-ndy'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unmatched argument'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().contains('-ndy'))
 
         assert cli.parse(['--help']).help
         assert cli.parse(['--help']).h
         resetPrintWriter()
         cli.writer = printWriter
         assert cli.parse(['-help']) == null
-        assertTrue(stringWriter.toString().startsWith('error: Unmatched argument'))
-        assertTrue(stringWriter.toString().contains('-elp'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unmatched argument'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().contains('-elp'))
 
         assert cli.parse(['--version']).version
         assert cli.parse(['--version']).V
