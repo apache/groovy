@@ -393,9 +393,9 @@ final class SyntaxErrorTest extends GroovyTestCase {
 
         assert err == '''\
             |startup failed:
-            |test.groovy: 1: Missing ')' @ line 1, column 14.
+            |test.groovy: 1: Missing ')' @ line 1, column 15.
             |   println ((int 123)
-            |                ^
+            |                 ^
             |
             |1 error
             |'''.stripMargin()
@@ -413,6 +413,22 @@ final class SyntaxErrorTest extends GroovyTestCase {
             |test.groovy: 2: Missing ')' @ line 2, column 22.
             |       println((int) 123
             |                        ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    void 'test error alternative - Missing ")" 3'() {
+        def err = expectParseError '''\
+            |def m( {
+            |}
+            |'''.stripMargin()
+
+        assert err == '''\
+            |startup failed:
+            |test.groovy: 1: Missing ')' @ line 1, column 8.
+            |   def m( {
+            |          ^
             |
             |1 error
             |'''.stripMargin()

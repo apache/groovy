@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.parser.antlr4.util;
 
+import groovy.lang.Tuple;
 import groovy.lang.Tuple2;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.parser.antlr4.GroovyParser;
+import org.apache.groovy.parser.antlr4.SyntaxErrorReportable;
 import org.codehaus.groovy.ast.ASTNode;
 
 import static groovy.lang.Tuple.tuple;
@@ -31,6 +34,20 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
  * Utilities for configuring node positions
  */
 public class PositionConfigureUtils {
+    public static Tuple2<Integer, Integer> calcMissingRparenOffset(Token errorToken, TokenStream tokenStream) {
+        Token token = tokenStream.LT(-2);
+        int tokenType = token.getType();
+
+        // DON'T adjust the offset for type casting, e.g. `println ((int) 6`
+        if (GroovyParser.RPAREN == tokenType) {
+            return SyntaxErrorReportable.NO_OFFSET;
+        }
+
+        final int errorTokenLength = errorToken.getText().length();
+
+        return Tuple.tuple(0, -errorTokenLength);
+    }
+
     /**
      * Sets location(lineNumber, colNumber, lastLineNumber, lastColumnNumber) for node using standard context information.
      * Note: this method is implemented to be closed over ASTNode. It returns same node as it received in arguments.
