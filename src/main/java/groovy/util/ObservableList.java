@@ -529,7 +529,7 @@ public class ObservableList implements List {
 
     public static class ElementClearedEvent extends ElementEvent {
         private static final long serialVersionUID = -2754983590419383972L;
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.CLEARED);
@@ -545,7 +545,7 @@ public class ObservableList implements List {
 
     public static class MultiElementAddedEvent extends ElementEvent {
         private static final long serialVersionUID = 443060557109693114L;
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, int index, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, index, ChangeType.MULTI_ADD);
@@ -561,7 +561,7 @@ public class ObservableList implements List {
 
     public static class MultiElementRemovedEvent extends ElementEvent {
         private static final long serialVersionUID = 2590238951081945868L;
-        private List values = new ArrayList();
+        private final List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, 0, ChangeType.MULTI_REMOVE);

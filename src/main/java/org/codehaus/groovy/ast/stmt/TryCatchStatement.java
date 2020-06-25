@@ -33,8 +33,8 @@ import java.util.List;
 public class TryCatchStatement extends Statement {
     private static final String IS_RESOURCE = "_IS_RESOURCE";
     private Statement tryStatement;
-    private List<ExpressionStatement> resourceStatements = new ArrayList<>();
-    private List<CatchStatement> catchStatements = new ArrayList<>();
+    private final List<ExpressionStatement> resourceStatements = new ArrayList<>();
+    private final List<CatchStatement> catchStatements = new ArrayList<>();
     private Statement finallyStatement;
     
 

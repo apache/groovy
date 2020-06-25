@@ -10608,7 +10608,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         private final Iterator<E> delegate;
         private final LinkedList<E> discards;
         private boolean exhausted;
-        private int num;
+        private final int num;
 
         private DropRightIterator(Iterator<E> delegate, int num) {
             this.delegate = delegate;

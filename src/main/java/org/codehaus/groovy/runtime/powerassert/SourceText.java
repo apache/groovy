@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class SourceText {
     private final int firstLine;
-    private String normalizedText;
+    private final String normalizedText;
 
     private final List<Integer> lineOffsets = new ArrayList<Integer>();
     private final List<Integer> textOffsets = new ArrayList<Integer>();

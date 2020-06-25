@@ -31,7 +31,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 public class ForStatement extends Statement implements LoopingStatement {
     public static final Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE,"forLoopDummyParameter");
 
-    private Parameter variable;
+    private final Parameter variable;
     private Expression collectionExpression;
     private Statement loopBlock;
     private VariableScope scope;

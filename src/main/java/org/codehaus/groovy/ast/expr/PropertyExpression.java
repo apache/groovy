@@ -27,7 +27,7 @@ public class PropertyExpression extends Expression {
 
     private Expression objectExpression;
     private final Expression property;
-    private boolean safe;
+    private final boolean safe;
     private boolean spreadSafe;
     private boolean isStatic;
     private boolean implicitThis;

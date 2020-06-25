@@ -24,9 +24,9 @@ import java.util.Objects;
  * TODO parse groovydoc to get tag content
  */
 public class GroovydocTag {
-    private String name;
-    private String content;
-    private Groovydoc groovydoc;
+    private final String name;
+    private final String content;
+    private final Groovydoc groovydoc;
 
     public GroovydocTag(String name, String content, Groovydoc groovydoc) {
         this.name = name;

@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.Parameter;
  */
 public class CatchStatement extends Statement {
 
-    private Parameter variable;
+    private final Parameter variable;
 
     private Statement code;
     
