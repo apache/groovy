@@ -125,7 +125,7 @@ public class ReferenceManager {
         if (threshold<0) throw new IllegalArgumentException("threshold must not be below 0.");
        
         return new ReferenceManager(queue){
-            private final AtomicInteger refCnt = new AtomicInteger();
+            private AtomicInteger refCnt = new AtomicInteger();
             private volatile ReferenceManager manager = createIdlingManager(queue);
             @Override
             public void afterReferenceCreation(Reference r) {
@@ -160,7 +160,7 @@ public class ReferenceManager {
         };        
     }  
     
-    private final ReferenceQueue queue;
+    private ReferenceQueue queue;
     
     public ReferenceManager(ReferenceQueue queue) {
         this.queue = queue;

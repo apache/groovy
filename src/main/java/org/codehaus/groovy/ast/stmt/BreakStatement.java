@@ -25,7 +25,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class BreakStatement extends Statement {
 
-    private final String label;
+    private String label;
     
     public BreakStatement() {
         this(null);

@@ -655,9 +655,9 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         return readLineFromReaderWithoutMark(self);
     }
 
-    private static final int charBufferSize = 4096;     // half the default stream buffer size
-    private static final int expectedLineLength = 160;  // double the default line length
-    private static final int EOF = -1;                  // End Of File
+    private static int charBufferSize = 4096;     // half the default stream buffer size
+    private static int expectedLineLength = 160;  // double the default line length
+    private static int EOF = -1;                  // End Of File
 
     /*
     * This method tries to read subsequent buffers from the reader using a mark

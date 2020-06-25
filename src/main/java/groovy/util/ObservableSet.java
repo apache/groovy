@@ -384,7 +384,7 @@ public class ObservableSet<E> implements Set<E> {
 
     public static class ElementClearedEvent extends ElementEvent {
         private static final long serialVersionUID = 6075523774365623231L;
-        private final List values = new ArrayList();
+        private List values = new ArrayList();
 
         public ElementClearedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.CLEARED);
@@ -400,7 +400,7 @@ public class ObservableSet<E> implements Set<E> {
 
     public static class MultiElementAddedEvent extends ElementEvent {
         private static final long serialVersionUID = 575204921472897312L;
-        private final List values = new ArrayList();
+        private List values = new ArrayList();
 
         public MultiElementAddedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI_ADD);
@@ -416,7 +416,7 @@ public class ObservableSet<E> implements Set<E> {
 
     public static class MultiElementRemovedEvent extends ElementEvent {
         private static final long serialVersionUID = 8894701122065438905L;
-        private final List values = new ArrayList();
+        private List values = new ArrayList();
 
         public MultiElementRemovedEvent(Object source, List values) {
             super(source, ChangeType.oldValue, ChangeType.newValue, ChangeType.MULTI_REMOVE);

@@ -30,7 +30,7 @@ import java.io.PrintWriter;
 public class LocatedMessage extends SimpleMessage {
 
     /** The CSTNode that indicates the location to which the message applies. */
-    private final CSTNode context;
+    private CSTNode context;
 
     public LocatedMessage(String message, CSTNode context, SourceUnit source) {
         super(message, source);

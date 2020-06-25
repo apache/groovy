@@ -36,13 +36,13 @@ public class QName implements Serializable {
     private static final String EMPTY_STRING = "";
 
     /** Field namespaceURI */
-    private final String namespaceURI;
+    private String namespaceURI;
 
     /** Field localPart */
-    private final String localPart;
+    private String localPart;
 
     /** Field prefix */
-    private final String prefix;
+    private String prefix;
 
     /**
      * Constructor for the QName.

@@ -104,7 +104,7 @@ public class GroovyMain {
     private boolean debug = false;
 
     // Compiler configuration, used to set the encodings of the scripts/classes
-    private final CompilerConfiguration conf = new CompilerConfiguration(System.getProperties());
+    private CompilerConfiguration conf = new CompilerConfiguration(System.getProperties());
 
     /**
      * Main CLI interface.
@@ -177,14 +177,14 @@ public class GroovyMain {
         private String classpath;
 
         @Option(names = {"-D", "--define"}, paramLabel = "<property=value>", description = "Define a system property")
-        private final Map<String, String> systemProperties = new LinkedHashMap<String, String>();
+        private Map<String, String> systemProperties = new LinkedHashMap<String, String>();
 
         @Option(names = "--disableopt", paramLabel = "optlist", split = ",",
                 description = {
                         "Disables one or all optimization elements; optlist can be a comma separated list with the elements: ",
                                 "all (disables all optimizations), ",
                                 "int (disable any int based optimizations)"})
-        private final List<String> disableopt = new ArrayList<String>();
+        private List<String> disableopt = new ArrayList<String>();
 
         @Option(names = {"-d", "--debug"}, description = "Debug mode will print out full stack traces")
         private boolean debug;
@@ -514,7 +514,7 @@ public class GroovyMain {
     private static void setupContextClassLoader(GroovyShell shell) {
         final Thread current = Thread.currentThread();
         class DoSetContext implements PrivilegedAction<Object> {
-            final ClassLoader classLoader;
+            ClassLoader classLoader;
 
             public DoSetContext(ClassLoader loader) {
                 classLoader = loader;

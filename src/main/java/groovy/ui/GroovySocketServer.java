@@ -168,11 +168,11 @@ public class GroovySocketServer implements Runnable {
     }
     
     static class GroovyClientConnection implements Runnable {
-        private final Script script;
-        private final Socket socket;
-        private final BufferedReader reader;
-        private final PrintWriter writer;
-        private final boolean autoOutputFlag;
+        private Script script;
+        private Socket socket;
+        private BufferedReader reader;
+        private PrintWriter writer;
+        private boolean autoOutputFlag;
     
         GroovyClientConnection(Script script, boolean autoOutput,Socket socket) throws IOException {
             this.script = script;
