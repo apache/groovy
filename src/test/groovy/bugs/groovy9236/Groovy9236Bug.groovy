@@ -100,7 +100,10 @@ java.util.stream$Stream
                                               'groovy.util.java$util$stream$Stream',
                                               'java$util$stream$Stream',
                                               'java.util$stream$Stream',
-                                              'java.util.stream$Stream']
+                                              'java.util.stream$Stream',
+                                              'groovy.lang.GroovyObject$java$util$stream$Collectors',
+                                              'groovy.lang.GroovyObject$groovy$transform$CompileStatic',
+                                              'groovy.lang.GroovyObject$java$util$stream$Stream']
 
         assert cl.guessedClassNameList.every(n -> !classNamesShouldAvoidToGuess.contains(n))
     }
