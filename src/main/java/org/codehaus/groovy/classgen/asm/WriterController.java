@@ -73,7 +73,7 @@ public class WriterController {
     private int bytecodeVersion = Opcodes.V1_8;
     private int lineNumber = -1;
     private int helperMethodIndex = 0;
-    private List<String> superMethodNames = new ArrayList<>();
+    private final List<String> superMethodNames = new ArrayList<>();
     private MethodPointerExpressionWriter methodPointerExpressionWriter;
     private MethodReferenceExpressionWriter methodReferenceExpressionWriter;
 

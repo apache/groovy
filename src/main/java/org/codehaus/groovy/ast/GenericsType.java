@@ -514,7 +514,7 @@ public class GenericsType extends ASTNode {
      * We should find a way to set declaring class for `GenericsType` first, it can be completed at the resolving phase.
      */
     public static class GenericsTypeName {
-        private String name;
+        private final String name;
 
         public GenericsTypeName(final String name) {
             this.name = Objects.requireNonNull(name);

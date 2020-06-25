@@ -326,7 +326,7 @@ public class ClosureWriter {
     }
 
     protected static class CorrectAccessedVariableVisitor extends CodeVisitorSupport {
-        private InnerClassNode icn;
+        private final InnerClassNode icn;
 
         public CorrectAccessedVariableVisitor(final InnerClassNode icn) {
             this.icn = icn;

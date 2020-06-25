@@ -48,12 +48,12 @@ public class GroovyCodeSource {
      * The codeSource to be given the generated class.  This can be used by policy file
      * grants to administer security.
      */
-    private CodeSource codeSource;
+    private final CodeSource codeSource;
 
     /**
      * The name given to the generated class
      */
-    private String name;
+    private final String name;
 
     /**
      * The groovy source to be compiled and turned into a class

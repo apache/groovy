@@ -68,7 +68,7 @@ import static org.objectweb.asm.Opcodes.RETURN;
  */
 public class CallSiteWriter {
     private static final int SIG_ARRAY_LENGTH = 255;
-    private static String [] sig = new String [SIG_ARRAY_LENGTH];
+    private static final String [] sig = new String [SIG_ARRAY_LENGTH];
     private static String getCreateArraySignature(int numberOfArguments) {
         if (numberOfArguments >= SIG_ARRAY_LENGTH) {
             throw new IllegalArgumentException(String.format(

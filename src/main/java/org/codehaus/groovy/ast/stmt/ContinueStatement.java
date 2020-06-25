@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class ContinueStatement extends Statement {
 
-    private String label;
+    private final String label;
     
     public ContinueStatement() {
         this(null);

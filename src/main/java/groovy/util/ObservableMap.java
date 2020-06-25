@@ -331,7 +331,7 @@ public class ObservableMap implements Map {
 
     public abstract static class PropertyEvent extends PropertyChangeEvent {
         private static final long serialVersionUID = -8328412226044328674L;
-        private ChangeType type;
+        private final ChangeType type;
 
         public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue, ChangeType type) {
             super(source, propertyName, oldValue, newValue);
@@ -377,7 +377,7 @@ public class ObservableMap implements Map {
 
     public static class PropertyClearedEvent extends PropertyEvent {
         private static final long serialVersionUID = -1472110679547513634L;
-        private Map values = new HashMap();
+        private final Map values = new HashMap();
 
         public PropertyClearedEvent(Object source, Map values) {
             super(source, ObservableMap.CLEARED_PROPERTY, values, null, ChangeType.CLEARED);

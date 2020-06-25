@@ -76,7 +76,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     private boolean auto;
     private Pattern classNamePattern;
 
-    private static Map<String, ClassNode> nameToGlobalClassesNodesMap;
+    private static final Map<String, ClassNode> nameToGlobalClassesNodesMap;
     private Map<String, NewifyClassData> nameToInnerClassesNodesMap;
 
     // ClassHelper.classes minus interfaces, abstract classes, and classes with private ctors

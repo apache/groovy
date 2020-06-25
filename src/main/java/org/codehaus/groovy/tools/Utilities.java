@@ -72,6 +72,6 @@ public abstract class Utilities
         return true;
     }    
     
-    private static String eol = System.lineSeparator();
+    private static final String eol = System.lineSeparator();
 
 }

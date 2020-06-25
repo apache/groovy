@@ -48,7 +48,7 @@ import static org.codehaus.groovy.ast.ClassHelper.short_TYPE;
  */
 public class BytecodeHelper implements Opcodes {
 
-    private static String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class);
+    private static final String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class);
 
     /**
      * @return the ASM internal name of the type
@@ -668,7 +668,7 @@ public class BytecodeHelper implements Opcodes {
     }
 
     private static class ReturnVarHandler extends PrimitiveTypeHandler {
-        private MethodVisitor mv;
+        private final MethodVisitor mv;
 
         public ReturnVarHandler(MethodVisitor mv, ClassNode type) {
             super(type);
@@ -707,8 +707,8 @@ public class BytecodeHelper implements Opcodes {
     }
 
     private static class LoadVarHandler extends PrimitiveTypeHandler {
-        private MethodVisitor mv;
-        private int idx;
+        private final MethodVisitor mv;
+        private final int idx;
 
         public LoadVarHandler(MethodVisitor mv, ClassNode type, int idx) {
             super(type);
@@ -748,8 +748,8 @@ public class BytecodeHelper implements Opcodes {
     }
 
     private static class StoreVarHandler extends PrimitiveTypeHandler {
-        private MethodVisitor mv;
-        private int idx;
+        private final MethodVisitor mv;
+        private final int idx;
 
         public StoreVarHandler(MethodVisitor mv, ClassNode type, int idx) {
             super(type);
@@ -789,7 +789,7 @@ public class BytecodeHelper implements Opcodes {
     }
 
     private static abstract class PrimitiveTypeHandler {
-        private ClassNode type;
+        private final ClassNode type;
 
         public PrimitiveTypeHandler(ClassNode type) {
             this.type = type;

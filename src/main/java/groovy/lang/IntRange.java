@@ -68,7 +68,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         /**
          * The number of values in the range.
          */
-        private int size = size();
+        private final int size = size();
 
         /**
          * The next value to return.

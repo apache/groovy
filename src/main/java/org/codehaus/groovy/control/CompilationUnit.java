@@ -101,10 +101,10 @@ public class CompilationUnit extends ProcessingUnit {
     protected Queue<SourceUnit> queuedSources = new LinkedList<>();
 
     /** The classes generated during classgen. */
-    private List<GroovyClass> generatedClasses = new ArrayList<>();
+    private final List<GroovyClass> generatedClasses = new ArrayList<>();
 
-    private Deque<PhaseOperation>[] phaseOperations;
-    private Deque<PhaseOperation>[] newPhaseOperations;
+    private final Deque<PhaseOperation>[] phaseOperations;
+    private final Deque<PhaseOperation>[] newPhaseOperations;
     {
         final int n = Phases.ALL + 1;
         phaseOperations = new Deque[n];
@@ -131,7 +131,7 @@ public class CompilationUnit extends ProcessingUnit {
     /** The AST transformations state data. */
     protected ASTTransformationsContext astTransformationsContext;
 
-    private Set<javax.tools.JavaFileObject> javaCompilationUnitSet = new HashSet<>();
+    private final Set<javax.tools.JavaFileObject> javaCompilationUnitSet = new HashSet<>();
 
     /**
      * Initializes the CompilationUnit with defaults.
@@ -523,7 +523,7 @@ public class CompilationUnit extends ProcessingUnit {
      */
     public Iterator<SourceUnit> iterator() {
         return new Iterator<SourceUnit>() {
-            private Iterator<String> nameIterator = sources.keySet().iterator();
+            private final Iterator<String> nameIterator = sources.keySet().iterator();
             @Override
             public boolean hasNext() {
                 return nameIterator.hasNext();

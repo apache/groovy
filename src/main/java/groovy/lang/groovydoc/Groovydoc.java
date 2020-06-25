@@ -28,7 +28,7 @@ import java.util.Objects;
  */
 public class Groovydoc {
     private final String content;
-    private List<GroovydocTag> tagList = Collections.emptyList();
+    private final List<GroovydocTag> tagList = Collections.emptyList();
     private GroovydocHolder holder;
     public static final Groovydoc EMPTY_GROOVYDOC = new Groovydoc("") {
         @Override
