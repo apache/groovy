@@ -2429,9 +2429,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             }
 
             // e.g.  m { return 1; }
+            Expression thisExpr = new VariableExpression("this");
+            thisExpr.setColumnNumber(baseExpr.getColumnNumber());
+            thisExpr.setLineNumber(baseExpr.getLineNumber());
+
             MethodCallExpression methodCallExpression =
                     new MethodCallExpression(
-                            new VariableExpression("this"),
+                            thisExpr,
 
                             (baseExpr instanceof VariableExpression)
                                     ? this.createConstantExpression(baseExpr)
@@ -2441,7 +2445,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                     new ArgumentListExpression(closureExpression),
                                     closureExpression)
                     );
-
 
             return configureAST(methodCallExpression, ctx);
         }
@@ -4210,8 +4213,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     // e.g. m(1, 2) or m 1, 2
     private MethodCallExpression createMethodCallExpression(Expression baseExpr, Expression arguments) {
-        MethodCallExpression methodCallExpression = new MethodCallExpression(
-                new VariableExpression("this"),
+        Expression thisExpr = new VariableExpression("this");
+        thisExpr.setColumnNumber(baseExpr.getColumnNumber());
+        thisExpr.setLineNumber(baseExpr.getLineNumber());
+
+        return new MethodCallExpression(
+                thisExpr,
 
                 (baseExpr instanceof VariableExpression)
                         ? this.createConstantExpression(baseExpr)
@@ -4219,8 +4226,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
                 arguments
         );
-
-        return methodCallExpression;
     }
 
     private Parameter processFormalParameter(GroovyParserRuleContext ctx,
