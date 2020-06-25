@@ -42,7 +42,6 @@ options {
 @header {
     import java.util.Map;
     import org.codehaus.groovy.ast.NodeMetaDataHandler;
-    import org.apache.groovy.parser.antlr4.util.PositionConfigureUtils;
 }
 
 @members {
@@ -1256,8 +1255,6 @@ keywords
 
 rparen
     :   RPAREN
-    |   r=~RPAREN // !!!Error Alternative
-        { require(false, "Missing ')'", PositionConfigureUtils.calcMissingRparenOffset($r, _input)); }
     ;
 
 nls

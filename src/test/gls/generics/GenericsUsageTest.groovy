@@ -122,7 +122,7 @@ final class GenericsUsageTest extends CompilableTestSupport {
     void testGenericsDiamondShortcutIllegalPosition() {
         shouldFailCompilationWithAnyMessage '''
             List<> list4 = []
-        ''', ['unexpected token: <', 'Unexpected input: \'<\'']
+        ''', ['unexpected token: <', 'Unexpected input: \'<>\'']
     }
 
     void testGenericsInAsType() {
@@ -166,7 +166,7 @@ final class GenericsUsageTest extends CompilableTestSupport {
 
         shouldFailCompilationWithMessage """
             def m(Class<Integer someParam) {}
-        """, "Unexpected input: '<'"
+        """, "Unexpected input: 'Class<Integer someParam'"
 
         shouldFailCompilationWithMessage """
             abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
