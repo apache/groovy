@@ -1045,7 +1045,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (isThisExpression(objectExpression)) return true;
         if (objectExpression instanceof ClassExpression) return false;
 
-        ClassNode objectExpressionType = isSuperExpression(objectExpression) ? controller.getClassNode().getSuperClass() : controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
+        ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
         if (objectExpressionType.equals(ClassHelper.OBJECT_TYPE)) objectExpressionType = objectExpression.getType();
         return objectExpressionType.isDerivedFromGroovyObject();
     }

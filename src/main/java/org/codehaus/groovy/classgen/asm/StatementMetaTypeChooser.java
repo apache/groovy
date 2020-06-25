@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -48,10 +47,8 @@ public class StatementMetaTypeChooser implements TypeChooser {
         if (exp instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) exp;
             if (ve.isClosureSharedVariable()) return ve.getType();
-            if (ve.getAccessedVariable() instanceof FieldNode) {
-                FieldNode fn = (FieldNode) ve.getAccessedVariable();
-                if (!fn.getDeclaringClass().equals(current)) return fn.getOriginType();
-            }
+            if (ve.isSuperExpression()) return current.getSuperClass();
+
             type = ve.getOriginType();
         } else if (exp instanceof Variable) {
             Variable v = (Variable) exp;
