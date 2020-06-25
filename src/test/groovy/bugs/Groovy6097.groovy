@@ -27,7 +27,7 @@ import static groovy.test.GroovyAssert.assertScript
 @CompileStatic
 final class Groovy6097 {
 
-    @Test @NotYetImplemented
+    @NotYetImplemented @Test
     void testSuperIsser1() {
         assertScript '''
             class A {
@@ -46,7 +46,7 @@ final class Groovy6097 {
         '''
     }
 
-    @Test @NotYetImplemented
+    @NotYetImplemented @Test
     void testSuperIsser2() {
         assertScript '''
             class A {
@@ -62,6 +62,48 @@ final class Groovy6097 {
             }
 
             new B()
+        '''
+    }
+
+    @NotYetImplemented @Test
+    void testSuperIsser3() {
+        assertScript '''
+            class A {
+                boolean isBool() { true }
+            }
+
+            class B extends A {
+                boolean isBool() { false }
+
+                void test() {
+                    assert !bool
+                    assert !this.bool
+                    assert super.bool
+                }
+            }
+
+            new B().test()
+        '''
+    }
+
+    @NotYetImplemented @Test
+    void testSuperIsser4() {
+        assertScript '''
+            class A {
+                boolean isBool() { true }
+            }
+
+            class B extends A {
+                boolean bool = false
+
+                void test() {
+                    assert !bool
+                    assert !this.bool
+                    assert super.bool
+                }
+            }
+
+            new B().test()
         '''
     }
 }

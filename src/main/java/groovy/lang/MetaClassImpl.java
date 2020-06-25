@@ -2893,13 +2893,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Retrieves the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
      *
      * @param sender      The class of the object that requested the attribute
-     * @param receiver    The instance
-     * @param messageName The name of the attribute
+     * @param object      The instance
+     * @param attribute   The name of the attribute
      * @param useSuper    Whether to look-up on the super class or not
      * @return The attribute value
      */
-    public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
-        return getAttribute(receiver, messageName);
+    public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean useSuper) {
+        return getAttribute(sender, object, attribute, useSuper, false);
     }
 
     /**
@@ -2912,7 +2912,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class.
      * @return The attribute value
      */
-    public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper, boolean fromInsideClass) {
+    public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean useSuper, final boolean fromInsideClass) {
         checkInitalised();
 
         boolean isStatic = theClass != Class.class && object instanceof Class;
@@ -2953,7 +2953,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param useSuper        Whether the call is to a super class property
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class
      */
-    public void setAttribute(Class sender, Object object, String attribute, Object newValue, boolean useSuper, boolean fromInsideClass) {
+    public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean useSuper, final boolean fromInsideClass) {
         checkInitalised();
 
         boolean isStatic = theClass != Class.class && object instanceof Class;
@@ -3846,7 +3846,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param attribute The name of the attribute
      * @return The attribute value
      */
-    public Object getAttribute(Object object, String attribute) {
+    public Object getAttribute(final Object object, final String attribute) {
         return getAttribute(theClass, object, attribute, false, false);
     }
 
@@ -3857,7 +3857,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param attribute The name of the attribute
      * @param newValue  The new value of the attribute
      */
-    public void setAttribute(Object object, String attribute, Object newValue) {
+    public void setAttribute(final Object object, final String attribute, final Object newValue) {
         setAttribute(theClass, object, attribute, newValue, false, false);
     }
 

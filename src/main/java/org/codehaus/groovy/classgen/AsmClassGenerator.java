@@ -714,9 +714,9 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     protected void loadThisOrOwner() {
         if (isInnerClass()) {
-            visitFieldExpression(new FieldExpression(controller.getClassNode().getDeclaredField("owner")));
+            fieldX(controller.getClassNode().getDeclaredField("owner")).visit(this);
         } else {
-            loadThis(null);
+            loadThis(VariableExpression.THIS_EXPRESSION);
         }
     }
 
@@ -1045,7 +1045,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (isThisExpression(objectExpression)) return true;
         if (objectExpression instanceof ClassExpression) return false;
 
-        ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
+        ClassNode objectExpressionType = isSuperExpression(objectExpression) ? controller.getClassNode().getSuperClass() : controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
         if (objectExpressionType.equals(ClassHelper.OBJECT_TYPE)) objectExpressionType = objectExpression.getType();
         return objectExpressionType.isDerivedFromGroovyObject();
     }
@@ -1151,8 +1151,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
-        FieldNode field = expression.getField();
-        if (field.isStatic()) {
+        if (expression.getField().isStatic()) {
             if (controller.getCompileStack().isLHS()) {
                 storeStaticField(expression);
             } else {
@@ -1167,69 +1166,58 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    public void loadStaticField(final FieldExpression fldExp) {
+    public void loadStaticField(final FieldExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
-        FieldNode field = fldExp.getField();
-        boolean holder = field.isHolder() && !controller.isInGeneratedFunctionConstructor();
+        FieldNode field = expression.getField();
         ClassNode type = field.getType();
 
-        String ownerName = (field.getOwner().equals(controller.getClassNode()))
-                ? controller.getInternalClassName()
-                : BytecodeHelper.getClassInternalName(field.getOwner());
-        if (holder) {
-            mv.visitFieldInsn(GETSTATIC, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
+        if (field.isHolder() && !controller.isInGeneratedFunctionConstructor()) {
+            mv.visitFieldInsn(GETSTATIC, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
         } else {
-            mv.visitFieldInsn(GETSTATIC, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
-            controller.getOperandStack().push(field.getType());
+            mv.visitFieldInsn(GETSTATIC, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
+            controller.getOperandStack().push(type);
         }
     }
 
     /**
      * RHS instance field. should move most of the code in the BytecodeHelper
      */
-    public void loadInstanceField(final FieldExpression fldExp) {
+    public void loadInstanceField(final FieldExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
-        FieldNode field = fldExp.getField();
-        boolean holder = field.isHolder() && !controller.isInGeneratedFunctionConstructor();
+        FieldNode field = expression.getField();
         ClassNode type = field.getType();
-        String ownerName = (field.getOwner().equals(controller.getClassNode()))
-                ? controller.getInternalClassName()
-                : BytecodeHelper.getClassInternalName(field.getOwner());
 
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
+        mv.visitFieldInsn(GETFIELD, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
 
-        if (holder) {
+        if (field.isHolder() && !controller.isInGeneratedFunctionConstructor()) {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
             controller.getOperandStack().push(ClassHelper.OBJECT_TYPE);
         } else {
-            controller.getOperandStack().push(field.getType());
+            controller.getOperandStack().push(type);
         }
     }
 
     private void storeThisInstanceField(final FieldExpression expression) {
+        OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = expression.getField();
+        ClassNode type = field.getType();
 
-        boolean setReferenceFromReference = field.isHolder() && expression.isUseReferenceDirectly();
-        String ownerName = (field.getOwner().equals(controller.getClassNode()))
-                ? controller.getInternalClassName() : BytecodeHelper.getClassInternalName(field.getOwner());
-        OperandStack operandStack = controller.getOperandStack();
-
-        if (setReferenceFromReference) {
+        if (field.isHolder() && expression.isUseReferenceDirectly()) {
             // rhs is ready to use reference, just put it in the field
             mv.visitVarInsn(ALOAD, 0);
             operandStack.push(controller.getClassNode());
             operandStack.swap();
-            mv.visitFieldInsn(PUTFIELD, ownerName, field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+            mv.visitFieldInsn(PUTFIELD, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
         } else if (field.isHolder()) {
             // rhs is normal value, set the value in the Reference
             operandStack.doGroovyCast(field.getOriginType());
             operandStack.box();
             mv.visitVarInsn(ALOAD, 0);
-            mv.visitFieldInsn(GETFIELD, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(field.getType()));
+            mv.visitFieldInsn(GETFIELD, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
             mv.visitInsn(SWAP);
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
         } else {
@@ -1238,28 +1226,34 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, 0);
             operandStack.push(controller.getClassNode());
             operandStack.swap();
-            mv.visitFieldInsn(PUTFIELD, ownerName, field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+            mv.visitFieldInsn(PUTFIELD, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
         }
     }
 
     private void storeStaticField(final FieldExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = expression.getField();
+        ClassNode type = field.getType();
 
-        boolean holder = field.isHolder() && !controller.isInGeneratedFunctionConstructor();
         controller.getOperandStack().doGroovyCast(field);
 
-        String ownerName = (field.getOwner().equals(controller.getClassNode()))
-                ? controller.getInternalClassName() : BytecodeHelper.getClassInternalName(field.getOwner());
-        if (holder) {
+        if (field.isHolder() && !controller.isInGeneratedFunctionConstructor()) {
             controller.getOperandStack().box();
-            mv.visitFieldInsn(GETSTATIC, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(field.getType()));
+            mv.visitFieldInsn(GETSTATIC, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
             mv.visitInsn(SWAP);
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
         } else {
-            mv.visitFieldInsn(PUTSTATIC, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(field.getType()));
+            mv.visitFieldInsn(PUTSTATIC, getFieldOwnerName(field), field.getName(), BytecodeHelper.getTypeDescription(type));
         }
+
         controller.getOperandStack().remove(1);
+    }
+
+    private String getFieldOwnerName(final FieldNode field) {
+        if (field.getOwner().equals(controller.getClassNode())) {
+            return controller.getInternalClassName();
+        }
+        return BytecodeHelper.getClassInternalName(field.getOwner());
     }
 
     @Override
@@ -1315,12 +1309,12 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private void loadThis(final VariableExpression thisExpression) {
+    private void loadThis(final VariableExpression thisOrSuper) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);
         if (controller.isInGeneratedFunction() && !controller.getCompileStack().isImplicitThis()) {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
-            ClassNode expectedType = thisExpression!=null?controller.getTypeChooser().resolveType(thisExpression, controller.getOutermostClass()):null;
+            ClassNode expectedType = controller.getTypeChooser().resolveType(thisOrSuper, controller.getOutermostClass());
             if (!ClassHelper.OBJECT_TYPE.equals(expectedType) && !ClassHelper.isPrimitiveType(expectedType)) {
                 BytecodeHelper.doCast(mv, expectedType);
                 controller.getOperandStack().push(expectedType);
