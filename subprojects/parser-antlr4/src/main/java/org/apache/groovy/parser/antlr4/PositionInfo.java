@@ -67,4 +67,5 @@ public class PositionInfo {
 
         return " @ line " + line + ", column " + column;
     }
+
 }

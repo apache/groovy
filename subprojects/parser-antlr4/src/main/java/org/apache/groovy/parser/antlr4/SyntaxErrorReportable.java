@@ -18,28 +18,45 @@
  */
 package org.apache.groovy.parser.antlr4;
 
+import groovy.lang.Tuple;
+import groovy.lang.Tuple2;
+
 /**
  * A SyntaxErrorReportable is a recognizer that can report syntax error
  */
 public interface SyntaxErrorReportable {
+    Tuple2<Integer, Integer> NO_OFFSET = Tuple.tuple(0, 0);
+
     default void require(boolean condition, String msg, int offset, boolean toAttachPositionInfo) {
+        require(condition, msg, Tuple.tuple(0, offset), toAttachPositionInfo);
+    }
+    default void require(boolean condition, String msg, Tuple2<Integer, Integer> offset, boolean toAttachPositionInfo) {
         if (condition) {
             return;
         }
 
         this.throwSyntaxError(msg, offset, toAttachPositionInfo);
     }
+
     default void require(boolean condition, String msg, boolean toAttachPositionInfo) {
-        require(condition, msg, 0, toAttachPositionInfo);
+        require(condition, msg, NO_OFFSET, toAttachPositionInfo);
     }
+
     default void require(boolean condition, String msg, int offset) {
+        require(condition, msg, Tuple.tuple(0, offset));
+    }
+    default void require(boolean condition, String msg, Tuple2<Integer, Integer> offset) {
         require(condition, msg, offset,false);
     }
+
     default void require(boolean condition, String msg) {
         require(condition, msg, false);
     }
 
     default void throwSyntaxError(String msg, int offset, boolean toAttachPositionInfo) {
+        throwSyntaxError(msg, Tuple.tuple(0, offset), toAttachPositionInfo);
+    }
+    default void throwSyntaxError(String msg, Tuple2<Integer, Integer> offset, boolean toAttachPositionInfo) {
         PositionInfo positionInfo = this.genPositionInfo(offset);
         throw new GroovySyntaxError(msg + (toAttachPositionInfo ? positionInfo.toString() : ""),
                 this.getSyntaxErrorSource(),
@@ -49,8 +66,12 @@ public interface SyntaxErrorReportable {
     }
 
     int getSyntaxErrorSource();
+
     default PositionInfo genPositionInfo(int offset) {
-        return new PositionInfo(getErrorLine(), getErrorColumn() + offset);
+        return genPositionInfo(Tuple.tuple(0, offset));
+    }
+    default PositionInfo genPositionInfo(Tuple2<Integer, Integer> offset) {
+        return new PositionInfo(getErrorLine() + offset.getV1(), getErrorColumn() + offset.getV2());
     }
 
     int getErrorLine();
