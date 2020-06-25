@@ -91,8 +91,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor implements Opcodes {
     private static final String CLOSURES_MAP_FIELD = "$closures$delegate$map";
     private static final String DELEGATE_OBJECT_FIELD = "$delegate";
 
-    private static final List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<Method>());
-    private static final List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<Method>());
+    private static List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<Method>());
+    private static List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<Method>());
 
     private static final AtomicLong pxyCounter = new AtomicLong();
     private static final Set<String> GROOVYOBJECT_METHOD_NAMESS;

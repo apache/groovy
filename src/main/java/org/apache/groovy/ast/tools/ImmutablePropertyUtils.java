@@ -69,7 +69,7 @@ public class ImmutablePropertyUtils {
               This list can by extended by providing "known immutable" classes
               via Immutable.knownImmutableClasses
              */
-    private static final Set<String> builtinImmutables = new HashSet<String>(Arrays.asList(
+    private static Set<String> builtinImmutables = new HashSet<String>(Arrays.asList(
             "java.lang.Class",
             "java.lang.Boolean",
             "java.lang.Byte",

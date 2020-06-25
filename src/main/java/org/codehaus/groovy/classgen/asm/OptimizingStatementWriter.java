@@ -439,8 +439,8 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
 
     private static class FastPathData {
-        private final Label pathStart = new Label();
-        private final Label afterPath = new Label();
+        private Label pathStart = new Label();
+        private Label afterPath = new Label();
     }
 
     public static class StatementMeta {

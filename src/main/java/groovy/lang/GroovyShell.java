@@ -53,7 +53,7 @@ public class GroovyShell extends GroovyObjectSupport {
     private final Binding context;
     private final AtomicInteger counter = new AtomicInteger(0);
     private final CompilerConfiguration config;
-    private final GroovyClassLoader loader;
+    private GroovyClassLoader loader;
 
     public static void main(String[] args) {
         GroovyMain.main(args);
@@ -186,7 +186,7 @@ public class GroovyShell extends GroovyObjectSupport {
         //ClassLoader currentClassLoader = thread.getContextClassLoader();
 
         class DoSetContext implements PrivilegedAction {
-            final ClassLoader classLoader;
+            ClassLoader classLoader;
 
             public DoSetContext(ClassLoader loader) {
                 classLoader = loader;
