@@ -32,6 +32,6 @@ import java.lang.annotation.Target
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target([ElementType.TYPE])
-@GroovyASTTransformationClass(["org.codehaus.groovy.ast.builder.AstBuilderTransformation"])
+@GroovyASTTransformationClass(["org.apache.groovy.ast.builder.AstBuilderTransformation"])
 @interface WithAstBuilder {
 }
