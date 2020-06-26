@@ -346,6 +346,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     //--------------------------------------------------------------------------
+    /**
+     * Sets the current class node context.
+     */
+    public void prepareVisit(ClassNode node) {
+        currentClass = node;
+        currentScope.setClassScope(node);
+    }
 
     @Override
     public void visitClass(final ClassNode node) {
