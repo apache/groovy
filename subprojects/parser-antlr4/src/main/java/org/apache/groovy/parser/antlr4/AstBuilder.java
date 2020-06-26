@@ -2472,20 +2472,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             }
 
             // e.g.  m { return 1; }
-            Expression thisExpr = new VariableExpression("this");
-            configureAST(thisExpr, baseExpr);
-
             MethodCallExpression methodCallExpression =
-                    new MethodCallExpression(
-                            thisExpr,
-
-                            (baseExpr instanceof VariableExpression)
-                                    ? this.createConstantExpression(baseExpr)
-                                    : baseExpr,
-
+                    createMethodCallExpression(
+                            baseExpr,
                             configureAST(
                                     new ArgumentListExpression(closureExpression),
-                                    closureExpression)
+                                    closureExpression
+                            )
                     );
 
             return configureAST(methodCallExpression, ctx);
