@@ -167,6 +167,17 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private Variable findClassMember(final ClassNode cn, final String name) {
+        for (ClassNode classNode = cn; null != classNode; classNode = classNode.getSuperClass()) {
+            Variable variable = doFindClassMember(classNode, name);
+            if (null != variable) {
+                return variable;
+            }
+        }
+
+        return null;
+    }
+
+    private Variable doFindClassMember(final ClassNode cn, final String name) {
         if (cn == null) return null;
 
         if (cn.isScript()) {
@@ -198,7 +209,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (fn != null) return fn;
         }
 
-        return findClassMember(cn.getSuperClass(), name);
+        return null;
     }
 
     private Variable findVariableDeclaration(final String name) {
